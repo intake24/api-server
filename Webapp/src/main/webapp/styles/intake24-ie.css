@@ -1,3 +1,5 @@
+@charset "UTF-8";
+
 /*
 This file is part of Intake24.
 
@@ -8,7 +10,6 @@ This software is licensed under the Open Government Licence 3.0:
 http://www.nationalarchives.gov.uk/doc/open-government-licence/
 */
 
-@CHARSET "UTF-8";
 
 body {
 	min-width: 940px;

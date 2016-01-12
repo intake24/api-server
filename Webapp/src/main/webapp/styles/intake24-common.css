@@ -1,3 +1,5 @@
+@charset "UTF-8";
+
 /*
 This file is part of Intake24.
 
@@ -23,8 +25,6 @@ Licensed under the Open Government Licence 3.0:
 
 http://www.nationalarchives.gov.uk/doc/open-government-licence/
 */
-
-@CHARSET "UTF-8";
 
 * {
 	/* Hide touch overlays on iOS */
