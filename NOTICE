@@ -1,0 +1,36 @@
+Intake24
+--------
+
+An open source self-completed computerised dietary recall system based on 
+multiple-pass 24-hour recall.
+
+https://intake24.co.uk/
+
+Copyright 2015, 2016 Newcastle University.
+
+Based on software developed at Newcastle University for Food Standards Scotland.
+
+© Crown copyright, 2012, 2013, 2014
+
+Licenced under the Open Government Licence 3.0:
+
+http://www.nationalarchives.gov.uk/doc/open-government-licence/
+
+
+Intake24 source code distribution includes the following software:
+------------------------------------------------------------------
+
+PCollections: http://pcollections.org/
+
+libstemmer by Dr Martin Porter and Richard Boulton: 
+http://snowball.tartarus.org/
+
+Metaphone 3 by Lawrence Philips (as part of Google Refine): 
+https://code.google.com/archive/p/google-refine/
+
+gwt-slider-bar by kiouri: https://code.google.com/archive/p/gwt-slider-bar/
+
+Shepherd: https://github.com/HubSpot/shepherd
+
+Bootstrap by Twitter, Inc.: https://github.com/twbs/bootstrap
+

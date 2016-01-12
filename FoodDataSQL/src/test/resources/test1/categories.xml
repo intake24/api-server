@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!--
+This file is part of Intake24.
+
+Copyright 2015, 2016 Newcastle University.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<categories>
+  <category code="C000" description="Category 1" hidden="false">
+    <food code="F004"/>
+    <food code="F000"/>
+    <food code="F005"/>
+  </category>
+  <category reasonableAmount="3456" sameAsBeforeOption="false" readyMealOption="true" code="C001" description="Category 2" hidden="false">
+    <food code="F003"/>
+    <subcategory code="C005"/>
+       <portion-size method="as-served" description="No description" imageUrl="portion/placeholder.jpg" useForRecipes="false">
+      <param name="serving-image-set" value="as_served_2"/>
+      <param name="leftovers-image-set" value="as_served_2_leftovers"/>
+    </portion-size>
+    <portion-size method="drink-scale" description="No description" imageUrl="portion/placeholder.jpg" useForRecipes="false">
+      <param name="drinkware-id" value="glasses_beer"/>
+      <param name="initial-fill-level" value="0.9"/>
+      <param name="skip-fill-level" value="true"/>
+    </portion-size>
+
+  </category>
+  <category code="C002" description="Category 3" hidden="true">
+    <food code="F002"/>
+    <food code="F007"/>
+    <food code="F008"/>
+  </category>
+  <category code="C003" description="Category 4" hidden="false">
+    <subcategory code="C004"/>
+  </category>
+  <category code="C004" description="Nested category 1" hidden="false">
+    <subcategory code="C005"/>
+  </category>
+  <category code="C005" description="Nested category 2" hidden="false">
+    <food code="F002"/>
+    <food code="F006"/>
+  </category>
+</categories>

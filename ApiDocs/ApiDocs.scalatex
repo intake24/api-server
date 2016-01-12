@@ -1,0 +1,778 @@
+@import Main._
+@import apidocs.Examples
+
+@sect{Intake24 REST API}
+
+  @p
+    @i{Version 15.11}
+
+  @p
+    Intake24 (@a("https://intake24.co.uk", href := "https://intake24.co.uk")) is a self-completed computerised dietary recall system 
+    based on multiple-pass 24-hour recall. The online system offers similar data quality to interviewer-led recalls at a significantly lower cost.
+    
+  @p
+    The Intake24 API is designed to provide easy access to the same underlying food database that the main system
+    uses, in order to build custom applications that are based on the estimation of nutrient intake.
+    
+  @sect{Change log}
+    @sect{4/11/2015}
+      @p
+        Added the following new endpoints:
+          @ul
+            @li
+              @sect.ref{Get all as served image sets}
+            @li
+              @sect.ref{Get as served image definition}
+            @li
+              @sect.ref{Get all guide images}
+            @li
+              @sect.ref{Get guide image definition}
+            @li
+              @sect.ref{Get all drinkware sets}
+            @li
+              @sect.ref{Get drinkware set definition}
+        
+    @sect{28/10/2015}
+      @p
+        Added the following new endpoints:
+          @ul
+            @li
+              @sect.ref{Get food group definition}
+            @li
+              @sect.ref{Get all food groups}
+            @li
+              @sect.ref{Get all uncategorised foods}
+            @li
+              @sect.ref{Check if a food code is available}
+            @li
+              @sect.ref{Check if a category code is available}
+    @sect{26/10/2015}
+      @ul
+        @li
+          Refactored the food and category definition records to split the basic and local data blocks. The motivation is to support separate permissions
+          for updating the basic and local food data blocks.
+        @li
+          Moved the portion size estimation options list from inheritable attributes to local data (it is still inherited similar to other
+          inheritable attributes, but only within the same locale).
+        @li
+          Moved the nutrient tables mapping from basic to local data block.         
+        @li
+          Added a separate version identifier to the local data block to support editing of local data without affecting the basic data block. 
+        @li
+          Added endpoints for editing food and category data.
+
+  @sect{Data types}
+    @p
+      Intake24 uses several basic data structures throughout the system. This section provides a brief explanation for each of them. 
+    @sect{Optional values}
+      @p
+       Optional values are encoded as JSON arrays with either zero or exactly one element (@a("explanation", href := "https://github.com/lihaoyi/upickle-pprint/issues/75")).   
+    @sect{Food definition}
+      @p 
+        The following data structure corresponds to a definition of a single food in the database: 
+      
+      @hl.js{@Examples.food1Json}
+      
+      @sect{Food definition basic fields}
+        @p
+          The basic fields of a food definition record are as follows:
+            @ul
+              @li
+                @b{version} — a @a("version 4 unique identifier", href := "https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_.28random.29") 
+                for the current version of this food record. Required to resolve conflicts when food records are edited concurrently and should not be 
+                displayed to the user. This is essentially a @a("cryptographic nonce", href := "https://en.wikipedia.org/wiki/Cryptographic_nonce") w.r.t. security.
+              @li
+                @b{code} — a four-character food code that uniquely identifies this food.
+              @li
+                @b{description} — an English name or a short description for this food.
+                @i{An English name is required for all local foods for maintainability purposes.}
+              @li
+                @b{groupCode} — food group code. See @b{ref???}
+              @li
+                @b{attributes} — the inheritable attributes block (see below).
+              @li
+                @b{localData} — the local data block for the current locale (see below).
+                
+      @sect{Food definition local data}
+        @p
+          Fields specific to the current locale are as follows:
+            @ul
+              @li
+                @b{version} — an optional @a("version 4 unique identifier", href := "https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_.28random.29") 
+                of the current version of the local data block of this food record. Empty if this food has no data for the current locale yet.
+              @li
+                @b{localDescription} — an optional name or a short description for this food in the current locale. Empty if this food has no translation for the current locale.
+              @li
+                @b{nutrientTableCodes} — a mapping from a nutrient table ID to a record ID in the nutrient table corresponding to this food for the current locale. 
+                If multiple tables are referenced, the one that has the highest priority (as defined in the server configuration) will be used.
+              @li
+                @b{portionSize} — a list of portion size estimation options applicable to this food, or an empty list. See below for the portion size estimation option format.
+        
+      @sect{Inheritable attributes}
+        @p
+          The inheritable attributes block represents attributes that can optionally be included in or omitted from the food definition record. If some of these
+          attributes are not defined, they will be inherited from a parent category following the inheritance rules @b{ref???}. If none of the parent categories define an attribute,
+          the default value @b{ref???} will be used.
+        @p
+          @hl.js{@Examples.food1AttrJson}          
+        @p
+          The inheritable attributes block includes the following fields:
+            @ul
+              @li
+                @b{readyMealOption} — an optional boolean value indicating whether this food should be flagged as a likely ready meal.
+              @li
+                @b{sameAsBeforeOption} — an optional boolean value indicating that the associated food items entered by the user for this food should be saved 
+                and suggested as a quick-completion option if this food is encountered again in the future. Mostly used for hot drinks at the moment, but can be 
+                applied to any food.
+              @li
+                @b{reasonableAmount} — an optional integer value indicating the maximum amount (in g or ml) of this food that should be treated as "reasonable". 
+                "Unreasonable" amounts are flagged and highlighted in the output spreadsheet.
+      @sect{Portion size estimation options}
+        @p
+          @hl.js{@Examples.food1PsmJson}
+        @p
+          An individual portion size estimation option is defined as follows:
+          @ul
+            @li
+              @b{method} — identifier of the portion size estimation method to use (see @b{ref???})
+            @li
+              @b{description} — a description of this portion size estimation option in the current locale. Used when there is more than one method available and the
+              user is prompted to choose one (e.g. "Use an image", "Use a standard portion", "Type the exact weight").               
+            @li
+              @b{imageUrl} — a link to a small (300x200 px) thumbnail image illustrating this portion size estimation option. User together with the description
+              when there is more than one option to choose from.
+            @li
+              @b{parameters} — a list of parameters specific to the portion size estimation method (see @b{ref???}). Each element of the list is an object with the
+              "name" and "value" fields, both of which are strings.  
+    
+    @sect{Category definition}
+      @p 
+        The following data structure corresponds to a definition of a food category in the database: 
+      
+      @hl.js{@Examples.catJson}
+      
+      @sect{Category definition basic fields}
+        @p
+          The basic fields of a category definition record are as follows:
+          @ul
+            @li
+              @b{version} — a @a("unique identifier", href := "https://en.wikipedia.org/wiki/Universally_unique_identifier") for the current version 
+                of this category record. Required only to resolve conflicts when category records are edited concurrently and should not be displayed to the user.
+            @li
+              @b{description} — an English name or a short description for this category. 
+              @i{Currently required, and it probably makes sense to keep this and require an English name even for the local foods for maintainability.}
+            @li
+              @b{isHidden} — a boolean value indicating whether this category is meant to be browsed by the user. Useful for utility categories such as e.g. "Sandwich ingredients"
+              that are used for various purposes in the system but are not meant to be displayed to the user.
+            @li
+              @b{localData}
+              
+      @sect{Category definition local data}
+        @p
+          Fields specific to the current locale are as follows:
+            @ul
+              @li
+                @b{version} — an optional @a("version 4 unique identifier", href := "https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_.28random.29") 
+                of the current version of the local data block of this category record. Empty if this category has no data for the current locale yet.
+              @li
+                @b{localDescription} — an optional name or a short description for this category in the current locale. Empty if this food has no translation for the current locale.
+              @li
+                @b{portionSize} — a list of portion size estimation options applicable to foods in this category, or an empty list. See @sect.ref("Portion size estimation options", "portion size estimation options format").
+      
+      @sect{Inheritable attributes}
+        @p
+          Same as @sect.ref{Inheritable attributes} for foods.
+    
+    @sect{Category header}
+      @p
+        This structure is used to retrieve the list of sub-categories contained in a given category and contains only the following basic fields from @sect.ref{Category definition}:        
+      @hl.js{@Examples.catHeaderJson} 
+    
+    @sect{Food header}
+      @p
+        This structure is used to retrieve the list of foods contained in a given category and contains only the following basic fields from @sect.ref{Food definition}:        
+      @hl.js{@Examples.foodHeaderJson} 
+      
+    @sect{Category contents}
+      @p
+        This structure represents the contents of a given category:
+      @hl.js{@Examples.catContentsJson}
+      
+      @p
+        The fields are:
+        @ul
+          @li
+            @b{foods} — a list of foods (see @sect.ref{Food header}) contained in this category
+          @li
+            @b{subcategories} — a list of categories (see @sect.ref{Category header}) contained in this category
+    @sect{Food group}
+      @p
+        This structure describes a food group:
+      @p
+        @hl.js{@Examples.foodGroup}
+      @p 
+        The fields are:
+        @ul
+          @li
+            @b{id} — an integer food group code.
+          @li
+            @b{englishDescription} — an English description of the food group.
+          @li
+            @b{localDescription} — an optional description of the food group in the current locale.
+
+  @sect{API endpoints}
+  
+    @sect{Authentication}
+      @p
+        Intake24 uses @a("JSON Web Tokens", href := "https://en.wikipedia.org/wiki/JSON_Web_Token") for authentication. To obtain a token, @b{POST} a sign in request to
+      
+      @p
+        @hl.asciidoc{/signin}
+      
+      @p
+        with the following JSON body:
+        
+        @hl.js{@Examples.signInRequestJson}
+        
+      @p
+        where
+        @ul
+          @li
+            @b{survey_id} is the survey ID for the user that you are signing in as (user names are unique w.r.t individual surveys, but not system-wide).
+            This field should contain an empty string if the user you would like to sign in as is a system-wide user, such as an administrator.
+          @li
+            @b{username} is the unique user ID
+          @li
+            @b{password} is the user's password
+      
+      @sect{Response}
+        @p In case of a successfull authentication, the server will respond with @hl.asciidoc{HTTP 200 OK} and a JSON object containing a single field, @b{token}:
+          @hl.js{@Examples.token}
+        @p If the server responds with @hl.asciidoc{HTTP 401 Unauthorized} this means that the provided credentials were not recognised.
+        
+      @sect{Using the JWT in API requests}
+        @p Any API request that requires authentication (all of them at the moment) must contain the authentication token exactly as returned by the server. 
+        @p The token should be included in the @hl.asciidoc{X-Auth-Token} header.
+        @p The authentication tokens are valid indefinitely at this time.
+
+    @sect{Reading from the food database}
+      @sect{Foods and categories}
+        @sect{Get all root categories}
+          @p
+            To get the list of all root categories for a given locale, @b{GET}
+          @p
+            @hl.asciidoc{/categories/<locale>}
+          @p
+            where @b{<locale>} is the current locale code.
+          @sect{Response}
+            The server will respond with a list of @sect.ref("Category header", "category headers").
+            @hl.js{@Examples.rootCats}          
+        @sect{Get all uncategorised foods}
+          @p
+            To get the list of foods not belonging to any category, @b{GET}
+          @p
+            @hl.asciidoc{/foods/<locale>/uncategorised}
+          @p
+            where @b{<locale>} is the current locale code.
+          @sect{Response}
+            The server will respond with a list of @sect.ref("Food header", "food headers").          
+        @sect{Get category contents}
+          @p
+            To get the list of all foods and subcatgories contained in a given category, @b{GET}
+          @p
+            @hl.asciidoc{/categories/<locale>/<code>}
+          @p
+            where @b{<locale>} is the current locale code and @b{<code>} is the four-character Intake24 category code.
+          @sect{Response}
+            The server will respond with a single @sect.ref("Category contents", "category contents") object.
+        @sect{Food quick search}
+          @p
+            To search for a food using a simple string matching algorithm, @b{GET}
+          @p
+            @hl.asciidoc{/foods/<locale>/search/<search-term>}
+          @p
+            where @b{<locale>} is the current locale code and @b{<search-term>} is the substring to search for. The search term will
+            match both the local food description and Intake24 food code. Character case is ignored. 
+          @sect{Response}
+            The server will respond with an array of @sect.ref("Category header", "category header") objects. 
+            @i{There will be at most 50 categories returned.} 
+        @sect{Category quick search}
+          @p
+            To search for a category using a simple string matching algorithm, @b{GET}
+          @p
+            @hl.asciidoc{/categories/<locale>/search/<search-term>}
+          @p
+            where @b{<locale>} is the current locale code and @b{<search-term>} is the substring to search for. The search term will
+            match both the local category description and Intake24 category code. Character case is ignored.
+          @sect{Response}
+            The server will respond with an array of @sect.ref("Food header", "food header") objects. 
+            @i{There will be at most 50 foods returned.}       
+        @sect{Get food definition}
+          @p
+            To get the definition of a specific food in the current locale, @b{GET}
+          @p
+            @hl.asciidoc{/foods/<locale>/<code>/definition}
+          @p
+            where @b{<code>} is the four-character Intake24 food code.
+          @sect{Response}
+            The server will respond with a single @sect.ref("Food definition", "food definition") object.          
+        @sect{Get category definition}
+          @p
+            To get the definition of a specific category in the current locale, @b{GET}
+          @p
+            @hl.asciidoc{/categories/<locale>/<code>/definition}
+          @p
+            where @b{<code>} is the four-character Intake24 category code.
+          @sect{Response}
+            The server will respond with a single @sect.ref("Category definition", "category definition") object.
+        @sect{Get food group definition}
+          @p
+            To get the definition of a specific food group in the current locale, @b{GET}
+          @p
+            @hl.asciidoc{/food-groups/<locale>/<code>}
+          @p
+            where @b{<code>} is the integer food group code and @b{<locale>} is the current locale.
+          @sect{Response}
+            The server will respond with HTTP code @b{200} and a single @sect.ref("Food group", "food group") object if the food code is valid,
+            and with HTTP code @b{400} if the food code is not valid.
+        @sect{Get all food groups}
+          @p
+            To get a list of all food groups currently defined in the database, @b{GET}
+          @p
+            @hl.asciidoc{/food-groups/<locale>}
+          @p
+            where @b{<locale>} is the current locale.
+          @sect{Response}
+            The server will respond with an array of @sect.ref("Food group", "food group") objects.
+
+      @sect{Portion size estimation}
+        @sect{Get all as served image sets}
+          @p
+            To get a list of all as served image sets, @b{GET}
+          @p
+            @hl.asciidoc{/portion-size/as-served}
+          @sect{Response}
+            The server will respond with an array of as served image headers.
+   
+        @sect{Get as served image definition}
+          @p
+            To get the definition of a specific as served image, @b{GET}
+          @p
+            @hl.asciidoc{/portion-size/as-served/<id>}
+          @p
+            where @b{<id>} is the as served image id.
+          @sect{Response}
+            The server will respond with an as served image definition object.
+   
+        @sect{Get all guide images}
+          @p
+            To get a list of all guide images in the database, @b{GET}
+          @p
+            @hl.asciidoc{/portion-size/guide-image}
+          @sect{Response}
+            The server will respond with an array of guide image headers.
+   
+        @sect{Get guide image definition}
+          @p
+            To get the definition of a specific guide image, @b{GET}
+          @p
+            @hl.asciidoc{/portion-size/guide-image/<id>}
+          @p
+            where @b{<id>} is the guide image id.
+          @sect{Response}
+            The server will respond with a guide image definition object.
+   
+        @sect{Get all drinkware sets}
+          @p
+            To get a list of all drinkware sets in the database, @b{GET}
+          @p
+            @hl.asciidoc{/portion-size/drinkware}
+          @sect{Response}
+            The server will respond with an array of drinkware set headers.
+   
+        @sect{Get drinkware set definition}
+          @p
+            To get the definition of a specific drinkware set, @b{GET}
+          @p
+            @hl.asciidoc{/portion-size/drinkware/<id>}
+          @p
+            where @b{<id>} is the drinkware set id.
+          @sect{Response}
+            The server will respond with a drinkware set definition object.
+      
+    @sect{Editing the food database}
+      @sect{Invalid request response}
+        @p
+          Most of the following endpoints use the same data structure to describe invalid requests (HTTP code @b{400}):
+          @hl.js{@Examples.invalidRequest}
+          @p
+            where 
+            @ul
+              @li
+                @b{error} can be either @b{json_exception}, which means that the request object could not be parsed,
+                or @b{invalid_request}, which means that the request was succesfully parsed but it could not be processed due
+                to an error specified in the @b{error_code} field.
+              @li
+                @b{error_code} is the error code specific to the endpoint (present only if @b{error} is @b{invalid_request}). 
+              @li
+                @b{message} is a user-friendly debug message.
+      
+      @sect{Check if a food code is available}
+        @p
+          To quickly check if a given food code is not used by any of the foods in the database, @b{GET}
+        @p
+          @hl.asciidoc{/foods/code-available/<code>}
+        @p
+          @sect{Response}
+            @p
+              The server will respond with a single JSON boolean value (@b{true} or @b{false}) indicating whether the given food code is available.
+      
+      @sect{Create a new food record}
+        @p
+          To create a new food record, @b{POST} a JSON request object to 
+        @p
+          @hl.asciidoc{/foods/new}
+        @p
+          where the new food request is the following structure:
+          @hl.js{@Examples.newFoodRequest}
+          which is the same as @sect.ref{Food definition} without the @b{version} and @b{localData} fields.
+        @sect{Response}
+          @p
+            The server will respond with one of the following HTTP codes:
+          @ul
+            @li
+              @b{200} — the new food record was successfully created.
+            @li
+              @b{400} — the new food record could not be created because the request was @sect.ref("Invalid request response", "invalid"). Possible
+              error codes for this endpoint are:
+              @ul
+                @li
+                  @b{duplicate_food_code} — the specified code is already used by another food in the database.
+                @li
+                  @b{invalid_food_code} — the food record was concurrently deleted by someone else in the middle of processing the request (this should never happen and indicates a bug).
+            @li 
+              @b{403} — the current user does not have the permission to create new food records.
+        
+          
+      @sect{Update basic food data}
+        @p
+          To update the basic fields of a food record, @b{POST} a JSON request object to
+        @p
+          @hl.asciidoc{/foods/<code>}
+        @p
+          where @b{code} is the code of the food that needs to be updated, and the request is the following structure:
+          @hl.js{@Examples.foodBase}
+          which is the same as @sect.ref{Food definition} without the @b{localData} field.
+        @p
+          The @b{version} field must contain the version of the food record retrieved earlier.
+         @sect{Response}
+          @p
+            The server will respond with one of the following HTTP codes:
+          @ul
+            @li
+              @b{200} — the food record was successfully updated.
+            @li
+              @b{400} — the food record could not be updated because the request was @sect.ref("Invalid request response", "invalid"). Possible
+              error codes for this endpoint are:
+              @ul
+                @li
+                  @b{invalid_food_code} — the food record was concurrently deleted by someone else in the middle of processing the request (this should never happen and indicates a bug).
+            @li 
+              @b{403} — the current user does not have the permission to edit basic food records.
+            @li
+              @b{409} — someone else has changed or deleted the food record since it was retrieved. The request should be retried with the updated version id. 
+                    
+      @sect{Update local food data}
+        @p
+          To update the locale-specific fields of a food record, @b{POST} a JSON request object to
+        @p
+          @hl.asciidoc{/foods/<locale>/<code>}
+        @p
+          where 
+          @ul
+            @li
+              @b{code} is the code of the food that needs to be updated.
+            @li
+              @b{locale} is the current locale code.
+          and the request is the following structure:
+          @hl.js{@Examples.foodLocal}
+          which is the same as the @b{localData} field of the @sect.ref{Food definition}.
+        @p
+          The @b{version} field must contain the version of the food record retrieved earlier. Note that this can either be an empty array (if the food 
+          does not yet have a locale-specific record for the current locale) or an array with a single element, which is the current version id. This field must be
+          passed exactly as it was retrieved using a food definition request.
+         @sect{Response}
+           @p
+             The server will respond with one of the following HTTP codes:
+           @ul
+             @li
+               @b{200} — the food record was successfully updated.
+             @li
+               @b{400} — the food record could not be updated because the request was @sect.ref("Invalid request response", "invalid"). Possible
+               error codes for this endpoint are:
+               @ul
+                 @li
+                   @b{invalid_food_code} — the food record was concurrently deleted by someone else in the middle of processing the request (this should never happen and indicates a bug).
+             @li 
+               @b{403} — the current user does not have the permission to edit food records in the current locale.
+             @li
+               @b{409} — someone else has changed the food record since it was retrieved. The request should be retried with the updated version id.
+
+      @sect{Delete a food record}
+        @p
+          To delete a food record, @b{DELETE}
+        @p 
+          @hl.asciidoc{/foods/<code>}
+        @p
+          where @b{code} is the code of the food that needs to be deleted.
+        @sect{Response}
+          @p
+            The server will respond with one of the following HTTP codes:
+          @ul
+            @li
+              @b{200} — the food record was successfully deleted.
+            @li
+              @b{400} — the food record could not be deleted because the request was @sect.ref("Invalid request response", "invalid"). Possible
+              error codes for this endpoint are:
+              @ul
+                @li
+                  @b{invalid_food_code} — the food code does not exist.
+            @li 
+              @b{403} — the current user does not have the permission to delete food records.
+
+      @sect{Check if a category code is available}
+        @p
+          To quickly check if a category food code is not used by any of the category in the database, @b{GET}
+        @p
+          @hl.asciidoc{/category/code-available/<code>}
+        @p
+          @sect{Response}
+            @p
+              The server will respond with a single JSON boolean value (@b{true} or @b{false}) indicating whether the given category code is available.
+         
+      @sect{Create a new category record}
+        @p
+          To create a new category record, @b{POST} a JSON request object to 
+        @p
+          @hl.asciidoc{/categories/new}
+        @p
+          where the new category request is the following structure:
+          @hl.js{@Examples.newCategoryRequest}
+          which is the same as @sect.ref{Category definition} without the @b{version} and @b{localData} fields.
+        @sect{Response}
+          @p
+            The server will respond with one of the following HTTP codes:
+          @ul
+            @li
+              @b{200} — the new category record was successfully created.
+            @li
+              @b{400} — the new category record could not be created because the request was @sect.ref("Invalid request response", "invalid"). Possible
+              error codes for this endpoint are:
+              @ul
+                @li
+                  @b{duplicate_category_code} — the specified code is already used by another category in the database.
+                @li
+                  @b{invalid_category_code} — the category record was concurrently deleted by someone else in the middle of processing the request (this should never happen and indicates a bug).
+            @li 
+              @b{403} — the current user does not have the permission to create new category records.
+      
+      @sect{Update basic category data}
+        @p
+          To update the basic fields of a category record, @b{POST} a JSON request object to
+        @p
+          @hl.asciidoc{/categories/<code>}
+        @p
+          where @b{code} is the code of the category that needs to be updated, and the request is the following structure:
+          @hl.js{@Examples.categoryBase}
+          which is the same as @sect.ref{Category definition} without the @b{localData} field.
+        @p
+          The @b{version} field must contain the version of the cateogry record retrieved earlier.
+         @sect{Response}
+          @p
+            The server will respond with one of the following HTTP codes:
+          @ul
+            @li
+              @b{200} — the category record was successfully updated.
+            @li
+              @b{400} — the category record could not be updated because the request was @sect.ref("Invalid request response", "invalid"). Possible
+              error codes for this endpoint are:
+              @ul
+                @li
+                  @b{invalid_category_code} — the category record was concurrently deleted by someone else in the middle of processing the request (this should never happen and indicates a bug).
+            @li 
+              @b{403} — the current user does not have the permission to edit basic category records.
+            @li
+              @b{409} — someone else has changed or deleted the category record since it was retrieved. The request should be retried with the updated version id. 
+        
+      @sect{Update local category data}
+       @p
+          To update the locale-specific fields of a category record, @b{POST} a JSON request object to
+        @p
+          @hl.asciidoc{/categories/<locale>/<code>}
+        @p
+          where
+          @ul
+            @li
+              @b{code} is the code of the category that needs to be updated.
+            @li
+              @b{locale} is the current locale code.
+          and the request is the following structure:
+          @hl.js{@Examples.categoryLocal}
+          which is the same as the @b{localData} field of the @sect.ref{Category definition}.
+        @p
+          The @b{version} field must contain the version of the category record retrieved earlier. Note that this can either be an empty array (if the category 
+          does not yet have a locale-specific record for the current locale) or an array with a single element, which is the current version id. This field must be
+          passed exactly as it was retrieved using a category definition request.
+         @sect{Response}
+           @p
+             The server will respond with one of the following HTTP codes:
+           @ul
+             @li
+               @b{200} — the category record was successfully updated.
+             @li
+               @b{400} — the category record could not be updated because the request was @sect.ref("Invalid request response", "invalid"). Possible
+               error codes for this endpoint are:
+               @ul
+                 @li
+                   @b{invalid_food_code} — the category record was concurrently deleted by someone else in the middle of processing the request (this should never happen and indicates a bug).
+             @li 
+               @b{403} — the current user does not have the permission to edit category records in this locale.
+             @li
+               @b{409} — someone else has changed the category record since it was retrieved. The request should be retried with the updated version id.
+
+      
+      @sect{Add food to a category}
+        @p
+          To add a food to a category, @b{PUT}
+        @p
+          @hl.asciidoc{/categories/<category-code>/foods/<food-code>}
+        @p
+          where
+          @ul
+            @li
+              @b{category-code} is the code of the category that the food should be added to
+            @li
+              @b{food-code} is the code of the food that is to be added to the category
+        @sect{Response}
+          @p
+            The server will respond with one of the following HTTP codes:
+          @ul
+            @li
+              @b{200} — the food was successfully added to the category. If the food was already in the category, the result will still be @b{200} but the operation
+              will have no effect.
+            @li
+              @b{400} — the food could not be added to the category because the request was @sect.ref("Invalid request response", "invalid"). Possible
+              error codes for this endpoint are:
+              @ul
+                @li
+                  @b{invalid_food_code} — the food code does not exist.
+                @li
+                  @b{invalid_category_code} — the category code does not exist.
+            @li 
+               @b{403} — the current user does not have the permission to add foods to categories.
+                 
+      @sect{Remove food from a category}
+        @p
+          To remove a food from a category, @b{DELETE}
+        @p
+          @hl.asciidoc{/categories/<category-code>/foods/<food-code>}
+        @p
+          where
+          @ul
+            @li
+              @b{category-code} is the code of the category that the food should be removed from.
+            @li
+              @b{food-code} is the code of the food that should be removed from the category.
+        @sect{Response}
+          @p
+            The server will respond with one of the following HTTP codes:
+          @ul
+            @li
+              @b{200} — the food was successfully removed from the category.
+            @li
+              @b{400} — the food could not be removed because the request was @sect.ref("Invalid request response", "invalid"). Possible
+              error codes for this endpoint are:
+              @ul
+                @li
+                  @b{food_not_in_category} — the food is not in the category. Please note that this error code will also be returned if
+                  either the food or the category code does not exist.
+            @li 
+               @b{403} — the current user does not have the permission to remove foods from categories.
+        
+      @sect{Add subcategory to a category}
+        @p
+          To add a subcategory to a category, @b{PUT}
+        @p
+          @hl.asciidoc{/categories/<category-code>/subcategories/<subcategory-code>}
+        @p
+          where
+          @ul
+            @li
+              @b{category-code} is the code of the category that the subcategory should be added to.
+            @li
+              @b{subcategory-code} is the code of the subcategory that is to be added to the category.
+        @sect{Response}
+          @p
+            The server will respond with one of the following HTTP codes:
+          @ul
+            @li
+              @b{200} — the subcategory was successfully added to the category. If the subcategory was already in the category, the result will still be @b{200} but the operation
+              will have no effect.
+            @li
+              @b{400} — the subcategory could not be added to the category because the request was @sect.ref("Invalid request response", "invalid"). Possible
+              error codes for this endpoint are:
+              @ul
+                @li
+                  @b{invalid_category_code} — either the category or the subcategory code does not exist.
+            @li 
+               @b{403} — the current user does not have the permission to add subcategories to categories.
+        
+      @sect{Remove subcategory from a category}
+        @p
+          To remove a subcategory from a category, @b{DELETE}
+        @p
+          @hl.asciidoc{/categories/<category-code>/subcategories/<subcategory-code>}
+        @p
+          where
+          @ul
+            @li
+              @b{category-code} is the code of the category that the subcategory should be removed from.
+            @li
+              @b{subcategory-code} is the code of the subcategory that should be removed from the category.
+        @sect{Response}
+          @p
+            The server will respond with one of the following HTTP codes:
+          @ul
+            @li
+              @b{200} — the subcategory was successfully removed from the category.
+            @li
+              @b{400} — the subcategory could not be removed because the request was @sect.ref("Invalid request response", "invalid"). Possible
+              error codes for this endpoint are:
+              @ul
+                @li
+                  @b{subcategory_not_in_category} — the subcategory is not in the category. Please note that this error code will also be returned if
+                  either the subcategory or the category code does not exist.
+            @li 
+               @b{403} — the current user does not have the permission to remove subcategories from categories.
+        
+      @sect{Delete a category record}
+        @p
+          To delete a category record, @b{DELETE}
+        @p 
+          @hl.asciidoc{/categories/<code>}
+        @p
+          where @b{code} is the code of the categories that should be deleted.
+        @sect{Response}
+          @p
+            The server will respond with one of the following HTTP codes:
+          @ul
+            @li
+              @b{200} — the category record was successfully deleted.
+            @li
+              @b{400} — the category record could not be deleted because the request was @sect.ref("Invalid request response", "invalid"). Possible
+              error codes for this endpoint are:
+              @ul
+                @li
+                  @b{invalid_category_code} — the category code does not exist.
+            @li 
+              @b{403} — the current user does not have the permission to delete category records.

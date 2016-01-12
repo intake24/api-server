@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+This file is part of Intake24.
+
+Copyright 2015, 2016 Newcastle University.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+This file is based on Intake24 v1.0.
+
+© Crown copyright, 2012, 2013, 2014
+
+Licensed under the Open Government Licence 3.0: 
+
+http://www.nationalarchives.gov.uk/doc/open-government-licence/
+-->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.workcraft</groupId>
+  <artifactId>phrasesearch</artifactId>
+  <version>15.9-SNAPSHOT</version>
+
+  <name>Indexing and searching tools for short phrases</name>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <repositories>
+    <repository>
+      <id>scala-tools.org</id>
+      <name>Scala-Tools Maven2 Repository</name>
+      <url>http://scala-tools.org/repo-releases</url>
+    </repository>
+    
+    
+  </repositories>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>scala-tools.org</id>
+      <name>Scala-Tools Maven2 Repository</name>
+      <url>http://scala-tools.org/repo-releases</url>
+    </pluginRepository>
+  </pluginRepositories>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.infiauto</groupId>
+      <artifactId>infiauto-datastr</artifactId>
+      <version>0.3.3</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-library</artifactId>
+      <version>2.11.6</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>org.scalatest</groupId>
+      <artifactId>scalatest_2.11</artifactId>
+      <version>2.2.4</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+	<groupId>org.scala-tools</groupId>
+	<artifactId>maven-scala-plugin</artifactId>
+	<version>2.15.2</version>
+	<executions>
+	  <execution>
+	    <goals>
+	      <goal>compile</goal>
+	      <goal>testCompile</goal>
+	    </goals>
+	    <configuration>
+	      <args>
+		<arg>-deprecation</arg>
+		<!-- <arg>-make:transitive</arg> <arg>-dependencyfile</arg> <arg>${project.build.directory}/.scala_dependencies</arg> -->
+	      </args>
+	    </configuration>
+	  </execution>
+	</executions>
+      </plugin>
+
+	<plugin>
+		<groupId>org.codehaus.mojo</groupId>
+		<artifactId>build-helper-maven-plugin</artifactId>
+		<version>1.8</version>
+		<executions>
+			<execution>
+				<id>add-source</id>
+				<phase>generate-sources</phase>
+				<goals>
+					<goal>add-source</goal>
+				</goals>
+				<configuration>
+					<sources>
+						<source>src/main/scala</source>
+					</sources>
+				</configuration>
+			</execution>
+			<execution>
+				<id>add-test-source</id>
+				<phase>generate-test-sources</phase>
+				<goals>
+					<goal>add-test-source</goal>
+				</goals>
+				<configuration>
+					<sources>
+						<source>src/test/scala</source>
+					</sources>
+				</configuration>
+			</execution>
+		</executions>
+	</plugin>
+
+
+      <plugin>
+	<groupId>org.apache.maven.plugins</groupId>
+	<artifactId>maven-compiler-plugin</artifactId>
+	<version>3.2</version>
+	<configuration>
+	  <source>1.7</source>
+	  <target>1.8</target>
+	</configuration>
+      </plugin>
+
+      <!-- disable surefire -->
+      <plugin>
+	<groupId>org.apache.maven.plugins</groupId>
+	<artifactId>maven-surefire-plugin</artifactId>
+	<version>2.7</version>
+	<configuration>
+	  <skipTests>true</skipTests>
+	</configuration>
+      </plugin>
+      
+       
+      <!-- enable scalatest -->
+      <plugin>
+	<groupId>org.scalatest</groupId>
+	<artifactId>scalatest-maven-plugin</artifactId>
+	<version>1.0-M2</version>
+	<configuration>
+	  <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
+	  <junitxml>.</junitxml>
+	  <filereports>WDF TestSuite.txt</filereports>
+	</configuration>
+	<executions>
+	  <execution>
+	    <id>test</id>
+	    <goals>
+              <goal>test</goal>
+	    </goals>
+	  </execution>
+	</executions>
+      </plugin>
+      
+    </plugins>
+  </build>
+</project>

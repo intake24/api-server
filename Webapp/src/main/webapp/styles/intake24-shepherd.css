@@ -1,0 +1,35 @@
+.shepherd-step {
+    z-index: 1000;
+}
+
+.shepherd-content {
+	max-width: 100%;
+	width: 500px;	
+}
+
+.shepherd-button-red {
+    background: #d33 !important;
+    color: white !important;
+}
+
+@media (max-width: 768px) {
+ .shepherd-content {
+    max-width:100%;
+    width: 300px;
+  }
+}
+
+.intake24-shepherd-target {
+	-webkit-transition: opacity 0.4s;
+	-moz-transition: opacity 0.4s;
+	-o-transition: opacity 0.4s;
+	transition: opacity 0.4s;	
+}
+
+.shepherd-active .intake24-shepherd-target {
+	opacity: 0.3;
+}
+
+.shepherd-target.shepherd-enabled {
+	opacity: 1.0;
+}

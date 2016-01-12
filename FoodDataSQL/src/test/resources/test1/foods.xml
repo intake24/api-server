@@ -1,0 +1,43 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!--
+This file is part of Intake24.
+
+Copyright 2015, 2016 Newcastle University.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<foods>
+  <food readyMealOption="true" code="F000" description="Food definition test 1" ndnsCode="100" groupCode="1">
+    <portion-size method="as-served" description="Test" imageUrl="portion/placeholder.jpg" useForRecipes="false">
+      <param name="serving-image-set" value="as_served_1"/>
+      <param name="leftovers-image-set" value="as_served_1_leftovers"/>
+    </portion-size>
+  </food>
+  <food code="F001" description="Uncategorised food" ndnsCode="1000" groupCode="1"> </food>
+  <food code="F002" description="Parent test" ndnsCode="1000" groupCode="1"> </food>
+  <food code="F003" description="Inheritance test 1" ndnsCode="-1" groupCode="0"> </food>
+  <food sameAsBeforeOption="true" code="F004" description="Food definition test 2" ndnsCode="200" groupCode="10"> </food>
+  <food reasonableAmount="1234" code="F005" description="Food definition test 3" ndnsCode="300" groupCode="20"> </food>
+  <food sameAsBeforeOption="true" code="F006" description="Inheritance test 2" ndnsCode="-1" groupCode="0"> </food>
+  <food code="F007" description="Default attributes test" ndnsCode="-1" groupCode="0"> </food>
+  <food code="F008" description="PSM test 1" ndnsCode="-1" groupCode="0">
+    <portion-size method="as-served" description="Blah" imageUrl="portion/placeholder.jpg" useForRecipes="false">
+      <param name="serving-image-set" value="as_served_1"/>
+      <param name="leftovers-image-set" value="as_served_1_leftovers"/>
+    </portion-size>
+    <portion-size method="guide-image" description="Blah Blah" imageUrl="test.jpg" useForRecipes="true">
+      <param name="guide-image-id" value="guide1"/>
+    </portion-size>
+  </food>
+</foods>

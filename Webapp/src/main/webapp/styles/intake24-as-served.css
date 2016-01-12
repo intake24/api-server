@@ -1,0 +1,57 @@
+/*
+This file is part of Intake24.
+
+© Crown copyright, 2012, 2013, 2014.
+
+This software is licensed under the Open Government Licence 3.0:
+
+http://www.nationalarchives.gov.uk/doc/open-government-licence/
+*/
+
+﻿@CHARSET "UTF-8";
+
+.intake24-as-served-image-chooser {
+
+}
+
+.intake24-as-served-image-container {
+	position: relative;
+}
+
+.intake24-as-served-thumbs-container {
+	margin-top:10px;
+}
+
+.intake24-as-served-image {
+	width: 100%;
+	height: auto;
+}
+
+.intake24-as-served-image-overlay {
+	position: absolute;
+	left:0;
+	top:0;
+	right:0;
+	bottom:0;
+}
+
+.intake24-as-served-image-label {
+	position: absolute;
+	right: 20px;
+	bottom: 20px;
+	font-size: 130%;
+	background-color: white;
+	border: 1px solid black;
+	border-radius: 3px;
+	padding: 5px;
+}
+
+.intake24-as-served-thumbnail {
+	border: 2px solid white;
+	cursor: pointer;
+
+}
+
+.intake24-as-served-thumbnail-selected {
+	border: 2px solid black;
+}

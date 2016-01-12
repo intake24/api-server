@@ -1,0 +1,17 @@
+# Build artifacts
+
+project/target
+target
+
+# Eclipse 
+
+.settings
+.project
+.cache
+.classpath
+
+# Third-party JavaScript resources managed by Bower, see README.md
+
+bower_components
+src/main/resources/libs
+/bin/
