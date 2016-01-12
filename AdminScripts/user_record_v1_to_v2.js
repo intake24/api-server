@@ -8,7 +8,7 @@ This software is licensed under the Open Government Licence 3.0:
 http://www.nationalarchives.gov.uk/doc/open-government-licence/
 */
 
-﻿// database evolution script
+// database evolution script
 // no longer relevant, kept for reference
 
 // change these parameters in case of 
