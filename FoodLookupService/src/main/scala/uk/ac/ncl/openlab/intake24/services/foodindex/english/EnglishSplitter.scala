@@ -25,18 +25,18 @@ import uk.ac.ncl.openlab.intake24.services.foodindex.Splitter
 import org.slf4j.LoggerFactory
 import net.scran24.fooddef.SplitList
 
-case class EnglishSplitter (splitList: SplitList) extends Splitter {
-  
+case class EnglishSplitter(splitList: SplitList) extends Splitter {
+
   val pairsWithDefault = splitList.keepPairs.withDefaultValue(Set())
-  
+
   val log = LoggerFactory.getLogger(classOf[EnglishSplitter])
-  
+
   log.debug(splitList.toString())
-  
-  val charPattern = """[,&\.\/]""".r 
-  
+
+  val charPattern = """[,&\.\/]""".r
+
   val pattern = ("""(?i)([^\s]+)(?:\s+(?:""" + splitList.splitWords.map(Pattern.quote(_)).mkString("|") + """))+\s+([^\s]+)""").r
-  
+
   def split(description: String): List[String] = {
     @tailrec
     def rec(prefix: String, remainder: String, parts: List[String]): List[String] = pattern.findFirstMatchIn(remainder) match {
@@ -56,12 +56,9 @@ case class EnglishSplitter (splitList: SplitList) extends Splitter {
 
     val lowerCaseDescription = description.toLowerCase
 
-    if (lowerCaseDescription.contains("sand") || lowerCaseDescription.contains("salad"))
-      List(description)
-    else {
-      // replace all instances of split characters (, & etc) with the first split word surrounded by spaces (e.g. " and ")
-      val descWithReplacedChars = charPattern.replaceAllIn(lowerCaseDescription, s" ${splitList.splitWords.head} ") 
-      rec("", descWithReplacedChars, List()).reverse
-    }
+    // replace all instances of split characters (, & etc) with the first split word surrounded by spaces (e.g. " and ")
+    val descWithReplacedChars = charPattern.replaceAllIn(lowerCaseDescription, s" ${splitList.splitWords.head} ")
+    
+    rec("", descWithReplacedChars, List()).reverse
   }
 }
