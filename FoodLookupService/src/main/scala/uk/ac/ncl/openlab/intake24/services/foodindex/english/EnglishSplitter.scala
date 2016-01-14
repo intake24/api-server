@@ -23,28 +23,30 @@ import java.util.regex.Pattern
 import uk.ac.ncl.openlab.intake24.services.FoodDataService
 import uk.ac.ncl.openlab.intake24.services.foodindex.Splitter
 import org.slf4j.LoggerFactory
+import net.scran24.fooddef.SplitList
 
-abstract class EnglishSplitter (foodData: FoodDataService, locale: String) extends Splitter {
-  val splitList = foodData.splitList(locale)
+case class EnglishSplitter (splitList: SplitList) extends Splitter {
   
-  val pairsWithDefault = splitList.pairs.withDefaultValue(Set())
+  val pairsWithDefault = splitList.keepPairs.withDefaultValue(Set())
   
   val log = LoggerFactory.getLogger(classOf[EnglishSplitter])
   
   log.debug(splitList.toString())
   
-  val pattern = ("""(?i)([^\s]+)\s+(""" + splitList.splitOnWords.map(Pattern.quote(_)).mkString("|") + """)\s+([^\s]+)""").r
-
+  val charPattern = """[,&\.\/]""".r 
+  
+  val pattern = ("""(?i)([^\s]+)(?:\s+(?:""" + splitList.splitWords.map(Pattern.quote(_)).mkString("|") + """))+\s+([^\s]+)""").r
+  
   def split(description: String): List[String] = {
     @tailrec
     def rec(prefix: String, remainder: String, parts: List[String]): List[String] = pattern.findFirstMatchIn(remainder) match {
       case Some(m) => {
-        val startOfSecondWord = m.end - m.group(3).length
+        val startOfSecondWord = m.end - m.group(2).length
         val nextRemainder = remainder.substring(startOfSecondWord)
 
         val pairSet = pairsWithDefault(m.group(1).toLowerCase)
 
-        if (pairSet.contains(m.group(3).toLowerCase) || pairSet.contains("*"))
+        if (pairSet.contains(m.group(2).toLowerCase) || pairSet.contains("*"))
           rec(prefix + remainder.substring(0, startOfSecondWord), nextRemainder, parts)
         else
           rec("", nextRemainder, (prefix + remainder.substring(0, m.start + m.group(1).length)) :: parts)
@@ -52,41 +54,14 @@ abstract class EnglishSplitter (foodData: FoodDataService, locale: String) exten
       case None => (prefix + remainder) :: parts
     }
 
-    val d = description.toLowerCase
+    val lowerCaseDescription = description.toLowerCase
 
-    if (d.contains("sand") || d.contains("salad"))
+    if (lowerCaseDescription.contains("sand") || lowerCaseDescription.contains("salad"))
       List(description)
-    else
-      rec("", description, List()).reverse
+    else {
+      // replace all instances of split characters (, & etc) with the first split word surrounded by spaces (e.g. " and ")
+      val descWithReplacedChars = charPattern.replaceAllIn(lowerCaseDescription, s" ${splitList.splitWords.head} ") 
+      rec("", descWithReplacedChars, List()).reverse
+    }
   }
 }
-
-/* object SplitterImpl {
-  def makePairs(splitWords: List[String], entries: Seq[IndexEntry]) = {
-    val pattern = ("""(?i)([^\s]+)\s+(""" + splitWords.map(Pattern.quote(_)).mkString("|") + """)\s+([^\s]+)""").r
-
-    def allPairs(s: String) = {
-      @tailrec
-      def rec(remainder: String, acc: List[(String, String)]): List[(String, String)] = pattern.findFirstMatchIn(remainder) match {
-        case Some(m) => rec(remainder.substring(m.end - m.group(3).length), (m.group(1), m.group(3)) :: acc)
-        case _ => acc
-      }
-      rec(s, List())
-    }
-
-    val z = Map[String, Set[String]]().withDefaultValue(Set())
-    entries.map(_.description).foldLeft(z)((map, next) => allPairs(next.replaceAll(",", "").toLowerCase).foldLeft(map) { case (m, (w1, w2)) => m + (w1 -> (m(w1) + w2)) })
-  }
-
-  def main(args: Array[String]) = {
-    val s = new Splitter(SplitList.parseFile("D:\\SCRAN24\\Data\\split_list"))
-
-    println(s.split("chicken and rice"))
-    println(s.split("sweet and sour chicken and rice"))
-    println(s.split("chips and fish"))
-    println(s.split("fIsH and cHiPs"))
-    println(s.split("sour and sweet chicken"))
-    println(s.split("sweet and sour chicken"))
-    println(s.split("sweEt and sour Chicken and Fish and chips"))
-  }
-} */

@@ -63,7 +63,7 @@ case class CategoryContents(foods: Seq[FoodHeader], subcategories: Seq[CategoryH
 case class FoodData(code: String, englishDescription: String, localDescription: Option[String], nutrientTableCodes: Map[String, String], groupCode: Int,
   portionSize: Seq[PortionSizeMethod], readyMealOption: Boolean, sameAsBeforeOption: Boolean, reasonableAmount: Int)
 
-case class SplitList(splitOnWords: Seq[String], pairs: Map[String, Set[String]])
+case class SplitList(splitWords: Seq[String], keepPairs: Map[String, Set[String]])
   
 case class AsServedImage(url: String, weight: Double)
 

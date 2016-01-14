@@ -30,5 +30,6 @@ javacOptions ++= Seq("-source", "1.6", "-target", "1.8", "-encoding", "UTF-8")
 
 libraryDependencies ++= Seq(  
   "org.slf4j" % "slf4j-api" % "1.7.12",
-  "org.scalatest" %% "scalatest" % "2.2.5" % "test"
+  "org.scalatest" %% "scalatest" % "2.2.5" % "test",
+  "com.infiauto" %% "infiauto-datastr" % "0.3.3"
 )

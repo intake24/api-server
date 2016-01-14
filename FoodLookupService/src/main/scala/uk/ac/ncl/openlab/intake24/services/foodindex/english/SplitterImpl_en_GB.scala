@@ -23,4 +23,4 @@ import com.google.inject.Inject
 import uk.ac.ncl.openlab.intake24.services.FoodDataService
 
 @Singleton
-class SplitterImpl_en_GB @Inject() (foodData: FoodDataService) extends EnglishSplitter(foodData, "en_GB")
+class SplitterImpl_en_GB @Inject() (foodData: FoodDataService) extends EnglishSplitter(foodData.splitList("en_GB"))
