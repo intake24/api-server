@@ -43,4 +43,4 @@ Edit web.xml to configure the system for your specific deployment.
 License
 =======
 
-Intake24 source code licensed under the terms of the [Apache License v2.0](http://www.apache.org/licenses/LICENSE-2.0).
+Intake24 source code is licensed under the terms of the [Apache License v2.0](http://www.apache.org/licenses/LICENSE-2.0).
