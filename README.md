@@ -39,3 +39,8 @@ The default account for the admin user (accessible at <webapp host url>/admin) i
 Copy the contents of ''Webapp/target'' in the source directory to your servlet container webapps directory. 
 
 Edit web.xml to configure the system for your specific deployment.
+
+License
+=======
+
+Intake24 source code licensed under the terms of the [Apache License v2.0](http://www.apache.org/licenses/LICENSE-2.0).
