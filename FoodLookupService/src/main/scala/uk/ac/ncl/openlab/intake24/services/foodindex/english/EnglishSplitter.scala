@@ -34,8 +34,14 @@ case class EnglishSplitter(splitList: SplitList) extends Splitter {
   log.debug(splitList.toString())
 
   val charPattern = """[,&\.\/]""".r
+  
+  val splitWordsClause = "(?:" + splitList.splitWords.map(Pattern.quote(_)).mkString("|") + ")"
 
-  val pattern = ("""(?i)([^\s]+)(?:\s+(?:""" + splitList.splitWords.map(Pattern.quote(_)).mkString("|") + """))+\s+([^\s]+)""").r
+  val pattern = ("""(?i)([^\s]+)(?:\s+""" + splitWordsClause + """)+\s+([^\s]+)""").r
+  
+  val leadingSplitWordsPattern = ("""(?i)^(?:\s*""" + splitWordsClause + """\s*)+""").r
+  
+  val trailingSplitWordsPattern = ("""(?i)(?:\s*""" + splitWordsClause + """\s*)+$""").r
 
   def split(description: String): List[String] = {
     @tailrec
@@ -59,6 +65,10 @@ case class EnglishSplitter(splitList: SplitList) extends Splitter {
     // replace all instances of split characters (, & etc) with the first split word surrounded by spaces (e.g. " and ")
     val descWithReplacedChars = charPattern.replaceAllIn(lowerCaseDescription, s" ${splitList.splitWords.head} ")
     
-    rec("", descWithReplacedChars, List()).reverse
+    val descRemovedLeading = leadingSplitWordsPattern.replaceAllIn(descWithReplacedChars, "")
+    
+    val descRemovedTrailing = trailingSplitWordsPattern.replaceAllIn(descRemovedLeading, "")
+    
+    rec("", descRemovedTrailing, List()).reverse
   }
 }

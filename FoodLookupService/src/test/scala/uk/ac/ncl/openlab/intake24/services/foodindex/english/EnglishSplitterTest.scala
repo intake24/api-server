@@ -66,4 +66,16 @@ class EnglishSplitterTest extends FunSuite {
     assert(splitter.split("x, sweet and sour chicken with y &&& z") === Seq("x", "sweet and sour chicken", "y", "z"))
   }
   
+  test("Ignore leading split words") {
+    assert(splitter.split(",, and chicken with potatoes") === Seq("chicken", "potatoes"))
+  }
+  
+  test("Ignore trailing split words") {
+    assert(splitter.split("chicken with potatoes and ,,,, , , , with   ") === Seq("chicken", "potatoes"))
+  }
+  
+  test("Ignore leading and trailing split words") {
+    assert(splitter.split(" , , with chicken and potatoes with &,   ") === Seq("chicken", "potatoes"))
+  }
+   
 }
