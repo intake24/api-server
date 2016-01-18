@@ -364,7 +364,13 @@ public interface PromptMessages extends Messages {
 
 	public String mealComplete_deleteButtonLabel();
 
-	public String splitFood_promptText(String foodDesc, String splitSuggestion);
+	public String splitFood_promptText();
+	
+	public String splitFood_split();
+	
+	public String splitFood_keep();
+	
+	public String splitFood_separateSuggestion();
 
 	public String splitFood_yesButtonLabel();
 

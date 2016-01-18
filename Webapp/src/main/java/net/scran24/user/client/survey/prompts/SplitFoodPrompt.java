@@ -99,21 +99,41 @@ public class SplitFoodPrompt implements Prompt<FoodEntry, FoodOperation> {
 				if (result.size() == 1)
 					onComplete.call(disableSplit);
 				else {
-					StringBuffer buf = new StringBuffer();
-					boolean first = true;
-					for (String s : result) {
-						if (first) {
-							first = false;
-						} else {
-							buf.append(" and ");
-						}
+										
+					StringBuilder sb = new StringBuilder();
+					
+					sb.append("<p>");
+					sb.append(messages.splitFood_promptText());
+					sb.append("</p>");
+					
+					sb.append("<p>");
+					sb.append(SafeHtmlUtils.htmlEscape(food.description()));
+					sb.append("</p>");
+					
+					sb.append("<p>");
+					sb.append(messages.splitFood_split());
 
-						buf.append("\"" + SafeHtmlUtils.htmlEscape(s) + "\"");
+					sb.append("<ul>");
+					
+					for (String s: result) {
+						sb.append("<li>");
+						sb.append(SafeHtmlUtils.htmlEscape(s));
+						sb.append("</li>");
 					}
+					
+					sb.append("</ul>");
+					sb.append("</p>");
+					
+					sb.append("<p>");
+					sb.append(messages.splitFood_keep());
+					sb.append("</p>");
+					sb.append("</p>");
+					sb.append(messages.splitFood_separateSuggestion());
+					sb.append("</p>");
 
-					SafeHtml promptText = SafeHtmlUtils.fromSafeConstant(messages.splitFood_promptText(SafeHtmlUtils.htmlEscape(food.description),
-							buf.toString()));
-
+					
+					SafeHtml promptText = SafeHtmlUtils.fromSafeConstant(sb.toString());
+							
 					content.clear();
 
 					content.add(WidgetFactory.createPromptPanel(promptText));
