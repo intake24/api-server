@@ -424,7 +424,7 @@ class XmlImporter(implicit val dbConn: Connection) {
 }
 
 case class Options(arguments: Seq[String]) extends ScallopConf(arguments) {
-  version("Intake24 XML to SQL food database migration tool 15.12-SNAPSHOT")
+  version("Intake24 XML to SQL food database migration tool 16.1-SNAPSHOT")
 
   val xmlPath = opt[String](required = true, noshort = true)
 

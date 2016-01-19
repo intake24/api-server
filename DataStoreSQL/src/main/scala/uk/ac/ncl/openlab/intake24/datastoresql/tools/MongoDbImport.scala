@@ -286,7 +286,7 @@ class MongoDbImporter(dbConn: Connection, mongoStore: MongoDbDataStore) {
 }
 
 case class Options(arguments: Seq[String]) extends ScallopConf(arguments) {
-  version("Intake24 MongoDB to SQL migration tool 15.9-SNAPSHOT")
+  version("Intake24 MongoDB to SQL migration tool 16.1-SNAPSHOT")
 
   val mongoHost = opt[String](required = true, noshort = true)
   val mongoDatabase = opt[String](required = true, noshort = true)
@@ -295,7 +295,8 @@ case class Options(arguments: Seq[String]) extends ScallopConf(arguments) {
   val pgHost = opt[String](required = true, noshort = true)
   val pgDatabase = opt[String](required = true, noshort = true)
   val pgUser = opt[String](required = true, noshort = true)
-  val pgPassword = opt[String](noshort = true)  
+  val pgPassword = opt[String](noshort = true)
+  val pgUseSsl = opt[Boolean](noshort = true)
 }
 
 object MongoDbImport extends App {
@@ -327,6 +328,7 @@ object MongoDbImport extends App {
   properties.setProperty("user", opts.pgUser())
 
   opts.pgPassword.foreach(pw => properties.setProperty("password", pw))
+  opts.pgUseSsl.foreach(ssl => properties.setProperty("ssl", ssl.toString()))
 
   implicit val dbConn = DriverManager.getConnection(s"jdbc:postgresql://${opts.pgHost()}/${opts.pgDatabase()}", properties)
 
