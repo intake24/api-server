@@ -127,7 +127,7 @@ public class SplitFoodPrompt implements Prompt<FoodEntry, FoodOperation> {
 					sb.append("<p>");
 					sb.append(messages.splitFood_keep());
 					sb.append("</p>");
-					sb.append("</p>");
+					sb.append("<p>");
 					sb.append(messages.splitFood_separateSuggestion());
 					sb.append("</p>");
 
