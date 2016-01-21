@@ -48,7 +48,9 @@ trait TestDB {
 
   val clearDbStatements = dropTableStatements ++ dropSequenceStatements
 
-  val initDbStatements = separateSqlStatements(scala.io.Source.fromInputStream(getClass.getResourceAsStream("/sql/init_system_db.sql"), "utf-8").mkString)
+  def stripComments(s: String) = """(?m)/\*(\*(?!/)|[^*])*\*/""".r.replaceAllIn(s, "")
+  
+  val initDbStatements = separateSqlStatements(stripComments(scala.io.Source.fromInputStream(getClass.getResourceAsStream("/sql/init_system_db.sql"), "utf-8").mkString))
 
   clearDbStatements.foreach {
     stmt =>

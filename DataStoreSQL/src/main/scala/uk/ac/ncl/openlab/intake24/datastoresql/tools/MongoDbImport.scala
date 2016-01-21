@@ -336,7 +336,9 @@ object MongoDbImport extends App {
     // Regex matches on semicolons that neither precede nor follow other semicolons
     sql.split("(?<!;);(?!;)").map(_.trim.replace(";;", ";")).filterNot(_.isEmpty)
 
-  val initDbStatements = separateSqlStatements(scala.io.Source.fromInputStream(getClass.getResourceAsStream("/sql/init_system_db.sql"), "utf-8").mkString)
+  def stripComments(s: String) = """(?m)/\*(\*(?!/)|[^*])*\*/""".r.replaceAllIn(s, "")
+    
+  val initDbStatements = separateSqlStatements(stripComments(scala.io.Source.fromInputStream(getClass.getResourceAsStream("/sql/init_system_db.sql"), "utf-8").mkString))
 
   logger.info("Dropping all tables and sequences")
 
