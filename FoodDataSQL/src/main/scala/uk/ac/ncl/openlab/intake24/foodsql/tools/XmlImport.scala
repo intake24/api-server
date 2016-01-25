@@ -424,7 +424,7 @@ class XmlImporter(implicit val dbConn: Connection) {
 }
 
 case class Options(arguments: Seq[String]) extends ScallopConf(arguments) {
-  version("Intake24 XML to SQL food database migration tool 15.12-SNAPSHOT")
+  version("Intake24 XML to SQL food database migration tool 16.1-SNAPSHOT")
 
   val xmlPath = opt[String](required = true, noshort = true)
 
@@ -472,7 +472,9 @@ object XmlImport extends App {
     // Regex matches on semicolons that neither precede nor follow other semicolons
     sql.split("(?<!;);(?!;)").map(_.trim.replace(";;", ";")).filterNot(_.isEmpty)
 
-  val initDbStatements = separateSqlStatements(scala.io.Source.fromInputStream(getClass.getResourceAsStream("/sql/init_foods_db.sql"), "utf-8").mkString)
+  def stripComments(s: String) = """(?m)/\*(\*(?!/)|[^*])*\*/""".r.replaceAllIn(s, "")
+
+  val initDbStatements = separateSqlStatements(stripComments(scala.io.Source.fromInputStream(getClass.getResourceAsStream("/sql/init_foods_db.sql"), "utf-8").mkString))
 
   val dropTableStatements =
     SQL("""SELECT 'DROP TABLE IF EXISTS ' || tablename || ' CASCADE;' AS query FROM pg_tables WHERE schemaname='public'""")

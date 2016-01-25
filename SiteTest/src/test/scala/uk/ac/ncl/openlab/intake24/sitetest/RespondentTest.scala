@@ -47,7 +47,7 @@ class RespondentTest extends FunSuite with BeforeAndAfterAll with WebBrowser {
 
   val actions = new Actions(webDriver)
 
-  val host = "http://127.0.0.1:8888"
+  val host = "https://intake24.co.uk"
 
   var currentPrompt: WebElement = null
   var promptCount = 0

@@ -43,9 +43,9 @@ case class FoodBrowser(client: ViandsClient, element: JQuery, onNodeSelected: Js
     onNodeSelected(data.node)
   })
       
-  def createNode(header: CategoryHeader): JsTreeNode = JsTree.createNode(s"$nodePrefix${header.code}", header.description, true, Map(nodeTypeAttr -> nodeTypeCategory))
+  def createNode(header: CategoryHeader): JsTreeNode = JsTree.createNode(s"$nodePrefix${header.code}", header.englishDescription, true, Map(nodeTypeAttr -> nodeTypeCategory))
 
-  def createNode(header: FoodHeader): JsTreeNode = JsTree.createNode(s"food_browser_node_${header.code}", header.description, false, Map(nodeTypeAttr -> nodeTypeFood))
+  def createNode(header: FoodHeader): JsTreeNode = JsTree.createNode(s"food_browser_node_${header.code}", header.englishDescription, false, Map(nodeTypeAttr -> nodeTypeFood))
 
   def loadChildNodes(parentNode: JsTreeNode): Future[Seq[JsTreeNode]] = parentNode.id match {
     case "#" => client.rootCategories.map(_.map(createNode))

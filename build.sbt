@@ -67,9 +67,7 @@ lazy val apiSharedJvm = apiShared.jvm.dependsOn(sharedTypesJvm)
 
 lazy val apiSharedJs = apiShared.js.dependsOn(sharedTypesJs)
 
-lazy val infiauto = Project(id = "infiauto", base = file ("InfiAuto"))
-
-lazy val phraseSearch = Project(id = "phrasesearch", base = file ("PhraseSearch")).dependsOn(infiauto)
+lazy val phraseSearch = Project(id = "phrasesearch", base = file ("PhraseSearch"))
 
 lazy val gwtShared = Project(id = "gwtShared", base = file("ClientShared"))
 

@@ -31,7 +31,7 @@ trait TestDB {
     sql.split("(?<!;);(?!;)").map(_.trim.replace(";;", ";")).filterNot(_.isEmpty)
 
   Class.forName("org.postgresql.Driver")
-  
+
   implicit val dbConn = DriverManager.getConnection("jdbc:postgresql://localhost/intake24_foods_test?user=postgres")
 
   val dropTableStatements =
@@ -46,7 +46,9 @@ trait TestDB {
 
   val clearDbStatements = dropTableStatements ++ dropSequenceStatements
 
-  val initDbStatements = separateSqlStatements(scala.io.Source.fromInputStream(getClass.getResourceAsStream("/sql/init_foods_db.sql"), "utf-8").mkString)
+  def stripComments(s: String) = """(?m)/\*(\*(?!/)|[^*])*\*/""".r.replaceAllIn(s, "")
+
+  val initDbStatements = separateSqlStatements(stripComments(scala.io.Source.fromInputStream(getClass.getResourceAsStream("/sql/init_foods_db.sql"), "utf-8").mkString))
 
   clearDbStatements.foreach {
     stmt =>
