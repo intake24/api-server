@@ -18,6 +18,8 @@ GET     /categories/:locale/:code           controllers.FoodDataRead.categoryCon
 GET     /categories/:locale/:code/definition           controllers.FoodDataRead.categoryDef(code: String, locale: String)
 GET     /categories/:locale/:code/parent-categories    controllers.FoodDataRead.categoryParentCategories(code: String, locale: String)
 GET     /categories/:locale/:code/all-categories       controllers.FoodDataRead.categoryAllCategories(code: String, locale: String)
+GET     /categories/:locale/:code/problems             controllers.ProblemChecker.checkCategory(code: String, locale: String)
+GET     /categories/:locale/:code/problems/recursive   controllers.ProblemChecker.checkCategoryRecursive(code: String, locale: String)
 
 PUT     /categories/:categoryCode/foods/:foodCode                  controllers.FoodDataWrite.addFoodToCategory(categoryCode: String, foodCode: String)
 DELETE  /categories/:categoryCode/foods/:foodCode                  controllers.FoodDataWrite.removeFoodFromCategory(categoryCode: String, foodCode: String)
@@ -36,6 +38,7 @@ GET     /foods/:locale/:code/parent-categories  controllers.FoodDataRead.foodPar
 GET     /foods/:locale/:code/all-categories     controllers.FoodDataRead.foodAllCategories(code: String, locale: String)
 GET     /foods/:locale/:code/associated-foods   controllers.FoodDataRead.associatedFoodPrompts(code: String, locale: String)
 GET     /foods/:locale/:code/brand-names        controllers.FoodDataRead.brandNames(code: String, locale: String)
+GET     /foods/:locale/:code/problems           controllers.ProblemChecker.checkFood(code: String, locale: String)
 GET     /foods/:locale/:code                    controllers.FoodDataRead.foodData(code: String, locale: String)
 
 POST    /foods/new                              controllers.FoodDataWrite.createFood()
