@@ -36,7 +36,7 @@ in the AdminScripts directory. **Make sure to set the correct mongodb host param
 
 The default account for the admin user (accessible at <webapp host url>/admin) is "admin" and the password is "intake24". 
 
-Copy the contents of ''Webapp/target'' in the source directory to your servlet container webapps directory. 
+Copy the contents of ''Webapp/target'' in the source directory to your servlet container webapps directory. **Use the generated "exploded" file and directory structure, do not put it into a .war.**
 
 Edit web.xml to configure the system for your specific deployment.
 
