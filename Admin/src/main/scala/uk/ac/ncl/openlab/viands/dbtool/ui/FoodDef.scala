@@ -26,7 +26,7 @@ import net.scran24.fooddef.FoodGroup
 
 case class FoodDef(originalFoodDef: Food, foodGroups: Seq[FoodGroup]) {
 
-  val foodGroupOptions = foodGroups.map( g => option(g.description))
+  val foodGroupOptions = foodGroups.map( g => option(g.englishDescription))
   
   val elem = div(
     div(
@@ -34,7 +34,7 @@ case class FoodDef(originalFoodDef: Food, foodGroups: Seq[FoodGroup]) {
       input(`type` := "text", id := "code", value := originalFoodDef.code)),
     div(
       label("Description:"),
-      input(`type` := "text", id := "description", value := originalFoodDef.description)),
+      input(`type` := "text", id := "description", value := originalFoodDef.englishDescription)),
     div(
         label("Food group:"),
         select(
