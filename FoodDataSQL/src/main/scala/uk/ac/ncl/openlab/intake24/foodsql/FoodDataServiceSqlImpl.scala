@@ -57,6 +57,8 @@ import net.scran24.fooddef.GuideHeader
 import net.scran24.fooddef.AsServedHeader
 import net.scran24.fooddef.DrinkwareHeader
 import net.scran24.fooddef.NutrientTable
+import anorm.SqlMappingError
+import anorm.AnormException
 
 @Singleton
 class FoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") dataSource: DataSource) extends FoodDataService {
@@ -414,11 +416,17 @@ class FoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") dataSource: Dat
 
       val categoryRowParser = Macro.namedParser[CategoryResultRow]
 
-      val result = SQL(categoryQuery).on('category_code -> code, 'locale_id -> locale).executeQuery().as(categoryRowParser.single)
+      val results = SQL(categoryQuery).on('category_code -> code, 'locale_id -> locale).executeQuery().as(categoryRowParser.*)
 
-      Category(result.version, result.code, result.description, result.is_hidden,
-        InheritableAttributes(result.ready_meal_option, result.same_as_before_option, result.reasonable_amount),
-        CategoryLocal(result.local_version, result.local_description, portionSizeMethods))
+      if (results.isEmpty)
+        throw new RuntimeException(s"Category ${code} does not exist")
+      else {
+        val result = results(0)
+
+        Category(result.version, result.code, result.description, result.is_hidden,
+          InheritableAttributes(result.ready_meal_option, result.same_as_before_option, result.reasonable_amount),
+          CategoryLocal(result.local_version, result.local_description, portionSizeMethods))
+      }
   }
 
   case class AsServedResultRow(id: String, description: String, weight: Double, url: String)
@@ -427,7 +435,7 @@ class FoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") dataSource: Dat
     implicit conn =>
       SQL("""SELECT id, description FROM as_served_sets ORDER BY description ASC""").executeQuery().as(Macro.namedParser[AsServedHeader].*)
   }
-  
+
   def asServedDef(id: String): AsServedSet = tryWithConnection {
     implicit conn =>
       val query =
@@ -451,7 +459,7 @@ class FoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") dataSource: Dat
     implicit conn =>
       SQL("""SELECT id, description from guide_images ORDER BY description ASC""").executeQuery().as(Macro.namedParser[GuideHeader].*)
   }
-  
+
   def guideDef(id: String): GuideImage = tryWithConnection {
     implicit conn =>
       val query =
@@ -472,12 +480,12 @@ class FoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") dataSource: Dat
     overlay_image_url: String)
 
   case class VolumeSampleResultRow(scale_id: Long, fill: Double, volume: Double)
-  
+
   def allDrinkware(): Seq[DrinkwareHeader] = tryWithConnection {
-    implicit conn => 
+    implicit conn =>
       SQL("""SELECT id, description FROM drinkware_sets ORDER BY description ASC""").executeQuery().as(Macro.namedParser[DrinkwareHeader].*)
   }
-  
+
   def drinkwareDef(id: String): DrinkwareSet = tryWithConnection {
     implicit conn =>
       val drinkwareScalesQuery =
@@ -602,15 +610,15 @@ class FoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") dataSource: Dat
       SQL(query).on('pattern -> s"%${lowerCaseTerm}%").executeQuery().as(Macro.namedParser[CategoryHeaderRow].*).map(_.asCategoryHeader)
 
   }
-  
-  case class NutrientTableDescRow (id: String, description: String) {
+
+  case class NutrientTableDescRow(id: String, description: String) {
     def asNutrientTable = NutrientTable(id, description)
   }
-  
+
   def nutrientTables(): Seq[NutrientTable] = tryWithConnection {
     implicit conn =>
       val query = """SELECT id, description FROM nutrient_tables ORDER BY id ASC"""
       SQL(query).executeQuery().as(Macro.namedParser[NutrientTableDescRow].*).map(_.asNutrientTable)
   }
-  
+
 }
