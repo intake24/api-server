@@ -53,10 +53,10 @@ lazy val admin = Project(id = "admin", base = file("Admin"))
   classDirectory in Compile := crossTarget.value,
   EclipseKeys.withSource := true,
   libraryDependencies ++= Seq(
-	"be.doeraene" %%% "scalajs-jquery" % "0.8.0",
-	"org.scala-js" %%% "scalajs-dom" % "0.8.0", 
-	"com.lihaoyi" %%% "scalatags" % "0.5.2",
-	"com.lihaoyi" %%% "upickle" % "0.3.4")
+	"be.doeraene" %%% "scalajs-jquery" % "0.8.1",
+	"org.scala-js" %%% "scalajs-dom" % "0.8.2", 
+	"com.lihaoyi" %%% "scalatags" % "0.5.4",
+	"com.lihaoyi" %%% "upickle" % "0.3.7")
 ).enablePlugins(ScalaJSPlugin).dependsOn(apiSharedJs)
 
 lazy val sharedTypesJvm = sharedTypes.jvm
@@ -95,7 +95,7 @@ lazy val apiDocs = scalatex.ScalatexReadme(
 ).settings(
   scalaVersion := "2.11.7",
   libraryDependencies ++= Seq (
-    "com.lihaoyi" %% "upickle" % "0.3.6",
+    "com.lihaoyi" %% "upickle" % "0.3.7",
     "com.google.code.gson" % "gson" % "2.3.1" // for JSON pretty-printing
   )
 ).dependsOn(sharedTypesJvm, apiSharedJvm, services)

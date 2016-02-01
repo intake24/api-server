@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package uk.ac.ncl.openlab.viands.dbtool
+package uk.ac.ncl.openlab.intake24.admin
 
 import scala.annotation.implicitNotFound
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -42,7 +42,7 @@ case class InternalServerError(error: String, debugMessage: String) extends Runt
 
 case class UnexpectedStatusCode(code: Int) extends RuntimeException("Unexpected status code: code.toString")
 
-case class ViandsClient(apiBaseUrl: String) {  
+case class ApiClient(apiBaseUrl: String) {  
   
   val JwtTokenKey = "viands_jwt"
   val DefaultTimeout = 5000

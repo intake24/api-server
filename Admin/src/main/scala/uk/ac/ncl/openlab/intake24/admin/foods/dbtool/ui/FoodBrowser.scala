@@ -19,7 +19,6 @@ limitations under the License.
 package uk.ac.ncl.openlab.viands.dbtool.ui
 
 import scala.scalajs.js
-import uk.ac.ncl.openlab.viands.dbtool.ViandsClient
 import org.scalajs.jquery.JQuery
 import net.scran24.fooddef.CategoryHeader
 import net.scran24.fooddef.FoodHeader
@@ -32,8 +31,9 @@ import scala.concurrent.Future
 import org.scalajs.jquery.JQueryEventObject
 import uk.ac.ncl.openlab.viands.dbtool.jstree.JsTreeSelectEvent
 import scala.ref.WeakReference
+import uk.ac.ncl.openlab.intake24.admin.ApiClient
 
-case class FoodBrowser(client: ViandsClient, element: JQuery, onNodeSelected: JsTreeNode => Unit) {
+case class FoodBrowser(client: ApiClient, element: JQuery, onNodeSelected: JsTreeNode => Unit) {
 
   import FoodBrowser._
   

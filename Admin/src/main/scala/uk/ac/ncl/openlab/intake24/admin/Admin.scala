@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package uk.ac.ncl.openlab.viands.dbtool
+package uk.ac.ncl.openlab.intake24.admin
 
 import scala.scalajs.js
 import scala.scalajs.js.JSApp
@@ -41,11 +41,12 @@ import uk.ac.ncl.openlab.viands.dbtool.jstree.JsTreeNode
 import uk.ac.ncl.openlab.viands.dbtool.ui.FoodDef
 import upickle.Invalid
 
-object DBTool extends JSApp {
+object Admin extends JSApp {
 
   def main = {
-
-    val client = ViandsClient(JsGlobals.viandsApiHost)
+    window.alert("test")
+/*
+    val client = ApiClient(JsGlobals.viandsApiHost)
 
     val treeDiv = document.createElement("div")
     treeDiv.setAttribute("id", "test")
@@ -89,6 +90,6 @@ object DBTool extends JSApp {
         val foodBrowser = FoodBrowser(client, q, foodBrowserNodeSelected)
 
       }
-    }
+    }*/
   }
 }
