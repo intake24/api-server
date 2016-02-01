@@ -11,7 +11,13 @@ object SBAdmin {
   
   def navigation = {
     
-    nav(cls := "navbar navbar-inverse navbar-fixed-top") 
+    nav(cls := "navbar navbar-inverse navbar-fixed-top", role := "navigation")
+    (
+        div(cls := "navbar-header")
+        (
+            
+        )
+    )
     
         
   }
