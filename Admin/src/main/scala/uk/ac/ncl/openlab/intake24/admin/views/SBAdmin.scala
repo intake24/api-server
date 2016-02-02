@@ -1,22 +1,66 @@
 package uk.ac.ncl.openlab.intake24.admin.views
 
 import scalatags.JsDom._
-
+import org.scalajs.dom.html._
 import implicits._
 import attrs._
 import tags._
 import tags2._
+import org.scalajs.dom.html
 
 object SBAdmin {
-  
-  def navigation = {
-    
-    nav(cls := "navbar navbar-inverse navbar-fixed-top") 
-    
-        
+
+  import attrs.ExtendedString
+
+  val dataToggle = "data-toggle".attr
+  val dataTarget = "data-target".attr
+
+  def dropdown() = {
+
   }
-  
-  
+
+  def sidebar() =
+    div(cls := "collapse navbar-collapse navbar-ex1-collapse")(
+      ul(cls := "nav navbar-nav side-nav")(
+        li()(a(href := "#")(i(cls := "fa fa-fw fa-dashboard"), "Dashboard")),
+        li()(a(href := "javascript:;", dataToggle := "collapse", dataTarget := "#demo")(i(cls := "fa fa-fw fa-arrows-v"), "Dropdown", i(cls := "fa fa-fw fa-caret-down")),
+          ul(id := "demo", cls := "collapse")(
+            li(a(href := "#")("Dropdown Item 1")),
+            li(a(href := "#")("Dropdown Item 2"))))))
+
+  def navigation() = {
+    div(id := "wrapper")(
+      nav(cls := "navbar navbar-inverse navbar-fixed-top")(
+        div(cls := "navbar-header")(
+          button(`type` := "button", cls := "navbar-toggle", dataToggle := "collapse", dataTarget := ".navbar-ex1-collapse")(
+            span(cls := "sr-only")("Toggle navigation"),
+            span(cls := "icon-bar"),
+            span(cls := "icon-bar"),
+            span(cls := "icon-bar")),
+          a(cls := "navbar-brand", href := "index.html")("Intake24 Admin")),
+        ul(cls := "nav navbar-right top-nav")(
+          li(cls := "dropdown")(
+            a(href := "#", cls := "dropdown-toggle", dataToggle := "dropdown")(i(cls := "fa fa-envelope"), b(cls := "caret")),
+            ul(cls := "dropdown-menu message-dropdown")(
+              li(cls := "message-preview")(
+                a(href := "#")(
+                  div(cls := "media")(
+                    span(cls := "pull-left")(
+                      img(cls := "media-object", src := "http://placehold.it/50x50", alt := "")),
+                    div(cls := "media-body")(
+                      h5(cls := "media-heading")(strong()("John Smith")),
+                      p(cls := "small text-muted")(i(cls := "fa fa-clock-o")("Yesterday at 4:32 PM")),
+                      p()("Lorem ipsum dolor sit amet, consectetur..."))))),
+              li(cls := "message-footer")(a(href:="#")("Read all messages")))),
+          li(cls := "dropdown")(
+            a(href := "#", cls := "dropdown-toggle", dataToggle := "dropdown")(
+              (i(cls := "fa fa-bell")),
+              (b(cls := "caret"))),
+            ul(cls := "dropdown-menu alert-dropdown")(
+              li()(a(href := "#")("Alert Name", span(cls := "label label-default")("Alert Badge")))))),
+        sidebar()))
+
+  }
   /* 
    *         <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
             <!-- Brand and toggle get grouped for better mobile display -->
@@ -79,9 +123,7 @@ object SBAdmin {
                                 </div>
                             </a>
                         </li>
-                        <li class="message-footer">
-                            <a href="#">Read All New Messages</a>
-                        </li>
+           
                     </ul>
                 </li>
                 <li class="dropdown">
@@ -131,48 +173,10 @@ object SBAdmin {
                 </li>
             </ul>
             <!-- Sidebar Menu Items - These collapse to the responsive navigation menu on small screens -->
-            <div class="collapse navbar-collapse navbar-ex1-collapse">
-                <ul class="nav navbar-nav side-nav">
-                    <li class="active">
-                        <a href="index.html"><i class="fa fa-fw fa-dashboard"></i> Dashboard</a>
-                    </li>
-                    <li>
-                        <a href="charts.html"><i class="fa fa-fw fa-bar-chart-o"></i> Charts</a>
-                    </li>
-                    <li>
-                        <a href="tables.html"><i class="fa fa-fw fa-table"></i> Tables</a>
-                    </li>
-                    <li>
-                        <a href="forms.html"><i class="fa fa-fw fa-edit"></i> Forms</a>
-                    </li>
-                    <li>
-                        <a href="bootstrap-elements.html"><i class="fa fa-fw fa-desktop"></i> Bootstrap Elements</a>
-                    </li>
-                    <li>
-                        <a href="bootstrap-grid.html"><i class="fa fa-fw fa-wrench"></i> Bootstrap Grid</a>
-                    </li>
-                    <li>
-                        <a href="javascript:;" data-toggle="collapse" data-target="#demo"><i class="fa fa-fw fa-arrows-v"></i> Dropdown <i class="fa fa-fw fa-caret-down"></i></a>
-                        <ul id="demo" class="collapse">
-                            <li>
-                                <a href="#">Dropdown Item</a>
-                            </li>
-                            <li>
-                                <a href="#">Dropdown Item</a>
-                            </li>
-                        </ul>
-                    </li>
-                    <li>
-                        <a href="blank-page.html"><i class="fa fa-fw fa-file"></i> Blank Page</a>
-                    </li>
-                    <li>
-                        <a href="index-rtl.html"><i class="fa fa-fw fa-dashboard"></i> RTL Dashboard</a>
-                    </li>
-                </ul>
-            </div>
+            
             <!-- /.navbar-collapse -->
         </nav>
    * 
    */
-  
+
 }
