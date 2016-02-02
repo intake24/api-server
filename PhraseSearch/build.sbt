@@ -28,6 +28,8 @@ scalaVersion := "2.11.7"
 
 javacOptions ++= Seq("-source", "1.6", "-target", "1.8", "-encoding", "UTF-8")
 
+resolvers += Resolver.mavenLocal // for InfiAuto library
+
 libraryDependencies ++= Seq(  
   "org.slf4j" % "slf4j-api" % "1.7.12",
   "com.infiauto" % "infiauto-datastr" % "0.3.3",
