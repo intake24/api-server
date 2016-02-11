@@ -22,11 +22,13 @@ import net.scran24.fooddef.Food
 import net.scran24.fooddef.CategoryHeader
 import net.scran24.fooddef.FoodHeader
 import net.scran24.fooddef.CategoryV2
+import net.scran24.fooddef.UserCategoryHeader
+import net.scran24.fooddef.UserFoodHeader
 
 sealed trait IndexEntry
 
-case class CategoryEntry(header: CategoryHeader) extends IndexEntry
-case class FoodEntry(header: FoodHeader) extends IndexEntry
+case class CategoryEntry(header: UserCategoryHeader) extends IndexEntry
+case class FoodEntry(header: UserFoodHeader) extends IndexEntry
 
 object Util {
   def mkHeader(category: CategoryV2) = CategoryHeader(category.code, category.description, Some(category.description), category.isHidden)

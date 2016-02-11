@@ -16,11 +16,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package uk.ac.ncl.openlab.intake24.services.foodindex.english
+package uk.ac.ncl.openlab.intake24.services
 
-import com.google.inject.Inject
-import com.google.inject.Singleton
-import uk.ac.ncl.openlab.intake24.services.IndexFoodDataService
+import net.scran24.fooddef.SplitList
+import net.scran24.fooddef.UserCategoryHeader
+import net.scran24.fooddef.UserFoodHeader
 
-@Singleton
-class FoodIndexImpl_en_GB @Inject() (foodData: IndexFoodDataService) extends EnglishFoodIndex (foodData, "en_GB")
+trait IndexFoodDataService {
+  def indexableCategories(locale: String): Seq[UserCategoryHeader]
+  def indexableFoods(locale: String): Seq[UserFoodHeader]
+  def synsets(locale: String): Seq[Set[String]]
+  def splitList(locale: String): SplitList
+}

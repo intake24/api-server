@@ -31,27 +31,29 @@ import com.google.inject.Singleton
 import com.google.inject.Inject
 import com.google.inject.name.Named
 import org.workcraft.phrasesearch.Metaphone3Encoder
-import uk.ac.ncl.openlab.intake24.services.FoodDataService
 import org.workcraft.phrasesearch.PhoneticEncoder
 import org.workcraft.phrasesearch.WordStemmer
+import uk.ac.ncl.openlab.intake24.services.IndexFoodDataService
+import net.scran24.fooddef.UserFoodHeader
+import net.scran24.fooddef.UserFoodHeader
 
-abstract class AbstractFoodIndex (foodData: FoodDataService, phoneticEncoder: Option[PhoneticEncoder], stemmer: WordStemmer, indexFilter: Seq[String], nonIndexedWords: Seq[String], localSpecialFoods: LocalSpecialFoodNames, locale: String) extends FoodIndex {
+abstract class AbstractFoodIndex (foodData: IndexFoodDataService, phoneticEncoder: Option[PhoneticEncoder], stemmer: WordStemmer, indexFilter: Seq[String], nonIndexedWords: Seq[String], localSpecialFoods: LocalSpecialFoodNames, locale: String) extends FoodIndex {
 
   val log = LoggerFactory.getLogger(classOf[AbstractFoodIndex])
   
   val ft0 = System.currentTimeMillis()
   
-  val foodsWithLocalNames = foodData.allFoods(locale).filterNot(_.localDescription.isEmpty)
+  val indexableFoods = foodData.indexableFoods(locale)
   
-  log.debug(s"Foods loaded in ${System.currentTimeMillis() - ft0} ms")
+  log.debug(s"Indexable foods loaded in ${System.currentTimeMillis() - ft0} ms")
   
   val ct0 = System.currentTimeMillis()
   
-  val categoriesWithLocalNames = foodData.allCategories(locale).filterNot(_.localDescription.isEmpty)
+  val indexableCategories = foodData.indexableCategories(locale)
   
-  log.debug(s"Categories loaded in ${System.currentTimeMillis() - ct0} ms")
+  log.debug(s"Indexable categories loaded in ${System.currentTimeMillis() - ct0} ms")
 
-  val indexEntries = foodsWithLocalNames.map(f => (f.localDescription.get, FoodEntry(f))) ++ categoriesWithLocalNames.map(c => (c.localDescription.get, CategoryEntry(c)))
+  val indexEntries = indexableFoods.map(f => (f.localDescription, FoodEntry(f))) ++ indexableCategories.map(c => (c.localDescription, CategoryEntry(c)))
 
   val it0 = System.currentTimeMillis()
   
@@ -61,9 +63,9 @@ abstract class AbstractFoodIndex (foodData: FoodDataService, phoneticEncoder: Op
   
   def specialFoodMatches(interpretation: InterpretedPhrase): Seq[MatchedFood] =
     if (interpretation.words.exists(_.interpretations.exists(_.image == CaseInsensitiveString(localSpecialFoods.sandwich))))
-      Seq(MatchedFood(FoodHeader(FoodIndex.specialFoodSandwich, "Build my sandwich »", Some(localSpecialFoods.buildMySandwichLabel)), 0))
+      Seq(MatchedFood(UserFoodHeader(FoodIndex.specialFoodSandwich, localSpecialFoods.buildMySandwichLabel), 0))
     else if (interpretation.words.exists(_.interpretations.exists(_.image == CaseInsensitiveString(localSpecialFoods.salad))))
-      Seq(MatchedFood(FoodHeader(FoodIndex.specialFoodSalad, "Build my salad »", Some(localSpecialFoods.buildMySaladLabel)), 0))
+      Seq(MatchedFood(UserFoodHeader(FoodIndex.specialFoodSalad, localSpecialFoods.buildMySaladLabel), 0))
     else Seq()
 
   def lookup(description: String, maxResults: Int): IndexLookupResult = {

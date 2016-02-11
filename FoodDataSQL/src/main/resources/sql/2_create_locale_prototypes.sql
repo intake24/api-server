@@ -16,11 +16,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package uk.ac.ncl.openlab.intake24.services.foodindex.english
+CREATE TABLE locale_prototypes
+(
+  locale_id character varying(16) NOT NULL,
+  prototype_locale_id character varying(16) NOT NULL,
 
-import com.google.inject.Inject
-import com.google.inject.Singleton
-import uk.ac.ncl.openlab.intake24.services.IndexFoodDataService
+  CONSTRAINT locale_prototypes_pk PRIMARY KEY (locale_id, prototype_locale_id),
+  CONSTRAINT locale_prototypes_only_one_prototype UNIQUE(locale_id),
+  CONSTRAINT locale_prototypes_locale_id_fk FOREIGN KEY (locale_id)
+    REFERENCES locales(id) ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT locale_prototypes_prototype_locale_id_fk FOREIGN KEY (prototype_locale_id)
+    REFERENCES locales(id) ON UPDATE CASCADE ON DELETE CASCADE    
+);
 
-@Singleton
-class FoodIndexImpl_en_GB @Inject() (foodData: IndexFoodDataService) extends EnglishFoodIndex (foodData, "en_GB")

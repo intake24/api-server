@@ -36,65 +36,25 @@ import net.scran24.fooddef.GuideHeader
 import net.scran24.fooddef.DrinkwareHeader
 import net.scran24.fooddef.AsServedHeader
 import net.scran24.fooddef.NutrientTable
+import net.scran24.fooddef.UserCategoryHeader
+import net.scran24.fooddef.UserCategoryContents
 
-trait FoodDataService {
-  
-  def allCategories(locale: String): Seq[CategoryHeader]
-  
-  def allFoods(locale: String): Seq[FoodHeader]
-  
-  def uncategorisedFoods(locale: String): Seq[FoodHeader]
-  
-  def rootCategories(locale: String): Seq[CategoryHeader]
+trait UserFoodDataService {
+    
+  def rootCategories(locale: String): Seq[UserCategoryHeader]
 
-  def categoryContents(code: String, locale: String): CategoryContents
-
-  def foodDef(code: String, locale: String): Food
+  def categoryContents(code: String, locale: String): UserCategoryContents
 
   def foodData(code: String, locale: String): FoodData
-  
-  def isCategoryCode(code: String): Boolean
-  
-  def isFoodCode(code: String): Boolean
-
-  def foodParentCategories(code: String, locale: String): Seq[CategoryHeader]
-
-  def foodAllCategories(code: String, locale: String): Seq[CategoryHeader]
-
-  // Categories are alphabetically sorted
-  def categoryParentCategories(code: String, locale: String): Seq[CategoryHeader]
-
-  def categoryAllCategories(code: String, locale: String): Seq[CategoryHeader]
-
-  def categoryDef(code: String, locale: String): Category
-  
-  def allAsServedSets(): Seq[AsServedHeader]
-
+   
   def asServedDef(id: String): AsServedSet
   
-  def allGuideImages(): Seq[GuideHeader]
-
   def guideDef(id: String): GuideImage
   
-  def allDrinkware(): Seq[DrinkwareHeader]
-
   def drinkwareDef(id: String): DrinkwareSet
 
   def associatedFoodPrompts(foodCode: String, locale: String): Seq[Prompt]
 
   def brandNames(foodCode: String, locale: String): Seq[String]
   
-  def allFoodGroups(locale: String): Seq[FoodGroup]
-  
-  def foodGroup(code: Int, locale: String): Option[FoodGroup]
-  
-  def splitList(locale: String): SplitList
-  
-  def synsets(locale: String): Seq[Set[String]]
-  
-  def nutrientTables(): Seq[NutrientTable]
-  
-  def searchFoods(searchTerm: String, locale: String): Seq[FoodHeader]
-  
-  def searchCategories(searchTerm: String, locale: String): Seq[CategoryHeader]
 }

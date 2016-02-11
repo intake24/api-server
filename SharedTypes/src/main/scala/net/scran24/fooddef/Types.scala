@@ -46,11 +46,15 @@ case class FoodLocal(version: Option[UUID], localDescription: Option[String], nu
 
 case class FoodHeader(code: String, englishDescription: String, localDescription: Option[String])
 
+case class UserFoodHeader(code: String, localDescription: String)
+
 case class CategoryV1(code: String, description: String, children: Map[String, IndexEntryOld], path: String) extends IndexEntryOld
  
 case class CategoryV2(version: UUID, code: String, description: String, foods: Seq[String], subcategories: Seq[String], isHidden: Boolean, attributes: InheritableAttributes, portionSizeMethods: Seq[PortionSizeMethod])
 
 case class CategoryHeader(code: String, englishDescription: String, localDescription: Option[String], isHidden: Boolean)
+
+case class UserCategoryHeader(code: String, localDescription: String)
 
 case class Category(version: UUID, code: String, englishDescription: String, isHidden: Boolean, attributes: InheritableAttributes, localData: CategoryLocal)
 
@@ -60,9 +64,11 @@ case class CategoryLocal(version: Option[UUID], localDescription: Option[String]
 
 case class CategoryContents(foods: Seq[FoodHeader], subcategories: Seq[CategoryHeader])
 
-case class FoodData(code: String, englishDescription: String, localDescription: Option[String], nutrientTableCodes: Map[String, String], groupCode: Int,
-  portionSize: Seq[PortionSizeMethod], readyMealOption: Boolean, sameAsBeforeOption: Boolean, reasonableAmount: Int)
+case class UserCategoryContents(foods: Seq[UserFoodHeader], subcategories: Seq[UserCategoryHeader])
 
+case class FoodData(code: String, localDescription: String, nutrientTableCodes: Map[String, String], groupCode: Int,
+  portionSize: Seq[PortionSizeMethod], readyMealOption: Boolean, sameAsBeforeOption: Boolean, reasonableAmount: Int)
+  
 case class SplitList(splitWords: Seq[String], keepPairs: Map[String, Set[String]])
   
 case class AsServedImage(url: String, weight: Double)

@@ -16,11 +16,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package uk.ac.ncl.openlab.intake24.services.foodindex.english
+package uk.ac.ncl.openlab.intake24.foodsql
 
-import com.google.inject.Inject
-import com.google.inject.Singleton
-import uk.ac.ncl.openlab.intake24.services.IndexFoodDataService
+import anorm.NamedParameter.symbol
+import anorm.SQL
+import anorm.SqlParser.str
+import anorm.sqlToSimple
 
-@Singleton
-class FoodIndexImpl_en_GB @Inject() (foodData: IndexFoodDataService) extends EnglishFoodIndex (foodData, "en_GB")
+trait SynsetsDataSqlImpl extends SqlDataService {
+  def synsets(locale: String) = tryWithConnection {
+    implicit conn =>
+      SQL("""SELECT synonyms FROM synonym_sets WHERE locale_id={locale}""")
+        .on('locale -> locale)
+        .executeQuery()
+        .as(str("synonyms").*)
+        .map(row => row.split("\\s+").toSet)
+  }
+}

@@ -20,7 +20,8 @@ package uk.ac.ncl.openlab.intake24.services.foodindex.english
 
 import com.google.inject.Singleton
 import com.google.inject.Inject
-import uk.ac.ncl.openlab.intake24.services.FoodDataService
+
+import uk.ac.ncl.openlab.intake24.services.IndexFoodDataService
 
 @Singleton
-class SplitterImpl_en_GB @Inject() (foodData: FoodDataService) extends EnglishSplitter(foodData.splitList("en_GB"))
+class SplitterImpl_en_GB @Inject() (foodData: IndexFoodDataService) extends EnglishSplitter(foodData.splitList("en_GB"))

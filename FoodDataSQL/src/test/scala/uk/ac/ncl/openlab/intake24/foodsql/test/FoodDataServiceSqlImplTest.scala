@@ -22,7 +22,7 @@ import org.scalatest.FunSuite
 import java.sql.DriverManager
 import anorm.SQL
 import uk.ac.ncl.openlab.intake24.foodsql.tools.XmlImporter
-import uk.ac.ncl.openlab.intake24.foodsql.FoodDataServiceSqlImpl
+import uk.ac.ncl.openlab.intake24.foodsql.AdminFoodDataServiceSqlImpl
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -41,11 +41,12 @@ import net.scran24.fooddef.CategoryHeader
 import net.scran24.fooddef.FoodData
 import uk.ac.ncl.openlab.intake24.foodxml.FoodDef
 import net.scran24.fooddef.PortionSizeMethodParameter
-import uk.ac.ncl.openlab.intake24.services.FoodDataServiceTest
+
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import uk.ac.ncl.openlab.intake24.services.AdminFoodDataServiceTest
 
-class FoodDataServiceSqlImplTest extends FoodDataServiceTest with TestDB {
+class FoodDataServiceSqlImplTest extends AdminFoodDataServiceTest with TestDB {
 
   new XmlImporter().importXmlData(getClass.getResource("/test1").toURI().getPath())
 
@@ -57,5 +58,5 @@ class FoodDataServiceSqlImplTest extends FoodDataServiceTest with TestDB {
 
   val dataSource = new HikariDataSource(hikariConfig)
 
-  val service = new FoodDataServiceSqlImpl(dataSource)
+  val service = new AdminFoodDataServiceSqlImpl(dataSource)
 }

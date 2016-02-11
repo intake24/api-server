@@ -35,9 +35,9 @@ import net.scran24.fooddef.VolumeFunction
 import net.scran24.fooddef.Prompt
 import net.scran24.fooddef.FoodLocal
 
-abstract class FoodDataServiceTest extends FunSuite {
+abstract class AdminFoodDataServiceTest extends FunSuite {
 
-  val service: FoodDataService
+  val service: AdminFoodDataService
 
   val defaultLocale = "en_GB"
 

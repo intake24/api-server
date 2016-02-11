@@ -29,6 +29,19 @@ CREATE TABLE locales
   CONSTRAINT locales_pk PRIMARY KEY(id)
 );
 
+CREATE TABLE locale_prototypes
+(
+  locale_id character varying(16) NOT NULL,
+  prototype_locale_id character varying(16) NOT NULL,
+
+  CONSTRAINT locale_prototypes_pk PRIMARY KEY (locale_id, prototype_locale_id),
+  CONSTRAINT locale_prototypes_only_one_prototype UNIQUE(locale_id),
+  CONSTRAINT locale_prototypes_locale_id_fk FOREIGN KEY (locale_id)
+    REFERENCES locales(id) ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT locale_prototypes_prototype_locale_id_fk FOREIGN KEY (prototype_locale_id)
+    REFERENCES locales(id) ON UPDATE CASCADE ON DELETE CASCADE    
+);
+
 -- Food groups
 
 CREATE TABLE food_groups
@@ -87,6 +100,18 @@ CREATE TABLE foods_local
   CONSTRAINT foods_local_food_code_fk FOREIGN KEY(food_code)
     REFERENCES foods(code) ON UPDATE CASCADE ON DELETE CASCADE,
   CONSTRAINT food_local_locale_id_fk FOREIGN KEY (locale_id)
+    REFERENCES locales(id) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+CREATE TABLE foods_restrictions
+(
+  food_code character(4) NOT NULL,
+  locale_id character varying(16) NOT NULL,
+
+  CONSTRAINT foods_restrictions_pk PRIMARY KEY (food_code, locale_id),
+  CONSTRAINT foods_restrictions_food_code_fk FOREIGN KEY (food_code)
+    REFERENCES foods(code) ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT foods_restrictions_locale_id_fk FOREIGN KEY (locale_id)
     REFERENCES locales(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
@@ -178,6 +203,18 @@ CREATE TABLE categories_local
   CONSTRAINT categories_local_category_code_fk FOREIGN KEY(category_code)
     REFERENCES categories(code) ON UPDATE CASCADE ON DELETE CASCADE,
   CONSTRAINT categories_local_locale_id_fk FOREIGN KEY (locale_id)
+    REFERENCES locales(id) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+CREATE TABLE categories_restrictions
+(
+  category_code character(4) NOT NULL,
+  locale_id character varying(16) NOT NULL,
+
+  CONSTRAINT categories_restrictions_pk PRIMARY KEY (category_code, locale_id),
+  CONSTRAINT categories_restrictions_food_code_fk FOREIGN KEY (category_code)
+    REFERENCES categories(code) ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT categories_restrictions_locale_id_fk FOREIGN KEY (locale_id)
     REFERENCES locales(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 

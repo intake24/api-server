@@ -48,7 +48,6 @@ import net.scran24.fooddef.PortionSizeMethodParameter
 import net.scran24.fooddef.Prompt
 import net.scran24.fooddef.SplitList
 import net.scran24.fooddef.VolumeFunction
-import uk.ac.ncl.openlab.intake24.services.FoodDataService
 import net.scran24.fooddef.FoodLocal
 import net.scran24.fooddef.Category
 import net.scran24.fooddef.CategoryLocal
@@ -59,32 +58,13 @@ import net.scran24.fooddef.DrinkwareHeader
 import net.scran24.fooddef.NutrientTable
 import anorm.SqlMappingError
 import anorm.AnormException
+import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService
 
 @Singleton
-class FoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") dataSource: DataSource) extends FoodDataService {
+class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends SqlDataService 
+  with AdminFoodDataService with SplitterDataSqlImpl with SynsetsDataSqlImpl {
 
-  val logger = LoggerFactory.getLogger(classOf[FoodDataServiceSqlImpl])
-
-  def tryWithConnection[T](block: Connection => T) = {
-    val conn = dataSource.getConnection()
-    try {
-      block(conn)
-    } catch {
-      case e: java.sql.BatchUpdateException => throw new RuntimeException(e.getNextException)
-      case e: Throwable => throw new RuntimeException(e)
-    } finally {
-      conn.close()
-    }
-  }
-
-  def allFoods(locale: String): Seq[FoodHeader] = tryWithConnection {
-    implicit conn =>
-      val query =
-        """|SELECT code, description, local_description
-           |FROM foods JOIN foods_local ON foods.code = foods_local.food_code""".stripMargin
-
-      SQL(query).executeQuery().as(Macro.namedParser[FoodHeaderRow].*).map(_.asFoodHeader)
-  }
+  val logger = LoggerFactory.getLogger(classOf[AdminFoodDataServiceSqlImpl])
 
   def isCategoryCode(code: String): Boolean = tryWithConnection {
     implicit conn =>
@@ -94,15 +74,6 @@ class FoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") dataSource: Dat
   def isFoodCode(code: String): Boolean = tryWithConnection {
     implicit conn =>
       SQL("""SELECT code FROM foods WHERE code={food_code}""").on('food_code -> code).executeQuery().as(SqlParser.str("code").*).nonEmpty
-  }
-
-  def allCategories(locale: String): Seq[CategoryHeader] = tryWithConnection {
-    implicit conn =>
-      val query =
-        """|SELECT code, description, local_description, is_hidden
-           |FROM categories JOIN categories_local ON categories.code = categories_local.category_code""".stripMargin
-
-      SQL(query).executeQuery().as(Macro.namedParser[CategoryHeaderRow].*).map(_.asCategoryHeader)
   }
 
   def uncategorisedFoods(locale: String): Seq[FoodHeader] = tryWithConnection {
@@ -551,35 +522,6 @@ class FoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") dataSource: Dat
         .executeQuery()
         .as((str("description") ~ str("local_description").?).singleOpt)
         .map(desc => FoodGroup(id, desc._1, desc._2))
-  }
-
-  case class SplitListRow(first_word: String, words: String)
-
-  def splitList(locale: String): SplitList = tryWithConnection {
-    implicit conn =>
-      val words = SQL("""SELECT words FROM split_words WHERE locale_id={locale}""")
-        .on('locale -> locale)
-        .executeQuery()
-        .as(str("words").single).split("\\s+").toSeq
-
-      val splitList = SQL("""SELECT first_word, words FROM split_list WHERE locale_id={locale}""")
-        .on('locale -> locale)
-        .executeQuery()
-        .as(Macro.namedParser[SplitListRow].*)
-        .map {
-          case SplitListRow(first_word, words) => (first_word, words.split("\\s+").toSet)
-        }.toMap
-
-      SplitList(words, splitList)
-  }
-
-  def synsets(locale: String) = tryWithConnection {
-    implicit conn =>
-      SQL("""SELECT synonyms FROM synonym_sets WHERE locale_id={locale}""")
-        .on('locale -> locale)
-        .executeQuery()
-        .as(str("synonyms").*)
-        .map(row => row.split("\\s+").toSet)
   }
 
   def searchFoods(searchTerm: String, locale: String): Seq[FoodHeader] = tryWithConnection {

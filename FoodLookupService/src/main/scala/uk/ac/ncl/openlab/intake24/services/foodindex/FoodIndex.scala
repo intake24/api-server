@@ -21,9 +21,12 @@ package uk.ac.ncl.openlab.intake24.services.foodindex
 import net.scran24.fooddef.FoodHeader
 import net.scran24.fooddef.CategoryHeader
 
-case class MatchedFood(food: FoodHeader, matchCost: Int)
+import net.scran24.fooddef.UserFoodHeader
+import net.scran24.fooddef.UserCategoryHeader
 
-case class MatchedCategory(category: CategoryHeader, matchCost: Int)
+case class MatchedFood(food: UserFoodHeader, matchCost: Int)
+
+case class MatchedCategory(category: UserCategoryHeader, matchCost: Int)
 
 case class IndexLookupResult(foods: Seq[MatchedFood], categories: Seq[MatchedCategory])
 
