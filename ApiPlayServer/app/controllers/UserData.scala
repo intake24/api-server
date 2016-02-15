@@ -30,9 +30,9 @@ import play.api.http.ContentTypes
 import javax.inject.Inject
 import be.objectify.deadbolt.scala.DeadboltActions
 import be.objectify.deadbolt.core.PatternType
-import uk.ac.ncl.openlab.intake24.services.FoodDataService
+import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService
 
-class FoodDataRead @Inject() (foodDataService: FoodDataService, deadbolt: DeadboltActions) extends Controller {
+class UserFoodData @Inject() (service: UserFoodDataService, deadbolt: DeadboltActions) extends Controller {
   
   def allCategories(locale: String) = deadbolt.Pattern("api.foods.read", PatternType.EQUALITY) {
     Action {

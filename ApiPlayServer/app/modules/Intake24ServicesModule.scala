@@ -18,29 +18,30 @@ limitations under the License.
 
 package modules
 
-import uk.ac.ncl.openlab.intake24.datastoresql.DataStoreScala
-import uk.ac.ncl.openlab.intake24.datastoresql.DataStoreSqlImpl
 import com.google.inject.AbstractModule
-import com.google.inject.name.Names
-import play.api.Configuration
-import uk.ac.ncl.openlab.intake24.foodsql.FoodDataServiceSqlImpl
-import com.google.inject.Provider
-import play.api.Environment
+import com.google.inject.Injector
 import com.google.inject.Provides
 import com.google.inject.Singleton
-import com.google.inject.Injector
-import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex
-import uk.ac.ncl.openlab.intake24.services.foodindex.english.FoodIndexImpl_en_GB
-import uk.ac.ncl.openlab.intake24.services.foodindex.english.EnglishStemmerPlingImpl
-import uk.ac.ncl.openlab.intake24.services.FoodDataService
-import uk.ac.ncl.openlab.intake24.services.foodindex.english.EnglishWordStemmer
-import play.api.db.Database
-import play.api.Play.current
-import javax.sql.DataSource
-import play.db.NamedDatabase
 import com.google.inject.name.Named
-import uk.ac.ncl.openlab.intake24.services.FoodDataEditingService
+
+import play.api.Configuration
+import play.api.Environment
+import play.api.db.Database
+import play.db.NamedDatabase
+import uk.ac.ncl.openlab.intake24.datastoresql.DataStoreScala
+import uk.ac.ncl.openlab.intake24.datastoresql.DataStoreSqlImpl
+import uk.ac.ncl.openlab.intake24.foodsql.AdminFoodDataServiceSqlImpl
 import uk.ac.ncl.openlab.intake24.foodsql.FoodDataEditingSqlImpl
+import uk.ac.ncl.openlab.intake24.foodsql.IndexFoodDataServiceSqlImpl
+import uk.ac.ncl.openlab.intake24.foodsql.UserFoodDataServiceSqlImpl
+import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService
+import uk.ac.ncl.openlab.intake24.services.FoodDataEditingService
+import uk.ac.ncl.openlab.intake24.services.IndexFoodDataService
+import uk.ac.ncl.openlab.intake24.services.UserFoodDataService
+import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex
+import uk.ac.ncl.openlab.intake24.services.foodindex.english.EnglishStemmerPlingImpl
+import uk.ac.ncl.openlab.intake24.services.foodindex.english.EnglishWordStemmer
+import uk.ac.ncl.openlab.intake24.services.foodindex.english.FoodIndexImpl_en_GB
 
 class Intake24ServicesModule(env: Environment, config: Configuration) extends AbstractModule {
 
@@ -60,7 +61,9 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
   def configure() = {
     bind(classOf[DataStoreScala]).to(classOf[DataStoreSqlImpl])
     bind(classOf[FoodDataEditingService]).to(classOf[FoodDataEditingSqlImpl])
-    bind(classOf[FoodDataService]).to(classOf[FoodDataServiceSqlImpl])
+    bind(classOf[UserFoodDataService]).to(classOf[UserFoodDataServiceSqlImpl])
+    bind(classOf[AdminFoodDataService]).to(classOf[AdminFoodDataServiceSqlImpl])
+    bind(classOf[IndexFoodDataService]).to(classOf[IndexFoodDataServiceSqlImpl])
     bind(classOf[EnglishWordStemmer]).to(classOf[EnglishStemmerPlingImpl])
   }
 }

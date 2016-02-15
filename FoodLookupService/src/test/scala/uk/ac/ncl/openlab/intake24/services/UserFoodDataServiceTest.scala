@@ -34,104 +34,26 @@ import net.scran24.fooddef.DrinkScale
 import net.scran24.fooddef.VolumeFunction
 import net.scran24.fooddef.Prompt
 import net.scran24.fooddef.FoodLocal
+import net.scran24.fooddef.UserCategoryHeader
 
-abstract class AdminFoodDataServiceTest extends FunSuite {
+abstract class UserFoodDataServiceTest extends FunSuite {
 
-  val service: AdminFoodDataService
+  val service: UserFoodDataService
 
   val defaultLocale = "en_GB"
 
-  val defaultVersion = java.util.UUID.fromString("454a02a5-785e-4ca8-af52-81b11c28f56e")
-
-  val c0 = CategoryHeader("C000", "Category 1", Some("Category 1"), false)
-  val c1 = CategoryHeader("C001", "Category 2", Some("Category 2"), false)
-  val c2 = CategoryHeader("C002", "Category 3", Some("Category 3"), true)
-  val c3 = CategoryHeader("C003", "Category 4", Some("Category 4"), false)
-  val c4 = CategoryHeader("C004", "Nested category 1", Some("Nested category 1"), false)
-  val c5 = CategoryHeader("C005", "Nested category 2", Some("Nested category 2"), false)
+  val c0 = UserCategoryHeader("C000", "Category 1")
+  val c1 = UserCategoryHeader("C001", "Category 2")
+  val c2 = UserCategoryHeader("C002", "Category 3")
+  val c3 = UserCategoryHeader("C003", "Category 4")
+  val c4 = UserCategoryHeader("C004", "Nested category 1")
+  val c5 = UserCategoryHeader("C005", "Nested category 2") 
 
   test("Get root categories") {
-    val expected = Seq(CategoryHeader("C000", "Category 1", Some("Category 1"), false), CategoryHeader("C001", "Category 2", Some("Category 2"), false),
-      CategoryHeader("C002", "Category 3", Some("Category 3"), true), CategoryHeader("C003", "Category 4", Some("Category 4"), false))
+    val expected = Seq(UserCategoryHeader("C000", "Category 1"), UserCategoryHeader("C001", "Category 2"),
+      UserCategoryHeader("C002", "Category 3"), UserCategoryHeader("C003", "Category 4"))
 
     assert(service.rootCategories(defaultLocale) === expected)
-  }
-
-  test("Get direct parent categories for uncategorised food") {
-    val expected = Seq[CategoryHeader]()
-
-    assert(service.foodParentCategories("F001", defaultLocale) === expected)
-  }
-
-  test("Get all parent categories for uncategorised food") {
-    val expected = Seq[CategoryHeader]()
-
-    assert(service.foodAllCategories("F001", defaultLocale) === expected)
-  }
-
-  test("Get direct parent categories for food") {
-    val expected = Seq(c2, c5)
-
-    assert(service.foodParentCategories("F002", defaultLocale) === expected)
-  }
-
-  test("Get all parent categories for food") {
-    val expected = Seq(c2, c5, c1, c4, c3)
-
-    assert(service.foodAllCategories("F002", defaultLocale) === expected)
-  }
-
-  test("Get direct parent categories for root category") {
-    val expected = Seq[CategoryHeader]()
-
-    assert(service.categoryParentCategories("C000", defaultLocale) === expected)
-  }
-
-  test("Get all parent categories for root category") {
-    val expected = Seq[CategoryHeader]()
-
-    assert(service.categoryAllCategories("C000", defaultLocale) === expected)
-  }
-
-  test("Get direct parent categories for nested category") {
-    val expected = Seq(c1, c4)
-
-    assert(service.categoryParentCategories("C005", defaultLocale) === expected)
-  }
-
-  test("Get all parent categories for nested category") {
-    val expected = Seq(c1, c4, c3)
-
-    assert(service.categoryAllCategories("C005", defaultLocale) === expected)
-  }
-
-  test("Get food definition") {
-    val expected1 =
-      Food(defaultVersion, "F000", "Food definition test 1", 1, InheritableAttributes(Some(true), None, None),
-        FoodLocal(Some(defaultVersion), Some("Food definition test 1"), Map("NDNS" -> "100"),
-          Seq(PortionSizeMethod("as-served", "Test", "portion/placeholder.jpg", false,
-            Seq(PortionSizeMethodParameter("serving-image-set", "as_served_1"), PortionSizeMethodParameter("leftovers-image-set", "as_served_1_leftovers"))))))
-    val expected2 =
-      Food(defaultVersion, "F004", "Food definition test 2", 10, InheritableAttributes(None, Some(true), None),
-        FoodLocal(Some(defaultVersion), Some("Food definition test 2"), Map("NDNS" -> "200"), Seq()))
-    val expected3 =
-      Food(defaultVersion, "F005", "Food definition test 3", 20, InheritableAttributes(None, None, Some(1234)),
-        FoodLocal(None, Some("Food definition test 3"), Map("NDNS" -> "300"), Seq()))
-
-    // This hack is required because version codes are generated randomly on import
-        
-    val actual1 = service.foodDef("F000", defaultLocale)
-    val versionOverride1 = actual1.copy(version = defaultVersion, localData = actual1.localData.copy(version = Some(defaultVersion)))
-        
-    val actual2 = service.foodDef("F004", defaultLocale)
-    val versionOverride2 = actual2.copy(version = defaultVersion, localData = actual2.localData.copy(version = Some(defaultVersion)))
-    
-    val actual3 = service.foodDef("F005", defaultLocale)
-    val versionOverride3 = actual3.copy(version = defaultVersion, localData = actual3.localData.copy(version = None))
-    
-    assert( versionOverride1 === expected1)
-    assert( versionOverride2 === expected2)
-    assert( versionOverride3 === expected3)
   }
 
   test("Attribute & portion size method inheritance") {
@@ -140,41 +62,20 @@ abstract class AdminFoodDataServiceTest extends FunSuite {
       PortionSizeMethod("as-served", "No description", "portion/placeholder.jpg", false, Seq(PortionSizeMethodParameter("serving-image-set", "as_served_2"), PortionSizeMethodParameter("leftovers-image-set", "as_served_2_leftovers"))),
       PortionSizeMethod("drink-scale", "No description", "portion/placeholder.jpg", false, Seq(PortionSizeMethodParameter("drinkware-id", "glasses_beer"), PortionSizeMethodParameter("initial-fill-level", "0.9"), PortionSizeMethodParameter("skip-fill-level", "true"))))
 
-    val expected1 = FoodData("F003", "Inheritance test 1", Some("Inheritance test 1"), Map(), 0, expectedPsm1, true, false, 3456)
+    val expected1 = FoodData("F003", "Inheritance test 1", Map(), 0, expectedPsm1, true, false, 3456)
 
     // Must inherit indirectly from C001, but override same as before
 
-    val expected2 = FoodData("F006", "Inheritance test 2", Some("Inheritance test 2"), Map(), 0, expectedPsm1, true, true, 3456)
+    val expected2 = FoodData("F006", "Inheritance test 2", Map(), 0, expectedPsm1, true, true, 3456)
 
     assert(service.foodData("F003", defaultLocale) === expected1)
     assert(service.foodData("F006", defaultLocale) === expected2)
   }
 
   test("Default attribute values") {
-    val expected = FoodData("F007", "Default attributes test", Some("Default attributes test"), Map(), 0, Seq(), false, false, 1000)
+    val expected = FoodData("F007", "Default attributes test", Map(), 0, Seq(), false, false, 1000)
   }
-
-  test("Portion size methods in food definition") {
-    val portionSizeMethods = Seq(
-      PortionSizeMethod("as-served", "Blah", "portion/placeholder.jpg", false, Seq(PortionSizeMethodParameter("serving-image-set", "as_served_1"), PortionSizeMethodParameter("leftovers-image-set", "as_served_1_leftovers"))),
-      PortionSizeMethod("guide-image", "Blah Blah", "test.jpg", true, Seq(PortionSizeMethodParameter("guide-image-id", "guide1"))))
-
-    // check that definition is correct
-    val expected1 =
-      Food(
-        defaultVersion, "F008", "PSM test 1", 0, InheritableAttributes(None, None, None),
-        FoodLocal(Some(defaultVersion), Some("PSM test 1"), Map(), portionSizeMethods))
-
-    // then check that uninherited PSM data is returned correctly
-    val expected2 = FoodData("F008", "PSM test 1", Some("PSM test 1"), Map(), 0, portionSizeMethods, false, false, 1000)
-
-    val actual1 = service.foodDef("F008", defaultLocale)
-    val versionOverride1 = actual1.copy(version = defaultVersion, localData = actual1.localData.copy(version = Some(defaultVersion)))
-    
-    assert(versionOverride1 === expected1)
-    assert(service.foodData("F008", defaultLocale) === expected2)
-  }
-
+  
   test("Get as served definition") {
     val expected1 = AsServedSet("as_served_1", "As served 1", Seq(
       AsServedImage("PStApl1.jpg", 51.3),

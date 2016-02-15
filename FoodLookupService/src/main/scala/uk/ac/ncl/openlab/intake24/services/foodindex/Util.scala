@@ -31,6 +31,6 @@ case class CategoryEntry(header: UserCategoryHeader) extends IndexEntry
 case class FoodEntry(header: UserFoodHeader) extends IndexEntry
 
 object Util {
-  def mkHeader(category: CategoryV2) = CategoryHeader(category.code, category.description, Some(category.description), category.isHidden)
-  def mkHeader(food: Food) = FoodHeader(food.code, food.englishDescription, food.localData.localDescription)
+  def mkHeader(category: CategoryV2) = UserCategoryHeader(category.code, category.description)
+  def mkHeader(food: Food) = UserFoodHeader(food.code, food.englishDescription)
 }

@@ -20,10 +20,10 @@ package uk.ac.ncl.openlab.intake24.foodxml.test
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
+import uk.ac.ncl.openlab.intake24.foodxml.UserFoodDataServiceXmlImpl
+import uk.ac.ncl.openlab.intake24.services.UserFoodDataServiceTest
+import uk.ac.ncl.openlab.intake24.foodxml.XmlDataSource
 
-import uk.ac.ncl.openlab.intake24.services.FoodDataServiceTest
-import uk.ac.ncl.openlab.intake24.foodxml.FoodDataServiceXmlImpl
-
-class FoodDataServiceXmlImplTest extends FoodDataServiceTest {
-  val service = new FoodDataServiceXmlImpl(getClass.getResource("/test1").toURI().getPath())
+class UserFoodDataServiceXmlImplTest extends UserFoodDataServiceTest {
+  val service = new UserFoodDataServiceXmlImpl(new XmlDataSource(getClass.getResource("/test1").toURI().getPath()))
 }
