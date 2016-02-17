@@ -39,7 +39,7 @@ CREATE TABLE locale_prototypes
   CONSTRAINT locale_prototypes_locale_id_fk FOREIGN KEY (locale_id)
     REFERENCES locales(id) ON UPDATE CASCADE ON DELETE CASCADE,
   CONSTRAINT locale_prototypes_prototype_locale_id_fk FOREIGN KEY (prototype_locale_id)
-    REFERENCES locales(id) ON UPDATE CASCADE ON DELETE CASCADE    
+    REFERENCES locales(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 -- Food groups
@@ -94,6 +94,7 @@ CREATE TABLE foods_local
   food_code character(4) NOT NULL,
   locale_id character varying(16) NOT NULL,
   local_description character varying(128) NOT NULL,
+  do_not_use boolean NOT NULL DEFAULT false,
   version uuid NOT NULL,
 
   CONSTRAINT foods_local_pk PRIMARY KEY(food_code, locale_id),
@@ -127,7 +128,7 @@ CREATE TABLE foods_nutrient_tables
     REFERENCES foods(code) ON UPDATE CASCADE ON DELETE CASCADE,
   CONSTRAINT foods_nutrient_tables_locale_id_fk FOREIGN KEY (locale_id)
     REFERENCES locales(id) ON UPDATE CASCADE ON DELETE CASCADE,
-  CONSTRAINT foods_nutrient_tables_nutrient_table_id_fk FOREIGN KEY (nutrient_table_id) 
+  CONSTRAINT foods_nutrient_tables_nutrient_table_id_fk FOREIGN KEY (nutrient_table_id)
     REFERENCES nutrient_tables(id)
 );
 
@@ -159,7 +160,7 @@ CREATE TABLE foods_portion_size_method_params
   value character varying(128) NOT NULL,
   CONSTRAINT foods_portion_size_method_params_pk PRIMARY KEY (id),
   CONSTRAINT foods_portion_size_method_params_portion_size_method_id_fk FOREIGN KEY (portion_size_method_id)
-      REFERENCES foods_portion_size_methods (id) 
+      REFERENCES foods_portion_size_methods (id)
       ON UPDATE CASCADE ON DELETE CASCADE
 );
 
@@ -174,8 +175,8 @@ CREATE TABLE foods_attributes
   reasonable_amount integer,
   CONSTRAINT foods_attributes_pk PRIMARY KEY(id),
   CONSTRAINT foods_attributes_food_code_fk FOREIGN KEY(food_code)
-    REFERENCES foods (code) 
-    ON UPDATE CASCADE ON DELETE CASCADE  
+    REFERENCES foods (code)
+    ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE INDEX foods_attributes_food_code_index ON foods_attributes (food_code);
@@ -197,6 +198,7 @@ CREATE TABLE categories_local
   category_code character(4) NOT NULL,
   locale_id character varying(16) NOT NULL,
   local_description character varying(128) NOT NULL,
+	do_not_use boolean NOT NULL DEFAULT false,
   version uuid NOT NULL,
 
   CONSTRAINT categories_local_pk PRIMARY KEY(category_code, locale_id),
@@ -281,7 +283,7 @@ CREATE TABLE categories_portion_size_method_params
   value character varying(128) NOT NULL,
   CONSTRAINT categories_portion_size_method_params_pk PRIMARY KEY (id),
   CONSTRAINT categories_portion_size_method_params_portion_size_method_id_fk FOREIGN KEY (portion_size_method_id)
-      REFERENCES categories_portion_size_methods (id) 
+      REFERENCES categories_portion_size_methods (id)
       ON UPDATE CASCADE ON DELETE CASCADE
 );
 
@@ -296,7 +298,7 @@ CREATE TABLE categories_attributes
   reasonable_amount integer,
   CONSTRAINT categories_attributes_pk PRIMARY KEY(id),
   CONSTRAINT categories_attributes_category_code_fk FOREIGN KEY(category_code)
-    REFERENCES categories (code) 
+    REFERENCES categories (code)
     ON UPDATE CASCADE ON DELETE CASCADE
 );
 
@@ -319,7 +321,7 @@ CREATE TABLE as_served_images
   url character varying(512) NOT NULL,
   CONSTRAINT as_served_images_pk PRIMARY KEY (id),
   CONSTRAINT as_served_images_as_served_set_id_fk FOREIGN KEY (as_served_set_id)
-      REFERENCES as_served_sets (id) 
+      REFERENCES as_served_sets (id)
       ON UPDATE CASCADE ON DELETE CASCADE
 );
 
@@ -395,7 +397,7 @@ CREATE TABLE drinkware_scales
 
   CONSTRAINT drinkware_scales_pk PRIMARY KEY (id),
   CONSTRAINT drinkware_scales_set_id_fk FOREIGN KEY (drinkware_set_id)
-    REFERENCES drinkware_sets(id) 
+    REFERENCES drinkware_sets(id)
     ON UPDATE CASCADE ON DELETE CASCADE
 );
 
@@ -413,7 +415,7 @@ CREATE TABLE drinkware_volume_samples
     REFERENCES drinkware_scales(id)
     ON UPDATE CASCADE ON DELETE CASCADE
 );
- 
+
 CREATE INDEX drinkware_volume_samples_drinkware_scale_id_index ON drinkware_volume_samples (drinkware_scale_id);
 
 -- Associated food prompts
@@ -421,16 +423,16 @@ CREATE INDEX drinkware_volume_samples_drinkware_scale_id_index ON drinkware_volu
 CREATE TABLE associated_food_prompts
 (
   id serial NOT NULL,
-  food_code character (4) NOT NULL,  
+  food_code character (4) NOT NULL,
   locale_id character varying(16) NOT NULL,
   category_code character (4) NOT NULL,
   text text NOT NULL,
   link_as_main boolean NOT NULL,
   generic_name character varying (128) NOT NULL,
-  CONSTRAINT associated_food_prompts_pk PRIMARY KEY (id), 
-  CONSTRAINT associated_food_prompts_food_code_fk FOREIGN KEY (food_code) 
+  CONSTRAINT associated_food_prompts_pk PRIMARY KEY (id),
+  CONSTRAINT associated_food_prompts_food_code_fk FOREIGN KEY (food_code)
     REFERENCES foods (code) ON UPDATE CASCADE ON DELETE CASCADE,
-  CONSTRAINT associated_food_prompts_locale_id_fk FOREIGN KEY (locale_id) 
+  CONSTRAINT associated_food_prompts_locale_id_fk FOREIGN KEY (locale_id)
     REFERENCES locales (id) ON UPDATE CASCADE ON DELETE CASCADE
 
 

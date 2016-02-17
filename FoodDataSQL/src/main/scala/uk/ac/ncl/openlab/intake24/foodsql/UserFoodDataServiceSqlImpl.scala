@@ -30,39 +30,13 @@ import anorm.SQL
 import anorm.SqlParser.str
 import anorm.sqlToSimple
 import javax.sql.DataSource
-import net.scran24.fooddef.AsServedImage
-import net.scran24.fooddef.AsServedSet
-import net.scran24.fooddef.CategoryContents
-import net.scran24.fooddef.CategoryHeader
-import net.scran24.fooddef.DrinkScale
-import net.scran24.fooddef.DrinkwareSet
-import net.scran24.fooddef.Food
-import net.scran24.fooddef.FoodData
-import net.scran24.fooddef.FoodGroup
-import net.scran24.fooddef.FoodHeader
-import net.scran24.fooddef.GuideImage
-import net.scran24.fooddef.GuideImageWeightRecord
-import net.scran24.fooddef.InheritableAttributes
-import net.scran24.fooddef.PortionSizeMethod
-import net.scran24.fooddef.PortionSizeMethodParameter
-import net.scran24.fooddef.Prompt
-import net.scran24.fooddef.SplitList
-import net.scran24.fooddef.VolumeFunction
-import net.scran24.fooddef.FoodLocal
-import net.scran24.fooddef.Category
-import net.scran24.fooddef.CategoryLocal
+import net.scran24.fooddef._
 import anorm.SqlParser
-import net.scran24.fooddef.GuideHeader
-import net.scran24.fooddef.AsServedHeader
-import net.scran24.fooddef.DrinkwareHeader
-import net.scran24.fooddef.NutrientTable
 import anorm.SqlMappingError
 import anorm.AnormException
 import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService
 import uk.ac.ncl.openlab.intake24.services.UserFoodDataService
-import net.scran24.fooddef.UserFoodHeader
-import net.scran24.fooddef.UserCategoryHeader
-import net.scran24.fooddef.UserCategoryContents
+import uk.ac.ncl.openlab.intake24.services.UndefinedCode
 
 @Singleton
 class UserFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends UserFoodDataService
@@ -77,13 +51,22 @@ class UserFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSou
       SQL(rootCategoriesQuery).on('locale_id -> locale).executeQuery().as(Macro.indexedParser[UserCategoryHeader].*)
   }
 
-  def categoryContents(code: String, locale: String): UserCategoryContents = tryWithConnection {
+  case class CategoryContentsFoodRow(food_code: Option[String], local_description: Option[String])
+  
+  case class CategoryContentsCategoryRow(subcategory_code: Option[String], local_description: Option[String])
+  
+  def categoryContents(code: String, locale: String) = tryWithConnection {
     implicit conn =>
-      val foods = SQL(categoryContentsFoodsQuery).on('category_code -> code, 'locale_id -> locale).executeQuery().as(Macro.indexedParser[UserFoodHeader].*)
-
-      val categories = SQL(categoryContentsSubcategoriesQuery).on('category_code -> code, 'locale_id -> locale).executeQuery().as(Macro.indexedParser[UserCategoryHeader].*)
-
-      UserCategoryContents(foods, categories)
+      val foodRows = SQL(categoryContentsFoodsQuery).on('category_code -> code, 'locale_id -> locale).executeQuery().as(Macro.namedParser[CategoryContentsFoodRow].*)
+      val categoryRows = SQL(categoryContentsSubcategoriesQuery).on('category_code -> code, 'locale_id -> locale).executeQuery().as(Macro.namedParser[CategoryContentsCategoryRow].*)
+      
+      if (foodRows.isEmpty || categoryRows.isEmpty)
+        Left(UndefinedCode)
+      else {
+        val foods = if (foodRows.head.food_code.isEmpty) Seq() else foodRows.map(row => UserFoodHeader(row.food_code.get, row.local_description.get))
+        val categories = if (categoryRows.head.subcategory_code.isEmpty) Seq() else foodRows.map(row => UserCategoryHeader(row.food_code.get, row.local_description.get))
+        Right(UserCategoryContents(foods, categories))
+      }
   }
 
   def associatedFoodPrompts(foodCode: String, locale: String): Seq[Prompt] = tryWithConnection {
@@ -105,6 +88,31 @@ class UserFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSou
 
 object UserFoodDataServiceSqlImpl {
   val rootCategoriesQuery = io.Source.fromInputStream(getClass.getResourceAsStream("sql/user/root_categories.sql")).mkString
+  /* 
+   Build food headers for foods contained in the given category for the
+   given locale.
+
+   Returns one of the following:
+
+   1) An empty set of rows if the category code is undefined or the category is
+   excluded from the current locale  (the category can be excluded in two ways:
+   through the global restriction list and through the local "do not use in this
+   locale" flag)
+
+   2) A single row with null food_code field if the category exists but has no
+   foods that are allowed in the current locale
+
+   3) One or more rows with non-null food_code field if the category exists, is
+   allowed in the current locale, and is not empty
+
+   Note: categories that don't pass the restriction filter are treated as
+   non-existing.  
+  */
   val categoryContentsFoodsQuery = io.Source.fromInputStream(getClass.getResourceAsStream("sql/user/category_contents_foods.sql")).mkString
+  
+  /* 
+   Build subcategory headers for foods contained in the given category for the
+   given locale. Works similar to foods query above.
+  */
   val categoryContentsSubcategoriesQuery = io.Source.fromInputStream(getClass.getResourceAsStream("sql/user/category_contents_subcategories.sql")).mkString
 }

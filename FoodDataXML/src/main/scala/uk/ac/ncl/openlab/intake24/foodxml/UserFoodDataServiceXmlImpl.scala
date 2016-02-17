@@ -19,10 +19,8 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.foodxml
 
 import org.slf4j.LoggerFactory
-
 import com.google.inject.Inject
 import com.google.inject.Singleton
-
 import net.scran24.fooddef.AsServedSet
 import net.scran24.fooddef.DrinkwareSet
 import net.scran24.fooddef.FoodData
@@ -33,6 +31,8 @@ import net.scran24.fooddef.UserCategoryContents
 import net.scran24.fooddef.UserCategoryHeader
 import uk.ac.ncl.openlab.intake24.services.UserFoodDataService
 import uk.ac.ncl.openlab.intake24.services.foodindex.Util.mkHeader
+import uk.ac.ncl.openlab.intake24.services.ResourceNotFound
+import uk.ac.ncl.openlab.intake24.services.UndefinedCode
 
 @Singleton
 class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends UserFoodDataService {
@@ -51,7 +51,7 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends UserFoo
     data.categories.rootCategories.map(mkHeader)
   }
 
-  def categoryContents(code: String, locale: String): UserCategoryContents = {
+  def categoryContents(code: String, locale: String) = {
     checkLocale(locale)
 
     val cat = data.categories.find(code)
@@ -59,10 +59,10 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends UserFoo
     val foodHeaders = cat.foods.map(fcode => mkHeader(data.foods.find(fcode)))
     val categoryHeaders = cat.subcategories.map(catcode => mkHeader(data.categories.find(catcode)))
 
-    UserCategoryContents(foodHeaders, categoryHeaders)
+    Right(UserCategoryContents(foodHeaders, categoryHeaders))
   }
 
-  def foodData(code: String, locale: String): FoodData = {
+  def foodData(code: String, locale: String) = {
     checkLocale(locale)
 
     val f = data.foods.find(code)
@@ -99,23 +99,38 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends UserFoo
       }
     }
 
-    FoodData(f.code, f.englishDescription, f.localData.nutrientTableCodes, f.groupCode, portionSizeMethods, readyMealOption, sameAsBeforeOption, reasonableAmount)
+    Right(FoodData(f.code, f.englishDescription, f.localData.nutrientTableCodes, f.groupCode, portionSizeMethods, readyMealOption, sameAsBeforeOption, reasonableAmount))
   }
 
-  def asServedDef(id: String): AsServedSet = data.asServedSets(id)
-
-  def guideDef(id: String): GuideImage = data.guideImages(id)
-
-  def drinkwareDef(id: String): DrinkwareSet = data.drinkwareSets(id)
-
-  def associatedFoodPrompts(foodCode: String, locale: String): Seq[Prompt] = {
-    checkLocale(locale)
-    data.prompts(foodCode)
+  def asServedDef(id: String) = data.asServedSets.get(id) match {
+    case Some(set) => Right(set)
+    case None => Left(ResourceNotFound)
   }
 
-  def brandNames(foodCode: String, locale: String): Seq[String] = {
+  def guideDef(id: String) = data.guideImages.get(id) match {
+    case Some(image) => Right(image)
+    case None => Left(ResourceNotFound)
+  }
+
+  def drinkwareDef(id: String) = data.drinkwareSets.get(id) match {
+    case Some(set) => Right(set)
+    case None => Left(ResourceNotFound)
+  }
+
+  def associatedFoodPrompts(foodCode: String, locale: String) = {
     checkLocale(locale)
-    data.brandNamesMap(foodCode)
+    data.prompts.get(foodCode) match {
+      case Some(seq) => Right(seq)
+      case None => Left(UndefinedCode)
+    }
+  }
+
+  def brandNames(foodCode: String, locale: String) = {
+    checkLocale(locale)
+    data.brandNamesMap.get(foodCode) match {
+      case Some(map) => Right(map)
+      case None => Left(UndefinedCode)
+    }
   }
   
 }

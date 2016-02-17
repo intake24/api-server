@@ -15,6 +15,8 @@ import be.objectify.deadbolt.core.PatternType
 import uk.ac.ncl.openlab.intake24.services.FoodDataService
 import scala.collection.mutable.Buffer
 import net.scran24.fooddef.CategoryHeader
+import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService
+import uk.ac.ncl.openlab.intake24.services.UserFoodDataService
 
 case class CategoryProblem(categoryCode: String, categoryName: String, problemCode: String)
 
@@ -25,7 +27,7 @@ case class RecursiveCategoryProblems(foodProblems: Seq[FoodProblem], categoryPro
   def ++(other: RecursiveCategoryProblems) = RecursiveCategoryProblems(foodProblems ++ other.foodProblems, categoryProblems ++ other.categoryProblems)
 }
 
-class ProblemChecker @Inject() (foodDataService: FoodDataService, deadbolt: DeadboltActions) extends Controller {
+class ProblemChecker @Inject() (userData: UserFoodDataService, adminData: AdminFoodDataService, deadbolt: DeadboltActions) extends Controller {
 
   val NutrientCodeMissing = "nutrient_code_missing"
   val NotAssignedToGroup = "not_assigned_to_group"
@@ -39,11 +41,13 @@ class ProblemChecker @Inject() (foodDataService: FoodDataService, deadbolt: Dead
   val maxReturnedProblems = 10
 
   def foodProblems(code: String, locale: String): Seq[FoodProblem] = {
-    val foodDef = foodDataService.foodDef(code, locale)
-    val foodData = foodDataService.foodData(code, locale)
-    val uncatFoods = foodDataService.uncategorisedFoods(locale)
+    val foodDef = adminData.foodDef(code, locale)
+    val foodData = userData.foodData(code, locale)
+    val uncatFoods = adminData.uncategorisedFoods(locale)
 
     val problems = Buffer[String]()
+    
+    
 
     if (foodData.nutrientTableCodes.isEmpty)
       problems += NutrientCodeMissing

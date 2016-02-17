@@ -12,7 +12,8 @@ SELECT * FROM (
 	LEFT JOIN categories as parent_categories
 		ON parent_categories.code = categories_categories.category_code
 	WHERE
-		(t1.local_description IS NOT NULL OR t2.local_description IS NOT NULL)
+		(COALESCE(t1.local_description, t2.local_description) IS NOT NULL)
+		AND (COALESCE(t1.do_not_use, t2.do_not_use) = false)
 		AND (categories_restrictions.locale_id = {locale_id} OR categories_restrictions.locale_id IS NULL)
 		AND (categories_categories.category_code IS NULL OR parent_categories.is_hidden)
 		AND (NOT categories.is_hidden)

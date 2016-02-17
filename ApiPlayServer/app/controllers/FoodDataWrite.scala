@@ -26,7 +26,6 @@ import net.scran24.fooddef.CategoryLocal
 import net.scran24.fooddef.FoodBase
 import net.scran24.fooddef.FoodLocal
 import uk.ac.ncl.openlab.intake24.services.FoodDataEditingService
-import uk.ac.ncl.openlab.intake24.services.FoodDataService
 import uk.ac.ncl.openlab.intake24.services.InvalidRequest
 import uk.ac.ncl.openlab.intake24.services.SqlException
 import uk.ac.ncl.openlab.intake24.services.Success
@@ -45,7 +44,7 @@ import uk.ac.ncl.openlab.intake24.services.NewCategory
 import play.api.libs.json.JsValue
 import play.api.libs.json.JsBoolean
 
-class FoodDataWrite @Inject() (foodDataService: FoodDataService, foodEditingService: FoodDataEditingService, deadbolt: DeadboltActions) extends Controller {
+class FoodDataWrite @Inject() (foodEditingService: FoodDataEditingService, deadbolt: DeadboltActions) extends Controller {
 
   def translateUpdateResult(result: UpdateResult): Result = result match {
     case Success => Ok
