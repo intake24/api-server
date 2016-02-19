@@ -21,15 +21,13 @@ package uk.ac.ncl.openlab.intake24.foodsql.test
 import anorm.SQL
 import java.sql.DriverManager
 import anorm.SqlParser
+import uk.ac.ncl.openlab.intake24.foodsql.SqlFileUtil
 
-trait TestDB {
+trait TestDB extends SqlFileUtil {
 
   val logger = org.slf4j.LoggerFactory.getLogger(classOf[TestDB])
 
-  def separateSqlStatements(sql: String) =
-    // Regex matches on semicolons that neither precede nor follow other semicolons
-    sql.split("(?<!;);(?!;)").map(_.trim.replace(";;", ";")).filterNot(_.isEmpty)
-
+ 
   Class.forName("org.postgresql.Driver")
 
   implicit val dbConn = DriverManager.getConnection("jdbc:postgresql://localhost/intake24_foods_test?user=postgres")
@@ -46,10 +44,8 @@ trait TestDB {
 
   val clearDbStatements = dropTableStatements ++ dropSequenceStatements
 
-  def stripComments(s: String) = """(?m)/\*(\*(?!/)|[^*])*\*/""".r.replaceAllIn(s, "")
-
-  val initDbStatements = separateSqlStatements(stripComments(scala.io.Source.fromInputStream(getClass.getResourceAsStream("/sql/init_foods_db.sql"), "utf-8").mkString))
-
+  val initDbStatements = loadStatementsFromResource("/sql/init_foods_db.sql")
+  
   clearDbStatements.foreach {
     stmt =>
       logger.debug(stmt)

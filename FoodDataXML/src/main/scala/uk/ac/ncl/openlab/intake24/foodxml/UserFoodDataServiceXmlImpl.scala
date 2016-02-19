@@ -31,8 +31,8 @@ import net.scran24.fooddef.UserCategoryContents
 import net.scran24.fooddef.UserCategoryHeader
 import uk.ac.ncl.openlab.intake24.services.UserFoodDataService
 import uk.ac.ncl.openlab.intake24.services.foodindex.Util.mkHeader
-import uk.ac.ncl.openlab.intake24.services.ResourceNotFound
-import uk.ac.ncl.openlab.intake24.services.UndefinedCode
+import uk.ac.ncl.openlab.intake24.services.ResourceError
+import uk.ac.ncl.openlab.intake24.services.CodeError
 
 @Singleton
 class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends UserFoodDataService {
@@ -40,9 +40,9 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends UserFoo
   import Util._
 
   val defaultLocale = "en_GB"
-   
+
   val log = LoggerFactory.getLogger(classOf[UserFoodDataServiceXmlImpl])
-  
+
   def checkLocale(locale: String) = if (locale != defaultLocale)
     log.warn("Locales other than en_GB are not supported by this implementation -- returning en_GB results for debug purposes");
 
@@ -104,24 +104,24 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends UserFoo
 
   def asServedDef(id: String) = data.asServedSets.get(id) match {
     case Some(set) => Right(set)
-    case None => Left(ResourceNotFound)
+    case None => Left(ResourceError.ResourceNotFound)
   }
 
   def guideDef(id: String) = data.guideImages.get(id) match {
     case Some(image) => Right(image)
-    case None => Left(ResourceNotFound)
+    case None => Left(ResourceError.ResourceNotFound)
   }
 
   def drinkwareDef(id: String) = data.drinkwareSets.get(id) match {
     case Some(set) => Right(set)
-    case None => Left(ResourceNotFound)
+    case None => Left(ResourceError.ResourceNotFound)
   }
 
   def associatedFoodPrompts(foodCode: String, locale: String) = {
     checkLocale(locale)
     data.prompts.get(foodCode) match {
       case Some(seq) => Right(seq)
-      case None => Left(UndefinedCode)
+      case None => Left(CodeError.UndefinedCode)
     }
   }
 
@@ -129,8 +129,8 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends UserFoo
     checkLocale(locale)
     data.brandNamesMap.get(foodCode) match {
       case Some(map) => Right(map)
-      case None => Left(UndefinedCode)
+      case None => Left(CodeError.UndefinedCode)
     }
   }
-  
+
 }

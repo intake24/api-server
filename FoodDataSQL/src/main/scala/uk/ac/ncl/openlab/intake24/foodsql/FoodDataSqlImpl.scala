@@ -30,6 +30,7 @@ import anorm.Macro
 import net.scran24.fooddef.PortionSizeMethod
 import java.sql.Connection
 import anorm.SqlParser
+import uk.ac.ncl.openlab.intake24.services.FoodDataError
 
 trait FoodDataSqlImpl extends SqlDataService {
 
@@ -39,7 +40,7 @@ trait FoodDataSqlImpl extends SqlDataService {
 
   private case class RecursiveAttributesRow(same_as_before_option: Option[Boolean], ready_meal_option: Option[Boolean], reasonable_amount: Option[Int])
 
-  private case class FoodRow(code: String, local_description: String, food_group_id: Long)
+  private case class FoodRow(code: String, local_description: Option[String], food_group_id: Long)
 
   private case class NutrientTableRow(nutrient_table_id: String, nutrient_table_code: String)
 
@@ -148,7 +149,7 @@ trait FoodDataSqlImpl extends SqlDataService {
   //    in the prototype locale
   //
   // Category restriction list is currently ignored  
-  def foodData(code: String, locale: String): FoodData = tryWithConnection {
+  def foodData(code: String, locale: String): Either[FoodDataError, FoodData] = tryWithConnection {
     implicit conn =>
 
       val prototypeLocale = SQL("""SELECT prototype_locale_id FROM locale_prototypes WHERE locale_id = {locale_id}""").on('locale_id -> locale).as(SqlParser.str("prototype_locale_id").singleOpt)
@@ -180,14 +181,15 @@ trait FoodDataSqlImpl extends SqlDataService {
             result.reasonable_amount.orElse(row.reasonable_amount))
         }
       }
-      
+
       val nutrientTableCodes = {
         val localCodes = localNutrientTableCodes(code, locale)
-        
+
         if (localCodes.isEmpty) prototypeLocale match {
           case Some(prototypeLocale) => localNutrientTableCodes(code, prototypeLocale)
           case None => Map[String, String]()
-        } else
+        }
+        else
           localCodes
       }
 
@@ -196,11 +198,19 @@ trait FoodDataSqlImpl extends SqlDataService {
            |FROM foods
            |  LEFT JOIN foods_local as t1 ON foods.code = t1.food_code AND t1.locale_id = {locale_id}
            |  LEFT JOIN foods_local as t2 ON foods.code = t2.food_code AND t2.locale_id IN (SELECT prototype_locale_id FROM locale_prototypes WHERE locale_id = {locale_id})
-           |WHERE code = {food_code} AND (t1.local_description IS NOT NULL OR t2.local_description IS NOT NULL)""".stripMargin
+           |WHERE code = {food_code}""".stripMargin
 
-      val foodRow = SQL(foodQuery).on('food_code -> code, 'locale_id -> locale).executeQuery().as(foodRowParser.single)
+      val foodRow = SQL(foodQuery).on('food_code -> code, 'locale_id -> locale).executeQuery().as(foodRowParser.singleOpt)
 
-      FoodData(foodRow.code, foodRow.local_description, nutrientTableCodes, foodRow.food_group_id.toInt, portionSizeMethods,
-        attributes.ready_meal_option.get, attributes.same_as_before_option.get, attributes.reasonable_amount.get)
+      foodRow match {
+        case Some(row) => row.local_description match {
+          case Some(description) => Right(FoodData(row.code, description, nutrientTableCodes, row.food_group_id.toInt, portionSizeMethods,
+            attributes.ready_meal_option.get, attributes.same_as_before_option.get, attributes.reasonable_amount.get))
+          case None => Left(FoodDataError.NoLocalDescription)
+
+        }
+        case None => Left(FoodDataError.UndefinedCode)
+      }
+
   }
 }

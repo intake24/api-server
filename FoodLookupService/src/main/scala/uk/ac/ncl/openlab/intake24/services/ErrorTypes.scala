@@ -20,14 +20,19 @@ package uk.ac.ncl.openlab.intake24.services
 
 sealed trait CodeError
 
-case object UndefinedCode extends CodeError
+object CodeError {
+  case object UndefinedCode extends CodeError
+}
 
+sealed trait FoodDataError
 
-sealed trait FoodDataError extends CodeError
-
-case object NoLocalDescription extends FoodDataError
-
+object FoodDataError {
+  case object UndefinedCode extends FoodDataError
+  case object NoLocalDescription extends FoodDataError
+}
 
 sealed trait ResourceError
 
-case object ResourceNotFound extends ResourceError
+object ResourceError {
+  case object ResourceNotFound extends ResourceError
+}
