@@ -347,3 +347,6 @@ INSERT INTO synonym_sets VALUES (1, 'en_GB', 'cola pepsi coke');
 INSERT INTO synonym_sets VALUES (2, 'en_GB', 'sandwich bap butty panini piece roll sarnie softie sub toastie wrap');
 
 SELECT pg_catalog.setval('synonym_sets_id_seq', 2, true);
+
+INSERT INTO categories_restrictions VALUES ('C005', 'test1');
+INSERT INTO categories_restrictions VALUES ('C005', 'en_GB');

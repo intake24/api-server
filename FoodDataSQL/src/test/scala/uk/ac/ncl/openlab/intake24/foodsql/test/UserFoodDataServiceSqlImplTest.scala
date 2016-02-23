@@ -46,6 +46,8 @@ import com.zaxxer.hikari.HikariDataSource
 import uk.ac.ncl.openlab.intake24.services.AdminFoodDataServiceTest
 import uk.ac.ncl.openlab.intake24.foodsql.UserFoodDataServiceSqlImpl
 import net.scran24.fooddef.UserCategoryHeader
+import uk.ac.ncl.openlab.intake24.services.CodeError
+import net.scran24.fooddef.UserFoodHeader
 
 class UserFoodDataServiceSqlImplTest extends FunSuite with TestDB {
 
@@ -85,6 +87,16 @@ class UserFoodDataServiceSqlImplTest extends FunSuite with TestDB {
   val test1_c5 = UserCategoryHeader("C005", "Locale 1 Nested category 2")
   val test1_c6 = UserCategoryHeader("C006", "Locale 1 Nested category 3")
   
+  val en_GB_f0 = UserFoodHeader("F000", "Food definition test 1")
+  val en_GB_f1 = UserFoodHeader("F001", "Uncategorised food")
+  val en_GB_f2 = UserFoodHeader("F002", "Parent test")
+  val en_GB_f3 = UserFoodHeader("F003", "Inheritance test 1")
+  val en_GB_f4 = UserFoodHeader("F004", "Food definition test 2")
+  val en_GB_f5 = UserFoodHeader("F005", "Food definition test 3")
+  val en_GB_f6 = UserFoodHeader("F006", "Inheritance test 2")
+  val en_GB_f7 = UserFoodHeader("F007", "Default attributes test")
+  val en_GB_f8 = UserFoodHeader("F008", "PSM test 1")
+  
   /*
    * Test data structure:
    * 
@@ -93,7 +105,7 @@ class UserFoodDataServiceSqlImplTest extends FunSuite with TestDB {
    *    F000
    *    F005
    *  C001
-   *    C005
+   *    C005 (restricted to en_GB, test1)
    *      F002
    *      F006
    *    F004
@@ -123,107 +135,16 @@ class UserFoodDataServiceSqlImplTest extends FunSuite with TestDB {
     // C006 is only contained in hidden categories and must be root (unless itself is hidden)    
     val expected = Seq(test1_c1, test1_c3, test1_c6)
   }
-    
-/*
-  test("Get direct parent categories for uncategorised food") {
-    val expected = Seq[CategoryHeader]()
-
-    assert(service.foodParentCategories("F001", defaultLocale) === expected)
+      
+  test("Category contents") {
+    // Restricted categories
+    assert(service.categoryContents("C005", "test2") === Left(CodeError.UndefinedCode))
+    assert(service.categoryContents("C005", "en_GB") === Right(Seq(en_GB_f2, en_GB_f6)))
   }
-
-  test("Get all parent categories for uncategorised food") {
-    val expected = Seq[CategoryHeader]()
-
-    assert(service.foodAllCategories("F001", defaultLocale) === expected)
-  }
-
-  test("Get direct parent categories for food") {
-    val expected = Seq(c2, c5)
-
-    assert(service.foodParentCategories("F002", defaultLocale) === expected)
-  }
-
-  test("Get all parent categories for food") {
-    val expected = Seq(c2, c5, c1, c4, c3)
-
-    assert(service.foodAllCategories("F002", defaultLocale) === expected)
-  }
-
-  test("Get direct parent categories for root category") {
-    val expected = Seq[CategoryHeader]()
-
-    assert(service.categoryParentCategories("C000", defaultLocale) === expected)
-  }
-
-  test("Get all parent categories for root category") {
-    val expected = Seq[CategoryHeader]()
-
-    assert(service.categoryAllCategories("C000", defaultLocale) === expected)
-  }
-
-  test("Get direct parent categories for nested category") {
-    val expected = Seq(c1, c4)
-
-    assert(service.categoryParentCategories("C005", defaultLocale) === expected)
-  }
-
-  test("Get all parent categories for nested category") {
-    val expected = Seq(c1, c4, c3)
-
-    assert(service.categoryAllCategories("C005", defaultLocale) === expected)
-  }
-
-  test("Get food definition") {
-    val expected1 =
-      Food(defaultVersion, "F000", "Food definition test 1", 1, InheritableAttributes(Some(true), None, None),
-        FoodLocal(Some(defaultVersion), Some("Food definition test 1"), Map("NDNS" -> "100"),
-          Seq(PortionSizeMethod("as-served", "Test", "portion/placeholder.jpg", false,
-            Seq(PortionSizeMethodParameter("serving-image-set", "as_served_1"), PortionSizeMethodParameter("leftovers-image-set", "as_served_1_leftovers"))))))
-    val expected2 =
-      Food(defaultVersion, "F004", "Food definition test 2", 10, InheritableAttributes(None, Some(true), None),
-        FoodLocal(Some(defaultVersion), Some("Food definition test 2"), Map("NDNS" -> "200"), Seq()))
-    val expected3 =
-      Food(defaultVersion, "F005", "Food definition test 3", 20, InheritableAttributes(None, None, Some(1234)),
-        FoodLocal(None, Some("Food definition test 3"), Map("NDNS" -> "300"), Seq()))
-
-    // This hack is required because version codes are generated randomly on import
-        
-    val actual1 = service.foodDef("F000", defaultLocale)
-    val versionOverride1 = actual1.copy(version = defaultVersion, localData = actual1.localData.copy(version = Some(defaultVersion)))
-        
-    val actual2 = service.foodDef("F004", defaultLocale)
-    val versionOverride2 = actual2.copy(version = defaultVersion, localData = actual2.localData.copy(version = Some(defaultVersion)))
-    
-    val actual3 = service.foodDef("F005", defaultLocale)
-    val versionOverride3 = actual3.copy(version = defaultVersion, localData = actual3.localData.copy(version = None))
-    
-    assert( versionOverride1 === expected1)
-    assert( versionOverride2 === expected2)
-    assert( versionOverride3 === expected3)
-  }
-
+  
   test("Default attribute values") {
-    val expected = FoodData("F007", "Default attributes test", Map(), 0, Seq(), false, false, 1000)
-  }
-
-  test("Portion size methods in food definition") {
-    val portionSizeMethods = Seq(
-      PortionSizeMethod("as-served", "Blah", "portion/placeholder.jpg", false, Seq(PortionSizeMethodParameter("serving-image-set", "as_served_1"), PortionSizeMethodParameter("leftovers-image-set", "as_served_1_leftovers"))),
-      PortionSizeMethod("guide-image", "Blah Blah", "test.jpg", true, Seq(PortionSizeMethodParameter("guide-image-id", "guide1"))))
-
-    // check that definition is correct
-    val expected1 =
-      Food(
-        defaultVersion, "F008", "PSM test 1", 0, InheritableAttributes(None, None, None),
-        FoodLocal(Some(defaultVersion), Some("PSM test 1"), Map(), portionSizeMethods))
-
-    // then check that uninherited PSM data is returned correctly
-    // val expected2 = FoodData("F008", "PSM test 1", Map(), 0, portionSizeMethods, false, false, 1000)
-
-    val actual1 = service.foodDef("F008", defaultLocale)
-    val versionOverride1 = actual1.copy(version = defaultVersion, localData = actual1.localData.copy(version = Some(defaultVersion)))
+    val expected = Right(FoodData("F007", "Default attributes test", Map(), 0, Seq(), false, false, 1000))
     
-    assert(versionOverride1 === expected1)
-    //assert(service.foodData("F008", defaultLocale) === expected2)
-  }*/
+    assert(service.foodData("F007", "en_GB") === expected)
+  }
 }
