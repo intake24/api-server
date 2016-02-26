@@ -51,25 +51,25 @@ class UserFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSou
       SQL(rootCategoriesQuery).on('locale_id -> locale).executeQuery().as(Macro.indexedParser[UserCategoryHeader].*)
   }
 
-  case class CategoryContentsFoodRow(food_code: Option[String], local_description: Option[String])
-  
-  case class CategoryContentsCategoryRow(subcategory_code: Option[String], local_description: Option[String])
-  
+  case class CategoryContentsFoodRow(food_code: String, local_description: String)
+
+  case class CategoryContentsCategoryRow(subcategory_code: String, local_description: String)
+
   def categoryContents(code: String, locale: String) = tryWithConnection {
     implicit conn =>
-      val foodRows = SQL(categoryContentsFoodsQuery).on('category_code -> code, 'locale_id -> locale).executeQuery().as(Macro.namedParser[CategoryContentsFoodRow].*)
-      val categoryRows = SQL(categoryContentsSubcategoriesQuery).on('category_code -> code, 'locale_id -> locale).executeQuery().as(Macro.namedParser[CategoryContentsCategoryRow].*)
-      
-      if (foodRows.isEmpty || categoryRows.isEmpty)
+      val categoryAllowed = (SQL(categoryRestrictions).on('category_code -> code, 'locale_id -> locale).executeQuery().as(SqlParser.long(1).single) == 1)
+
+      if (!categoryAllowed)
         Left(CodeError.UndefinedCode)
       else {
-        val foods = if (foodRows.head.food_code.isEmpty) Seq() else foodRows.map(row => UserFoodHeader(row.food_code.get, row.local_description.get))
-        val categories = if (categoryRows.head.subcategory_code.isEmpty) Seq() else foodRows.map(row => UserCategoryHeader(row.food_code.get, row.local_description.get))
-        Right(UserCategoryContents(foods, categories))
+        val foodRows = SQL(categoryContentsFoodsQuery).on('category_code -> code, 'locale_id -> locale).executeQuery().as(Macro.namedParser[CategoryContentsFoodRow].*)
+        val categoryRows = SQL(categoryContentsSubcategoriesQuery).on('category_code -> code, 'locale_id -> locale).executeQuery().as(Macro.namedParser[CategoryContentsCategoryRow].*)
+        
+        Right(UserCategoryContents(foodRows.map(row => UserFoodHeader(row.food_code, row.local_description)), categoryRows.map(row => UserCategoryHeader(row.subcategory_code, row.local_description))))
       }
   }
-  
-  case class AssociatedFoodPromptsRow(category_code: Option[String], text: Option[String], link_as_main: Option[Boolean], generic_name: Option[String], locale_id:Option[String])
+
+  case class AssociatedFoodPromptsRow(category_code: Option[String], text: Option[String], link_as_main: Option[Boolean], generic_name: Option[String], locale_id: Option[String])
 
   def associatedFoodPrompts(foodCode: String, locale: String): Either[CodeError, Seq[Prompt]] = tryWithConnection {
     implicit conn =>
@@ -84,51 +84,49 @@ class UserFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSou
            |ORDER BY id""".stripMargin
 
       val rows = SQL(query).on('food_code -> foodCode, 'locale_id -> locale).executeQuery().as(Macro.namedParser[AssociatedFoodPromptsRow].*)
-      
-      def mkPrompt(row: AssociatedFoodPromptsRow) = Prompt(row.category_code.get, row.text.get, row.link_as_main.get, row.generic_name.get) 
-      
+
+      def mkPrompt(row: AssociatedFoodPromptsRow) = Prompt(row.category_code.get, row.text.get, row.link_as_main.get, row.generic_name.get)
+
       if (rows.isEmpty)
         Left(CodeError.UndefinedCode)
-      else
-        if (rows.head.category_code.isEmpty)
-          Right(Seq())
-        else {
-          val (local, prototype) = rows.partition(_.locale_id.get == locale)
-          
-          if (local.nonEmpty)
-            Right(local.map(mkPrompt))
-          else
-            Right(prototype.map(mkPrompt))
-        }
+      else if (rows.head.category_code.isEmpty)
+        Right(Seq())
+      else {
+        val (local, prototype) = rows.partition(_.locale_id.get == locale)
+
+        if (local.nonEmpty)
+          Right(local.map(mkPrompt))
+        else
+          Right(prototype.map(mkPrompt))
+      }
   }
-  
+
   case class BrandNamesRow(name: Option[String], locale_id: Option[String])
 
-  def brandNames(foodCode: String, locale: String): Either[CodeError, Seq[String]] = tryWithConnection {    
+  def brandNames(foodCode: String, locale: String): Either[CodeError, Seq[String]] = tryWithConnection {
     implicit conn =>
-      
-      val query = 
+
+      val query =
         """|SELECT name, locale_id
 	         |FROM foods
 	         |  LEFT JOIN brands
 		       |    ON foods.code = brands.food_code
            |WHERE foods.code = {food_code} AND (locale_id = {locale_id} OR locale_id IN (SELECT prototype_locale_id FROM locale_prototypes WHERE locale_id = {locale_id}) OR locale_id IS NULL) ORDER BY id"""
-      
+
       val rows = SQL(query).on('food_code -> foodCode, 'locale_id -> locale).executeQuery().as(Macro.namedParser[BrandNamesRow].*)
-      
+
       if (rows.isEmpty)
         Left(CodeError.UndefinedCode)
-      else
-        if (rows.head.name.isEmpty)
-          Right(Seq())
-        else {
-          val (local, prototype) = rows.partition(_.locale_id.get == locale)
-          
-          if (local.nonEmpty)
-            Right(local.map(_.name.get))
-          else
-            Right(prototype.map(_.name.get))
-        }            
+      else if (rows.head.name.isEmpty)
+        Right(Seq())
+      else {
+        val (local, prototype) = rows.partition(_.locale_id.get == locale)
+
+        if (local.nonEmpty)
+          Right(local.map(_.name.get))
+        else
+          Right(prototype.map(_.name.get))
+      }
   }
 }
 
@@ -155,10 +153,12 @@ object UserFoodDataServiceSqlImpl {
    non-existing.  
   */
   val categoryContentsFoodsQuery = io.Source.fromInputStream(getClass.getResourceAsStream("/sql/user/category_contents_foods.sql")).mkString
-  
+
   /* 
    Build subcategory headers for foods contained in the given category for the
    given locale. Works similar to foods query above.
   */
   val categoryContentsSubcategoriesQuery = io.Source.fromInputStream(getClass.getResourceAsStream("/sql/user/category_contents_subcategories.sql")).mkString
+
+  val categoryRestrictions = io.Source.fromInputStream(getClass.getResourceAsStream("/sql/user/category_restrictions.sql")).mkString
 }

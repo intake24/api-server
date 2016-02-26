@@ -48,6 +48,7 @@ import uk.ac.ncl.openlab.intake24.foodsql.UserFoodDataServiceSqlImpl
 import net.scran24.fooddef.UserCategoryHeader
 import uk.ac.ncl.openlab.intake24.services.CodeError
 import net.scran24.fooddef.UserFoodHeader
+import net.scran24.fooddef.UserCategoryContents
 
 class UserFoodDataServiceSqlImplTest extends FunSuite with TestDB {
 
@@ -106,8 +107,8 @@ class UserFoodDataServiceSqlImplTest extends FunSuite with TestDB {
    *    F005
    *  C001
    *    C005 (restricted to en_GB, test1)
-   *      F002
-   *      F006
+   *      F002 (do not use in test1)
+   *      F006 (do not use in test1)
    *    F004
    *  C002 (hidden)
    *    C006
@@ -135,11 +136,17 @@ class UserFoodDataServiceSqlImplTest extends FunSuite with TestDB {
     // C006 is only contained in hidden categories and must be root (unless itself is hidden)    
     val expected = Seq(test1_c1, test1_c3, test1_c6)
   }
+  
+  test("Restricted category should be treated as missing") { 
+    assert(service.categoryContents("C005", "test2") === Left(CodeError.UndefinedCode))
+  }
       
   test("Category contents") {
-    // Restricted categories
-    assert(service.categoryContents("C005", "test2") === Left(CodeError.UndefinedCode))
-    assert(service.categoryContents("C005", "en_GB") === Right(Seq(en_GB_f2, en_GB_f6)))
+    assert(service.categoryContents("C005", "en_GB") === Right(UserCategoryContents(Seq(/* alphabetical order */ en_GB_f6, en_GB_f2), Seq())))    
+  }
+  
+  test("Empty category due to restrictions") {
+    assert(service.categoryContents("C005", "test1") === Right(UserCategoryContents(Seq(), Seq())))
   }
   
   test("Default attribute values") {

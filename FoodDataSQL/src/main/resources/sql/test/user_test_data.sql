@@ -290,6 +290,9 @@ INSERT INTO foods_local VALUES ('F006', 'en_GB', 'Inheritance test 2', false, 'a
 INSERT INTO foods_local VALUES ('F007', 'en_GB', 'Default attributes test', false, 'ed0a169e-474c-4630-aa90-6dce02942613');
 INSERT INTO foods_local VALUES ('F008', 'en_GB', 'PSM test 1', false, '60cb0687-a0e9-475d-ad6d-c912ffb4ae2f');
 
+INSERT INTO foods_local VALUES ('F002', 'test1', 'test1 PSM test 1', true, '60cb0687-a0e9-475d-ad6d-c912ffb4ae2f');
+INSERT INTO foods_local VALUES ('F006', 'test1', 'test1 PSM test 1', true, '60cb0687-a0e9-475d-ad6d-c912ffb4ae2f');
+
 INSERT INTO foods_nutrient_tables VALUES ('F000', 'en_GB', 'NDNS', '100');
 INSERT INTO foods_nutrient_tables VALUES ('F001', 'en_GB', 'NDNS', '1000');
 INSERT INTO foods_nutrient_tables VALUES ('F002', 'en_GB', 'NDNS', '1000');
