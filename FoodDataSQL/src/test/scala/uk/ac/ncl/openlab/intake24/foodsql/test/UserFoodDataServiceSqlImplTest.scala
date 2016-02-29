@@ -147,7 +147,7 @@ class UserFoodDataServiceSqlImplTest extends FunSuite with TestDB {
   
   test("Empty category due to restrictions") {
     assert(service.categoryContents("C005", "test1") === Right(UserCategoryContents(Seq(), Seq())))
-  }
+  }  
   
   test("Default attribute values") {
     val expected = Right(FoodData("F007", "Default attributes test", Map(), 0, Seq(), false, false, 1000))
