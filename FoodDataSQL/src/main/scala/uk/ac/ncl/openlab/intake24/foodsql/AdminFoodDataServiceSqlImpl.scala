@@ -62,7 +62,7 @@ import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService
 
 @Singleton
 class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends SqlDataService 
-  with AdminFoodDataService with SplitterDataSqlImpl with SynsetsDataSqlImpl {
+  with AdminFoodDataService with SplitterDataSqlImpl with SynsetsDataSqlImpl with FoodDataEditingSqlImpl {
 
   val logger = LoggerFactory.getLogger(classOf[AdminFoodDataServiceSqlImpl])
 

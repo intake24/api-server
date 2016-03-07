@@ -76,7 +76,7 @@ class ProblemChecker @Inject() (userData: UserFoodDataService, adminData: AdminF
   }
 
   def categoryProblems(code: String, locale: String): Seq[CategoryProblem] = {
-    val contents = foodDataService.categoryContents(code, locale)
+    /* val contents = foodDataService.categoryContents(code, locale)
 
     val size = contents.foods.size + contents.subcategories.size
 
@@ -93,7 +93,8 @@ class ProblemChecker @Inject() (userData: UserFoodDataService, adminData: AdminF
     if (categoryDef.localData.version.isEmpty)
       problems += LocalDataEmpty
 
-    problems.toSeq.map(pcode => CategoryProblem(code, categoryDef.localData.localDescription.getOrElse(categoryDef.englishDescription), pcode))
+    problems.toSeq.map(pcode => CategoryProblem(code, categoryDef.localData.localDescription.getOrElse(categoryDef.englishDescription), pcode))*/
+    Seq()
   }
 
   def recursiveCategoryProblems(code: String, locale: String, maxProblems: Int): RecursiveCategoryProblems = {
@@ -110,7 +111,8 @@ class ProblemChecker @Inject() (userData: UserFoodDataService, adminData: AdminF
     if (maxProblems <= 0)
       RecursiveCategoryProblems(Seq(), Seq())
     else {
-      val contents = foodDataService.categoryContents(code, locale)
+      RecursiveCategoryProblems(Seq(), Seq())
+      /*val contents = foodDataService.categoryContents(code, locale)
 
       var remainingProblemSlots = maxProblems
 
@@ -130,7 +132,7 @@ class ProblemChecker @Inject() (userData: UserFoodDataService, adminData: AdminF
 
       remainingProblemSlots -= subcatProblems.length
 
-      collectSubcategoryProblems(contents.subcategories, RecursiveCategoryProblems(fdProblems, ownProblems ++ subcatProblems), remainingProblemSlots)
+      collectSubcategoryProblems(contents.subcategories, RecursiveCategoryProblems(fdProblems, ownProblems ++ subcatProblems), remainingProblemSlots)*/      
     }
   }
 

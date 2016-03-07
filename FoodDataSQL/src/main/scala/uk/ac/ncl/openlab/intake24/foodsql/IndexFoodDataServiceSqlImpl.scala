@@ -42,7 +42,7 @@ class IndexFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
   def indexableFoods(locale: String): Seq[UserFoodHeader] = tryWithConnection {
     implicit conn =>
       val query =
-        """|SELECT code, CASE WHEN t1.local_description IS NULL THEN t2.local_description ELSE t1.local_description END
+        """|SELECT code, COALESCE(t1.local_description, t2.local_description) AS local_description
            |FROM foods
            |LEFT JOIN foods_local as t1 ON foods.code = t1.food_code AND t1.locale_id = {locale_id}
            |LEFT JOIN foods_local as t2 ON foods.code = t2.food_code AND t2.locale_id IN (SELECT prototype_locale_id FROM locale_prototypes WHERE locale_id = {locale_id})
@@ -58,16 +58,15 @@ class IndexFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
   def indexableCategories(locale: String): Seq[UserCategoryHeader] = tryWithConnection {
     implicit conn =>
       val query =
-        """|SELECT code, CASE WHEN t1.local_description IS NULL THEN t2.local_description ELSE t1.local_description END
+        """|SELECT code, COALESCE(t1.local_description, t2.local_description) AS local_description
            |FROM categories
-           |LEFT JOIN categories_local as t1 ON categories.code = t1.food_code AND t1.locale_id = {locale_id}
-           |LEFT JOIN categories_local as t2 ON categories.code = t2.food_code AND t2.locale_id IN (SELECT prototype_locale_id FROM locale_prototypes WHERE locale_id = {locale_id})
-           |LEFT JOIN categories_restrictions ON categories.code = categories_restrictions.food_code
+           |LEFT JOIN categories_local as t1 ON categories.code = t1.category_code AND t1.locale_id = 'en_GB'
+           |LEFT JOIN categories_local as t2 ON categories.code = t2.category_code AND t2.locale_id IN (SELECT prototype_locale_id FROM locale_prototypes WHERE locale_id = 'en_GB')
+           |LEFT JOIN categories_restrictions ON categories.code = categories_restrictions.category_code
            |WHERE 
            |(t1.local_description IS NOT NULL OR t2.local_description IS NOT NULL) 
-           |AND (categories_restrictions.locale_id = 'ar_AE' OR categories_restrictions.locale_id IS NULL)
-           |ORDER BY local_description""".stripMargin
+           |AND (categories_restrictions.locale_id = 'ar_AE' OR categories_restrictions.locale_id IS NULL)ORDER BY local_description""".stripMargin
 
-      SQL(query).executeQuery().as(Macro.indexedParser[UserCategoryHeader].*)
+      SQL(query).on('locale_id -> locale).executeQuery().as(Macro.indexedParser[UserCategoryHeader].*)
   }
 }

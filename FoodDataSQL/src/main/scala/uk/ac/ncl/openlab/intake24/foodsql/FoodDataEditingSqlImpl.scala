@@ -18,7 +18,6 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodsql
 
-import uk.ac.ncl.openlab.intake24.services.FoodDataEditingService
 import net.scran24.fooddef.Food
 import java.util.UUID
 import com.google.inject.Singleton
@@ -41,9 +40,7 @@ import uk.ac.ncl.openlab.intake24.services.NewFood
 import uk.ac.ncl.openlab.intake24.services.NewCategory
 
 @Singleton
-class FoodDataEditingSqlImpl @Inject() (@Named("intake24_foods") dataSource: DataSource) extends FoodDataEditingService {
-
-  val logger = LoggerFactory.getLogger(classOf[FoodDataEditingSqlImpl])
+trait FoodDataEditingSqlImpl extends SqlDataService {
 
   def foodCodeFkConstraintFailedMessage(foodCode: String) =
     s"Food code $foodCode is not defined. Either an invalid code was supplied or the food was deleted or had its code changed by someone else."
@@ -84,18 +81,6 @@ class FoodDataEditingSqlImpl @Inject() (@Named("intake24_foods") dataSource: Dat
     s"Cannot add $categoryCode to itself."
 
   val cannotAddCategoryToItselfCode = "cannot_add_category_to_itself"
-
-  def tryWithConnection[T](block: Connection => T) = {
-    val conn = dataSource.getConnection()
-    try {
-      block(conn)
-    } catch {
-      case e: java.sql.BatchUpdateException => throw e.getNextException
-      case e: Throwable => throw e
-    } finally {
-      conn.close()
-    }
-  }
 
   def isFoodCodeAvailable(code: String) = tryWithConnection {
     implicit conn =>

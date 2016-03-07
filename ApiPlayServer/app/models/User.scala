@@ -23,13 +23,11 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import be.objectify.deadbolt.core.models.Subject
 import play.libs.Scala
 
-case class User(id: String, securityInfo: SecurityInfo) extends Identity with Subject {
-  
-  val RolePermissions = Map("admin" -> Set("api.foods.read", "api.foods.write")).withDefaultValue(Set())
+case class User(id: String, securityInfo: SecurityInfo) extends Identity with Subject {    
   
   def getRoles: java.util.List[SecurityRole] = Scala.asJava(securityInfo.roles.map(SecurityRole).toSeq)
 
-  def getPermissions: java.util.List[SecurityPermission] =  Scala.asJava((securityInfo.permissions ++ securityInfo.roles.flatMap(RolePermissions)).map(SecurityPermission).toSeq)
+  def getPermissions: java.util.List[SecurityPermission] =  Scala.asJava((securityInfo.permissions).map(SecurityPermission).toSeq)
   
   def getIdentifier() = id
 }

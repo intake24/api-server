@@ -36,8 +36,29 @@ import net.scran24.fooddef.GuideHeader
 import net.scran24.fooddef.DrinkwareHeader
 import net.scran24.fooddef.AsServedHeader
 import net.scran24.fooddef.NutrientTable
+import net.scran24.fooddef.InheritableAttributes
+import net.scran24.fooddef.FoodBase
+import net.scran24.fooddef.FoodLocal
+import net.scran24.fooddef.CategoryBase
+import net.scran24.fooddef.CategoryLocal
+
+sealed trait UpdateResult 
+
+case object Success extends UpdateResult
+
+case object VersionConflict extends UpdateResult
+
+case class InvalidRequest(errorCode: String, message: String) extends UpdateResult
+
+case class SqlException(message: String) extends UpdateResult
+
+case class NewFood(code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes)
+
+case class NewCategory(code: String, englishDescription: String, isHidden: Boolean, attributes: InheritableAttributes)
 
 trait AdminFoodDataService {
+  
+  // Read
    
   def uncategorisedFoods(locale: String): Seq[FoodHeader]
   
@@ -77,4 +98,34 @@ trait AdminFoodDataService {
   def searchFoods(searchTerm: String, locale: String): Seq[FoodHeader]
   
   def searchCategories(searchTerm: String, locale: String): Seq[CategoryHeader]
+  
+  // Write
+  
+  def updateFoodBase(foodCode: String, foodBase: FoodBase): UpdateResult
+  
+  def updateFoodLocal(foodCode: String, locale: String, foodLocal: FoodLocal): UpdateResult
+  
+  def isFoodCodeAvailable(code: String): Boolean
+  
+  def createFood(newFood: NewFood): UpdateResult
+  
+  def deleteFood(foodCode: String): UpdateResult
+  
+  def updateCategoryBase(categoryCode: String, categoryBase: CategoryBase): UpdateResult
+  
+  def updateCategoryLocal(categoryCode: String, locale: String, categoryLocal: CategoryLocal): UpdateResult
+  
+  def isCategoryCodeAvailable(code: String): Boolean
+  
+  def createCategory(newCategory: NewCategory): UpdateResult
+  
+  def deleteCategory(categoryCode: String): UpdateResult
+  
+  def addFoodToCategory(categoryCode: String, foodCode: String): UpdateResult
+  
+  def addSubcategoryToCategory(categoryCode: String, subcategoryCode: String): UpdateResult
+  
+  def removeFoodFromCategory(categoryCode: String, foodCode: String): UpdateResult
+  
+  def removeSubcategoryFromCategory(categoryCode: String, foodCode: String): UpdateResult
 }

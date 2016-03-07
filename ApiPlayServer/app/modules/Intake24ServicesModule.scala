@@ -35,7 +35,6 @@ import uk.ac.ncl.openlab.intake24.foodsql.FoodDataEditingSqlImpl
 import uk.ac.ncl.openlab.intake24.foodsql.IndexFoodDataServiceSqlImpl
 import uk.ac.ncl.openlab.intake24.foodsql.UserFoodDataServiceSqlImpl
 import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService
-import uk.ac.ncl.openlab.intake24.services.FoodDataEditingService
 import uk.ac.ncl.openlab.intake24.services.IndexFoodDataService
 import uk.ac.ncl.openlab.intake24.services.UserFoodDataService
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex
@@ -60,7 +59,6 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
 
   def configure() = {
     bind(classOf[DataStoreScala]).to(classOf[DataStoreSqlImpl])
-    bind(classOf[FoodDataEditingService]).to(classOf[FoodDataEditingSqlImpl])
     bind(classOf[UserFoodDataService]).to(classOf[UserFoodDataServiceSqlImpl])
     bind(classOf[AdminFoodDataService]).to(classOf[AdminFoodDataServiceSqlImpl])
     bind(classOf[IndexFoodDataService]).to(classOf[IndexFoodDataServiceSqlImpl])

@@ -27,45 +27,45 @@ import play.api.mvc.Controller
 import uk.ac.ncl.openlab.intake24.services.UserFoodDataService
 import upickle.default._
 
-class UserDataService @Inject() (service: UserFoodDataService, deadbolt: DeadboltActions) extends Controller {
+class UserFoodDataController @Inject() (service: UserFoodDataService, deadbolt: DeadboltActions) extends Controller {
 
-  def categoryContents(code: String, locale: String) = deadbolt.Pattern("api.readUserFoodsData", PatternType.EQUALITY) {
+  def categoryContents(code: String, locale: String) = deadbolt.Pattern("api.fooddata.user", PatternType.EQUALITY) {
     Action {
       Ok(write(service.categoryContents(code, locale))).as(ContentTypes.JSON)
     }
   }
 
-  def foodData(code: String, locale: String) = deadbolt.Pattern("api.readUserFoodsData", PatternType.EQUALITY) {
+  def foodData(code: String, locale: String) = deadbolt.Pattern("api.fooddata.user", PatternType.EQUALITY) {
     Action {
       Ok(write(service.foodData(code, locale))).as(ContentTypes.JSON)
     }
   }
 
-  def brandNames(code: String, locale: String) = deadbolt.Pattern("api.readUserFoodsData", PatternType.EQUALITY) {
+  def brandNames(code: String, locale: String) = deadbolt.Pattern("api.fooddata.user", PatternType.EQUALITY) {
     Action {
       Ok(write(service.brandNames(code, locale))).as(ContentTypes.JSON)
     }
   }
 
-  def asServedDef(id: String) = deadbolt.Pattern("api.readUserFoodsData", PatternType.EQUALITY) {
+  def asServedDef(id: String) = deadbolt.Pattern("api.fooddata.user", PatternType.EQUALITY) {
     Action {
       Ok(write(service.asServedDef(id))).as(ContentTypes.JSON)
     }
   }
 
-  def drinkwareDef(id: String) = deadbolt.Pattern("api.readUserFoodsData", PatternType.EQUALITY) {
+  def drinkwareDef(id: String) = deadbolt.Pattern("api.fooddata.user", PatternType.EQUALITY) {
     Action {
       Ok(write(service.drinkwareDef(id))).as(ContentTypes.JSON)
     }
   }
 
-  def guideDef(id: String) = deadbolt.Pattern("api.readUserFoodsData", PatternType.EQUALITY) {
+  def guideDef(id: String) = deadbolt.Pattern("api.fooddata.user", PatternType.EQUALITY) {
     Action {
       Ok(write(service.guideDef(id))).as(ContentTypes.JSON)
     }
   }
 
-  def associatedFoodPrompts(code: String, locale: String) = deadbolt.Pattern("api.readUserFoodsData", PatternType.EQUALITY) {
+  def associatedFoodPrompts(code: String, locale: String) = deadbolt.Pattern("api.fooddata.user", PatternType.EQUALITY) {
     Action {
       Ok(write(service.associatedFoodPrompts(code, locale))).as(ContentTypes.JSON)
     }
