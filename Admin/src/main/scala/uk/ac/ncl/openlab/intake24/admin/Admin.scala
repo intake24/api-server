@@ -40,11 +40,17 @@ import uk.ac.ncl.openlab.viands.dbtool.ui.FoodBrowser
 import uk.ac.ncl.openlab.viands.dbtool.jstree.JsTreeNode
 import uk.ac.ncl.openlab.viands.dbtool.ui.FoodDef
 import upickle.Invalid
+import uk.ac.ncl.openlab.intake24.admin.views.SBAdmin
 
 object Admin extends JSApp {
 
   def main = {
-    window.alert("test")
+    
+    val nav = SBAdmin.navigation
+    
+    document.body.appendChild(nav.render)
+    
+    
 /*
     val client = ApiClient(JsGlobals.viandsApiHost)
 
