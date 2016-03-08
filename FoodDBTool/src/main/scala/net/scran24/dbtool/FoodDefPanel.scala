@@ -82,7 +82,7 @@ class FoodDefPanel(portion: PortionSizeResolver, foods: MutableFoods, foodGroups
 
   codeLabel.setPreferredSize(new Dimension(100, 20))
 
-  val ndnsText = new JTextField(food.localData.nutrientTableCodes("NDNS").toString)
+  val ndnsText = new JTextField(food.localData.nutrientTableCodes.getOrElse("NDNS", -1).toString())
   addChangeListener(ndnsText, () => changesMade())
   val ndnsLabel = new JLabel("NDNS code")
   ndnsLabel.setPreferredSize(new Dimension(100, 20))
@@ -191,10 +191,15 @@ class FoodDefPanel(portion: PortionSizeResolver, foods: MutableFoods, foodGroups
   add(new LineBreak)
   add(changeLabel)
   add(new LineBreak)
+  
+  def nutrientCodeSnapshot: Map[String, String] = ndnsText.getText.toInt match {
+    case x if x < 0 => Map()
+    case y => Map("NDNS" -> y.toString())
+  }
 
   def snapshot = new Food(UUID.randomUUID(), codeText.getText(), descText.getText(), groupCode.getSelectedItem().asInstanceOf[FoodGroup].id, 
       InheritableAttributes(attrPanel.readyMealAttr, attrPanel.sameAsBeforeAttr, attrPanel.reasonableAmountAttr ),
-      FoodLocal(Some(UUID.randomUUID()), Some(descText.getText()), Map("NDNS" -> (ndnsText.getText().toInt.toString)), portionSizePanel.portionSizes.map(_.portionSizeMethod)))
+      FoodLocal(Some(UUID.randomUUID()), Some(descText.getText()), nutrientCodeSnapshot, portionSizePanel.portionSizes.map(_.portionSizeMethod)))
 
   def changesMade() = {
     changed = true

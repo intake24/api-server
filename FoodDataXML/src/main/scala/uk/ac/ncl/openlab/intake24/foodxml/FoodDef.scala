@@ -44,7 +44,7 @@ object FoodDef {
   def toXml(food: Food): Node =
     addPortionSizeMethods(
         addInheritableAttributes(
-          <food code={ food.code } description={ food.englishDescription } ndnsCode={ food.localData.nutrientTableCodes.get("NDNS").getOrElse("-1") } groupCode={ food.groupCode.toString }> </food>, 
+          <food code={ food.code } description={ food.englishDescription } ndnsCode={ food.localData.nutrientTableCodes.getOrElse("NDNS", "-1") } groupCode={ food.groupCode.toString }> </food>, 
           food.attributes),
         food.localData.portionSize)
 
