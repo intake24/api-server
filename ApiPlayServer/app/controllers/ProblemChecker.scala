@@ -136,22 +136,22 @@ class ProblemChecker @Inject() (userData: UserFoodDataService, adminData: AdminF
     }
   }
 
-  def checkFood(code: String, locale: String) = deadbolt.Pattern("api.foods.read", PatternType.EQUALITY) {
+  def checkFood(code: String, locale: String) = deadbolt.Pattern("api.fooddata.admin.read", PatternType.EQUALITY) {
     Action {
       Ok(write(foodProblems(code, locale))).as(ContentTypes.JSON)
     }
   }
 
-  def checkCategory(code: String, locale: String) = deadbolt.Pattern("api.foods.read", PatternType.EQUALITY) {
+  def checkCategory(code: String, locale: String) = deadbolt.Pattern("api.fooddata.admin.read", PatternType.EQUALITY) {
     Action {
 
       Ok(write(categoryProblems(code, locale))).as(ContentTypes.JSON)
     }
   }
 
-  def checkCategoryRecursive(code: String, locale: String) = deadbolt.Pattern("api.foods.read", PatternType.EQUALITY) {
+  def checkCategoryRecursive(code: String, locale: String) = deadbolt.Pattern("api.fooddata.admin.read", PatternType.EQUALITY) {
     Action {
-
+      
       Ok(write(recursiveCategoryProblems(code, locale, maxReturnedProblems))).as(ContentTypes.JSON)
     }
   }

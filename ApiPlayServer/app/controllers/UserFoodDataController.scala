@@ -26,6 +26,7 @@ import play.api.mvc.Action
 import play.api.mvc.Controller
 import uk.ac.ncl.openlab.intake24.services.UserFoodDataService
 import upickle.default._
+import uk.ac.ncl.openlab.intake24.services.FoodDataError
 
 class UserFoodDataController @Inject() (service: UserFoodDataService, deadbolt: DeadboltActions) extends Controller {
 
@@ -37,7 +38,10 @@ class UserFoodDataController @Inject() (service: UserFoodDataService, deadbolt: 
 
   def foodData(code: String, locale: String) = deadbolt.Pattern("api.fooddata.user", PatternType.EQUALITY) {
     Action {
-      Ok(write(service.foodData(code, locale))).as(ContentTypes.JSON)
+      service.foodData(code, locale) match {
+        case Left(_) => NotFound
+        case Right(data) => Ok(write(data)).as(ContentTypes.JSON) 
+      }
     }
   }
 
