@@ -45,7 +45,7 @@ import javax.sql.DataSource
 import uk.ac.ncl.openlab.intake24.datastoresql.SecureUserRecord
 
 case class InitOptions(arguments: Seq[String]) extends ScallopConf(arguments) {
-  version("Intake24 MongoDB to SQL migration tool 16.1-SNAPSHOT")
+  version("Intake24 SQL system database setup tool 16.1-SNAPSHOT")
 
   val pgHost = opt[String](required = true, noshort = true)
   val pgDatabase = opt[String](required = true, noshort = true)

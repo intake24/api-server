@@ -44,6 +44,7 @@ import uk.ac.ncl.openlab.intake24.foodsql.Queries
 import java.util.UUID
 import uk.ac.ncl.openlab.intake24.foodsql.Util
 import org.postgresql.util.PSQLException
+import org.rogach.scallop.ScallopOption
 
 class XmlImporter(implicit val dbConn: Connection) {
 
@@ -90,9 +91,13 @@ class XmlImporter(implicit val dbConn: Connection) {
       }
 
       val foodLocalParams =
-        foods.map(f => Seq[NamedParameter]('food_code -> f.code, 'locale_id -> defaultLocale, 'local_description -> f.localData.localDescription, 'version -> f.localData.version))
+        foods.map(f => Seq[NamedParameter]('food_code -> f.code, 'locale_id -> defaultLocale, 'local_description -> f.localData.localDescription, 'do_not_use -> false, 'version -> f.localData.version))
 
-      BatchSql(Queries.foodsLocalInsert, foodLocalParams).execute()
+      try {
+        BatchSql(Queries.foodsLocalInsert, foodLocalParams).execute()
+      } catch {
+        case e: BatchUpdateException => throw new RuntimeException(e.getMessage, e.getNextException)
+      }
 
       val foodNutritionTableParams =
         foods.flatMap {
@@ -151,7 +156,7 @@ class XmlImporter(implicit val dbConn: Connection) {
       BatchSql(Queries.categoriesInsert, categoryParams).execute()
 
       val localCategoryParams =
-        categories.map(c => Seq[NamedParameter]('category_code -> c.code, 'locale_id -> defaultLocale, 'local_description -> c.description, 'version -> UUID.randomUUID()))
+        categories.map(c => Seq[NamedParameter]('category_code -> c.code, 'locale_id -> defaultLocale, 'local_description -> c.description, 'do_not_use -> false, 'version -> UUID.randomUUID()))
 
       BatchSql(Queries.categoriesLocalInsert, localCategoryParams).execute()
 
@@ -464,7 +469,11 @@ object XmlImport extends App {
   properties.setProperty("user", opts.pgUser())
 
   opts.pgPassword.foreach(pw => properties.setProperty("password", pw))
-  opts.pgUseSsl.foreach(ssl => properties.setProperty("ssl", ssl.toString()))
+
+  opts.pgUseSsl.get match {
+    case Some(true) => properties.setProperty("ssl", "true")
+    case _ => ()
+  }
 
   implicit val dbConn = DriverManager.getConnection(s"jdbc:postgresql://${opts.pgHost()}/${opts.pgDatabase()}", properties)
 

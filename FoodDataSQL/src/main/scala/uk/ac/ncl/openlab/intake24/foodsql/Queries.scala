@@ -27,7 +27,7 @@ object Queries {
   
   val foodsDeleteVersioned = """DELETE FROM foods WHERE code={food_code} AND version={version}::uuid"""
   
-  val foodsLocalInsert = """INSERT INTO foods_local VALUES({food_code}, {locale_id}, {local_description}, {version}::uuid)"""
+  val foodsLocalInsert = """INSERT INTO foods_local VALUES({food_code}, {locale_id}, {local_description}, {do_not_use}, {version}::uuid)"""
   
   val foodsLocalUpdate = """UPDATE foods_local SET version = {new_version}::uuid, local_description = {local_description} WHERE food_code = {food_code} AND locale_id = {locale_id} AND version = {base_version}::uuid"""
   
@@ -55,7 +55,7 @@ object Queries {
  
   val categoriesDelete = """DELETE FROM categories WHERE code={category_code}"""
   
-  val categoriesLocalInsert = """INSERT INTO categories_local VALUES({category_code}, {locale_id}, {local_description}, {version}::uuid)"""
+  val categoriesLocalInsert = """INSERT INTO categories_local VALUES({category_code}, {locale_id}, {local_description}, {do_not_use}, {version}::uuid)"""
   
   val categoriesLocalUpdate = """UPDATE categories_local SET version = {new_version}::uuid, local_description = {local_description} WHERE category_code = {category_code} AND locale_id = {locale_id} AND version = {base_version}::uuid"""
   
