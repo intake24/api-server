@@ -22,23 +22,14 @@ CREATE TABLE locales
 (
   id character varying(16) NOT NULL,
   english_name character varying(64) NOT NULL,
-  english_language_name character varying(64) NOT NULL,
   local_name character varying(64) NOT NULL,
-  local_language_name character varying(64) NOT NULL,
+  respondent_language_id character varying(16) NOT NULL,
+  admin_language_id character varying(16) NOT NULL,
+  country_flag_code character varying(16) NOT NULL,
+  prototype_locale_id character varying(16),
 
-  CONSTRAINT locales_pk PRIMARY KEY(id)
-);
-
-CREATE TABLE locale_prototypes
-(
-  locale_id character varying(16) NOT NULL,
-  prototype_locale_id character varying(16) NOT NULL,
-
-  CONSTRAINT locale_prototypes_pk PRIMARY KEY (locale_id, prototype_locale_id),
-  CONSTRAINT locale_prototypes_only_one_prototype UNIQUE(locale_id),
-  CONSTRAINT locale_prototypes_locale_id_fk FOREIGN KEY (locale_id)
-    REFERENCES locales(id) ON UPDATE CASCADE ON DELETE CASCADE,
-  CONSTRAINT locale_prototypes_prototype_locale_id_fk FOREIGN KEY (prototype_locale_id)
+  CONSTRAINT locales_pk PRIMARY KEY(id),
+  CONSTRAINT locales_prototype_locale_id_fk FOREIGN KEY (prototype_locale_id)
     REFERENCES locales(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
@@ -498,6 +489,5 @@ CREATE TABLE attribute_defaults
 
 INSERT INTO attribute_defaults VALUES (DEFAULT, false, false, 1000);
 
-INSERT INTO locales VALUES('en_GB', 'United Kingdom', 'English (UK)', 'United Kingdom', 'English (UK)');
-INSERT INTO locales VALUES('ar_AE', 'United Arab Emirates', 'Arabic (UAE)', 'الإمارات العربية المتحدة' , 'العربية');
+INSERT INTO locales VALUES('en_GB', 'United Kingdom', 'United Kingdom', 'en_GB', 'en', 'gb', NULL);
 INSERT INTO nutrient_tables VALUES('NDNS', 'UK National Diet and Nutrition Survey');

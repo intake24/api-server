@@ -24,7 +24,7 @@ import anorm.SqlParser._
 
 trait SplitterDataSqlImpl extends SqlDataService {
 
-  case class SplitListRow(first_word: String, words: String)
+  private case class SplitListRow(first_word: String, words: String)
 
   def splitList(locale: String): SplitList = tryWithConnection {
     implicit conn =>

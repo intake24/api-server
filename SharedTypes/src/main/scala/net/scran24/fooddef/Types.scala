@@ -143,3 +143,5 @@ case class FoodGroup (id: Int, englishDescription: String, localDescription: Opt
 }
 
 case class NutrientTable(id: String, description: String)
+
+case class Locale(id: String, englishName: String, localName: String, respondentLanguage: String, adminLanguage: String, flagCode: String, prototypeLocale: Option[String])

@@ -23,7 +23,6 @@ import com.google.inject.Injector
 import com.google.inject.Provides
 import com.google.inject.Singleton
 import com.google.inject.name.Named
-
 import play.api.Configuration
 import play.api.Environment
 import play.api.db.Database
@@ -41,6 +40,8 @@ import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex
 import uk.ac.ncl.openlab.intake24.services.foodindex.english.EnglishStemmerPlingImpl
 import uk.ac.ncl.openlab.intake24.services.foodindex.english.EnglishWordStemmer
 import uk.ac.ncl.openlab.intake24.services.foodindex.english.FoodIndexImpl_en_GB
+import uk.ac.ncl.openlab.intake24.services.LocaleManagementService
+import uk.ac.ncl.openlab.intake24.foodsql.LocaleManagementSqlImpl
 
 class Intake24ServicesModule(env: Environment, config: Configuration) extends AbstractModule {
 
@@ -62,6 +63,7 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     bind(classOf[UserFoodDataService]).to(classOf[UserFoodDataServiceSqlImpl])
     bind(classOf[AdminFoodDataService]).to(classOf[AdminFoodDataServiceSqlImpl])
     bind(classOf[IndexFoodDataService]).to(classOf[IndexFoodDataServiceSqlImpl])
+    bind(classOf[LocaleManagementService]).to(classOf[LocaleManagementSqlImpl])
     bind(classOf[EnglishWordStemmer]).to(classOf[EnglishStemmerPlingImpl])
   }
 }

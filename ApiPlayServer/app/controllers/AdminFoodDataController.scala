@@ -45,90 +45,91 @@ import uk.ac.ncl.openlab.intake24.services.NewFood
 import uk.ac.ncl.openlab.intake24.services.NewCategory
 import net.scran24.fooddef.CategoryBase
 import net.scran24.fooddef.CategoryLocal
+import security.Permissions
 
-class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt: DeadboltActions) extends Controller {
+class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt: DeadboltActions) extends Controller with PickleErrorHandler {
 
   // Read 
 
-  def rootCategories(locale: String) = deadbolt.Pattern("api.fooddata.admin.read", PatternType.EQUALITY) {
+  def rootCategories(locale: String) = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
     Action {
       Ok(write(service.rootCategories(locale))).as(ContentTypes.JSON)
     }
   }
 
-  def uncategorisedFoods(locale: String) = deadbolt.Pattern("api.fooddata.admin.read", PatternType.EQUALITY) {
+  def uncategorisedFoods(locale: String) = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
     Action {
       Ok(write(service.uncategorisedFoods(locale))).as(ContentTypes.JSON)
     }
   }
 
-  def categoryContents(code: String, locale: String) = deadbolt.Pattern("api.fooddata.admin.read", PatternType.EQUALITY) {
+  def categoryContents(code: String, locale: String) = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
     Action {
       Ok(write(service.categoryContents(code, locale))).as(ContentTypes.JSON)
     }
   }
 
-  def foodParentCategories(code: String, locale: String) = deadbolt.Pattern("api.fooddata.admin.read", PatternType.EQUALITY) {
+  def foodParentCategories(code: String, locale: String) = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
     Action {
       Ok(write(service.foodParentCategories(code, locale))).as(ContentTypes.JSON)
     }
   }
 
-  def foodAllCategories(code: String, locale: String) = deadbolt.Pattern("api.fooddata.admin.read", PatternType.EQUALITY) {
+  def foodAllCategories(code: String, locale: String) = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
     Action {
       Ok(write(service.foodAllCategories(code, locale))).as(ContentTypes.JSON)
     }
   }
 
-  def foodDef(code: String, locale: String) = deadbolt.Pattern("api.fooddata.admin.read", PatternType.EQUALITY) {
+  def foodDef(code: String, locale: String) = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
     Action {
       Ok(write(service.foodDef(code, locale))).as(ContentTypes.JSON)
     }
   }
 
-  def categoryDef(code: String, locale: String) = deadbolt.Pattern("api.fooddata.admin.read", PatternType.EQUALITY) {
+  def categoryDef(code: String, locale: String) = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
     Action {
       Ok(write(service.categoryDef(code, locale))).as(ContentTypes.JSON)
     }
   }
 
-  def categoryParentCategories(code: String, locale: String) = deadbolt.Pattern("api.fooddata.admin.read", PatternType.EQUALITY) {
+  def categoryParentCategories(code: String, locale: String) = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
     Action {
       Ok(write(service.categoryParentCategories(code, locale))).as(ContentTypes.JSON)
     }
   }
 
-  def categoryAllCategories(code: String, locale: String) = deadbolt.Pattern("api.fooddata.admin.read", PatternType.EQUALITY) {
+  def categoryAllCategories(code: String, locale: String) = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
     Action {
       Ok(write(service.categoryAllCategories(code, locale))).as(ContentTypes.JSON)
     }
   }
 
-  def allAsServedSets() = deadbolt.Pattern("api.fooddata.admin.read", PatternType.EQUALITY) {
+  def allAsServedSets() = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
     Action {
       Ok(write(service.allAsServedSets())).as(ContentTypes.JSON)
     }
   }
 
-  def allDrinkware = deadbolt.Pattern("api.fooddata.admin.read", PatternType.EQUALITY) {
+  def allDrinkware = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
     Action {
       Ok(write(service.allDrinkware())).as(ContentTypes.JSON)
     }
   }
 
-  def allGuideImages() = deadbolt.Pattern("api.fooddata.admin.read", PatternType.EQUALITY) {
+  def allGuideImages() = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
     Action {
       Ok(write(service.allGuideImages())).as(ContentTypes.JSON)
     }
   }
 
-  def allFoodGroups(locale: String) = deadbolt.Pattern("api.fooddata.admin.read", PatternType.EQUALITY) {
+  def allFoodGroups(locale: String) = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
     Action {
       Ok(write(service.allFoodGroups(locale))).as(ContentTypes.JSON)
     }
   }
 
-  def foodGroup(id: Int, locale: String) = deadbolt.Pattern("api.fooddata.admin.read", PatternType.EQUALITY) {
+  def foodGroup(id: Int, locale: String) = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
     Action {
       service.foodGroup(id, locale) match {
         case Some(group) => Ok(write(group)).as(ContentTypes.JSON)
@@ -137,19 +138,19 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt
     }
   }
 
-  def searchFoods(searchTerm: String, locale: String) = deadbolt.Pattern("api.fooddata.admin.read", PatternType.EQUALITY) {
+  def searchFoods(searchTerm: String, locale: String) = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
     Action {
       Ok(write(service.searchFoods(searchTerm, locale))).as(ContentTypes.JSON)
     }
   }
 
-  def searchCategories(searchTerm: String, locale: String) = deadbolt.Pattern("api.fooddata.admin.read", PatternType.EQUALITY) {
+  def searchCategories(searchTerm: String, locale: String) = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
     Action {
       Ok(write(service.searchCategories(searchTerm, locale))).as(ContentTypes.JSON)
     }
   }
 
-  def nutrientTables() = deadbolt.Pattern("api.fooddata.admin.read", PatternType.EQUALITY) {
+  def nutrientTables() = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
     Action {
       Ok(write(service.nutrientTables())).as(ContentTypes.JSON)
     }
@@ -164,13 +165,7 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt
     case SqlException(message) => InternalServerError(Json.obj("error" -> "sql_exception", "message" -> message))
   }
 
-  def tryWithPickle(block: => Result) =
-    try {
-      block
-    } catch {
-      case Invalid.Data(_, msg) => BadRequest(Json.obj("error" -> "json_exception", "message" -> msg))
-      case Invalid.Json(msg, input) => BadRequest(Json.obj("error" -> "json_exception", "message" -> msg))
-    }
+
 
   def updateFoodBase(foodCode: String) = deadbolt.Pattern("api.fooddata.admin.write", PatternType.EQUALITY) {
     Action(parse.tolerantText) { implicit request =>
