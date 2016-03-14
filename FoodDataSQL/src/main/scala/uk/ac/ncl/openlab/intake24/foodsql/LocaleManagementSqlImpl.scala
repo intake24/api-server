@@ -27,21 +27,21 @@ import anorm._
 
 class LocaleManagementSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends LocaleManagementService with SqlDataService {
 
-  private case class LocaleRow(id: String, english_name: String, local_name: String, respondent_language_code: String, admin_language_code: String, country_flag_code: String, prototype_locale_id: Option[String]) {
-    def mkLocale = Locale(id, english_name, local_name, respondent_language_code, admin_language_code, country_flag_code, prototype_locale_id)
+  private case class LocaleRow(id: String, english_name: String, local_name: String, respondent_language_id: String, admin_language_id: String, country_flag_code: String, prototype_locale_id: Option[String]) {
+    def mkLocale = Locale(id, english_name, local_name, respondent_language_id, admin_language_id, country_flag_code, prototype_locale_id)
   }
 
   def list: Seq[Locale] = tryWithConnection {
     implicit conn =>
 
-      var query = """SELECT id, english_name, local_name, respondent_language_code, admin_language_code, country_flag_code, prototype_locale_id FROM locales ORDER BY english_name"""
+      var query = """SELECT id, english_name, local_name, respondent_language_id, admin_language_id, country_flag_code, prototype_locale_id FROM locales ORDER BY english_name"""
 
       SQL(query).executeQuery().as(Macro.namedParser[LocaleRow].*).map(_.mkLocale)
   }
 
   def get(id: String): Option[Locale] = tryWithConnection {
     implicit conn =>
-      var query = """SELECT id, english_name, local_name, respondent_language_code, admin_language_code, country_flag_code, prototype_locale_id FROM locales WHERE id = {locale_id} ORDER BY english_name"""
+      var query = """SELECT id, english_name, local_name, respondent_language_id, admin_language_id, country_flag_code, prototype_locale_id FROM locales WHERE id = {locale_id} ORDER BY english_name"""
 
       SQL(query).on('locale_id -> id).executeQuery().as(Macro.namedParser[LocaleRow].singleOpt).map(_.mkLocale)
   }

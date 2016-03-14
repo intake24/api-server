@@ -10,6 +10,8 @@ GET     /surveys/:survey            controllers.Surveys.info(survey: String)
 
 GET     /index/lookup/:locale/:term               controllers.FoodIndexController.lookup(locale, term)
 
+GET     /admin/locales							  controllers.LocaleController.list()
+
 GET     /admin/categories/code-available/:code    controllers.AdminFoodDataController.isCategoryCodeAvailable(code)
 GET     /admin/categories/:locale                 controllers.AdminFoodDataController.rootCategories(locale: String)
 
