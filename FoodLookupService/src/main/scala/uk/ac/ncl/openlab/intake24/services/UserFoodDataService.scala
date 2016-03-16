@@ -38,6 +38,7 @@ import net.scran24.fooddef.AsServedHeader
 import net.scran24.fooddef.NutrientTable
 import net.scran24.fooddef.UserCategoryHeader
 import net.scran24.fooddef.UserCategoryContents
+import net.scran24.fooddef.FoodDataSources
 
 trait UserFoodDataService {
     
@@ -45,8 +46,8 @@ trait UserFoodDataService {
 
   def categoryContents(code: String, locale: String): Either[CodeError, UserCategoryContents]
 
-  def foodData(code: String, locale: String): Either[FoodDataError, FoodData]
-   
+  def foodData(code: String, locale: String): Either[FoodDataError, (FoodData, FoodDataSources)]
+     
   def asServedDef(id: String): Either[ResourceError, AsServedSet]
   
   def guideDef(id: String): Either[ResourceError, GuideImage]

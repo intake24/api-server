@@ -32,8 +32,12 @@ import java.sql.Connection
 import anorm.SqlParser
 import uk.ac.ncl.openlab.intake24.services.FoodDataError
 import org.slf4j.LoggerFactory
+import net.scran24.fooddef.FoodDataSources
+import net.scran24.fooddef.DataSource
 
 trait FoodDataSqlImpl extends SqlDataService {
+  
+  val fallbackLocale = "en_GB"
 
   private case class PsmResultRow(id: Long, method: String, description: String, image_url: String, use_for_recipes: Boolean, param_name: Option[String], param_value: Option[String])
 
@@ -77,20 +81,20 @@ trait FoodDataSqlImpl extends SqlDataService {
         PortionSizeMethod(head.method, head.description, head.image_url, head.use_for_recipes, params)
     }
 
-  private def mkRecursivePortionSizeMethods(rows: Seq[RecursivePsmResultRow]) =
+  private def mkRecursivePortionSizeMethods(rows: Seq[RecursivePsmResultRow]): (Seq[PortionSizeMethod], String) =
     if (rows.isEmpty)
-      Seq()
+      (Seq(), "")
     else {
       val firstCategoryCode = rows.head.category_code
-      mkPortionSizeMethods(rows.takeWhile(_.category_code == firstCategoryCode).map(r => PsmResultRow(r.id, r.method, r.description, r.image_url, r.use_for_recipes, r.param_name, r.param_value)))
+      (mkPortionSizeMethods(rows.takeWhile(_.category_code == firstCategoryCode).map(r => PsmResultRow(r.id, r.method, r.description, r.image_url, r.use_for_recipes, r.param_name, r.param_value))), firstCategoryCode)
     }
 
-  private def resolveLocalPortionSizeMethods(code: String, locale: String)(implicit conn: Connection): Seq[PortionSizeMethod] = {
+  private def resolveLocalPortionSizeMethods(code: String, locale: String)(implicit conn: Connection): (Seq[PortionSizeMethod], String) = {
     val psmResults =
       SQL(foodPortionSizeMethodsQuery).on('food_code -> code, 'locale_id -> locale).executeQuery().as(psmResultRowParser.*)
 
     if (!psmResults.isEmpty)
-      mkPortionSizeMethods(psmResults)
+      (mkPortionSizeMethods(psmResults), "food data")
     else {
       // This probably should honour restricted categories list, but it gets messy...
       val inheritedPortionSizesQuery =
@@ -110,7 +114,9 @@ trait FoodDataSqlImpl extends SqlDataService {
                |WHERE categories_portion_size_methods.locale_id = {locale_id}              
                |ORDER BY level, id, param_id""".stripMargin
 
-      mkRecursivePortionSizeMethods(SQL(inheritedPortionSizesQuery).on('food_code -> code, 'locale_id -> locale).executeQuery().as(recursivePsmResultRowParser.*))
+      val (methods, category) = mkRecursivePortionSizeMethods(SQL(inheritedPortionSizesQuery).on('food_code -> code, 'locale_id -> locale).executeQuery().as(recursivePsmResultRowParser.*))
+
+      (methods, "inherited from " + category)
     }
   }
 
@@ -138,6 +144,8 @@ trait FoodDataSqlImpl extends SqlDataService {
         case NutrientTableRow(id, code) => (id -> code)
       }.toMap
   }
+  
+  private def modifyPsmSource(psm: (Seq[PortionSizeMethod], String), f: String => String) = (psm._1, f(psm._2)) 
 
   // Get food data with resolved attribute/portion size method inheritance
   //
@@ -150,23 +158,22 @@ trait FoodDataSqlImpl extends SqlDataService {
   //    in the prototype locale
   //
   // Category restriction list is currently ignored  
-  def foodData(code: String, locale: String): Either[FoodDataError, FoodData] = tryWithConnection {
+  def foodData(code: String, locale: String): Either[FoodDataError, (FoodData, FoodDataSources)] = tryWithConnection {
     implicit conn =>
 
       val prototypeLocale = SQL("""SELECT prototype_locale_id FROM locales WHERE id = {locale_id}""").on('locale_id -> locale).executeQuery().as(SqlParser.str("prototype_locale_id").?.single)
-      
-      val portionSizeMethods = {
+
+      val (portionSizeMethods, portionSizeMethodsSource) = {
         val localPsm = resolveLocalPortionSizeMethods(code, locale)
 
-        if (localPsm.isEmpty) {
-          prototypeLocale match {
-            case Some(prototypeLocale) => {
-              resolveLocalPortionSizeMethods(code, prototypeLocale)
-            }
-            case None => Seq()
+        if (localPsm._1.isEmpty) {
+          prototypeLocale.map(resolveLocalPortionSizeMethods(code, _)) match {
+            case Some(protoPsm) if protoPsm._1.nonEmpty => modifyPsmSource(protoPsm, source => s"$source, prototype locale ($prototypeLocale)") 
+            case Some(protoPsm) if protoPsm._1.isEmpty => modifyPsmSource(resolveLocalPortionSizeMethods(code, fallbackLocale), source => s"$source, fallback locale ($fallbackLocale)")
+            case None => modifyPsmSource(resolveLocalPortionSizeMethods(code, fallbackLocale), source => s"$source, fallback locale ($fallbackLocale)")
           }
         } else
-          localPsm
+          modifyPsmSource(localPsm, source => s"$source, current locale ($locale)")
       }
 
       val attributeRows = localAttributeRows(code, locale) ++ (prototypeLocale match {
