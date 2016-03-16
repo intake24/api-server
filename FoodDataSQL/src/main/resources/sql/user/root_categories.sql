@@ -4,7 +4,7 @@ SELECT * FROM (
 	LEFT JOIN categories_local as t1
 		ON categories.code = t1.category_code AND t1.locale_id = {locale_id}
 	LEFT JOIN categories_local as t2
-		ON categories.code = t2.category_code AND t2.locale_id IN (SELECT prototype_locale_id FROM locale_prototypes WHERE locale_id = {locale_id})
+		ON categories.code = t2.category_code AND t2.locale_id IN (SELECT prototype_locale_id FROM locales WHERE id = {locale_id})
 	LEFT JOIN categories_restrictions
 		ON categories.code = categories_restrictions.category_code
 	LEFT JOIN categories_categories

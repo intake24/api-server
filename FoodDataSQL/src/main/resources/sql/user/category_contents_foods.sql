@@ -3,7 +3,7 @@ SELECT foods_categories.food_code as food_code, COALESCE(fl1.local_description, 
 	LEFT JOIN foods_local as fl1
 		ON fl1.food_code = foods_categories.food_code AND fl1.locale_id = {locale_id}
 	LEFT JOIN foods_local as fl2
-		ON fl2.food_code = foods_categories.food_code AND fl2.locale_id IN (SELECT prototype_locale_id FROM locale_prototypes WHERE locale_id = {locale_id})
+		ON fl2.food_code = foods_categories.food_code AND fl2.locale_id IN (SELECT prototype_locale_id FROM locales WHERE id = {locale_id})
 	LEFT JOIN foods_restrictions
 		ON foods_restrictions.food_code = foods_categories.food_code
 WHERE

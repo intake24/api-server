@@ -3,7 +3,7 @@ SELECT categories_categories.subcategory_code as subcategory_code, COALESCE(cl1.
 	LEFT JOIN categories_local as cl1
 		ON cl1.category_code = categories_categories.subcategory_code AND cl1.locale_id = {locale_id}
 	LEFT JOIN categories_local as cl2
-		ON cl2.category_code = categories_categories.subcategory_code AND cl2.locale_id IN (SELECT prototype_locale_id FROM locale_prototypes WHERE locale_id = {locale_id})
+		ON cl2.category_code = categories_categories.subcategory_code AND cl2.locale_id IN (SELECT prototype_locale_id FROM locales WHERE id = {locale_id})
 	LEFT JOIN categories_restrictions
 		ON categories_restrictions.category_code = categories_categories.subcategory_code
 WHERE

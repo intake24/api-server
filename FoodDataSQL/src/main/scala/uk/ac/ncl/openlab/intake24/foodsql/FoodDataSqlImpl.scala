@@ -31,6 +31,7 @@ import net.scran24.fooddef.PortionSizeMethod
 import java.sql.Connection
 import anorm.SqlParser
 import uk.ac.ncl.openlab.intake24.services.FoodDataError
+import org.slf4j.LoggerFactory
 
 trait FoodDataSqlImpl extends SqlDataService {
 
@@ -152,8 +153,8 @@ trait FoodDataSqlImpl extends SqlDataService {
   def foodData(code: String, locale: String): Either[FoodDataError, FoodData] = tryWithConnection {
     implicit conn =>
 
-      val prototypeLocale = SQL("""SELECT prototype_locale_id FROM locale_prototypes WHERE locale_id = {locale_id}""").on('locale_id -> locale).as(SqlParser.str("prototype_locale_id").singleOpt)
-
+      val prototypeLocale = SQL("""SELECT prototype_locale_id FROM locales WHERE id = {locale_id}""").on('locale_id -> locale).executeQuery().as(SqlParser.str("prototype_locale_id").?.single)
+      
       val portionSizeMethods = {
         val localPsm = resolveLocalPortionSizeMethods(code, locale)
 
@@ -197,7 +198,7 @@ trait FoodDataSqlImpl extends SqlDataService {
         """|SELECT code, COALESCE(t1.local_description, t2.local_description) AS local_description, food_group_id
            |FROM foods
            |  LEFT JOIN foods_local as t1 ON foods.code = t1.food_code AND t1.locale_id = {locale_id}
-           |  LEFT JOIN foods_local as t2 ON foods.code = t2.food_code AND t2.locale_id IN (SELECT prototype_locale_id FROM locale_prototypes WHERE locale_id = {locale_id})
+           |  LEFT JOIN foods_local as t2 ON foods.code = t2.food_code AND t2.locale_id IN (SELECT prototype_locale_id FROM locales WHERE id = {locale_id})
            |WHERE code = {food_code}""".stripMargin
 
       val foodRow = SQL(foodQuery).on('food_code -> code, 'locale_id -> locale).executeQuery().as(foodRowParser.singleOpt)

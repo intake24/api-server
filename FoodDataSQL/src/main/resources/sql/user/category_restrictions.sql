@@ -5,7 +5,7 @@ SELECT COUNT(*)
 	LEFT JOIN categories_local as cl1
 		ON categories.code = cl1.category_code AND cl1.locale_id = {locale_id}
 	LEFT JOIN categories_local as cl2
-		ON categories.code = cl2.category_code AND cl2.locale_id IN (SELECT prototype_locale_id FROM locale_prototypes WHERE locale_id = {locale_id})
+		ON categories.code = cl2.category_code AND cl2.locale_id IN (SELECT prototype_locale_id FROM locales WHERE id = {locale_id})
 WHERE
 	categories.code = {category_code}
 	AND (categories_restrictions.locale_id = {locale_id} OR categories_restrictions.locale_id IS NULL)
