@@ -101,7 +101,7 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends UserFoo
       }
     }
 
-    Right(FoodData(f.code, f.englishDescription, f.localData.nutrientTableCodes, f.groupCode, portionSizeMethods, readyMealOption, sameAsBeforeOption, reasonableAmount))
+    Right((FoodData(f.code, f.englishDescription, f.localData.nutrientTableCodes, f.groupCode, portionSizeMethods, readyMealOption, sameAsBeforeOption, reasonableAmount), null))
   }
 
   def asServedDef(id: String) = data.asServedSets.get(id) match {
