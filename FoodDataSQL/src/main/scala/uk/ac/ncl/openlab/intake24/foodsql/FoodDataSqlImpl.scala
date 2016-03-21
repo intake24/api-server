@@ -32,28 +32,28 @@ import java.sql.Connection
 import anorm.SqlParser
 import uk.ac.ncl.openlab.intake24.services.FoodDataError
 import org.slf4j.LoggerFactory
-import net.scran24.fooddef.FoodDataSources
-import net.scran24.fooddef.DataSource
+import uk.ac.ncl.openlab.intake24.services.FoodDataSources
+import uk.ac.ncl.openlab.intake24.services.SourceRecord
+import uk.ac.ncl.openlab.intake24.services.SourceLocale
+import uk.ac.ncl.openlab.intake24.services.InheritableAttributeSource
+import uk.ac.ncl.openlab.intake24.services.InheritableAttributeSources
+import uk.ac.ncl.openlab.intake24.services.FoodDataSources
 
 trait FoodDataSqlImpl extends SqlDataService {
-  
+
   val fallbackLocale = "en_GB"
 
   private case class PsmResultRow(id: Long, method: String, description: String, image_url: String, use_for_recipes: Boolean, param_name: Option[String], param_value: Option[String])
 
   private case class RecursivePsmResultRow(id: Long, category_code: String, method: String, description: String, image_url: String, use_for_recipes: Boolean, param_name: Option[String], param_value: Option[String])
 
-  private case class RecursiveAttributesRow(same_as_before_option: Option[Boolean], ready_meal_option: Option[Boolean], reasonable_amount: Option[Int])
-
-  private case class FoodRow(code: String, local_description: Option[String], food_group_id: Long)
+  private case class FoodRow(code: String, local_description: Option[String], prototype_description: Option[String], food_group_id: Long)
 
   private case class NutrientTableRow(nutrient_table_id: String, nutrient_table_code: String)
 
   private val psmResultRowParser = Macro.namedParser[PsmResultRow]
 
   private val recursivePsmResultRowParser = Macro.namedParser[RecursivePsmResultRow]
-
-  private val recursiveAttributesRowParser = Macro.namedParser[RecursiveAttributesRow]
 
   private val foodRowParser = Macro.namedParser[FoodRow]
 
@@ -89,12 +89,12 @@ trait FoodDataSqlImpl extends SqlDataService {
       (mkPortionSizeMethods(rows.takeWhile(_.category_code == firstCategoryCode).map(r => PsmResultRow(r.id, r.method, r.description, r.image_url, r.use_for_recipes, r.param_name, r.param_value))), firstCategoryCode)
     }
 
-  private def resolveLocalPortionSizeMethods(code: String, locale: String)(implicit conn: Connection): (Seq[PortionSizeMethod], String) = {
+  private def resolveLocalPortionSizeMethods(code: String, locale: String)(implicit conn: Connection): (Seq[PortionSizeMethod], SourceRecord) = {
     val psmResults =
       SQL(foodPortionSizeMethodsQuery).on('food_code -> code, 'locale_id -> locale).executeQuery().as(psmResultRowParser.*)
 
     if (!psmResults.isEmpty)
-      (mkPortionSizeMethods(psmResults), "food data")
+      (mkPortionSizeMethods(psmResults), SourceRecord.FoodRecord(code))
     else {
       // This probably should honour restricted categories list, but it gets messy...
       val inheritedPortionSizesQuery =
@@ -116,25 +116,33 @@ trait FoodDataSqlImpl extends SqlDataService {
 
       val (methods, category) = mkRecursivePortionSizeMethods(SQL(inheritedPortionSizesQuery).on('food_code -> code, 'locale_id -> locale).executeQuery().as(recursivePsmResultRowParser.*))
 
-      (methods, "inherited from " + category)
+      (methods, SourceRecord.CategoryRecord(category))
     }
   }
 
-  private def localAttributeRows(code: String, locale: String)(implicit conn: Connection) = {
+  private case class DefaultAttributesRow(same_as_before_option: Boolean, ready_meal_option: Boolean, reasonable_amount: Int)
+
+  private def defaultAttributesRow(implicit conn: Connection) = {
+    SQL("""""").executeQuery().as(Macro.namedParser[DefaultAttributesRow].single)
+  }
+
+  private case class RecursiveAttributesRow(same_as_before_option: Option[Boolean], ready_meal_option: Option[Boolean], reasonable_amount: Option[Int], is_food_record: Boolean, code: Option[String])
+
+  private def attributeRows(code: String)(implicit conn: Connection) = {
     val attributesQuery =
       """|WITH RECURSIVE t(code, level) AS (
            |(SELECT category_code as code, 0 as level FROM foods_categories WHERE food_code = {food_code} ORDER BY code)
            |   UNION
            |(SELECT category_code as code, level + 1 as level FROM t JOIN categories_categories ON subcategory_code = code ORDER BY code)
            |)
-           |(SELECT same_as_before_option, ready_meal_option, reasonable_amount FROM foods_attributes WHERE food_code = {food_code})
+           |(SELECT same_as_before_option, ready_meal_option, reasonable_amount, true as is_food_record, food_code as code FROM foods_attributes WHERE food_code = {food_code})
            |UNION ALL
-           |(SELECT same_as_before_option, ready_meal_option, reasonable_amount FROM categories_attributes JOIN t ON code = category_code ORDER BY level)
+           |(SELECT same_as_before_option, ready_meal_option, reasonable_amount, false as is_food_record, category_code as code FROM categories_attributes JOIN t ON code = category_code ORDER BY level)
            |UNION ALL
-           |(SELECT same_as_before_option, ready_meal_option, reasonable_amount FROM attribute_defaults LIMIT 1)
+           |(SELECT same_as_before_option, ready_meal_option, reasonable_amount, false as is_food_record, NULL as code FROM attribute_defaults LIMIT 1)
            """.stripMargin
 
-    SQL(attributesQuery).on('food_code -> code).executeQuery().as(recursiveAttributesRowParser.+)
+    SQL(attributesQuery).on('food_code -> code).executeQuery().as(Macro.namedParser[RecursiveAttributesRow].+)
   }
 
   private def localNutrientTableCodes(code: String, locale: String)(implicit conn: Connection) = {
@@ -144,8 +152,25 @@ trait FoodDataSqlImpl extends SqlDataService {
         case NutrientTableRow(id, code) => (id -> code)
       }.toMap
   }
-  
-  private def modifyPsmSource(psm: (Seq[PortionSizeMethod], String), f: String => String) = (psm._1, f(psm._2)) 
+
+  private case class InheritableAttributesFinal(sameAsBeforeOption: Boolean, readyMealOption: Boolean, reasonableAmount: Int, sources: InheritableAttributeSources)
+
+  private case class InheritableAttributeTemp(
+      sameAsBeforeOption: Option[(Boolean, InheritableAttributeSource)],
+      readyMealOption: Option[(Boolean, InheritableAttributeSource)],
+      reasonableAmount: Option[(Int, InheritableAttributeSource)]) {
+    def finalise = InheritableAttributesFinal(sameAsBeforeOption.get._1, readyMealOption.get._1, reasonableAmount.get._1,
+      InheritableAttributeSources(sameAsBeforeOption.get._2, readyMealOption.get._2, reasonableAmount.get._2))
+  }
+
+  def inheritableAttributeSource(row: RecursiveAttributesRow): InheritableAttributeSource = row.code match {
+    case Some(code) =>
+      if (row.is_food_record)
+        InheritableAttributeSource.FoodRecord(code)
+      else
+        InheritableAttributeSource.CategoryRecord(code)
+    case None => InheritableAttributeSource.Default
+  }
 
   // Get food data with resolved attribute/portion size method inheritance
   //
@@ -164,45 +189,54 @@ trait FoodDataSqlImpl extends SqlDataService {
       val prototypeLocale = SQL("""SELECT prototype_locale_id FROM locales WHERE id = {locale_id}""").on('locale_id -> locale).executeQuery().as(SqlParser.str("prototype_locale_id").?.single)
 
       val (portionSizeMethods, portionSizeMethodsSource) = {
-        val localPsm = resolveLocalPortionSizeMethods(code, locale)
+        val (localPsm, localPsmSrcRec) = resolveLocalPortionSizeMethods(code, locale)
 
-        if (localPsm._1.isEmpty) {
+        if (localPsm.isEmpty) {
           prototypeLocale.map(resolveLocalPortionSizeMethods(code, _)) match {
-            case Some(protoPsm) if protoPsm._1.nonEmpty => modifyPsmSource(protoPsm, source => s"$source, prototype locale ($prototypeLocale)") 
-            case Some(protoPsm) if protoPsm._1.isEmpty => modifyPsmSource(resolveLocalPortionSizeMethods(code, fallbackLocale), source => s"$source, fallback locale ($fallbackLocale)")
-            case None => modifyPsmSource(resolveLocalPortionSizeMethods(code, fallbackLocale), source => s"$source, fallback locale ($fallbackLocale)")
+            case Some((protoPsm, protoPsmSrcRec)) if protoPsm.nonEmpty => (protoPsm, (SourceLocale.Prototype(prototypeLocale.get), protoPsmSrcRec))
+            case _ => {
+              val (fallbackPsm, fallbackPsmSrcRec) = resolveLocalPortionSizeMethods(code, fallbackLocale)
+              (fallbackPsm, (SourceLocale.Fallback(fallbackLocale), fallbackPsmSrcRec))
+            }
           }
         } else
-          modifyPsmSource(localPsm, source => s"$source, current locale ($locale)")
+          (localPsm, (SourceLocale.Current(locale), localPsmSrcRec))
       }
 
-      val attributeRows = localAttributeRows(code, locale) ++ (prototypeLocale match {
-        case Some(prototypeLocale) => localAttributeRows(code, prototypeLocale)
-        case None => Seq()
-      })
+      val attrRows = attributeRows(code)
 
-      val attributes = attributeRows.tail.foldLeft(attributeRows.head) {
+      val attrFirstRowSrc = inheritableAttributeSource(attrRows.head)
+
+      val attrTemp = InheritableAttributeTemp(
+        attrRows.head.same_as_before_option.map((_, attrFirstRowSrc)),
+        attrRows.head.ready_meal_option.map((_, attrFirstRowSrc)),
+        attrRows.head.reasonable_amount.map((_, attrFirstRowSrc)))
+
+      val attributes = attrRows.tail.foldLeft(attrTemp) {
         case (result, row) => {
-          RecursiveAttributesRow(
-            result.same_as_before_option.orElse(row.same_as_before_option),
-            result.ready_meal_option.orElse(row.ready_meal_option),
-            result.reasonable_amount.orElse(row.reasonable_amount))
-        }
-      }
 
-      val nutrientTableCodes = {
+          val rowSrc = inheritableAttributeSource(row)
+
+          InheritableAttributeTemp(
+            result.sameAsBeforeOption.orElse(row.same_as_before_option.map((_, rowSrc))),
+            result.readyMealOption.orElse(row.ready_meal_option.map((_, rowSrc))),
+            result.reasonableAmount.orElse(row.reasonable_amount.map((_, rowSrc))))
+        }
+      }.finalise
+
+      val (nutrientTableCodes, nutrientTableCodesSrc) = {
         val localCodes = localNutrientTableCodes(code, locale)
 
-        if (localCodes.isEmpty) prototypeLocale match {
-          case Some(prototypeLocale) => localNutrientTableCodes(code, prototypeLocale)
-          case None => Map[String, String]()
+        if (localCodes.isEmpty) prototypeLocale.map(pl => (pl, localNutrientTableCodes(code, pl))) match {
+          case Some((ploc, prototypeCodes)) if prototypeCodes.nonEmpty => (prototypeCodes, SourceLocale.Prototype(ploc))
+          case _ => (localNutrientTableCodes(code, fallbackLocale), SourceLocale.Fallback(fallbackLocale))
         }
         else
-          localCodes
+          (localCodes, SourceLocale.Current(locale))
       }
 
       val foodQuery =
-        """|SELECT code, COALESCE(t1.local_description, t2.local_description) AS local_description, food_group_id
+        """|SELECT code, t1.local_description as local_description, t2.local_description AS prototype_description, food_group_id
            |FROM foods
            |  LEFT JOIN foods_local as t1 ON foods.code = t1.food_code AND t1.locale_id = {locale_id}
            |  LEFT JOIN foods_local as t2 ON foods.code = t2.food_code AND t2.locale_id IN (SELECT prototype_locale_id FROM locales WHERE id = {locale_id})
@@ -211,14 +245,22 @@ trait FoodDataSqlImpl extends SqlDataService {
       val foodRow = SQL(foodQuery).on('food_code -> code, 'locale_id -> locale).executeQuery().as(foodRowParser.singleOpt)
 
       foodRow match {
-        case Some(row) => row.local_description match {
-          case Some(description) => Right(FoodData(row.code, description, nutrientTableCodes, row.food_group_id.toInt, portionSizeMethods,
-            attributes.ready_meal_option.get, attributes.same_as_before_option.get, attributes.reasonable_amount.get))
-          case None => Left(FoodDataError.NoLocalDescription)
-
+        case Some(row) => (row.local_description, row.prototype_description) match {
+          case (Some(localDescription), _) => {
+            val data = FoodData(row.code, localDescription, nutrientTableCodes, row.food_group_id.toInt, portionSizeMethods,
+              attributes.readyMealOption, attributes.sameAsBeforeOption, attributes.reasonableAmount)
+            val sources = FoodDataSources(SourceLocale.Current(locale), nutrientTableCodesSrc, portionSizeMethodsSource, attributes.sources)
+            Right((data, sources))
+          }
+          case (None, Some(prototypeDescription)) => {
+            val data = FoodData(row.code, prototypeDescription, nutrientTableCodes, row.food_group_id.toInt, portionSizeMethods,
+              attributes.readyMealOption, attributes.sameAsBeforeOption, attributes.reasonableAmount)
+            val sources = FoodDataSources(SourceLocale.Prototype(locale), nutrientTableCodesSrc, portionSizeMethodsSource, attributes.sources)
+            Right((data, sources))
+          }
+          case (None, None) => Left(FoodDataError.NoLocalDescription)
         }
         case None => Left(FoodDataError.UndefinedCode)
       }
-
   }
 }

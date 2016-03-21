@@ -49,7 +49,7 @@ class ProblemChecker @Inject() (userData: UserFoodDataService, adminData: AdminF
     val problems = Buffer[String]()
 
     foodData match {
-      case Right(foodData) => {
+      case Right((foodData, _)) => {
         if (foodData.nutrientTableCodes.isEmpty)
           problems += NutrientCodeMissing
 

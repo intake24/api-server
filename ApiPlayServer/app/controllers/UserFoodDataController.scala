@@ -40,7 +40,16 @@ class UserFoodDataController @Inject() (service: UserFoodDataService, deadbolt: 
     Action {
       service.foodData(code, locale) match {
         case Left(_) => NotFound
-        case Right(data) => Ok(write(data)).as(ContentTypes.JSON) 
+        case Right((data,_)) => Ok(write(data)).as(ContentTypes.JSON) 
+      }
+    }
+  }
+  
+  def foodDataSources(code: String, locale: String) = deadbolt.Pattern("api.fooddata.user", PatternType.EQUALITY) {
+    Action {
+      service.foodData(code, locale) match {
+        case Left(_) => NotFound
+        case Right((data,_)) => Ok(write(data)).as(ContentTypes.JSON) 
       }
     }
   }
