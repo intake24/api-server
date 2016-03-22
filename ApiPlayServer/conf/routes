@@ -59,6 +59,7 @@ GET     /user/portion-size/guide-image/:id   controllers.UserFoodDataController.
 GET     /user/portion-size/drinkware/:id     controllers.UserFoodDataController.drinkwareDef(id: String)
 
 GET     /user/foods/:locale/:code                    controllers.UserFoodDataController.foodData(code: String, locale: String)
+GET     /user/foods/:locale/:code/with-sources       controllers.UserFoodDataController.foodDataWithSources(code: String, locale: String)
 GET     /user/foods/:locale/:code/brand-names        controllers.UserFoodDataController.brandNames(code: String, locale: String)
 GET     /user/foods/:locale/:code/associated-foods   controllers.UserFoodDataController.associatedFoodPrompts(code: String, locale: String)
 

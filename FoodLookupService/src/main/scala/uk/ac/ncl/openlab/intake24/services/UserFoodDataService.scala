@@ -67,21 +67,21 @@ case class InheritableAttributeSources(sameAsBeforeOptionSource: InheritableAttr
 case class FoodDataSources(localDescriptionSource: SourceLocale, nutrientTablesSource: SourceLocale, portionSizeSource: (SourceLocale, SourceRecord), inheritableAttributesSources: InheritableAttributeSources)
 
 trait UserFoodDataService {
-    
+
   def rootCategories(locale: String): Seq[UserCategoryHeader]
 
   def categoryContents(code: String, locale: String): Either[CodeError, UserCategoryContents]
 
   def foodData(code: String, locale: String): Either[FoodDataError, (FoodData, FoodDataSources)]
-     
+
   def asServedDef(id: String): Either[ResourceError, AsServedSet]
-  
+
   def guideDef(id: String): Either[ResourceError, GuideImage]
-  
+
   def drinkwareDef(id: String): Either[ResourceError, DrinkwareSet]
 
   def associatedFoodPrompts(foodCode: String, locale: String): Either[CodeError, Seq[Prompt]]
 
   def brandNames(foodCode: String, locale: String): Either[CodeError, Seq[String]]
-  
+
 }

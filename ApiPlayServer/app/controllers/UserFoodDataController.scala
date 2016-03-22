@@ -27,9 +27,41 @@ import play.api.mvc.Controller
 import uk.ac.ncl.openlab.intake24.services.UserFoodDataService
 import upickle.default._
 import uk.ac.ncl.openlab.intake24.services.FoodDataError
+import upickle.Js
+import uk.ac.ncl.openlab.intake24.services.FoodDataSources
+import uk.ac.ncl.openlab.intake24.services.SourceLocale
+import uk.ac.ncl.openlab.intake24.services.SourceRecord
+import uk.ac.ncl.openlab.intake24.services.InheritableAttributeSource
+
+object FoodSourceWriters {
+  implicit val sourceLocaleWriter = upickle.default.Writer[SourceLocale] {
+    case t => t match {
+      case SourceLocale.Current(locale) => Js.Obj(("source", Js.Str("current")), ("id", Js.Str(locale)))
+      case SourceLocale.Prototype(locale) => Js.Obj(("source", Js.Str("prototype")), ("id", Js.Str(locale)))
+      case SourceLocale.Fallback(locale) => Js.Obj(("source", Js.Str("fallback")), ("id", Js.Str(locale)))
+    }
+  }
+
+  implicit val sourceRecordWriter = upickle.default.Writer[SourceRecord] {
+    case t => t match {
+      case SourceRecord.CategoryRecord(code) => Js.Obj(("source", Js.Str("category")), ("code", Js.Str(code)))
+      case SourceRecord.FoodRecord(code) => Js.Obj(("source", Js.Str("food")), ("code", Js.Str(code)))
+    }
+  }
+
+  implicit val inheritableAttributeSourceWriter = upickle.default.Writer[InheritableAttributeSource] {
+    case t => t match {
+      case InheritableAttributeSource.FoodRecord(code: String) => Js.Obj(("source", Js.Str("food")), ("code", Js.Str(code)))
+      case InheritableAttributeSource.CategoryRecord(code: String) => Js.Obj(("source", Js.Str("category")), ("code", Js.Str(code)))
+      case InheritableAttributeSource.Default => Js.Obj(("source", Js.Str("default")))
+    }
+  }
+}
 
 class UserFoodDataController @Inject() (service: UserFoodDataService, deadbolt: DeadboltActions) extends Controller {
 
+  import FoodSourceWriters._
+  
   def categoryContents(code: String, locale: String) = deadbolt.Pattern("api.fooddata.user", PatternType.EQUALITY) {
     Action {
       Ok(write(service.categoryContents(code, locale))).as(ContentTypes.JSON)
@@ -40,16 +72,16 @@ class UserFoodDataController @Inject() (service: UserFoodDataService, deadbolt: 
     Action {
       service.foodData(code, locale) match {
         case Left(_) => NotFound
-        case Right((data,_)) => Ok(write(data)).as(ContentTypes.JSON) 
+        case Right((data, _)) => Ok(write(data)).as(ContentTypes.JSON)
       }
     }
   }
-  
-  def foodDataSources(code: String, locale: String) = deadbolt.Pattern("api.fooddata.user", PatternType.EQUALITY) {
+
+  def foodDataWithSources(code: String, locale: String) = deadbolt.Pattern("api.fooddata.user", PatternType.EQUALITY) {
     Action {
       service.foodData(code, locale) match {
         case Left(_) => NotFound
-        case Right((data,_)) => Ok(write(data)).as(ContentTypes.JSON) 
+        case Right(data) => Ok(write(data)).as(ContentTypes.JSON)
       }
     }
   }
