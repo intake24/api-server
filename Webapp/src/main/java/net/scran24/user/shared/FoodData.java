@@ -1,5 +1,5 @@
 /*
-This file is part of Intake24.
+This file is part of Intake24
 
 Copyright 2015, 2016 Newcastle University.
 
@@ -32,14 +32,11 @@ import java.util.List;
 
 import net.scran24.user.shared.lookup.PortionSizeMethod;
 
-import org.workcraft.gwt.shared.client.Option;
-
 import com.google.gwt.user.client.rpc.IsSerializable;
 
 public class FoodData implements IsSerializable {
 	public String code;
-	public String englishDescription;
-	public Option<String> localDescription;	
+	public String localDescription;
 	public boolean askIfReadyMeal;
 	public boolean sameAsBeforeOption;
 	public double caloriesPer100g;
@@ -51,11 +48,10 @@ public class FoodData implements IsSerializable {
 	@Deprecated
 	public FoodData() { }
 	
-	public FoodData(String code, boolean askIfReadyMeal, boolean sameAsBeforeOption, double caloriesPer100g, String englishDescription, Option<String> localDescription, List<PortionSizeMethod> portionSizeMethods, List<FoodPrompt> prompts, List<String> brands, List<String> categories) {
+	public FoodData(String code, boolean askIfReadyMeal, boolean sameAsBeforeOption, double caloriesPer100g, String localDescription, List<PortionSizeMethod> portionSizeMethods, List<FoodPrompt> prompts, List<String> brands, List<String> categories) {
 		this.askIfReadyMeal = askIfReadyMeal;
 		this.sameAsBeforeOption = sameAsBeforeOption;
 		this.caloriesPer100g = caloriesPer100g;
-		this.englishDescription = englishDescription;
 		this.localDescription = localDescription;
 		this.code = code;
 		this.portionSizeMethods = portionSizeMethods;
@@ -65,7 +61,7 @@ public class FoodData implements IsSerializable {
 	}
 	
 	public FoodData withPortionSizeMethods (List<PortionSizeMethod> portionSizeMethods) {
-		return new FoodData (code, askIfReadyMeal, sameAsBeforeOption, caloriesPer100g, englishDescription, localDescription, portionSizeMethods, prompts, brands, categories);
+		return new FoodData (code, askIfReadyMeal, sameAsBeforeOption, caloriesPer100g, localDescription, portionSizeMethods, prompts, brands, categories);
 	}
 	
 	public FoodData withRecipePortionSizeMethods() {
@@ -82,11 +78,11 @@ public class FoodData implements IsSerializable {
 	}
 	
 	public String description() {
-		return localDescription.getOrElse(englishDescription);
+		return localDescription;
 	}
 	
 	@Override
 	public String toString() {
-		return code + " " + englishDescription;
+		return code + " " + localDescription;
 	}
 }

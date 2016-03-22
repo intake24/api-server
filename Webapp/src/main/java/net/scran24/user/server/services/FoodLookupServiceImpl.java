@@ -22,7 +22,7 @@ This file is based on Intake24 v1.0.
 Licensed under the Open Government Licence 3.0: 
 
 http://www.nationalarchives.gov.uk/doc/open-government-licence/
-*/
+ */
 
 package net.scran24.user.server.services;
 
@@ -45,8 +45,17 @@ import javax.servlet.ServletException;
 
 import net.scran24.datastore.DataStore;
 import net.scran24.datastore.DataStoreException;
+import net.scran24.fooddef.AsServedSet;
 import net.scran24.fooddef.CategoryContents;
-import uk.ac.ncl.openlab.intake24.services.FoodDataService;
+import net.scran24.fooddef.DrinkwareSet;
+import net.scran24.fooddef.GuideImage;
+import net.scran24.fooddef.UserCategoryContents;
+import net.scran24.fooddef.UserCategoryHeader;
+import uk.ac.ncl.openlab.intake24.services.CodeError;
+import uk.ac.ncl.openlab.intake24.services.FoodDataError;
+import uk.ac.ncl.openlab.intake24.services.FoodDataSources;
+import uk.ac.ncl.openlab.intake24.services.ResourceError;
+import uk.ac.ncl.openlab.intake24.services.UserFoodDataService;
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex;
 import uk.ac.ncl.openlab.intake24.services.foodindex.IndexLookupResult;
 import uk.ac.ncl.openlab.intake24.services.foodindex.MatchedCategory;
@@ -69,8 +78,10 @@ import org.slf4j.LoggerFactory;
 import org.workcraft.gwt.imagechooser.shared.ImageDef;
 import org.workcraft.gwt.shared.client.Pair;
 
+import scala.Tuple2;
 import scala.collection.Iterator;
 import scala.collection.JavaConversions;
+import scala.util.Either;
 
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 import com.google.inject.Injector;
@@ -82,12 +93,11 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 	private final static Logger log = LoggerFactory.getLogger(FoodLookupServiceImpl.class);
 
 	private DataStore dataStore;
-	private FoodDataService foodData;
-	
+	private UserFoodDataService foodData;
 
 	private Map<String, FoodIndex> foodIndexes;
 	private Map<String, Splitter> splitters;
-	private List<Pair<String, ? extends NutrientMappingService>> nutrientTables; 
+	private List<Pair<String, ? extends NutrientMappingService>> nutrientTables;
 
 	private String imageUrlBase;
 	private String thumbnailUrlBase;
@@ -105,10 +115,13 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 			Injector injector = (Injector) this.getServletContext().getAttribute("intake24.injector");
 
 			dataStore = injector.getInstance(DataStore.class);
-			foodData = injector.getInstance(FoodDataService.class);
-			foodIndexes = injector.getInstance(Key.get(new TypeLiteral<Map<String, FoodIndex>>() {}));
-			splitters = injector.getInstance(Key.get(new TypeLiteral<Map<String, Splitter>>() {}));
-			nutrientTables = injector.getInstance(Key.get(new TypeLiteral<List<Pair<String, ? extends NutrientMappingService>>>(){}));
+			foodData = injector.getInstance(UserFoodDataService.class);
+			foodIndexes = injector.getInstance(Key.get(new TypeLiteral<Map<String, FoodIndex>>() {
+			}));
+			splitters = injector.getInstance(Key.get(new TypeLiteral<Map<String, Splitter>>() {
+			}));
+			nutrientTables = injector.getInstance(Key.get(new TypeLiteral<List<Pair<String, ? extends NutrientMappingService>>>() {
+			}));
 
 			imageUrlBase = getServletContext().getInitParameter("image-url-base");
 
@@ -117,10 +130,6 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 		} catch (Throwable e) {
 			throw new ServletException(e);
 		}
-	}
-
-	public List<CategoryHeader> allCategories(String code, String locale) {
-		return toJavaCategoryHeaders(foodData.allCategories(locale));
 	}
 
 	private LookupResult lookupImpl(String description, String locale, int maxResults, boolean includeHidden) {
@@ -145,35 +154,22 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 			while (iter.hasNext()) {
 				MatchedFood next = iter.next();
 
-				net.scran24.fooddef.FoodHeader header = next.food();
+				net.scran24.fooddef.UserFoodHeader header = next.food();
 
-				boolean isHidden = true;
+				// boolean isHidden = true;
 
-				List<CategoryHeader> parents = toJavaCategoryHeaders(foodData.foodParentCategories(header.code(), locale));
+				foodCodes.add(header.code());
+				matchCost.put(header.code(), next.matchCost());
+				foodHeaders.add(toJavaFoodHeader(header));
 
-				for (CategoryHeader h : parents) {
-					if (!h.isHidden) {
-						isHidden = false;
-						break;
-					}
-				}
-
-				if (parents.isEmpty())
-					isHidden = false;
-
-				if (!isHidden || includeHidden) {
-					foodCodes.add(header.code());
-					matchCost.put(header.code(), next.matchCost());
-					foodHeaders.add(toJavaFoodHeader(header));
-				}
 			}
 
 			Iterator<MatchedCategory> iter2 = lookupResult.categories().iterator();
 
 			while (iter2.hasNext()) {
 				MatchedCategory next = iter2.next();
-				if (!next.category().isHidden() || includeHidden)
-					categoryHeaders.add(toJavaCategoryHeader(next.category()));
+				// if (!next.category().isHidden() || includeHidden)
+				categoryHeaders.add(toJavaCategoryHeader(next.category()));
 			}
 
 			Map<String, Integer> popularityCount = dataStore.getPopularityCount(foodCodes);
@@ -190,7 +186,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 				// based on popularity and match cost
 				finalCost.put(header.code, pop / mcost);
 			}
-			
+
 			Collections.sort(foodHeaders, new Comparator<FoodHeader>() {
 				@Override
 				public int compare(FoodHeader o1, FoodHeader o2) {
@@ -226,15 +222,15 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 		ArrayList<CategoryHeader> categories = new ArrayList<CategoryHeader>();
 
 		for (FoodHeader h : lookupResult.foods)
-			for (net.scran24.fooddef.CategoryHeader ch : JavaConversions.asJavaCollection(foodData.foodAllCategories(h.code, locale))) {
-				if (ch.code().equals(categoryCode)) {
+			for (String c : JavaConversions.asJavaCollection(foodData.foodAllCategories(h.code))) {
+				if (c.equals(categoryCode)) {
 					foods.add(h);
 					break;
 				}
 			}
 
 		for (CategoryHeader h : lookupResult.categories)
-			for (net.scran24.fooddef.CategoryHeader ch : JavaConversions.asJavaCollection(foodData.categoryAllCategories(h.code, locale))) {
+			for (String c : JavaConversions.asJavaCollection(foodData.categoryAllCategories(h.code, locale))) {
 				if (ch.code().equals(categoryCode)) {
 					categories.add(h);
 					break;
@@ -255,9 +251,14 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 	public LookupResult browseCategory(String code, String locale) {
 		crashIfDebugOptionSet("crash-on-browse-category");
 
-		CategoryContents categoryContents = foodData.categoryContents(code, locale);
+		Either<CodeError, UserCategoryContents> categoryContents = foodData.categoryContents(code, locale);
 
-		return new LookupResult(toJavaFoodHeaders(categoryContents.foods()), toJavaCategoryHeaders(categoryContents.subcategories()));
+		if (categoryContents.isLeft())
+			throw new RuntimeException("Invalid category code");
+		else {
+			UserCategoryContents contents = categoryContents.right().get();
+			return new LookupResult(toJavaFoodHeaders(contents.foods()), toJavaCategoryHeaders(contents.subcategories()));
+		}
 	}
 
 	private String labelForAsServed(double weight) {
@@ -282,23 +283,29 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 	public AsServedDef getAsServedDef(String asServedSet, String locale) {
 		crashIfDebugOptionSet("crash-on-get-as-served-def");
 
-		net.scran24.fooddef.AsServedSet set = foodData.asServedDef(asServedSet);
+		Either<ResourceError, AsServedSet> asServedDef = foodData.asServedDef(asServedSet);
 
-		int size = set.images().size();
+		if (asServedDef.isLeft())
+			throw new RuntimeException("As served set not found: " + asServedSet);
+		else {
+			net.scran24.fooddef.AsServedSet set = asServedDef.right().get();
 
-		AsServedDef.ImageInfo[] info = new AsServedDef.ImageInfo[size];
+			int size = set.images().size();
 
-		Iterator<net.scran24.fooddef.AsServedImage> iter = set.images().iterator();
+			AsServedDef.ImageInfo[] info = new AsServedDef.ImageInfo[size];
 
-		int i = 0;
-		while (iter.hasNext()) {
-			net.scran24.fooddef.AsServedImage img = iter.next();
+			Iterator<net.scran24.fooddef.AsServedImage> iter = set.images().iterator();
 
-			info[i++] = new AsServedDef.ImageInfo(new ImageDef(imageUrlBase + "/" + img.url(), thumbnailUrlBase + "/" + img.url(),
-					labelForAsServed(img.weight())), img.weight());
+			int i = 0;
+			while (iter.hasNext()) {
+				net.scran24.fooddef.AsServedImage img = iter.next();
+
+				info[i++] = new AsServedDef.ImageInfo(new ImageDef(imageUrlBase + "/" + img.url(), thumbnailUrlBase + "/" + img.url(),
+						labelForAsServed(img.weight())), img.weight());
+			}
+
+			return new AsServedDef(set.description(), info);
 		}
-
-		return new AsServedDef(set.description(), info);
 	}
 
 	@Override
@@ -315,37 +322,51 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 	public GuideDef getGuideDef(String guideId, String locale) {
 		crashIfDebugOptionSet("crash-on-get-guide-def");
 
-		net.scran24.fooddef.GuideImage image = foodData.guideDef(guideId);
+		Either<ResourceError, GuideImage> guideDef = foodData.guideDef(guideId);
 
-		Map<Integer, Double> weights = new TreeMap<Integer, Double>();
+		if (guideDef.isLeft())
+			throw new RuntimeException("Guide image not found: " + guideId);
+		else {
 
-		Iterator<net.scran24.fooddef.GuideImageWeightRecord> iter = image.weights().iterator();
+			net.scran24.fooddef.GuideImage image = guideDef.right().get();
 
-		while (iter.hasNext()) {
-			net.scran24.fooddef.GuideImageWeightRecord wr = iter.next();
-			weights.put(wr.objectId(), wr.weight());
+			Map<Integer, Double> weights = new TreeMap<Integer, Double>();
+
+			Iterator<net.scran24.fooddef.GuideImageWeightRecord> iter = image.weights().iterator();
+
+			while (iter.hasNext()) {
+				net.scran24.fooddef.GuideImageWeightRecord wr = iter.next();
+				weights.put(wr.objectId(), wr.weight());
+			}
+
+			return new GuideDef(image.description(), guideId, weights);
 		}
-
-		return new GuideDef(image.description(), guideId, weights);
 	}
 
 	@Override
 	public DrinkwareDef getDrinkwareDef(String drinkwareId, String locale) {
 		crashIfDebugOptionSet("crash-on-get-drinkware-def");
 
-		net.scran24.fooddef.DrinkwareSet set = foodData.drinkwareDef(drinkwareId);
-		ArrayList<DrinkScaleDef> scaleDefs = new ArrayList<DrinkScaleDef>();
+		Either<ResourceError, DrinkwareSet> drinkwareDef = foodData.drinkwareDef(drinkwareId);
 
-		Iterator<net.scran24.fooddef.DrinkScale> iter = set.scaleDefs().iterator();
+		if (drinkwareDef.isLeft())
+			throw new RuntimeException("Drinkware definition not found: " + drinkwareId);
+		else {
+			net.scran24.fooddef.DrinkwareSet set = drinkwareDef.right().get();
+			
+			ArrayList<DrinkScaleDef> scaleDefs = new ArrayList<DrinkScaleDef>();
 
-		while (iter.hasNext()) {
-			net.scran24.fooddef.DrinkScale def = iter.next();
+			Iterator<net.scran24.fooddef.DrinkScale> iter = set.scaleDefs().iterator();
 
-			scaleDefs.add(new DrinkScaleDef(def.choice_id(), imageUrlBase + "/" + def.baseImage(), imageUrlBase + "/" + def.overlayImage(), def
-					.width(), def.height(), def.emptyLevel(), def.fullLevel(), def.vf().asArray()));
+			while (iter.hasNext()) {
+				net.scran24.fooddef.DrinkScale def = iter.next();
+
+				scaleDefs.add(new DrinkScaleDef(def.choice_id(), imageUrlBase + "/" + def.baseImage(), imageUrlBase + "/" + def.overlayImage(), def
+						.width(), def.height(), def.emptyLevel(), def.fullLevel(), def.vf().asArray()));
+			}
+
+			return new DrinkwareDef(set.guide_id(), scaleDefs.toArray(new DrinkScaleDef[scaleDefs.size()]));
 		}
-
-		return new DrinkwareDef(set.guide_id(), scaleDefs.toArray(new DrinkScaleDef[scaleDefs.size()]));
 	}
 
 	@Override
@@ -358,7 +379,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 
 		while (iter.hasNext()) {
 			net.scran24.fooddef.Prompt next = iter.next();
-			
+
 			if (foodData.isCategoryCode(next.category()))
 				result.add(new FoodPrompt(next.category(), true, next.promptText(), next.linkAsMain(), next.genericName()));
 			else
@@ -371,13 +392,19 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 	@Override
 	public FoodData getFoodData(String foodCode, String locale) {
 		crashIfDebugOptionSet("crash-on-get-food-data");
+
+		Either<FoodDataError, Tuple2<net.scran24.fooddef.FoodData, FoodDataSources>> foodDataResult = foodData.foodData(foodCode, locale);
 		
-		net.scran24.fooddef.FoodData data = foodData.foodData(foodCode, locale);
-		
+		if (foodDataResult.isLeft())
+			throw new RuntimeException("Food code not found or local description missing: " + foodCode);
+		else {
+			
+			net.scran24.fooddef.FoodData data = foodDataResult.right().get()._1();
+
 		log.debug(data.toString());
-		
+
 		double kcal_per_100g = 0;
-		
+
 		for (Pair<String, ? extends NutrientMappingService> table : nutrientTables) {
 			if (data.nutrientTableCodes().contains(table.left)) {
 				String nutrientTableID = table.left;
@@ -387,9 +414,10 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 				break;
 			}
 		}
-		
-		return buildJavaFoodData(data, kcal_per_100g, foodData.associatedFoodPrompts(foodCode, locale),
-				foodData.brandNames(foodCode, locale), foodData.foodAllCategories(foodCode, locale), imageUrlBase);
+
+		return buildJavaFoodData(data, kcal_per_100g, foodData.associatedFoodPrompts(foodCode, locale), foodData.brandNames(foodCode, locale),
+				foodData.foodAllCategories(foodCode, locale), imageUrlBase);
+		}
 	}
 
 }

@@ -57,7 +57,7 @@ public class MilkInHotDrinkPortionSizeScript implements PortionSizeScript {
 	@Override
 	public Option<SimplePrompt<UpdateFunc>> nextPrompt(PMap<String, String> data, final FoodData foodData) {
 		if (!data.containsKey("milkPartIndex"))
-			return Option.some(withBackLink(standardUnitChoicePrompt(SafeHtmlUtils.fromSafeConstant(messages.milkInHotDrink_promptText(foodData.localDescription.getOrElse(foodData.englishDescription).toLowerCase(), "tea or coffee")), messages.milkInHotDrink_confirmButtonLabel(), amounts, new Function1<StandardUnitDef, String>(){
+			return Option.some(withBackLink(standardUnitChoicePrompt(SafeHtmlUtils.fromSafeConstant(messages.milkInHotDrink_promptText(foodData.description().toLowerCase(), "tea or coffee")), messages.milkInHotDrink_confirmButtonLabel(), amounts, new Function1<StandardUnitDef, String>(){
 				@Override
 				public String apply(StandardUnitDef argument) {
 					return argument.name;

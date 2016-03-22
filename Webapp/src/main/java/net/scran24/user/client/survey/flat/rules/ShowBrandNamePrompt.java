@@ -55,7 +55,7 @@ public class ShowBrandNamePrompt implements PromptRule<FoodEntry, FoodOperation>
 			@Override
 			public Option<Prompt<FoodEntry, FoodOperation>> visitEncoded(EncodedFood food) {
 				if (surveyFlags.contains(Survey.FLAG_FREE_ENTRY_COMPLETE) && food.brand.isEmpty() && !food.data.brands.isEmpty())
-					return Option.<Prompt<FoodEntry, FoodOperation>>some(new BrandNamePrompt(food.data.localDescription.getOrElse("(MISSING TRANSLATION) " + food.data.englishDescription), food.data.brands));
+					return Option.<Prompt<FoodEntry, FoodOperation>>some(new BrandNamePrompt(food.data.localDescription, food.data.brands));
 				else
 					return Option.none();
 			}

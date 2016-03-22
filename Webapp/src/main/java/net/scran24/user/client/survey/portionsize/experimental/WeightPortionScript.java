@@ -50,7 +50,7 @@ public class WeightPortionScript implements PortionSizeScript {
 			return done();
 		else
 			return Option.some(withBackLink(foodWeightPrompt(
-					SafeHtmlUtils.fromSafeConstant(messages.weightTypeIn_promptText(SafeHtmlUtils.htmlEscape(foodData.localDescription.getOrElse(foodData.englishDescription)))),
+					SafeHtmlUtils.fromSafeConstant(messages.weightTypeIn_promptText(SafeHtmlUtils.htmlEscape(foodData.description()))),
 					SafeHtmlUtils.fromSafeConstant(messages.weightTypeIn_unitLabel()), messages.weightTypeIn_continueLabel(), "servingWeight", "leftoversWeight")));
 	}
 }

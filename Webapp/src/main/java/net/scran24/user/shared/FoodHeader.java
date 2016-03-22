@@ -18,30 +18,26 @@ limitations under the License.
 
 package net.scran24.user.shared;
 
-import org.workcraft.gwt.shared.client.Option;
-
 import com.google.gwt.user.client.rpc.IsSerializable;
 
 public class FoodHeader implements IsSerializable {
 	public String code;
-	public String englishDescription;
-	public Option<String> localDescription;
+	public String localDescription;
 	
 	@Deprecated
 	public FoodHeader() {} ;
 
-	public FoodHeader(String code, String englishDescription, Option<String> localDescription) {		
+	public FoodHeader(String code, String localDescription) {		
 		this.code = code;
-		this.englishDescription = englishDescription;
 		this.localDescription = localDescription;
 	}
 	
 	@Override
 	public String toString() {
-		return code + " " + englishDescription;
+		return code + " " + localDescription;
 	}
 	
 	public String description() {
-		return localDescription.getOrElse(englishDescription);
+		return localDescription;
 	}
 }

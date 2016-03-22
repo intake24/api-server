@@ -28,7 +28,6 @@ package net.scran24.user.shared;
 
 import net.scran24.datastore.shared.CompletedPortionSize;
 import net.scran24.user.client.survey.portionsize.experimental.PortionSize;
-import net.scran24.user.shared.lookup.PortionSizeMethod;
 
 import org.pcollections.client.HashTreePMap;
 import org.pcollections.client.HashTreePSet;
@@ -78,7 +77,7 @@ public class EncodedFood extends FoodEntry {
 
 	@Override
 	public String description() {
-		return data.localDescription.getOrElse(data.englishDescription);
+		return data.localDescription;
 	}
 
 	@Override
@@ -157,7 +156,7 @@ public class EncodedFood extends FoodEntry {
 
 	@Override
 	public String toString() {
-		return link.id.toString() + " " + data.code + " " + data.localDescription.getOrElse(data.englishDescription);
+		return link.id.toString() + " " + data.code + " " + data.description();
 	}
 
 	@Override
