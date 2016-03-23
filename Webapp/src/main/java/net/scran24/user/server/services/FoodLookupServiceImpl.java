@@ -26,11 +26,12 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package net.scran24.user.server.services;
 
-import static net.scran24.user.server.services.ScalaConversions.buildJavaFoodData;
 import static net.scran24.user.server.services.ScalaConversions.toJavaCategoryHeader;
 import static net.scran24.user.server.services.ScalaConversions.toJavaCategoryHeaders;
 import static net.scran24.user.server.services.ScalaConversions.toJavaFoodHeader;
 import static net.scran24.user.server.services.ScalaConversions.toJavaFoodHeaders;
+import static net.scran24.user.server.services.ScalaConversions.toJavaList;
+import static net.scran24.user.server.services.ScalaConversions.toJavaPortionSizeMethods;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,22 +47,10 @@ import javax.servlet.ServletException;
 import net.scran24.datastore.DataStore;
 import net.scran24.datastore.DataStoreException;
 import net.scran24.fooddef.AsServedSet;
-import net.scran24.fooddef.CategoryContents;
 import net.scran24.fooddef.DrinkwareSet;
 import net.scran24.fooddef.GuideImage;
+import net.scran24.fooddef.Prompt;
 import net.scran24.fooddef.UserCategoryContents;
-import net.scran24.fooddef.UserCategoryHeader;
-import uk.ac.ncl.openlab.intake24.services.CodeError;
-import uk.ac.ncl.openlab.intake24.services.FoodDataError;
-import uk.ac.ncl.openlab.intake24.services.FoodDataSources;
-import uk.ac.ncl.openlab.intake24.services.ResourceError;
-import uk.ac.ncl.openlab.intake24.services.UserFoodDataService;
-import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex;
-import uk.ac.ncl.openlab.intake24.services.foodindex.IndexLookupResult;
-import uk.ac.ncl.openlab.intake24.services.foodindex.MatchedCategory;
-import uk.ac.ncl.openlab.intake24.services.foodindex.MatchedFood;
-import uk.ac.ncl.openlab.intake24.services.foodindex.Splitter;
-import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService;
 import net.scran24.user.client.services.FoodLookupService;
 import net.scran24.user.shared.CategoryHeader;
 import net.scran24.user.shared.FoodData;
@@ -81,7 +70,19 @@ import org.workcraft.gwt.shared.client.Pair;
 import scala.Tuple2;
 import scala.collection.Iterator;
 import scala.collection.JavaConversions;
+import scala.collection.Seq;
 import scala.util.Either;
+import uk.ac.ncl.openlab.intake24.services.CodeError;
+import uk.ac.ncl.openlab.intake24.services.FoodDataError;
+import uk.ac.ncl.openlab.intake24.services.FoodDataSources;
+import uk.ac.ncl.openlab.intake24.services.ResourceError;
+import uk.ac.ncl.openlab.intake24.services.UserFoodDataService;
+import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex;
+import uk.ac.ncl.openlab.intake24.services.foodindex.IndexLookupResult;
+import uk.ac.ncl.openlab.intake24.services.foodindex.MatchedCategory;
+import uk.ac.ncl.openlab.intake24.services.foodindex.MatchedFood;
+import uk.ac.ncl.openlab.intake24.services.foodindex.Splitter;
+import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService;
 
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 import com.google.inject.Injector;
@@ -230,8 +231,8 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 			}
 
 		for (CategoryHeader h : lookupResult.categories)
-			for (String c : JavaConversions.asJavaCollection(foodData.categoryAllCategories(h.code, locale))) {
-				if (ch.code().equals(categoryCode)) {
+			for (String c : JavaConversions.asJavaCollection(foodData.categoryAllCategories(h.code))) {
+				if (c.equals(categoryCode)) {
 					categories.add(h);
 					break;
 				}
@@ -353,7 +354,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 			throw new RuntimeException("Drinkware definition not found: " + drinkwareId);
 		else {
 			net.scran24.fooddef.DrinkwareSet set = drinkwareDef.right().get();
-			
+
 			ArrayList<DrinkScaleDef> scaleDefs = new ArrayList<DrinkScaleDef>();
 
 			Iterator<net.scran24.fooddef.DrinkScale> iter = set.scaleDefs().iterator();
@@ -373,20 +374,36 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 	public List<FoodPrompt> getFoodPrompts(String foodCode, String locale) {
 		crashIfDebugOptionSet("crash-on-get-food-prompts");
 
-		Iterator<net.scran24.fooddef.Prompt> iter = foodData.associatedFoodPrompts(foodCode, locale).iterator();
+		Either<CodeError, Seq<Prompt>> associatedFoodPrompts = foodData.associatedFoodPrompts(foodCode, locale);
 
-		ArrayList<FoodPrompt> result = new ArrayList<FoodPrompt>();
+		if (associatedFoodPrompts.isLeft()) {
+			throw new RuntimeException("Food code " + foodCode + " is not defined");
+		} else {
 
-		while (iter.hasNext()) {
-			net.scran24.fooddef.Prompt next = iter.next();
+			Iterator<net.scran24.fooddef.Prompt> iter = associatedFoodPrompts.right().get().iterator();
 
-			if (foodData.isCategoryCode(next.category()))
-				result.add(new FoodPrompt(next.category(), true, next.promptText(), next.linkAsMain(), next.genericName()));
-			else
-				result.add(new FoodPrompt(next.category(), false, next.promptText(), next.linkAsMain(), next.genericName()));
+			ArrayList<FoodPrompt> result = new ArrayList<FoodPrompt>();
+
+			while (iter.hasNext()) {
+				net.scran24.fooddef.Prompt next = iter.next();
+
+				if (foodData.isCategoryCode(next.category()))
+					result.add(new FoodPrompt(next.category(), true, next.promptText(), next.linkAsMain(), next.genericName()));
+				else
+					result.add(new FoodPrompt(next.category(), false, next.promptText(), next.linkAsMain(), next.genericName()));
+			}
+
+			return result;
 		}
+	}
 
-		return result;
+	public List<String> getBrandNames(String foodCode, String locale) {
+		Either<CodeError, Seq<String>> brandNames = foodData.brandNames(foodCode, locale);
+
+		if (brandNames.isLeft())
+			throw new RuntimeException("Unknown food code: " + foodCode);
+		else
+			return toJavaList(brandNames.right().get());
 	}
 
 	@Override
@@ -394,29 +411,31 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 		crashIfDebugOptionSet("crash-on-get-food-data");
 
 		Either<FoodDataError, Tuple2<net.scran24.fooddef.FoodData, FoodDataSources>> foodDataResult = foodData.foodData(foodCode, locale);
-		
+
 		if (foodDataResult.isLeft())
 			throw new RuntimeException("Food code not found or local description missing: " + foodCode);
 		else {
-			
+
 			net.scran24.fooddef.FoodData data = foodDataResult.right().get()._1();
 
-		log.debug(data.toString());
+			log.debug(data.toString());
 
-		double kcal_per_100g = 0;
+			double kcal_per_100g = 0;
 
-		for (Pair<String, ? extends NutrientMappingService> table : nutrientTables) {
-			if (data.nutrientTableCodes().contains(table.left)) {
-				String nutrientTableID = table.left;
-				String nutrientTableCode = data.nutrientTableCodes().apply(nutrientTableID);
-				Map<String, Double> nutrients = table.right.javaNutrientsFor(nutrientTableCode, 100.0);
-				kcal_per_100g = nutrients.get("energy_kcal");
-				break;
+			for (Pair<String, ? extends NutrientMappingService> table : nutrientTables) {
+				if (data.nutrientTableCodes().contains(table.left)) {
+					String nutrientTableID = table.left;
+					String nutrientTableCode = data.nutrientTableCodes().apply(nutrientTableID);
+					Map<String, Double> nutrients = table.right.javaNutrientsFor(nutrientTableCode, 100.0);
+					kcal_per_100g = nutrients.get("energy_kcal");
+					break;
+				}
 			}
-		}
 
-		return buildJavaFoodData(data, kcal_per_100g, foodData.associatedFoodPrompts(foodCode, locale), foodData.brandNames(foodCode, locale),
-				foodData.foodAllCategories(foodCode, locale), imageUrlBase);
+			return new FoodData(data.code(), data.readyMealOption(), data.sameAsBeforeOption(), kcal_per_100g, data.localDescription(),
+					toJavaPortionSizeMethods(data.portionSize(), imageUrlBase), getFoodPrompts(foodCode, locale), getBrandNames(foodCode, locale),
+					toJavaList(foodData.foodAllCategories(foodCode)));
+
 		}
 	}
 

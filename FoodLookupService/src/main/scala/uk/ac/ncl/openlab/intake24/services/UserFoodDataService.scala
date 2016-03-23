@@ -75,6 +75,10 @@ trait UserFoodDataService {
   def foodData(code: String, locale: String): Either[FoodDataError, (FoodData, FoodDataSources)]
   
   def foodAllCategories(code: String): Seq[String]
+  
+  def categoryAllCategories(code: String): Seq[String]
+  
+  def isCategoryCode(code: String): Boolean
      
   def asServedDef(id: String): Either[ResourceError, AsServedSet]
   
