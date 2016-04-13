@@ -181,7 +181,7 @@ trait FoodDataSqlImpl extends SqlDataService {
   
   def isCategoryCode(code: String): Boolean = tryWithConnection {
     implicit conn =>
-      val query = """SELECT COUNT(*) FROM categories WHERE code={catgory_code}"""
+      val query = """SELECT COUNT(*) FROM categories WHERE code={category_code}"""
       (SQL(query).on('category_code -> code).executeQuery().as(SqlParser.long("count").single) == 1)      
   }
 
