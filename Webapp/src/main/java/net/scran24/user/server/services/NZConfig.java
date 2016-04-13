@@ -31,6 +31,7 @@ import org.workcraft.gwt.shared.client.Pair;
 
 import uk.ac.ncl.openlab.intake24.foodxml.FoodDataServiceXmlImpl;
 import uk.ac.ncl.openlab.intake24.nutrientsndns.NdnsNutrientMappingServiceImpl;
+import uk.ac.ncl.openlab.intake24.nutrientsndns.NzNutrientMappingServiceImpl;
 import uk.ac.ncl.openlab.intake24.services.FoodDataService;
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex;
 import uk.ac.ncl.openlab.intake24.services.foodindex.Splitter;
@@ -44,10 +45,10 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Names;
 
-public class MongoDBAndXmlConfig extends AbstractModule {
+public class NZConfig extends AbstractModule {
 	public final Map<String, String> webXmlConfig;
 
-	public MongoDBAndXmlConfig(Map<String, String> webXmlConfig) {
+	public NZConfig(Map<String, String> webXmlConfig) {
 		this.webXmlConfig = webXmlConfig;
 	}
 
@@ -58,7 +59,6 @@ public class MongoDBAndXmlConfig extends AbstractModule {
 
 		Map<String, FoodIndex> result = new HashMap<String, FoodIndex>();
 		result.put("en_GB", new FoodIndexImpl_en_GB(foodDataService));
-		result.put("ar_AE", new FoodIndexImpl_en_GB(foodDataService));
 		return result;
 	}
 
@@ -77,7 +77,8 @@ public class MongoDBAndXmlConfig extends AbstractModule {
 	protected List<Pair<String, ? extends NutrientMappingService>> nutrientTables(Injector injector) {
 		FoodDataService foodDataService = injector.getInstance(FoodDataService.class);
 		List<Pair<String, ? extends NutrientMappingService>> result = new ArrayList<Pair<String, ? extends NutrientMappingService>>();
-		result.add(Pair.create("NDNS", new NdnsNutrientMappingServiceImpl(webXmlConfig.get("ndns-data-path"), foodDataService)));
+		result.add(Pair.create("NZ", new NzNutrientMappingServiceImpl(webXmlConfig.get("nz-data-path"), foodDataService)));
+		result.add(Pair.create("NDNS", new NdnsNutrientMappingServiceImpl(webXmlConfig.get("ndns-data-path"), foodDataService)));		
 		return result;
 	}
 

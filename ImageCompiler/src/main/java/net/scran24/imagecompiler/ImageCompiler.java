@@ -6,7 +6,7 @@ This file is part of Intake24.
 This software is licensed under the Open Government Licence 3.0:
 
 http://www.nationalarchives.gov.uk/doc/open-government-licence/
-*/
+ */
 
 package net.scran24.imagecompiler;
 
@@ -14,16 +14,13 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import java.awt.RenderingHints.Key;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.PathIterator;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FilenameFilter;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -37,16 +34,14 @@ import org.apache.batik.dom.svg.SAXSVGDocumentFactory;
 import org.apache.batik.dom.svg.SVGOMDocument;
 import org.apache.batik.parser.AWTPathProducer;
 import org.apache.batik.parser.AWTTransformProducer;
-import org.apache.batik.parser.ParseException;
 import org.apache.batik.util.XMLResourceDescriptor;
 import org.im4java.core.ConvertCmd;
-import org.im4java.core.IM4JavaException;
 import org.im4java.core.IMOperation;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.svg.SVGAnimatedRect;
 import org.w3c.dom.svg.SVGLength;
-import org.w3c.dom.svg.SVGPathElement;
 import org.w3c.dom.svg.SVGSVGElement;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -86,7 +81,6 @@ public class ImageCompiler {
 				if (n.getAttributes() != null && n.getAttributes().getNamedItem("transform") != null) {
 					String tt = n.getAttributes().getNamedItem("transform").getTextContent();
 					AffineTransform t = AWTTransformProducer.createAffineTransform(tt);
-					// AffineTransform inv = t.createInverse();
 					transform.concatenate(t);
 
 				}
@@ -117,16 +111,16 @@ public class ImageCompiler {
 		ArrayList<Element> matchingPathElements = new ArrayList<Element>();
 
 		NodeList nl = doc.getElementsByTagName("path");
-		System.out.println (nl.getLength() + " path element(s) in SVG");
-		
+		System.out.println(nl.getLength() + " path element(s) in SVG");
+
 		for (int i = 0; i < nl.getLength(); i++) {
 			Element e = (Element) nl.item(i);
 
 			if (e.getAttribute("id").matches(idParser.pattern())) {
-				System.out.println ("Using " + e.getAttribute("id"));
+				System.out.println("Using " + e.getAttribute("id"));
 				matchingPathElements.add(e);
 			} else {
-				System.out.println ("Skipping " + e.getAttribute("id"));
+				System.out.println("Skipping " + e.getAttribute("id"));
 			}
 		}
 
@@ -219,9 +213,9 @@ public class ImageCompiler {
 				op.addImage(unblurred.getAbsolutePath());
 				op.channel("RBGA");
 				op.blur(0.0, blur);
-				
+
 				String name = f.mkName(o);
-				
+
 				op.addImage(outlineDir.getAbsolutePath() + File.separator + name + ".png");
 
 				cmd.run(op);
@@ -243,7 +237,7 @@ public class ImageCompiler {
 
 		PathIterator i = o.shape.getPathIterator(o.transformToRootSpace, 2);
 
-		//i.next();
+		// i.next();
 
 		while (!i.isDone()) {
 			float coords[] = new float[6];
@@ -329,16 +323,14 @@ public class ImageCompiler {
 			SVGOMDocument doc = parseSvg(f);
 
 			SVGSVGElement svgElem = (SVGSVGElement) doc.getDocumentElement();
-
-			SVGLength orig_width = svgElem.getWidth().getBaseVal();
-			orig_width.convertToSpecifiedUnits(SVGLength.SVG_LENGTHTYPE_PX);
-			SVGLength orig_height = svgElem.getHeight().getBaseVal();
-			orig_height.convertToSpecifiedUnits(SVGLength.SVG_LENGTHTYPE_PX);
-
-			int orig_w = (int) orig_width.getValueInSpecifiedUnits();
-			int orig_h = (int) orig_height.getValueInSpecifiedUnits();
-
-			double scale = width / (double) orig_w;
+			
+			SVGAnimatedRect viewBox = svgElem.getViewBox();
+			
+			float viewBoxWidth = viewBox.getBaseVal().getWidth();
+			
+			float viewBoxHeight = viewBox.getBaseVal().getHeight();
+			
+			double scale = width / (double) viewBox.getBaseVal().getWidth();
 
 			List<Outline> outlines = getOutlines(scale, doc, new IdParser() {
 				@Override
@@ -360,7 +352,7 @@ public class ImageCompiler {
 			File outlineDir = new File(dstDir.getAbsolutePath() + File.separator + baseName);
 			outlineDir.mkdir();
 
-			generateOverlays((int) (orig_w * scale), (int) (orig_h * scale), (float) (outlineWidth / scale), outlineColor, false, blur, outlines,
+			generateOverlays((int) (viewBoxWidth * scale), (int) (viewBoxHeight * scale), (float) (outlineWidth / scale), outlineColor, false, blur, outlines,
 					outlineDir, new NameFunc() {
 						@Override
 						public String mkName(Outline outline) {
@@ -478,7 +470,7 @@ public class ImageCompiler {
 					return f.getName().replace(".svg", "") + "_fill";
 				}
 			});
-			
+
 			Outline outline = outlines.get(0);
 			Shape shapeInRootSpace = outline.transformToRootSpace.createTransformedShape(outline.shape);
 
@@ -486,24 +478,24 @@ public class ImageCompiler {
 			int fullHeight = newHeight - (int) (shapeInRootSpace.getBounds2D().getMinY());
 
 			ContainerDef cont = contdef.get(photo_id);
-			
+
 			if (cont == null) {
 				log.warning("No definition for photo_id " + photo_id + " skipping");
 				continue;
 			}
-			
+
 			pw.println("  <scale choice-id=\"" + cont.choice_id + "\">");
-			pw.println("    <dimensions width=\"" + newWidth + "\" height=\"" + newHeight + "\" emptyLevel=\"" + emptyHeight + "\" fullLevel=\"" + fullHeight
-					+ "\"/>");
+			pw.println("    <dimensions width=\"" + newWidth + "\" height=\"" + newHeight + "\" emptyLevel=\"" + emptyHeight + "\" fullLevel=\""
+					+ fullHeight + "\"/>");
 			pw.println("    <volume-function>");
-			
+
 			for (VolumeSample s : cont.volumeSamples)
 				pw.println("      <value fill=\"" + s.fill + "\" volume=\"" + s.volume + "\"/>");
-			
+
 			pw.println("    </volume-function>");
-			pw.println("    <baseImage>$url_base/" + baseImage.getName() +"</baseImage>");
+			pw.println("    <baseImage>$url_base/" + baseImage.getName() + "</baseImage>");
 			pw.println("    <overlayImage>$overlay_url_base/" + photo_id + "_fill.png" + "</overlayImage>");
-			
+
 			pw.println("  </scale>");
 
 		}
@@ -577,9 +569,9 @@ public class ImageCompiler {
 		System.out.println("    dest_dir is the path to the directory where the resized images will be produced");
 		System.out.println("    thumb_dir is the path to the directory where the resized & cropped thumbnails will be produced");
 		System.out.println("    width is the width of the resulting images");
-		System.out.println("    height is the height of the resulting images (images will be resized based on the width\n" +
-				               "    parameter so as to preserve the aspect ratio, and then cropped or padded with white to\n" +
-				               "    fit exactly to the given height))");
+		System.out.println("    height is the height of the resulting images (images will be resized based on the width\n"
+				+ "    parameter so as to preserve the aspect ratio, and then cropped or padded with white to\n"
+				+ "    fit exactly to the given height))");
 		System.out.println("    thumb_width is the width of the resulting thumbnails (height will be adjusted automatically");
 		System.out.println("\n");
 
@@ -591,7 +583,8 @@ public class ImageCompiler {
 	}
 
 	public static void main(String[] args) {
-		if (args.length == 0 || !((args[0].equals("-as") && args.length == 7) || (args[0].equals("-guide") && args.length == 5) || (args[0].equals("-drinkscale") && args.length == 5))) {
+		if (args.length == 0
+				|| !((args[0].equals("-as") && args.length == 7) || (args[0].equals("-guide") && args.length == 5) || (args[0].equals("-drinkscale") && args.length == 5))) {
 			showUsage();
 			return;
 		}
@@ -602,13 +595,13 @@ public class ImageCompiler {
 			compiler.compileGuideImages(new File(args[1]), new File(args[2]), new File(args[3]), new Color(32, 64, 128), 3.0f, 6.0,
 					Integer.parseInt(args[4]));
 		else if (args[0].equals("-as"))
-			compiler.compileAsServedImages(new File(args[1]), new File(args[2]), new File(args[3]), Integer.parseInt(args[4]), Integer.parseInt(args[5]),
-					Integer.parseInt(args[6]));
+			compiler.compileAsServedImages(new File(args[1]), new File(args[2]), new File(args[3]), Integer.parseInt(args[4]),
+					Integer.parseInt(args[5]), Integer.parseInt(args[6]));
 		else if (args[0].equals("-drinkscale")) {
-			String high = args[3].substring(0,4);
+			String high = args[3].substring(0, 4);
 			String low = args[3].substring(4);
-			int colv = (Integer.parseInt(high, 16) << 16) | Integer.parseInt(low, 16);   
-			
+			int colv = (Integer.parseInt(high, 16) << 16) | Integer.parseInt(low, 16);
+
 			compiler.compileDrinkScaleImages(new File(args[1]), new File(args[2]), new Color(colv, true), 1.0f, 1.0, Integer.parseInt(args[4]));
 		}
 	}

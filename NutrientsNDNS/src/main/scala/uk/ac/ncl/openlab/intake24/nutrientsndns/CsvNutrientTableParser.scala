@@ -24,37 +24,14 @@ import au.com.bytecode.opencsv.CSVReader
 import java.io.FileReader
 import scala.collection.JavaConversions._
 
-object NutrientDef {
+object CsvNutrientTableParser {
   import Nutrient._
   
-  val log = LoggerFactory.getLogger(NutrientDef.getClass)
-
-  val tableMapping: Map[Nutrient, Int] =
-    Map(
-      (Protein, 20),
-      (Fat, 22),
-      (Carbohydrate, 24),
-      (EnergyKcal, 26),
-      (EnergyKj, 28),
-      (Alcohol, 30),
-      (TotalSugars, 38),
-      (Nmes, 40),
-      (SatdFa, 56),
-      (Cholesterol, 66),
-      (VitaminA, 78),
-      (VitaminD, 80),
-      (VitaminC, 92),
-      (VitaminE, 94),
-      (Folate, 100),
-      (Sodium, 106),
-      (Calcium, 110),
-      (Iron, 116),
-      (Zinc, 124),
-      (Selenium, 132))
+  val log = LoggerFactory.getLogger(CsvNutrientTableParser.getClass)
       
   val zeroData = Nutrient.list.map (n => (n.key, 0.0)).toMap
 
-  def parseTable(fileName: String): NutrientData = {
+  def parseTable(fileName: String, rowOffset: Int, tableMapping: Map[Nutrient, Int]): NutrientData = {
     val rows = new CSVReader(new FileReader(fileName)).readAll().toSeq.map(_.toIndexedSeq)
 
     val descriptions: Map[String, String] = Nutrient.list.map(n => (n.key, rows.head(tableMapping(n) - 1))).toMap
@@ -71,11 +48,11 @@ object NutrientDef {
       }
     }).toMap
 
-    val values = rows.zipWithIndex.tail.foldLeft(Map[Int, Map[String, java.lang.Double]]()) {
+    val values = rows.zipWithIndex.drop(rowOffset).foldLeft(Map[String, Map[String, java.lang.Double]]()) {
       case (map, row) => {
         val (rowSeq, rowIndex) = row
         
-        map + (rowSeq(0).toInt -> readRow(rowSeq, rowIndex))
+        map + (rowSeq(0) -> readRow(rowSeq, rowIndex))
       }
     }
 

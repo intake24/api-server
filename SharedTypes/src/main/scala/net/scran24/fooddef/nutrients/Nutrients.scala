@@ -53,5 +53,5 @@ object Nutrient {
   val javaList: java.util.List[Nutrient] = list
 }
 
-case class NutrientData(description: Map[String, String], value: Map[Int, Map[String, java.lang.Double]])
+case class NutrientData(description: Map[String, String], value: Map[String, Map[String, java.lang.Double]])
 

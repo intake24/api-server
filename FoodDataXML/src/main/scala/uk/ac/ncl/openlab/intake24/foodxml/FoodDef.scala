@@ -41,12 +41,19 @@ object FoodDef {
       }
     </portion-size>
 
+  def toXml(nutrientTables: Map[String, String]) =
+    nutrientTables.keys.map {
+      key =>
+        <nutrient-table id={ key } code={ nutrientTables(key) }/>
+    }
+
   def toXml(food: Food): Node =
-    addPortionSizeMethods(
-        addInheritableAttributes(
-          <food code={ food.code } description={ food.englishDescription } ndnsCode={ food.localData.nutrientTableCodes.getOrElse("NDNS", "-1") } groupCode={ food.groupCode.toString }> </food>, 
-          food.attributes),
-        food.localData.portionSize)
+    addInheritableAttributes(
+      <food code={ food.code } description={ food.englishDescription } groupCode={ food.groupCode.toString }>
+        { toXml(food.localData.nutrientTableCodes) }
+        { food.localData.portionSize.map(toXml) }
+      </food>,
+      food.attributes)
 
   def toXml(foods: Seq[Food]): Node =
     <foods>
@@ -72,12 +79,12 @@ object FoodDef {
   def portionSizeMethods(e: Node): Seq[PortionSizeMethod] =
     (e \ "portion-size").map(n => parsePortionSize(n.asInstanceOf[Elem]))
 
-  def addPortionSizeMethods(e: Elem, psm: Seq[PortionSizeMethod]) = 
-    e.copy(child = e.child ++ psm.map(toXml))    
-  
+  def addPortionSizeMethods(e: Elem, psm: Seq[PortionSizeMethod]) =
+    e.copy(child = e.child ++ psm.map(toXml))
+
   def addInheritableAttributes(e: Elem, attr: InheritableAttributes) = {
     var result = e
-    
+
     attr.readyMealOption.foreach(readyMealOption => result %= Attribute(None, "readyMealOption", Text(readyMealOption.toString), Null))
     attr.sameAsBeforeOption.foreach(sameAsBeforeOption => result %= Attribute(None, "sameAsBeforeOption", Text(sameAsBeforeOption.toString), Null))
     attr.reasonableAmount.foreach(reasonableAmount => result %= Attribute(None, "reasonableAmount", Text(reasonableAmount.toString), Null))
@@ -85,17 +92,29 @@ object FoodDef {
     result
   }
 
+  def parseNutrientTableCodes(e: Node): Map[String, String] =
+    (e \ "nutrient-table").map {
+      n =>
+        (n.attribute("id").get.text, n.attribute("code").get.text)
+    }.toMap
+
   def parseXml(root: NodeSeq): Seq[Food] =
     (root \ "food").map(fnode => {
       val code = fnode.attribute("code").get.text
       val desc = fnode.attribute("description").get.text
-      val ndnsCode = fnode.attribute("ndnsCode").get.text.toInt
       val groupCode = fnode.attribute("groupCode").map(_.text.toInt).getOrElse(0)
 
       val attribs = inheritableAttributes(fnode)
-      
-      val psm = portionSizeMethods(fnode)
 
-      Food(UUID.randomUUID(), code, desc, groupCode, attribs, FoodLocal(Some(UUID.randomUUID()), Some(desc), if (ndnsCode == -1) Map() else Map("NDNS" -> ndnsCode.toString()), psm))
+      val psm = portionSizeMethods(fnode)
+      
+      val legacyNdns = fnode.attribute("ndnsCode").map(_.text.toInt)
+      
+      val nutrientTables = legacyNdns match {
+        case Some(code) if code != -1 => parseNutrientTableCodes(fnode) + ("NDNS" -> code.toString())
+        case _ => parseNutrientTableCodes(fnode)
+      }
+
+      Food(UUID.randomUUID(), code, desc, groupCode, attribs, FoodLocal(Some(UUID.randomUUID()), Some(desc), nutrientTables , psm))
     })
 }

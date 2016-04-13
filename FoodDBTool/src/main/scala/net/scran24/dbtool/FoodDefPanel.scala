@@ -82,12 +82,19 @@ class FoodDefPanel(portion: PortionSizeResolver, foods: MutableFoods, foodGroups
 
   codeLabel.setPreferredSize(new Dimension(100, 20))
 
-  val ndnsText = new JTextField(food.localData.nutrientTableCodes.getOrElse("NDNS", -1).toString())
+  val ndnsText = new JTextField(food.localData.nutrientTableCodes.getOrElse("NDNS", "").toString())
   addChangeListener(ndnsText, () => changesMade())
   val ndnsLabel = new JLabel("NDNS code")
   ndnsLabel.setPreferredSize(new Dimension(100, 20))
   val dd = ndnsText.getPreferredSize()
   ndnsText.setPreferredSize(new Dimension(70, dd.height))
+  
+  val nzText = new JTextField(food.localData.nutrientTableCodes.getOrElse("NZ", "").toString())
+  addChangeListener(nzText, () => changesMade())
+  val nzLabel = new JLabel("NZ code")
+  nzLabel.setPreferredSize(new Dimension(100, 20))
+  val dd2 = nzText.getPreferredSize()
+  nzText.setPreferredSize(new Dimension(70, dd2.height))
   
   val groupCodeLabel = new JLabel ("Food group")
   groupCodeLabel.setPreferredSize(new Dimension(100, 20))
@@ -172,6 +179,9 @@ class FoodDefPanel(portion: PortionSizeResolver, foods: MutableFoods, foodGroups
   add(ndnsLabel)
   add(ndnsText)
   add(new LineBreak)
+  add(nzLabel)
+  add(nzText)  
+  add(new LineBreak)
   add(groupCodeLabel)
   add(groupCode)
   add(new LineBreak)
@@ -192,9 +202,18 @@ class FoodDefPanel(portion: PortionSizeResolver, foods: MutableFoods, foodGroups
   add(changeLabel)
   add(new LineBreak)
   
-  def nutrientCodeSnapshot: Map[String, String] = ndnsText.getText.toInt match {
-    case x if x < 0 => Map()
-    case y => Map("NDNS" -> y.toString())
+  def nutrientCodeSnapshot: Map[String, String] = {
+    val ndns = ndnsText.getText.trim()
+    val nz = nzText.getText.trim()
+    
+    var res = Map[String, String]()
+    
+    if (!ndns.isEmpty())
+      res += "NDNS" -> ndns
+    if (!nz.isEmpty())
+      res += "NZ" -> nz
+    
+    res
   }
 
   def snapshot = new Food(UUID.randomUUID(), codeText.getText(), descText.getText(), groupCode.getSelectedItem().asInstanceOf[FoodGroup].id, 

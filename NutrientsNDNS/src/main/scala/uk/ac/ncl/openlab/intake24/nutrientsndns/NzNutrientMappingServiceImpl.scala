@@ -26,7 +26,6 @@ import com.google.inject.Inject
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientDescription
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService
 import uk.ac.ncl.openlab.intake24.services.FoodDataService
-import net.scran24.fooddef.nutrients.Nutrient
 import net.scran24.fooddef.nutrients.Fat
 import net.scran24.fooddef.nutrients.Nmes
 import net.scran24.fooddef.nutrients.Protein
@@ -47,10 +46,10 @@ import net.scran24.fooddef.nutrients.Carbohydrate
 import net.scran24.fooddef.nutrients.TotalSugars
 import net.scran24.fooddef.nutrients.VitaminC
 import net.scran24.fooddef.nutrients.EnergyKcal
+import net.scran24.fooddef.nutrients.Nutrient
 
 @Singleton
-class NdnsNutrientMappingServiceImpl @Inject() (@Named("ndns-data-path") nutrientTableFile: String, foodData: FoodDataService) extends NutrientMappingService {
-
+class NzNutrientMappingServiceImpl @Inject() (@Named("nz-data-path") nutrientTableFile: String, foodData: FoodDataService) extends NutrientMappingService {
   val tableMapping: Map[Nutrient, Int] =
     Map(
       (Protein, 20),
@@ -74,9 +73,8 @@ class NdnsNutrientMappingServiceImpl @Inject() (@Named("ndns-data-path") nutrien
       (Zinc, 124),
       (Selenium, 132))
 
-  val table = CsvNutrientTableParser.parseTable(nutrientTableFile, 1, tableMapping)
-
-  val log = LoggerFactory.getLogger(classOf[NdnsNutrientMappingServiceImpl])
+  val table = CsvNutrientTableParser.parseTable(nutrientTableFile, 2, tableMapping)
+  val log = LoggerFactory.getLogger(classOf[NzNutrientMappingServiceImpl]);
 
   def nutrientDescriptions() =
     Seq(NutrientDescription("protein", "Protein", "g"),

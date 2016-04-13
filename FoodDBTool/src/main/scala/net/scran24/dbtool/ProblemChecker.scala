@@ -45,7 +45,7 @@ class ProblemChecker(foods: MutableFoods, categories: MutableCategories, portion
   }
 
   def problems(food: Food): Seq[String] = Seq(
-    conditional(food.localData.nutrientTableCodes.get("NDNS") match { case None => true; case Some(code) => code == -1 }, "\"" + food.englishDescription + "\" does not have an NDNS code assigned"),
+    conditional(food.localData.nutrientTableCodes.isEmpty, "\"" + food.englishDescription + "\" does not have a nutrient table code assigned"),
     conditional(food.groupCode == 0 || food.groupCode == -1, "\"" + food.englishDescription + "\" is not assigned to a food group"),
     conditional(categories.foodSuperCategories(food.code).isEmpty, "\"" + food.englishDescription + "\" is not assigned to any category"),
     conditional( food.localData.portionSize.isEmpty && portionSize.foodInheritedPortionSize(food.code).isEmpty, "Portion size method cannot be resolved for \"" + food.englishDescription + "\""),
