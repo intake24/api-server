@@ -33,6 +33,8 @@ import scala.runtime.AbstractFunction0;
 import uk.ac.ncl.openlab.intake24.datastoresql.DataStoreJavaAdapter;
 import uk.ac.ncl.openlab.intake24.datastoresql.DataStoreScala;
 import uk.ac.ncl.openlab.intake24.datastoresql.DataStoreSqlImpl;
+import uk.ac.ncl.openlab.intake24.foodsql.AdminFoodDataServiceSqlImpl;
+import uk.ac.ncl.openlab.intake24.foodsql.IndexFoodDataServiceSqlImpl;
 import uk.ac.ncl.openlab.intake24.foodsql.UserFoodDataServiceSqlImpl;
 import uk.ac.ncl.openlab.intake24.nutrientsndns.NdnsNutrientMappingServiceImpl;
 import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService;
@@ -122,6 +124,28 @@ public class SqlConfig extends AbstractModule {
 		cpConfig.setPassword(webXmlConfig.get("sql-foods-db-password"));
 
 		return new UserFoodDataServiceSqlImpl(new HikariDataSource(cpConfig));
+	}
+	
+	@Provides
+	@Singleton
+	protected AdminFoodDataService adminDataServiceSqlImpl(Injector injector) {
+		HikariConfig cpConfig = new HikariConfig();
+		cpConfig.setJdbcUrl(webXmlConfig.get("sql-foods-db-url"));
+		cpConfig.setUsername(webXmlConfig.get("sql-foods-db-user"));
+		cpConfig.setPassword(webXmlConfig.get("sql-foods-db-password"));
+
+		return new AdminFoodDataServiceSqlImpl(new HikariDataSource(cpConfig));
+	}
+	
+	@Provides
+	@Singleton
+	protected IndexFoodDataService indexDataServiceSqlImpl(Injector injector) {
+		HikariConfig cpConfig = new HikariConfig();
+		cpConfig.setJdbcUrl(webXmlConfig.get("sql-foods-db-url"));
+		cpConfig.setUsername(webXmlConfig.get("sql-foods-db-user"));
+		cpConfig.setPassword(webXmlConfig.get("sql-foods-db-password"));
+
+		return new IndexFoodDataServiceSqlImpl(new HikariDataSource(cpConfig));		
 	}
 
 	@Override
