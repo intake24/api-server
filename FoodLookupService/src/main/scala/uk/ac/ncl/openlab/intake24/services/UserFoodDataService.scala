@@ -73,7 +73,8 @@ trait UserFoodDataService {
   def categoryContents(code: String, locale: String): Either[CodeError, UserCategoryContents]
 
   def foodData(code: String, locale: String): Either[FoodDataError, (FoodData, FoodDataSources)]
-  
+    
+  /* The following 3 methods are needed for associated foods logic */
   def foodAllCategories(code: String): Seq[String]
   
   def categoryAllCategories(code: String): Seq[String]
