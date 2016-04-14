@@ -95,9 +95,9 @@ public class StandardPortionScript implements PortionSizeScript {
 								return messages.standardUnit_choiceLabel(SafeHtmlUtils.htmlEscape(argument.name.toLowerCase()));							
 						}},"unit-choice")));
 			else
-				return mkQuantityPrompt(data, 0, foodData.localDescription.getOrElse(foodData.englishDescription));
+				return mkQuantityPrompt(data, 0, foodData.description());
 		} else
-			return mkQuantityPrompt(data, Integer.parseInt(data.get("unit-choice")), foodData.localDescription.getOrElse(foodData.englishDescription));
+			return mkQuantityPrompt(data, Integer.parseInt(data.get("unit-choice")), foodData.description());
 
 	}
 }

@@ -62,8 +62,12 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends UserFoo
     Right(UserCategoryContents(foodHeaders, categoryHeaders))
   }
   
-  def explainFoodDataSources(code: String, locale: String) = throw new RuntimeException("Method not supported by this implementation")
-
+  def foodAllCategories(code: String) = data.categories.foodAllCategories(code)   
+  
+  def categoryAllCategories(code: String) = data.categories.categoryAllCategories(code)
+  
+  def isCategoryCode(code: String) = data.categories.categoryMap.contains(code)
+  
   def foodData(code: String, locale: String) = {
     checkLocale(locale)
 

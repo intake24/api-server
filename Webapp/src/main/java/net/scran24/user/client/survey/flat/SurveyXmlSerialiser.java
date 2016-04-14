@@ -136,8 +136,7 @@ public class SurveyXmlSerialiser {
 	private static final String RECIPE_TAG = "recipe";
 	private static final String RECIPES_TAG = "recipes";
 	
-	private static final String version_id = "bccf825f-18bf-4bc0-918c-4c2dee1be8ac";
-	
+	private static final String version_id = "548293aa-4ede-4709-8896-6de165edf4ab";
 	
 	private static List<Element> getChildElementsByTagName(Element parent, String tagName) {
 		ArrayList<Element> result = new ArrayList<Element>();
@@ -185,11 +184,8 @@ public class SurveyXmlSerialiser {
 			@Override
 			public Element visitEncoded(EncodedFood food) {
 				final Element e2 = doc.createElement(ENCODED_FOOD_TAG);
-				e2.setAttribute(ENGLISH_DESCRIPTION_ATTR, food.data.englishDescription);
 				
-				if (!food.data.localDescription.isEmpty())
-					e2.setAttribute(LOCAL_DESCRIPTION_ATTR, food.data.localDescription.getOrDie());
-				
+				e2.setAttribute(LOCAL_DESCRIPTION_ATTR, food.data.localDescription);				
 				e2.setAttribute(CODE_ATTR, food.data.code);
 				e2.setAttribute(ASK_IF_READY_MEAL_ATTR, food.data.askIfReadyMeal ? TRUE_LIT : FALSE_LIT);
 				e2.setAttribute(SAME_AS_BEFORE_OPTION_ATTR, food.data.sameAsBeforeOption ? TRUE_LIT : FALSE_LIT);
@@ -588,18 +584,11 @@ public class SurveyXmlSerialiser {
 				for (Element e: nutrientTableCodeElements) 
 					nutrientTableCodes.put(e.getAttribute(ID_ATTR), e.getAttribute(CODE_ATTR)); */
 				
-				Option<String> localDescription;
-				
-				if (!fe.hasAttribute(LOCAL_DESCRIPTION_ATTR))
-					localDescription = Option.none();
-				else
-					localDescription = Option.some(fe.getAttribute(LOCAL_DESCRIPTION_ATTR));
-
 				EncodedFood ef = new EncodedFood(new FoodData(fe.getAttribute(CODE_ATTR),
 						fe.getAttribute(ASK_IF_READY_MEAL_ATTR).equals(TRUE_LIT),
 						fe.getAttribute(SAME_AS_BEFORE_OPTION_ATTR).equals(TRUE_LIT),
 						Double.parseDouble(fe.getAttribute(CALORIES_PER_100_G_ATTR)),
-						fe.getAttribute(ENGLISH_DESCRIPTION_ATTR), localDescription, portionSizeMethods, prompts, brands, categories), link, selectedPortionSizeMethodIndex, portionSize, brand,
+						fe.getAttribute(LOCAL_DESCRIPTION_ATTR), portionSizeMethods, prompts, brands, categories), link, selectedPortionSizeMethodIndex, portionSize, brand,
 						fe.getAttribute(SEARCH_TERM_ATTR), TreePVector.<FoodPrompt> empty().plusAll(enabledPrompts), flags, customData);
 
 				foods = foods.plus(ef);

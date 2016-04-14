@@ -111,7 +111,7 @@ class UserFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSou
 	         |FROM foods
 	         |  LEFT JOIN brands
 		       |    ON foods.code = brands.food_code
-           |WHERE foods.code = {food_code} AND (locale_id = {locale_id} OR locale_id IN (SELECT prototype_locale_id FROM locales WHERE id = {locale_id}) OR locale_id IS NULL) ORDER BY id"""
+           |WHERE foods.code = {food_code} AND (locale_id = {locale_id} OR locale_id IN (SELECT prototype_locale_id FROM locales WHERE id = {locale_id}) OR locale_id IS NULL) ORDER BY id""".stripMargin
 
       val rows = SQL(query).on('food_code -> foodCode, 'locale_id -> locale).executeQuery().as(Macro.namedParser[BrandNamesRow].*)
 

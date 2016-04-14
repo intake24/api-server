@@ -139,7 +139,7 @@ public class FoodBrowser extends Composite {
 		else if (foodHeader.code.equals(SpecialData.FOOD_CODE_SALAD))
 			description = messages.foodBrowser_homemadeSalad();
 		else
-			description = foodHeader.localDescription.getOrElse(foodHeader.englishDescription);
+			description = foodHeader.description();
 
 		Label item = new Label(description);
 		item.addStyleName("intake24-food-browser-food");
@@ -231,13 +231,13 @@ public class FoodBrowser extends Composite {
 			categoriesContainer.add(header);
 
 			for (final CategoryHeader categoryData : result.categories) {
-				Label item = new Label(categoryData.localDescription.getOrElse(categoryData.englishDescription));
+				Label item = new Label(categoryData.description());
 				item.addStyleName("intake24-food-browser-category");
 				item.addClickHandler(new ClickHandler() {
 					@Override
 					public void onClick(ClickEvent arg0) {
 						pushHistory(result, resultName, foodHeader, categoryHeader);
-						browse(categoryData.code, categoryData.localDescription.getOrElse(categoryData.englishDescription));
+						browse(categoryData.code, categoryData.description());
 					}
 				});
 				categoriesContainer.add(item);

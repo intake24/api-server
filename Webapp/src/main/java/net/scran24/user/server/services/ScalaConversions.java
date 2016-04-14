@@ -43,34 +43,34 @@ public class ScalaConversions {
 			return Option.none();		
 	}	
 	
-	public static FoodHeader toJavaFoodHeader(net.scran24.fooddef.FoodHeader header) {
-		return new FoodHeader(header.code(), header.englishDescription(), toJavaOption(header.localDescription()));
+	public static FoodHeader toJavaFoodHeader(net.scran24.fooddef.UserFoodHeader header) {
+		return new FoodHeader(header.code(), header.localDescription());
 	}
 	
-	public static List<FoodHeader> toJavaFoodHeaders(Seq<net.scran24.fooddef.FoodHeader> headers) {
-		Iterator<net.scran24.fooddef.FoodHeader> iter = headers.iterator();
+	public static List<FoodHeader> toJavaFoodHeaders(Seq<net.scran24.fooddef.UserFoodHeader> headers) {
+		Iterator<net.scran24.fooddef.UserFoodHeader> iter = headers.iterator();
 		
 		List<FoodHeader> result = new ArrayList<FoodHeader>();
 
 		while (iter.hasNext()) {			
-			net.scran24.fooddef.FoodHeader header = iter.next();
+			net.scran24.fooddef.UserFoodHeader header = iter.next();
 			result.add(toJavaFoodHeader(header));
 		}
 
 		return result;		
 	}
 	
-	public static CategoryHeader toJavaCategoryHeader(net.scran24.fooddef.CategoryHeader header) {
-		return new CategoryHeader(header.code(), header.englishDescription(), toJavaOption(header.localDescription()), header.isHidden());
+	public static CategoryHeader toJavaCategoryHeader(net.scran24.fooddef.UserCategoryHeader header) {
+		return new CategoryHeader(header.code(), header.localDescription());
 	}
 	
-	public static List<CategoryHeader> toJavaCategoryHeaders(Seq<net.scran24.fooddef.CategoryHeader> headers) {
-		Iterator<net.scran24.fooddef.CategoryHeader> iter = headers.iterator();
+	public static List<CategoryHeader> toJavaCategoryHeaders(Seq<net.scran24.fooddef.UserCategoryHeader> headers) {
+		Iterator<net.scran24.fooddef.UserCategoryHeader> iter = headers.iterator();
 		
 		List<CategoryHeader> result = new ArrayList<CategoryHeader>();
 
 		while (iter.hasNext()) {			
-			net.scran24.fooddef.CategoryHeader header = iter.next();
+			net.scran24.fooddef.UserCategoryHeader header = iter.next();
 			result.add(toJavaCategoryHeader(header));
 		}
 
@@ -137,7 +137,7 @@ public class ScalaConversions {
 		while (i.hasNext())
 			categoryCodes.add(i.next().code());
 						
-		return new FoodData(data.code(), data.readyMealOption(), data.sameAsBeforeOption(), calPer100g, data.englishDescription(), toJavaOption(data.localDescription()), toJavaPortionSizeMethods(data.portionSize(), imageUrlBase),
+		return new FoodData(data.code(), data.readyMealOption(), data.sameAsBeforeOption(), calPer100g, data.localDescription(), toJavaPortionSizeMethods(data.portionSize(), imageUrlBase),
 				toJavaPrompts(prompts), toJavaList(brands), categoryCodes);
 	}
 }

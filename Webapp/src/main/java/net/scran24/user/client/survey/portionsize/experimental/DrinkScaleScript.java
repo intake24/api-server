@@ -127,7 +127,7 @@ public class DrinkScaleScript implements PortionSizeScript {
 
 	@Override
 	public Option<SimplePrompt<UpdateFunc>> nextPrompt(final PMap<String, String> data, FoodData foodData) {
-		String escapedFoodDesc = SafeHtmlUtils.htmlEscape(foodData.localDescription.getOrDie(foodData.englishDescription).toLowerCase());
+		String escapedFoodDesc = SafeHtmlUtils.htmlEscape(foodData.description().toLowerCase());
 		
 		if (!data.containsKey("containerIndex")) {
 			return Option
@@ -135,7 +135,7 @@ public class DrinkScaleScript implements PortionSizeScript {
 							withBackLink(
 									withHeader(
 									guidePrompt(SafeHtmlUtils.fromSafeConstant(messages.drinkScale_containerPromptText(escapedFoodDesc)), guideImage, "containerIndex", "imageUrl"), 
-									foodData.localDescription.getOrElse(foodData.englishDescription))), calcFillVolumeIfSkip));
+									foodData.description())), calcFillVolumeIfSkip));
 		} else if (!data.containsKey("fillLevel")) {
 			return Option.some(PromptUtil.map(
 					withBackLink(
@@ -143,21 +143,21 @@ public class DrinkScaleScript implements PortionSizeScript {
 							drinkScalePrompt(
 									SafeHtmlUtils.fromSafeConstant(messages.drinkScale_servedPromptText()), getScaleDef(Integer.parseInt(data.get("containerIndex"))), 
 									messages.drinkScale_servedLessButtonLabel(), messages.drinkScale_servedMoreButtonLabel(), messages.drinkScale_servedContinueButtonLabel(),
-									1.0, Double.parseDouble(data.get("initial-fill-level")), "fillLevel"), foodData.localDescription.getOrElse(foodData.englishDescription))), calcFillVolume));
+									1.0, Double.parseDouble(data.get("initial-fill-level")), "fillLevel"), foodData.description())), calcFillVolume));
 		} else if (!data.containsKey("leftoversLevel")) {
 			if (!data.containsKey("leftovers"))
 				return Option.some(PromptUtil.map(
 						withBackLink(
 								withHeader(
 								yesNoPromptZeroField(SafeHtmlUtils.fromSafeConstant(messages.drinkScale_leftoversQuestionPromptText(escapedFoodDesc)), messages.yesNoQuestion_defaultYesLabel(), messages.yesNoQuestion_defaultNoLabel(), "leftovers",
-										"leftoversLevel"), foodData.localDescription.getOrElse(foodData.englishDescription))), calcLeftoversVolume));
+										"leftoversLevel"), foodData.description())), calcLeftoversVolume));
 			else
 				return Option.some(PromptUtil.map(
 						withBackLink(
 								withHeader(
 								drinkScalePrompt(SafeHtmlUtils.fromSafeConstant(messages.drinkScale_leftPromptText(escapedFoodDesc)),
 										getScaleDef(Integer.parseInt(data.get("containerIndex"))), messages.drinkScale_leftLessButtonLabel(), messages.drinkScale_leftMoreButtonLabel(), messages.drinkScale_leftContinueButtonLabel(),
-										Double.parseDouble(data.get("fillLevel")), Double.parseDouble(data.get("fillLevel")), "leftoversLevel"), foodData.localDescription.getOrElse(foodData.englishDescription))), calcLeftoversVolume));
+										Double.parseDouble(data.get("fillLevel")), Double.parseDouble(data.get("fillLevel")), "leftoversLevel"), foodData.description())), calcLeftoversVolume));
 		} else
 			return done();
 	}

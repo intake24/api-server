@@ -72,7 +72,7 @@ public class AsServedScript implements PortionSizeScript {
 		if (!data.containsKey("servingWeight")) {
 			SimplePrompt<UpdateFunc> portionSizePrompt = 
 					withBackLink(
-							asServedPrompt(servingImages,	messages.asServed_servedLessButtonLabel(), messages.asServed_servedMoreButtonLabel(), messages.asServed_servedContinueButtonLabel(), "servingChoiceIndex", "servingImage", "servingWeight", defaultServingSizePrompt(foodData.localDescription.getOrElse(foodData.englishDescription)))
+							asServedPrompt(servingImages,	messages.asServed_servedLessButtonLabel(), messages.asServed_servedMoreButtonLabel(), messages.asServed_servedContinueButtonLabel(), "servingChoiceIndex", "servingImage", "servingWeight", defaultServingSizePrompt(foodData.description()))
 							 );
 			
 			if (!hasLeftoverImages)
@@ -83,10 +83,10 @@ public class AsServedScript implements PortionSizeScript {
 		else if (!data.containsKey("leftoversWeight") && hasLeftoverImages) {
 			if (!data.containsKey("leftovers")) 
 				return Option.some(withBackLink(
-						yesNoPromptZeroField(SafeHtmlUtils.fromSafeConstant(messages.asServed_leftoversQuestionPromptText(SafeHtmlUtils.htmlEscape(foodData.localDescription.getOrElse(foodData.englishDescription).toLowerCase()))), messages.yesNoQuestion_defaultYesLabel(), messages.yesNoQuestion_defaultNoLabel(), "leftovers", "leftoversWeight")));
+						yesNoPromptZeroField(SafeHtmlUtils.fromSafeConstant(messages.asServed_leftoversQuestionPromptText(SafeHtmlUtils.htmlEscape(foodData.description().toLowerCase()))), messages.yesNoQuestion_defaultYesLabel(), messages.yesNoQuestion_defaultNoLabel(), "leftovers", "leftoversWeight")));
 			else
 				return Option.some(withBackLink(asServedPrompt(leftoversImages.getOrDie(), 
-						messages.asServed_leftLessButtonLabel(), messages.asServed_leftMoreButtonLabel(), messages.asServed_leftContinueButtonLabel(), "leftoversChoiceIndex", "leftoversImage", "leftoversWeight", defaultLeftoversPrompt(foodData.localDescription.getOrElse(foodData.englishDescription)))));
+						messages.asServed_leftLessButtonLabel(), messages.asServed_leftMoreButtonLabel(), messages.asServed_leftContinueButtonLabel(), "leftoversChoiceIndex", "leftoversImage", "leftoversWeight", defaultLeftoversPrompt(foodData.description()))));
 		}
 		else
 			return done();

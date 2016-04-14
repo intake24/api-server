@@ -25,14 +25,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import net.scran24.datastore.DataStore;
-import uk.ac.ncl.openlab.intake24.services.AutoReloadIndex;
-import uk.ac.ncl.openlab.intake24.services.FoodDataService;
-import uk.ac.ncl.openlab.intake24.services.foodindex.AbstractFoodIndex;
-import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex;
-import uk.ac.ncl.openlab.intake24.services.foodindex.Splitter;
-import uk.ac.ncl.openlab.intake24.services.foodindex.english.FoodIndexImpl_en_GB;
-import uk.ac.ncl.openlab.intake24.services.foodindex.english.SplitterImpl_en_GB;
-import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService;
 
 import org.workcraft.gwt.shared.client.Pair;
 
@@ -41,8 +33,20 @@ import scala.runtime.AbstractFunction0;
 import uk.ac.ncl.openlab.intake24.datastoresql.DataStoreJavaAdapter;
 import uk.ac.ncl.openlab.intake24.datastoresql.DataStoreScala;
 import uk.ac.ncl.openlab.intake24.datastoresql.DataStoreSqlImpl;
-import uk.ac.ncl.openlab.intake24.foodsql.FoodDataServiceSqlImpl;
+import uk.ac.ncl.openlab.intake24.foodsql.AdminFoodDataServiceSqlImpl;
+import uk.ac.ncl.openlab.intake24.foodsql.IndexFoodDataServiceSqlImpl;
+import uk.ac.ncl.openlab.intake24.foodsql.UserFoodDataServiceSqlImpl;
 import uk.ac.ncl.openlab.intake24.nutrientsndns.NdnsNutrientMappingServiceImpl;
+import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService;
+import uk.ac.ncl.openlab.intake24.services.AutoReloadIndex;
+import uk.ac.ncl.openlab.intake24.services.IndexFoodDataService;
+import uk.ac.ncl.openlab.intake24.services.UserFoodDataService;
+import uk.ac.ncl.openlab.intake24.services.foodindex.AbstractFoodIndex;
+import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex;
+import uk.ac.ncl.openlab.intake24.services.foodindex.Splitter;
+import uk.ac.ncl.openlab.intake24.services.foodindex.english.FoodIndexImpl_en_GB;
+import uk.ac.ncl.openlab.intake24.services.foodindex.english.SplitterImpl_en_GB;
+import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
@@ -61,7 +65,7 @@ public class SqlConfig extends AbstractModule {
 	@Provides
 	@Singleton
 	protected Map<String, FoodIndex> localFoodIndex(Injector injector) {
-		final FoodDataService foodDataService = injector.getInstance(FoodDataService.class);
+		final IndexFoodDataService foodDataService = injector.getInstance(IndexFoodDataService.class);
 		Map<String, FoodIndex> result = new HashMap<String, FoodIndex>();
 
 		result.put("en_GB", new AutoReloadIndex(new AbstractFunction0<AbstractFoodIndex>() {
@@ -84,7 +88,7 @@ public class SqlConfig extends AbstractModule {
 	@Provides
 	@Singleton
 	protected Map<String, Splitter> localSplitter(Injector injector) {
-		FoodDataService foodDataService = injector.getInstance(FoodDataService.class);
+		IndexFoodDataService foodDataService = injector.getInstance(IndexFoodDataService.class);
 
 		Map<String, Splitter> result = new HashMap<String, Splitter>();
 		result.put("en_GB", new SplitterImpl_en_GB(foodDataService));
@@ -94,7 +98,7 @@ public class SqlConfig extends AbstractModule {
 	@Provides
 	@Singleton
 	protected List<Pair<String, ? extends NutrientMappingService>> nutrientTables(Injector injector) {
-		FoodDataService foodDataService = injector.getInstance(FoodDataService.class);
+		UserFoodDataService foodDataService = injector.getInstance(UserFoodDataService.class);
 		List<Pair<String, ? extends NutrientMappingService>> result = new ArrayList<Pair<String, ? extends NutrientMappingService>>();
 		result.add(Pair.create("NDNS", new NdnsNutrientMappingServiceImpl(webXmlConfig.get("ndns-data-path"), foodDataService)));
 		return result;
@@ -113,13 +117,35 @@ public class SqlConfig extends AbstractModule {
 
 	@Provides
 	@Singleton
-	protected FoodDataService foodDataServiceSqlImpl(Injector injector) {
+	protected UserFoodDataService foodDataServiceSqlImpl(Injector injector) {
 		HikariConfig cpConfig = new HikariConfig();
 		cpConfig.setJdbcUrl(webXmlConfig.get("sql-foods-db-url"));
 		cpConfig.setUsername(webXmlConfig.get("sql-foods-db-user"));
 		cpConfig.setPassword(webXmlConfig.get("sql-foods-db-password"));
 
-		return new FoodDataServiceSqlImpl(new HikariDataSource(cpConfig));
+		return new UserFoodDataServiceSqlImpl(new HikariDataSource(cpConfig));
+	}
+	
+	@Provides
+	@Singleton
+	protected AdminFoodDataService adminDataServiceSqlImpl(Injector injector) {
+		HikariConfig cpConfig = new HikariConfig();
+		cpConfig.setJdbcUrl(webXmlConfig.get("sql-foods-db-url"));
+		cpConfig.setUsername(webXmlConfig.get("sql-foods-db-user"));
+		cpConfig.setPassword(webXmlConfig.get("sql-foods-db-password"));
+
+		return new AdminFoodDataServiceSqlImpl(new HikariDataSource(cpConfig));
+	}
+	
+	@Provides
+	@Singleton
+	protected IndexFoodDataService indexDataServiceSqlImpl(Injector injector) {
+		HikariConfig cpConfig = new HikariConfig();
+		cpConfig.setJdbcUrl(webXmlConfig.get("sql-foods-db-url"));
+		cpConfig.setUsername(webXmlConfig.get("sql-foods-db-user"));
+		cpConfig.setPassword(webXmlConfig.get("sql-foods-db-password"));
+
+		return new IndexFoodDataServiceSqlImpl(new HikariDataSource(cpConfig));		
 	}
 
 	@Override
