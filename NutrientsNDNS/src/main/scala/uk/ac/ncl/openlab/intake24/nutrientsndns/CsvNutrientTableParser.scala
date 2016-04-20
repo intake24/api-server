@@ -26,19 +26,30 @@ import scala.collection.JavaConversions._
 
 object CsvNutrientTableParser {
   import Nutrient._
-  
+
   val log = LoggerFactory.getLogger(CsvNutrientTableParser.getClass)
-      
-  val zeroData = Nutrient.list.map (n => (n.key, 0.0)).toMap
+
+  val zeroData = Nutrient.list.map(n => (n.key, 0.0)).toMap
+
+  def excelColumnToOffset(colRef: String) = {
+    def r(s: String) = s.foldRight((0, 1)) {
+      case (ch, (acc, mul)) => (acc + (ch - 'A' + 1) * mul, mul * 26)
+    }
+    r(colRef)._1
+  }
 
   def parseTable(fileName: String, rowOffset: Int, tableMapping: Map[Nutrient, Int]): NutrientData = {
     val rows = new CSVReader(new FileReader(fileName)).readAll().toSeq.map(_.toIndexedSeq)
 
-    val descriptions: Map[String, String] = Nutrient.list.map(n => (n.key, rows.head(tableMapping(n) - 1))).toMap
+    val descriptions: Map[String, String] = Nutrient.list.map(n => {
+      val colNum = tableMapping(n)
+      (n.key, if (colNum == -1) "N/A" else rows.head(colNum - 1))
+    }).toMap
 
     def readRow(row: IndexedSeq[String], rowIndex: Int): Map[String, java.lang.Double] = Nutrient.list.map(n => {
       try {
-        val v: java.lang.Double = row(tableMapping(n) - 1).toDouble
+        val colNum = tableMapping(n)
+        val v: java.lang.Double = if (colNum == -1) 0 else row(colNum - 1).toDouble
         (n.key, v)
       } catch {
         case e: Throwable => {
@@ -51,7 +62,7 @@ object CsvNutrientTableParser {
     val values = rows.zipWithIndex.drop(rowOffset).foldLeft(Map[String, Map[String, java.lang.Double]]()) {
       case (map, row) => {
         val (rowSeq, rowIndex) = row
-        
+
         map + (rowSeq(0) -> readRow(rowSeq, rowIndex))
       }
     }

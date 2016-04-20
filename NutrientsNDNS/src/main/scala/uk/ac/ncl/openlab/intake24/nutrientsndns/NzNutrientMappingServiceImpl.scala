@@ -50,28 +50,31 @@ import net.scran24.fooddef.nutrients.Nutrient
 
 @Singleton
 class NzNutrientMappingServiceImpl @Inject() (@Named("nz-data-path") nutrientTableFile: String, foodData: FoodDataService) extends NutrientMappingService {
+  
+  import CsvNutrientTableParser.{ excelColumnToOffset => col }
+  
   val tableMapping: Map[Nutrient, Int] =
     Map(
-      (Protein, 20),
-      (Fat, 22),
-      (Carbohydrate, 24),
-      (EnergyKcal, 26),
-      (EnergyKj, 28),
-      (Alcohol, 30),
-      (TotalSugars, 38),
-      (Nmes, 40),
-      (SatdFa, 56),
-      (Cholesterol, 66),
-      (VitaminA, 78),
-      (VitaminD, 80),
-      (VitaminC, 92),
-      (VitaminE, 94),
-      (Folate, 100),
-      (Sodium, 106),
-      (Calcium, 110),
-      (Iron, 116),
-      (Zinc, 124),
-      (Selenium, 132))
+      (Protein, col("BP")),
+      (Fat, col("AF")),
+      (Carbohydrate, col("I")),
+      (EnergyKcal, col("X")),
+      (EnergyKj, col("Z")),
+      (Alcohol, col("D")),
+      (TotalSugars, col("BW")),
+      (Nmes, -1),
+      (SatdFa, col("AS")),
+      (Cholesterol, col("R")),
+      (VitaminA, col("CB")),
+      (VitaminD, col("CF")),
+      (VitaminC, col("CE")),
+      (VitaminE, col("CG")),
+      (Folate, col("AY")),
+      (Sodium, col("BT")),
+      (Calcium, col("P")),
+      (Iron, col("BE")),
+      (Zinc, col("CI")),
+      (Selenium, col("BS")))
 
   val table = CsvNutrientTableParser.parseTable(nutrientTableFile, 2, tableMapping)
   val log = LoggerFactory.getLogger(classOf[NzNutrientMappingServiceImpl]);
