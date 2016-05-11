@@ -84,7 +84,7 @@ CREATE TABLE foods_local
 (
   food_code character(4) NOT NULL,
   locale_id character varying(16) NOT NULL,
-  local_description character varying(128) NOT NULL,
+  local_description character varying(128),
   do_not_use boolean NOT NULL DEFAULT false,
   version uuid NOT NULL,
 
