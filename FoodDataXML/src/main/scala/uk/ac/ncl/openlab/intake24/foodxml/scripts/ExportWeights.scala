@@ -31,10 +31,10 @@ import uk.ac.ncl.openlab.intake24.foodxml.AsServedDef
 
 
 object ExportWeights extends App {
-  val asServedSets = AsServedDef.parseXml(XML.load("D:\\SCRAN24\\Data\\as-served.xml"))
-  val writer = new CSVWriter(new FileWriter("D:\\scratch\\scran24_asw.csv"))
+  val asServedSets = AsServedDef.parseXml(XML.load("/home/ivan/Projects/Intake24/intake24-data/as-served.xml"))
+  val writer = new CSVWriter(new FileWriter("/home/ivan/tmp/scran24_asw.csv"))
   
-  val guide = GuideImageDef.parseXml(XML.load("D:\\SCRAN24\\Data\\guide.xml")) 
+  val guide = GuideImageDef.parseXml(XML.load("/home/ivan/Projects/Intake24/intake24-data/guide.xml")) 
 
   def toCSV(set: AsServedSet) =
     set.images.map(ps => Array(set.description, ps.url, ps.url.replaceAll(".jpg", ""), ps.weight.toString))
@@ -46,7 +46,7 @@ object ExportWeights extends App {
   val guideCSV = guide.keys.toSeq.sorted.flatMap ( k => 
    guide(k).weights.map( r => Array(r.description, k, r.objectId.toString, r.weight.toString)) )
    
-  val guideWriter = new CSVWriter(new FileWriter("D:\\scratch\\scran24_gw.csv"))
+  val guideWriter = new CSVWriter(new FileWriter("/home/ivan/tmp/scran24_gw.csv"))
   guideWriter.writeAll(Array("Description", "Guide image ID", "Object ID", "Weight, g") +: guideCSV)
   guideWriter.close
 
