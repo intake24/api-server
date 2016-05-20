@@ -80,7 +80,7 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
     implicit conn =>
       val query =
         """|SELECT code, description, local_description
-           |FROM foods JOIN foods_local ON foods.code = foods_local.food_code
+           |FROM foods LEFT JOIN foods_local ON foods.code = foods_local.food_code
            |           LEFT JOIN foods_categories ON foods.code = foods_categories.food_code
            |WHERE category_code IS NULL""".stripMargin
 
