@@ -457,8 +457,8 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
 
       val query =
         """|SELECT code, description, local_description
-           |FROM foods JOIN foods_local ON foods.code = foods_local.food_code 
-           |WHERE lower(local_description) LIKE {pattern} OR lower(code) LIKE {pattern} 
+           |FROM foods LEFT JOIN foods_local ON foods.code = foods_local.food_code 
+           |WHERE lower(local_description) LIKE {pattern} OR lower(description) LIKE {pattern} OR lower(code) LIKE {pattern} 
            |ORDER BY local_description DESC
            |LIMIT 50""".stripMargin
 
@@ -471,8 +471,8 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
 
       val query =
         """|SELECT code, description, local_description, is_hidden
-           |FROM categories JOIN categories_local ON categories.code = categories_local.category_code
-           |WHERE lower(local_description) LIKE {pattern} OR lower(code) LIKE {pattern}
+           |FROM categories LEFT JOIN categories_local ON categories.code = categories_local.category_code
+           |WHERE lower(local_description) LIKE {pattern} OR lower(description) LIKE {pattern} OR lower(code) LIKE {pattern}
            |ORDER BY local_description DESC
            |LIMIT 50""".stripMargin
 
