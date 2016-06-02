@@ -82,6 +82,10 @@ trait FoodDataEditingSqlImpl extends SqlDataService {
 
   val cannotAddCategoryToItselfCode = "cannot_add_category_to_itself"
 
+  val temporaryCodesExhausted = "temporary_codes_exhausted"
+
+  val temporaryCodesExhaustedMessage = "Cannot assign a temporary food code, tried F000 through F999 but none are available."
+
   def isFoodCodeAvailable(code: String) = tryWithConnection {
     implicit conn =>
       SQL("SELECT code FROM foods WHERE code={food_code}").on('food_code -> code).executeQuery().as(SqlParser.str("code").*).isEmpty
@@ -106,6 +110,23 @@ trait FoodDataEditingSqlImpl extends SqlDataService {
             case _ => SqlException(e.getServerErrorMessage.getMessage)
           }
       }
+  }
+
+  def createFoodWithTempCode(newFood: NewFood): Either[InvalidRequest, String] = {
+    def tryNextNumber(n: Int): Either[InvalidRequest, String] = {
+      if (n > 999)
+        Left(InvalidRequest(temporaryCodesExhausted, temporaryCodesExhaustedMessage))
+      else {
+        val tempCode = "F%03d".format(n)
+        createFood(newFood.copy(code = tempCode)) match {
+          case InvalidRequest(errorCode, _) if errorCode == foodCodePkConstraintFailedCode => tryNextNumber(n + 1)
+          case x: InvalidRequest => Left(x)
+          case uk.ac.ncl.openlab.intake24.services.Success => Right(tempCode)
+        }
+      }
+    }
+
+    tryNextNumber(0)
   }
 
   def deleteFood(foodCode: String) = tryWithConnection {
@@ -188,6 +209,7 @@ trait FoodDataEditingSqlImpl extends SqlDataService {
 
         foodLocal.version match {
           case Some(version) => {
+
             val rowsAffected = SQL(Queries.foodsLocalUpdate)
               .on('food_code -> foodCode, 'locale_id -> locale, 'base_version -> foodLocal.version, 'new_version -> UUID.randomUUID(), 'local_description -> foodLocal.localDescription)
               .executeUpdate()
@@ -203,7 +225,7 @@ trait FoodDataEditingSqlImpl extends SqlDataService {
           case None => {
             try {
               SQL(Queries.foodsLocalInsert)
-                .on('food_code -> foodCode, 'locale_id -> locale, 'local_description -> foodLocal.localDescription, 'version -> UUID.randomUUID())
+                .on('food_code -> foodCode, 'locale_id -> locale, 'local_description -> foodLocal.localDescription, 'do_not_use -> false, 'version -> UUID.randomUUID())
                 .execute()
               conn.commit()
               uk.ac.ncl.openlab.intake24.services.Success

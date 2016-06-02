@@ -54,6 +54,8 @@ case class SqlException(message: String) extends UpdateResult
 
 case class NewFood(code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes)
 
+case class NewFoodAutoCode(englishDescription: String, groupCode: Int, attributes: InheritableAttributes)
+
 case class NewCategory(code: String, englishDescription: String, isHidden: Boolean, attributes: InheritableAttributes)
 
 trait AdminFoodDataService {
@@ -108,6 +110,8 @@ trait AdminFoodDataService {
   def isFoodCodeAvailable(code: String): Boolean
   
   def createFood(newFood: NewFood): UpdateResult
+  
+  def createFoodWithTempCode(newFood: NewFood): Either[InvalidRequest, String]
   
   def deleteFood(foodCode: String): UpdateResult
   

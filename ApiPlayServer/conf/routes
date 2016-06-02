@@ -43,6 +43,7 @@ GET     /admin/foods/:locale/:code/problems           controllers.ProblemChecker
 
 
 POST    /admin/foods/new                              controllers.AdminFoodDataController.createFood()
+POST    /admin/foods/new-with-temp-code               controllers.AdminFoodDataController.createFoodWithTempCode()
 POST    /admin/foods/:code                            controllers.AdminFoodDataController.updateFoodBase(code: String)
 POST    /admin/foods/:locale/:code                    controllers.AdminFoodDataController.updateFoodLocal(code: String, locale: String)
 DELETE  /admin/foods/:code                            controllers.AdminFoodDataController.deleteFood(code)

@@ -46,6 +46,7 @@ import uk.ac.ncl.openlab.intake24.services.NewCategory
 import net.scran24.fooddef.CategoryBase
 import net.scran24.fooddef.CategoryLocal
 import security.Permissions
+import play.api.libs.json.JsString
 
 class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt: DeadboltActions) extends Controller with PickleErrorHandler {
 
@@ -193,6 +194,17 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
         translateUpdateResult(service.createFood(read[NewFood](request.body)))
+      }
+    }
+  }
+  
+  def createFoodWithTempCode() = deadbolt.Pattern("api.fooddata.admin.write", PatternType.EQUALITY) {
+    Action(parse.tolerantText) { implicit request =>
+      tryWithPickle {
+        service.createFoodWithTempCode(read[NewFood](request.body)) match {
+          case Left(error) => translateUpdateResult(error)
+          case Right(tempCode) => Ok(tempCode) 
+        }
       }
     }
   }
