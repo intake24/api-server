@@ -472,7 +472,7 @@ object XmlImport extends App {
 
   opts.pgUseSsl.get match {
     case Some(true) => properties.setProperty("ssl", "true")
-    case _ => properties.setProperty("ssl", "false")
+    case _ => ()
   }
 
   implicit val dbConn = DriverManager.getConnection(s"jdbc:postgresql://${opts.pgHost()}/${opts.pgDatabase()}", properties)
