@@ -463,19 +463,17 @@ object XmlImport extends App {
   val logger = LoggerFactory.getLogger(getClass)
 
   DriverManager.registerDriver(new org.postgresql.Driver)
-
-  val properties = new Properties()
-
-  properties.setProperty("user", opts.pgUser())
-
-  opts.pgPassword.foreach(pw => properties.setProperty("password", pw))
-
-  opts.pgUseSsl.get match {
-    case Some(true) => properties.setProperty("ssl", "true")
-    case _ => ()
-  }
-
-  implicit val dbConn = DriverManager.getConnection(s"jdbc:postgresql://${opts.pgHost()}/${opts.pgDatabase()}", properties)
+  
+  val dataSource = new org.postgresql.ds.PGSimpleDataSource()
+  
+  dataSource.setServerName(opts.pgHost())
+  dataSource.setDatabaseName(opts.pgDatabase())
+  dataSource.setUser(opts.pgUser())
+  
+  opts.pgPassword.foreach(pw => dataSource.setPassword(pw))
+  opts.pgUseSsl.foreach(ssl => dataSource.setSsl(ssl))
+  
+  implicit val dbConn = dataSource.getConnection
 
   def separateSqlStatements(sql: String) =
     // Regex matches on semicolons that neither precede nor follow other semicolons
