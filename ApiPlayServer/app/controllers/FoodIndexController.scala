@@ -31,10 +31,10 @@ import javax.inject.Inject
 import be.objectify.deadbolt.scala.DeadboltActions
 import be.objectify.deadbolt.core.PatternType
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex
-
+import security.Roles
 
 class FoodIndexController @Inject() (foodIndexes: Map[String, FoodIndex], deadbolt: DeadboltActions) extends Controller {
-  def lookup(locale: String, term: String) = deadbolt.Pattern("api.foods.read", PatternType.EQUALITY) {
+  def lookup(locale: String, term: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       foodIndexes.get(locale) match {
         case Some(index) => Ok(write(index.lookup(term, 50))).as(ContentTypes.JSON)

@@ -47,90 +47,90 @@ import net.scran24.fooddef.CategoryBase
 import net.scran24.fooddef.CategoryLocal
 import security.Permissions
 import play.api.libs.json.JsString
+import security.Roles
 
 class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt: DeadboltActions) extends Controller with PickleErrorHandler {
 
   // Read 
-
-  def rootCategories(locale: String) = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
+  def rootCategories(locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       Ok(write(service.rootCategories(locale))).as(ContentTypes.JSON)
     }
   }
 
-  def uncategorisedFoods(locale: String) = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
+  def uncategorisedFoods(locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       Ok(write(service.uncategorisedFoods(locale))).as(ContentTypes.JSON)
     }
   }
 
-  def categoryContents(code: String, locale: String) = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
+  def categoryContents(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       Ok(write(service.categoryContents(code, locale))).as(ContentTypes.JSON)
     }
   }
 
-  def foodParentCategories(code: String, locale: String) = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
+  def foodParentCategories(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       Ok(write(service.foodParentCategories(code, locale))).as(ContentTypes.JSON)
     }
   }
 
-  def foodAllCategories(code: String, locale: String) = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
+  def foodAllCategories(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       Ok(write(service.foodAllCategories(code, locale))).as(ContentTypes.JSON)
     }
   }
 
-  def foodDef(code: String, locale: String) = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
+  def foodDef(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       Ok(write(service.foodDef(code, locale))).as(ContentTypes.JSON)
     }
   }
 
-  def categoryDef(code: String, locale: String) = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
+  def categoryDef(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       Ok(write(service.categoryDef(code, locale))).as(ContentTypes.JSON)
     }
   }
 
-  def categoryParentCategories(code: String, locale: String) = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
+  def categoryParentCategories(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       Ok(write(service.categoryParentCategories(code, locale))).as(ContentTypes.JSON)
     }
   }
 
-  def categoryAllCategories(code: String, locale: String) = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
+  def categoryAllCategories(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       Ok(write(service.categoryAllCategories(code, locale))).as(ContentTypes.JSON)
     }
   }
 
-  def allAsServedSets() = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
+  def allAsServedSets() = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       Ok(write(service.allAsServedSets())).as(ContentTypes.JSON)
     }
   }
 
-  def allDrinkware = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
+  def allDrinkware = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       Ok(write(service.allDrinkware())).as(ContentTypes.JSON)
     }
   }
 
-  def allGuideImages() = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
+  def allGuideImages() = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       Ok(write(service.allGuideImages())).as(ContentTypes.JSON)
     }
   }
 
-  def allFoodGroups(locale: String) = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
+  def allFoodGroups(locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       Ok(write(service.allFoodGroups(locale))).as(ContentTypes.JSON)
     }
   }
 
-  def foodGroup(id: Int, locale: String) = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
+  def foodGroup(id: Int, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       service.foodGroup(id, locale) match {
         case Some(group) => Ok(write(group)).as(ContentTypes.JSON)
@@ -139,19 +139,19 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt
     }
   }
 
-  def searchFoods(searchTerm: String, locale: String) = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
+  def searchFoods(searchTerm: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       Ok(write(service.searchFoods(searchTerm, locale))).as(ContentTypes.JSON)
     }
   }
 
-  def searchCategories(searchTerm: String, locale: String) = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
+  def searchCategories(searchTerm: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       Ok(write(service.searchCategories(searchTerm, locale))).as(ContentTypes.JSON)
     }
   }
 
-  def nutrientTables() = deadbolt.Pattern(Permissions.foodDataAdminRead, PatternType.EQUALITY) {
+  def nutrientTables() = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       Ok(write(service.nutrientTables())).as(ContentTypes.JSON)
     }
@@ -168,7 +168,7 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt
 
 
 
-  def updateFoodBase(foodCode: String) = deadbolt.Pattern("api.fooddata.admin.write", PatternType.EQUALITY) {
+  def updateFoodBase(foodCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
         translateUpdateResult(service.updateFoodBase(foodCode, read[FoodBase](request.body)))
@@ -176,7 +176,7 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt
     }
   }
 
-  def updateFoodLocal(foodCode: String, locale: String) = deadbolt.Pattern("api.fooddata.admin.write", PatternType.EQUALITY) {
+  def updateFoodLocal(foodCode: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
         translateUpdateResult(service.updateFoodLocal(foodCode, locale, read[FoodLocal](request.body)))
@@ -184,13 +184,13 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt
     }
   }
 
-  def isFoodCodeAvailable(code: String) = deadbolt.Pattern("api.fooddata.admin.write", PatternType.EQUALITY) {
+  def isFoodCodeAvailable(code: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       Ok(JsBoolean(service.isFoodCodeAvailable(code)))
     }
   }
 
-  def createFood() = deadbolt.Pattern("api.fooddata.admin.write", PatternType.EQUALITY) {
+  def createFood() = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
         translateUpdateResult(service.createFood(read[NewFood](request.body)))
@@ -198,7 +198,7 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt
     }
   }
   
-  def createFoodWithTempCode() = deadbolt.Pattern("api.fooddata.admin.write", PatternType.EQUALITY) {
+  def createFoodWithTempCode() = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
         service.createFoodWithTempCode(read[NewFood](request.body)) match {
@@ -209,44 +209,44 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt
     }
   }
 
-  def deleteFood(code: String) = deadbolt.Pattern("api.fooddata.admin.write", PatternType.EQUALITY) {
+  def deleteFood(code: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       translateUpdateResult(service.deleteFood(code))
     }
   }
 
-  def addFoodToCategory(categoryCode: String, foodCode: String) = deadbolt.Pattern("api.fooddata.admin.write", PatternType.EQUALITY) {
+  def addFoodToCategory(categoryCode: String, foodCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       translateUpdateResult(service.addFoodToCategory(categoryCode, foodCode))
 
     }
   }
-  def removeFoodFromCategory(categoryCode: String, foodCode: String) = deadbolt.Pattern("api.fooddata.admin.write", PatternType.EQUALITY) {
+  def removeFoodFromCategory(categoryCode: String, foodCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       translateUpdateResult(service.removeFoodFromCategory(categoryCode, foodCode))
     }
   }
 
-  def addSubcategoryToCategory(categoryCode: String, subcategoryCode: String) = deadbolt.Pattern("api.fooddata.admin.write", PatternType.EQUALITY) {
+  def addSubcategoryToCategory(categoryCode: String, subcategoryCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       translateUpdateResult(service.addSubcategoryToCategory(categoryCode, subcategoryCode))
     }
   }
 
-  def removeSubcategoryFromCategory(categoryCode: String, subcategoryCode: String) = deadbolt.Pattern("api.fooddata.admin.write", PatternType.EQUALITY) {
+  def removeSubcategoryFromCategory(categoryCode: String, subcategoryCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       translateUpdateResult(service.removeSubcategoryFromCategory(categoryCode, subcategoryCode))
 
     }
   }
 
-  def isCategoryCodeAvailable(code: String) = deadbolt.Pattern("api.fooddata.admin.write", PatternType.EQUALITY) {
+  def isCategoryCodeAvailable(code: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       Ok(JsBoolean(service.isCategoryCodeAvailable(code)))
     }
   }
 
-  def createCategory() = deadbolt.Pattern("api.fooddata.admin.write", PatternType.EQUALITY) {
+  def createCategory() = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
         translateUpdateResult(service.createCategory(read[NewCategory](request.body)))
@@ -254,7 +254,7 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt
     }
   }
 
-  def updateCategoryBase(categoryCode: String) = deadbolt.Pattern("api.fooddata.admin.write", PatternType.EQUALITY) {
+  def updateCategoryBase(categoryCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
         translateUpdateResult(service.updateCategoryBase(categoryCode, read[CategoryBase](request.body)))
@@ -262,7 +262,7 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt
     }
   }
 
-  def updateCategoryLocal(categoryCode: String, locale: String) = deadbolt.Pattern("api.fooddata.admin.write", PatternType.EQUALITY) {
+  def updateCategoryLocal(categoryCode: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
         translateUpdateResult(service.updateCategoryLocal(categoryCode, locale, read[CategoryLocal](request.body)))
@@ -270,7 +270,7 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt
     }
   }
 
-  def deleteCategory(categoryCode: String) = deadbolt.Pattern("api.fooddata.admin.write", PatternType.EQUALITY) {
+  def deleteCategory(categoryCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       translateUpdateResult(service.deleteCategory(categoryCode))
     }

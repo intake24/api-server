@@ -33,17 +33,18 @@ import be.objectify.deadbolt.core.PatternType
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex
 import uk.ac.ncl.openlab.intake24.services.LocaleManagementService
 import security.Permissions
+import security.Roles
 
 
 class LocaleController @Inject() (service: LocaleManagementService, deadbolt: DeadboltActions) extends Controller {
   
-  def list = deadbolt.Pattern(Permissions.localeDataRead, PatternType.EQUALITY) {
+  def list = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       Ok(write(service.list)).as(ContentTypes.JSON)
     }
   }
   
-  def get(id: String) = deadbolt.Pattern(Permissions.localeDataRead, PatternType.EQUALITY) {
+  def get(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       service.get(id) match {
         case None => NotFound
@@ -51,5 +52,4 @@ class LocaleController @Inject() (service: LocaleManagementService, deadbolt: De
       }
     }
   }
-  
 }

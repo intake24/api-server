@@ -32,6 +32,7 @@ import uk.ac.ncl.openlab.intake24.services.FoodDataSources
 import uk.ac.ncl.openlab.intake24.services.SourceLocale
 import uk.ac.ncl.openlab.intake24.services.SourceRecord
 import uk.ac.ncl.openlab.intake24.services.InheritableAttributeSource
+import security.Roles
 
 object FoodSourceWriters {
   implicit val sourceLocaleWriter = upickle.default.Writer[SourceLocale] {
@@ -62,13 +63,13 @@ class UserFoodDataController @Inject() (service: UserFoodDataService, deadbolt: 
 
   import FoodSourceWriters._
   
-  def categoryContents(code: String, locale: String) = deadbolt.Pattern("api.fooddata.user", PatternType.EQUALITY) {
+  def categoryContents(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       Ok(write(service.categoryContents(code, locale))).as(ContentTypes.JSON)
     }
   }
 
-  def foodData(code: String, locale: String) = deadbolt.Pattern("api.fooddata.user", PatternType.EQUALITY) {
+  def foodData(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       service.foodData(code, locale) match {
         case Left(_) => NotFound
@@ -77,7 +78,7 @@ class UserFoodDataController @Inject() (service: UserFoodDataService, deadbolt: 
     }
   }
 
-  def foodDataWithSources(code: String, locale: String) = deadbolt.Pattern("api.fooddata.user", PatternType.EQUALITY) {
+  def foodDataWithSources(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       service.foodData(code, locale) match {
         case Left(_) => NotFound
@@ -86,31 +87,31 @@ class UserFoodDataController @Inject() (service: UserFoodDataService, deadbolt: 
     }
   }
 
-  def brandNames(code: String, locale: String) = deadbolt.Pattern("api.fooddata.user", PatternType.EQUALITY) {
+  def brandNames(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       Ok(write(service.brandNames(code, locale))).as(ContentTypes.JSON)
     }
   }
 
-  def asServedDef(id: String) = deadbolt.Pattern("api.fooddata.user", PatternType.EQUALITY) {
+  def asServedDef(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       Ok(write(service.asServedDef(id))).as(ContentTypes.JSON)
     }
   }
 
-  def drinkwareDef(id: String) = deadbolt.Pattern("api.fooddata.user", PatternType.EQUALITY) {
+  def drinkwareDef(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       Ok(write(service.drinkwareDef(id))).as(ContentTypes.JSON)
     }
   }
 
-  def guideDef(id: String) = deadbolt.Pattern("api.fooddata.user", PatternType.EQUALITY) {
+  def guideDef(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       Ok(write(service.guideDef(id))).as(ContentTypes.JSON)
     }
   }
 
-  def associatedFoodPrompts(code: String, locale: String) = deadbolt.Pattern("api.fooddata.user", PatternType.EQUALITY) {
+  def associatedFoodPrompts(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       Ok(write(service.associatedFoodPrompts(code, locale))).as(ContentTypes.JSON)
     }
