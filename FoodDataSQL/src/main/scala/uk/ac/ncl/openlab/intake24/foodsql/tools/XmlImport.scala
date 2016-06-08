@@ -80,9 +80,16 @@ class XmlImporter(implicit val dbConn: Connection) {
 
     if (!foods.isEmpty) {
       logger.info("Writing " + foods.size + " foods to database")
-
-      val foodParams =
-        foods.map(f => Seq[NamedParameter]('code -> f.code, 'description -> f.englishDescription, 'food_group_id -> f.groupCode, 'version -> f.version))
+      
+      val foodParams = foods.map {
+        f => 
+          val truncatedEnglishDesc = f.englishDescription.take(128)
+          if (f.englishDescription.length() > 128) {
+            logger.warn(s"English description too long for ${f.code}, truncating")
+            logger.warn(f.englishDescription)
+          }
+          Seq[NamedParameter]('code -> f.code, 'description -> truncatedEnglishDesc, 'food_group_id -> f.groupCode, 'version -> f.version)      
+      }
 
       try {
         BatchSql(Queries.foodsInsert, foodParams).execute()
@@ -90,8 +97,18 @@ class XmlImporter(implicit val dbConn: Connection) {
         case e: BatchUpdateException => throw new RuntimeException(e.getMessage, e.getNextException)
       }
 
-      val foodLocalParams =
-        foods.map(f => Seq[NamedParameter]('food_code -> f.code, 'locale_id -> defaultLocale, 'local_description -> f.localData.localDescription, 'do_not_use -> false, 'version -> f.localData.version))
+      val foodLocalParams = foods.map {
+        f =>
+          val truncatedLocalDesc = f.localData.localDescription.map(_.take(128))
+          f.localData.localDescription match {
+            case Some(desc) if desc.length() > 128 => {
+              logger.warn(s"Local description too long for ${f.code}, truncating")
+              logger.warn(desc)
+            }
+            case _ => ()
+          }
+          Seq[NamedParameter]('food_code -> f.code, 'locale_id -> defaultLocale, 'local_description -> truncatedLocalDesc, 'do_not_use -> false, 'version -> f.localData.version)
+      }
 
       try {
         BatchSql(Queries.foodsLocalInsert, foodLocalParams).execute()
@@ -107,7 +124,11 @@ class XmlImporter(implicit val dbConn: Connection) {
             }
         }
 
-      BatchSql(Queries.foodNutrientTablesInsert, foodNutritionTableParams).execute()
+      try {
+        BatchSql(Queries.foodNutrientTablesInsert, foodNutritionTableParams).execute()
+      } catch {
+        case e: BatchUpdateException => throw new RuntimeException(e.getMessage, e.getNextException)
+      }
 
       logger.info("Writing " + foods.size + " food attribute records to database")
 
