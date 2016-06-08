@@ -31,8 +31,11 @@ import scala.xml.NodeSeq.seqToNodeSeq
 import net.scran24.fooddef.PortionSizeMethodParameter
 import net.scran24.fooddef.FoodLocal
 import java.util.UUID
+import org.slf4j.LoggerFactory
 
 object FoodDef {
+  
+  val log = LoggerFactory.getLogger(getClass())
 
   def toXml(portionSizeMethod: PortionSizeMethod) =
     <portion-size method={ portionSizeMethod.method } description={ portionSizeMethod.description } imageUrl={ portionSizeMethod.imageUrl } useForRecipes={ portionSizeMethod.useForRecipes.toString }>
@@ -89,13 +92,27 @@ object FoodDef {
     (root \ "food").map(fnode => {
       val code = fnode.attribute("code").get.text
       val desc = fnode.attribute("description").get.text
-      val ndnsCode = fnode.attribute("ndnsCode").get.text.toInt
+      
+      val legacyNdnsCode = fnode.attribute("ndnsCode").map(_.text.toInt)
+      
+      val nutrientTableCodes = (fnode \ "nutrient-table").map {
+        t =>
+          val id = t.attribute("id").get.text
+          val code = t.attribute("code").get.text
+          id -> code
+      }
+      
+      val nutrientTableMap = legacyNdnsCode match {
+        case Some(ndnsCode) if ndnsCode > -1 => nutrientTableCodes.toMap + ("NDNS" -> ndnsCode.toString)
+        case _ => nutrientTableCodes.toMap
+      }
+      
       val groupCode = fnode.attribute("groupCode").map(_.text.toInt).getOrElse(0)
 
       val attribs = inheritableAttributes(fnode)
       
       val psm = portionSizeMethods(fnode)
 
-      Food(UUID.randomUUID(), code, desc, groupCode, attribs, FoodLocal(Some(UUID.randomUUID()), Some(desc), if (ndnsCode == -1) Map() else Map("NDNS" -> ndnsCode.toString()), psm))
+      Food(UUID.randomUUID(), code, desc, groupCode, attribs, FoodLocal(Some(UUID.randomUUID()), Some(desc), nutrientTableMap, psm))
     })
 }
