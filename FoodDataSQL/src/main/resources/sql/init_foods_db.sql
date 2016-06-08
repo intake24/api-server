@@ -68,7 +68,7 @@ CREATE TABLE nutrient_tables
 
 CREATE TABLE foods
 (
-  code character(4) NOT NULL,
+  code character varying(8) NOT NULL,
   description character varying(128) NOT NULL,
   food_group_id integer NOT NULL,
   version uuid NOT NULL,
@@ -82,7 +82,7 @@ CREATE INDEX foods_food_group_index ON foods (food_group_id);
 
 CREATE TABLE foods_local
 (
-  food_code character(4) NOT NULL,
+  food_code character varying(8) NOT NULL,
   locale_id character varying(16) NOT NULL,
   local_description character varying(128),
   do_not_use boolean NOT NULL DEFAULT false,
@@ -97,7 +97,7 @@ CREATE TABLE foods_local
 
 CREATE TABLE foods_restrictions
 (
-  food_code character(4) NOT NULL,
+  food_code character varying(8) NOT NULL,
   locale_id character varying(16) NOT NULL,
 
   CONSTRAINT foods_restrictions_pk PRIMARY KEY (food_code, locale_id),
@@ -109,7 +109,7 @@ CREATE TABLE foods_restrictions
 
 CREATE TABLE foods_nutrient_tables
 (
-  food_code character(4) NOT NULL,
+  food_code character varying(8) NOT NULL,
   locale_id character varying(16) NOT NULL,
   nutrient_table_id character varying(64) NOT NULL,
   nutrient_table_code character varying(64) NOT NULL,
@@ -126,7 +126,7 @@ CREATE TABLE foods_nutrient_tables
 CREATE TABLE foods_portion_size_methods
 (
   id serial NOT NULL,
-  food_code character(4) NOT NULL,
+  food_code character varying(8) NOT NULL,
   locale_id character varying(16) NOT NULL,
   method character varying(32) NOT NULL,
   description character varying(128) NOT NULL,
@@ -160,7 +160,7 @@ CREATE INDEX foods_portion_size_method_params_psm_id_index ON foods_portion_size
 CREATE TABLE foods_attributes
 (
   id serial NOT NULL,
-  food_code character(4) NOT NULL,
+  food_code character varying(8) NOT NULL,
     same_as_before_option boolean,
   ready_meal_option boolean,
   reasonable_amount integer,
@@ -176,7 +176,7 @@ CREATE INDEX foods_attributes_food_code_index ON foods_attributes (food_code);
 
 CREATE TABLE categories
 (
-  code character(4) NOT NULL,
+  code character varying(8) NOT NULL,
   description character varying(128) NOT NULL,
   is_hidden boolean NOT NULL,
   version uuid NOT NULL,
@@ -186,7 +186,7 @@ CREATE TABLE categories
 
 CREATE TABLE categories_local
 (
-  category_code character(4) NOT NULL,
+  category_code character varying(8) NOT NULL,
   locale_id character varying(16) NOT NULL,
   local_description character varying(128) NOT NULL,
 	do_not_use boolean NOT NULL DEFAULT false,
@@ -201,7 +201,7 @@ CREATE TABLE categories_local
 
 CREATE TABLE categories_restrictions
 (
-  category_code character(4) NOT NULL,
+  category_code character varying(8) NOT NULL,
   locale_id character varying(16) NOT NULL,
 
   CONSTRAINT categories_restrictions_pk PRIMARY KEY (category_code, locale_id),
@@ -231,8 +231,8 @@ CREATE INDEX foods_categories_category_code_index ON foods_categories (category_
 CREATE TABLE categories_categories
 (
   id serial NOT NULL,
-  subcategory_code character(4) NOT NULL,
-  category_code character(4) NOT NULL,
+  subcategory_code character varying(8) NOT NULL,
+  category_code character varying(8) NOT NULL,
   CONSTRAINT categories_categories_pk PRIMARY KEY (id),
   CONSTRAINT categories_categories_subcategory_code_fk FOREIGN KEY(subcategory_code)
     REFERENCES categories(code) ON UPDATE CASCADE ON DELETE CASCADE,
@@ -248,7 +248,7 @@ CREATE INDEX categories_categories_category_code_index ON categories_categories 
 CREATE TABLE categories_portion_size_methods
 (
   id serial NOT NULL,
-  category_code character(4) NOT NULL,
+  category_code character varying(8) NOT NULL,
   locale_id character varying(16) NOT NULL,
   method character varying(32) NOT NULL,
   description character varying(128) NOT NULL,
@@ -283,7 +283,7 @@ CREATE INDEX categories_portion_size_method_params_psm_id_index ON categories_po
 CREATE TABLE categories_attributes
 (
   id serial NOT NULL,
-  category_code character(4) NOT NULL,
+  category_code character varying(8) NOT NULL,
   same_as_before_option boolean,
   ready_meal_option boolean,
   reasonable_amount integer,
@@ -348,7 +348,7 @@ CREATE INDEX guide_image_weights_guide_image_id_index ON guide_image_weights (gu
 CREATE TABLE brands
 (
   id serial NOT NULL,
-  food_code character(4) NOT NULL,
+  food_code character varying(8) NOT NULL,
   locale_id character varying(16) NOT NULL,
   name character varying(128) NOT NULL,
   CONSTRAINT brands_pk PRIMARY KEY (id),
