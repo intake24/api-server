@@ -24,44 +24,32 @@ import au.com.bytecode.opencsv.CSVReader
 import java.io.FileReader
 import scala.collection.JavaConversions._
 
-object NutrientDef {
+object CsvNutrientTableParser {
   import Nutrient._
-  
-  val log = LoggerFactory.getLogger(NutrientDef.getClass)
 
-  val tableMapping: Map[Nutrient, Int] =
-    Map(
-      (Protein, 20),
-      (Fat, 22),
-      (Carbohydrate, 24),
-      (EnergyKcal, 26),
-      (EnergyKj, 28),
-      (Alcohol, 30),
-      (TotalSugars, 38),
-      (Nmes, 40),
-      (SatdFa, 56),
-      (Cholesterol, 66),
-      (VitaminA, 78),
-      (VitaminD, 80),
-      (VitaminC, 92),
-      (VitaminE, 94),
-      (Folate, 100),
-      (Sodium, 106),
-      (Calcium, 110),
-      (Iron, 116),
-      (Zinc, 124),
-      (Selenium, 132))
-      
-  val zeroData = Nutrient.list.map (n => (n.key, 0.0)).toMap
+  val log = LoggerFactory.getLogger(CsvNutrientTableParser.getClass)
 
-  def parseTable(fileName: String): NutrientData = {
+  val zeroData = Nutrient.list.map(n => (n.key, 0.0)).toMap
+
+  def excelColumnToOffset(colRef: String) = {
+    def r(s: String) = s.foldRight((0, 1)) {
+      case (ch, (acc, mul)) => (acc + (ch - 'A' + 1) * mul, mul * 26)
+    }
+    r(colRef)._1
+  }
+
+  def parseTable(fileName: String, rowOffset: Int, tableMapping: Map[Nutrient, Int]): NutrientData = {
     val rows = new CSVReader(new FileReader(fileName)).readAll().toSeq.map(_.toIndexedSeq)
 
-    val descriptions: Map[String, String] = Nutrient.list.map(n => (n.key, rows.head(tableMapping(n) - 1))).toMap
+    val descriptions: Map[String, String] = Nutrient.list.map(n => {
+      val colNum = tableMapping(n)
+      (n.key, if (colNum == -1) "N/A" else rows.head(colNum - 1))
+    }).toMap
 
     def readRow(row: IndexedSeq[String], rowIndex: Int): Map[String, java.lang.Double] = Nutrient.list.map(n => {
       try {
-        val v: java.lang.Double = row(tableMapping(n) - 1).toDouble
+        val colNum = tableMapping(n)
+        val v: java.lang.Double = if (colNum == -1) 0 else row(colNum - 1).toDouble
         (n.key, v)
       } catch {
         case e: Throwable => {
@@ -71,11 +59,11 @@ object NutrientDef {
       }
     }).toMap
 
-    val values = rows.zipWithIndex.tail.foldLeft(Map[Int, Map[String, java.lang.Double]]()) {
+    val values = rows.zipWithIndex.drop(rowOffset).foldLeft(Map[String, Map[String, java.lang.Double]]()) {
       case (map, row) => {
         val (rowSeq, rowIndex) = row
-        
-        map + (rowSeq(0).toInt -> readRow(rowSeq, rowIndex))
+
+        map + (rowSeq(0) -> readRow(rowSeq, rowIndex))
       }
     }
 

@@ -19,15 +19,26 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.foodxml.scripts
 
 import scala.xml.XML
-import uk.ac.ncl.openlab.intake24.foodxml.CategoryDef
+import uk.ac.ncl.openlab.intake24.foodxml.AsServedDef
+import java.io.File
 import uk.ac.ncl.openlab.intake24.foodxml.FoodDef
-import uk.ac.ncl.openlab.intake24.foodxml.Util
 
-object DryRun extends App {
-  val foods = FoodDef.parseXml(XML.load("/home/ivan/Projects/Intake24/intake24-data/foods.xml"))
-  Util.writeXml(FoodDef.toXml(foods), "/home/ivan/Projects/Intake24/intake24-data/foods-dryrun.xml")
+object CheckPortionSizeSelectionImages extends App {
   
-  val cats = CategoryDef.parseXml(XML.load("/home/ivan/Projects/Intake24/intake24-data/categories.xml"))
-  Util.writeXml(CategoryDef.toXml(cats), "/home/ivan/Projects/Intake24/intake24-data/categories-dryrun.xml")
+  val imageDir = new File("/home/ivan/Projects/Intake24/intake24-images")
+  
+  val foods = FoodDef.parseXml(XML.load("/home/ivan/Projects/Intake24/intake24-data/foods.xml"))
+   
+  foods.foreach {
+    food =>
+      if (food.localData.portionSize.size > 1) {
+        food.localData.portionSize.foreach {
+          ps =>
+            val file = new File(imageDir.getAbsolutePath + File.separator + ps.imageUrl)
+            if (!file.exists())
+              println(s"Image ${ps.imageUrl} missing for ${food.code}") 
+        }
+      }
+  }
 
 }
