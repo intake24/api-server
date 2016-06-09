@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package uk.ac.ncl.openlab.viands.dbtool
+package uk.ac.ncl.openlab.intake24.admin
 
 import scala.scalajs.js
 

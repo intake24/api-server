@@ -20,18 +20,39 @@ limitations under the License.
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Viands DB tool</title>
+<title>Intake24 Administration</title>
 
-<script src="libs/jquery/jquery.min.js"></script>
-<script src="libs/jstree/jstree.js"></script>
-<script src="viands-db-tool-fastopt.js"></script>
+<!-- Bootstrap Core CSS -->
+<link href="css/bootstrap.min.css" rel="stylesheet">
 
-<link rel="stylesheet" href="libs/jstree/themes/default/style.css">
+<!-- Custom CSS -->
+<link href="css/sb-admin.css" rel="stylesheet">
+
+<!-- Morris Charts CSS -->
+<link href="css/plugins/morris.css" rel="stylesheet">
+
+<!-- Custom Fonts -->
+<link href="font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+<script src="admin-jsdeps.js"></script>
+<script src="admin-fastopt.js"></script>
+
 </head>
 <body>
 	<script>
-	  var viandsApiHost = "http://127.0.0.1:9000"
-	  uk.ac.ncl.openlab.viands.dbtool.DBTool().main();
+		var viandsApiHost = "http://127.0.0.1:9000"
+		uk.ac.ncl.openlab.intake24.admin.Admin().main();
 	</script>
+    <!-- jQuery -->
+    <script src="js/jquery.js"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="js/bootstrap.min.js"></script>
+
+    <!-- Morris Charts JavaScript -->
+    <script src="js/plugins/morris/raphael.min.js"></script>
+    <script src="js/plugins/morris/morris.min.js"></script>
+    <script src="js/plugins/morris/morris-data.js"></script>
+
 </body>
 </html>

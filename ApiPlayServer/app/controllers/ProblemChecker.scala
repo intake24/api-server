@@ -14,12 +14,16 @@ import be.objectify.deadbolt.scala.DeadboltActions
 import be.objectify.deadbolt.core.PatternType
 import uk.ac.ncl.openlab.intake24.services.FoodDataService
 import scala.collection.mutable.Buffer
+import net.scran24.fooddef.CategoryHeader
 
-case class CategoryProblem(categoryCode: String, problemCode: String)
+case class CategoryProblem(categoryCode: String, categoryName: String, problemCode: String)
 
-case class FoodProblem(foodCode: String, problemCode: String)
+case class FoodProblem(foodCode: String, foodName: String, problemCode: String)
 
-case class RecursiveCategoryProblems(foodProblems: Map[String, Seq[FoodProblem]], subcategoryProblems: Map[String, Seq[CategoryProblem]])
+case class RecursiveCategoryProblems(foodProblems: Seq[FoodProblem], categoryProblems: Seq[CategoryProblem]) {
+  def count = foodProblems.size + categoryProblems.size
+  def ++(other: RecursiveCategoryProblems) = RecursiveCategoryProblems(foodProblems ++ other.foodProblems, categoryProblems ++ other.categoryProblems)
+}
 
 class ProblemChecker @Inject() (foodDataService: FoodDataService, deadbolt: DeadboltActions) extends Controller {
 
@@ -32,7 +36,9 @@ class ProblemChecker @Inject() (foodDataService: FoodDataService, deadbolt: Dead
   val EmptyCategory = "empty_category"
   val SingleItem = "single_item_in_category"
 
-  def foodProblems(locale: String, code: String): Seq[FoodProblem] = {
+  val maxReturnedProblems = 10
+
+  def foodProblems(code: String, locale: String): Seq[FoodProblem] = {
     val foodDef = foodDataService.foodDef(code, locale)
     val foodData = foodDataService.foodData(code, locale)
     val uncatFoods = foodDataService.uncategorisedFoods(locale)
@@ -57,10 +63,10 @@ class ProblemChecker @Inject() (foodDataService: FoodDataService, deadbolt: Dead
     if (foodDef.localData.version.isEmpty)
       problems += LocalDataEmpty
 
-    problems.toSeq.map(pcode => FoodProblem(code, pcode))
+    problems.toSeq.map(pcode => FoodProblem(code, foodData.localDescription.getOrElse(foodData.englishDescription), pcode))
   }
 
-  def categoryProblems(locale: String, code: String): Seq[CategoryProblem] = {
+  def categoryProblems(code: String, locale: String): Seq[CategoryProblem] = {
     val contents = foodDataService.categoryContents(code, locale)
 
     val size = contents.foods.size + contents.subcategories.size
@@ -73,48 +79,69 @@ class ProblemChecker @Inject() (foodDataService: FoodDataService, deadbolt: Dead
     if (size == 1)
       problems += SingleItem
 
-    if (foodDataService.categoryDef(code, locale).localData.version.isEmpty)
+    val categoryDef = foodDataService.categoryDef(code, locale)
+
+    if (categoryDef.localData.version.isEmpty)
       problems += LocalDataEmpty
 
-    problems.toSeq.map(pcode => CategoryProblem(code, pcode))
+    problems.toSeq.map(pcode => CategoryProblem(code, categoryDef.localData.localDescription.getOrElse(categoryDef.englishDescription), pcode))
   }
 
-  def recursiveCategoryProblems(locale: String, code: String): RecursiveCategoryProblems = {
-    def allFoods(code: String): Seq[String] = {
-      val contents = foodDataService.categoryContents(code, locale)
-      contents.foods.map(_.code) ++ contents.subcategories.flatMap(cat => allFoods(cat.code))
+  def recursiveCategoryProblems(code: String, locale: String, maxProblems: Int): RecursiveCategoryProblems = {
+
+    def collectSubcategoryProblems(rem: Seq[CategoryHeader], problems: RecursiveCategoryProblems, slots: Int): RecursiveCategoryProblems = {
+      if (rem.isEmpty || slots <= 0)
+        problems
+      else {
+        val p = recursiveCategoryProblems(rem.head.code, locale, slots)
+        collectSubcategoryProblems(rem.tail, problems ++ p, slots - p.count)
+      }
     }
 
-    def allSubcategories(code: String): Seq[String] = {
+    if (maxProblems <= 0)
+      RecursiveCategoryProblems(Seq(), Seq())
+    else {
       val contents = foodDataService.categoryContents(code, locale)
-      contents.subcategories.map(_.code) ++ foodDataService.categoryContents(code, locale).subcategories.flatMap(cat => allSubcategories(cat.code))
-    }
-
-    val subcategoryProblems = allSubcategories(code).map(c => (c, categoryProblems(c, locale))).toMap 
-
-    val foodProblems_ = allFoods(code).map(c => (c, foodProblems(c, locale))).toMap 
       
-    
-    RecursiveCategoryProblems(foodProblems_, subcategoryProblems)
-  }
+      var remainingProblemSlots = maxProblems
+      
+      val ownProblems = categoryProblems(code, locale).take(remainingProblemSlots)
+      
+      remainingProblemSlots -= ownProblems.size
+      
+      val fdProblems = contents.foods.sortBy(fh => fh.localDescription.getOrElse(fh.englishDescription)).flatMap(fh => foodProblems(fh.code, locale)).take(remainingProblemSlots)
 
-  def checkFood(locale: String, code: String) = deadbolt.Pattern("api.foods.read", PatternType.EQUALITY) {
-    Action {
-      Ok(write(foodProblems(locale, code))).as(ContentTypes.JSON)
+      remainingProblemSlots -= fdProblems.length
+
+      val subcatProblems =
+        if (remainingProblemSlots > 0)
+          contents.subcategories.sortBy(ch => ch.localDescription.getOrElse(ch.englishDescription)).flatMap(ch => categoryProblems(ch.code, locale)).take(remainingProblemSlots)
+        else
+          Seq()
+
+      remainingProblemSlots -= subcatProblems.length
+
+      collectSubcategoryProblems(contents.subcategories, RecursiveCategoryProblems(fdProblems, ownProblems ++ subcatProblems), remainingProblemSlots)  
     }
   }
 
-  def checkCategory(locale: String, code: String) = deadbolt.Pattern("api.foods.read", PatternType.EQUALITY) {
+  def checkFood(code: String, locale: String) = deadbolt.Pattern("api.foods.read", PatternType.EQUALITY) {
     Action {
-
-      Ok(write(categoryProblems(locale, code))).as(ContentTypes.JSON)
+      Ok(write(foodProblems(code, locale))).as(ContentTypes.JSON)
     }
   }
 
-  def checkCategoryRecursive(locale: String, code: String) = deadbolt.Pattern("api.foods.read", PatternType.EQUALITY) {
+  def checkCategory(code: String, locale: String) = deadbolt.Pattern("api.foods.read", PatternType.EQUALITY) {
     Action {
 
-      Ok(write(recursiveCategoryProblems(code, locale))).as(ContentTypes.JSON)
+      Ok(write(categoryProblems(code, locale))).as(ContentTypes.JSON)
+    }
+  }
+
+  def checkCategoryRecursive(code: String, locale: String) = deadbolt.Pattern("api.foods.read", PatternType.EQUALITY) {
+    Action {
+
+      Ok(write(recursiveCategoryProblems(code, locale, maxReturnedProblems))).as(ContentTypes.JSON)
     }
   }
 
