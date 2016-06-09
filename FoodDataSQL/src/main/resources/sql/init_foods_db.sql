@@ -214,8 +214,8 @@ CREATE TABLE categories_restrictions
 CREATE TABLE foods_categories
 (
   id serial NOT NULL,
-  food_code character (4) NOT NULL,
-  category_code character (4) NOT NULL,
+  food_code character varying(8) NOT NULL,
+  category_code character varying(8) NOT NULL,
   CONSTRAINT foods_categories_pk PRIMARY KEY (id),
   CONSTRAINT foods_categories_food_code_fk FOREIGN KEY(food_code)
     REFERENCES foods (code) ON UPDATE CASCADE ON DELETE CASCADE,
@@ -414,9 +414,9 @@ CREATE INDEX drinkware_volume_samples_drinkware_scale_id_index ON drinkware_volu
 CREATE TABLE associated_food_prompts
 (
   id serial NOT NULL,
-  food_code character (4) NOT NULL,
+  food_code character varying(8) NOT NULL,
   locale_id character varying(16) NOT NULL,
-  category_code character (4) NOT NULL,
+  category_code character varying(8) NOT NULL,
   text text NOT NULL,
   link_as_main boolean NOT NULL,
   generic_name character varying (128) NOT NULL,
