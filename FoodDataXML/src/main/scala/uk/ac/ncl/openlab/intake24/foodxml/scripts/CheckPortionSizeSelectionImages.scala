@@ -27,7 +27,7 @@ object CheckPortionSizeSelectionImages extends App {
   
   val imageDir = new File("/home/ivan/Projects/Intake24/intake24-images")
   
-  val foods = FoodDef.parseXml(XML.load("/home/ivan/Projects/Intake24/intake24-data-NEW ZEALAND/foods.xml"))
+  val foods = FoodDef.parseXml(XML.load("/home/ivan/Projects/Intake24/intake24-data/foods.xml"))
    
   foods.foreach {
     food =>
@@ -40,6 +40,5 @@ object CheckPortionSizeSelectionImages extends App {
         }
       }
   }
-
 
 }
