@@ -24,10 +24,10 @@ import uk.ac.ncl.openlab.intake24.foodxml.FoodDef
 import uk.ac.ncl.openlab.intake24.foodxml.Util
 
 object DryRun extends App {
-  val foods = FoodDef.parseXml(XML.load("D:\\SCRAN24\\Data\\foods.xml"))
-  Util.writeXml(FoodDef.toXml(foods), "D:\\SCRAN24\\Data\\foods-dryrun.xml")
+  val foods = FoodDef.parseXml(XML.load("/home/ivan/Projects/Intake24/intake24-data/foods.xml"))
+  Util.writeXml(FoodDef.toXml(foods), "/home/ivan/Projects/Intake24/intake24-data/foods-dryrun.xml")
   
-  val cats = CategoryDef.parseXml(XML.load("D:\\SCRAN24\\Data\\categories.xml"))
-  Util.writeXml(CategoryDef.toXml(cats), "D:\\SCRAN24\\Data\\categories-dryrun.xml")
+  val cats = CategoryDef.parseXml(XML.load("/home/ivan/Projects/Intake24/intake24-data/categories.xml"))
+  Util.writeXml(CategoryDef.toXml(cats), "/home/ivan/Projects/Intake24/intake24-data/categories-dryrun.xml")
 
 }
