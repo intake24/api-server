@@ -25,7 +25,6 @@ import com.google.inject.name.Named
 import com.google.inject.Inject
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientDescription
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService
-import uk.ac.ncl.openlab.intake24.services.FoodDataService
 import net.scran24.fooddef.nutrients.Fat
 import net.scran24.fooddef.nutrients.Nmes
 import net.scran24.fooddef.nutrients.Protein
@@ -49,7 +48,7 @@ import net.scran24.fooddef.nutrients.EnergyKcal
 import net.scran24.fooddef.nutrients.Nutrient
 
 @Singleton
-class NzNutrientMappingServiceImpl @Inject() (@Named("nz-data-path") nutrientTableFile: String, foodData: FoodDataService) extends NutrientMappingService {
+class NzNutrientMappingServiceImpl @Inject() (@Named("nz-data-path") nutrientTableFile: String) extends NutrientMappingService {
   
   import CsvNutrientTableParser.{ excelColumnToOffset => col }
   

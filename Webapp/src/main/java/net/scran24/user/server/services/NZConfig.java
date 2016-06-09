@@ -29,10 +29,12 @@ import net.scran24.datastore.mongodb.MongoDbDataStore;
 
 import org.workcraft.gwt.shared.client.Pair;
 
-import uk.ac.ncl.openlab.intake24.foodxml.FoodDataServiceXmlImpl;
+import uk.ac.ncl.openlab.intake24.foodxml.IndexFoodDataServiceXmlImpl;
+import uk.ac.ncl.openlab.intake24.foodxml.UserFoodDataServiceXmlImpl;
 import uk.ac.ncl.openlab.intake24.nutrientsndns.NdnsNutrientMappingServiceImpl;
 import uk.ac.ncl.openlab.intake24.nutrientsndns.NzNutrientMappingServiceImpl;
-import uk.ac.ncl.openlab.intake24.services.FoodDataService;
+import uk.ac.ncl.openlab.intake24.services.IndexFoodDataService;
+import uk.ac.ncl.openlab.intake24.services.UserFoodDataService;
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex;
 import uk.ac.ncl.openlab.intake24.services.foodindex.Splitter;
 import uk.ac.ncl.openlab.intake24.services.foodindex.english.FoodIndexImpl_en_GB;
@@ -55,17 +57,17 @@ public class NZConfig extends AbstractModule {
 	@Provides
 	@Singleton
 	protected Map<String, FoodIndex> localFoodIndex(Injector injector) {
-		FoodDataService foodDataService = injector.getInstance(FoodDataService.class);
+		IndexFoodDataService indexFoodDataService = injector.getInstance(IndexFoodDataService.class);
 
 		Map<String, FoodIndex> result = new HashMap<String, FoodIndex>();
-		result.put("en_GB", new FoodIndexImpl_en_GB(foodDataService));
+		result.put("en_GB", new FoodIndexImpl_en_GB(indexFoodDataService));
 		return result;
 	}
 
 	@Provides
 	@Singleton
 	protected Map<String, Splitter> localSplitter(Injector injector) {
-		FoodDataService foodDataService = injector.getInstance(FoodDataService.class);
+		IndexFoodDataService foodDataService = injector.getInstance(IndexFoodDataService.class);
 
 		Map<String, Splitter> result = new HashMap<String, Splitter>();
 		result.put("en_GB", new SplitterImpl_en_GB(foodDataService));
@@ -75,10 +77,9 @@ public class NZConfig extends AbstractModule {
 	@Provides
 	@Singleton
 	protected List<Pair<String, ? extends NutrientMappingService>> nutrientTables(Injector injector) {
-		FoodDataService foodDataService = injector.getInstance(FoodDataService.class);
 		List<Pair<String, ? extends NutrientMappingService>> result = new ArrayList<Pair<String, ? extends NutrientMappingService>>();
-		result.add(Pair.create("NZ", new NzNutrientMappingServiceImpl(webXmlConfig.get("nz-data-path"), foodDataService)));
-		result.add(Pair.create("NDNS", new NdnsNutrientMappingServiceImpl(webXmlConfig.get("ndns-data-path"), foodDataService)));		
+		result.add(Pair.create("NZ", new NzNutrientMappingServiceImpl(webXmlConfig.get("nz-data-path"))));
+		result.add(Pair.create("NDNS", new NdnsNutrientMappingServiceImpl(webXmlConfig.get("ndns-data-path"))));		
 		return result;
 	}
 
@@ -98,6 +99,7 @@ public class NZConfig extends AbstractModule {
 	@Override
 	protected void configure() {
 		bindConstant().annotatedWith(Names.named("xml-data-path")).to(webXmlConfig.get("xml-data-path"));
-		bind(FoodDataService.class).to(FoodDataServiceXmlImpl.class);
+		bind(IndexFoodDataService.class).to(IndexFoodDataServiceXmlImpl.class);
+		bind(UserFoodDataService.class).to(UserFoodDataServiceXmlImpl.class);
 	}
 }

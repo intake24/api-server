@@ -98,9 +98,8 @@ public class SqlConfig extends AbstractModule {
 	@Provides
 	@Singleton
 	protected List<Pair<String, ? extends NutrientMappingService>> nutrientTables(Injector injector) {
-		UserFoodDataService foodDataService = injector.getInstance(UserFoodDataService.class);
 		List<Pair<String, ? extends NutrientMappingService>> result = new ArrayList<Pair<String, ? extends NutrientMappingService>>();
-		result.add(Pair.create("NDNS", new NdnsNutrientMappingServiceImpl(webXmlConfig.get("ndns-data-path"), foodDataService)));
+		result.add(Pair.create("NDNS", new NdnsNutrientMappingServiceImpl(webXmlConfig.get("ndns-data-path"))));
 		return result;
 	}
 
