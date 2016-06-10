@@ -62,9 +62,61 @@ import javax.swing.JCheckBox
 import javax.swing.event.ChangeListener
 import javax.swing.event.ChangeEvent
 import net.scran24.fooddef.PortionSizeMethodParameter
+import java.awt.event.ActionEvent
+import java.awt.event.ActionListener
 
 class EditablePortionSizePanel(p: PortionSizeMethod, res: PortionResources, imageDirectory: ImageDirectory, delete: EditablePortionSizePanel => Unit, changesMade: () => Unit) extends JPanel {
   type MaybeParams = Option[Seq[PortionSizeMethodParameter]]
+
+  case class Description(description: String, value: String) {
+    override def toString() = description
+  }
+
+  val descriptions = Seq(
+    Description("Grated", "grated"),
+    Description("In a bag", "in_a_bag"),
+    Description("In a bottle", "in_a_bottle"),
+    Description("In a bowl", "in_a_bowl"),
+    Description("In a can", "in_a_can"),
+    Description("In a carton", "in_a_carton"),
+    Description("In a glass", "in_a_glass"),
+    Description("In a mug", "in_a_mug"),
+    Description("In a pot", "in_a_pot"),
+    Description("In a takeaway cup", "in_a_takeaway_cup"),
+    Description("In baby carrots", "in_baby_carrots"),
+    Description("In bars", "in_bars"),
+    Description("In batons", "in_batons"),
+    Description("In berries", "in_berries"),
+    Description("In burgers", "in_burgers"),
+    Description("In chopped fruit", "in_chopped_fruit"),
+    Description("In crinkle cut chips", "in_crinkle_cut_chips"),
+    Description("In cubes", "in_cubes"),
+    Description("In curly fries", "in_curly_fries"),
+    Description("In dollops", "in_dollops"),
+    Description("In French fries", "in_french_fries"),
+    Description("In individual cakes", "in_individual_cakes"),
+    Description("In individual packs", "in_individual_packs"),
+    Description("In individual puddings", "in_individual_puddings"),
+    Description("In individual sweets", "in_individual_sweets"),
+    Description("In slices", "in_slices"),
+    Description("In spoonfuls", "in_spoonfuls"),
+    Description("In straight cut chips", "in_straight_cut_chips"),
+    Description("In thick cut chips", "in_thick_cut_chips"),
+    Description("In unwrapped bars", "in_unwrapped_bars"),
+    Description("In whole fruit / vegetables", "in_whole_fruit_vegetables"),
+    Description("In wrapped bars", "in_wrapped_bars"),
+    Description("On a knife", "on_a_knife"),
+    Description("On a plate", "on_a_plate"),
+    Description("Slice from a large cake", "slice_from_a_large_cake"),
+    Description("Slice from a large pudding", "slice_from_a_large_pudding"),
+    Description("Spread on a cracker", "spread_on_a_cracker"),
+    Description("Spread on a scone", "spread_on_a_scone"),
+    Description("Spread on bread", "spread_on_bread"),
+    Description("Use a standard measure", "use_a_standard_measure"),
+    Description("Use a standard portion", "use_a_standard_portion"),
+    Description("Use an image", "use_an_image"),
+    Description("Use these crisps in a bag", "use_these_crisps_in_a_bag"),
+    Description("Use tortilla chips in a bowl", "use_tortilla_chips_in_a_bowl"))
 
   var asServedParams: MaybeParams = None
   var guideParams: MaybeParams = None
@@ -140,22 +192,33 @@ class EditablePortionSizePanel(p: PortionSizeMethod, res: PortionResources, imag
   descLabel.setPreferredSize(new Dimension(120, 20))
   descLabel.setHorizontalAlignment(SwingConstants.RIGHT)
 
-  val descText = new JTextField()
+  val initialDesc = descriptions.find(_.value == p.description) match {
+    case Some(desc) => desc
+    case None => throw new RuntimeException(s"Unexpected portion size method description: ${p.description}")  
+  }
+  
+  val descChoice = new JComboBox[Description]()
+  descriptions.foreach { descChoice.addItem(_) }
+  descChoice.setSelectedItem(initialDesc)
+  descChoice.addActionListener( new ActionListener() {
+    def actionPerformed(e: ActionEvent) = changesMade()
+  })
+
+  /*val descText = new JTextField()
   descText.setPreferredSize(new Dimension(150, 20))
   descText.setText(p.description)
-  addChangeListener(descText, () => changesMade())
-  
+  addChangeListener(descText, () => changesMade())*/
+
   val useForRecipesLabel = new JLabel("Use for recipes: ")
   useForRecipesLabel.setPreferredSize(new Dimension(120, 20))
   useForRecipesLabel.setHorizontalAlignment(SwingConstants.RIGHT)
-  
+
   val useForRecipes = new JCheckBox
   useForRecipes.setOpaque(false)
   useForRecipes.setSelected(p.useForRecipes)
   useForRecipes.addChangeListener(new ChangeListener() {
     def stateChanged(e: ChangeEvent) = changesMade()
   })
-  
 
   val imageLabel = new JLabel("Image: ")
   imageLabel.setPreferredSize(new Dimension(120, 20))
@@ -181,7 +244,7 @@ class EditablePortionSizePanel(p: PortionSizeMethod, res: PortionResources, imag
   val method = new JComboBox(Array("As served", "Guide", "Drink scale", "Standard portion", "Cereal", "Milk on cereal", "Milk in a hot drink", "Pizza"))
 
   add(descLabel)
-  add(descText)
+  add(descChoice)
 
   add(new LineBreak)
 
@@ -190,12 +253,11 @@ class EditablePortionSizePanel(p: PortionSizeMethod, res: PortionResources, imag
   add(chooseImageButton)
 
   add(new LineBreak)
-      
+
   add(useForRecipesLabel)
   add(useForRecipes)
-  
-  add(new LineBreak)
 
+  add(new LineBreak)
 
   add(methodLabel)
   add(method)
@@ -238,12 +300,12 @@ class EditablePortionSizePanel(p: PortionSizeMethod, res: PortionResources, imag
     case "milk-on-cereal" => {
       method.setSelectedIndex(5)
       milkPortionParams = Some(p.parameters)
-      switchToMilk()      
+      switchToMilk()
     }
     case "milk-in-a-hot-drink" => {
       method.setSelectedIndex(6)
       milkHotDrinkPortionParams = Some(p.parameters)
-      switchToMilkInHotDrink()      
+      switchToMilkInHotDrink()
     }
     case "pizza" => {
       method.setSelectedIndex(7)
@@ -278,6 +340,6 @@ class EditablePortionSizePanel(p: PortionSizeMethod, res: PortionResources, imag
 
   def portionSizeMethod = {
     val editor = currentEditor.get
-    PortionSizeMethod(editor.methodName, descText.getText(), imageUrl.getText(), useForRecipes.isSelected(), editor.parameters)
+    PortionSizeMethod(editor.methodName, descChoice.getSelectedItem.asInstanceOf[Description].value, imageUrl.getText(), useForRecipes.isSelected(), editor.parameters)
   }
 }
