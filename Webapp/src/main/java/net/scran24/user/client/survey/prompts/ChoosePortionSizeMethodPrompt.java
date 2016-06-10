@@ -28,6 +28,7 @@ package net.scran24.user.client.survey.prompts;
 
 import net.scran24.common.client.WidgetFactory;
 import net.scran24.user.client.ShepherdTour;
+import net.scran24.user.client.survey.PortionDescriptions;
 import net.scran24.user.client.survey.SurveyStageInterface;
 import net.scran24.user.client.survey.flat.FoodOperation;
 import net.scran24.user.client.survey.flat.Prompt;
@@ -56,6 +57,7 @@ import com.google.gwt.user.client.ui.Label;
 public class ChoosePortionSizeMethodPrompt implements Prompt<FoodEntry, FoodOperation> {
 	private final EncodedFood food;
 	private final static PromptMessages messages = PromptMessages.Util.getInstance();
+	private final static PortionDescriptions descriptions = PortionDescriptions.Util.getInstance();
 	private final static HelpMessages helpMessages = HelpMessages.Util.getInstance(); 
 	
 	private final static PVector<ShepherdTour.Step> tour = TreePVector.<ShepherdTour.Step>empty()
@@ -115,7 +117,7 @@ public class ChoosePortionSizeMethodPrompt implements Prompt<FoodEntry, FoodOper
 						
 			container.add(img);
 			
-			Label label = new Label(m.description.substring(0, 1).toUpperCase() + m.description.substring(1));
+			Label label = new Label(SafeHtmlUtils.htmlEscape(descriptions.getString(m.description)));
 			label.addStyleName("intake24-choose-portion-label");
 			label.addClickHandler(clickHandler);
 			
