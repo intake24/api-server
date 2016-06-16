@@ -10,6 +10,16 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package net.scran24.user.client.survey.flat;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+
+@JsonSubTypes({@Type(Selection.SelectedMeal.class), @Type(Selection.SelectedFood.class), @Type(Selection.EmptySelection.class)})
+@JsonTypeInfo(use=Id.CLASS, include=As.PROPERTY, property="@class")
 public abstract class Selection {
 	public interface Visitor<R> {
 		public R visitMeal(SelectedMeal meal);
@@ -18,10 +28,13 @@ public abstract class Selection {
 	}
 	
 	public static class SelectedFood extends Selection {
+		@JsonProperty
 		public final int mealIndex;
+		@JsonProperty
 		public final int foodIndex;
 		
-		public SelectedFood(int mealIndex, int foodIndex, SelectionType selectionType) {
+		@JsonCreator
+		public SelectedFood(@JsonProperty("mealIndex") int mealIndex, @JsonProperty("foodIndex") int foodIndex, @JsonProperty("selectionType") SelectionType selectionType) {
 			super(selectionType);
 			this.mealIndex = mealIndex;
 			this.foodIndex = foodIndex;
@@ -34,9 +47,11 @@ public abstract class Selection {
 	}
 	
 	public static class SelectedMeal extends Selection {
+		@JsonProperty
 		public final int mealIndex;
 		
-		public SelectedMeal(int mealIndex, SelectionType selectionType) {
+		@JsonCreator
+		public SelectedMeal(@JsonProperty("mealIndex") int mealIndex, @JsonProperty("selectionType") SelectionType selectionType) {
 			super(selectionType);
 			this.mealIndex = mealIndex;
 		}
@@ -48,7 +63,9 @@ public abstract class Selection {
 	}
 	
 	public static class EmptySelection extends Selection {
-		public EmptySelection(final SelectionType selectionType) {
+		
+		@JsonCreator
+		public EmptySelection(@JsonProperty("selectionType") final SelectionType selectionType) {
 			super(selectionType);
 		}
 		
@@ -58,11 +75,13 @@ public abstract class Selection {
 		}
 	}
 	
+	@JsonProperty
 	public final SelectionType selectionType; 
 	
 	public abstract <R> R accept (Visitor<R> visitor);
 	
-	public Selection(final SelectionType type) {
+	@JsonCreator
+	public Selection(@JsonProperty("selectionType") final SelectionType type) {
 		this.selectionType = type;
 	}
 	

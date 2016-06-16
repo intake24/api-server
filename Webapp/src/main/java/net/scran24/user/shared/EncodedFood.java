@@ -22,9 +22,13 @@ This file is based on Intake24 v1.0.
 Licensed under the Open Government Licence 3.0: 
 
 http://www.nationalarchives.gov.uk/doc/open-government-licence/
-*/
+ */
 
 package net.scran24.user.shared;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import net.scran24.datastore.shared.CompletedPortionSize;
 import net.scran24.user.client.survey.portionsize.experimental.PortionSize;
@@ -38,18 +42,43 @@ import org.pcollections.client.TreePVector;
 import org.workcraft.gwt.shared.client.Either;
 import org.workcraft.gwt.shared.client.Option;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class EncodedFood extends FoodEntry {
-	public final static String FLAG_NOT_SAME_AS_BEFORE = "not-same-as-before"; 
-	
+	public final static String FLAG_NOT_SAME_AS_BEFORE = "not-same-as-before";
+
+	@JsonProperty
 	public final FoodData data;
+	@JsonProperty
 	public final Option<Integer> portionSizeMethodIndex;
+	@JsonProperty
 	public final Option<Either<PortionSize, CompletedPortionSize>> portionSize;
+	@JsonProperty
 	public final Option<String> brand;
+	@JsonProperty
 	public final String searchTerm;
+	@JsonProperty
 	public final PVector<FoodPrompt> enabledPrompts;
 
-	public EncodedFood(FoodData data, FoodLink link, Option<Integer> portionSizeMethodIndex, Option<Either<PortionSize, CompletedPortionSize>> portionSize, 
-			Option<String> brand, String searchTerm, PVector<FoodPrompt> enabledPrompts, PSet<String> flags, PMap<String, String> customData) {
+	@JsonCreator
+	@Deprecated
+	public EncodedFood(@JsonProperty("data") FoodData data, 
+			@JsonProperty("link") FoodLink link, 
+			@JsonProperty("portionSizeMethodIndex") Option<Integer> portionSizeMethodIndex,
+			@JsonProperty("portionSize") Option<Either<PortionSize, CompletedPortionSize>> portionSize, 
+			@JsonProperty("brand") Option<String> brand,
+			@JsonProperty("searchTerm") String searchTerm, 
+			@JsonProperty("enabledPrompts") List<FoodPrompt> enabledPrompts, 
+			@JsonProperty("flags") Set<String> flags,
+			@JsonProperty("customData") Map<String, String> customData) {
+		this(data, link, portionSizeMethodIndex, portionSize, brand, searchTerm, TreePVector.from(enabledPrompts), HashTreePSet.from(flags),
+				HashTreePMap.from(customData));
+	}
+
+	public EncodedFood(FoodData data, FoodLink link, Option<Integer> portionSizeMethodIndex,
+			Option<Either<PortionSize, CompletedPortionSize>> portionSize, Option<String> brand, String searchTerm,
+			PVector<FoodPrompt> enabledPrompts, PSet<String> flags, PMap<String, String> customData) {
 		super(link, flags, customData);
 		this.data = data;
 		this.portionSizeMethodIndex = portionSizeMethodIndex;
@@ -61,13 +90,14 @@ public class EncodedFood extends FoodEntry {
 
 	public EncodedFood(FoodData data, Option<Integer> portionSizeMethodIndex, Option<Either<PortionSize, CompletedPortionSize>> portionSize,
 			Option<String> brand, String searchTerm, FoodLink link, PSet<String> flags, PMap<String, String> customData) {
-		this(data, link, portionSizeMethodIndex, portionSize, brand, searchTerm, TreePVector.<FoodPrompt> empty().plusAll(data.prompts), flags, customData);
+		this(data, link, portionSizeMethodIndex, portionSize, brand, searchTerm, TreePVector.<FoodPrompt> empty().plusAll(data.prompts), flags,
+				customData);
 	}
-	
+
 	public EncodedFood(FoodData data, FoodLink link, String searchTerm) {
-		this(data, link, data.portionSizeMethods.size() == 1 ? Option.some(0) : Option
-				.<Integer>none(), Option.<Either<PortionSize, CompletedPortionSize>> none(), Option.<String>none(), searchTerm, TreePVector.<FoodPrompt> empty().plusAll(
-				data.prompts), HashTreePSet.<String>empty(), HashTreePMap.<String, String>empty());
+		this(data, link, data.portionSizeMethods.size() == 1 ? Option.some(0) : Option.<Integer> none(), Option
+				.<Either<PortionSize, CompletedPortionSize>> none(), Option.<String> none(), searchTerm, TreePVector.<FoodPrompt> empty().plusAll(
+				data.prompts), HashTreePSet.<String> empty(), HashTreePMap.<String, String> empty());
 	}
 
 	@Override
@@ -108,7 +138,7 @@ public class EncodedFood extends FoodEntry {
 			}
 		});
 	}
-	
+
 	public CompletedPortionSize completedPortionSize() {
 		return portionSize.accept(new Option.Visitor<Either<PortionSize, CompletedPortionSize>, CompletedPortionSize>() {
 			@Override
@@ -121,16 +151,16 @@ public class EncodedFood extends FoodEntry {
 
 					@Override
 					public CompletedPortionSize visitLeft(PortionSize value) {
-						throw new IllegalStateException ("portion size incomplete");
+						throw new IllegalStateException("portion size incomplete");
 					}
 				});
 			}
 
 			@Override
 			public CompletedPortionSize visitNone() {
-				throw new IllegalStateException ("portion size incomplete");
+				throw new IllegalStateException("portion size incomplete");
 			}
-		});	
+		});
 	}
 
 	public EncodedFood withSelectedPortionSizeMethod(int portionSizeMethodIndex) {
@@ -145,9 +175,10 @@ public class EncodedFood extends FoodEntry {
 		return new EncodedFood(data, link, portionSizeMethodIndex, portionSize, brand, searchTerm, enabledPrompts.minus(index), flags, customData);
 
 	}
-	
+
 	public EncodedFood disableAllPrompts() {
-		return new EncodedFood(data, link, portionSizeMethodIndex, portionSize, brand, searchTerm, TreePVector.<FoodPrompt>empty(), flags, customData);
+		return new EncodedFood(data, link, portionSizeMethodIndex, portionSize, brand, searchTerm, TreePVector.<FoodPrompt> empty(), flags,
+				customData);
 	}
 
 	public boolean isInCategory(String categoryCode) {
@@ -168,15 +199,16 @@ public class EncodedFood extends FoodEntry {
 	public FoodEntry withFlags(PSet<String> new_flags) {
 		return new EncodedFood(data, link, portionSizeMethodIndex, portionSize, brand, searchTerm, enabledPrompts, new_flags, customData);
 	}
-	
+
 	public EncodedFood markNotSameAsBefore() {
-		return new EncodedFood(data, link, portionSizeMethodIndex, portionSize, brand, searchTerm, enabledPrompts, flags.plus(FLAG_NOT_SAME_AS_BEFORE), customData);
+		return new EncodedFood(data, link, portionSizeMethodIndex, portionSize, brand, searchTerm, enabledPrompts,
+				flags.plus(FLAG_NOT_SAME_AS_BEFORE), customData);
 	}
-	
+
 	public EncodedFood withBrand(String name) {
 		return new EncodedFood(data, link, portionSizeMethodIndex, portionSize, Option.some(name), searchTerm, enabledPrompts, flags, customData);
 	}
-	
+
 	public boolean notSameAsBefore() {
 		return flags.contains(FLAG_NOT_SAME_AS_BEFORE);
 	}
@@ -184,6 +216,6 @@ public class EncodedFood extends FoodEntry {
 	@Override
 	public FoodEntry withCustomDataField(String key, String value) {
 		return new EncodedFood(data, link, portionSizeMethodIndex, portionSize, brand, searchTerm, enabledPrompts, flags, customData.plus(key, value));
-		
+
 	}
 }

@@ -10,8 +10,15 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package org.workcraft.gwt.shared.client;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.google.gwt.user.client.rpc.IsSerializable;
 
+@JsonSubTypes({@Type(Either.Left.class), @Type(Either.Right.class)})
+@JsonTypeInfo(use=Id.CLASS, include=As.PROPERTY, property="@class")
 public abstract class Either<L, R> {
 	public static interface Visitor<L, R, T> {
 		public T visitRight(R value);
@@ -23,9 +30,8 @@ public abstract class Either<L, R> {
 		public void visitLeft (L value);
 	}
 
-
 	public static class Right<L, R> extends Either <L, R> implements IsSerializable {
-		R value;
+		public R value;
 		
 		@Deprecated
 		public Right() { }
@@ -52,7 +58,7 @@ public abstract class Either<L, R> {
 	}
 	
 	public static class Left<L, R> extends Either <L, R> implements IsSerializable {
-		L value;
+		public L value;
 		
 		@Deprecated
 		public Left() { }

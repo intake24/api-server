@@ -57,6 +57,7 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
     <module>FoodDataSQL</module>
     <module>FoodDataXML</module>    
     <module>NutrientsNDNS</module>
+    <module>RestyGWT</module>
     <module>Webapp</module>
   </modules>
 

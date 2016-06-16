@@ -28,6 +28,9 @@ package net.scran24.user.client.survey.flat;
 
 import java.util.logging.Logger;
 
+import net.scran24.user.client.json.OptionTest;
+import net.scran24.user.client.json.OptionTestCodec;
+import net.scran24.user.client.json.SurveyCodec;
 import net.scran24.user.client.survey.SimpleSurveyStageInterface;
 import net.scran24.user.client.survey.SurveyStage;
 import net.scran24.user.client.survey.flat.Selection.EmptySelection;
@@ -39,8 +42,12 @@ import net.scran24.user.client.survey.prompts.AddMealPrompt;
 import net.scran24.user.client.survey.prompts.DeleteMealPrompt;
 import net.scran24.user.client.survey.prompts.EditMealPrompt;
 import net.scran24.user.client.survey.prompts.EditTimePrompt;
+import net.scran24.user.shared.CompoundFood;
 import net.scran24.user.shared.FoodEntry;
+import net.scran24.user.shared.RawFood;
+import net.scran24.user.shared.TemplateFood;
 
+import org.fusesource.restygwt.client.JsonEncoderDecoder;
 import org.pcollections.client.PVector;
 import org.workcraft.gwt.shared.client.Callback;
 import org.workcraft.gwt.shared.client.Callback1;
@@ -49,6 +56,8 @@ import org.workcraft.gwt.shared.client.Function1;
 import org.workcraft.gwt.shared.client.Option;
 import org.workcraft.gwt.shared.client.Option.SideEffectVisitor;
 
+import com.google.gwt.core.shared.GWT;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.FlowPanel;
 
 /**
@@ -79,6 +88,11 @@ public class IntakeSurvey implements SurveyStage<Survey> {
 	private Callback1<Function1<Survey, Survey>> updateIntermediateState;
 
 	private SimpleSurveyStageInterface cachedInterface = null;
+	
+	//private final SurveyCodec dogar = GWT.create(SurveyCodec.class);
+	
+	public static interface TestCodec extends JsonEncoderDecoder<TemplateFood> { } 
+	private final TestCodec kazon = GWT.create(TestCodec.class);
 
 	public void showPrompt(Prompt<Survey, SurveyOperation> prompt) {
 		interfaceManager.applyInterface(prompt, applyOperation, updateIntermediateState);
@@ -105,6 +119,12 @@ public class IntakeSurvey implements SurveyStage<Survey> {
 
 	public void showNextPrompt() {
 		Survey currentState = stateManager.getCurrentState();
+		
+		//Window.alert(dogar.encode(currentState).toString());
+		
+		if (currentState.meals.get(0).foods.size() > 0)
+			Window.alert(kazon.encode((TemplateFood)currentState.meals.get(0).foods.get(0)).toString());
+		
 		Option<Prompt<Survey, SurveyOperation>> nextPrompt = promptManager.nextPromptForSelection(currentState);
 
 		final Survey stateWithForcedAutoSelection = currentState.withSelection(convertToAuto(currentState.selectedElement));

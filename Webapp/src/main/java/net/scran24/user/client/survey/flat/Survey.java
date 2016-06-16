@@ -22,7 +22,7 @@ This file is based on Intake24 v1.0.
 Licensed under the Open Government Licence 3.0: 
 
 http://www.nationalarchives.gov.uk/doc/open-government-licence/
-*/
+ */
 
 package net.scran24.user.client.survey.flat;
 
@@ -38,9 +38,10 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import net.scran24.common.client.CurrentUser;
-
 import net.scran24.datastore.shared.Time;
 import net.scran24.user.shared.CompletedFood;
 import net.scran24.user.shared.CompletedMeal;
@@ -55,12 +56,18 @@ import net.scran24.user.shared.MissingFood;
 import net.scran24.user.shared.MissingFoodDescription;
 import net.scran24.user.shared.RawFood;
 
+import org.pcollections.client.HashTreePMap;
+import org.pcollections.client.HashTreePSet;
 import org.pcollections.client.PMap;
 import org.pcollections.client.PSet;
 import org.pcollections.client.PVector;
+import org.pcollections.client.TreePVector;
 import org.workcraft.gwt.shared.client.CollectionUtils.WithIndex;
 import org.workcraft.gwt.shared.client.Function1;
 import org.workcraft.gwt.shared.client.Option;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Survey {
 	public static final String FLAG_ENERGY_VALUE_CONFIRMED = "energy-value-confirmed";
@@ -69,20 +76,33 @@ public class Survey {
 	public static final String FLAG_FREE_ENTRY_COMPLETE = "free-entry-complete";
 	public static final String FLAG_NO_MORE_PROMPTS = "no-more-prompts";
 	public static final String FLAG_SKIP_HISTORY = "skip-history";
-	
-	public final long startTime;
 
+	@JsonProperty
+	public final long startTime;
+	@JsonProperty
 	public final PVector<Meal> meals;
-	public final PVector<WithIndex<Meal>> mealsSortedByTime;
+	@JsonProperty
 	public final Selection selectedElement;
+	@JsonProperty
 	public final PSet<String> flags;
+	@JsonProperty
 	public final PMap<String, String> customData;
+	
+	public final PVector<WithIndex<Meal>> mealsSortedByTime;
+
+	@JsonCreator
+	public Survey(@JsonProperty("meals") List<Meal> meals, @JsonProperty("selectedElement") Selection selectedElement,
+			@JsonProperty("startTime") long startTime, @JsonProperty("flags") Set<String> flags,
+			@JsonProperty("customData") Map<String, String> customData) {
+		this(TreePVector.<Meal> from(meals), selectedElement, startTime, HashTreePSet.<String> from(flags), HashTreePMap
+				.<String, String> from(customData));
+	}
 
 	public Survey(PVector<Meal> meals, Selection selectedElement, long startTime, PSet<String> flags, PMap<String, String> customData) {
 		this.meals = meals;
 		this.startTime = startTime;
 		this.customData = customData;
-		
+
 		PVector<WithIndex<Meal>> mealsWithIndex = zipWithIndex(meals);
 
 		mealsSortedByTime = sort(mealsWithIndex, new Comparator<WithIndex<Meal>>() {
@@ -112,12 +132,12 @@ public class Survey {
 		this.selectedElement = selectedElement;
 
 		PSet<String> f = flags;
-		
+
 		if (forall(meals, Meal.isFreeEntryCompleteFunc))
 			f = f.plus(FLAG_FREE_ENTRY_COMPLETE);
 		if (forall(meals, Meal.isEncodingCompleteFunc))
 			f = f.plus(FLAG_ENCODING_COMPLETE);
-		
+
 		this.flags = f;
 	}
 
@@ -132,7 +152,7 @@ public class Survey {
 				PVector<CompletedFood> completedFoods = map(filter(argument.foods, new Function1<FoodEntry, Boolean>() {
 					@Override
 					public Boolean apply(FoodEntry argument) {
-						return !argument.isTemplate() && !argument.isCompound() &&!argument.isMissing();
+						return !argument.isTemplate() && !argument.isCompound() && !argument.isMissing();
 					}
 				}), new Function1<FoodEntry, CompletedFood>() {
 					@Override
@@ -142,11 +162,11 @@ public class Survey {
 				});
 
 				return new CompletedMeal(argument.name, new ArrayList<CompletedFood>(completedFoods), argument.time
-						.getOrDie("Cannot finalise survey because it contains an undefined time entry"), new HashMap<String, String>(argument.customData));
+						.getOrDie("Cannot finalise survey because it contains an undefined time entry"), new HashMap<String, String>(
+						argument.customData));
 			}
 		});
-		
-		
+
 		PVector<CompletedMissingFood> missingFoods = flatten(map(meals, new Function1<Meal, PVector<CompletedMissingFood>>() {
 			@Override
 			public PVector<CompletedMissingFood> apply(Meal meal) {
@@ -171,28 +191,24 @@ public class Survey {
 
 							@Override
 							public Option<CompletedMissingFood> visitMissing(MissingFood food) {
-								
-								MissingFoodDescription desc = food.description.getOrDie("Cannot finalise survey because it contains a missing food entry with no description");
-								
-								return Option.some(new CompletedMissingFood(
-										food.name,
-										desc.brand.getOrElse(null),
-										desc.description.getOrElse(null),
-										desc.portionSize.getOrElse(null),
-										desc.leftovers.getOrElse(null)));
+
+								MissingFoodDescription desc = food.description
+										.getOrDie("Cannot finalise survey because it contains a missing food entry with no description");
+
+								return Option.some(new CompletedMissingFood(food.name, desc.brand.getOrElse(null), desc.description.getOrElse(null),
+										desc.portionSize.getOrElse(null), desc.leftovers.getOrElse(null)));
 							}
 
 							@Override
-							public Option<CompletedMissingFood> visitCompound(
-									CompoundFood food) {
+							public Option<CompletedMissingFood> visitCompound(CompoundFood food) {
 								return Option.none();
 							}
 						});
 					}
-				}));			
+				}));
 			}
 		}));
-		
+
 		// FIXME: username should be determined on the server
 		return new CompletedSurvey(startTime, System.currentTimeMillis(), new ArrayList<CompletedMeal>(completedMeals),
 				new ArrayList<CompletedMissingFood>(missingFoods), log, CurrentUser.userInfo.userName, new HashMap<String, String>(customData));
@@ -234,51 +250,51 @@ public class Survey {
 	public Survey invalidateSelection() {
 		return this.withSelection(new Selection.EmptySelection(SelectionType.AUTO_SELECTION));
 	}
-	
+
 	public Survey withFlag(String flag) {
-		return new Survey(meals, selectedElement, startTime, flags.plus(flag), customData);		
+		return new Survey(meals, selectedElement, startTime, flags.plus(flag), customData);
 	}
-	
+
 	public Survey clearFlag(String flag) {
 		return new Survey(meals, selectedElement, startTime, flags.minus(flag), customData);
 	}
-	
+
 	public Survey markCompletionConfirmed() {
 		return withFlag(FLAG_COMPLETION_CONFIRMED);
 	}
-	
+
 	public Survey clearCompletionConfirmed() {
-		return clearFlag(FLAG_COMPLETION_CONFIRMED);		
+		return clearFlag(FLAG_COMPLETION_CONFIRMED);
 	}
-	
+
 	public Survey markEnergyValueConfirmed() {
 		return withFlag(FLAG_ENERGY_VALUE_CONFIRMED);
 	}
-	
+
 	public Survey markFreeEntryComplete() {
 		return withFlag(FLAG_FREE_ENTRY_COMPLETE);
 	}
-	
+
 	public boolean freeEntryComplete() {
 		return flags.contains(FLAG_FREE_ENTRY_COMPLETE);
 	}
-		
+
 	public Survey clearEnergyValueConfirmed() {
 		return clearFlag(FLAG_ENERGY_VALUE_CONFIRMED);
 	}
-	
+
 	public boolean completionConfirmed() {
 		return flags.contains(FLAG_COMPLETION_CONFIRMED);
 	}
-	
+
 	public boolean energyValueConfirmed() {
 		return flags.contains(FLAG_ENERGY_VALUE_CONFIRMED);
 	}
-	
+
 	public Survey withData(PMap<String, String> newData) {
-		return new Survey (meals, selectedElement, startTime, flags, newData);
+		return new Survey(meals, selectedElement, startTime, flags, newData);
 	}
-	
+
 	public Survey withData(String key, String value) {
 		return withData(customData.plus(key, value));
 	}
