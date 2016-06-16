@@ -77,7 +77,7 @@ public class TemplateFood extends FoodEntry {
 	@Deprecated
 	public TemplateFood(@JsonProperty("link") FoodLink link, @JsonProperty("description") String description,
 			@JsonProperty("isDrink") boolean isDrink, @JsonProperty("data") TemplateFoodData data,
-			@JsonProperty("completeComponents") Set<Integer> completeComponents, @JsonProperty("components") Map<Integer, Set<UUID>> components,
+			@JsonProperty("markedAsComplete") Set<Integer> completeComponents, @JsonProperty("components") Map<Integer, Set<UUID>> components,
 			@JsonProperty("flags") Set<String> flags, @JsonProperty("customData") Map<String, String> customData) {
 		this(link, description, isDrink, data, HashTreePSet.from(completeComponents), mapComponents(components), HashTreePSet.from(flags),
 				HashTreePMap.from(customData));
