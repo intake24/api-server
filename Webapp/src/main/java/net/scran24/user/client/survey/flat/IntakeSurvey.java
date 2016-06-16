@@ -122,7 +122,7 @@ public class IntakeSurvey implements SurveyStage<Survey> {
 		
 		//Window.alert(dogar.encode(currentState).toString());
 		
-		if (currentState.meals.get(0).foods.size() > 0)
+		if (currentState.meals.get(0).foods.size() > 0 && currentState.meals.get(0).foods.get(0).isTemplate())
 			Window.alert(kazon.encode((TemplateFood)currentState.meals.get(0).foods.get(0)).toString());
 		
 		Option<Prompt<Survey, SurveyOperation>> nextPrompt = promptManager.nextPromptForSelection(currentState);

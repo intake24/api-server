@@ -1,4 +1,4 @@
-package net.scran24.user.client.json;
+package net.scran24.common.restygwt;
 
 import org.fusesource.restygwt.rebind.JsonEncoderDecoderClassCreator;
 import org.fusesource.restygwt.rebind.RestyJsonSerializerGenerator;

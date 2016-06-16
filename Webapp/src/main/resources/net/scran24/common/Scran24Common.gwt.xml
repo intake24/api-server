@@ -38,7 +38,7 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
     <extend-configuration-property 
         name="org.fusesource.restygwt.restyjsonserializergenerator"
-        value="net.scran24.user.client.json.OptionRestySerializerGenerator"/>
+        value="net.scran24.common.restygwt.OptionRestySerializerGenerator"/>
 
 	<extend-property name="locale" values="en_GB" />
 	<!--   <extend-property name="locale" values="ar_AE" />-->

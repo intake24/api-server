@@ -1,8 +1,8 @@
-package net.scran24.user.client.json;
+package net.scran24.common.restygwt;
 
+import org.fusesource.restygwt.client.Json;
 import org.fusesource.restygwt.rebind.JsonEncoderDecoderClassCreator;
 import org.fusesource.restygwt.rebind.JsonEncoderDecoderInstanceLocator;
-import org.fusesource.restygwt.client.Json;
 
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
