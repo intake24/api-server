@@ -72,7 +72,7 @@ public class NutrientMapper {
 	private NutritionMappedFood mapFood(CompletedFood food, String locale) {
 		final double weight = food.portionSize.servingWeight() - food.portionSize.leftoversWeight();
 
-		Either<FoodDataError, Tuple2<FoodData, FoodDataSources>> foodDataResult = userDataService.foodData(food.code, locale);
+		Either<FoodDataError, Tuple2<SerialisableFoodData, FoodDataSources>> foodDataResult = userDataService.foodData(food.code, locale);
 		
 		Food foodDef = adminDataService.foodDef(food.code, locale);
 
@@ -80,7 +80,7 @@ public class NutrientMapper {
 			throw new RuntimeException("Cannot retreive data for food code " + food.code);
 		else {
 			
-			FoodData foodData = foodDataResult.right().get()._1();
+			SerialisableFoodData foodData = foodDataResult.right().get()._1();
 
 			Map<String, Double> nutrients = null;
 			String nutrientTableID = null;

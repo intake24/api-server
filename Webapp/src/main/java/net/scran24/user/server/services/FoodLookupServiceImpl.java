@@ -410,13 +410,13 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 	public FoodData getFoodData(String foodCode, String locale) {
 		crashIfDebugOptionSet("crash-on-get-food-data");
 
-		Either<FoodDataError, Tuple2<net.scran24.fooddef.FoodData, FoodDataSources>> foodDataResult = foodData.foodData(foodCode, locale);
+		Either<FoodDataError, Tuple2<net.scran24.fooddef.SerialisableFoodData, FoodDataSources>> foodDataResult = foodData.foodData(foodCode, locale);
 
 		if (foodDataResult.isLeft())
 			throw new RuntimeException("Food code not found or local description missing: " + foodCode);
 		else {
 
-			net.scran24.fooddef.FoodData data = foodDataResult.right().get()._1();
+			net.scran24.fooddef.SerialisableFoodData data = foodDataResult.right().get()._1();
 
 			log.debug(data.toString());
 

@@ -77,13 +77,13 @@ public class ScalaConversions {
 		return result;		
 	}
 	
-	public static List<PortionSizeMethod> toJavaPortionSizeMethods(Seq<net.scran24.fooddef.PortionSizeMethod> methods, String imageUrlBase) {
-		Iterator<net.scran24.fooddef.PortionSizeMethod> iter = methods.iterator();
+	public static List<PortionSizeMethod> toJavaPortionSizeMethods(Seq<net.scran24.fooddef.SerialisablePortionSizeMethod> methods, String imageUrlBase) {
+		Iterator<net.scran24.fooddef.SerialisablePortionSizeMethod> iter = methods.iterator();
 
 		ArrayList<PortionSizeMethod> result = new ArrayList<PortionSizeMethod>();
 
 		while (iter.hasNext()) {
-			net.scran24.fooddef.PortionSizeMethod next = iter.next();
+			net.scran24.fooddef.SerialisablePortionSizeMethod next = iter.next();
 			Iterator<PortionSizeMethodParameter> paramIter = next.parameters().iterator();
 
 			HashMap<String, String> params = new HashMap<String, String>();
@@ -128,7 +128,7 @@ public class ScalaConversions {
 		return result;
 	}
 
-	public static FoodData buildJavaFoodData(net.scran24.fooddef.FoodData data, double calPer100g, Seq<net.scran24.fooddef.Prompt> prompts, Seq<String> brands, Seq<net.scran24.fooddef.CategoryHeader> allSuperCategories, String imageUrlBase) {
+	public static FoodData buildJavaFoodData(net.scran24.fooddef.SerialisableFoodData data, double calPer100g, Seq<net.scran24.fooddef.Prompt> prompts, Seq<String> brands, Seq<net.scran24.fooddef.CategoryHeader> allSuperCategories, String imageUrlBase) {
 		
 		ArrayList<String> categoryCodes = new ArrayList<String>();
 		
