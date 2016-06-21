@@ -181,7 +181,7 @@ public abstract class PromptAdapter<T, Op> implements Prompt<Survey, SurveyOpera
 						@Override
 						public Survey apply(Survey argument) {
 							return argument.updateMeal(mealIndex, argument.meals.get(mealIndex).minusFood(foodIndex))
-									.withSelection(new Selection.SelectedMeal(mealIndex, SelectionType.AUTO_SELECTION));
+									.withSelection(new Selection.SelectedMeal(mealIndex, SelectionMode.AUTO_SELECTION));
 						}
 					}, true);
 				}

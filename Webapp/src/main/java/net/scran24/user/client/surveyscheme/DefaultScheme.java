@@ -26,17 +26,11 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package net.scran24.user.client.surveyscheme;
 
-import com.google.gwt.core.shared.GWT;
-import com.google.gwt.user.client.Window;
-
 import net.scran24.user.client.SurveyInterfaceManager;
-import net.scran24.user.client.json.SelectionCodec;
-import net.scran24.user.client.json.SurveyCodec;
 import net.scran24.user.client.survey.SurveyMessages;
 import net.scran24.user.client.survey.WelcomePage;
 import net.scran24.user.client.survey.flat.FlatFinalPage;
 import net.scran24.user.client.survey.flat.IntakeSurvey;
-import net.scran24.user.client.survey.flat.Selection;
 import net.scran24.user.client.survey.flat.Survey;
 
 /**

@@ -20,7 +20,9 @@ import org.pcollections.client.HashTreePSet;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 
+@JsonTypeName("compound")
 public class SerialisableCompoundFood extends SerialisableFoodEntry {
 	
 	@JsonProperty

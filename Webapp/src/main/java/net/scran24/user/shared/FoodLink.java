@@ -32,4 +32,31 @@ public class FoodLink {
 	public static FoodLink newLinked(UUID linkedTo) {
 		return new FoodLink(UUID.randomUUID(), Option.some(linkedTo));
 	}
+
+	@Override
+	public String toString() {
+		return "FoodLink [id=" + id + ", linkedTo=" + linkedTo + "]";
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		FoodLink other = (FoodLink) obj;
+		if (id == null) {
+			if (other.id != null)
+				return false;
+		} else if (!id.equals(other.id))
+			return false;
+		if (linkedTo == null) {
+			if (other.linkedTo != null)
+				return false;
+		} else if (!linkedTo.equals(other.linkedTo))
+			return false;
+		return true;
+	}	
 }

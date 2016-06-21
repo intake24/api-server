@@ -74,7 +74,7 @@ public class MealPanel extends Composite {
 		foodLabel.addClickHandler(new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
-				requestSelectionChange.call(new Selection.SelectedFood(mealIndex, f.index, SelectionType.MANUAL_SELECTION));
+				requestSelectionChange.call(new Selection.SelectedFood(mealIndex, f.index, SelectionMode.MANUAL_SELECTION));
 			}
 		});
 
@@ -165,7 +165,7 @@ public class MealPanel extends Composite {
 		label.addClickHandler(new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
-				requestSelectionChange.call(new Selection.SelectedMeal(mealIndex, SelectionType.MANUAL_SELECTION));
+				requestSelectionChange.call(new Selection.SelectedMeal(mealIndex, SelectionMode.MANUAL_SELECTION));
 			}
 		});
 		

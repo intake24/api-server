@@ -29,7 +29,7 @@ package net.scran24.user.client.survey.flat.rules;
 import net.scran24.user.client.survey.flat.FoodOperation;
 import net.scran24.user.client.survey.flat.Prompt;
 import net.scran24.user.client.survey.flat.PromptRule;
-import net.scran24.user.client.survey.flat.SelectionType;
+import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.flat.Survey;
 import net.scran24.user.client.survey.prompts.BrandNamePrompt;
 import net.scran24.user.shared.CompoundFood;
@@ -45,7 +45,7 @@ import org.workcraft.gwt.shared.client.Option;
 
 public class ShowBrandNamePrompt implements PromptRule<FoodEntry, FoodOperation> {
 	@Override
-	public Option<Prompt<FoodEntry, FoodOperation>> apply(FoodEntry data, SelectionType selectionType, final PSet<String> surveyFlags) {
+	public Option<Prompt<FoodEntry, FoodOperation>> apply(FoodEntry data, SelectionMode selectionType, final PSet<String> surveyFlags) {
 		return data.accept(new FoodEntry.Visitor<Option<Prompt<FoodEntry, FoodOperation>>>() {
 			@Override
 			public Option<Prompt<FoodEntry, FoodOperation>> visitRaw(RawFood food) {

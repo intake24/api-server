@@ -48,7 +48,7 @@ import net.scran24.user.client.survey.flat.Rules;
 import net.scran24.user.client.survey.flat.Selection;
 import net.scran24.user.client.survey.flat.SelectionManager;
 import net.scran24.user.client.survey.flat.SelectionRule;
-import net.scran24.user.client.survey.flat.SelectionType;
+import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.flat.StateManager;
 import net.scran24.user.client.survey.flat.StateManagerUtil;
 import net.scran24.user.client.survey.flat.Survey;
@@ -127,7 +127,7 @@ public abstract class BasicScheme implements SurveyScheme {
 	
 	protected Survey startingSurveyData() {
 		return new Survey(PredefinedMeals.startingMeals, new Selection.EmptySelection(
-				SelectionType.AUTO_SELECTION), System.currentTimeMillis(), HashTreePSet.<String>empty(), HashTreePMap.<String, String>empty());
+				SelectionMode.AUTO_SELECTION), System.currentTimeMillis(), HashTreePSet.<String>empty(), HashTreePMap.<String, String>empty());
 	}
 	
 	protected Survey postProcess(Survey data, PVector<Function1<Survey, Survey>> functions) {

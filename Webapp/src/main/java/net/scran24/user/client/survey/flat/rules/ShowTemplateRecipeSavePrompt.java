@@ -14,7 +14,7 @@ import static org.workcraft.gwt.shared.client.CollectionUtils.forall;
 import net.scran24.user.client.survey.RecipeManager;
 import net.scran24.user.client.survey.flat.Prompt;
 import net.scran24.user.client.survey.flat.PromptRule;
-import net.scran24.user.client.survey.flat.SelectionType;
+import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.prompts.MealOperation;
 import net.scran24.user.client.survey.prompts.SaveHomeRecipePrompt;
 import net.scran24.user.shared.CompoundFood;
@@ -40,7 +40,7 @@ public class ShowTemplateRecipeSavePrompt implements PromptRule<Pair<FoodEntry, 
 	}
 
 	@Override
-	public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> apply(final Pair<FoodEntry, Meal> data, SelectionType selectionType, final PSet<String> surveyFlags) {
+	public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> apply(final Pair<FoodEntry, Meal> data, SelectionMode selectionType, final PSet<String> surveyFlags) {
 		return data.left.accept(new FoodEntry.Visitor<Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>>>() {
 			@Override
 			public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> visitRaw(RawFood food) {

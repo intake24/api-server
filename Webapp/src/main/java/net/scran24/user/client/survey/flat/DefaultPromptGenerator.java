@@ -38,7 +38,7 @@ public class DefaultPromptGenerator<T, Op> implements PromptGenerator<T, Op> {
 				new Function1<WithPriority<PromptRule<T, Op>>, Option<WithPriority<Prompt<T, Op>>>>() {
 					@Override
 					public Option<WithPriority<Prompt<T, Op>>> apply(final WithPriority<PromptRule<T, Op>> rule) {
-						Option<WithPriority<Prompt<T, Op>>> promptOption = rule.value.apply(state, selection.selectionType, surveyFlags).map(
+						Option<WithPriority<Prompt<T, Op>>> promptOption = rule.value.apply(state, selection.selectionMode, surveyFlags).map(
 								new Function1<Prompt<T, Op>, WithPriority<Prompt<T, Op>>>() {
 									@Override
 									public WithPriority<Prompt<T, Op>> apply(Prompt<T, Op> p) {

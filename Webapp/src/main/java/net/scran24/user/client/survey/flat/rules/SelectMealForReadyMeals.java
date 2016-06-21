@@ -16,7 +16,7 @@ import org.workcraft.gwt.shared.client.Option;
 import static org.workcraft.gwt.shared.client.CollectionUtils.*;
 import net.scran24.user.client.survey.flat.Selection;
 import net.scran24.user.client.survey.flat.SelectionRule;
-import net.scran24.user.client.survey.flat.SelectionType;
+import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.flat.Survey;
 import net.scran24.user.shared.Meal;
 import net.scran24.user.shared.WithPriority;
@@ -34,7 +34,7 @@ public class SelectMealForReadyMeals implements SelectionRule {
 		if (index == -1)
 			return new Option.None<Selection>();
 		else
-			return new Option.Some<Selection>(new Selection.SelectedMeal(index, SelectionType.AUTO_SELECTION));
+			return new Option.Some<Selection>(new Selection.SelectedMeal(index, SelectionMode.AUTO_SELECTION));
 	}
 	
 	@Override

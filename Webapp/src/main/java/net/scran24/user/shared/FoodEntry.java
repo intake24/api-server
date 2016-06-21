@@ -27,30 +27,18 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 package net.scran24.user.shared;
 
 import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
 import net.scran24.datastore.shared.CompletedPortionSize;
 import net.scran24.user.client.survey.portionsize.experimental.PortionSize;
 
-import org.pcollections.client.HashTreePMap;
-import org.pcollections.client.HashTreePSet;
 import org.pcollections.client.PMap;
 import org.pcollections.client.PSet;
 import org.workcraft.gwt.shared.client.Either;
 import org.workcraft.gwt.shared.client.Function1;
 import org.workcraft.gwt.shared.client.Option;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
-import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 
-@JsonSubTypes({@Type(RawFood.class), @Type(EncodedFood.class), @Type(CompoundFood.class), @Type(TemplateFood.class), @Type(MissingFood.class)})
-@JsonTypeInfo(use=Id.CLASS, include=As.PROPERTY, property="@class")
 public abstract class FoodEntry {
 	public static final String FLAG_READY_MEAL = "ready-meal";
 
@@ -73,12 +61,6 @@ public abstract class FoodEntry {
 		public T visitMissing(MissingFood food);
 	}
 	
-	@JsonCreator
-	@Deprecated
-	public FoodEntry(@JsonProperty("link") FoodLink link, @JsonProperty("flags") Set<String> flags, @JsonProperty("customData") Map<String, String> customData) {
-		this(link, HashTreePSet.<String>from(flags), HashTreePMap.<String, String>from(customData));
-	}
-
 	public FoodEntry(FoodLink link, PSet<String> flags, PMap<String, String> customData) {
 		this.link = link;
 		this.flags = flags;

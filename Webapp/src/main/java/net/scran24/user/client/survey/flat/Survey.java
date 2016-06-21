@@ -27,9 +27,9 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 package net.scran24.user.client.survey.flat;
 
 import static org.workcraft.gwt.shared.client.CollectionUtils.filter;
-import static org.workcraft.gwt.shared.client.CollectionUtils.forall;
 import static org.workcraft.gwt.shared.client.CollectionUtils.flatten;
 import static org.workcraft.gwt.shared.client.CollectionUtils.flattenOption;
+import static org.workcraft.gwt.shared.client.CollectionUtils.forall;
 import static org.workcraft.gwt.shared.client.CollectionUtils.map;
 import static org.workcraft.gwt.shared.client.CollectionUtils.sort;
 import static org.workcraft.gwt.shared.client.CollectionUtils.zipWithIndex;
@@ -48,13 +48,13 @@ import net.scran24.user.shared.CompletedMeal;
 import net.scran24.user.shared.CompletedMissingFood;
 import net.scran24.user.shared.CompletedSurvey;
 import net.scran24.user.shared.CompoundFood;
-import net.scran24.user.shared.TemplateFood;
 import net.scran24.user.shared.EncodedFood;
 import net.scran24.user.shared.FoodEntry;
 import net.scran24.user.shared.Meal;
 import net.scran24.user.shared.MissingFood;
 import net.scran24.user.shared.MissingFoodDescription;
 import net.scran24.user.shared.RawFood;
+import net.scran24.user.shared.TemplateFood;
 
 import org.pcollections.client.HashTreePMap;
 import org.pcollections.client.HashTreePSet;
@@ -66,9 +66,6 @@ import org.workcraft.gwt.shared.client.CollectionUtils.WithIndex;
 import org.workcraft.gwt.shared.client.Function1;
 import org.workcraft.gwt.shared.client.Option;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 public class Survey {
 	public static final String FLAG_ENERGY_VALUE_CONFIRMED = "energy-value-confirmed";
 	public static final String FLAG_COMPLETION_CONFIRMED = "completion-confirmed";
@@ -77,23 +74,14 @@ public class Survey {
 	public static final String FLAG_NO_MORE_PROMPTS = "no-more-prompts";
 	public static final String FLAG_SKIP_HISTORY = "skip-history";
 
-	@JsonProperty
 	public final long startTime;
-	@JsonProperty
 	public final PVector<Meal> meals;
-	@JsonProperty
 	public final Selection selectedElement;
-	@JsonProperty
 	public final PSet<String> flags;
-	@JsonProperty
 	public final PMap<String, String> customData;
-	
 	public final PVector<WithIndex<Meal>> mealsSortedByTime;
 
-	@JsonCreator
-	public Survey(@JsonProperty("meals") List<Meal> meals, @JsonProperty("selectedElement") Selection selectedElement,
-			@JsonProperty("startTime") long startTime, @JsonProperty("flags") Set<String> flags,
-			@JsonProperty("customData") Map<String, String> customData) {
+	public Survey(List<Meal> meals, Selection selectedElement, long startTime, Set<String> flags, Map<String, String> customData) {
 		this(TreePVector.<Meal> from(meals), selectedElement, startTime, HashTreePSet.<String> from(flags), HashTreePMap
 				.<String, String> from(customData));
 	}
@@ -133,9 +121,9 @@ public class Survey {
 
 		PSet<String> f = flags;
 
-		if (forall(meals, Meal.isFreeEntryCompleteFunc))
+		if (!meals.isEmpty() && forall(meals, Meal.isFreeEntryCompleteFunc))
 			f = f.plus(FLAG_FREE_ENTRY_COMPLETE);
-		if (forall(meals, Meal.isEncodingCompleteFunc))
+		if (!meals.isEmpty() && forall(meals, Meal.isEncodingCompleteFunc))
 			f = f.plus(FLAG_ENCODING_COMPLETE);
 
 		this.flags = f;
@@ -248,7 +236,7 @@ public class Survey {
 	}
 
 	public Survey invalidateSelection() {
-		return this.withSelection(new Selection.EmptySelection(SelectionType.AUTO_SELECTION));
+		return this.withSelection(new Selection.EmptySelection(SelectionMode.AUTO_SELECTION));
 	}
 
 	public Survey withFlag(String flag) {
@@ -297,5 +285,39 @@ public class Survey {
 
 	public Survey withData(String key, String value) {
 		return withData(customData.plus(key, value));
+	}
+
+	@Override
+	public boolean equals(Object obj) {		
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Survey other = (Survey) obj;
+		if (customData == null) {
+			if (other.customData != null)
+				return false;
+		} else if (!customData.equals(other.customData))
+			return false;
+		if (flags == null) {
+			if (other.flags != null)
+				return false;
+		} else if (!flags.equals(other.flags))
+			return false;
+		if (meals == null) {
+			if (other.meals != null)
+				return false;
+		} else if (!meals.equals(other.meals))
+			return false;
+		if (selectedElement == null) {
+			if (other.selectedElement != null)
+				return false;
+		} else if (!selectedElement.equals(other.selectedElement))
+			return false;
+		if (startTime != other.startTime)
+			return false;		
+		return true;
 	}
 }

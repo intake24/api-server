@@ -10,17 +10,11 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package net.scran24.user.shared;
 
-import java.util.Map;
-import java.util.Set;
-
 import org.pcollections.client.HashTreePMap;
 import org.pcollections.client.HashTreePSet;
 import org.pcollections.client.PMap;
 import org.pcollections.client.PSet;
 import org.workcraft.gwt.shared.client.Option;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class MissingFood extends FoodEntry {
 
@@ -34,11 +28,8 @@ public class MissingFood extends FoodEntry {
 	public static final String HOME_RECIPE_FLAG = "home-recipe";
 	public static final String NOT_HOME_RECIPE_FLAG = "not-home-recipe";
 
-	@JsonProperty
 	public final String name;
-	@JsonProperty
 	public final Option<MissingFoodDescription> description;
-	@JsonProperty
 	public final boolean isDrink;
 
 	public MissingFood(FoodLink link, String name, boolean isDrink) {
@@ -53,13 +44,6 @@ public class MissingFood extends FoodEntry {
 		this.name = name;
 		this.isDrink = isDrink;
 		this.description = description;
-	}
-
-	@JsonCreator
-	@Deprecated
-	public MissingFood(@JsonProperty("link") FoodLink link, @JsonProperty("name") String name, @JsonProperty("isDrink") boolean isDrink,
-			@JsonProperty("description") Option<MissingFoodDescription> description, @JsonProperty("flags") Set<String> flags, @JsonProperty("customData") Map<String, String> customData) {
-		this(link, name, isDrink, description, HashTreePSet.from(flags), HashTreePMap.from(customData));
 	}
 
 	public MissingFood(FoodLink link, String name, boolean isDrink, Option<MissingFoodDescription> description, PSet<String> flags,

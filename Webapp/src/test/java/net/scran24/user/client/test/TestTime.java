@@ -8,7 +8,7 @@ This software is licensed under the Open Government Licence 3.0:
 http://www.nationalarchives.gov.uk/doc/open-government-licence/
 */
 
-package net.scran24.client;
+package net.scran24.user.client.test;
 
 import static org.junit.Assert.assertEquals;
 import net.scran24.datastore.shared.Time;

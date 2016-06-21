@@ -12,7 +12,7 @@ package net.scran24.user.client.survey.flat.rules;
 
 import net.scran24.user.client.survey.flat.Prompt;
 import net.scran24.user.client.survey.flat.PromptRule;
-import net.scran24.user.client.survey.flat.SelectionType;
+import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.flat.Survey;
 import net.scran24.user.client.survey.flat.SurveyOperation;
 import net.scran24.user.client.survey.prompts.EmptySurveyPrompt;
@@ -24,7 +24,7 @@ import org.workcraft.gwt.shared.client.Option;
 public class ShowEmptySurveyPrompt implements PromptRule<Survey, SurveyOperation> {
 	
 	@Override
-	public Option<Prompt<Survey, SurveyOperation>> apply(Survey state, SelectionType selectionType, PSet<String> surveyFlags) {
+	public Option<Prompt<Survey, SurveyOperation>> apply(Survey state, SelectionMode selectionType, PSet<String> surveyFlags) {
 		if (state.meals.isEmpty())
 			return Option.<Prompt<Survey, SurveyOperation>>some(new EmptySurveyPrompt());
 		else

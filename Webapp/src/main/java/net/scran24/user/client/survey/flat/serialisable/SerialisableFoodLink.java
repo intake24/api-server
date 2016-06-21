@@ -14,6 +14,7 @@ package net.scran24.user.client.survey.flat.serialisable;
 import net.scran24.user.shared.FoodLink;
 import net.scran24.user.shared.UUID;
 
+import org.workcraft.gwt.shared.client.Function1;
 import org.workcraft.gwt.shared.client.Option;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -21,21 +22,31 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class SerialisableFoodLink {
 	@JsonProperty
-	public final UUID id;
+	public final String id;
 	@JsonProperty
-	public final Option<UUID> linkedTo;
+	public final Option<String> linkedTo;
 
 	@JsonCreator
-	public SerialisableFoodLink(@JsonProperty("id") UUID id, @JsonProperty("linkedTo") Option<UUID> linkedTo) {
+	public SerialisableFoodLink(@JsonProperty("id") String id, @JsonProperty("linkedTo") Option<String> linkedTo) {
 		this.id = id;
 		this.linkedTo = linkedTo;
 	}
 	
 	public SerialisableFoodLink(FoodLink link) {
-		this(link.id, link.linkedTo);
+		this(link.id.value, link.linkedTo.map(new Function1<UUID, String>() {
+			@Override
+			public String apply(UUID argument) {
+				return argument.value;
+			}			
+		}));
 	}
 	
 	public FoodLink toFoodLink() {
-		return new FoodLink(id, linkedTo);		
+		return new FoodLink(new UUID(id), linkedTo.map(new Function1<String, UUID>(){
+			@Override
+			public UUID apply(String argument) {
+				return new UUID(argument);
+			}			
+		}));		
 	}
 }

@@ -81,8 +81,61 @@ public class FoodData implements IsSerializable {
 		return localDescription;
 	}
 	
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		FoodData other = (FoodData) obj;
+		if (askIfReadyMeal != other.askIfReadyMeal)
+			return false;
+		if (brands == null) {
+			if (other.brands != null)
+				return false;
+		} else if (!brands.equals(other.brands))
+			return false;
+		if (Double.doubleToLongBits(caloriesPer100g) != Double.doubleToLongBits(other.caloriesPer100g))
+			return false;
+		if (categories == null) {
+			if (other.categories != null)
+				return false;
+		} else if (!categories.equals(other.categories))
+			return false;
+		if (code == null) {
+			if (other.code != null)
+				return false;
+		} else if (!code.equals(other.code))
+			return false;
+		if (localDescription == null) {
+			if (other.localDescription != null)
+				return false;
+		} else if (!localDescription.equals(other.localDescription))
+			return false;
+		if (portionSizeMethods == null) {
+			if (other.portionSizeMethods != null)
+				return false;
+		} else if (!portionSizeMethods.equals(other.portionSizeMethods))
+			return false;
+		if (prompts == null) {
+			if (other.prompts != null)
+				return false;
+		} else if (!prompts.equals(other.prompts))
+			return false;
+		if (sameAsBeforeOption != other.sameAsBeforeOption)
+			return false;
+		return true;
+	}
+
 	@Override
 	public String toString() {
-		return code + " " + localDescription;
+		return "FoodData [code=" + code + ", localDescription=" + localDescription + ", askIfReadyMeal=" + askIfReadyMeal + ", sameAsBeforeOption="
+				+ sameAsBeforeOption + ", caloriesPer100g=" + caloriesPer100g + ", portionSizeMethods=" + portionSizeMethods + ", prompts=" + prompts
+				+ ", brands=" + brands + ", categories=" + categories + "]";
 	}
+	
+	
 }

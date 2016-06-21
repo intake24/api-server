@@ -41,7 +41,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 
 @JsonSubTypes({@Type(SerialisableRawFood.class), @Type(SerialisableEncodedFood.class), @Type(SerialisableCompoundFood.class), @Type(SerialisableTemplateFood.class), @Type(SerialisableMissingFood.class)})
-@JsonTypeInfo(use=Id.CLASS, include=As.PROPERTY, property="@class")
+@JsonTypeInfo(use=Id.NAME, include=As.PROPERTY, property="entryType")
 public abstract class SerialisableFoodEntry {
 
 	@JsonProperty

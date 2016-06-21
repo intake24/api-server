@@ -48,7 +48,9 @@ import static org.workcraft.gwt.shared.client.CollectionUtils.map;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 
+@JsonTypeName("encoded")
 public class SerialisableEncodedFood extends SerialisableFoodEntry {
 
 	@JsonProperty

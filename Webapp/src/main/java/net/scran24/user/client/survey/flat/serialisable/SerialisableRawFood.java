@@ -20,7 +20,9 @@ import org.pcollections.client.HashTreePSet;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 
+@JsonTypeName("raw")
 public class SerialisableRawFood extends SerialisableFoodEntry {
 
 	@JsonProperty
@@ -35,6 +37,11 @@ public class SerialisableRawFood extends SerialisableFoodEntry {
 		this.description = description;
 	}
 	
+	public SerialisableRawFood(RawFood food) {
+		super(new SerialisableFoodLink(food.link), food.flags, food.customData);
+		this.description = food.description;
+	}
+	
 	public RawFood toRawFood() {
 		return new RawFood(link.toFoodLink(), description, flags, customData);		
 	}
@@ -43,5 +50,4 @@ public class SerialisableRawFood extends SerialisableFoodEntry {
 	public <T> T accept(Visitor<T> visitor) {
 		return visitor.visitRaw(this);
 	}
-
 }

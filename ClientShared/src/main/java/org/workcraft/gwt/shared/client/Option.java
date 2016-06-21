@@ -183,4 +183,16 @@ public abstract class Option<T> implements IsSerializable {
 			}
 		});
 	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (obj.getClass() != this.getClass())
+			return false;
+		return equalTo((Option<T>)obj);	
+	}	
 }

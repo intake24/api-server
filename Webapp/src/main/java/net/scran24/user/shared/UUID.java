@@ -10,15 +10,11 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package net.scran24.user.shared;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class UUID {
-	@JsonProperty
 	public final String value;
 	
-	@JsonCreator
-	public UUID(@JsonProperty("value") String value) {
+	public UUID(String value) {
 		this.value = value;
 	}
 	

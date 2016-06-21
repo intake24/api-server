@@ -26,10 +26,6 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package net.scran24.user.shared;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import net.scran24.datastore.shared.CompletedPortionSize;
 import net.scran24.user.client.survey.portionsize.experimental.PortionSize;
 
@@ -42,39 +38,15 @@ import org.pcollections.client.TreePVector;
 import org.workcraft.gwt.shared.client.Either;
 import org.workcraft.gwt.shared.client.Option;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 public class EncodedFood extends FoodEntry {
 	public final static String FLAG_NOT_SAME_AS_BEFORE = "not-same-as-before";
 
-	@JsonProperty
 	public final FoodData data;
-	@JsonProperty
 	public final Option<Integer> portionSizeMethodIndex;
-	@JsonProperty
 	public final Option<Either<PortionSize, CompletedPortionSize>> portionSize;
-	@JsonProperty
 	public final Option<String> brand;
-	@JsonProperty
 	public final String searchTerm;
-	@JsonProperty
 	public final PVector<FoodPrompt> enabledPrompts;
-
-	@JsonCreator
-	@Deprecated
-	public EncodedFood(@JsonProperty("data") FoodData data, 
-			@JsonProperty("link") FoodLink link, 
-			@JsonProperty("portionSizeMethodIndex") Option<Integer> portionSizeMethodIndex,
-			@JsonProperty("portionSize") Option<Either<PortionSize, CompletedPortionSize>> portionSize, 
-			@JsonProperty("brand") Option<String> brand,
-			@JsonProperty("searchTerm") String searchTerm, 
-			@JsonProperty("enabledPrompts") List<FoodPrompt> enabledPrompts, 
-			@JsonProperty("flags") Set<String> flags,
-			@JsonProperty("customData") Map<String, String> customData) {
-		this(data, link, portionSizeMethodIndex, portionSize, brand, searchTerm, TreePVector.from(enabledPrompts), HashTreePSet.from(flags),
-				HashTreePMap.from(customData));
-	}
 
 	public EncodedFood(FoodData data, FoodLink link, Option<Integer> portionSizeMethodIndex,
 			Option<Either<PortionSize, CompletedPortionSize>> portionSize, Option<String> brand, String searchTerm,
@@ -184,12 +156,7 @@ public class EncodedFood extends FoodEntry {
 	public boolean isInCategory(String categoryCode) {
 		return data.categories.contains(categoryCode);
 	}
-
-	@Override
-	public String toString() {
-		return link.id.toString() + " " + data.code + " " + data.description();
-	}
-
+	
 	@Override
 	public FoodEntry relink(FoodLink link) {
 		return new EncodedFood(data, link, portionSizeMethodIndex, portionSize, brand, searchTerm, enabledPrompts, flags, customData);
@@ -217,5 +184,11 @@ public class EncodedFood extends FoodEntry {
 	public FoodEntry withCustomDataField(String key, String value) {
 		return new EncodedFood(data, link, portionSizeMethodIndex, portionSize, brand, searchTerm, enabledPrompts, flags, customData.plus(key, value));
 
+	}
+
+	@Override
+	public String toString() {
+		return "EncodedFood [data=" + data + ", portionSizeMethodIndex=" + portionSizeMethodIndex + ", portionSize=" + portionSize + ", brand="
+				+ brand + ", searchTerm=" + searchTerm + ", enabledPrompts=" + enabledPrompts + "]";
 	}
 }

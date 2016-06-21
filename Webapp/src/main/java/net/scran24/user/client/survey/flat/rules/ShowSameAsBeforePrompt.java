@@ -30,7 +30,7 @@ import net.scran24.common.client.CurrentUser;
 import net.scran24.user.client.survey.CompoundFoodTemplateManager;
 import net.scran24.user.client.survey.flat.Prompt;
 import net.scran24.user.client.survey.flat.PromptRule;
-import net.scran24.user.client.survey.flat.SelectionType;
+import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.flat.StateManagerUtil;
 import net.scran24.user.client.survey.portionsize.experimental.PortionSizeScriptManager;
 import net.scran24.user.client.survey.prompts.MealOperation;
@@ -56,7 +56,7 @@ public class ShowSameAsBeforePrompt implements PromptRule<Pair<FoodEntry, Meal>,
 	}
 
 	@Override
-	public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> apply(final Pair<FoodEntry, Meal> pair, SelectionType selectionType, PSet<String> surveyFlags) {
+	public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> apply(final Pair<FoodEntry, Meal> pair, SelectionMode selectionType, PSet<String> surveyFlags) {
 		if (pair.left.isEncoded()) {
 			EncodedFood f = pair.left.asEncoded();
 			if (!f.data.sameAsBeforeOption || f.notSameAsBefore() || f.isInCategory(SpecialData.FOOD_CODE_MILK_IN_HOT_DRINK) || f.isPortionSizeComplete() || f.link.isLinked())

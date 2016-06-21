@@ -12,7 +12,7 @@ package net.scran24.user.client.survey.flat.rules;
 
 import net.scran24.user.client.survey.flat.Prompt;
 import net.scran24.user.client.survey.flat.PromptRule;
-import net.scran24.user.client.survey.flat.SelectionType;
+import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.prompts.ConfirmMealPrompt;
 import net.scran24.user.client.survey.prompts.MealOperation;
 import net.scran24.user.shared.Meal;
@@ -23,7 +23,7 @@ import org.workcraft.gwt.shared.client.Option;
 
 public class AskForMealTime implements PromptRule<Meal, MealOperation> {
 	@Override
-	public Option<Prompt<Meal, MealOperation>> apply(Meal data, SelectionType selectionType, PSet<String> surveyFlags) {
+	public Option<Prompt<Meal, MealOperation>> apply(Meal data, SelectionMode selectionType, PSet<String> surveyFlags) {
 		if (data.time.isEmpty()) {
 			return new Option.Some<Prompt<Meal, MealOperation>>(new ConfirmMealPrompt(data));
 		} else {

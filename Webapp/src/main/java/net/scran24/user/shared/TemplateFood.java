@@ -13,12 +13,10 @@ package net.scran24.user.shared;
 import static org.workcraft.gwt.shared.client.CollectionUtils.filter;
 import static org.workcraft.gwt.shared.client.CollectionUtils.indexOf;
 import static org.workcraft.gwt.shared.client.CollectionUtils.indices;
-import static org.workcraft.gwt.shared.client.CollectionUtils.mapValues;
 import static org.workcraft.gwt.shared.client.CollectionUtils.map;
+import static org.workcraft.gwt.shared.client.CollectionUtils.mapValues;
 
 import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
 import net.scran24.user.shared.TemplateFoodData.ComponentDef;
 import net.scran24.user.shared.TemplateFoodData.ComponentOccurence;
@@ -33,20 +31,12 @@ import org.workcraft.gwt.shared.client.Function1;
 import org.workcraft.gwt.shared.client.Option;
 import org.workcraft.gwt.shared.client.Pair;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 public class TemplateFood extends FoodEntry {
 
-	@JsonProperty
 	public final TemplateFoodData data;
-	@JsonProperty
 	public final PSet<Integer> markedAsComplete;
-	@JsonProperty
 	public final PMap<Integer, PSet<UUID>> components;
-	@JsonProperty
 	public final String description;
-	@JsonProperty
 	public final boolean isDrink;
 
 	public TemplateFood(FoodLink link, String description, boolean isDrink, TemplateFoodData data) {
@@ -62,25 +52,6 @@ public class TemplateFood extends FoodEntry {
 			comp = comp.plus(i, HashTreePSet.<UUID> empty());
 
 		this.components = comp;
-	}
-
-	private static PMap<Integer, PSet<UUID>> mapComponents(Map<Integer, Set<UUID>> components) {
-		PMap<Integer, PSet<UUID>> result = HashTreePMap.<Integer, PSet<UUID>> empty();
-
-		for (Integer key : components.keySet())
-			result = result.plus(key, HashTreePSet.from(components.get(key)));
-
-		return result;
-	}
-
-	@JsonCreator
-	@Deprecated
-	public TemplateFood(@JsonProperty("link") FoodLink link, @JsonProperty("description") String description,
-			@JsonProperty("isDrink") boolean isDrink, @JsonProperty("data") TemplateFoodData data,
-			@JsonProperty("markedAsComplete") Set<Integer> completeComponents, @JsonProperty("components") Map<Integer, Set<UUID>> components,
-			@JsonProperty("flags") Set<String> flags, @JsonProperty("customData") Map<String, String> customData) {
-		this(link, description, isDrink, data, HashTreePSet.from(completeComponents), mapComponents(components), HashTreePSet.from(flags),
-				HashTreePMap.from(customData));
 	}
 
 	public TemplateFood(FoodLink link, String description, boolean isDrink, TemplateFoodData data, PSet<Integer> completeComponents,

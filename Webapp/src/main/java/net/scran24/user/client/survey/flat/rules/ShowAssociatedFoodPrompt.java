@@ -17,7 +17,7 @@ import java.util.logging.Logger;
 
 import net.scran24.user.client.survey.flat.Prompt;
 import net.scran24.user.client.survey.flat.PromptRule;
-import net.scran24.user.client.survey.flat.SelectionType;
+import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.prompts.AssociatedFoodPrompt;
 import net.scran24.user.client.survey.prompts.MealOperation;
 import net.scran24.user.shared.CompoundFood;
@@ -80,7 +80,7 @@ public class ShowAssociatedFoodPrompt implements PromptRule<Pair<FoodEntry, Meal
 	}
 
 	@Override
-	public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> apply(final Pair<FoodEntry, Meal> pair, SelectionType selectionType, PSet<String> surveyFlag) {
+	public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> apply(final Pair<FoodEntry, Meal> pair, SelectionMode selectionType, PSet<String> surveyFlag) {
 		log.info("Meal encoding complete = " + pair.right.encodingComplete());
 		
 		if (!pair.left.isEncoded() || !pair.left.isPortionSizeComplete() || pair.left.link.isLinked() || !pair.right.encodingComplete())

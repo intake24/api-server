@@ -10,15 +10,10 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package org.workcraft.gwt.shared.client;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
-import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
-import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import java.util.NoSuchElementException;
+
 import com.google.gwt.user.client.rpc.IsSerializable;
 
-@JsonSubTypes({@Type(Either.Left.class), @Type(Either.Right.class)})
-@JsonTypeInfo(use=Id.CLASS, include=As.PROPERTY, property="@class")
 public abstract class Either<L, R> {
 	public static interface Visitor<L, R, T> {
 		public T visitRight(R value);
@@ -101,6 +96,35 @@ public abstract class Either<L, R> {
 		return !isLeft();
 	}
 	
+	public L getLeftOrDie() {
+		return accept (new Visitor<L, R, L>() {
+			@Override
+			public L visitRight(R value) {
+				throw new NoSuchElementException("getLeft on a Right"); 
+			}
+
+			@Override
+			public L visitLeft(L value) {
+				return value;
+			}
+		});		
+	}
+	
+	public R getRightOrDie() {
+		return accept (new Visitor<L, R, R>() {
+			@Override
+			public R visitRight(R value) {
+				return value; 
+			}
+
+			@Override
+			public R visitLeft(L value) {
+				throw new NoSuchElementException("getRight on a Left");
+			}
+		});		
+	}
+	
+	
 	public abstract <T> T accept (Visitor<L, R, T> visitor);
 	public abstract void accept (SideEffectVisitor<L, R> visitor);
 	
@@ -138,5 +162,17 @@ public abstract class Either<L, R> {
 				});
 			}
 		}); 		
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (obj.getClass() != this.getClass())
+			return false;
+		return equalsTo((Either<L,R>)obj);	
 	}
 }

@@ -28,23 +28,20 @@ package net.scran24.user.client.survey.flat;
 
 import java.util.logging.Logger;
 
-import net.scran24.user.client.json.OptionTest;
-import net.scran24.user.client.json.OptionTestCodec;
-import net.scran24.user.client.json.SurveyCodec;
+import net.scran24.user.client.json.SerialisableSurveyCodec;
 import net.scran24.user.client.survey.SimpleSurveyStageInterface;
 import net.scran24.user.client.survey.SurveyStage;
 import net.scran24.user.client.survey.flat.Selection.EmptySelection;
 import net.scran24.user.client.survey.flat.Selection.SelectedFood;
 import net.scran24.user.client.survey.flat.Selection.SelectedMeal;
 import net.scran24.user.client.survey.flat.Selection.Visitor;
+import net.scran24.user.client.survey.flat.serialisable.SerialisableSurvey;
 import net.scran24.user.client.survey.portionsize.experimental.PortionSizeScriptManager;
 import net.scran24.user.client.survey.prompts.AddMealPrompt;
 import net.scran24.user.client.survey.prompts.DeleteMealPrompt;
 import net.scran24.user.client.survey.prompts.EditMealPrompt;
 import net.scran24.user.client.survey.prompts.EditTimePrompt;
-import net.scran24.user.shared.CompoundFood;
 import net.scran24.user.shared.FoodEntry;
-import net.scran24.user.shared.RawFood;
 import net.scran24.user.shared.TemplateFood;
 
 import org.fusesource.restygwt.client.JsonEncoderDecoder;
@@ -89,10 +86,10 @@ public class IntakeSurvey implements SurveyStage<Survey> {
 
 	private SimpleSurveyStageInterface cachedInterface = null;
 	
-	//private final SurveyCodec dogar = GWT.create(SurveyCodec.class);
+	private final SerialisableSurveyCodec dogar = GWT.create(SerialisableSurveyCodec.class);
 	
-	public static interface TestCodec extends JsonEncoderDecoder<TemplateFood> { } 
-	private final TestCodec kazon = GWT.create(TestCodec.class);
+	//public static interface TestCodec extends JsonEncoderDecoder<TemplateFood> { } 
+	//private final TestCodec kazon = GWT.create(TestCodec.class);
 
 	public void showPrompt(Prompt<Survey, SurveyOperation> prompt) {
 		interfaceManager.applyInterface(prompt, applyOperation, updateIntermediateState);
@@ -102,17 +99,17 @@ public class IntakeSurvey implements SurveyStage<Survey> {
 		return selection.accept(new Visitor<Selection>() {
 			@Override
 			public Selection visitMeal(SelectedMeal meal) {
-				return new Selection.SelectedMeal(meal.mealIndex, SelectionType.AUTO_SELECTION);
+				return new Selection.SelectedMeal(meal.mealIndex, SelectionMode.AUTO_SELECTION);
 			}
 
 			@Override
 			public Selection visitFood(SelectedFood food) {
-				return new Selection.SelectedFood(food.mealIndex, food.foodIndex, SelectionType.AUTO_SELECTION);
+				return new Selection.SelectedFood(food.mealIndex, food.foodIndex, SelectionMode.AUTO_SELECTION);
 			}
 
 			@Override
 			public Selection visitNothing(EmptySelection selection) {
-				return new Selection.EmptySelection(SelectionType.AUTO_SELECTION);
+				return new Selection.EmptySelection(SelectionMode.AUTO_SELECTION);
 			}
 		});
 	}
@@ -120,10 +117,10 @@ public class IntakeSurvey implements SurveyStage<Survey> {
 	public void showNextPrompt() {
 		Survey currentState = stateManager.getCurrentState();
 		
-		//Window.alert(dogar.encode(currentState).toString());
+		Window.alert(dogar.encode(new SerialisableSurvey(currentState)).toString());
 		
-		if (currentState.meals.get(0).foods.size() > 0 && currentState.meals.get(0).foods.get(0).isTemplate())
-			Window.alert(kazon.encode((TemplateFood)currentState.meals.get(0).foods.get(0)).toString());
+		/*if (currentState.meals.get(0).foods.size() > 0 && currentState.meals.get(0).foods.get(0).isTemplate())
+			Window.alert(kazon.encode((TemplateFood)currentState.meals.get(0).foods.get(0)).toString()); */
 		
 		Option<Prompt<Survey, SurveyOperation>> nextPrompt = promptManager.nextPromptForSelection(currentState);
 
@@ -230,7 +227,7 @@ public class IntakeSurvey implements SurveyStage<Survey> {
 								showPrompt(new DeleteMealPrompt(mealIndex, stateManager.getCurrentState().meals.get(mealIndex)));
 							} else {
 								Survey state = stateManager.getCurrentState();
-								stateManager.updateState(state.minusMeal(mealIndex).withSelection(new Selection.EmptySelection(SelectionType.AUTO_SELECTION)), true);
+								stateManager.updateState(state.minusMeal(mealIndex).withSelection(new Selection.EmptySelection(SelectionMode.AUTO_SELECTION)), true);
 								showNextPrompt();
 							}
 						}

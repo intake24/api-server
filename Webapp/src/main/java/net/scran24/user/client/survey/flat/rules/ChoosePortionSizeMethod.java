@@ -13,7 +13,7 @@ package net.scran24.user.client.survey.flat.rules;
 import net.scran24.user.client.survey.flat.FoodOperation;
 import net.scran24.user.client.survey.flat.Prompt;
 import net.scran24.user.client.survey.flat.PromptRule;
-import net.scran24.user.client.survey.flat.SelectionType;
+import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.flat.Survey;
 import net.scran24.user.client.survey.prompts.ChoosePortionSizeMethodPrompt;
 import net.scran24.user.client.survey.prompts.UnknownPortionSizeMethodPrompt;
@@ -26,7 +26,7 @@ import org.workcraft.gwt.shared.client.Option;
 
 public class ChoosePortionSizeMethod implements PromptRule<FoodEntry, FoodOperation> {
 	@Override
-	public Option<Prompt<FoodEntry, FoodOperation>> apply(final FoodEntry state, SelectionType selectionType, PSet<String> surveyFlags) {
+	public Option<Prompt<FoodEntry, FoodOperation>> apply(final FoodEntry state, SelectionMode selectionType, PSet<String> surveyFlags) {
 		if (!surveyFlags.contains(Survey.FLAG_FREE_ENTRY_COMPLETE) || !state.isEncoded())
 			return new Option.None<Prompt<FoodEntry, FoodOperation>>();
 		else {

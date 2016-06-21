@@ -32,9 +32,6 @@ import static org.workcraft.gwt.shared.client.CollectionUtils.indexOf;
 import static org.workcraft.gwt.shared.client.CollectionUtils.lastIndexOf;
 
 import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import net.scran24.common.client.LocaleUtil;
 import net.scran24.datastore.shared.Time;
@@ -50,10 +47,7 @@ import org.workcraft.gwt.shared.client.CollectionUtils;
 import org.workcraft.gwt.shared.client.Function1;
 import org.workcraft.gwt.shared.client.Option;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gwt.safehtml.shared.SafeHtmlUtils;
-import com.google.gwt.user.client.Window;
 
 public class Meal {
 	
@@ -65,15 +59,10 @@ public class Meal {
 	private static final String FLAG_FREE_ENTRY_COMPLETE = "free-entry-complete";
 	private static final String FLAG_READY_MEALS_COMPLETE = "ready-meals-complete";
 	
-	@JsonProperty
 	public final String name;
-	@JsonProperty
 	public final PVector<FoodEntry> foods;
-	@JsonProperty
 	public final Option<Time> time;
-	@JsonProperty
 	public final PSet<String> flags;
-	@JsonProperty
 	public final PMap<String, String> customData;
 	
 	public boolean isEmpty() {
@@ -189,12 +178,6 @@ public class Meal {
 		});
 	}
 	
-	@JsonCreator
-	public Meal(@JsonProperty("name") String name, @JsonProperty("foods") List<FoodEntry> foods, @JsonProperty("time") Option<Time> time, 
-			@JsonProperty("flags") Set<String> flags, @JsonProperty("customData") Map<String, String> customData) {
-		this(name, TreePVector.<FoodEntry>from(foods), time, HashTreePSet.<String>from(flags), HashTreePMap.<String, String>from(customData));
-	}
-
 	public Meal(String name, PVector<FoodEntry> foods, Option<Time> time, PSet<String> flags, PMap<String, String> customData) {
 		this.name = name;
 		this.foods = foods;

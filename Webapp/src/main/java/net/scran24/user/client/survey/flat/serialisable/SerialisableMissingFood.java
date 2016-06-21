@@ -18,14 +18,14 @@ import net.scran24.user.shared.MissingFoodDescription;
 
 import org.pcollections.client.HashTreePMap;
 import org.pcollections.client.HashTreePSet;
-import org.pcollections.client.PMap;
-import org.pcollections.client.PSet;
 import org.workcraft.gwt.shared.client.Function1;
 import org.workcraft.gwt.shared.client.Option;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 
+@JsonTypeName("missing")
 public class SerialisableMissingFood extends SerialisableFoodEntry {
 	@JsonProperty
 	public final String name;
@@ -64,7 +64,5 @@ public class SerialisableMissingFood extends SerialisableFoodEntry {
 	@Override
 	public <T> T accept(Visitor<T> visitor) {
 		return visitor.visitMissing(this);
-	}
-
-	
+	}	
 }

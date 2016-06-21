@@ -28,7 +28,6 @@ package net.scran24.user.client.survey.flat;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -42,8 +41,6 @@ import net.scran24.user.client.survey.flat.Selection.SelectedMeal;
 import net.scran24.user.client.survey.portionsize.experimental.PortionSize;
 import net.scran24.user.client.survey.portionsize.experimental.PortionSizeScriptManager;
 import net.scran24.user.shared.CompoundFood;
-import net.scran24.user.shared.TemplateFood;
-import net.scran24.user.shared.TemplateFoodData;
 import net.scran24.user.shared.EncodedFood;
 import net.scran24.user.shared.FoodData;
 import net.scran24.user.shared.FoodEntry;
@@ -54,6 +51,8 @@ import net.scran24.user.shared.MissingFood;
 import net.scran24.user.shared.MissingFoodDescription;
 import net.scran24.user.shared.RawFood;
 import net.scran24.user.shared.Recipe;
+import net.scran24.user.shared.TemplateFood;
+import net.scran24.user.shared.TemplateFoodData;
 import net.scran24.user.shared.UUID;
 import net.scran24.user.shared.lookup.PortionSizeMethod;
 
@@ -66,7 +65,6 @@ import org.pcollections.client.TreePVector;
 import org.workcraft.gwt.shared.client.Either;
 import org.workcraft.gwt.shared.client.Option;
 
-import com.google.gwt.i18n.client.NumberFormat;
 import com.google.gwt.xml.client.Document;
 import com.google.gwt.xml.client.Element;
 import com.google.gwt.xml.client.Node;
@@ -541,8 +539,8 @@ public class SurveyXmlSerialiser {
 				
 				if (!selectedPortionSizeMethodElements.isEmpty())
 					selectedPortionSizeMethodIndex = Option.some(Integer.parseInt(selectedPortionSizeMethodElements.get(0).getAttribute(INDEX_ATTR)));
-				else if (portionSizeMethods.size() == 1)
-					selectedPortionSizeMethodIndex = Option.some(0);
+				/*else if (portionSizeMethods.size() == 1)
+					selectedPortionSizeMethodIndex = Option.some(0);*/
 				else
 					selectedPortionSizeMethodIndex = Option.none();
 
@@ -656,7 +654,7 @@ public class SurveyXmlSerialiser {
 					if (el.hasAttribute(LEFTOVERS_ATTR))
 						leftovers = Option.some(el.getAttribute(LEFTOVERS_ATTR));
 						
-					foods = foods.plus(new MissingFood(link, name, isDrink, Option.some(new MissingFoodDescription(description, brand, portionSize, leftovers)), flags, customData));
+					foods = foods.plus(new MissingFood(link, name, isDrink, Option.some(new MissingFoodDescription(brand, description, portionSize, leftovers)), flags, customData));
 				} else {
 					foods = foods.plus(new MissingFood(link, name, isDrink, Option.<MissingFoodDescription>none(), flags, customData));
 				}				
@@ -709,7 +707,7 @@ public class SurveyXmlSerialiser {
 			public Element visitMeal(SelectedMeal meal) {
 				Element e = doc.createElement(SELECTED_MEAL_TAG);
 				e.setAttribute(INDEX_ATTR, Integer.toString(meal.mealIndex));
-				e.setAttribute(IS_AUTO_ATTR, (meal.selectionType == SelectionType.AUTO_SELECTION) ? TRUE_LIT : FALSE_LIT);
+				e.setAttribute(IS_AUTO_ATTR, (meal.selectionMode == SelectionMode.AUTO_SELECTION) ? TRUE_LIT : FALSE_LIT);
 				return e;
 			}
 
@@ -718,7 +716,7 @@ public class SurveyXmlSerialiser {
 				Element e = doc.createElement(SELECTED_FOOD_TAG);
 				e.setAttribute(MEAL_INDEX_ATTR, Integer.toString(food.mealIndex));
 				e.setAttribute(FOOD_INDEX_ATTR, Integer.toString(food.foodIndex));
-				e.setAttribute(IS_AUTO_ATTR, (food.selectionType == SelectionType.AUTO_SELECTION) ? TRUE_LIT : FALSE_LIT);
+				e.setAttribute(IS_AUTO_ATTR, (food.selectionMode == SelectionMode.AUTO_SELECTION) ? TRUE_LIT : FALSE_LIT);
 				return e;
 			}
 
@@ -812,20 +810,20 @@ public class SurveyXmlSerialiser {
 			List<Element> selectedFoodElements = getChildElementsByTagName(se, SELECTED_FOOD_TAG);
 
 			if (selectedFoodElements.size() == 0) {
-				selection = new Selection.EmptySelection(SelectionType.AUTO_SELECTION);
+				selection = new Selection.EmptySelection(SelectionMode.AUTO_SELECTION);
 			} else {
 				Element selfe = selectedFoodElements.get(0);
 
 				selection = new Selection.SelectedFood(Integer.parseInt(selfe.getAttribute(MEAL_INDEX_ATTR)), Integer.parseInt(selfe
-						.getAttribute(FOOD_INDEX_ATTR)), selfe.getAttribute(IS_AUTO_ATTR).equals(TRUE_LIT) ? SelectionType.AUTO_SELECTION
-						: SelectionType.MANUAL_SELECTION);
+						.getAttribute(FOOD_INDEX_ATTR)), selfe.getAttribute(IS_AUTO_ATTR).equals(TRUE_LIT) ? SelectionMode.AUTO_SELECTION
+						: SelectionMode.MANUAL_SELECTION);
 
 			}
 		} else {
 			Element selme = selectedMealElements.get(0);
 
 			selection = new Selection.SelectedMeal(Integer.parseInt(selme.getAttribute(INDEX_ATTR)),
-					selme.getAttribute(IS_AUTO_ATTR).equals(TRUE_LIT) ? SelectionType.AUTO_SELECTION : SelectionType.MANUAL_SELECTION);
+					selme.getAttribute(IS_AUTO_ATTR).equals(TRUE_LIT) ? SelectionMode.AUTO_SELECTION : SelectionMode.MANUAL_SELECTION);
 		}
 
 		return new Survey(meals, selection, startTime, getFlags(se), getData(se));

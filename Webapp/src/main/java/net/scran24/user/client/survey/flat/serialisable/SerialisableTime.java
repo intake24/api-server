@@ -26,38 +26,28 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package net.scran24.user.client.survey.flat.serialisable;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import net.scran24.datastore.shared.CompletedPortionSize;
-
-import org.pcollections.client.HashTreePMap;
-import org.pcollections.client.PMap;
+import net.scran24.datastore.shared.Time;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class SerialisableCompletedPortionSize {
+public class SerialisableTime {
 	@JsonProperty
-	public final String scriptName;
+	public final int hours;
 	@JsonProperty
-	public PMap<String, String> data;
+	public final int minutes;
 
 	@JsonCreator
-	public SerialisableCompletedPortionSize(@JsonProperty("scriptName") String scriptName, @JsonProperty("data") Map<String, String> data) {
-		this.scriptName = scriptName;
-		this.data = HashTreePMap.from(data);		
+	public SerialisableTime(@JsonProperty("hours") int hours, @JsonProperty("minutes") int minutes) {
+		this.hours = hours;
+		this.minutes = minutes;
 	}
 	
-	public SerialisableCompletedPortionSize(CompletedPortionSize completedPortionSize) {
-		this(completedPortionSize.scriptName, completedPortionSize.data);		
+	public SerialisableTime(Time time) {
+		this(time.hours, time.minutes);
 	}
 	
-	public CompletedPortionSize toCompletedPortionSize() {		
-		// TODO: to support GWT serialisation, remove at some point
-		HashMap<String, String> hmdata = new HashMap<String, String>();
-		hmdata.putAll(this.data);
-		
-		return new CompletedPortionSize(scriptName, hmdata);
-	}
+	public Time toTime() {
+		return new Time(hours, minutes);
+	}	
 }

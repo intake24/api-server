@@ -13,7 +13,7 @@ package net.scran24.user.client.survey.flat.rules;
 import static org.workcraft.gwt.shared.client.CollectionUtils.exists;
 import net.scran24.user.client.survey.flat.Prompt;
 import net.scran24.user.client.survey.flat.PromptRule;
-import net.scran24.user.client.survey.flat.SelectionType;
+import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.prompts.MealOperation;
 import net.scran24.user.client.survey.prompts.ReadyMealsPrompt;
 import net.scran24.user.shared.CompoundFood;
@@ -33,7 +33,7 @@ import org.workcraft.gwt.shared.client.Option;
 public class ShowReadyMealsPrompt implements PromptRule<Meal, MealOperation> {
 	
 	@Override
-	public Option<Prompt<Meal, MealOperation>> apply(final Meal meal, SelectionType selectionType, PSet<String> surveyFlags) {
+	public Option<Prompt<Meal, MealOperation>> apply(final Meal meal, SelectionMode selectionType, PSet<String> surveyFlags) {
 		boolean hasReadyMeal = exists(meal.foods, new Function1<FoodEntry, Boolean>() {
 			@Override
 			public Boolean apply(FoodEntry argument) {

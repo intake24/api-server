@@ -10,6 +10,9 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package net.scran24.user.client.survey.flat.serialisable;
 
+import static org.workcraft.gwt.shared.client.CollectionUtils.map;
+import static org.workcraft.gwt.shared.client.CollectionUtils.mapValues;
+
 import java.util.Map;
 import java.util.Set;
 
@@ -21,10 +24,13 @@ import org.pcollections.client.HashTreePMap;
 import org.pcollections.client.HashTreePSet;
 import org.pcollections.client.PMap;
 import org.pcollections.client.PSet;
+import org.workcraft.gwt.shared.client.Function1;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 
+@JsonTypeName("template")
 public class SerialisableTemplateFood extends SerialisableFoodEntry {
 
 	@JsonProperty
@@ -32,14 +38,14 @@ public class SerialisableTemplateFood extends SerialisableFoodEntry {
 	@JsonProperty
 	public final PSet<Integer> markedAsComplete;
 	@JsonProperty
-	public final PMap<Integer, PSet<UUID>> components;
+	public final PMap<Integer, PSet<String>> components;
 	@JsonProperty
 	public final String description;
 	@JsonProperty
 	public final boolean isDrink;
 	
-	private static PMap<Integer, PSet<UUID>> mapComponents(Map<Integer, Set<UUID>> components) {
-		PMap<Integer, PSet<UUID>> result = HashTreePMap.<Integer, PSet<UUID>> empty();
+	private static PMap<Integer, PSet<String>> mapComponents(Map<Integer, Set<String>> components) {
+		PMap<Integer, PSet<String>> result = HashTreePMap.<Integer, PSet<String>> empty();
 
 		for (Integer key : components.keySet())
 			result = result.plus(key, HashTreePSet.from(components.get(key)));
@@ -54,7 +60,7 @@ public class SerialisableTemplateFood extends SerialisableFoodEntry {
 			@JsonProperty("isDrink") boolean isDrink, 
 			@JsonProperty("template_id") String template_id,
 			@JsonProperty("markedAsComplete") Set<Integer> markedAsComplete, 
-			@JsonProperty("components") Map<Integer, Set<UUID>> components,
+			@JsonProperty("components") Map<Integer, Set<String>> components,
 			@JsonProperty("flags") Set<String> flags, 
 			@JsonProperty("customData") Map<String, String> customData) {
 		super(link, HashTreePSet.from(flags), HashTreePMap.from(customData));
@@ -72,11 +78,34 @@ public class SerialisableTemplateFood extends SerialisableFoodEntry {
 		this.template_id = food.data.template_id;
 		this.isDrink = food.isDrink;
 		this.markedAsComplete = food.markedAsComplete;
-		this.components = food.components;
+		this.components = mapValues(food.components, new Function1<PSet<UUID>, PSet<String>>() {
+			@Override
+			public PSet<String> apply(PSet<UUID> argument) {
+				return map(argument, new Function1<UUID, String>() {
+					@Override
+					public String apply(UUID argument) {
+						return argument.value;
+					}					
+				});
+			}			
+		});
 	}
 	
 	public TemplateFood toTemplateFood(CompoundFoodTemplateManager templateManager) {
-		return new TemplateFood(link.toFoodLink(), description, isDrink, templateManager.getTemplate(template_id));
+		
+		PMap<Integer, PSet<UUID>> tfComponents = mapValues(components, new Function1<PSet<String>, PSet<UUID>>() {
+			@Override
+			public PSet<UUID> apply(PSet<String> argument) {
+				return map(argument, new Function1<String, UUID>() {
+					@Override
+					public UUID apply(String argument) {
+						return new UUID(argument);
+					}					
+				});
+			}
+		});
+		
+		return new TemplateFood(link.toFoodLink(), description, isDrink, templateManager.getTemplate(template_id), markedAsComplete, tfComponents, flags, customData);
 	}
 
 	@Override
