@@ -28,7 +28,7 @@ package net.scran24.user.client.survey.flat;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -42,8 +42,6 @@ import net.scran24.user.client.survey.flat.Selection.SelectedMeal;
 import net.scran24.user.client.survey.portionsize.experimental.PortionSize;
 import net.scran24.user.client.survey.portionsize.experimental.PortionSizeScriptManager;
 import net.scran24.user.shared.CompoundFood;
-import net.scran24.user.shared.TemplateFood;
-import net.scran24.user.shared.TemplateFoodData;
 import net.scran24.user.shared.EncodedFood;
 import net.scran24.user.shared.FoodData;
 import net.scran24.user.shared.FoodEntry;
@@ -54,6 +52,8 @@ import net.scran24.user.shared.MissingFood;
 import net.scran24.user.shared.MissingFoodDescription;
 import net.scran24.user.shared.RawFood;
 import net.scran24.user.shared.Recipe;
+import net.scran24.user.shared.TemplateFood;
+import net.scran24.user.shared.TemplateFoodData;
 import net.scran24.user.shared.UUID;
 import net.scran24.user.shared.lookup.PortionSizeMethod;
 
@@ -66,7 +66,6 @@ import org.pcollections.client.TreePVector;
 import org.workcraft.gwt.shared.client.Either;
 import org.workcraft.gwt.shared.client.Option;
 
-import com.google.gwt.i18n.client.NumberFormat;
 import com.google.gwt.xml.client.Document;
 import com.google.gwt.xml.client.Element;
 import com.google.gwt.xml.client.Node;
@@ -570,7 +569,9 @@ public class SurveyXmlSerialiser {
 					brands.add (elem.getAttribute(NAME_ATTR));
 				}				
 
-				List<String> categories = Arrays.asList(fe.getAttribute(SUPER_CATEGORIES_ATTR).split(","));
+				String superCategoriesAttr = fe.getAttribute(SUPER_CATEGORIES_ATTR);
+							
+				List<String> categories = superCategoriesAttr.isEmpty() ? Collections.<String>emptyList() : Arrays.asList(superCategoriesAttr.split(","));
 				
 				Option<String> brand = Option.none();
 				
