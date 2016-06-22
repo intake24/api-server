@@ -61,7 +61,6 @@ import com.google.gwt.user.client.Random;
 public class SurveySerialisationTest extends GWTTestCase {
 
 	private SerialisableSurveyCodec codec;
-	private SurveyXmlSerialiser xmlSerialiser;
 
 	private PortionSizeScriptManager scriptManager;
 	private CompoundFoodTemplateManager templateManager;
@@ -72,7 +71,6 @@ public class SurveySerialisationTest extends GWTTestCase {
 		templateManager = new CompoundFoodTemplateManager(HashTreePMap.<String, TemplateFoodData> empty().plus("sandwich", FoodTemplates.sandwich)
 				.plus("salad", FoodTemplates.salad));
 		codec = GWT.create(SerialisableSurveyCodec.class);
-		xmlSerialiser = new SurveyXmlSerialiser();
 	}
 
 	private Survey emptySurvey() {
@@ -113,7 +111,16 @@ public class SurveySerialisationTest extends GWTTestCase {
 				if (b.isEncoded()) {
 					EncodedFood food2 = (EncodedFood) b;
 
-					assertEquals(food1.data, food2.data);
+					assertEquals(food1.data.askIfReadyMeal, food2.data.askIfReadyMeal);
+					assertEquals(food1.data.brands, food2.data.brands);
+					assertEquals(food1.data.caloriesPer100g, food2.data.caloriesPer100g);
+					assertEquals(food1.data.categories, food2.data.categories);
+					assertEquals(food1.data.code, food2.data.code);
+					assertEquals(food1.data.localDescription, food2.data.localDescription);
+					assertEquals(food1.data.portionSizeMethods, food2.data.portionSizeMethods);
+					assertEquals(food1.data.prompts, food2.data.prompts);
+					assertEquals(food1.data.sameAsBeforeOption, food2.data.sameAsBeforeOption);
+
 					assertEquals(food1.portionSizeMethodIndex, food2.portionSizeMethodIndex);
 					assertEquals(food1.portionSize, food2.portionSize);
 					assertEquals(food1.brand, food2.brand);
@@ -278,8 +285,8 @@ public class SurveySerialisationTest extends GWTTestCase {
 				PMap<Integer, PSet<UUID>> components = HashTreePMap.empty();
 				for (int k = 0; k < template.template.size(); k++)
 					components = components.plus(k, generateUuidSet());
-				result = result.plus(new TemplateFood(link, generateString(16), Random.nextBoolean(), template, generateIntSet(),
-						components, flags, customData));
+				result = result.plus(new TemplateFood(link, generateString(16), Random.nextBoolean(), template, generateIntSet(), components, flags,
+						customData));
 				break;
 			case 4:
 				result = result.plus(new MissingFood(link, generateString(16), Random.nextBoolean(), generateOption(new MissingFoodDescription(
@@ -443,14 +450,10 @@ public class SurveySerialisationTest extends GWTTestCase {
 
 			Survey survey = generateSurvey();
 			System.out.println("Iteration " + i);
-			String xml = xmlSerialiser.toXml(survey);
-			System.out.println(xml);
-			Survey decoded = xmlSerialiser.fromXml(xml, scriptManager, templateManager);
+			String json = encode(survey);
+			System.out.println(json);
+			Survey decoded = decode(json);
 
-			/*
-			 * String json = encode(survey); System.out.println("Iteration " +
-			 * i); System.out.println(json); Survey decoded = decode(json);
-			 */
 			compare(survey, decoded);
 		}
 	}
