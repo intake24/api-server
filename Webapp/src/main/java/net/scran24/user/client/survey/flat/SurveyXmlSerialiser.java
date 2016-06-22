@@ -28,6 +28,7 @@ package net.scran24.user.client.survey.flat;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -568,7 +569,9 @@ public class SurveyXmlSerialiser {
 					brands.add (elem.getAttribute(NAME_ATTR));
 				}				
 
-				List<String> categories = Arrays.asList(fe.getAttribute(SUPER_CATEGORIES_ATTR).split(","));
+				String superCategoriesAttr = fe.getAttribute(SUPER_CATEGORIES_ATTR);
+							
+				List<String> categories = superCategoriesAttr.isEmpty() ? Collections.<String>emptyList() : Arrays.asList(superCategoriesAttr.split(","));
 				
 				Option<String> brand = Option.none();
 				
