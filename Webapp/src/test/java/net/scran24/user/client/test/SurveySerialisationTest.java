@@ -21,7 +21,6 @@ import net.scran24.user.client.survey.FoodTemplates;
 import net.scran24.user.client.survey.flat.Selection;
 import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.flat.Survey;
-import net.scran24.user.client.survey.flat.SurveyXmlSerialiser;
 import net.scran24.user.client.survey.flat.VersionMismatchException;
 import net.scran24.user.client.survey.flat.serialisable.SerialisableSurvey;
 import net.scran24.user.client.survey.portionsize.experimental.DefaultPortionSizeScripts;
