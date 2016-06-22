@@ -26,6 +26,7 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package net.scran24.user.client.surveyscheme.ucljan15;
 
+import net.scran24.datastore.shared.SurveySchemeReference;
 import net.scran24.user.client.SurveyInterfaceManager;
 import net.scran24.user.client.survey.flat.FlatFinalPage;
 import net.scran24.user.client.survey.flat.IntakeSurvey;
@@ -54,5 +55,15 @@ public class UCLJan15 extends BasicScheme {
 		} else {
 			interfaceManager.show(new FlatFinalPage(HtmlResources.INSTANCE.getFinalHtml().getText(), postProcess(state, basicPostProcess), log.log));
 		}
+	}
+
+	@Override
+	public String getDataVersion() {
+		return "1";
+	}
+
+	@Override
+	public String getSchemeId() {
+		return SurveySchemeReference.UclJan15Scheme.ID;
 	}
 }

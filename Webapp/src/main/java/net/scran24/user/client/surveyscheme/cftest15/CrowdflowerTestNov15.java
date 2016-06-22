@@ -21,6 +21,7 @@ package net.scran24.user.client.surveyscheme.cftest15;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.scran24.datastore.shared.SurveySchemeReference;
 import net.scran24.user.client.SurveyInterfaceManager;
 import net.scran24.user.client.survey.SurveyMessages;
 import net.scran24.user.client.survey.WelcomePage;
@@ -81,5 +82,15 @@ public class CrowdflowerTestNov15 extends BasicScheme {
 		result.add(giveUp);
 
 		return result;
+	}
+
+	@Override
+	public String getDataVersion() {
+		return "1";
+	}
+
+	@Override
+	public String getSchemeId() {
+		return SurveySchemeReference.CrowdflowerNov15Scheme.ID;
 	}
 }

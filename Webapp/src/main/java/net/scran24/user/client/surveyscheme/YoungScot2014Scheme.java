@@ -33,8 +33,8 @@ import static org.workcraft.gwt.shared.client.CollectionUtils.map;
 import java.util.Map;
 
 import net.scran24.common.client.CurrentUser;
+import net.scran24.datastore.shared.SurveySchemeReference;
 import net.scran24.datastore.shared.Time;
-import net.scran24.user.client.ProcessMilkInHotDrinks;
 import net.scran24.user.client.SurveyInterfaceManager;
 import net.scran24.user.client.survey.CompoundFoodTemplateManager;
 import net.scran24.user.client.survey.SurveyMessages;
@@ -49,8 +49,8 @@ import net.scran24.user.client.survey.flat.PromptUtil;
 import net.scran24.user.client.survey.flat.RuleBasedPromptManager;
 import net.scran24.user.client.survey.flat.Rules;
 import net.scran24.user.client.survey.flat.Selection;
-import net.scran24.user.client.survey.flat.SelectionRule;
 import net.scran24.user.client.survey.flat.SelectionMode;
+import net.scran24.user.client.survey.flat.SelectionRule;
 import net.scran24.user.client.survey.flat.Survey;
 import net.scran24.user.client.survey.flat.SurveyOperation;
 import net.scran24.user.client.survey.flat.rules.AskForMealTime;
@@ -97,7 +97,7 @@ public class YoungScot2014Scheme extends BasicScheme {
 	final private static String FLAG_ENABLE_FINAL_RUN = "enable-final-run";
 	
 	final private static SurveyMessages surveyMessages = SurveyMessages.Util.getInstance();
-	
+
 	final private PVector<String> mealLocationOptions =
 			TreePVector.<String>empty()
 			.plus("Home")
@@ -342,7 +342,7 @@ public class YoungScot2014Scheme extends BasicScheme {
 				// extended food propmts
 				TreePVector.<WithPriority<PromptRule<Pair<FoodEntry, Meal>, MealOperation>>> empty()
 				.plus(AskToLookupFood.withPriority(2, recipeManager))
-				.plus(ShowSameAsBeforePrompt.withPriority(2, scriptManager, templateManager))
+				.plus(ShowSameAsBeforePrompt.withPriority(2, getSchemeId(), getDataVersion(), scriptManager, templateManager))
 				.plus(ShowCompoundFoodPrompt.withPriority(0))
 				.plus(ShowAssociatedFoodPrompt.withPriority(0))
 				
@@ -426,5 +426,15 @@ public class YoungScot2014Scheme extends BasicScheme {
 		else {
 			interfaceManager.show(new FlatFinalPage(surveyMessages.finalPage_text(), postProcess(state, basicPostProcess), log.log));
 		}
+	}
+
+	@Override
+	public String getDataVersion() {
+		return "1";
+	}
+
+	@Override
+	public String getSchemeId() {
+		return SurveySchemeReference.YoungScot2014Scheme.ID;
 	}
 }

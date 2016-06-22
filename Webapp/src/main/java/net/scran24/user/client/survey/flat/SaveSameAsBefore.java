@@ -24,6 +24,14 @@ import org.workcraft.gwt.shared.client.Option;
 import org.workcraft.gwt.shared.client.Pair;
 
 public class SaveSameAsBefore implements Function2<Survey, Survey, Survey> {
+	
+	public final String scheme_id;
+	public final String version_id;
+	
+	public SaveSameAsBefore(String scheme_id, String version_id) {
+		this.scheme_id = scheme_id;
+		this.version_id = version_id;
+	}
 
 	private Option<Pair<Meal, FoodEntry>> findById(Survey survey, UUID id) {
 		for (Meal m : survey.meals) {
@@ -52,7 +60,7 @@ public class SaveSameAsBefore implements Function2<Survey, Survey, Survey> {
 	}
 
 	@Override
-	public Survey apply(Survey s0, Survey s1) {
+	public Survey apply(Survey s0, final Survey s1) {
 		for (final Meal m : s1.meals)
 			for (int i = 0; i < m.foods.size(); i++) {
 				final FoodEntry newState = m.foods.get(i);
@@ -66,7 +74,7 @@ public class SaveSameAsBefore implements Function2<Survey, Survey, Survey> {
 								if (oldState.right.isEncoded()) {
 									EncodedFood encOld = oldState.right.asEncoded();
 									if (!portionSizeComplete(oldState.left, encOld) && portionSizeComplete(m, encNew)) {
-										StateManagerUtil.saveSameAsBefore(CurrentUser.getUserInfo().userName, m, newState);
+										StateManagerUtil.saveSameAsBefore(CurrentUser.getUserInfo().userName, m, encNew, scheme_id, version_id);
 									}
 								}
 							}

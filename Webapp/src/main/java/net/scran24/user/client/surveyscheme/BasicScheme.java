@@ -163,7 +163,7 @@ public abstract class BasicScheme implements SurveyScheme {
 				TreePVector.<WithPriority<PromptRule<Pair<FoodEntry, Meal>, MealOperation>>> empty()
 				.plus(ShowEditIngredientsPrompt.withPriority(3))
 				.plus(AskToLookupFood.withPriority(3, recipeManager))
-				.plus(ShowSameAsBeforePrompt.withPriority(3, scriptManager, templateManager))
+				.plus(ShowSameAsBeforePrompt.withPriority(3, getSchemeId(), getDataVersion(), scriptManager, templateManager))
 				.plus(ShowHomeRecipeServingsPrompt.withPriority(2))				
 				.plus(ShowTemplateRecipeSavePrompt.withPriority(1, recipeManager))
 				.plus(ShowCompoundFoodPrompt.withPriority(0))
@@ -191,6 +191,8 @@ public abstract class BasicScheme implements SurveyScheme {
 		    .plus(SelectMealForReadyMeals.withPriority(1)));
 	}
 
+
+
 	public BasicScheme(final SurveyInterfaceManager interfaceManager) {
 		this.log = new LogRecorder();
 		this.interfaceManager = interfaceManager;
@@ -216,7 +218,7 @@ public abstract class BasicScheme implements SurveyScheme {
 		defaultTemplateManager = new CompoundFoodTemplateManager(HashTreePMap.<String, TemplateFoodData> empty()
 				.plus("sandwich", FoodTemplates.sandwich).plus("salad", FoodTemplates.salad));
 		
-		recipeManager = new RecipeManager(defaultScriptManager, defaultTemplateManager);
+		recipeManager = new RecipeManager(getSchemeId(), getDataVersion(), defaultScriptManager, defaultTemplateManager);
 	
 		final Rules rules = defaultRules(defaultScriptManager, defaultTemplateManager, recipeManager);
 		
@@ -226,9 +228,7 @@ public abstract class BasicScheme implements SurveyScheme {
 		
 		defaultSelectionManager = new PromptAvailabilityBasedSelectionManager(defaultPromptManager);
 
-		
-
-		Survey initialState = StateManagerUtil.getLatestState(CurrentUser.getUserInfo().userName, defaultScriptManager, defaultTemplateManager).accept(new Option.Visitor<Survey, Survey>() {
+		Survey initialState = StateManagerUtil.getLatestState(CurrentUser.getUserInfo().userName, getSchemeId(), getDataVersion(), defaultScriptManager, defaultTemplateManager).accept(new Option.Visitor<Survey, Survey>() {
 			@Override
 			public Survey visitSome(Survey data) {
 				double age = (System.currentTimeMillis() - data.startTime) / 3600000.0;
@@ -250,7 +250,7 @@ public abstract class BasicScheme implements SurveyScheme {
 			}
 		});
 		
-		stateManager = new StateManager(initialState, new Callback() {
+		stateManager = new StateManager(initialState, getSchemeId(), getDataVersion(), new Callback() {
 			@Override
 			public void call() {
 				showNextPage();
@@ -260,6 +260,12 @@ public abstract class BasicScheme implements SurveyScheme {
 	
 	@Override
 	public abstract void showNextPage();
+	
+	@Override
+	public abstract String getDataVersion();
+
+	@Override
+	public abstract String getSchemeId();
 	
 	@Override
 	public List<Anchor> navBarLinks() {

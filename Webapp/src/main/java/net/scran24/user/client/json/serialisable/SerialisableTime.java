@@ -24,7 +24,7 @@ Licensed under the Open Government Licence 3.0:
 http://www.nationalarchives.gov.uk/doc/open-government-licence/
 */
 
-package net.scran24.user.client.survey.flat.serialisable;
+package net.scran24.user.client.json.serialisable;
 
 import net.scran24.datastore.shared.Time;
 

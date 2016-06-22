@@ -14,4 +14,12 @@ public class BrowserConsole {
 	public static native void log(String msg) /*-{
 		$wnd.console.log(msg);
 	}-*/;
+
+	public static native void error(String msg) /*-{
+		$wnd.console.error(msg);
+	}-*/;
+
+	public static native void warn(String msg) /*-{
+		$wnd.console.warn(msg);
+	}-*/;
 }

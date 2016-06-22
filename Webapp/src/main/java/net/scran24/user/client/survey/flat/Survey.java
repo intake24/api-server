@@ -80,7 +80,7 @@ public class Survey {
 	public final PSet<String> flags;
 	public final PMap<String, String> customData;
 	public final PVector<WithIndex<Meal>> mealsSortedByTime;
-
+	
 	public Survey(List<Meal> meals, Selection selectedElement, long startTime, Set<String> flags, Map<String, String> customData) {
 		this(TreePVector.<Meal> from(meals), selectedElement, startTime, HashTreePSet.<String> from(flags), HashTreePMap
 				.<String, String> from(customData));
@@ -288,7 +288,7 @@ public class Survey {
 	}
 
 	@Override
-	public boolean equals(Object obj) {		
+	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -311,13 +311,18 @@ public class Survey {
 				return false;
 		} else if (!meals.equals(other.meals))
 			return false;
+		if (mealsSortedByTime == null) {
+			if (other.mealsSortedByTime != null)
+				return false;
+		} else if (!mealsSortedByTime.equals(other.mealsSortedByTime))
+			return false;
 		if (selectedElement == null) {
 			if (other.selectedElement != null)
 				return false;
 		} else if (!selectedElement.equals(other.selectedElement))
 			return false;
 		if (startTime != other.startTime)
-			return false;		
+			return false;
 		return true;
 	}
 }

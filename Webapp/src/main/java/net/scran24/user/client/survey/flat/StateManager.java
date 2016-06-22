@@ -29,7 +29,10 @@ public class StateManager {
 	private Survey currentState;
 	private int historyEventCounter = 0;
 
-	private final Logger log = Logger.getLogger("StateManager");
+	private final Logger log = Logger.getLogger(StateManager.class.getSimpleName());
+	
+	public final String version_id;
+	public final String scheme_id;
 
 	public Survey getCurrentState() {
 		return currentState;
@@ -53,17 +56,16 @@ public class StateManager {
 			makeHistoryEntry();
 		}
 
-		StateManagerUtil.setLatestState(CurrentUser.getUserInfo().userName, currentState);
+		StateManagerUtil.setLatestState(CurrentUser.getUserInfo().userName, currentState, scheme_id, version_id);
 		// log.info("Updated latest state");
 
 //		updateUi.call(newState);
 	}
 
-	public StateManager(Survey initialState, /*Callback1<Survey> updateUi,*/ final Callback showNextPage,
-			final PortionSizeScriptManager scriptManager) {
-		
-		currentState = initialState;
-	//	this.updateUi = updateUi;
+	public StateManager(Survey initialState, String scheme_id, String version_id, final Callback showNextPage, final PortionSizeScriptManager scriptManager) {
+		this.scheme_id = scheme_id;
+		this.version_id = version_id;
+		this.currentState = initialState;
 
 		log.info("Making initial history entry");
 		makeHistoryEntry();
@@ -83,6 +85,7 @@ public class StateManager {
 
 					@Override
 					public void visitNone() {
+						log.warning("Failed to load historical state, keeping current state");
 					}
 				});
 			}

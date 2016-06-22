@@ -16,13 +16,13 @@ import java.util.List;
 import net.scran24.datastore.shared.CompletedPortionSize;
 import net.scran24.datastore.shared.Time;
 import net.scran24.user.client.json.SerialisableSurveyCodec;
+import net.scran24.user.client.json.serialisable.SerialisableSurvey;
 import net.scran24.user.client.survey.CompoundFoodTemplateManager;
 import net.scran24.user.client.survey.FoodTemplates;
 import net.scran24.user.client.survey.flat.Selection;
 import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.flat.Survey;
 import net.scran24.user.client.survey.flat.VersionMismatchException;
-import net.scran24.user.client.survey.flat.serialisable.SerialisableSurvey;
 import net.scran24.user.client.survey.portionsize.experimental.DefaultPortionSizeScripts;
 import net.scran24.user.client.survey.portionsize.experimental.PortionSize;
 import net.scran24.user.client.survey.portionsize.experimental.PortionSizeScript;
@@ -72,15 +72,10 @@ public class SurveySerialisationTest extends GWTTestCase {
 		codec = GWT.create(SerialisableSurveyCodec.class);
 	}
 
-	private Survey emptySurvey() {
-		return new Survey(TreePVector.<Meal> empty(), new Selection.EmptySelection(SelectionMode.AUTO_SELECTION), 0l, HashTreePSet.<String> empty(),
-				HashTreePMap.<String, String> empty());
-	}
-
 	private String encode(Survey survey) {
 		GWT.create(SerialisableSurveyCodec.class);
 
-		return codec.encode(new SerialisableSurvey(survey)).toString();
+		return codec.encode(new SerialisableSurvey(survey, "test", "test")).toString();
 	}
 
 	private Survey decode(String json) {

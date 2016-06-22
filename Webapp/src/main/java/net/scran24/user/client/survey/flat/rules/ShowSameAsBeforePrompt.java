@@ -30,6 +30,7 @@ import net.scran24.common.client.CurrentUser;
 import net.scran24.user.client.survey.CompoundFoodTemplateManager;
 import net.scran24.user.client.survey.flat.Prompt;
 import net.scran24.user.client.survey.flat.PromptRule;
+import net.scran24.user.client.survey.flat.SameAsBefore;
 import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.flat.StateManagerUtil;
 import net.scran24.user.client.survey.portionsize.experimental.PortionSizeScriptManager;
@@ -42,15 +43,18 @@ import net.scran24.user.shared.SpecialData;
 import net.scran24.user.shared.WithPriority;
 
 import org.pcollections.client.PSet;
-import org.pcollections.client.PVector;
 import org.workcraft.gwt.shared.client.Option;
 import org.workcraft.gwt.shared.client.Pair;
 
 public class ShowSameAsBeforePrompt implements PromptRule<Pair<FoodEntry, Meal>, MealOperation> {
 	private final PortionSizeScriptManager scriptManager;
 	private final CompoundFoodTemplateManager templateManager;
+	private final String scheme_id;
+	private final String version_id;
 		
-	public ShowSameAsBeforePrompt(PortionSizeScriptManager scriptManager, CompoundFoodTemplateManager templateManager) {
+	public ShowSameAsBeforePrompt(String scheme_id, String version_id, PortionSizeScriptManager scriptManager, CompoundFoodTemplateManager templateManager) {
+		this.scheme_id = scheme_id;
+		this.version_id = version_id;
 		this.scriptManager = scriptManager;
 		this.templateManager = templateManager;
 	}
@@ -62,11 +66,11 @@ public class ShowSameAsBeforePrompt implements PromptRule<Pair<FoodEntry, Meal>,
 			if (!f.data.sameAsBeforeOption || f.notSameAsBefore() || f.isInCategory(SpecialData.FOOD_CODE_MILK_IN_HOT_DRINK) || f.isPortionSizeComplete() || f.link.isLinked())
 				return Option.none();
 			else {
-				Option<PVector<FoodEntry>> sameAsBefore = StateManagerUtil.getSameAsBefore(CurrentUser.getUserInfo().userName, f.data.code, scriptManager, templateManager);
-				return sameAsBefore.accept(new Option.Visitor<PVector<FoodEntry>, Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>>>() {
+				Option<SameAsBefore> sameAsBefore = StateManagerUtil.getSameAsBefore(CurrentUser.getUserInfo().userName, f.data.code, scheme_id, version_id, scriptManager, templateManager);
+				return sameAsBefore.accept(new Option.Visitor<SameAsBefore, Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>>>() {
 					@Override
-					public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> visitSome(PVector<FoodEntry> item) {
-						return Option.<Prompt<Pair<FoodEntry, Meal>, MealOperation>>some(new SameAsBeforePrompt(pair, item, pair.right.foodIndex(pair.left)));
+					public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> visitSome(SameAsBefore item) {
+						return Option.<Prompt<Pair<FoodEntry, Meal>, MealOperation>>some(new SameAsBeforePrompt(pair, pair.right.foodIndex(pair.left), item));
 					}
 
 					@Override
@@ -79,7 +83,7 @@ public class ShowSameAsBeforePrompt implements PromptRule<Pair<FoodEntry, Meal>,
 			return Option.none();
 	}
 
-	public static WithPriority<PromptRule<Pair<FoodEntry, Meal>, MealOperation>> withPriority(int priority, PortionSizeScriptManager scriptManager, CompoundFoodTemplateManager templateManager) {
-		return new WithPriority<PromptRule<Pair<FoodEntry, Meal>, MealOperation>>(new ShowSameAsBeforePrompt(scriptManager, templateManager), priority);
+	public static WithPriority<PromptRule<Pair<FoodEntry, Meal>, MealOperation>> withPriority(int priority, String scheme_id, String version_id, PortionSizeScriptManager scriptManager, CompoundFoodTemplateManager templateManager) {
+		return new WithPriority<PromptRule<Pair<FoodEntry, Meal>, MealOperation>>(new ShowSameAsBeforePrompt(scheme_id, version_id, scriptManager, templateManager), priority);
 	}
 }

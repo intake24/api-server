@@ -24,7 +24,7 @@ Licensed under the Open Government Licence 3.0:
 http://www.nationalarchives.gov.uk/doc/open-government-licence/
  */
 
-package net.scran24.user.client.survey.flat.serialisable;
+package net.scran24.user.client.json.serialisable;
 
 import static org.workcraft.gwt.shared.client.CollectionUtils.map;
 
@@ -32,15 +32,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import net.scran24.user.client.json.serialisable.SerialisableSelection.SerialisableEmptySelection;
+import net.scran24.user.client.json.serialisable.SerialisableSelection.SerialisableSelectedFood;
+import net.scran24.user.client.json.serialisable.SerialisableSelection.SerialisableSelectedMeal;
 import net.scran24.user.client.survey.CompoundFoodTemplateManager;
 import net.scran24.user.client.survey.flat.Selection;
 import net.scran24.user.client.survey.flat.Selection.EmptySelection;
 import net.scran24.user.client.survey.flat.Selection.SelectedFood;
 import net.scran24.user.client.survey.flat.Selection.SelectedMeal;
 import net.scran24.user.client.survey.flat.Survey;
-import net.scran24.user.client.survey.flat.serialisable.SerialisableSelection.SerialisableEmptySelection;
-import net.scran24.user.client.survey.flat.serialisable.SerialisableSelection.SerialisableSelectedFood;
-import net.scran24.user.client.survey.flat.serialisable.SerialisableSelection.SerialisableSelectedMeal;
 import net.scran24.user.client.survey.portionsize.experimental.PortionSizeScriptManager;
 import net.scran24.user.shared.Meal;
 
@@ -67,21 +67,30 @@ public class SerialisableSurvey {
 	public final PSet<String> flags;
 	@JsonProperty
 	public final PMap<String, String> customData;
+	@JsonProperty
+	public final String scheme_id;
+	@JsonProperty
+	public final String version_id;
 	
 
 	@JsonCreator
 	public SerialisableSurvey(@JsonProperty("meals") List<SerialisableMeal> meals, @JsonProperty("selectedElement") SerialisableSelection selectedElement,
 			@JsonProperty("startTime") long startTime, @JsonProperty("flags") Set<String> flags,
-			@JsonProperty("customData") Map<String, String> customData) {
+			@JsonProperty("customData") Map<String, String> customData, @JsonProperty("scheme_id") String scheme_id, 
+			@JsonProperty("version_id") String version_id) {
 		this.startTime = startTime;
 		this.meals = TreePVector.from(meals);
 		this.selectedElement = selectedElement;
 		this.flags = HashTreePSet.from(flags);
 		this.customData = HashTreePMap.from(customData);
+		this.scheme_id = scheme_id;
+		this.version_id = version_id;
 	}
 
-	public SerialisableSurvey(Survey survey) {
+	public SerialisableSurvey(Survey survey, String scheme_id, String version_id) {
 		this.startTime = survey.startTime;
+		this.scheme_id = scheme_id;
+		this.version_id = version_id;
 		this.meals = map(survey.meals, new Function1<Meal, SerialisableMeal>() {
 			@Override
 			public SerialisableMeal apply(Meal argument) {
