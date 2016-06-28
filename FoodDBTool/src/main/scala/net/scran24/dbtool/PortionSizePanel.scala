@@ -129,7 +129,7 @@ class PortionSizePanel(entryCode: String, food: Boolean, initial: Seq[PortionSiz
 
   val addPortionSizeButton = new JButton("Add a portion size method")
   addPortionSizeButton.addActionListener(() => {
-    addPortionSize(new PortionSizeMethod("as-served", "No description", "portion/placeholder.jpg", false, Seq()), false)
+    addPortionSize(new PortionSizeMethod("as-served", "use_an_image", "portion/placeholder.jpg", false, Seq()), false)
   })
 
   add(addPortionSizeButton)

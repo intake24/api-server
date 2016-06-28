@@ -21,7 +21,9 @@ object StandardisePsmDescriptionsApply extends App {
   
   val rows = reader.readAll().tail.filter(row => !row(2).isEmpty())
   
-  val descMap = rows.map(row => (row(2).trim().toLowerCase() -> row(0).trim().toLowerCase().replace(" ", "_"))).toMap
+  val descMap = rows.map(row => (row(2).trim().toLowerCase() -> row(0).trim().toLowerCase().replace(" ", "_"))).toMap  ++ Map("bowlfuls" -> "in_a_bowl", "choose a slice" -> "in slices")
+  
+  
  
   val processed = foods.map {
     food =>
