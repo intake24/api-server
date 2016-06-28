@@ -83,7 +83,7 @@ lazy val dataStoreMongo = Project(id = "dataStoreMongo", base = file ("DataStore
 
 lazy val dataStoreSql = Project(id = "dataStoreSql", base = file("DataStoreSQL")).dependsOn(services % "compile->compile;test->test", dataStore, sharedTypesJvm, dataStoreMongo)
 
-lazy val apiPlayServer = Project(id = "apiPlayServer", base = file("ApiPlayServer")).enablePlugins(PlayScala).dependsOn(foodDataSql, dataStoreSql, apiSharedJvm, services)
+lazy val apiPlayServer = Project(id = "apiPlayServer", base = file("ApiPlayServer")).enablePlugins(PlayScala, SystemdPlugin).dependsOn(foodDataSql, dataStoreSql, apiSharedJvm, services)
 
 lazy val siteTest = Project(id = "siteTest", base = file("SiteTest"))
 

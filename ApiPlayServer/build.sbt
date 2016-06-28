@@ -46,7 +46,7 @@ javaOptions in Universal ++= Seq(
   "-J-Xms128m",
 
   // Since play uses separate pidfile we have to provide it with a proper path
-  s"-Dpidfile.path=/var/run/${packageName.value}/play.pid",
+  s"-Dpidfile.path=/dev/null",
 
   // Use separate configuration file for production environment
   s"-Dconfig.file=/usr/share/${packageName.value}/conf/production.conf",
