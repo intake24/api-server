@@ -1,3 +1,4 @@
 [submodule "resty-gwt"]
 	path = resty-gwt
 	url = https://github.com/digitalinteraction/resty-gwt.git
+	branch = master
