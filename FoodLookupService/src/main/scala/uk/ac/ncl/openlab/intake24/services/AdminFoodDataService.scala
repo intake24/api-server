@@ -68,7 +68,7 @@ trait AdminFoodDataService {
 
   def categoryContents(code: String, locale: String): CategoryContents
 
-  def foodDef(code: String, locale: String): Food
+  def foodDef(code: String, locale: String): Either[CodeError, Food]
  
   def isCategoryCode(code: String): Boolean
   

@@ -59,10 +59,11 @@ import net.scran24.fooddef.NutrientTable
 import anorm.SqlMappingError
 import anorm.AnormException
 import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService
+import uk.ac.ncl.openlab.intake24.services.CodeError
 
 @Singleton
-class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends SqlDataService 
-  with AdminFoodDataService with SplitterDataSqlImpl with SynsetsDataSqlImpl with FoodDataEditingSqlImpl {
+class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends SqlDataService
+    with AdminFoodDataService with SplitterDataSqlImpl with SynsetsDataSqlImpl with FoodDataEditingSqlImpl {
 
   val logger = LoggerFactory.getLogger(classOf[AdminFoodDataServiceSqlImpl])
 
@@ -158,7 +159,7 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
        |  ON foods_portion_size_methods.id = foods_portion_size_method_params.portion_size_method_id
        |WHERE food_code = {food_code} AND locale_id = {locale_id} ORDER BY param_id""".stripMargin
 
-  case class FoodResultRow(version: UUID, code: String, description: String, local_description: Option[String], food_group_id: Long,
+  case class FoodResultRow(version: UUID, code: String, description: String, local_description: Option[String], do_not_use: Option[Boolean], food_group_id: Long,
     same_as_before_option: Option[Boolean], ready_meal_option: Option[Boolean], reasonable_amount: Option[Int], local_version: Option[UUID])
 
   val categoryPortionSizeMethodsQuery =
@@ -191,7 +192,7 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
 
   case class NutrientTableRow(nutrient_table_id: String, nutrient_table_code: String)
 
-  def foodDef(code: String, locale: String): Food = tryWithConnection {
+  def foodDef(code: String, locale: String): Either[CodeError, Food] = tryWithConnection {
     // This is divided into two queries because the portion size estimation method list
     // can be empty, and it's very awkward to handle this case with one big query
     // with a lot of replication
@@ -210,7 +211,7 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
           }.toMap
 
       val foodQuery =
-        """|SELECT code, description, local_description, food_group_id, same_as_before_option, ready_meal_option,
+        """|SELECT code, description, local_description, do_not_use, food_group_id, same_as_before_option, ready_meal_option,
            |       reasonable_amount, foods.version as version, foods_local.version as local_version 
            |FROM foods 
            |     INNER JOIN foods_attributes ON foods.code = foods_attributes.food_code
@@ -219,11 +220,13 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
 
       val foodRowParser = Macro.namedParser[FoodResultRow]
 
-      val result = SQL(foodQuery).on('food_code -> code, 'locale_id -> locale).executeQuery().as(foodRowParser.single)
-
-      Food(result.version, result.code, result.description, result.food_group_id.toInt,
-        InheritableAttributes(result.ready_meal_option, result.same_as_before_option, result.reasonable_amount),
-        FoodLocal(result.local_version, result.local_description, nutrientTableCodes, portionSizeMethods))
+      SQL(foodQuery).on('food_code -> code, 'locale_id -> locale).executeQuery().as(foodRowParser.singleOpt) match {
+        case Some(result) =>
+          Right(Food(result.version, result.code, result.description, result.food_group_id.toInt,
+            InheritableAttributes(result.ready_meal_option, result.same_as_before_option, result.reasonable_amount),
+            FoodLocal(result.local_version, result.local_description, result.do_not_use.getOrElse(false), nutrientTableCodes, portionSizeMethods)))
+        case None => Left(CodeError.UndefinedCode)
+      }
 
   }
 

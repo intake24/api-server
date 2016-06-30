@@ -211,7 +211,7 @@ trait FoodDataEditingSqlImpl extends SqlDataService {
           case Some(version) => {
 
             val rowsAffected = SQL(Queries.foodsLocalUpdate)
-              .on('food_code -> foodCode, 'locale_id -> locale, 'base_version -> foodLocal.version, 'new_version -> UUID.randomUUID(), 'local_description -> foodLocal.localDescription)
+              .on('food_code -> foodCode, 'locale_id -> locale, 'base_version -> foodLocal.version, 'new_version -> UUID.randomUUID(), 'local_description -> foodLocal.localDescription, 'do_not_use -> foodLocal.do_not_use)
               .executeUpdate()
 
             if (rowsAffected == 1) {
@@ -225,7 +225,7 @@ trait FoodDataEditingSqlImpl extends SqlDataService {
           case None => {
             try {
               SQL(Queries.foodsLocalInsert)
-                .on('food_code -> foodCode, 'locale_id -> locale, 'local_description -> foodLocal.localDescription, 'do_not_use -> false, 'version -> UUID.randomUUID())
+                .on('food_code -> foodCode, 'locale_id -> locale, 'local_description -> foodLocal.localDescription, 'do_not_use -> foodLocal.do_not_use, 'version -> UUID.randomUUID())
                 .execute()
               conn.commit()
               uk.ac.ncl.openlab.intake24.services.Success

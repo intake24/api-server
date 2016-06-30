@@ -218,7 +218,7 @@ class FoodDefPanel(portion: PortionSizeResolver, foods: MutableFoods, foodGroups
 
   def snapshot = new Food(UUID.randomUUID(), codeText.getText(), descText.getText(), groupCode.getSelectedItem().asInstanceOf[FoodGroup].id, 
       InheritableAttributes(attrPanel.readyMealAttr, attrPanel.sameAsBeforeAttr, attrPanel.reasonableAmountAttr ),
-      FoodLocal(Some(UUID.randomUUID()), Some(descText.getText()), nutrientCodeSnapshot, portionSizePanel.portionSizes.map(_.portionSizeMethod)))
+      FoodLocal(Some(UUID.randomUUID()), Some(descText.getText()), false, nutrientCodeSnapshot, portionSizePanel.portionSizes.map(_.portionSizeMethod)))
 
   def changesMade() = {
     changed = true

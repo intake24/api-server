@@ -29,7 +29,7 @@ object Queries {
   
   val foodsLocalInsert = """INSERT INTO foods_local VALUES({food_code}, {locale_id}, {local_description}, {do_not_use}, {version}::uuid)"""
   
-  val foodsLocalUpdate = """UPDATE foods_local SET version = {new_version}::uuid, local_description = {local_description} WHERE food_code = {food_code} AND locale_id = {locale_id} AND version = {base_version}::uuid"""
+  val foodsLocalUpdate = """UPDATE foods_local SET version = {new_version}::uuid, local_description = {local_description}, do_not_use = {do_not_use} WHERE food_code = {food_code} AND locale_id = {locale_id} AND version = {base_version}::uuid"""
   
   val foodsLocalDelete = """DELETE FROM foods_local WHERE food_code={food_code} AND locale_id={locale_id}"""
   

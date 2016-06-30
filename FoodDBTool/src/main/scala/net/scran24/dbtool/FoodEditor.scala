@@ -92,9 +92,9 @@ class FoodEditor(foods: Seq[Food], foodGroups: Seq[FoodGroup], categories: Seq[C
   }
   
   def newFood = addNewFood(Food(UUID.randomUUID(), mutableFoods.tempcode, "New food", 0, InheritableAttributes(None, None, None), 
-      FoodLocal(Some(UUID.randomUUID()), Some("New food"), Map("NDNS" -> "-1"), Seq())))
+      FoodLocal(Some(UUID.randomUUID()), Some("New food"), false, Map("NDNS" -> "-1"), Seq())))
   def cloneFood(source: Food) = addNewFood(Food(UUID.randomUUID(), mutableFoods.tempcode, "Copy of " + source.englishDescription, source.groupCode, source.attributes,
-      FoodLocal(Some(UUID.randomUUID()), Some("Copy of " + source.localData.localDescription), source.localData.nutrientTableCodes, source.localData.portionSize)))
+      FoodLocal(Some(UUID.randomUUID()), Some("Copy of " + source.localData.localDescription), false, source.localData.nutrientTableCodes, source.localData.portionSize)))
 
   def newCategory = {
     val tempCategory = CategoryV2(UUID.randomUUID(), mutableCategories.tempcode, "New category", Seq(), Seq(), false, InheritableAttributes(None, None, None), Seq())

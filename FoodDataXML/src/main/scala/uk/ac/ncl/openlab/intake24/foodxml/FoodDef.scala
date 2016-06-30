@@ -118,6 +118,6 @@ object FoodDef {
         case _ => parseNutrientTableCodes(fnode)
       }
 
-      Food(UUID.randomUUID(), code, desc, groupCode, attribs, FoodLocal(Some(UUID.randomUUID()), Some(desc), nutrientTables , psm))
+      Food(UUID.randomUUID(), code, desc, groupCode, attribs, FoodLocal(Some(UUID.randomUUID()), Some(desc), false, nutrientTables , psm))
     })
 }
