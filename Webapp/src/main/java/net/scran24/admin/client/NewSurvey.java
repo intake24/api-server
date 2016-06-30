@@ -68,8 +68,11 @@ public class NewSurvey extends Composite {
         localeBox.setMultipleSelect(false);
         
         localeBox.addItem("English (UK)", "en_GB");
+        localeBox.addItem("English (New Zealand)", "en_NZ");
+        localeBox.addItem("Portuguese (Portugal)", "pt_PT");
+        localeBox.addItem("Danish (Denmark)", "da_DK");
         localeBox.addItem("Arabic (UAE)", "ar_AE");
-        localeBox.addItem("Russian", "ru_RU");
+        
 		
 		for (SurveySchemeReference s: SurveySchemes.allSchemes)
 			schemeBox.addItem(s.description(), s.id());

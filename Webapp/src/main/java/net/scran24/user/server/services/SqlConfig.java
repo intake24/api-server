@@ -46,6 +46,8 @@ import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex;
 import uk.ac.ncl.openlab.intake24.services.foodindex.Splitter;
 import uk.ac.ncl.openlab.intake24.services.foodindex.english.FoodIndexImpl_en_GB;
 import uk.ac.ncl.openlab.intake24.services.foodindex.english.SplitterImpl_en_GB;
+import uk.ac.ncl.openlab.intake24.services.foodindex.portuguese.FoodIndexImpl_pt_PT;
+import uk.ac.ncl.openlab.intake24.services.foodindex.portuguese.SplitterImpl_pt_PT;
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService;
 
 import com.google.inject.AbstractModule;
@@ -75,12 +77,12 @@ public class SqlConfig extends AbstractModule {
 			}
 		}, Duration.create(60, TimeUnit.MINUTES), Duration.create(60, TimeUnit.MINUTES), "English"));
 
-		result.put("ar_AE", new AutoReloadIndex(new AbstractFunction0<AbstractFoodIndex>() {
+		result.put("pt_PT", new AutoReloadIndex(new AbstractFunction0<AbstractFoodIndex>() {
 			@Override
 			public AbstractFoodIndex apply() {
-				return new FoodIndexImpl_en_GB(foodDataService);
+				return new FoodIndexImpl_pt_PT(foodDataService);
 			}
-		}, Duration.create(30, TimeUnit.MINUTES), Duration.create(60, TimeUnit.MINUTES), "Arabic"));
+		}, Duration.create(30, TimeUnit.MINUTES), Duration.create(60, TimeUnit.MINUTES), "Portuguese"));
 
 		return result;
 	}
@@ -92,6 +94,7 @@ public class SqlConfig extends AbstractModule {
 
 		Map<String, Splitter> result = new HashMap<String, Splitter>();
 		result.put("en_GB", new SplitterImpl_en_GB(foodDataService));
+		result.put("pt_PT", new SplitterImpl_pt_PT(foodDataService));
 		return result;
 	}
 

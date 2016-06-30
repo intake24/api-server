@@ -88,7 +88,7 @@ public class FoodLookupPrompt implements Prompt<Pair<FoodEntry, Meal>, MealOpera
 	private final Meal meal;
 	private final RecipeManager recipeManager;
 
-	private final String currentLocale = "en_GB"; // LocaleInfo.getCurrentLocale().getLocaleName();
+	private final String currentLocale = LocaleInfo.getCurrentLocale().getLocaleName();
 
 	public FoodLookupPrompt(final FoodEntry food, final Meal meal, RecipeManager recipeManager) {
 		this.food = food;

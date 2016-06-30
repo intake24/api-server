@@ -271,11 +271,18 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 		crashIfDebugOptionSet("crash-on-split");
 
 		ArrayList<String> result = new ArrayList<String>();
-
-		Iterator<String> iter = splitters.get(locale).split(description).iterator();
-
-		while (iter.hasNext())
-			result.add(iter.next());
+		
+		Splitter splitter = splitters.get(locale);
+		
+		if (splitter != null) {		
+			Iterator<String> iter = splitter.split(description).iterator();
+			
+			while (iter.hasNext())
+				result.add(iter.next());
+		} else {
+			log.warn("Food description splitter not registered for locale " + locale + ", skipping split check.");
+			result.add(description);
+		}
 
 		return result;
 	}
