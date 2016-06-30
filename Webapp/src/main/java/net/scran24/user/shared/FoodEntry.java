@@ -37,11 +37,16 @@ import org.workcraft.gwt.shared.client.Either;
 import org.workcraft.gwt.shared.client.Function1;
 import org.workcraft.gwt.shared.client.Option;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public abstract class FoodEntry {
 	public static final String FLAG_READY_MEAL = "ready-meal";
 
+	@JsonProperty
 	public final FoodLink link;
+	@JsonProperty
 	public final PSet<String> flags;
+	@JsonProperty
 	public final PMap<String, String> customData;
 
 	public interface Visitor<T> {
@@ -55,7 +60,7 @@ public abstract class FoodEntry {
 
 		public T visitMissing(MissingFood food);
 	}
-
+	
 	public FoodEntry(FoodLink link, PSet<String> flags, PMap<String, String> customData) {
 		this.link = link;
 		this.flags = flags;

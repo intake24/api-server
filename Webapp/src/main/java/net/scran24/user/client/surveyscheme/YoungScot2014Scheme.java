@@ -33,8 +33,8 @@ import static org.workcraft.gwt.shared.client.CollectionUtils.map;
 import java.util.Map;
 
 import net.scran24.common.client.CurrentUser;
+import net.scran24.datastore.shared.SurveySchemeReference;
 import net.scran24.datastore.shared.Time;
-import net.scran24.user.client.ProcessMilkInHotDrinks;
 import net.scran24.user.client.SurveyInterfaceManager;
 import net.scran24.user.client.survey.CompoundFoodTemplateManager;
 import net.scran24.user.client.survey.SurveyMessages;
@@ -49,8 +49,8 @@ import net.scran24.user.client.survey.flat.PromptUtil;
 import net.scran24.user.client.survey.flat.RuleBasedPromptManager;
 import net.scran24.user.client.survey.flat.Rules;
 import net.scran24.user.client.survey.flat.Selection;
+import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.flat.SelectionRule;
-import net.scran24.user.client.survey.flat.SelectionType;
 import net.scran24.user.client.survey.flat.Survey;
 import net.scran24.user.client.survey.flat.SurveyOperation;
 import net.scran24.user.client.survey.flat.rules.AskForMealTime;
@@ -97,7 +97,7 @@ public class YoungScot2014Scheme extends BasicScheme {
 	final private static String FLAG_ENABLE_FINAL_RUN = "enable-final-run";
 	
 	final private static SurveyMessages surveyMessages = SurveyMessages.Util.getInstance();
-	
+
 	final private PVector<String> mealLocationOptions =
 			TreePVector.<String>empty()
 			.plus("Home")
@@ -199,7 +199,7 @@ public class YoungScot2014Scheme extends BasicScheme {
 	private Rules rules(PortionSizeScriptManager scriptManager, CompoundFoodTemplateManager templateManager) {
 		PromptRule<Meal, MealOperation> showMealLocationPrompt = new PromptRule<Meal, MealOperation>() {
 			@Override
-			public Option<Prompt<Meal, MealOperation>> apply(Meal state, SelectionType selectionType, PSet<String> surveyFlags) {
+			public Option<Prompt<Meal, MealOperation>> apply(Meal state, SelectionMode selectionType, PSet<String> surveyFlags) {
 				if (state.customData.containsKey("mealLocation") || !state.encodingComplete() || !surveyFlags.contains(FLAG_ENABLE_FINAL_RUN))
 					return Option.none();
 				else
@@ -220,7 +220,7 @@ public class YoungScot2014Scheme extends BasicScheme {
 		
 		PromptRule<Meal, MealOperation> showShopPricePrompt = new PromptRule<Meal, MealOperation>() {
 			@Override
-			public Option<Prompt<Meal, MealOperation>> apply(Meal state, SelectionType selectionType, PSet<String> surveyFlags) {
+			public Option<Prompt<Meal, MealOperation>> apply(Meal state, SelectionMode selectionType, PSet<String> surveyFlags) {
 				if (!foodSourcesComplete(state) || !hasShopItems(state) || state.customData.containsKey("shopSpending"))
 					return Option.none();
 				else
@@ -241,7 +241,7 @@ public class YoungScot2014Scheme extends BasicScheme {
 		
 		PromptRule<Meal, MealOperation> showSchoolPricePrompt = new PromptRule<Meal, MealOperation>() {
 			@Override
-			public Option<Prompt<Meal, MealOperation>> apply(Meal state, SelectionType selectionType, PSet<String> surveyFlags) {
+			public Option<Prompt<Meal, MealOperation>> apply(Meal state, SelectionMode selectionType, PSet<String> surveyFlags) {
 				if (!foodSourcesComplete(state) || !hasSchoolItems(state) || state.customData.containsKey("schoolSpending"))
 					return Option.none();
 				else
@@ -262,7 +262,7 @@ public class YoungScot2014Scheme extends BasicScheme {
 		
 		PromptRule<Meal, MealOperation> showMealSourcePrompt = new PromptRule<Meal, MealOperation>() {
 			@Override
-			public Option<Prompt<Meal, MealOperation>> apply(Meal state, SelectionType selectionType, PSet<String> surveyFlags) {
+			public Option<Prompt<Meal, MealOperation>> apply(Meal state, SelectionMode selectionType, PSet<String> surveyFlags) {
 				if (state.customData.containsKey("mealSource") || !state.encodingComplete() || !surveyFlags.contains(FLAG_ENABLE_FINAL_RUN))
 					return Option.none();
 				else
@@ -298,7 +298,7 @@ public class YoungScot2014Scheme extends BasicScheme {
 		
 		PromptRule<Meal, MealOperation> showFoodSourcePrompt = new PromptRule<Meal, MealOperation>() {
 			@Override
-			public Option<Prompt<Meal, MealOperation>> apply(Meal state, SelectionType selectionType, PSet<String> surveyFlags) {
+			public Option<Prompt<Meal, MealOperation>> apply(Meal state, SelectionMode selectionType, PSet<String> surveyFlags) {
 				if (!state.customData.containsKey("mealSource") || !state.encodingComplete() || foodSourcesComplete(state))
 					return Option.none();
 					else 
@@ -308,7 +308,7 @@ public class YoungScot2014Scheme extends BasicScheme {
 		
 		PromptRule<Survey, SurveyOperation> confirmCompletion = new PromptRule<Survey, SurveyOperation>() {
 			@Override
-			public Option<Prompt<Survey, SurveyOperation>> apply(Survey state, SelectionType selectionType, PSet<String> surveyFlags) {
+			public Option<Prompt<Survey, SurveyOperation>> apply(Survey state, SelectionMode selectionType, PSet<String> surveyFlags) {
 				if (state.completionConfirmed() || !state.flags.contains(FLAG_ENABLE_FINAL_RUN))
 					return Option.none();
 				else
@@ -342,7 +342,7 @@ public class YoungScot2014Scheme extends BasicScheme {
 				// extended food propmts
 				TreePVector.<WithPriority<PromptRule<Pair<FoodEntry, Meal>, MealOperation>>> empty()
 				.plus(AskToLookupFood.withPriority(2, recipeManager))
-				.plus(ShowSameAsBeforePrompt.withPriority(2, scriptManager, templateManager))
+				.plus(ShowSameAsBeforePrompt.withPriority(2, getSchemeId(), getDataVersion(), scriptManager, templateManager))
 				.plus(ShowCompoundFoodPrompt.withPriority(0))
 				.plus(ShowAssociatedFoodPrompt.withPriority(0))
 				
@@ -394,7 +394,7 @@ public class YoungScot2014Scheme extends BasicScheme {
 		} else if (!state.completionConfirmed()) {
 
 			if (state.flags.contains(Survey.FLAG_NO_MORE_PROMPTS) && !state.flags.contains(FLAG_ENABLE_FINAL_RUN))
-				stateManager.updateState(state.clearFlag(Survey.FLAG_NO_MORE_PROMPTS).withFlag(FLAG_ENABLE_FINAL_RUN).withSelection(new Selection.SelectedMeal(0, SelectionType.AUTO_SELECTION)), false);
+				stateManager.updateState(state.clearFlag(Survey.FLAG_NO_MORE_PROMPTS).withFlag(FLAG_ENABLE_FINAL_RUN).withSelection(new Selection.SelectedMeal(0, SelectionMode.AUTO_SELECTION)), false);
 
 			if (cachedSurveyPage == null) {
 				RuleBasedPromptManager promptManager = new RuleBasedPromptManager(rules(defaultScriptManager, defaultTemplateManager));
@@ -426,5 +426,15 @@ public class YoungScot2014Scheme extends BasicScheme {
 		else {
 			interfaceManager.show(new FlatFinalPage(surveyMessages.finalPage_text(), postProcess(state, basicPostProcess), log.log));
 		}
+	}
+
+	@Override
+	public String getDataVersion() {
+		return "1";
+	}
+
+	@Override
+	public String getSchemeId() {
+		return SurveySchemeReference.YoungScot2014Scheme.ID;
 	}
 }

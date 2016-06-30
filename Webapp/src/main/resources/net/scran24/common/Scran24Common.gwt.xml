@@ -34,6 +34,16 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 	<inherits name="com.google.gwt.i18n.I18N" />
 
+	<inherits name="org.fusesource.restygwt.RestyGWT"/>
+
+    <extend-configuration-property 
+        name="org.fusesource.restygwt.restyjsonserializergenerator"
+        value="net.scran24.common.restygwt.OptionRestySerializerGenerator"/>
+        
+    <extend-configuration-property 
+        name="org.fusesource.restygwt.restyjsonserializergenerator"
+        value="net.scran24.common.restygwt.EitherRestySerializerGenerator"/>
+
 	<extend-property name="locale" values="en_GB" />
 	<!--   <extend-property name="locale" values="ar_AE" />-->
 

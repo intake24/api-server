@@ -14,7 +14,7 @@ import static org.workcraft.gwt.shared.client.CollectionUtils.forall;
 import net.scran24.user.client.survey.flat.Prompt;
 import net.scran24.user.client.survey.flat.PromptRule;
 import net.scran24.user.client.survey.flat.PromptUtil;
-import net.scran24.user.client.survey.flat.SelectionType;
+import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.prompts.MealOperation;
 import net.scran24.user.client.survey.prompts.messages.PromptMessages;
 import net.scran24.user.client.survey.prompts.simple.FractionalQuantityPrompt;
@@ -41,7 +41,7 @@ public class ShowHomeRecipeServingsPrompt implements PromptRule<Pair<FoodEntry, 
 
 	@Override
 	public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> apply(final Pair<FoodEntry, Meal> data,
-			SelectionType selectionType, final PSet<String> surveyFlags) {
+			SelectionMode selectionType, final PSet<String> surveyFlags) {
 		return data.left.accept(new FoodEntry.Visitor<Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>>>() {
 
 			private Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> getPromptIfApplicable(final FoodEntry food) {

@@ -79,7 +79,7 @@ public class IntakeSurvey implements SurveyStage<Survey> {
 	private Callback1<Function1<Survey, Survey>> updateIntermediateState;
 
 	private SimpleSurveyStageInterface cachedInterface = null;
-
+	
 	public void showPrompt(Prompt<Survey, SurveyOperation> prompt) {
 		interfaceManager.applyInterface(prompt, applyOperation, updateIntermediateState);
 	}
@@ -88,23 +88,24 @@ public class IntakeSurvey implements SurveyStage<Survey> {
 		return selection.accept(new Visitor<Selection>() {
 			@Override
 			public Selection visitMeal(SelectedMeal meal) {
-				return new Selection.SelectedMeal(meal.mealIndex, SelectionType.AUTO_SELECTION);
+				return new Selection.SelectedMeal(meal.mealIndex, SelectionMode.AUTO_SELECTION);
 			}
 
 			@Override
 			public Selection visitFood(SelectedFood food) {
-				return new Selection.SelectedFood(food.mealIndex, food.foodIndex, SelectionType.AUTO_SELECTION);
+				return new Selection.SelectedFood(food.mealIndex, food.foodIndex, SelectionMode.AUTO_SELECTION);
 			}
 
 			@Override
 			public Selection visitNothing(EmptySelection selection) {
-				return new Selection.EmptySelection(SelectionType.AUTO_SELECTION);
+				return new Selection.EmptySelection(SelectionMode.AUTO_SELECTION);
 			}
 		});
 	}
 
 	public void showNextPrompt() {
 		Survey currentState = stateManager.getCurrentState();
+		
 		Option<Prompt<Survey, SurveyOperation>> nextPrompt = promptManager.nextPromptForSelection(currentState);
 
 		final Survey stateWithForcedAutoSelection = currentState.withSelection(convertToAuto(currentState.selectedElement));
@@ -210,7 +211,7 @@ public class IntakeSurvey implements SurveyStage<Survey> {
 								showPrompt(new DeleteMealPrompt(mealIndex, stateManager.getCurrentState().meals.get(mealIndex)));
 							} else {
 								Survey state = stateManager.getCurrentState();
-								stateManager.updateState(state.minusMeal(mealIndex).withSelection(new Selection.EmptySelection(SelectionType.AUTO_SELECTION)), true);
+								stateManager.updateState(state.minusMeal(mealIndex).withSelection(new Selection.EmptySelection(SelectionMode.AUTO_SELECTION)), true);
 								showNextPrompt();
 							}
 						}

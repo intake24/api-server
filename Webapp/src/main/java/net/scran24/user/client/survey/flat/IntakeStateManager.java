@@ -15,9 +15,7 @@ import org.pcollections.client.TreePVector;
 import org.workcraft.gwt.shared.client.Function2;
 
 public class IntakeStateManager {
-	private final PVector<Function2<Survey, Survey, Survey>> stateTransitionFilters = TreePVector.<Function2<Survey, Survey, Survey>> empty()
-			.plus(new HandleDeleted()).plus(new SaveSameAsBefore());
-
+	private final PVector<Function2<Survey, Survey, Survey>> stateTransitionFilters;
 	private final StateManager baseManager;
 	private final NavigationPanel navPanel;
 
@@ -43,5 +41,7 @@ public class IntakeStateManager {
 	public IntakeStateManager(StateManager baseManager, NavigationPanel navPanel) {
 		this.baseManager = baseManager;
 		this.navPanel = navPanel;
+		this.stateTransitionFilters = TreePVector.<Function2<Survey, Survey, Survey>> empty()
+					.plus(new HandleDeleted()).plus(new SaveSameAsBefore(baseManager.scheme_id, baseManager.version_id));
 	}
 }

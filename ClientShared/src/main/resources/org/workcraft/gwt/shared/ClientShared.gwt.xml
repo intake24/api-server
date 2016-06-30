@@ -13,6 +13,7 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 <module>
 	<inherits name="com.google.gwt.user.User" />
 	<inherits name='org.pcollections.pcollections'/>
+
 	<source path="client"/>
 	<source path="shared"/>
 </module>

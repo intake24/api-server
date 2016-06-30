@@ -16,7 +16,7 @@ import org.workcraft.gwt.shared.client.Option;
 import net.scran24.user.client.survey.flat.FoodOperation;
 import net.scran24.user.client.survey.flat.Prompt;
 import net.scran24.user.client.survey.flat.PromptRule;
-import net.scran24.user.client.survey.flat.SelectionType;
+import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.flat.Survey;
 import net.scran24.user.client.survey.prompts.FoodCompletePrompt;
 import net.scran24.user.shared.CompoundFood;
@@ -27,13 +27,13 @@ import net.scran24.user.shared.WithPriority;
 
 public class InformFoodComplete implements PromptRule<FoodEntry, FoodOperation> {
 	@Override
-	public Option<Prompt<FoodEntry, FoodOperation>> apply(final FoodEntry state, SelectionType selectionType, PSet<String> surveyFlags) {
+	public Option<Prompt<FoodEntry, FoodOperation>> apply(final FoodEntry state, SelectionMode selectionType, PSet<String> surveyFlags) {
 		if (
-				(!surveyFlags.contains(Survey.FLAG_FREE_ENTRY_COMPLETE) && selectionType == SelectionType.MANUAL_SELECTION) ||
-				(surveyFlags.contains(Survey.FLAG_FREE_ENTRY_COMPLETE) && state.isEncoded() && selectionType == SelectionType.MANUAL_SELECTION) ||
-				(surveyFlags.contains(Survey.FLAG_FREE_ENTRY_COMPLETE) && state.isTemplate() && ((TemplateFood)state).isTemplateComplete() && selectionType == SelectionType.MANUAL_SELECTION) ||
-				(surveyFlags.contains(Survey.FLAG_FREE_ENTRY_COMPLETE) && state.isCompound() && ((CompoundFood)state).flags.contains(CompoundFood.FLAG_INGREDIENTS_COMPLETE) && selectionType == SelectionType.MANUAL_SELECTION) ||
-				(surveyFlags.contains(Survey.FLAG_FREE_ENTRY_COMPLETE) && state.isMissing() && ((MissingFood)state).isDescriptionComplete() && selectionType == SelectionType.MANUAL_SELECTION)
+				(!surveyFlags.contains(Survey.FLAG_FREE_ENTRY_COMPLETE) && selectionType == SelectionMode.MANUAL_SELECTION) ||
+				(surveyFlags.contains(Survey.FLAG_FREE_ENTRY_COMPLETE) && state.isEncoded() && selectionType == SelectionMode.MANUAL_SELECTION) ||
+				(surveyFlags.contains(Survey.FLAG_FREE_ENTRY_COMPLETE) && state.isTemplate() && ((TemplateFood)state).isTemplateComplete() && selectionType == SelectionMode.MANUAL_SELECTION) ||
+				(surveyFlags.contains(Survey.FLAG_FREE_ENTRY_COMPLETE) && state.isCompound() && ((CompoundFood)state).flags.contains(CompoundFood.FLAG_INGREDIENTS_COMPLETE) && selectionType == SelectionMode.MANUAL_SELECTION) ||
+				(surveyFlags.contains(Survey.FLAG_FREE_ENTRY_COMPLETE) && state.isMissing() && ((MissingFood)state).isDescriptionComplete() && selectionType == SelectionMode.MANUAL_SELECTION)
 			)
 			return new Option.Some<Prompt<FoodEntry, FoodOperation>>(new FoodCompletePrompt(state));
 		else

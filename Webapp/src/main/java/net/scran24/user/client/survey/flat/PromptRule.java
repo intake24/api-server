@@ -27,5 +27,5 @@ public interface PromptRule<T, Op> {
 	 * Some(prompt), an instance of a prompt if this rule is applicable
 	 * or None if this rule is not currently applicable. 
 	 */
-	Option<Prompt<T, Op>> apply (final T state, SelectionType selectionType, PSet<String> surveyFlags);
+	Option<Prompt<T, Op>> apply (final T state, SelectionMode selectionType, PSet<String> surveyFlags);
 }

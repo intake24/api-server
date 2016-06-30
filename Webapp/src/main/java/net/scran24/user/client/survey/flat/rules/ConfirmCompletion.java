@@ -15,7 +15,7 @@ import org.workcraft.gwt.shared.client.Option;
 
 import net.scran24.user.client.survey.flat.Prompt;
 import net.scran24.user.client.survey.flat.PromptRule;
-import net.scran24.user.client.survey.flat.SelectionType;
+import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.flat.Survey;
 import net.scran24.user.client.survey.flat.SurveyOperation;
 import net.scran24.user.client.survey.prompts.ConfirmCompletionPrompt;
@@ -23,7 +23,7 @@ import net.scran24.user.shared.WithPriority;
 
 public class ConfirmCompletion implements PromptRule<Survey, SurveyOperation> {
 	@Override
-	public Option<Prompt<Survey, SurveyOperation>> apply(Survey state, SelectionType selectionType, PSet<String> surveyFlags) {
+	public Option<Prompt<Survey, SurveyOperation>> apply(Survey state, SelectionMode selectionType, PSet<String> surveyFlags) {
 		if (state.completionConfirmed())
 			return Option.none();
 		else

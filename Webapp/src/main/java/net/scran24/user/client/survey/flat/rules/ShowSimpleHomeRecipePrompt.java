@@ -13,7 +13,7 @@ package net.scran24.user.client.survey.flat.rules;
 import net.scran24.user.client.survey.flat.FoodOperation;
 import net.scran24.user.client.survey.flat.Prompt;
 import net.scran24.user.client.survey.flat.PromptRule;
-import net.scran24.user.client.survey.flat.SelectionType;
+import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.flat.Survey;
 import net.scran24.user.client.survey.prompts.SimpleHomeRecipePrompt;
 import net.scran24.user.shared.FoodEntry;
@@ -25,7 +25,7 @@ import org.workcraft.gwt.shared.client.Option;
 
 public class ShowSimpleHomeRecipePrompt implements PromptRule<FoodEntry, FoodOperation> {
 	@Override
-	public Option<Prompt<FoodEntry, FoodOperation>> apply(FoodEntry data, SelectionType selectionType, PSet<String> surveyFlags) {
+	public Option<Prompt<FoodEntry, FoodOperation>> apply(FoodEntry data, SelectionMode selectionType, PSet<String> surveyFlags) {
 		if (!surveyFlags.contains(Survey.FLAG_FREE_ENTRY_COMPLETE))
 			return new Option.None<Prompt<FoodEntry, FoodOperation>>();
 		else if (data.isMissing() && data.flags.contains(MissingFood.HOME_RECIPE_FLAG) && !((MissingFood)data).isDescriptionComplete())

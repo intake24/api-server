@@ -13,7 +13,7 @@ package net.scran24.user.client.survey.flat.rules;
 import net.scran24.user.client.survey.RecipeManager;
 import net.scran24.user.client.survey.flat.Prompt;
 import net.scran24.user.client.survey.flat.PromptRule;
-import net.scran24.user.client.survey.flat.SelectionType;
+import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.flat.Survey;
 import net.scran24.user.client.survey.prompts.FoodLookupPrompt;
 import net.scran24.user.client.survey.prompts.MealOperation;
@@ -34,7 +34,7 @@ public class AskToLookupFood implements PromptRule<Pair<FoodEntry, Meal>, MealOp
 	}
 
 	@Override
-	public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> apply(Pair<FoodEntry, Meal> data, SelectionType selectionType, PSet<String> surveyFlags) {
+	public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> apply(Pair<FoodEntry, Meal> data, SelectionMode selectionType, PSet<String> surveyFlags) {
 		if (!surveyFlags.contains(Survey.FLAG_FREE_ENTRY_COMPLETE) || data.left.isTemplate() || data.left.isCompound() || data.left.isMissing())
 			return Option.none();
 		else if (!data.left.isEncoded())

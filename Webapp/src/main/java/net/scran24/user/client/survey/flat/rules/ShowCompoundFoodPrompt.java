@@ -12,7 +12,7 @@ package net.scran24.user.client.survey.flat.rules;
 
 import net.scran24.user.client.survey.flat.Prompt;
 import net.scran24.user.client.survey.flat.PromptRule;
-import net.scran24.user.client.survey.flat.SelectionType;
+import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.flat.Survey;
 import net.scran24.user.client.survey.prompts.CompoundFoodPrompt;
 import net.scran24.user.client.survey.prompts.MealOperation;
@@ -31,7 +31,7 @@ import org.workcraft.gwt.shared.client.Pair;
 
 public class ShowCompoundFoodPrompt implements PromptRule<Pair<FoodEntry, Meal>, MealOperation> {
 	@Override
-	public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> apply(final Pair<FoodEntry, Meal> pair, SelectionType selectionType, PSet<String> surveyFlags) {
+	public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> apply(final Pair<FoodEntry, Meal> pair, SelectionMode selectionType, PSet<String> surveyFlags) {
 		if (!pair.left.isTemplate() || !surveyFlags.contains(Survey.FLAG_FREE_ENTRY_COMPLETE))
 			return Option.none();
 		else {

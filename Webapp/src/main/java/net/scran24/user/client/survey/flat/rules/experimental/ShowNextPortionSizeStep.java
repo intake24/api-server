@@ -16,7 +16,7 @@ import net.scran24.user.client.survey.flat.FoodOperation;
 import net.scran24.user.client.survey.flat.Prompt;
 import net.scran24.user.client.survey.flat.PromptRule;
 import net.scran24.user.client.survey.flat.PromptUtil;
-import net.scran24.user.client.survey.flat.SelectionType;
+import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.flat.SimplePrompt;
 import net.scran24.user.client.survey.flat.Survey;
 import net.scran24.user.client.survey.portionsize.experimental.PortionSize;
@@ -54,7 +54,7 @@ public class ShowNextPortionSizeStep implements PromptRule<FoodEntry, FoodOperat
 	}
 
 	@Override
-	public Option<Prompt<FoodEntry, FoodOperation>> apply(FoodEntry data, SelectionType selectionType, PSet<String> surveyFlags) {
+	public Option<Prompt<FoodEntry, FoodOperation>> apply(FoodEntry data, SelectionMode selectionType, PSet<String> surveyFlags) {
 		// wait until all meals are marked as complete ("free-entry pass") before
 		// showing any portion size dialogues
 		if (!surveyFlags.contains(Survey.FLAG_FREE_ENTRY_COMPLETE) || data.isTemplate())

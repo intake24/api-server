@@ -20,7 +20,7 @@ This file is based on Intake24 v1.0.
 
 © Crown copyright, 2012, 2013, 2014
 
-Licensed under the Open Government Licence 3.0: 
+Licensed under the Open Government Licence 3.0:
 
 http://www.nationalarchives.gov.uk/doc/open-government-licence/
 -->
@@ -50,15 +50,15 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
     <module>DataStoreTools</module>
     <module>DataStoreMongo</module>
     <module>DataStoreSQL</module>
- 	<module>ImageMap</module>
+    <module>ImageMap</module>
     <module>ImageChooser</module>
     <module>PhraseSearch</module>
     <module>FoodLookupService</module>
     <module>FoodDataSQL</module>
-    <module>FoodDataXML</module>    
+    <module>FoodDataXML</module>
     <module>NutrientsNDNS</module>
+    <module>resty-gwt</module>
     <module>Webapp</module>
   </modules>
 
 </project>
-

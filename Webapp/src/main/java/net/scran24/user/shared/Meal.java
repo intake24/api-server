@@ -48,7 +48,6 @@ import org.workcraft.gwt.shared.client.Function1;
 import org.workcraft.gwt.shared.client.Option;
 
 import com.google.gwt.safehtml.shared.SafeHtmlUtils;
-import com.google.gwt.user.client.Window;
 
 public class Meal {
 	
@@ -178,7 +177,7 @@ public class Meal {
 			}
 		});
 	}
-
+	
 	public Meal(String name, PVector<FoodEntry> foods, Option<Time> time, PSet<String> flags, PMap<String, String> customData) {
 		this.name = name;
 		this.foods = foods;

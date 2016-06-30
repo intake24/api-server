@@ -23,7 +23,7 @@ import net.scran24.user.client.ShepherdTour;
 import net.scran24.user.client.survey.SurveyStageInterface;
 import net.scran24.user.client.survey.flat.Prompt;
 import net.scran24.user.client.survey.flat.Selection;
-import net.scran24.user.client.survey.flat.SelectionType;
+import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.flat.Survey;
 import net.scran24.user.client.survey.flat.SurveyOperation;
 import net.scran24.user.client.survey.prompts.messages.HelpMessages;
@@ -99,7 +99,7 @@ public class AddMealPrompt implements Prompt<Survey, SurveyOperation> {
 							@Override
 							public Survey apply(Survey argument) {
 								return argument.plusMeal(Meal.empty(text.getText()))
-												.withSelection(new Selection.SelectedMeal(argument.meals.size(), SelectionType.AUTO_SELECTION));
+												.withSelection(new Selection.SelectedMeal(argument.meals.size(), SelectionMode.AUTO_SELECTION));
 							}
 						}));
 				}
@@ -141,7 +141,7 @@ public class AddMealPrompt implements Prompt<Survey, SurveyOperation> {
 					@Override
 					public Survey apply(Survey argument) {
 						return argument.plusMeal(Meal.empty(text.getText()))
-										.withSelection(new Selection.SelectedMeal(argument.meals.size(), SelectionType.AUTO_SELECTION));
+										.withSelection(new Selection.SelectedMeal(argument.meals.size(), SelectionMode.AUTO_SELECTION));
 					}
 				}));
 			}

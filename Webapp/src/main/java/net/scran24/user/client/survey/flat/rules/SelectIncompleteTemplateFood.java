@@ -18,7 +18,7 @@ import net.scran24.user.client.survey.flat.Selection;
 import net.scran24.user.client.survey.flat.Selection.SelectedFood;
 import net.scran24.user.client.survey.flat.SelectionRule;
 import net.scran24.user.client.survey.flat.SelectionRuleUtil;
-import net.scran24.user.client.survey.flat.SelectionType;
+import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.flat.Survey;
 import net.scran24.user.shared.CompoundFood;
 import net.scran24.user.shared.TemplateFood;
@@ -80,7 +80,7 @@ public class SelectIncompleteTemplateFood implements SelectionRule {
 		if (selectedMealIndex != -1) {
 			PVector<Integer> incomplete = incompleteTemplateFoods(state.meals.get(selectedMealIndex).foods);
 			if (!incomplete.isEmpty())
-				return Option.<Selection> some(new SelectedFood(selectedMealIndex, incomplete.get(0), SelectionType.AUTO_SELECTION));
+				return Option.<Selection> some(new SelectedFood(selectedMealIndex, incomplete.get(0), SelectionMode.AUTO_SELECTION));
 		}
 
 		PVector<PVector<Integer>> incomplete = map(state.mealsSortedByTime, new Function1<WithIndex<Meal>, PVector<Integer>>() {
@@ -101,7 +101,7 @@ public class SelectIncompleteTemplateFood implements SelectionRule {
 			return new Option.None<Selection>();
 		else
 			return new Option.Some<Selection>(new Selection.SelectedFood(state.mealsSortedByTime.get(index).index, incomplete.get(index).get(0),
-					SelectionType.AUTO_SELECTION));
+					SelectionMode.AUTO_SELECTION));
 	}
 
 	@Override

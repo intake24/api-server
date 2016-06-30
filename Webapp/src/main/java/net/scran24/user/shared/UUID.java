@@ -10,10 +10,11 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package net.scran24.user.shared;
 
+
 public class UUID {
 	public final String value;
 	
-	private UUID(String value) {
+	public UUID(String value) {
 		this.value = value;
 	}
 	

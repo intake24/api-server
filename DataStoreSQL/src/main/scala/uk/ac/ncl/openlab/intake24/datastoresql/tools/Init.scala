@@ -131,5 +131,5 @@ object Init extends App {
   
   logger.info("Creating the default admin user")
   
-  sqlDataStore.addUser("", SecureUserRecord("admin", "7klnEraBssvRBTnFR5FbIJ/5Qjqgf8w3/7Rs4gBoFBY=", "hUkIQLASWraVS4JDPOr8tA==", "shiro-sha256", Set("superuser"), Set(), Map()))
+  sqlDataStore.addUser("", SecureUserRecord("admin", "7klnEraBssvRBTnFR5FbIJ/5Qjqgf8w3/7Rs4gBoFBY=", "hUkIQLASWraVS4JDPOr8tA==", "shiro-sha256", Set("superuser", "admin"), Set(), Map()))
 }

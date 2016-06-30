@@ -12,7 +12,7 @@ package net.scran24.user.client.survey.flat.rules;
 
 import net.scran24.user.client.survey.flat.Prompt;
 import net.scran24.user.client.survey.flat.PromptRule;
-import net.scran24.user.client.survey.flat.SelectionType;
+import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.prompts.DrinkReminderPrompt;
 import net.scran24.user.client.survey.prompts.MealOperation;
 import net.scran24.user.shared.Meal;
@@ -24,7 +24,7 @@ import org.workcraft.gwt.shared.client.Option;
 public class ShowDrinkReminderPrompt implements PromptRule<Meal, MealOperation> {
 	
 	@Override
-	public Option<Prompt<Meal, MealOperation>> apply(final Meal meal, SelectionType selectionType, PSet<String> surveyFlags) {
+	public Option<Prompt<Meal, MealOperation>> apply(final Meal meal, SelectionMode selectionType, PSet<String> surveyFlags) {
 		if (!meal.encodingComplete() || meal.hasDrinks() || meal.confirmedNoDrinks())
 			return Option.none();
 		else {

@@ -16,7 +16,7 @@ import net.scran24.user.client.survey.flat.FoodOperation;
 import net.scran24.user.client.survey.flat.Prompt;
 import net.scran24.user.client.survey.flat.PromptRule;
 import net.scran24.user.client.survey.flat.PromptUtil;
-import net.scran24.user.client.survey.flat.SelectionType;
+import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.flat.Survey;
 import net.scran24.user.client.survey.prompts.messages.PromptMessages;
 import net.scran24.user.client.survey.prompts.simple.RadioButtonPrompt;
@@ -40,7 +40,7 @@ public class AskIfHomeRecipe implements PromptRule<FoodEntry, FoodOperation> {
 	private final PromptMessages messages = GWT.create(PromptMessages.class);
 	
 	@Override
-	public Option<Prompt<FoodEntry, FoodOperation>> apply(FoodEntry data, SelectionType selectionType, PSet<String> surveyFlags) {
+	public Option<Prompt<FoodEntry, FoodOperation>> apply(FoodEntry data, SelectionMode selectionType, PSet<String> surveyFlags) {
 		if (!surveyFlags.contains(Survey.FLAG_FREE_ENTRY_COMPLETE))
 			return new Option.None<Prompt<FoodEntry, FoodOperation>>();
 		else if (data.isMissing() && !(data.flags.contains(MissingFood.NOT_HOME_RECIPE_FLAG) || data.flags.contains(MissingFood.HOME_RECIPE_FLAG)))

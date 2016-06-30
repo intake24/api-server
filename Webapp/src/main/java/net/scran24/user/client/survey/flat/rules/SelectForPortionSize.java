@@ -20,7 +20,7 @@ import org.workcraft.gwt.shared.client.CollectionUtils.WithIndex;
 
 import net.scran24.user.client.survey.flat.Selection;
 import net.scran24.user.client.survey.flat.SelectionRule;
-import net.scran24.user.client.survey.flat.SelectionType;
+import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.flat.Survey;
 import net.scran24.user.client.survey.flat.Selection.EmptySelection;
 import net.scran24.user.client.survey.flat.Selection.SelectedFood;
@@ -81,7 +81,7 @@ public class SelectForPortionSize implements SelectionRule {
 		if (foodIndex == -1)
 			return new Option.None<Selection>();
 		else
-			return new Option.Some<Selection>(new Selection.SelectedFood(mealIndex, foodIndex, SelectionType.AUTO_SELECTION));
+			return new Option.Some<Selection>(new Selection.SelectedFood(mealIndex, foodIndex, SelectionMode.AUTO_SELECTION));
 	}
 
 	@Override

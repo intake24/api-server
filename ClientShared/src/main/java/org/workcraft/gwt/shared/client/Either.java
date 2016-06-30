@@ -10,6 +10,8 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package org.workcraft.gwt.shared.client;
 
+import java.util.NoSuchElementException;
+
 import com.google.gwt.user.client.rpc.IsSerializable;
 
 public abstract class Either<L, R> {
@@ -23,9 +25,8 @@ public abstract class Either<L, R> {
 		public void visitLeft (L value);
 	}
 
-
 	public static class Right<L, R> extends Either <L, R> implements IsSerializable {
-		R value;
+		public R value;
 		
 		@Deprecated
 		public Right() { }
@@ -52,7 +53,7 @@ public abstract class Either<L, R> {
 	}
 	
 	public static class Left<L, R> extends Either <L, R> implements IsSerializable {
-		L value;
+		public L value;
 		
 		@Deprecated
 		public Left() { }
@@ -95,6 +96,35 @@ public abstract class Either<L, R> {
 		return !isLeft();
 	}
 	
+	public L getLeftOrDie() {
+		return accept (new Visitor<L, R, L>() {
+			@Override
+			public L visitRight(R value) {
+				throw new NoSuchElementException("getLeft on a Right"); 
+			}
+
+			@Override
+			public L visitLeft(L value) {
+				return value;
+			}
+		});		
+	}
+	
+	public R getRightOrDie() {
+		return accept (new Visitor<L, R, R>() {
+			@Override
+			public R visitRight(R value) {
+				return value; 
+			}
+
+			@Override
+			public R visitLeft(L value) {
+				throw new NoSuchElementException("getRight on a Left");
+			}
+		});		
+	}
+	
+	
 	public abstract <T> T accept (Visitor<L, R, T> visitor);
 	public abstract void accept (SideEffectVisitor<L, R> visitor);
 	
@@ -132,5 +162,17 @@ public abstract class Either<L, R> {
 				});
 			}
 		}); 		
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (obj.getClass() != this.getClass())
+			return false;
+		return equalsTo((Either<L,R>)obj);	
 	}
 }

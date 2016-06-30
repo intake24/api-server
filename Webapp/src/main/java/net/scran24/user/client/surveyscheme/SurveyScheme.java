@@ -32,6 +32,8 @@ import com.google.gwt.user.client.ui.Anchor;
 
 
 public interface SurveyScheme {
+	public String getSchemeId();
+	public String getDataVersion();
 	public void showNextPage();
 	public List<Anchor> navBarLinks();
 }

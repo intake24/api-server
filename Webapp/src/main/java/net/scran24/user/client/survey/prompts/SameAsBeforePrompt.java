@@ -16,6 +16,7 @@ import net.scran24.user.client.ShepherdTour;
 import net.scran24.user.client.survey.SurveyStageInterface;
 import net.scran24.user.client.survey.flat.Prompt;
 import net.scran24.user.client.survey.flat.PromptUtil;
+import net.scran24.user.client.survey.flat.SameAsBefore;
 import net.scran24.user.client.survey.portionsize.experimental.MilkInHotDrinkPortionSizeScript;
 import net.scran24.user.client.survey.portionsize.experimental.PortionSize;
 import net.scran24.user.client.survey.prompts.messages.HelpMessages;
@@ -55,13 +56,13 @@ public class SameAsBeforePrompt implements Prompt<Pair<FoodEntry, Meal>, MealOpe
 			.plus(new ShepherdTour.Step("noButton", "#intake24-sab-no-button", helpMessages.sameAsBefore_noButtonTitle(), helpMessages.sameAsBefore_noButtonDescription(), "top right", "bottom right"));
 	
 	private final EncodedFood food;
-	private final PVector<FoodEntry> before;
+	private final SameAsBefore asBefore;
 	private final int foodIndex;
-
-	public SameAsBeforePrompt(final Pair<FoodEntry, Meal> pair, final PVector<FoodEntry> before, final int foodIndex) {
+	
+	public SameAsBeforePrompt(final Pair<FoodEntry, Meal> pair, final int foodIndex, SameAsBefore asBefore) {
 		this.foodIndex = foodIndex;
 		this.food = pair.left.asEncoded();
-		this.before = before;
+		this.asBefore = asBefore;
 	}
 
 	@Override
@@ -78,8 +79,8 @@ public class SameAsBeforePrompt implements Prompt<Pair<FoodEntry, Meal>, MealOpe
 		final Panel promptPanel = WidgetFactory.createPromptPanel(SafeHtmlUtils.fromSafeConstant(messages.sameAsBefore_promptText(SafeHtmlUtils.htmlEscape(food.description().toLowerCase()))), ShepherdTour.createTourButton(tour, SameAsBeforePrompt.class.getSimpleName()));
 		content.add(promptPanel);
 		
-		final EncodedFood mainFoodAsBefore = before.get(0).asEncoded();
-		final PVector<FoodEntry> assocFoodsAsBefore = (before.size() > 1) ? before.subList(1, before.size()) : TreePVector.<FoodEntry>empty();
+		final EncodedFood mainFoodAsBefore = asBefore.mainFood; 
+		final PVector<FoodEntry> assocFoodsAsBefore = asBefore.linkedFoods;
 		
 		final double leftoversWeight = mainFoodAsBefore.completedPortionSize().leftoversWeight();
 		final double servingWeight = mainFoodAsBefore.completedPortionSize().servingWeight();

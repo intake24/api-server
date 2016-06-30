@@ -23,12 +23,18 @@ import org.pcollections.client.PSet;
 import org.pcollections.client.PVector;
 import org.pcollections.client.TreePVector;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class CollectionUtils {
 	public static class WithIndex<T> {
+		@JsonProperty
 		public final T value;
+		@JsonProperty
 		public final int index;
 
-		public WithIndex(T value, int index) {
+		@JsonCreator
+		public WithIndex(@JsonProperty("value") T value, @JsonProperty("index") int index) {
 			this.value = value;
 			this.index = index;
 		}

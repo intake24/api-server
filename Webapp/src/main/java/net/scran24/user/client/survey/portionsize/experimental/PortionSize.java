@@ -52,4 +52,27 @@ public class PortionSize {
 	public static Either<PortionSize, CompletedPortionSize> complete(CompletedPortionSize size) {
 		return new Either.Right<PortionSize, CompletedPortionSize>(size);
 	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		PortionSize other = (PortionSize) obj;
+		if (data == null) {
+			if (other.data != null)
+				return false;
+		} else if (!data.equals(other.data))
+			return false;
+		if (scriptName == null) {
+			if (other.scriptName != null)
+				return false;
+		} else if (!scriptName.equals(other.scriptName))
+			return false;
+		return true;
+	}
+	
 }

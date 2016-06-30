@@ -28,18 +28,18 @@ public class PromptAvailabilityBasedSelectionManager implements SelectionManager
 	}
 	
 	private boolean hasPrompts (final Survey state, final int mealIndex) {
-		return !promptManager.nextPromptForSelection(state.withSelection(new SelectedMeal(mealIndex, SelectionType.AUTO_SELECTION))).isEmpty();		
+		return !promptManager.nextPromptForSelection(state.withSelection(new SelectedMeal(mealIndex, SelectionMode.AUTO_SELECTION))).isEmpty();		
 	}
 	
 	private boolean hasPrompts (final Survey state, final int mealIndex, final int foodIndex) {
-		return !promptManager.nextPromptForSelection(state.withSelection(new SelectedFood(mealIndex, foodIndex, SelectionType.AUTO_SELECTION))).isEmpty();
+		return !promptManager.nextPromptForSelection(state.withSelection(new SelectedFood(mealIndex, foodIndex, SelectionMode.AUTO_SELECTION))).isEmpty();
 	}
 
 	private Option<Selection> tryMeal (final Survey state, final int mealIndex) {
 		// log.log(Level.INFO, "Trying meal " + mealIndex);
 		
 		if (hasPrompts(state, mealIndex))
-			return Option.<Selection>some(new SelectedMeal(mealIndex, SelectionType.AUTO_SELECTION));
+			return Option.<Selection>some(new SelectedMeal(mealIndex, SelectionMode.AUTO_SELECTION));
 		else
 			return Option.none();
 	}
@@ -47,14 +47,14 @@ public class PromptAvailabilityBasedSelectionManager implements SelectionManager
 	private Option<Selection> tryAnyFood(final Survey state, final int mealIndex) {
 		for (int foodIndex = 0; foodIndex < state.meals.get(mealIndex).foods.size(); foodIndex++) 
 			if (hasPrompts(state, mealIndex, foodIndex))
-					return Option.<Selection>some(new SelectedFood(mealIndex, foodIndex, SelectionType.AUTO_SELECTION));
+					return Option.<Selection>some(new SelectedFood(mealIndex, foodIndex, SelectionMode.AUTO_SELECTION));
 		return Option.none();
 	}
 	
 	private Option<Selection> tryFollowUpFood(final Survey state, final int mealIndex, final int currentFoodIndex) {
 		for (int foodIndex = currentFoodIndex + 1; foodIndex < state.meals.get(mealIndex).foods.size(); foodIndex++) 
 			if (hasPrompts(state, mealIndex, foodIndex))
-					return Option.<Selection>some(new SelectedFood(mealIndex, foodIndex, SelectionType.AUTO_SELECTION));
+					return Option.<Selection>some(new SelectedFood(mealIndex, foodIndex, SelectionMode.AUTO_SELECTION));
 		return Option.none();
 	}
 	

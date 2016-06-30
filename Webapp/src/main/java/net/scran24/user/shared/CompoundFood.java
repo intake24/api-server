@@ -6,7 +6,7 @@ This file is part of Intake24.
 This software is licensed under the Open Government Licence 3.0:
 
 http://www.nationalarchives.gov.uk/doc/open-government-licence/
-*/
+ */
 
 package net.scran24.user.shared;
 
@@ -17,22 +17,22 @@ import org.pcollections.client.PSet;
 
 public class CompoundFood extends FoodEntry {
 	public static final String FLAG_INGREDIENTS_COMPLETE = "ingredients-complete";
+
 	public final String description;
 	public final boolean isDrink;
 
 	public CompoundFood(FoodLink link, String description, boolean isDrink) {
-		super(link, HashTreePSet.<String>empty(), HashTreePMap.<String, String>empty());
+		super(link, HashTreePSet.<String> empty(), HashTreePMap.<String, String> empty());
 		this.description = description;
-		this.isDrink = isDrink;		
+		this.isDrink = isDrink;
 	}
-	
+
 	public CompoundFood(FoodLink link, String description, boolean isDrink, PSet<String> flags, PMap<String, String> customData) {
 		super(link, flags, customData);
 		this.description = description;
-		this.isDrink = isDrink;		
+		this.isDrink = isDrink;
 	}
-	
-	
+
 	@Override
 	public CompoundFood relink(FoodLink link) {
 		return new CompoundFood(link, description, isDrink, flags, customData);

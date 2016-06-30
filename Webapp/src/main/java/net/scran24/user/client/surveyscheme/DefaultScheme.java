@@ -26,6 +26,7 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package net.scran24.user.client.surveyscheme;
 
+import net.scran24.datastore.shared.SurveySchemeReference;
 import net.scran24.user.client.SurveyInterfaceManager;
 import net.scran24.user.client.survey.SurveyMessages;
 import net.scran24.user.client.survey.WelcomePage;
@@ -46,11 +47,10 @@ public class DefaultScheme extends BasicScheme {
 	}
 
 	private IntakeSurvey cachedSurveyPage = null;
-
+	
 	@Override
 	public void showNextPage() {
 		final Survey state = stateManager.getCurrentState();
-
 		// Logger log = Logger.getLogger("showNextPage");
 		// log.info(SurveyXmlSerialiser.toXml(state));
 
@@ -63,6 +63,16 @@ public class DefaultScheme extends BasicScheme {
 		} else {
 			interfaceManager.show(new FlatFinalPage(surveyMessages.finalPage_text(), postProcess(state, basicPostProcess), log.log));
 		}
+	}
+
+	@Override
+	public String getDataVersion() {
+		return "1";
+	}
+
+	@Override
+	public String getSchemeId() {
+		return SurveySchemeReference.DefaultScheme.ID;
 	}
 
 }

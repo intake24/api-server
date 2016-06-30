@@ -31,7 +31,7 @@ import net.scran24.common.client.WidgetFactory;
 import net.scran24.user.client.survey.SurveyStageInterface;
 import net.scran24.user.client.survey.flat.Prompt;
 import net.scran24.user.client.survey.flat.Selection;
-import net.scran24.user.client.survey.flat.SelectionType;
+import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.flat.Survey;
 import net.scran24.user.client.survey.flat.SurveyOperation;
 import net.scran24.user.client.survey.prompts.messages.PromptMessages;
@@ -71,7 +71,7 @@ public class DeleteMealPrompt implements Prompt<Survey, SurveyOperation> {
 				onComplete.call(SurveyOperation.update(new Function1<Survey, Survey>() {
 					@Override
 					public Survey apply(Survey argument) {
-						return argument.minusMeal(mealIndex).withSelection(new Selection.EmptySelection(SelectionType.AUTO_SELECTION));
+						return argument.minusMeal(mealIndex).withSelection(new Selection.EmptySelection(SelectionMode.AUTO_SELECTION));
 					}
 				}));
 			}

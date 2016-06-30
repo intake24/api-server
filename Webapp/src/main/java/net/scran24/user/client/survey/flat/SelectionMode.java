@@ -10,7 +10,7 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package net.scran24.user.client.survey.flat;
 
-public enum SelectionType {
+public enum SelectionMode {
 	MANUAL_SELECTION,
 	AUTO_SELECTION
 }

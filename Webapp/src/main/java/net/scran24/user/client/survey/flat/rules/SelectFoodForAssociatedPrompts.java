@@ -19,7 +19,7 @@ import net.scran24.user.client.survey.flat.Selection;
 import net.scran24.user.client.survey.flat.Selection.SelectedFood;
 import net.scran24.user.client.survey.flat.SelectionRule;
 import net.scran24.user.client.survey.flat.SelectionRuleUtil;
-import net.scran24.user.client.survey.flat.SelectionType;
+import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.flat.Survey;
 import net.scran24.user.shared.CompoundFood;
 import net.scran24.user.shared.TemplateFood;
@@ -84,7 +84,7 @@ public class SelectFoodForAssociatedPrompts implements SelectionRule {
 			else {
 				PVector<Integer> foodsWithPrompts = foodsWithPrompts(state.meals.get(selectedMealIndex).foods);
 				if (!foodsWithPrompts.isEmpty())
-					return Option.<Selection> some(new SelectedFood(selectedMealIndex, foodsWithPrompts.get(0), SelectionType.AUTO_SELECTION));
+					return Option.<Selection> some(new SelectedFood(selectedMealIndex, foodsWithPrompts.get(0), SelectionMode.AUTO_SELECTION));
 			}
 		}
 
@@ -111,7 +111,7 @@ public class SelectFoodForAssociatedPrompts implements SelectionRule {
 			return new Option.None<Selection>();
 		else
 			return new Option.Some<Selection>(new Selection.SelectedFood(state.mealsSortedByTime.get(index).index, prompts.get(index).get(0),
-					SelectionType.AUTO_SELECTION));
+					SelectionMode.AUTO_SELECTION));
 	}
 
 	@Override
