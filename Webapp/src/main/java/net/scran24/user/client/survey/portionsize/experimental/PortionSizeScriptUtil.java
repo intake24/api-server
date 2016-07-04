@@ -65,7 +65,7 @@ public class PortionSizeScriptUtil {
 		return new Function1<String, SafeHtml>() {
 			@Override
 			public SafeHtml apply(String imageDescription) {
-				return SafeHtmlUtils.fromSafeConstant(messages.asServed_servingPromptText(SafeHtmlUtils.htmlEscape(imageDescription.toLowerCase()), SafeHtmlUtils.htmlEscape(foodDescription.toLowerCase())));
+				return SafeHtmlUtils.fromSafeConstant(messages.asServed_servingPromptText(SafeHtmlUtils.htmlEscape(foodDescription.toLowerCase())));
 
 			}
 		};
@@ -75,7 +75,7 @@ public class PortionSizeScriptUtil {
 		return new Function1<String, SafeHtml>() {
 			@Override
 			public SafeHtml apply(String imageDescription) {
-				return SafeHtmlUtils.fromSafeConstant(messages.asServed_leftoversPromptText(SafeHtmlUtils.htmlEscape(imageDescription.toLowerCase()), SafeHtmlUtils.htmlEscape(foodDescription.toLowerCase())));
+				return SafeHtmlUtils.fromSafeConstant(messages.asServed_leftoversPromptText(SafeHtmlUtils.htmlEscape(foodDescription.toLowerCase())));
 			}
 		};
 	}
@@ -111,7 +111,7 @@ public class PortionSizeScriptUtil {
 		}));
 	}
 	
-	public static SimplePrompt<UpdateFunc> optionalFoodPrompt (final SafeHtml promptHtml, final String yesText, final String noText, final SafeHtml foodChoicePrompt, final String category, final String choiceField, final String codeField) {
+	public static SimplePrompt<UpdateFunc> optionalFoodPrompt (final String locale, final SafeHtml promptHtml, final String yesText, final String noText, final SafeHtml foodChoicePrompt, final String category, final String choiceField, final String codeField) {
 		OptionalFoodPromptDef def = new OptionalFoodPromptDef(
 				promptHtml,
 				yesText,
@@ -119,7 +119,7 @@ public class PortionSizeScriptUtil {
 				foodChoicePrompt,
 				category);
 		
-		return map(new OptionalFoodPrompt(def), new Function1<Option<String>, UpdateFunc>() {
+		return map(new OptionalFoodPrompt(locale, def), new Function1<Option<String>, UpdateFunc>() {
 			@Override
 			public UpdateFunc apply(Option<String> argument) {
 				return argument.accept(new Option.Visitor<String, UpdateFunc>() {

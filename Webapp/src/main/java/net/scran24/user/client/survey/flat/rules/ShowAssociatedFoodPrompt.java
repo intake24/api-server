@@ -21,13 +21,13 @@ import net.scran24.user.client.survey.flat.SelectionMode;
 import net.scran24.user.client.survey.prompts.AssociatedFoodPrompt;
 import net.scran24.user.client.survey.prompts.MealOperation;
 import net.scran24.user.shared.CompoundFood;
-import net.scran24.user.shared.TemplateFood;
 import net.scran24.user.shared.EncodedFood;
 import net.scran24.user.shared.FoodEntry;
 import net.scran24.user.shared.FoodPrompt;
 import net.scran24.user.shared.Meal;
 import net.scran24.user.shared.MissingFood;
 import net.scran24.user.shared.RawFood;
+import net.scran24.user.shared.TemplateFood;
 import net.scran24.user.shared.WithPriority;
 
 import org.pcollections.client.PSet;
@@ -39,6 +39,12 @@ import org.workcraft.gwt.shared.client.Pair;
 public class ShowAssociatedFoodPrompt implements PromptRule<Pair<FoodEntry, Meal>, MealOperation> {
 	
 	private final Logger log = Logger.getLogger("ShowAssociatedFoodPrompt");
+	
+	private final String locale;
+	
+	public ShowAssociatedFoodPrompt(final String locale) {
+		this.locale = locale;
+	}
 	
 	public static int applicablePromptIndex(final PVector<FoodEntry> foods, final EncodedFood food) {
 		return indexOf(food.enabledPrompts, new Function1<FoodPrompt, Boolean>() {
@@ -81,7 +87,6 @@ public class ShowAssociatedFoodPrompt implements PromptRule<Pair<FoodEntry, Meal
 
 	@Override
 	public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> apply(final Pair<FoodEntry, Meal> pair, SelectionMode selectionType, PSet<String> surveyFlag) {
-		log.info("Meal encoding complete = " + pair.right.encodingComplete());
 		
 		if (!pair.left.isEncoded() || !pair.left.isPortionSizeComplete() || pair.left.link.isLinked() || !pair.right.encodingComplete())
 			return Option.none();
@@ -94,11 +99,11 @@ public class ShowAssociatedFoodPrompt implements PromptRule<Pair<FoodEntry, Meal
 			if (index == -1)
 				return Option.none();
 			else
-				return Option.<Prompt<Pair<FoodEntry, Meal>, MealOperation>> some(new AssociatedFoodPrompt(pair, meal.foodIndex(food), index));
+				return Option.<Prompt<Pair<FoodEntry, Meal>, MealOperation>> some(new AssociatedFoodPrompt(locale, pair, meal.foodIndex(food), index));
 		}
 	}
 
-	public static WithPriority<PromptRule<Pair<FoodEntry, Meal>, MealOperation>> withPriority(int priority) {
-		return new WithPriority<PromptRule<Pair<FoodEntry, Meal>, MealOperation>>(new ShowAssociatedFoodPrompt(), priority);
+	public static WithPriority<PromptRule<Pair<FoodEntry, Meal>, MealOperation>> withPriority(int priority, String locale) {
+		return new WithPriority<PromptRule<Pair<FoodEntry, Meal>, MealOperation>>(new ShowAssociatedFoodPrompt(locale), priority);
 	}
 }

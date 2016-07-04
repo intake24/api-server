@@ -46,6 +46,7 @@ import org.workcraft.gwt.shared.client.Pair;
 import scala.Tuple2;
 import scala.util.Either;
 import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService;
+import uk.ac.ncl.openlab.intake24.services.CodeError;
 import uk.ac.ncl.openlab.intake24.services.FoodDataError;
 import uk.ac.ncl.openlab.intake24.services.FoodDataSources;
 import uk.ac.ncl.openlab.intake24.services.UserFoodDataService;
@@ -74,7 +75,12 @@ public class NutrientMapper {
 
 		Either<FoodDataError, Tuple2<FoodData, FoodDataSources>> foodDataResult = userDataService.foodData(food.code, locale);
 		
-		Food foodDef = adminDataService.foodDef(food.code, locale);
+		Either<CodeError, Food> foodDefResult = adminDataService.foodDef(food.code, locale);
+		
+		if (foodDefResult.isLeft())
+			throw new RuntimeException("Cannot retreive food record for " + food.code);
+		
+		Food foodDef = foodDefResult.right().get();
 
 		if (foodDataResult.isLeft())
 			throw new RuntimeException("Cannot retreive data for food code " + food.code);

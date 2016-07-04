@@ -42,30 +42,30 @@ public class SurveySchemeMap {
 	 * HTML to display as a "debriefing" following a successful survey submission. 
 	 * Usually extracted from the host HTML page which allows for simple customisation.
 	 */
-	public static SurveyScheme initScheme (SurveySchemeReference ref, final SurveyInterfaceManager interfaceManager) {
+	public static SurveyScheme initScheme (SurveySchemeReference ref, final String locale, final SurveyInterfaceManager interfaceManager) {
 		return ref.accept(new SurveySchemeReference.Visitor<SurveyScheme>() {
 			@Override
 			public SurveyScheme visitDefault() {
-				return new DefaultScheme(interfaceManager);
+				return new DefaultScheme(locale, interfaceManager);
 			}
 
 			@Override
 			public SurveyScheme visitYoungScot() {
-				return new YoungScot2014Scheme(interfaceManager);
+				return new YoungScot2014Scheme(locale, interfaceManager);
 			}
 			
 			public SurveyScheme visitUclJan15() {
-				return new UCLJan15(interfaceManager);
+				return new UCLJan15(locale, interfaceManager);
 			}
 
 			@Override
 			public SurveyScheme visitSHeSJun15() {
-				return new SHeSJun15(interfaceManager);
+				return new SHeSJun15(locale, interfaceManager);
 			}
 
 			@Override
 			public SurveyScheme visitCrowdflowerNov15() {
-				return new CrowdflowerTestNov15(interfaceManager);
+				return new CrowdflowerTestNov15(locale, interfaceManager);
 			}
 		});
 	}

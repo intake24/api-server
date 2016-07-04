@@ -88,9 +88,10 @@ public class FoodLookupPrompt implements Prompt<Pair<FoodEntry, Meal>, MealOpera
 	private final Meal meal;
 	private final RecipeManager recipeManager;
 
-	private final String currentLocale = LocaleInfo.getCurrentLocale().getLocaleName();
+	private final String locale;
 
-	public FoodLookupPrompt(final FoodEntry food, final Meal meal, RecipeManager recipeManager) {
+	public FoodLookupPrompt(final String locale, final FoodEntry food, final Meal meal, RecipeManager recipeManager) {
+		this.locale = locale;
 		this.food = food;
 		this.meal = meal;
 		this.recipeManager = recipeManager;
@@ -123,10 +124,10 @@ public class FoodLookupPrompt implements Prompt<Pair<FoodEntry, Meal>, MealOpera
 				public void execute(AsyncCallback<LookupResult> callback) {
 
 					if (food.customData.containsKey(RawFood.KEY_LIMIT_LOOKUP_TO_CATEGORY))
-						lookupService.lookupInCategory(description, food.customData.get(RawFood.KEY_LIMIT_LOOKUP_TO_CATEGORY), currentLocale,
+						lookupService.lookupInCategory(description, food.customData.get(RawFood.KEY_LIMIT_LOOKUP_TO_CATEGORY), locale,
 								MAX_RESULTS, callback);
 					else
-						lookupService.lookup(description, currentLocale, MAX_RESULTS, callback);
+						lookupService.lookup(description, locale, MAX_RESULTS, callback);
 				}
 			}, new AsyncCallback<LookupResult>() {
 				@Override
@@ -217,7 +218,7 @@ public class FoodLookupPrompt implements Prompt<Pair<FoodEntry, Meal>, MealOpera
 			else
 				limitToCategory = Option.none();
 
-			foodBrowser = new FoodBrowser(new Callback1<FoodData>() {
+			foodBrowser = new FoodBrowser(locale, new Callback1<FoodData>() {
 				@Override
 				public void call(final FoodData foodData) {
 					// filter portion size methods if the food is an ingredient

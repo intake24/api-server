@@ -49,8 +49,10 @@ public class OptionalFoodPrompt implements SimplePrompt<Option<String>> {
 	private final OptionalFoodPromptDef def;
 	private FlowPanel interf;
 	private Panel buttonsPanel;
+	private final String locale;
 
-	public OptionalFoodPrompt(OptionalFoodPromptDef def) {
+	public OptionalFoodPrompt(String locale, OptionalFoodPromptDef def) {
+		this.locale = locale;
 		this.def = def;
 	}
 
@@ -61,7 +63,7 @@ public class OptionalFoodPrompt implements SimplePrompt<Option<String>> {
 		final Panel promptPanel = WidgetFactory.createPromptPanel(def.promptHtml);
 		content.add(promptPanel);
 
-		final FoodBrowser foodBrowser = new FoodBrowser(new Callback1<FoodData>() {
+		final FoodBrowser foodBrowser = new FoodBrowser(locale, new Callback1<FoodData>() {
 			@Override
 			public void call(FoodData result) {
 				onComplete.call(Option.some(result.code));

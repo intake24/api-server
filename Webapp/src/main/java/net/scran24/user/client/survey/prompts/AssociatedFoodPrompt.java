@@ -45,7 +45,6 @@ import net.scran24.user.client.survey.portionsize.experimental.PortionSize;
 import net.scran24.user.client.survey.prompts.messages.HelpMessages;
 import net.scran24.user.client.survey.prompts.messages.PromptMessages;
 import net.scran24.user.shared.CompoundFood;
-import net.scran24.user.shared.TemplateFood;
 import net.scran24.user.shared.EncodedFood;
 import net.scran24.user.shared.FoodData;
 import net.scran24.user.shared.FoodEntry;
@@ -55,6 +54,7 @@ import net.scran24.user.shared.Meal;
 import net.scran24.user.shared.MissingFood;
 import net.scran24.user.shared.MissingFoodDescription;
 import net.scran24.user.shared.RawFood;
+import net.scran24.user.shared.TemplateFood;
 import net.scran24.user.shared.lookup.PortionSizeMethod;
 
 import org.pcollections.client.PVector;
@@ -69,7 +69,6 @@ import org.workcraft.gwt.shared.client.Pair;
 
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.i18n.client.LocaleInfo;
 import com.google.gwt.safehtml.shared.SafeHtmlUtils;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Button;
@@ -95,9 +94,10 @@ public class AssociatedFoodPrompt implements Prompt<Pair<FoodEntry, Meal>, MealO
 
 	private FoodBrowser foodBrowser;
 	private boolean isInBrowserMode = false;
-	private final String currentLocale = "en_GB"; // LocaleInfo.getCurrentLocale().getLocaleName();
+	private final String locale;
 
-	public AssociatedFoodPrompt(final Pair<FoodEntry, Meal> pair, final int foodIndex, final int promptIndex) {
+	public AssociatedFoodPrompt(final String locale, final Pair<FoodEntry, Meal> pair, final int foodIndex, final int promptIndex) {
+		this.locale = locale;
 		this.pair = pair;
 		this.foodIndex = foodIndex;
 		this.promptIndex = promptIndex;
@@ -240,7 +240,7 @@ public class AssociatedFoodPrompt implements Prompt<Pair<FoodEntry, Meal>, MealO
 			}
 		};
 
-		foodBrowser = new FoodBrowser(new Callback1<FoodData>() {
+		foodBrowser = new FoodBrowser(locale, new Callback1<FoodData>() {
 			@Override
 			public void call(FoodData result) {
 				addNewFood.call(result);
@@ -290,7 +290,7 @@ public class AssociatedFoodPrompt implements Prompt<Pair<FoodEntry, Meal>, MealO
 					AsyncRequestAuthHandler.execute(new AsyncRequest<FoodData>() {
 						@Override
 						public void execute(AsyncCallback<FoodData> callback) {
-							lookupService.getFoodData(prompt.code, currentLocale, callback);
+							lookupService.getFoodData(prompt.code, locale, callback);
 						}
 					}, new AsyncCallback<FoodData>() {
 						@Override

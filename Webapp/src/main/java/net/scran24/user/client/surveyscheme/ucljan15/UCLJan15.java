@@ -36,8 +36,8 @@ import net.scran24.user.client.surveyscheme.BasicScheme;
 import com.google.gwt.user.client.Window;
 
 public class UCLJan15 extends BasicScheme {
-	public UCLJan15(final SurveyInterfaceManager interfaceManager) {
-		super(interfaceManager);
+	public UCLJan15(String locale, final SurveyInterfaceManager interfaceManager) {
+		super(locale, interfaceManager);
 	}
 	
 	@Override

@@ -120,6 +120,7 @@ public abstract class BasicScheme implements SurveyScheme {
 	final protected CompoundFoodTemplateManager defaultTemplateManager;
 	final protected RecipeManager recipeManager;
 	final protected LogRecorder log;
+	final protected String locale;
 	
 	final protected TreePVector<Function1<Survey, Survey>> basicPostProcess = TreePVector.<Function1<Survey, Survey>> empty().plus(new ProcessMilkInHotDrinks());
 	
@@ -162,12 +163,12 @@ public abstract class BasicScheme implements SurveyScheme {
 				// extended food propmts
 				TreePVector.<WithPriority<PromptRule<Pair<FoodEntry, Meal>, MealOperation>>> empty()
 				.plus(ShowEditIngredientsPrompt.withPriority(3))
-				.plus(AskToLookupFood.withPriority(3, recipeManager))
+				.plus(AskToLookupFood.withPriority(3, locale, recipeManager))
 				.plus(ShowSameAsBeforePrompt.withPriority(3, getSchemeId(), getDataVersion(), scriptManager, templateManager))
 				.plus(ShowHomeRecipeServingsPrompt.withPriority(2))				
 				.plus(ShowTemplateRecipeSavePrompt.withPriority(1, recipeManager))
-				.plus(ShowCompoundFoodPrompt.withPriority(0))
-				.plus(ShowAssociatedFoodPrompt.withPriority(0))
+				.plus(ShowCompoundFoodPrompt.withPriority(0, locale))
+				.plus(ShowAssociatedFoodPrompt.withPriority(0, locale))
 				
 				,
 				// global prompts
@@ -193,9 +194,10 @@ public abstract class BasicScheme implements SurveyScheme {
 
 
 
-	public BasicScheme(final SurveyInterfaceManager interfaceManager) {
+	public BasicScheme(String locale, final SurveyInterfaceManager interfaceManager) {
 		this.log = new LogRecorder();
 		this.interfaceManager = interfaceManager;
+		this.locale = locale;
 			
 		interfaceManager.setCallbacks(new Callback1<Survey>() {
 			@Override

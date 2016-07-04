@@ -47,6 +47,7 @@ import org.workcraft.gwt.shared.client.Option;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.dom.client.Document;
 import com.google.gwt.dom.client.Element;
+import com.google.gwt.i18n.client.LocaleInfo;
 import com.google.gwt.safehtml.shared.SafeHtmlUtils;
 import com.google.gwt.user.client.Window.Location;
 import com.google.gwt.user.client.rpc.AsyncCallback;
@@ -121,7 +122,7 @@ public class Scran24 implements EntryPoint {
 				SurveyInterfaceManager surveyInterfaceManager = new SurveyInterfaceManager(mainContentPanel);
 
 				SurveyScheme scheme = SurveySchemeMap.initScheme(SurveySchemes.schemeForId(userInfo.surveyParameters.schemeName),
-						surveyInterfaceManager);
+						LocaleInfo.getCurrentLocale().getLocaleName(), surveyInterfaceManager);
 				
 				links.add(new NavigationBar(scheme.navBarLinks(), watchTutorial, logOut));
 

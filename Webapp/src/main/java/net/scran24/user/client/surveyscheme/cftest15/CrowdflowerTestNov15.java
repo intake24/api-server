@@ -40,8 +40,8 @@ public class CrowdflowerTestNov15 extends BasicScheme {
 
 	private IntakeSurvey cachedSurveyPage = null;
 
-	public CrowdflowerTestNov15(final SurveyInterfaceManager interfaceManager) {
-		super(interfaceManager);
+	public CrowdflowerTestNov15(String locale, final SurveyInterfaceManager interfaceManager) {
+		super(locale, interfaceManager);
 	}
 
 	@Override

@@ -108,15 +108,16 @@ public class FoodBrowser extends Composite {
 	private FlowPanel categoriesContainer;
 	private HTMLPanel cantFindPopupPrompt;
 
-	private final String currentLocale = "en_GB"; // LocaleInfo.getCurrentLocale().getLocaleName();
+	private final String locale;
 
 	private PStack<HistoryState> browseHistory = ConsPStack.<HistoryState> empty();
 
-	public FoodBrowser(final Callback1<FoodData> onFoodChosen, final Callback1<String> onSpecialFoodChosen, final Callback onMissingFoodReported,
+	public FoodBrowser(final String locale, final Callback1<FoodData> onFoodChosen, final Callback1<String> onSpecialFoodChosen, final Callback onMissingFoodReported,
 			final Option<SkipFoodHandler> skipFoodHandler, boolean allowBrowsingAllFoods, Option<Pair<String, String>> limitBrowseAllCategory) {
 
 		contents.addStyleName("intake24-food-browser");
 
+		this.locale = locale;
 		this.onFoodChosen = onFoodChosen;
 		this.onSpecialFoodChosen = onSpecialFoodChosen;
 		this.allowBrowsingAllFoods = allowBrowsingAllFoods;
@@ -155,7 +156,7 @@ public class FoodBrowser extends Composite {
 				if (foodHeader.code.equals(SpecialData.FOOD_CODE_SANDWICH) || foodHeader.code.equals(SpecialData.FOOD_CODE_SALAD)) {
 					onSpecialFoodChosen.call(foodHeader.code);
 				} else
-					lookupService.getFoodData(foodHeader.code, currentLocale, new AsyncCallback<FoodData>() {
+					lookupService.getFoodData(foodHeader.code, locale, new AsyncCallback<FoodData>() {
 						@Override
 						public void onFailure(Throwable caught) {
 							contents.clear();
@@ -411,7 +412,7 @@ public class FoodBrowser extends Composite {
 		AsyncRequestAuthHandler.execute(new AsyncRequest<LookupResult>() {
 			@Override
 			public void execute(AsyncCallback<LookupResult> callback) {
-				lookupService.browseCategory(categoryCode, currentLocale, callback);
+				lookupService.browseCategory(categoryCode, locale, callback);
 			}
 		}, new AsyncCallback<LookupResult>() {
 			@Override
@@ -443,7 +444,7 @@ public class FoodBrowser extends Composite {
 		AsyncRequestAuthHandler.execute(new AsyncRequest<List<CategoryHeader>>() {
 			@Override
 			public void execute(AsyncCallback<List<CategoryHeader>> callback) {
-				lookupService.getRootCategories(currentLocale, callback);
+				lookupService.getRootCategories(locale, callback);
 			}
 		}, new AsyncCallback<List<CategoryHeader>>() {
 			@Override

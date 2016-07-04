@@ -42,8 +42,8 @@ import net.scran24.user.client.survey.flat.Survey;
 public class DefaultScheme extends BasicScheme {
 	final private static SurveyMessages surveyMessages = SurveyMessages.Util.getInstance();
 
-	public DefaultScheme(final SurveyInterfaceManager interfaceManager) {
-		super(interfaceManager);
+	public DefaultScheme(String locale, final SurveyInterfaceManager interfaceManager) {
+		super(locale, interfaceManager);
 	}
 
 	private IntakeSurvey cachedSurveyPage = null;

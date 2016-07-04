@@ -442,9 +442,9 @@ public interface PromptMessages extends Messages {
 	
 	public String asServed_weightUnitLabel();
 
-	public String asServed_servingPromptText(String imageDescription, String foodDescription);
+	public String asServed_servingPromptText(String foodDescription);
 
-	public String asServed_leftoversPromptText(String imageDescription, String foodDescription);
+	public String asServed_leftoversPromptText(String foodDescription);
 
 	public String asServed_leftoversQuestionPromptText(String foodDescription);
 

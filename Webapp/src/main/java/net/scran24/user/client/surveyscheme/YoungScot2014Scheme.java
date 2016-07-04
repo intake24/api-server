@@ -341,10 +341,10 @@ public class YoungScot2014Scheme extends BasicScheme {
 
 				// extended food propmts
 				TreePVector.<WithPriority<PromptRule<Pair<FoodEntry, Meal>, MealOperation>>> empty()
-				.plus(AskToLookupFood.withPriority(2, recipeManager))
+				.plus(AskToLookupFood.withPriority(2, locale, recipeManager))
 				.plus(ShowSameAsBeforePrompt.withPriority(2, getSchemeId(), getDataVersion(), scriptManager, templateManager))
-				.plus(ShowCompoundFoodPrompt.withPriority(0))
-				.plus(ShowAssociatedFoodPrompt.withPriority(0))
+				.plus(ShowCompoundFoodPrompt.withPriority(0, locale))
+				.plus(ShowAssociatedFoodPrompt.withPriority(0, locale))
 				
 				,
 				// global prompts
@@ -369,8 +369,8 @@ public class YoungScot2014Scheme extends BasicScheme {
 	}
 
 
-	public YoungScot2014Scheme(final SurveyInterfaceManager interfaceManager) {
-		super(interfaceManager);	
+	public YoungScot2014Scheme(String locale, final SurveyInterfaceManager interfaceManager) {
+		super(locale, interfaceManager);	
 	}
 	
 	private boolean checkUserData() {

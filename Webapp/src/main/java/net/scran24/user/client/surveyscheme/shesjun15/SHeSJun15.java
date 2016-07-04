@@ -111,8 +111,8 @@ public class SHeSJun15 extends BasicScheme {
 			.plus("Weight Watchers");
 	
 
-	public SHeSJun15(final SurveyInterfaceManager interfaceManager) {
-		super(interfaceManager);
+	public SHeSJun15(String locale, final SurveyInterfaceManager interfaceManager) {
+		super(locale, interfaceManager);
 	}
 
 	private IntakeSurvey cachedSurveyPage = null;

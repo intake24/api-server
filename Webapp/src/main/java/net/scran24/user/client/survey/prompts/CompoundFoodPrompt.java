@@ -79,6 +79,7 @@ public class CompoundFoodPrompt implements Prompt<Pair<FoodEntry, Meal>, MealOpe
 	private final int foodIndex;
 	private final int componentIndex;
 	private final boolean allowSkip;
+	private final String locale;
 
 	private Panel buttonsPanel;
 	private boolean isFirst;
@@ -86,7 +87,8 @@ public class CompoundFoodPrompt implements Prompt<Pair<FoodEntry, Meal>, MealOpe
 
 	private FoodBrowser foodBrowser;
 
-	public CompoundFoodPrompt(final Meal meal, final int foodIndex, final int componentIndex, boolean isFirst, boolean allowSkip) {
+	public CompoundFoodPrompt(final String locale, final Meal meal, final int foodIndex, final int componentIndex, boolean isFirst, boolean allowSkip) {
+		this.locale = locale;
 		this.meal = meal;
 		this.foodIndex = foodIndex;
 		this.componentIndex = componentIndex;
@@ -156,7 +158,7 @@ public class CompoundFoodPrompt implements Prompt<Pair<FoodEntry, Meal>, MealOpe
 			}
 		})) : Option.<SkipFoodHandler> none();
 
-		foodBrowser = new FoodBrowser(new Callback1<FoodData>() {
+		foodBrowser = new FoodBrowser(locale, new Callback1<FoodData>() {
 			@Override
 			public void call(final FoodData result) {
 				onComplete.call(MealOperation.update(new Function1<Meal, Meal>() {

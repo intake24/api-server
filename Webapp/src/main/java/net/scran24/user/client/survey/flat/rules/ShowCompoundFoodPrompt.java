@@ -30,6 +30,13 @@ import org.workcraft.gwt.shared.client.Option;
 import org.workcraft.gwt.shared.client.Pair;
 
 public class ShowCompoundFoodPrompt implements PromptRule<Pair<FoodEntry, Meal>, MealOperation> {
+	
+	private final String locale;
+	
+	public ShowCompoundFoodPrompt(String locale) {
+		this.locale = locale;
+	}
+	
 	@Override
 	public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> apply(final Pair<FoodEntry, Meal> pair, SelectionMode selectionType, PSet<String> surveyFlags) {
 		if (!pair.left.isTemplate() || !surveyFlags.contains(Survey.FLAG_FREE_ENTRY_COMPLETE))
@@ -46,13 +53,13 @@ public class ShowCompoundFoodPrompt implements PromptRule<Pair<FoodEntry, Meal>,
 					boolean isFirst = food.components.get(componentIndex).isEmpty();
 					boolean allowSkip = (def.type == ComponentType.Optional) || (def.occurence == ComponentOccurence.Multiple && !isFirst); 
 					
-					return new CompoundFoodPrompt(meal, meal.foodIndex(food), componentIndex, isFirst, allowSkip);
+					return new CompoundFoodPrompt(locale, meal, meal.foodIndex(food), componentIndex, isFirst, allowSkip);
 				}
 			});
 		}
 	}
 
-	public static WithPriority<PromptRule<Pair<FoodEntry, Meal>, MealOperation>> withPriority(int priority) {
-		return new WithPriority<PromptRule<Pair<FoodEntry, Meal>, MealOperation>>(new ShowCompoundFoodPrompt(), priority);
+	public static WithPriority<PromptRule<Pair<FoodEntry, Meal>, MealOperation>> withPriority(int priority, String locale) {
+		return new WithPriority<PromptRule<Pair<FoodEntry, Meal>, MealOperation>>(new ShowCompoundFoodPrompt(locale), priority);
 	}
 }

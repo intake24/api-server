@@ -28,8 +28,10 @@ import org.workcraft.gwt.shared.client.Pair;
 public class AskToLookupFood implements PromptRule<Pair<FoodEntry, Meal>, MealOperation> {
 	
 	final private RecipeManager recipeManager;
+	final private String locale;
 	
-	public AskToLookupFood(RecipeManager recipeManager) {
+	public AskToLookupFood(String locale, RecipeManager recipeManager) {
+		this.locale = locale;
 		this.recipeManager = recipeManager;
 	}
 
@@ -38,7 +40,7 @@ public class AskToLookupFood implements PromptRule<Pair<FoodEntry, Meal>, MealOp
 		if (!surveyFlags.contains(Survey.FLAG_FREE_ENTRY_COMPLETE) || data.left.isTemplate() || data.left.isCompound() || data.left.isMissing())
 			return Option.none();
 		else if (!data.left.isEncoded())
-			return Option.<Prompt<Pair<FoodEntry, Meal>, MealOperation>>some(new FoodLookupPrompt(data.left, data.right, recipeManager));
+			return Option.<Prompt<Pair<FoodEntry, Meal>, MealOperation>>some(new FoodLookupPrompt(locale, data.left, data.right, recipeManager));
 		else
 			return Option.none();
 	}
@@ -48,7 +50,7 @@ public class AskToLookupFood implements PromptRule<Pair<FoodEntry, Meal>, MealOp
 		return "Ask to look up food";
 	}
 
-	public static WithPriority<PromptRule<Pair<FoodEntry, Meal>, MealOperation>> withPriority(int priority, RecipeManager recipeManager) {
-		return new WithPriority<PromptRule<Pair<FoodEntry, Meal>, MealOperation>>(new AskToLookupFood(recipeManager), priority);
+	public static WithPriority<PromptRule<Pair<FoodEntry, Meal>, MealOperation>> withPriority(int priority, String locale, RecipeManager recipeManager) {
+		return new WithPriority<PromptRule<Pair<FoodEntry, Meal>, MealOperation>>(new AskToLookupFood(locale, recipeManager), priority);
 	}
 }
