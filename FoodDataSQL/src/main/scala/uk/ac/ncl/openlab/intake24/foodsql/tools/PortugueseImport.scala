@@ -11,22 +11,34 @@ import au.com.bytecode.opencsv.CSVReader
 import java.io.FileReader
 import scala.collection.JavaConversions._
 import uk.ac.ncl.openlab.intake24.services.CodeError
+import com.zaxxer.hikari.HikariDataSource
+import com.zaxxer.hikari.pool.HikariPool
+import uk.ac.ncl.openlab.intake24.foodsql.IndexFoodDataServiceSqlImpl
+import uk.ac.ncl.openlab.intake24.foodsql.LocaleManagementSqlImpl
+import net.scran24.fooddef.Locale
+import uk.ac.ncl.openlab.intake24.foodsql.NutrientTableManagementSqlImpl
+import net.scran24.fooddef.NutrientTable
+import java.util.Properties
+import java.io.PrintWriter
+import com.zaxxer.hikari.HikariConfig
 
 object PortugueseImport extends App {
-  
-  val locale_code = "pt_PT"
+
+  val portugueseLocaleCode = "pt_PT"
+  val baseLocaleCode = "en_GB"
+  val portugueseNutrientTableCode = "PT"
 
   case class Options(arguments: Seq[String]) extends ScallopConf(arguments) {
     version("Intake24 Portuguese localisation data import tool 16.7")
 
     val csvPath = opt[String](required = true, noshort = true)
+    val logPath = opt[String](required = false, noshort = true)
 
     val pgHost = opt[String](required = true, noshort = true)
     val pgDatabase = opt[String](required = true, noshort = true)
     val pgUser = opt[String](required = true, noshort = true)
     val pgPassword = opt[String](noshort = true)
     val pgUseSsl = opt[Boolean](noshort = true)
-
   }
 
   val opts = Options(args)
@@ -51,51 +63,79 @@ object PortugueseImport extends App {
 
   DriverManager.registerDriver(new org.postgresql.Driver)
 
-  val dataSource = new org.postgresql.ds.PGSimpleDataSource()
+  val dbConnectionProps = new Properties();
+  dbConnectionProps.setProperty("dataSourceClassName", "org.postgresql.ds.PGSimpleDataSource")
+  dbConnectionProps.setProperty("dataSource.user", opts.pgUser())
+  dbConnectionProps.setProperty("dataSource.databaseName", opts.pgDatabase())
+  dbConnectionProps.setProperty("dataSource.serverName", opts.pgHost())
+  dbConnectionProps.put("dataSource.logWriter", new PrintWriter(System.out))
 
-  dataSource.setServerName(opts.pgHost())
-  dataSource.setDatabaseName(opts.pgDatabase())
-  dataSource.setUser(opts.pgUser())
+  opts.pgPassword.foreach(pw => dbConnectionProps.setProperty("dataSource.password", pw))
+  opts.pgUseSsl.foreach(ssl => dbConnectionProps.setProperty("dataSource.ssl", ssl.toString()))
 
-  opts.pgPassword.foreach(pw => dataSource.setPassword(pw))
-  opts.pgUseSsl.foreach(ssl => dataSource.setSsl(ssl))
+  val dataSource = new HikariDataSource(new HikariConfig(dbConnectionProps))
 
   val dataService = new AdminFoodDataServiceSqlImpl(dataSource)
 
-  println("Applying do not use flags")
-  
+  val indexDataService = new IndexFoodDataServiceSqlImpl(dataSource)
+
+  // Should be an insert-update loop, but this is just a one-time script so using unsafe way
+  val localeService = new LocaleManagementSqlImpl(dataSource)
+  localeService.delete(portugueseLocaleCode)
+  localeService.create(Locale(portugueseLocaleCode, "Portuguese (Portugal)", "Português", portugueseLocaleCode, "pt", "pt", Some(baseLocaleCode)))
+
+  val nutrientTableService = new NutrientTableManagementSqlImpl(dataSource)
+  nutrientTableService.delete(portugueseNutrientTableCode)
+  nutrientTableService.create(NutrientTable(portugueseNutrientTableCode, "Portuguese food composition database"))
+
   val doNotUseReader = new CSVReader(new FileReader(opts.csvPath() + "/do_not_use.csv"))
 
-  val doNotUseCodes = doNotUseReader.readAll().tail.map(_(0))
-  
-  doNotUseCodes.foreach {
-    code =>
-     // println(s"Updating $code")
-      dataService.foodDef(code, locale_code) match {
-        case Right(fooddef) => dataService.updateFoodLocal(code, locale_code, fooddef.localData.copy(do_not_use = true))
-        case Left(CodeError.UndefinedCode) => println(s"Unexpected food code: $code")
-      }
-  }
-  
+  val doNotUseCodes = doNotUseReader.readAll().tail.map(_(0)).toSet
+
   doNotUseReader.close()
-  
-  println("Adding translations to foods using UK nutrient database")
-  
+
   val useUkReader = new CSVReader(new FileReader(opts.csvPath() + "/use_uk.csv"))
 
-  val useUkRows = useUkReader.readAll().tail
-    
-  useUkRows.foreach {
-    row =>
-      
-      val code = row(0)
-      val portugueseName = row(8)
-      
-     // println(s"Updating $code")
-      
-      dataService.foodDef(code, locale_code) match {
-        case Right(fooddef) => dataService.updateFoodLocal(code, locale_code, fooddef.localData.copy(localDescription = Some(portugueseName)))
-        case Left(CodeError.UndefinedCode) => println(s"Unexpected food code: $code")
-      }      
+  val useUk = useUkReader.readAll().tail.map(row => row(0) -> row(9)).toMap
+
+  useUkReader.close()
+
+  val usePtReader = new CSVReader(new FileReader(opts.csvPath() + "/use_pt.csv"))
+
+  val usePt = usePtReader.readAll().tail.map(row => row(0) -> (row(7), row(9))).toMap
+
+  usePtReader.close()
+
+  val indexableFoods = indexDataService.indexableFoods(baseLocaleCode)
+  
+  indexableFoods.foreach {
+    header =>
+      print(s""""${header.code}", "${header.localDescription}"""")
+
+      dataService.foodDef(header.code, portugueseLocaleCode) match {
+        case Right(fooddef) => {
+          val localData = fooddef.localData
+
+          if (doNotUseCodes.contains(header.code)) {
+            println(s""","Not using in Portuguese locale"""")
+            dataService.updateFoodLocal(header.code, portugueseLocaleCode, localData.copy(do_not_use = true))
+          } else useUk.get(header.code) match {
+            case Some(portugueseDescription) => {
+              println(s""","Inheriting UK food database code", "$portugueseDescription"""")
+              dataService.updateFoodLocal(header.code, portugueseLocaleCode, localData.copy(localDescription = Some(portugueseDescription), do_not_use = false))
+            }
+            case None => usePt.get(header.code) match {
+              case Some((portugueseCode, portugueseDescription)) => {
+                println(s""","Using Portuguese food database code", "$portugueseDescription", "$portugueseCode"""")
+                dataService.updateFoodLocal(header.code, portugueseLocaleCode, localData.copy(localDescription = Some(portugueseDescription), nutrientTableCodes = Map(portugueseNutrientTableCode -> portugueseCode), do_not_use = false))
+              }
+              case None => {
+                println(""","Not in Portuguese recoding tables!"""")
+              }
+            }
+          }
+        }
+        case _ => throw new RuntimeException(s"Could not retrieve food definition for ${header.localDescription} (${header.code})")
+      }
   }
 }

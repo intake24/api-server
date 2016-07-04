@@ -31,7 +31,9 @@ trait SplitterDataSqlImpl extends SqlDataService {
       val words = SQL("""SELECT words FROM split_words WHERE locale_id={locale}""")
         .on('locale -> locale)
         .executeQuery()
-        .as(str("words").single).split("\\s+").toSeq
+        .as(str("words").singleOpt).map {
+          words => words.split("\\s+").toSeq
+        }.getOrElse(Seq())
 
       val splitList = SQL("""SELECT first_word, words FROM split_list WHERE locale_id={locale}""")
         .on('locale -> locale)

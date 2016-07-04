@@ -132,4 +132,6 @@ trait AdminFoodDataService {
   def removeFoodFromCategory(categoryCode: String, foodCode: String): UpdateResult
   
   def removeSubcategoryFromCategory(categoryCode: String, foodCode: String): UpdateResult
+  
+  //def updateAssociatedFoods(foodCode: String, locale: String, foodPrompts)
 }

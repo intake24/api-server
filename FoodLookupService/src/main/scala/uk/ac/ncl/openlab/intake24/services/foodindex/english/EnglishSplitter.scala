@@ -33,16 +33,17 @@ case class EnglishSplitter(splitList: SplitList) extends Splitter {
   log.debug(splitList.toString())
 
   val charPattern = """[,&\.\/]""".r
-  
+
   val splitWordsClause = "(?:" + splitList.splitWords.map(Pattern.quote(_)).mkString("|") + ")"
 
   val pattern = ("""(?i)([^\s]+)(?:\s+""" + splitWordsClause + """)+\s+([^\s]+)""").r
-  
+
   val leadingSplitWordsPattern = ("""(?i)^(?:\s*""" + splitWordsClause + """\s*)+""").r
-  
+
   val trailingSplitWordsPattern = ("""(?i)(?:\s*""" + splitWordsClause + """\s*)+$""").r
 
   def split(description: String): List[String] = {
+
     @tailrec
     def rec(prefix: String, remainder: String, parts: List[String]): List[String] = pattern.findFirstMatchIn(remainder) match {
       case Some(m) => {
@@ -59,15 +60,21 @@ case class EnglishSplitter(splitList: SplitList) extends Splitter {
       case None => (prefix + remainder) :: parts
     }
 
-    val lowerCaseDescription = description.toLowerCase
+    if (splitList.splitWords.isEmpty) {
+      log.warn("Empty split list! Returning original description.")
+      List(description)
+    } else {
 
-    // replace all instances of split characters (, & etc) with the first split word surrounded by spaces (e.g. " and ")
-    val descWithReplacedChars = charPattern.replaceAllIn(lowerCaseDescription, s" ${splitList.splitWords.head} ")
-    
-    val descRemovedLeading = leadingSplitWordsPattern.replaceAllIn(descWithReplacedChars, "")
-    
-    val descRemovedTrailing = trailingSplitWordsPattern.replaceAllIn(descRemovedLeading, "")
-    
-    rec("", descRemovedTrailing, List()).reverse
+      val lowerCaseDescription = description.toLowerCase
+
+      // replace all instances of split characters (, & etc) with the first split word surrounded by spaces (e.g. " and ")
+      val descWithReplacedChars = charPattern.replaceAllIn(lowerCaseDescription, s" ${splitList.splitWords.head} ")
+
+      val descRemovedLeading = leadingSplitWordsPattern.replaceAllIn(descWithReplacedChars, "")
+
+      val descRemovedTrailing = trailingSplitWordsPattern.replaceAllIn(descRemovedLeading, "")
+
+      rec("", descRemovedTrailing, List()).reverse
+    }
   }
 }
