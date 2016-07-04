@@ -38,6 +38,7 @@ import net.scran24.fooddef.CategoryLocal
 import uk.ac.ncl.openlab.intake24.services.InvalidRequest
 import uk.ac.ncl.openlab.intake24.services.NewFood
 import uk.ac.ncl.openlab.intake24.services.NewCategory
+import net.scran24.fooddef.Prompt
 
 @Singleton
 trait FoodDataEditingSqlImpl extends SqlDataService {
@@ -211,7 +212,7 @@ trait FoodDataEditingSqlImpl extends SqlDataService {
           case Some(version) => {
 
             val rowsAffected = SQL(Queries.foodsLocalUpdate)
-              .on('food_code -> foodCode, 'locale_id -> locale, 'base_version -> foodLocal.version, 'new_version -> UUID.randomUUID(), 'local_description -> foodLocal.localDescription, 'do_not_use -> foodLocal.do_not_use)
+              .on('food_code -> foodCode, 'locale_id -> locale, 'base_version -> foodLocal.version, 'new_version -> UUID.randomUUID(), 'local_description -> foodLocal.localDescription, 'do_not_use -> foodLocal.doNotUse)
               .executeUpdate()
 
             if (rowsAffected == 1) {
@@ -225,7 +226,7 @@ trait FoodDataEditingSqlImpl extends SqlDataService {
           case None => {
             try {
               SQL(Queries.foodsLocalInsert)
-                .on('food_code -> foodCode, 'locale_id -> locale, 'local_description -> foodLocal.localDescription, 'do_not_use -> foodLocal.do_not_use, 'version -> UUID.randomUUID())
+                .on('food_code -> foodCode, 'locale_id -> locale, 'local_description -> foodLocal.localDescription, 'do_not_use -> foodLocal.doNotUse, 'version -> UUID.randomUUID())
                 .execute()
               conn.commit()
               uk.ac.ncl.openlab.intake24.services.Success
@@ -453,6 +454,29 @@ trait FoodDataEditingSqlImpl extends SqlDataService {
           uk.ac.ncl.openlab.intake24.services.Success
         else
           InvalidRequest(subcategoryNotInCategoryCode, subcategoryNotInCategoryMessage(categoryCode, subcategoryCode))
+      } catch {
+        case e: PSQLException => SqlException(e.getServerErrorMessage.getMessage)
+      }
+  }
+
+  def updateAssociatedFoods(foodCode: String, locale: String, foods: Seq[Prompt]): UpdateResult = tryWithConnection {
+    implicit conn =>
+      try {
+        conn.setAutoCommit(false)
+
+        SQL("DELETE FROM associated_food_prompts WHERE food_code={food_code} AND locale_id={locale_id}").execute()
+
+        if (foods.nonEmpty) {
+
+          val params = foods.map(p => Seq[NamedParameter]('food_code -> foodCode, 'locale_id -> locale, 'category_code -> p.category, 'text -> p.promptText,
+            'link_as_main -> p.linkAsMain, 'generic_name -> p.genericName))
+
+          BatchSql("INSERT INTO associated_food_prompts VALUES (DEFAULT, {food_code}, {locale_id}, {category_code}, {text}, {link_as_main}, {generic_name})").execute()
+        }
+
+        conn.commit()
+        
+        uk.ac.ncl.openlab.intake24.services.Success
       } catch {
         case e: PSQLException => SqlException(e.getServerErrorMessage.getMessage)
       }

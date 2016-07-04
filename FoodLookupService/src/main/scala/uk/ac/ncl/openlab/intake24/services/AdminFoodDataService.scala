@@ -107,6 +107,8 @@ trait AdminFoodDataService {
   
   def updateFoodLocal(foodCode: String, locale: String, foodLocal: FoodLocal): UpdateResult
   
+  def updateAssociatedFoods(foodCode: String, locale: String, foods: Seq[Prompt]): UpdateResult
+  
   def isFoodCodeAvailable(code: String): Boolean
   
   def createFood(newFood: NewFood): UpdateResult

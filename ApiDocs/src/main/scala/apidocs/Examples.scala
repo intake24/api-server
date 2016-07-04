@@ -57,7 +57,7 @@ object Examples {
   val signInRequestJson = prettyPrint(write(signInRequest))
 
   val food1 = Food(xmlVersionId, "MLAS", "Meat lasagne (includes homemade)", 107, InheritableAttributes(Some(true), None, None),
-    FoodLocal(Some(xmlVersionId), Some("Лазанья с мясом (в том числе домашнего приготовления)"), Map("NDNS" -> "1348"), Seq(PortionSizeMethod("as-served", "Use an image", "portion/lasagne.jpg", false,
+    FoodLocal(Some(xmlVersionId), Some("Лазанья с мясом (в том числе домашнего приготовления)"), false, Map("NDNS" -> "1348"), Seq(PortionSizeMethod("as-served", "Use an image", "portion/lasagne.jpg", false,
       Seq(PortionSizeMethodParameter("serving-image-set", "lasagne"),
         PortionSizeMethodParameter("leftovers-image-set", "lasagne_leftovers"))))))
 
@@ -79,7 +79,7 @@ object Examples {
 
   val catHeaderJson = prettyPrint(write(catHeader))
 
-  val foodHeader = FoodHeader(food1.code, food1.englishDescription, food1.localData.localDescription)
+  val foodHeader = FoodHeader(food1.code, food1.englishDescription, food1.localData.localDescription, false)
 
   val foodHeaderJson = prettyPrint(write(foodHeader))
 
@@ -99,7 +99,7 @@ object Examples {
   
   val foodBase = prettyPrint(write(FoodBase(xmlVersionId, "F001", "Updated food", 1, InheritableAttributes(Some(true), None, None))))
   
-  val foodLocal = prettyPrint(write(FoodLocal(Some(xmlVersionId), Some("Лазанья с мясом (в том числе домашнего приготовления)"), Map("NDNS" -> "1348"), Seq(PortionSizeMethod("as-served", "Use an image", "portion/lasagne.jpg", false,
+  val foodLocal = prettyPrint(write(FoodLocal(Some(xmlVersionId), Some("Лазанья с мясом (в том числе домашнего приготовления)"), false, Map("NDNS" -> "1348"), Seq(PortionSizeMethod("as-served", "Use an image", "portion/lasagne.jpg", false,
       Seq(PortionSizeMethodParameter("serving-image-set", "lasagne"),
         PortionSizeMethodParameter("leftovers-image-set", "lasagne_leftovers")))))))
         

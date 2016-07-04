@@ -118,16 +118,16 @@ object PortugueseImport extends App {
 
           if (doNotUseCodes.contains(header.code)) {
             println(s""","Not using in Portuguese locale"""")
-            dataService.updateFoodLocal(header.code, portugueseLocaleCode, localData.copy(do_not_use = true))
+            dataService.updateFoodLocal(header.code, portugueseLocaleCode, localData.copy(doNotUse = true))
           } else useUk.get(header.code) match {
             case Some(portugueseDescription) => {
               println(s""","Inheriting UK food database code", "$portugueseDescription"""")
-              dataService.updateFoodLocal(header.code, portugueseLocaleCode, localData.copy(localDescription = Some(portugueseDescription), do_not_use = false))
+              dataService.updateFoodLocal(header.code, portugueseLocaleCode, localData.copy(localDescription = Some(portugueseDescription), doNotUse = false))
             }
             case None => usePt.get(header.code) match {
               case Some((portugueseCode, portugueseDescription)) => {
                 println(s""","Using Portuguese food database code", "$portugueseDescription", "$portugueseCode"""")
-                dataService.updateFoodLocal(header.code, portugueseLocaleCode, localData.copy(localDescription = Some(portugueseDescription), nutrientTableCodes = Map(portugueseNutrientTableCode -> portugueseCode), do_not_use = false))
+                dataService.updateFoodLocal(header.code, portugueseLocaleCode, localData.copy(localDescription = Some(portugueseDescription), nutrientTableCodes = Map(portugueseNutrientTableCode -> portugueseCode), doNotUse = false))
               }
               case None => {
                 println(""","Not in Portuguese recoding tables!"""")

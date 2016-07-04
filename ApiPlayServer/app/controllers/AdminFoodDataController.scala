@@ -40,6 +40,7 @@ import uk.ac.ncl.openlab.intake24.services.SqlException
 import upickle.Invalid
 import play.api.libs.json.JsBoolean
 import net.scran24.fooddef.FoodBase
+import net.scran24.fooddef.Prompt
 import net.scran24.fooddef.FoodLocal
 import uk.ac.ncl.openlab.intake24.services.NewFood
 import uk.ac.ncl.openlab.intake24.services.NewCategory
@@ -48,6 +49,7 @@ import net.scran24.fooddef.CategoryLocal
 import security.Permissions
 import play.api.libs.json.JsString
 import security.Roles
+import uk.ac.ncl.openlab.intake24.services.CodeError
 
 class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt: DeadboltActions) extends Controller with PickleErrorHandler {
 
@@ -84,7 +86,10 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt
 
   def foodDef(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      Ok(write(service.foodDef(code, locale))).as(ContentTypes.JSON)
+      service.foodDef(code, locale) match {
+        case Right(d) => Ok(write(d)).as(ContentTypes.JSON)
+        case Left(CodeError.UndefinedCode) => NotFound 
+      }
     }
   }
 
@@ -183,6 +188,14 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt
       }
     }
   }
+  
+  def updateAssociatedFoodPrompts(foodCode: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
+    Action(parse.tolerantText) { implicit request =>
+      tryWithPickle {
+        translateUpdateResult(service.updateAssociatedFoods(foodCode, locale, read[Seq[Prompt]](request.body)))
+      }
+    }
+  } 
 
   def isFoodCodeAvailable(code: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {

@@ -26,5 +26,7 @@ version := "15.9-SNAPSHOT"
 
 scalaVersion := "2.11.7"
 
-libraryDependencies += "com.google.gwt" % "gwt-user" % "2.7.0" % "provided"
+libraryDependencies ++= 
+	Seq("com.google.gwt" % "gwt-user" % "2.7.0" % "provided",
+	"com.fasterxml.jackson.core" % "jackson-databind" % "2.7.2")
 

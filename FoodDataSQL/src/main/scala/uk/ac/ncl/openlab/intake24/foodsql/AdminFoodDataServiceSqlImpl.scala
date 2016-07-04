@@ -80,7 +80,7 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
   def uncategorisedFoods(locale: String): Seq[FoodHeader] = tryWithConnection {
     implicit conn =>
       val query =
-        """|SELECT code, description, local_description
+        """|SELECT code, description, local_description, do_not_use
            |FROM foods LEFT JOIN foods_local ON foods.code = foods_local.food_code
            |           LEFT JOIN foods_categories ON foods.code = foods_categories.food_code
            |WHERE category_code IS NULL""".stripMargin
@@ -107,14 +107,14 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
       SQL(query).on('locale_id -> locale).executeQuery().as(Macro.namedParser[CategoryHeaderRow].*).map(_.asCategoryHeader)
   }
 
-  case class FoodHeaderRow(code: String, description: String, local_description: Option[String]) {
-    def asFoodHeader = FoodHeader(code, description, local_description)
+  case class FoodHeaderRow(code: String, description: String, local_description: Option[String], do_not_use: Option[Boolean]) {
+    def asFoodHeader = FoodHeader(code, description, local_description, do_not_use.getOrElse(false))
   }
 
   def categoryContents(code: String, locale: String): CategoryContents = tryWithConnection {
     implicit conn =>
       val foodsQuery =
-        """|SELECT code, description, local_description 
+        """|SELECT code, description, local_description, do_not_use 
            |FROM foods_categories 
            |  INNER JOIN foods ON foods.code = foods_categories.food_code 
            |  LEFT JOIN foods_local ON foods.code = foods_local.food_code AND foods_local.locale_id = {locale_id}
@@ -459,7 +459,7 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
       val lowerCaseTerm = searchTerm.toLowerCase
 
       val query =
-        """|SELECT code, description, local_description
+        """|SELECT code, description, local_description, do_not_use
            |FROM foods LEFT JOIN foods_local ON foods.code = foods_local.food_code 
            |WHERE lower(local_description) LIKE {pattern} OR lower(description) LIKE {pattern} OR lower(code) LIKE {pattern} 
            |ORDER BY local_description DESC

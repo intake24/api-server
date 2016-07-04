@@ -46,6 +46,7 @@ POST    /admin/foods/new                              controllers.AdminFoodDataC
 POST    /admin/foods/new-with-temp-code               controllers.AdminFoodDataController.createFoodWithTempCode()
 POST    /admin/foods/:code                            controllers.AdminFoodDataController.updateFoodBase(code: String)
 POST    /admin/foods/:locale/:code                    controllers.AdminFoodDataController.updateFoodLocal(code: String, locale: String)
+POST    /admin/foods/:locale/:code/associated-foods   controllers.AdminFoodDataController.updateAssociatedFoodPrompts(code: String, locale: String)
 DELETE  /admin/foods/:code                            controllers.AdminFoodDataController.deleteFood(code)
 
 GET     /admin/food-groups/:locale                    controllers.AdminFoodDataController.allFoodGroups(locale: String)

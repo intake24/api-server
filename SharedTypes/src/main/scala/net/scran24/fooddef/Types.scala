@@ -42,9 +42,9 @@ case class Food(version: UUID, code: String, englishDescription: String, groupCo
 
 case class FoodBase(version: UUID, code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes)
 
-case class FoodLocal(version: Option[UUID], localDescription: Option[String], do_not_use: Boolean, nutrientTableCodes: Map[String, String], portionSize: Seq[PortionSizeMethod])
+case class FoodLocal(version: Option[UUID], localDescription: Option[String], doNotUse: Boolean, nutrientTableCodes: Map[String, String], portionSize: Seq[PortionSizeMethod])
 
-case class FoodHeader(code: String, englishDescription: String, localDescription: Option[String])
+case class FoodHeader(code: String, englishDescription: String, localDescription: Option[String], doNotUse: Boolean)
 
 case class UserFoodHeader(code: String, localDescription: String)
 
