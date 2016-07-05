@@ -18,11 +18,11 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.services.foodindex
 
-import net.scran24.fooddef.FoodHeader
-import net.scran24.fooddef.CategoryHeader
+import uk.ac.ncl.openlab.intake24.FoodHeader
+import uk.ac.ncl.openlab.intake24.CategoryHeader
 
-import net.scran24.fooddef.UserFoodHeader
-import net.scran24.fooddef.UserCategoryHeader
+import uk.ac.ncl.openlab.intake24.UserFoodHeader
+import uk.ac.ncl.openlab.intake24.UserCategoryHeader
 
 case class MatchedFood(food: UserFoodHeader, matchCost: Int)
 

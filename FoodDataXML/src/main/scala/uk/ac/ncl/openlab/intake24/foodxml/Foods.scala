@@ -18,9 +18,9 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodxml
 
-import net.scran24.fooddef.Food
+import uk.ac.ncl.openlab.intake24.FoodRecord
 
-case class Foods(foods: Seq[Food]) {
+case class Foods(foods: Seq[FoodRecord]) {
   val foodMap = foods.map( c => (c.code,c)).toMap
   
   def find(code: String) = foodMap.get(code) match {

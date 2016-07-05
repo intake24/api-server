@@ -18,27 +18,30 @@ limitations under the License.
 
 package apidocs
 
-import net.scran24.fooddef.Food
-import net.scran24.fooddef.FoodLocal
-import net.scran24.fooddef.Category
-import net.scran24.fooddef.CategoryLocal
-import net.scran24.fooddef.InheritableAttributes
+
+import uk.ac.ncl.openlab.intake24.Category
+import uk.ac.ncl.openlab.intake24.CategoryLocal
+import uk.ac.ncl.openlab.intake24.InheritableAttributes
 import java.io.StringReader
 import upickle.default._
 import java.util.UUID
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
-import net.scran24.fooddef.PortionSizeMethod
-import net.scran24.fooddef.PortionSizeMethodParameter
-import net.scran24.fooddef.CategoryHeader
-import net.scran24.fooddef.FoodHeader
-import net.scran24.fooddef.CategoryContents
+import uk.ac.ncl.openlab.intake24.PortionSizeMethod
+import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
+import uk.ac.ncl.openlab.intake24.CategoryHeader
+import uk.ac.ncl.openlab.intake24.FoodHeader
+import uk.ac.ncl.openlab.intake24.CategoryContents
 import uk.ac.ncl.openlab.intake24.api.Intake24Credentials
 import uk.ac.ncl.openlab.intake24.services.NewFood
-import net.scran24.fooddef.FoodBase
+
 import uk.ac.ncl.openlab.intake24.services.NewCategory
-import net.scran24.fooddef.CategoryBase
-import net.scran24.fooddef.FoodGroup
+import uk.ac.ncl.openlab.intake24.CategoryBase
+import uk.ac.ncl.openlab.intake24.FoodGroup
+
+import uk.ac.ncl.openlab.intake24.MainFoodRecord
+import uk.ac.ncl.openlab.intake24.LocalFoodRecord
+import uk.ac.ncl.openlab.intake24.FoodRecord
 
 object Examples {
 
@@ -56,8 +59,8 @@ object Examples {
 
   val signInRequestJson = prettyPrint(write(signInRequest))
 
-  val food1 = Food(xmlVersionId, "MLAS", "Meat lasagne (includes homemade)", 107, InheritableAttributes(Some(true), None, None),
-    FoodLocal(Some(xmlVersionId), Some("Лазанья с мясом (в том числе домашнего приготовления)"), false, Map("NDNS" -> "1348"), Seq(PortionSizeMethod("as-served", "Use an image", "portion/lasagne.jpg", false,
+  val food1 = FoodRecord(xmlVersionId, "MLAS", "Meat lasagne (includes homemade)", 107, InheritableAttributes(Some(true), None, None),
+    LocalFoodRecord(Some(xmlVersionId), Some("Лазанья с мясом (в том числе домашнего приготовления)"), false, Map("NDNS" -> "1348"), Seq(PortionSizeMethod("as-served", "Use an image", "portion/lasagne.jpg", false,
       Seq(PortionSizeMethodParameter("serving-image-set", "lasagne"),
         PortionSizeMethodParameter("leftovers-image-set", "lasagne_leftovers"))))))
 
@@ -97,9 +100,9 @@ object Examples {
   
   val newCategoryRequest = prettyPrint(write(NewCategory("C001", "New category", false, InheritableAttributes(Some(true), None, None))))
   
-  val foodBase = prettyPrint(write(FoodBase(xmlVersionId, "F001", "Updated food", 1, InheritableAttributes(Some(true), None, None))))
+  val foodBase = prettyPrint(write(MainFoodRecord(xmlVersionId, "F001", "Updated food", 1, InheritableAttributes(Some(true), None, None))))
   
-  val foodLocal = prettyPrint(write(FoodLocal(Some(xmlVersionId), Some("Лазанья с мясом (в том числе домашнего приготовления)"), false, Map("NDNS" -> "1348"), Seq(PortionSizeMethod("as-served", "Use an image", "portion/lasagne.jpg", false,
+  val foodLocal = prettyPrint(write(LocalFoodRecord(Some(xmlVersionId), Some("Лазанья с мясом (в том числе домашнего приготовления)"), false, Map("NDNS" -> "1348"), Seq(PortionSizeMethod("as-served", "Use an image", "portion/lasagne.jpg", false,
       Seq(PortionSizeMethodParameter("serving-image-set", "lasagne"),
         PortionSizeMethodParameter("leftovers-image-set", "lasagne_leftovers")))))))
         

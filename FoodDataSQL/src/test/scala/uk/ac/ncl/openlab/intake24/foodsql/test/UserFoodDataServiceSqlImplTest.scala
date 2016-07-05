@@ -18,37 +18,24 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodsql.test
 
+import scala.Left
+import scala.Right
+
 import org.scalatest.FunSuite
-import java.sql.DriverManager
-import anorm.SQL
-import uk.ac.ncl.openlab.intake24.foodsql.tools.XmlImporter
-import uk.ac.ncl.openlab.intake24.foodsql.AdminFoodDataServiceSqlImpl
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Await
-import scala.concurrent.duration._
-import net.scran24.fooddef.Food
-import net.scran24.fooddef.InheritableAttributes
-import net.scran24.fooddef.PortionSizeMethod
-import net.scran24.fooddef.AsServedSet
-import net.scran24.fooddef.AsServedImage
-import net.scran24.fooddef.VolumeFunction
-import net.scran24.fooddef.DrinkwareSet
-import net.scran24.fooddef.DrinkScale
-import net.scran24.fooddef.Prompt
-import net.scran24.fooddef.GuideImageWeightRecord
-import net.scran24.fooddef.GuideImage
-import net.scran24.fooddef.CategoryHeader
-import net.scran24.fooddef.FoodData
-import uk.ac.ncl.openlab.intake24.foodxml.FoodDef
-import net.scran24.fooddef.PortionSizeMethodParameter
+
+import com.google.inject.Inject
+import com.google.inject.Singleton
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import uk.ac.ncl.openlab.intake24.services.AdminFoodDataServiceTest
+
+import anorm.SQL
+import anorm.sqlToSimple
+import uk.ac.ncl.openlab.intake24.UserCategoryContents
+import uk.ac.ncl.openlab.intake24.UserCategoryHeader
+import uk.ac.ncl.openlab.intake24.UserFoodData
+import uk.ac.ncl.openlab.intake24.UserFoodHeader
 import uk.ac.ncl.openlab.intake24.foodsql.UserFoodDataServiceSqlImpl
-import net.scran24.fooddef.UserCategoryHeader
 import uk.ac.ncl.openlab.intake24.services.CodeError
-import net.scran24.fooddef.UserFoodHeader
-import net.scran24.fooddef.UserCategoryContents
 
 class UserFoodDataServiceSqlImplTest extends FunSuite with TestDB {
 
@@ -150,7 +137,7 @@ class UserFoodDataServiceSqlImplTest extends FunSuite with TestDB {
   }  
   
   test("Default attribute values") {
-    val expected = Right(FoodData("F007", "Default attributes test", Map(), 0, Seq(), false, false, 1000))
+    val expected = Right(UserFoodData("F007", "Default attributes test", Map(), 0, Seq(), false, false, 1000))
     
     assert(service.foodData("F007", "en_GB") === expected)
   }

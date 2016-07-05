@@ -21,18 +21,18 @@ package uk.ac.ncl.openlab.intake24.foodxml
 import org.slf4j.LoggerFactory
 import com.google.inject.Inject
 import com.google.inject.Singleton
-import net.scran24.fooddef.AsServedSet
-import net.scran24.fooddef.DrinkwareSet
-import net.scran24.fooddef.FoodData
-import net.scran24.fooddef.GuideImage
-import net.scran24.fooddef.InheritableAttributes
-import net.scran24.fooddef.Prompt
-import net.scran24.fooddef.UserCategoryContents
-import net.scran24.fooddef.UserCategoryHeader
+import uk.ac.ncl.openlab.intake24.AsServedSet
+import uk.ac.ncl.openlab.intake24.DrinkwareSet
+import uk.ac.ncl.openlab.intake24.GuideImage
+import uk.ac.ncl.openlab.intake24.InheritableAttributes
+import uk.ac.ncl.openlab.intake24.AssociatedFood
+import uk.ac.ncl.openlab.intake24.UserCategoryContents
+import uk.ac.ncl.openlab.intake24.UserCategoryHeader
 import uk.ac.ncl.openlab.intake24.services.UserFoodDataService
 import uk.ac.ncl.openlab.intake24.services.foodindex.Util.mkHeader
 import uk.ac.ncl.openlab.intake24.services.ResourceError
 import uk.ac.ncl.openlab.intake24.services.CodeError
+import uk.ac.ncl.openlab.intake24.UserFoodData
 
 @Singleton
 class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends UserFoodDataService {
@@ -105,7 +105,7 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends UserFoo
       }
     }
 
-    Right((FoodData(f.code, f.englishDescription, f.localData.nutrientTableCodes, f.groupCode, portionSizeMethods, readyMealOption, sameAsBeforeOption, reasonableAmount), null))
+    Right((UserFoodData(f.code, f.englishDescription, f.localData.nutrientTableCodes, f.groupCode, portionSizeMethods, readyMealOption, sameAsBeforeOption, reasonableAmount), null))
   }
 
   def asServedDef(id: String) = data.asServedSets.get(id) match {
@@ -123,7 +123,7 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends UserFoo
     case None => Left(ResourceError.ResourceNotFound)
   }
 
-  def associatedFoodPrompts(foodCode: String, locale: String) = {
+  def associatedFoods(foodCode: String, locale: String) = {
     checkLocale(locale)
     data.prompts.get(foodCode) match {
       case Some(seq) => Right(seq)

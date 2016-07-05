@@ -24,8 +24,8 @@ import scala.xml.XML
 import au.com.bytecode.opencsv.CSVWriter
 import java.io.FileWriter
 import scala.collection.JavaConversions._
-import net.scran24.fooddef.AsServedSet
-import net.scran24.fooddef.GuideImageWeightRecord
+import uk.ac.ncl.openlab.intake24.AsServedSet
+import uk.ac.ncl.openlab.intake24.GuideImageWeightRecord
 import uk.ac.ncl.openlab.intake24.foodxml.GuideImageDef
 import uk.ac.ncl.openlab.intake24.foodxml.AsServedDef
 

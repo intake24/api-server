@@ -19,7 +19,7 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.services.foodindex.english
 
 import org.scalatest.FunSuite
-import net.scran24.fooddef.SplitList
+import uk.ac.ncl.openlab.intake24.SplitList
 
 class EnglishSplitterTest extends FunSuite {
   

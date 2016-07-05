@@ -18,29 +18,22 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.services
 
-import net.scran24.fooddef.AsServedSet
-import net.scran24.fooddef.DrinkwareSet
-import net.scran24.fooddef.Prompt
-import net.scran24.fooddef.GuideImage
-import net.scran24.fooddef.Food
-import net.scran24.fooddef.CategoryHeader
-import net.scran24.fooddef.FoodHeader
-import net.scran24.fooddef.CategoryHeader
-import net.scran24.fooddef.CategoryContents
-import net.scran24.fooddef.FoodData
-import net.scran24.fooddef.SplitList
-import net.scran24.fooddef.FoodGroup
-import net.scran24.fooddef.Category
-import net.scran24.fooddef.AsServedHeader
-import net.scran24.fooddef.GuideHeader
-import net.scran24.fooddef.DrinkwareHeader
-import net.scran24.fooddef.AsServedHeader
-import net.scran24.fooddef.NutrientTable
-import net.scran24.fooddef.InheritableAttributes
-import net.scran24.fooddef.FoodBase
-import net.scran24.fooddef.FoodLocal
-import net.scran24.fooddef.CategoryBase
-import net.scran24.fooddef.CategoryLocal
+import uk.ac.ncl.openlab.intake24.AsServedHeader
+import uk.ac.ncl.openlab.intake24.AssociatedFood
+import uk.ac.ncl.openlab.intake24.Category
+import uk.ac.ncl.openlab.intake24.CategoryBase
+import uk.ac.ncl.openlab.intake24.CategoryContents
+import uk.ac.ncl.openlab.intake24.CategoryHeader
+import uk.ac.ncl.openlab.intake24.CategoryLocal
+import uk.ac.ncl.openlab.intake24.DrinkwareHeader
+import uk.ac.ncl.openlab.intake24.FoodGroup
+import uk.ac.ncl.openlab.intake24.FoodHeader
+import uk.ac.ncl.openlab.intake24.FoodRecord
+import uk.ac.ncl.openlab.intake24.GuideHeader
+import uk.ac.ncl.openlab.intake24.InheritableAttributes
+import uk.ac.ncl.openlab.intake24.LocalFoodRecord
+import uk.ac.ncl.openlab.intake24.MainFoodRecord
+import uk.ac.ncl.openlab.intake24.NutrientTable
 
 sealed trait UpdateResult 
 
@@ -68,7 +61,7 @@ trait AdminFoodDataService {
 
   def categoryContents(code: String, locale: String): CategoryContents
 
-  def foodDef(code: String, locale: String): Either[CodeError, Food]
+  def foodRecord(code: String, locale: String): Either[CodeError, FoodRecord]
  
   def isCategoryCode(code: String): Boolean
   
@@ -103,11 +96,9 @@ trait AdminFoodDataService {
   
   // Write
   
-  def updateFoodBase(foodCode: String, foodBase: FoodBase): UpdateResult
+  def updateFoodBase(foodCode: String, foodBase: MainFoodRecord): UpdateResult
   
-  def updateFoodLocal(foodCode: String, locale: String, foodLocal: FoodLocal): UpdateResult
-  
-  def updateAssociatedFoods(foodCode: String, locale: String, foods: Seq[Prompt]): UpdateResult
+  def updateFoodLocal(foodCode: String, locale: String, foodLocal: LocalFoodRecord): UpdateResult 
   
   def isFoodCodeAvailable(code: String): Boolean
   
@@ -135,5 +126,5 @@ trait AdminFoodDataService {
   
   def removeSubcategoryFromCategory(categoryCode: String, foodCode: String): UpdateResult
   
-  //def updateAssociatedFoods(foodCode: String, locale: String, foodPrompts)
+  def updateAssociatedFoods(foodCode: String, locale: String, associatedFoods: Seq[AssociatedFood]): UpdateResult
 }

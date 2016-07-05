@@ -22,7 +22,7 @@ import scala.annotation.tailrec
 import java.util.regex.Pattern
 import uk.ac.ncl.openlab.intake24.services.foodindex.Splitter
 import org.slf4j.LoggerFactory
-import net.scran24.fooddef.SplitList
+import uk.ac.ncl.openlab.intake24.SplitList
 
 case class EnglishSplitter(splitList: SplitList) extends Splitter {
 

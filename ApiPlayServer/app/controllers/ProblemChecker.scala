@@ -3,7 +3,7 @@ package controllers
 import play.api.mvc.Controller
 import play.api.libs.json.Json
 import play.api.mvc.Action
-import net.scran24.fooddef.nutrients.EnergyKcal
+import uk.ac.ncl.openlab.intake24.nutrients.EnergyKcal
 import play.api.libs.json.JsError
 import scala.concurrent.Future
 import upickle.default._
@@ -13,7 +13,7 @@ import javax.inject.Inject
 import be.objectify.deadbolt.scala.DeadboltActions
 import be.objectify.deadbolt.core.PatternType
 import scala.collection.mutable.Buffer
-import net.scran24.fooddef.CategoryHeader
+import uk.ac.ncl.openlab.intake24.CategoryHeader
 import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService
 import uk.ac.ncl.openlab.intake24.services.UserFoodDataService
 import uk.ac.ncl.openlab.intake24.services.FoodDataError
@@ -55,7 +55,7 @@ class ProblemChecker @Inject() (userData: UserFoodDataService, adminData: AdminF
   }
 
   def foodProblems(code: String, locale: String): Seq[FoodProblem] = {
-    val foodDef = adminData.foodDef(code, locale)
+    val foodDef = adminData.foodRecord(code, locale)
     val userFoodData = userData.foodData(code, locale)
     val uncatFoods = adminData.uncategorisedFoods(locale)
     

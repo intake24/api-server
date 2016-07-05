@@ -18,7 +18,7 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodxml
 
-import net.scran24.fooddef.CategoryV2
+import uk.ac.ncl.openlab.intake24.CategoryV2
 import org.slf4j.LoggerFactory
 
 case class Categories(categories: Seq[CategoryV2]) {

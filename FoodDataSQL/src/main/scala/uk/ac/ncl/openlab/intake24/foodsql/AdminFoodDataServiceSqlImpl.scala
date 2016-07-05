@@ -18,48 +18,49 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodsql
 
-import java.sql.Connection
 import java.util.UUID
+
+import scala.Left
+import scala.Right
+
 import org.slf4j.LoggerFactory
+
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.google.inject.name.Named
+
 import anorm.Macro
 import anorm.NamedParameter.symbol
 import anorm.SQL
+import anorm.SqlParser
 import anorm.SqlParser.str
 import anorm.sqlToSimple
 import javax.sql.DataSource
-import net.scran24.fooddef.AsServedImage
-import net.scran24.fooddef.AsServedSet
-import net.scran24.fooddef.CategoryContents
-import net.scran24.fooddef.CategoryHeader
-import net.scran24.fooddef.DrinkScale
-import net.scran24.fooddef.DrinkwareSet
-import net.scran24.fooddef.Food
-import net.scran24.fooddef.FoodData
-import net.scran24.fooddef.FoodGroup
-import net.scran24.fooddef.FoodHeader
-import net.scran24.fooddef.GuideImage
-import net.scran24.fooddef.GuideImageWeightRecord
-import net.scran24.fooddef.InheritableAttributes
-import net.scran24.fooddef.PortionSizeMethod
-import net.scran24.fooddef.PortionSizeMethodParameter
-import net.scran24.fooddef.Prompt
-import net.scran24.fooddef.SplitList
-import net.scran24.fooddef.VolumeFunction
-import net.scran24.fooddef.FoodLocal
-import net.scran24.fooddef.Category
-import net.scran24.fooddef.CategoryLocal
-import anorm.SqlParser
-import net.scran24.fooddef.GuideHeader
-import net.scran24.fooddef.AsServedHeader
-import net.scran24.fooddef.DrinkwareHeader
-import net.scran24.fooddef.NutrientTable
-import anorm.SqlMappingError
-import anorm.AnormException
+import uk.ac.ncl.openlab.intake24.AsServedHeader
+import uk.ac.ncl.openlab.intake24.AsServedImage
+import uk.ac.ncl.openlab.intake24.AsServedSet
+import uk.ac.ncl.openlab.intake24.AssociatedFood
+import uk.ac.ncl.openlab.intake24.Category
+import uk.ac.ncl.openlab.intake24.CategoryContents
+import uk.ac.ncl.openlab.intake24.CategoryHeader
+import uk.ac.ncl.openlab.intake24.CategoryLocal
+import uk.ac.ncl.openlab.intake24.DrinkScale
+import uk.ac.ncl.openlab.intake24.DrinkwareHeader
+import uk.ac.ncl.openlab.intake24.DrinkwareSet
+import uk.ac.ncl.openlab.intake24.FoodRecord
+import uk.ac.ncl.openlab.intake24.FoodGroup
+import uk.ac.ncl.openlab.intake24.FoodHeader
+import uk.ac.ncl.openlab.intake24.GuideHeader
+import uk.ac.ncl.openlab.intake24.GuideImage
+import uk.ac.ncl.openlab.intake24.GuideImageWeightRecord
+import uk.ac.ncl.openlab.intake24.InheritableAttributes
+import uk.ac.ncl.openlab.intake24.NutrientTable
+import uk.ac.ncl.openlab.intake24.PortionSizeMethod
+import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
+import uk.ac.ncl.openlab.intake24.VolumeFunction
 import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService
 import uk.ac.ncl.openlab.intake24.services.CodeError
+import uk.ac.ncl.openlab.intake24.LocalFoodRecord
 
 @Singleton
 class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends SqlDataService
@@ -192,7 +193,7 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
 
   case class NutrientTableRow(nutrient_table_id: String, nutrient_table_code: String)
 
-  def foodDef(code: String, locale: String): Either[CodeError, Food] = tryWithConnection {
+  def foodRecord(code: String, locale: String): Either[CodeError, FoodRecord] = tryWithConnection {
     // This is divided into two queries because the portion size estimation method list
     // can be empty, and it's very awkward to handle this case with one big query
     // with a lot of replication
@@ -222,9 +223,9 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
 
       SQL(foodQuery).on('food_code -> code, 'locale_id -> locale).executeQuery().as(foodRowParser.singleOpt) match {
         case Some(result) =>
-          Right(Food(result.version, result.code, result.description, result.food_group_id.toInt,
+          Right(FoodRecord(result.version, result.code, result.description, result.food_group_id.toInt,
             InheritableAttributes(result.ready_meal_option, result.same_as_before_option, result.reasonable_amount),
-            FoodLocal(result.local_version, result.local_description, result.do_not_use.getOrElse(false), nutrientTableCodes, portionSizeMethods)))
+            LocalFoodRecord(result.local_version, result.local_description, result.do_not_use.getOrElse(false), nutrientTableCodes, portionSizeMethods)))
         case None => Left(CodeError.UndefinedCode)
       }
 
@@ -413,12 +414,12 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
       DrinkwareSet(id, result.head.description, result.head.guide_image_id, scales)
   }
 
-  def associatedFoodPrompts(foodCode: String, locale: String): Seq[Prompt] = tryWithConnection {
+  def associatedFoods(foodCode: String, locale: String): Seq[AssociatedFood] = tryWithConnection {
     implicit conn =>
       val query =
         """SELECT category_code, text, link_as_main, generic_name FROM associated_food_prompts WHERE food_code = {food_code} AND locale_id = {locale_id} ORDER BY id"""
 
-      SQL(query).on('food_code -> foodCode, 'locale_id -> locale).executeQuery().as(Macro.parser[Prompt]("category_code", "text", "link_as_main", "generic_name").*)
+      SQL(query).on('food_code -> foodCode, 'locale_id -> locale).executeQuery().as(Macro.parser[AssociatedFood]("category_code", "text", "link_as_main", "generic_name").*)
   }
 
   def brandNames(foodCode: String, locale: String): Seq[String] = tryWithConnection {

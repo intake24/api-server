@@ -18,9 +18,9 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.services
 
-import net.scran24.fooddef.SplitList
-import net.scran24.fooddef.UserCategoryHeader
-import net.scran24.fooddef.UserFoodHeader
+import uk.ac.ncl.openlab.intake24.SplitList
+import uk.ac.ncl.openlab.intake24.UserCategoryHeader
+import uk.ac.ncl.openlab.intake24.UserFoodHeader
 
 trait IndexFoodDataService {
   def indexableCategories(locale: String): Seq[UserCategoryHeader]

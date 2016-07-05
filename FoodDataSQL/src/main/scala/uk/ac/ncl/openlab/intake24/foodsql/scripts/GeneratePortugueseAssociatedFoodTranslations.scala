@@ -23,7 +23,7 @@ object GeneratePortugueseAssociatedFoodTranslations extends App with DatabaseScr
   
   val csvRows = indexService.indexableFoods(portugueseLocaleCode).flatMap {
     foodHeader =>
-      dataService.associatedFoodPrompts(foodHeader.code, baseLocaleCode) match {
+      dataService.associatedFoods(foodHeader.code, baseLocaleCode) match {
         case Right(prompts) => prompts.toArray.map {
           prompt => Array(foodHeader.code, prompt.category, baseLocaleFoods(foodHeader.code).localDescription, foodHeader.localDescription, prompt.promptText, "", prompt.genericName, "")
         }

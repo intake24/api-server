@@ -18,26 +18,25 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodsql
 
+import java.sql.Connection
+
+import scala.Left
+import scala.Right
+
+import anorm.Macro
 import anorm.NamedParameter.symbol
 import anorm.SQL
-import anorm.SqlParser.str
-import anorm.sqlToSimple
-import net.scran24.fooddef.FoodData
-import net.scran24.fooddef.PortionSizeMethodParameter
-import net.scran24.fooddef.PortionSizeMethod
-import net.scran24.fooddef.FoodData
-import anorm.Macro
-import net.scran24.fooddef.PortionSizeMethod
-import java.sql.Connection
 import anorm.SqlParser
+import anorm.sqlToSimple
+import uk.ac.ncl.openlab.intake24.PortionSizeMethod
+import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
+import uk.ac.ncl.openlab.intake24.UserFoodData
 import uk.ac.ncl.openlab.intake24.services.FoodDataError
-import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.services.FoodDataSources
-import uk.ac.ncl.openlab.intake24.services.SourceRecord
-import uk.ac.ncl.openlab.intake24.services.SourceLocale
 import uk.ac.ncl.openlab.intake24.services.InheritableAttributeSource
 import uk.ac.ncl.openlab.intake24.services.InheritableAttributeSources
-import uk.ac.ncl.openlab.intake24.services.FoodDataSources
+import uk.ac.ncl.openlab.intake24.services.SourceLocale
+import uk.ac.ncl.openlab.intake24.services.SourceRecord
 
 trait FoodDataSqlImpl extends SqlDataService {
 
@@ -215,7 +214,7 @@ trait FoodDataSqlImpl extends SqlDataService {
   //    in the prototype locale
   //
   // Category restriction list is currently ignored  
-  def foodData(code: String, locale: String): Either[FoodDataError, (FoodData, FoodDataSources)] = tryWithConnection {
+  def foodData(code: String, locale: String): Either[FoodDataError, (UserFoodData, FoodDataSources)] = tryWithConnection {
     implicit conn =>
 
       val prototypeLocale = SQL("""SELECT prototype_locale_id FROM locales WHERE id = {locale_id}""").on('locale_id -> locale).executeQuery().as(SqlParser.str("prototype_locale_id").?.single)
@@ -279,13 +278,13 @@ trait FoodDataSqlImpl extends SqlDataService {
       foodRow match {
         case Some(row) => (row.local_description, row.prototype_description) match {
           case (Some(localDescription), _) => {
-            val data = FoodData(row.code, localDescription, nutrientTableCodes, row.food_group_id.toInt, portionSizeMethods,
+            val data = UserFoodData(row.code, localDescription, nutrientTableCodes, row.food_group_id.toInt, portionSizeMethods,
               attributes.readyMealOption, attributes.sameAsBeforeOption, attributes.reasonableAmount)
             val sources = FoodDataSources(SourceLocale.Current(locale), nutrientTableCodesSrc, portionSizeMethodsSource, attributes.sources)
             Right((data, sources))
           }
           case (None, Some(prototypeDescription)) => {
-            val data = FoodData(row.code, prototypeDescription, nutrientTableCodes, row.food_group_id.toInt, portionSizeMethods,
+            val data = UserFoodData(row.code, prototypeDescription, nutrientTableCodes, row.food_group_id.toInt, portionSizeMethods,
               attributes.readyMealOption, attributes.sameAsBeforeOption, attributes.reasonableAmount)
             val sources = FoodDataSources(SourceLocale.Prototype(locale), nutrientTableCodesSrc, portionSizeMethodsSource, attributes.sources)
             Right((data, sources))

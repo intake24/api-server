@@ -22,14 +22,14 @@ import java.io.FileReader
 import scala.collection.JavaConversions.asScalaBuffer
 import au.com.bytecode.opencsv.CSVReader
 
-import net.scran24.fooddef.AsServedImage
-import net.scran24.fooddef.AsServedSet
+import uk.ac.ncl.openlab.intake24.AsServedImage
+import uk.ac.ncl.openlab.intake24.AsServedSet
 
 import scala.xml.XML
 import java.io.File
 import java.io.FileFilter
 
-import net.scran24.fooddef.PortionSizeMethod
+import uk.ac.ncl.openlab.intake24.PortionSizeMethod
 
 object ParseNewPhotos {
 

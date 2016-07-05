@@ -16,19 +16,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package uk.ac.ncl.openlab.intake24.services.foodindex
+name := "api-shared"
 
-import uk.ac.ncl.openlab.intake24.CategoryV2
-import uk.ac.ncl.openlab.intake24.FoodRecord
-import uk.ac.ncl.openlab.intake24.UserCategoryHeader
-import uk.ac.ncl.openlab.intake24.UserFoodHeader
+organization := "uk.ac.ncl.openlab.intake24"
 
-sealed trait IndexEntry
+description := "Intake24 API shared types"
 
-case class CategoryEntry(header: UserCategoryHeader) extends IndexEntry
-case class FoodEntry(header: UserFoodHeader) extends IndexEntry
+version := "15.9-SNAPSHOT"
 
-object Util {
-  def mkHeader(category: CategoryV2) = UserCategoryHeader(category.code, category.description)
-  def mkHeader(food: FoodRecord) = UserFoodHeader(food.code, food.englishDescription)
-}
+scalaVersion := "2.11.7"
+

@@ -18,23 +18,24 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodxml.scripts
 
-import scala.xml.XML
-import scala.collection.mutable.Buffer
-import net.scran24.fooddef.Food
-import au.com.bytecode.opencsv.CSVWriter
-import java.io.FileWriter
 import java.io.File
-import uk.ac.ncl.openlab.intake24.foodxml.GuideImageDef
+import java.io.FileWriter
+
+import scala.xml.XML
+
+import au.com.bytecode.opencsv.CSVWriter
+import uk.ac.ncl.openlab.intake24.FoodRecord
+import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
 import uk.ac.ncl.openlab.intake24.foodxml.AsServedDef
 import uk.ac.ncl.openlab.intake24.foodxml.FoodDef
-import net.scran24.fooddef.PortionSizeMethodParameter
+import uk.ac.ncl.openlab.intake24.foodxml.GuideImageDef
 
 object FoodsByPortionSizeMethod extends App {
 
   val foods = FoodDef.parseXml(XML.load("/home/ivan/Projects/Intake24/intake24-data/foods.xml"))
 
-  val asServed = scala.collection.mutable.Map[String, Seq[Food]]().withDefaultValue(Seq())
-  val guide = scala.collection.mutable.Map[String, Seq[Food]]().withDefaultValue(Seq())
+  val asServed = scala.collection.mutable.Map[String, Seq[FoodRecord]]().withDefaultValue(Seq())
+  val guide = scala.collection.mutable.Map[String, Seq[FoodRecord]]().withDefaultValue(Seq())
 
   val asServedSets = AsServedDef.parseXml(XML.load("/home/ivan/Projects/Intake24/intake24-data/as-served.xml"))
   val guideDef = GuideImageDef.parseXml(XML.load("/home/ivan/Projects/Intake24/intake24-data/guide.xml"))

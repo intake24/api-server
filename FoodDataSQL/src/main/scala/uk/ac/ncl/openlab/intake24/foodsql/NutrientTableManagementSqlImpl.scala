@@ -26,7 +26,7 @@ import anorm.NamedParameter.symbol
 import anorm.SQL
 import anorm.sqlToSimple
 import javax.sql.DataSource
-import net.scran24.fooddef.NutrientTable
+import uk.ac.ncl.openlab.intake24.NutrientTable
 import uk.ac.ncl.openlab.intake24.services.NutrientTableManagementService
 
 class NutrientTableManagementSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends NutrientTableManagementService with SqlDataService {

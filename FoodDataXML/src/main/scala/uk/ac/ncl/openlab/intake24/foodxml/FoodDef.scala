@@ -24,14 +24,16 @@ import scala.xml.Attribute
 import scala.xml.Text
 import scala.xml.Null
 import scala.xml.Elem
-import net.scran24.fooddef.Food
-import net.scran24.fooddef.InheritableAttributes
-import net.scran24.fooddef.PortionSizeMethod
+
+import uk.ac.ncl.openlab.intake24.InheritableAttributes
+import uk.ac.ncl.openlab.intake24.PortionSizeMethod
 import scala.xml.NodeSeq.seqToNodeSeq
-import net.scran24.fooddef.PortionSizeMethodParameter
-import net.scran24.fooddef.FoodLocal
+import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
+
 import java.util.UUID
 import org.slf4j.LoggerFactory
+import uk.ac.ncl.openlab.intake24.LocalFoodRecord
+import uk.ac.ncl.openlab.intake24.FoodRecord
 
 object FoodDef {
   
@@ -50,7 +52,7 @@ object FoodDef {
         <nutrient-table id={ key } code={ nutrientTables(key) }/>
     }
 
-  def toXml(food: Food): Node =
+  def toXml(food: FoodRecord): Node =
     addInheritableAttributes(
       <food code={ food.code } description={ food.englishDescription } groupCode={ food.groupCode.toString }>
         { toXml(food.localData.nutrientTableCodes) }
@@ -58,7 +60,7 @@ object FoodDef {
       </food>,
       food.attributes)
 
-  def toXml(foods: Seq[Food]): Node =
+  def toXml(foods: Seq[FoodRecord]): Node =
     <foods>
       { foods.map(toXml) }
     </foods>
@@ -101,7 +103,7 @@ object FoodDef {
         (n.attribute("id").get.text, n.attribute("code").get.text)
     }.toMap
 
-  def parseXml(root: NodeSeq): Seq[Food] =
+  def parseXml(root: NodeSeq): Seq[FoodRecord] =
     (root \ "food").map(fnode => {
       val code = fnode.attribute("code").get.text
       val desc = fnode.attribute("description").get.text
@@ -118,6 +120,6 @@ object FoodDef {
         case _ => parseNutrientTableCodes(fnode)
       }
 
-      Food(UUID.randomUUID(), code, desc, groupCode, attribs, FoodLocal(Some(UUID.randomUUID()), Some(desc), false, nutrientTables , psm))
+      FoodRecord(UUID.randomUUID(), code, desc, groupCode, attribs, LocalFoodRecord(Some(UUID.randomUUID()), Some(desc), false, nutrientTables , psm))
     })
 }

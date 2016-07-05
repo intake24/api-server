@@ -18,26 +18,13 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.services
 
-import net.scran24.fooddef.AsServedSet
-import net.scran24.fooddef.DrinkwareSet
-import net.scran24.fooddef.Prompt
-import net.scran24.fooddef.GuideImage
-import net.scran24.fooddef.Food
-import net.scran24.fooddef.CategoryHeader
-import net.scran24.fooddef.FoodHeader
-import net.scran24.fooddef.CategoryHeader
-import net.scran24.fooddef.CategoryContents
-import net.scran24.fooddef.FoodData
-import net.scran24.fooddef.SplitList
-import net.scran24.fooddef.FoodGroup
-import net.scran24.fooddef.Category
-import net.scran24.fooddef.AsServedHeader
-import net.scran24.fooddef.GuideHeader
-import net.scran24.fooddef.DrinkwareHeader
-import net.scran24.fooddef.AsServedHeader
-import net.scran24.fooddef.NutrientTable
-import net.scran24.fooddef.UserCategoryHeader
-import net.scran24.fooddef.UserCategoryContents
+import uk.ac.ncl.openlab.intake24.AsServedSet
+import uk.ac.ncl.openlab.intake24.AssociatedFood
+import uk.ac.ncl.openlab.intake24.DrinkwareSet
+import uk.ac.ncl.openlab.intake24.GuideImage
+import uk.ac.ncl.openlab.intake24.UserCategoryContents
+import uk.ac.ncl.openlab.intake24.UserCategoryHeader
+import uk.ac.ncl.openlab.intake24.UserFoodData
 
 sealed trait SourceRecord
 
@@ -72,7 +59,7 @@ trait UserFoodDataService {
 
   def categoryContents(code: String, locale: String): Either[CodeError, UserCategoryContents]
 
-  def foodData(code: String, locale: String): Either[FoodDataError, (FoodData, FoodDataSources)]
+  def foodData(code: String, locale: String): Either[FoodDataError, (UserFoodData, FoodDataSources)]
     
   /* The following 3 methods are needed for associated foods logic */
   def foodAllCategories(code: String): Seq[String]
@@ -87,8 +74,8 @@ trait UserFoodDataService {
 
   def drinkwareDef(id: String): Either[ResourceError, DrinkwareSet]
 
-  def associatedFoodPrompts(foodCode: String, locale: String): Either[CodeError, Seq[Prompt]]
-
   def brandNames(foodCode: String, locale: String): Either[CodeError, Seq[String]]
+  
+  def associatedFoods(foodCode: String, locale: String): Either[CodeError, Seq[AssociatedFood]]
 
 }

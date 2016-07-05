@@ -19,7 +19,7 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.foodxml
 
 import scala.xml._
-import net.scran24.fooddef.FoodGroup
+import uk.ac.ncl.openlab.intake24.FoodGroup
 import scala.xml.NodeSeq.seqToNodeSeq
 
 object FoodGroupDef {

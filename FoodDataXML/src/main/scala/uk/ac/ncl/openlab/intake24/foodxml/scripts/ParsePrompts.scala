@@ -22,13 +22,13 @@ import java.io.FileReader
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.JavaConversions.seqAsJavaList
 import au.com.bytecode.opencsv.CSVReader
-import net.scran24.fooddef.Prompt
+import uk.ac.ncl.openlab.intake24.AssociatedFood
 import scala.xml.XML
 import uk.ac.ncl.openlab.intake24.foodxml.CategoryDef
 import uk.ac.ncl.openlab.intake24.foodxml.FoodDef
 import uk.ac.ncl.openlab.intake24.foodxml.Util
 
-object ParsePrompts {
+object ParseAssociatedFoods {
   def main(args: Array[String]): Unit = {
     val sourcePath = "/home/ivan/Projects/Intake24/Misc/prompts.csv"
 
@@ -41,7 +41,7 @@ object ParsePrompts {
 
     val prompts = rows.map(_.filterNot(_.isEmpty)).filter(_.length > 1).tail.groupBy(_(0)).mapValues(rows =>
       {
-        val pdefs = rows.map( row => Prompt(row(2), row(3), row(1).toBoolean, row(4)))
+        val pdefs = rows.map( row => AssociatedFood(row(2), row(3), row(1).toBoolean, row(4)))
 
         pdefs.foreach(p => {
           if (!(cats.exists(_.code == p.category) || foods.exists(_.code == p.category)))

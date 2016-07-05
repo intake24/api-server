@@ -22,7 +22,7 @@ import java.io.FileReader
 import scala.collection.JavaConversions.asScalaBuffer
 import au.com.bytecode.opencsv.CSVReader
 import scala.xml.XML
-import net.scran24.fooddef.PortionSizeMethod
+import uk.ac.ncl.openlab.intake24.PortionSizeMethod
 
 object RemoveStandardisedPortionSize {
 

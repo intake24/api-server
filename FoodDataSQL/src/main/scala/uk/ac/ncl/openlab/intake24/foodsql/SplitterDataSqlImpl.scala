@@ -18,7 +18,7 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodsql
 
-import net.scran24.fooddef.SplitList
+import uk.ac.ncl.openlab.intake24.SplitList
 import anorm._
 import anorm.SqlParser._
 

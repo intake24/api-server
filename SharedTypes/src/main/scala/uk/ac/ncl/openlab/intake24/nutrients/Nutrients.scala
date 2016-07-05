@@ -16,9 +16,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package net.scran24.fooddef.nutrients
+package uk.ac.ncl.openlab.intake24.nutrients
 
-import java.io.FileReader
 import scala.collection.JavaConversions._
 
 sealed trait Nutrient {

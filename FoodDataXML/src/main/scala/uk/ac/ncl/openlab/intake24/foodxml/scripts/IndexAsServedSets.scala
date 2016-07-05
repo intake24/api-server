@@ -21,7 +21,7 @@ package uk.ac.ncl.openlab.intake24.foodxml.scripts
 import scala.xml.XML
 import Map._
 
-import net.scran24.fooddef.FoodOld
+import uk.ac.ncl.openlab.intake24.FoodOld
 
 object IndexAsServedSets {
   def main (args: Array[String]) = {

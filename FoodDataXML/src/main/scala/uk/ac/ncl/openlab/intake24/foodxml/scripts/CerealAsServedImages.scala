@@ -23,8 +23,8 @@ import java.io.FileFilter
 import au.com.bytecode.opencsv.CSVReader
 import java.io.FileReader
 import scala.collection.JavaConversions._
-import net.scran24.fooddef.AsServedSet
-import net.scran24.fooddef.AsServedImage
+import uk.ac.ncl.openlab.intake24.AsServedSet
+import uk.ac.ncl.openlab.intake24.AsServedImage
 import scala.xml.XML
 import uk.ac.ncl.openlab.intake24.foodxml.AsServedDef
 import uk.ac.ncl.openlab.intake24.foodxml.Util

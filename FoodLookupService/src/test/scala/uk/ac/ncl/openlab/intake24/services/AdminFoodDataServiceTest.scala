@@ -19,21 +19,23 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.services
 
 import org.scalatest.FunSuite
-import net.scran24.fooddef.CategoryHeader
-import net.scran24.fooddef.Food
-import net.scran24.fooddef.InheritableAttributes
-import net.scran24.fooddef.PortionSizeMethod
-import net.scran24.fooddef.PortionSizeMethodParameter
-import net.scran24.fooddef.FoodData
-import net.scran24.fooddef.AsServedSet
-import net.scran24.fooddef.AsServedImage
-import net.scran24.fooddef.GuideImage
-import net.scran24.fooddef.GuideImageWeightRecord
-import net.scran24.fooddef.DrinkwareSet
-import net.scran24.fooddef.DrinkScale
-import net.scran24.fooddef.VolumeFunction
-import net.scran24.fooddef.Prompt
-import net.scran24.fooddef.FoodLocal
+import uk.ac.ncl.openlab.intake24.CategoryHeader
+
+import uk.ac.ncl.openlab.intake24.InheritableAttributes
+import uk.ac.ncl.openlab.intake24.PortionSizeMethod
+import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
+
+import uk.ac.ncl.openlab.intake24.AsServedSet
+import uk.ac.ncl.openlab.intake24.AsServedImage
+import uk.ac.ncl.openlab.intake24.GuideImage
+import uk.ac.ncl.openlab.intake24.GuideImageWeightRecord
+import uk.ac.ncl.openlab.intake24.DrinkwareSet
+import uk.ac.ncl.openlab.intake24.DrinkScale
+import uk.ac.ncl.openlab.intake24.VolumeFunction
+import uk.ac.ncl.openlab.intake24.AssociatedFood
+import uk.ac.ncl.openlab.intake24.LocalFoodRecord
+import uk.ac.ncl.openlab.intake24.UserFoodData
+import uk.ac.ncl.openlab.intake24.FoodRecord
 
 abstract class AdminFoodDataServiceTest extends FunSuite {
 
@@ -107,26 +109,26 @@ abstract class AdminFoodDataServiceTest extends FunSuite {
 
   test("Get food definition") {
     val expected1 =
-      Food(defaultVersion, "F000", "Food definition test 1", 1, InheritableAttributes(Some(true), None, None),
-        FoodLocal(Some(defaultVersion), Some("Food definition test 1"), false, Map("NDNS" -> "100"),
+      FoodRecord(defaultVersion, "F000", "Food definition test 1", 1, InheritableAttributes(Some(true), None, None),
+        LocalFoodRecord(Some(defaultVersion), Some("Food definition test 1"), false, Map("NDNS" -> "100"),
           Seq(PortionSizeMethod("as-served", "Test", "portion/placeholder.jpg", false,
             Seq(PortionSizeMethodParameter("serving-image-set", "as_served_1"), PortionSizeMethodParameter("leftovers-image-set", "as_served_1_leftovers"))))))
     val expected2 =
-      Food(defaultVersion, "F004", "Food definition test 2", 10, InheritableAttributes(None, Some(true), None),
-        FoodLocal(Some(defaultVersion), Some("Food definition test 2"), false, Map("NDNS" -> "200"), Seq()))
+      FoodRecord(defaultVersion, "F004", "Food definition test 2", 10, InheritableAttributes(None, Some(true), None),
+        LocalFoodRecord(Some(defaultVersion), Some("Food definition test 2"), false, Map("NDNS" -> "200"), Seq()))
     val expected3 =
-      Food(defaultVersion, "F005", "Food definition test 3", 20, InheritableAttributes(None, None, Some(1234)),
-        FoodLocal(None, Some("Food definition test 3"), false, Map("NDNS" -> "300"), Seq()))
+      FoodRecord(defaultVersion, "F005", "Food definition test 3", 20, InheritableAttributes(None, None, Some(1234)),
+        LocalFoodRecord(None, Some("Food definition test 3"), false, Map("NDNS" -> "300"), Seq()))
 
     // This hack is required because version codes are generated randomly on import
         
-    val actual1 = service.foodDef("F000", defaultLocale).right.get
+    val actual1 = service.foodRecord("F000", defaultLocale).right.get
     val versionOverride1 = actual1.copy(version = defaultVersion, localData = actual1.localData.copy(version = Some(defaultVersion)))
         
-    val actual2 = service.foodDef("F004", defaultLocale).right.get
+    val actual2 = service.foodRecord("F004", defaultLocale).right.get
     val versionOverride2 = actual2.copy(version = defaultVersion, localData = actual2.localData.copy(version = Some(defaultVersion)))
     
-    val actual3 = service.foodDef("F005", defaultLocale).right.get
+    val actual3 = service.foodRecord("F005", defaultLocale).right.get
     val versionOverride3 = actual3.copy(version = defaultVersion, localData = actual3.localData.copy(version = None))
     
     assert( versionOverride1 === expected1)
@@ -135,7 +137,7 @@ abstract class AdminFoodDataServiceTest extends FunSuite {
   }
 
   test("Default attribute values") {
-    val expected = FoodData("F007", "Default attributes test", Map(), 0, Seq(), false, false, 1000)
+    val expected = UserFoodData("F007", "Default attributes test", Map(), 0, Seq(), false, false, 1000)
   }
 
   test("Portion size methods in food definition") {
@@ -145,14 +147,14 @@ abstract class AdminFoodDataServiceTest extends FunSuite {
 
     // check that definition is correct
     val expected1 =
-      Food(
+      FoodRecord(
         defaultVersion, "F008", "PSM test 1", 0, InheritableAttributes(None, None, None),
-        FoodLocal(Some(defaultVersion), Some("PSM test 1"), false, Map(), portionSizeMethods))
+        LocalFoodRecord(Some(defaultVersion), Some("PSM test 1"), false, Map(), portionSizeMethods))
 
     // then check that uninherited PSM data is returned correctly
     // val expected2 = FoodData("F008", "PSM test 1", Map(), 0, portionSizeMethods, false, false, 1000)
 
-    val actual1 = service.foodDef("F008", defaultLocale).right.get
+    val actual1 = service.foodRecord("F008", defaultLocale).right.get
     val versionOverride1 = actual1.copy(version = defaultVersion, localData = actual1.localData.copy(version = Some(defaultVersion)))
     
     assert(versionOverride1 === expected1)

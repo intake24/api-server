@@ -19,11 +19,11 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.foodxml.scripts
 
 import scala.xml.XML
-import net.scran24.fooddef.PortionSizeMethod
-import net.scran24.fooddef.PortionSizeMethod
-import net.scran24.fooddef.InheritableAttributes
+import uk.ac.ncl.openlab.intake24.PortionSizeMethod
+import uk.ac.ncl.openlab.intake24.PortionSizeMethod
+import uk.ac.ncl.openlab.intake24.InheritableAttributes
 import scala.sys.process._
-import net.scran24.fooddef.DrinkScale
+import uk.ac.ncl.openlab.intake24.DrinkScale
 import uk.ac.ncl.openlab.intake24.foodxml.FoodDef
 import uk.ac.ncl.openlab.intake24.foodxml.GuideImageDef
 import uk.ac.ncl.openlab.intake24.foodxml.DrinkwareDef

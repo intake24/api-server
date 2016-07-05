@@ -30,7 +30,7 @@ import anorm.SQL
 import anorm.SqlParser.str
 import anorm.sqlToSimple
 import javax.sql.DataSource
-import net.scran24.fooddef._
+import uk.ac.ncl.openlab.intake24._
 import anorm.SqlParser
 import anorm.SqlMappingError
 import anorm.AnormException
@@ -71,7 +71,7 @@ class UserFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSou
 
   case class AssociatedFoodPromptsRow(category_code: Option[String], text: Option[String], link_as_main: Option[Boolean], generic_name: Option[String], locale_id: Option[String])
 
-  def associatedFoodPrompts(foodCode: String, locale: String): Either[CodeError, Seq[Prompt]] = tryWithConnection {
+  def associatedFoods(foodCode: String, locale: String): Either[CodeError, Seq[AssociatedFood]] = tryWithConnection {
     implicit conn =>
       val query =
         """|SELECT category_code, text, link_as_main, generic_name, locale_id
@@ -85,7 +85,7 @@ class UserFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSou
 
       val rows = SQL(query).on('food_code -> foodCode, 'locale_id -> locale).executeQuery().as(Macro.namedParser[AssociatedFoodPromptsRow].*)
 
-      def mkPrompt(row: AssociatedFoodPromptsRow) = Prompt(row.category_code.get, row.text.get, row.link_as_main.get, row.generic_name.get)
+      def mkPrompt(row: AssociatedFoodPromptsRow) = AssociatedFood(row.category_code.get, row.text.get, row.link_as_main.get, row.generic_name.get)
 
       if (rows.isEmpty)
         Left(CodeError.UndefinedCode)

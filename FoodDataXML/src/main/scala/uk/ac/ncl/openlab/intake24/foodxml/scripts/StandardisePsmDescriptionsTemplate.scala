@@ -2,7 +2,7 @@ package uk.ac.ncl.openlab.intake24.foodxml.scripts
 
 import uk.ac.ncl.openlab.intake24.foodxml.FoodDef
 import scala.xml.XML
-import net.scran24.fooddef.PortionSizeMethodParameter
+import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
 import au.com.bytecode.opencsv.CSVWriter
 import java.io.File
 import java.io.FileWriter

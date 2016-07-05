@@ -23,11 +23,11 @@ import scala.xml.Text
 import scala.xml.Null
 import scala.xml.XML
 import scala.xml.NodeSeq
-import net.scran24.fooddef.DrinkwareSet
-import net.scran24.fooddef.VolumeFunction
+import uk.ac.ncl.openlab.intake24.DrinkwareSet
+import uk.ac.ncl.openlab.intake24.VolumeFunction
 import scala.xml.NodeSeq.seqToNodeSeq
 
-import net.scran24.fooddef.DrinkScale
+import uk.ac.ncl.openlab.intake24.DrinkScale
 
 object DrinkwareDef {
   def toXml(sets: Iterable[DrinkwareSet]) =

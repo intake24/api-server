@@ -22,7 +22,7 @@ import java.io.FileReader
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.JavaConversions.seqAsJavaList
 import au.com.bytecode.opencsv.CSVReader
-import net.scran24.fooddef.Prompt
+import uk.ac.ncl.openlab.intake24.AssociatedFood
 import scala.xml.XML
 import uk.ac.ncl.openlab.intake24.foodxml.Util
 

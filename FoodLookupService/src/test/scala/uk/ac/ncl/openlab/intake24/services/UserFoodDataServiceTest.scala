@@ -20,18 +20,18 @@ package uk.ac.ncl.openlab.intake24.services
 
 import org.scalatest.FunSuite
 
-import net.scran24.fooddef.AsServedImage
-import net.scran24.fooddef.AsServedSet
-import net.scran24.fooddef.DrinkScale
-import net.scran24.fooddef.DrinkwareSet
-import net.scran24.fooddef.FoodData
-import net.scran24.fooddef.GuideImage
-import net.scran24.fooddef.GuideImageWeightRecord
-import net.scran24.fooddef.PortionSizeMethod
-import net.scran24.fooddef.PortionSizeMethodParameter
-import net.scran24.fooddef.Prompt
-import net.scran24.fooddef.UserCategoryHeader
-import net.scran24.fooddef.VolumeFunction
+import uk.ac.ncl.openlab.intake24.AsServedImage
+import uk.ac.ncl.openlab.intake24.AsServedSet
+import uk.ac.ncl.openlab.intake24.DrinkScale
+import uk.ac.ncl.openlab.intake24.DrinkwareSet
+import uk.ac.ncl.openlab.intake24.GuideImage
+import uk.ac.ncl.openlab.intake24.GuideImageWeightRecord
+import uk.ac.ncl.openlab.intake24.PortionSizeMethod
+import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
+import uk.ac.ncl.openlab.intake24.AssociatedFood
+import uk.ac.ncl.openlab.intake24.UserCategoryHeader
+import uk.ac.ncl.openlab.intake24.VolumeFunction
+import uk.ac.ncl.openlab.intake24.UserFoodData
 
 abstract class UserFoodDataServiceTest extends FunSuite {
 
@@ -59,18 +59,18 @@ abstract class UserFoodDataServiceTest extends FunSuite {
       PortionSizeMethod("as-served", "No description", "portion/placeholder.jpg", false, Seq(PortionSizeMethodParameter("serving-image-set", "as_served_2"), PortionSizeMethodParameter("leftovers-image-set", "as_served_2_leftovers"))),
       PortionSizeMethod("drink-scale", "No description", "portion/placeholder.jpg", false, Seq(PortionSizeMethodParameter("drinkware-id", "glasses_beer"), PortionSizeMethodParameter("initial-fill-level", "0.9"), PortionSizeMethodParameter("skip-fill-level", "true"))))
 
-    val expected1 = Right(FoodData("F003", "Inheritance test 1", Map(), 0, expectedPsm1, true, false, 3456))
+    val expected1 = Right(UserFoodData("F003", "Inheritance test 1", Map(), 0, expectedPsm1, true, false, 3456))
 
     // Must inherit indirectly from C001, but override same as before
 
-    val expected2 = Right(FoodData("F006", "Inheritance test 2", Map(), 0, expectedPsm1, true, true, 3456))
+    val expected2 = Right(UserFoodData("F006", "Inheritance test 2", Map(), 0, expectedPsm1, true, true, 3456))
 
     assert(service.foodData("F003", defaultLocale) === expected1)
     assert(service.foodData("F006", defaultLocale) === expected2)
   }
 
   test("Default attribute values") {
-    val expected = FoodData("F007", "Default attributes test", Map(), 0, Seq(), false, false, 1000)
+    val expected = UserFoodData("F007", "Default attributes test", Map(), 0, Seq(), false, false, 1000)
   }
   
   test("Get as served definition") {
@@ -130,9 +130,9 @@ abstract class UserFoodDataServiceTest extends FunSuite {
   }
 
   test("Get associated food prompts") {
-    val expected = Seq(Prompt("C000", "Prompt 1", false, "name1"), Prompt("C001", "Prompt 2", true, "name2"))
+    val expected = Seq(AssociatedFood("C000", "Prompt 1", false, "name1"), AssociatedFood("C001", "Prompt 2", true, "name2"))
 
-    assert(service.associatedFoodPrompts("F000", defaultLocale) === expected)
+    assert(service.associatedFoods("F000", defaultLocale).right.get === expected)
   }
 
   test("Get brand names") {

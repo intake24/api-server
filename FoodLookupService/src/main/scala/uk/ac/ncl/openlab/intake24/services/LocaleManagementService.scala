@@ -1,6 +1,6 @@
 package uk.ac.ncl.openlab.intake24.services
 
-import net.scran24.fooddef.Locale
+import uk.ac.ncl.openlab.intake24.Locale
 
 trait LocaleManagementService {
   def list: Seq[Locale]

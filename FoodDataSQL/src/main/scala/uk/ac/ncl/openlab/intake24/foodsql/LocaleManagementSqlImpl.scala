@@ -22,7 +22,7 @@ import uk.ac.ncl.openlab.intake24.services.LocaleManagementService
 import javax.sql.DataSource
 import com.google.inject.Inject
 import com.google.inject.name.Named
-import net.scran24.fooddef.Locale
+import uk.ac.ncl.openlab.intake24.Locale
 import anorm._
 
 class LocaleManagementSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends LocaleManagementService with SqlDataService {

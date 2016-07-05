@@ -19,21 +19,6 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.services
 
 import org.scalatest.FunSuite
-import net.scran24.fooddef.CategoryHeader
-import net.scran24.fooddef.Food
-import net.scran24.fooddef.InheritableAttributes
-import net.scran24.fooddef.PortionSizeMethod
-import net.scran24.fooddef.PortionSizeMethodParameter
-import net.scran24.fooddef.FoodData
-import net.scran24.fooddef.AsServedSet
-import net.scran24.fooddef.AsServedImage
-import net.scran24.fooddef.GuideImage
-import net.scran24.fooddef.GuideImageWeightRecord
-import net.scran24.fooddef.DrinkwareSet
-import net.scran24.fooddef.DrinkScale
-import net.scran24.fooddef.VolumeFunction
-import net.scran24.fooddef.Prompt
-import net.scran24.fooddef.FoodLocal
 
 abstract class IndexFoodDataServiceTest extends FunSuite {
 

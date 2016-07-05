@@ -20,7 +20,7 @@ package uk.ac.ncl.openlab.intake24.foodxml
 
 import scala.xml.NodeSeq
 import scala.xml.Node
-import net.scran24.fooddef.CategoryV2
+import uk.ac.ncl.openlab.intake24.CategoryV2
 import scala.xml.NodeSeq.seqToNodeSeq
 import java.util.UUID
 

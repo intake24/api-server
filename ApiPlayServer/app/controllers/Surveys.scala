@@ -21,7 +21,7 @@ package controllers
 import play.api.mvc.Controller
 import play.api.libs.json.Json
 import play.api.mvc.Action
-import net.scran24.fooddef.nutrients.EnergyKcal
+import uk.ac.ncl.openlab.intake24.nutrients.EnergyKcal
 import play.api.libs.json.JsError
 import scala.concurrent.Future
 import javax.inject.Inject

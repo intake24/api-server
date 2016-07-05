@@ -15,9 +15,9 @@ import com.zaxxer.hikari.HikariDataSource
 import com.zaxxer.hikari.pool.HikariPool
 import uk.ac.ncl.openlab.intake24.foodsql.IndexFoodDataServiceSqlImpl
 import uk.ac.ncl.openlab.intake24.foodsql.LocaleManagementSqlImpl
-import net.scran24.fooddef.Locale
+import uk.ac.ncl.openlab.intake24.Locale
 import uk.ac.ncl.openlab.intake24.foodsql.NutrientTableManagementSqlImpl
-import net.scran24.fooddef.NutrientTable
+import uk.ac.ncl.openlab.intake24.NutrientTable
 import java.util.Properties
 import java.io.PrintWriter
 import com.zaxxer.hikari.HikariConfig
@@ -112,7 +112,7 @@ object PortugueseImport extends App {
     header =>
       print(s""""${header.code}", "${header.localDescription}"""")
 
-      dataService.foodDef(header.code, portugueseLocaleCode) match {
+      dataService.foodRecord(header.code, portugueseLocaleCode) match {
         case Right(fooddef) => {
           val localData = fooddef.localData
 

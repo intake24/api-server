@@ -22,8 +22,8 @@ import scala.xml.Attribute
 import scala.xml.Text
 import scala.xml.Null
 import scala.xml.NodeSeq
-import net.scran24.fooddef.AsServedSet
-import net.scran24.fooddef.AsServedImage
+import uk.ac.ncl.openlab.intake24.AsServedSet
+import uk.ac.ncl.openlab.intake24.AsServedImage
 import scala.xml.NodeSeq.seqToNodeSeq
 
 object AsServedDef {

@@ -18,38 +18,36 @@ limitations under the License.
 
 package controllers
 
-import play.api.mvc.Controller
-import play.api.libs.json.Json
-import play.api.mvc.Action
-import net.scran24.fooddef.nutrients.EnergyKcal
-import play.api.libs.json.JsError
-import scala.concurrent.Future
-import upickle.default._
-import com.oracle.webservices.internal.api.message.ContentType
-import play.api.http.ContentTypes
-import javax.inject.Inject
 import be.objectify.deadbolt.scala.DeadboltActions
-import be.objectify.deadbolt.core.PatternType
-import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService
-import uk.ac.ncl.openlab.intake24.services.UpdateResult
-import play.api.mvc.Result
-import uk.ac.ncl.openlab.intake24.services.Success
-import uk.ac.ncl.openlab.intake24.services.VersionConflict
-import uk.ac.ncl.openlab.intake24.services.InvalidRequest
-import uk.ac.ncl.openlab.intake24.services.SqlException
-import upickle.Invalid
+import javax.inject.Inject
+import play.api.http.ContentTypes
 import play.api.libs.json.JsBoolean
-import net.scran24.fooddef.FoodBase
-import net.scran24.fooddef.Prompt
-import net.scran24.fooddef.FoodLocal
-import uk.ac.ncl.openlab.intake24.services.NewFood
-import uk.ac.ncl.openlab.intake24.services.NewCategory
-import net.scran24.fooddef.CategoryBase
-import net.scran24.fooddef.CategoryLocal
-import security.Permissions
-import play.api.libs.json.JsString
+import play.api.libs.json.Json
+import play.api.libs.json.Json.toJsFieldJsValueWrapper
+import play.api.mvc.Action
+import play.api.mvc.Controller
+import play.api.mvc.Result
 import security.Roles
+import uk.ac.ncl.openlab.intake24.AssociatedFood
+import uk.ac.ncl.openlab.intake24.CategoryBase
+import uk.ac.ncl.openlab.intake24.CategoryLocal
+import uk.ac.ncl.openlab.intake24.MainFoodRecord
+import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService
 import uk.ac.ncl.openlab.intake24.services.CodeError
+import uk.ac.ncl.openlab.intake24.services.InvalidRequest
+import uk.ac.ncl.openlab.intake24.services.NewCategory
+import uk.ac.ncl.openlab.intake24.services.NewFood
+import uk.ac.ncl.openlab.intake24.services.SqlException
+import uk.ac.ncl.openlab.intake24.services.Success
+import uk.ac.ncl.openlab.intake24.services.UpdateResult
+import uk.ac.ncl.openlab.intake24.services.VersionConflict
+import upickle.default.SeqishR
+import upickle.default.SeqishW
+import upickle.default.macroR
+import upickle.default.macroW
+import upickle.default.read
+import upickle.default.write
+import uk.ac.ncl.openlab.intake24.LocalFoodRecord
 
 class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt: DeadboltActions) extends Controller with PickleErrorHandler {
 
@@ -84,9 +82,9 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt
     }
   }
 
-  def foodDef(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
+  def foodRecord(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      service.foodDef(code, locale) match {
+      service.foodRecord(code, locale) match {
         case Right(d) => Ok(write(d)).as(ContentTypes.JSON)
         case Left(CodeError.UndefinedCode) => NotFound 
       }
@@ -176,7 +174,7 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt
   def updateFoodBase(foodCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
-        translateUpdateResult(service.updateFoodBase(foodCode, read[FoodBase](request.body)))
+        translateUpdateResult(service.updateFoodBase(foodCode, read[MainFoodRecord](request.body)))
       }
     }
   }
@@ -184,7 +182,7 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt
   def updateFoodLocal(foodCode: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
-        translateUpdateResult(service.updateFoodLocal(foodCode, locale, read[FoodLocal](request.body)))
+        translateUpdateResult(service.updateFoodLocal(foodCode, locale, read[LocalFoodRecord](request.body)))
       }
     }
   }
@@ -192,7 +190,7 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt
   def updateAssociatedFoodPrompts(foodCode: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
-        translateUpdateResult(service.updateAssociatedFoods(foodCode, locale, read[Seq[Prompt]](request.body)))
+        translateUpdateResult(service.updateAssociatedFoods(foodCode, locale, read[Seq[AssociatedFood]](request.body)))
       }
     }
   } 

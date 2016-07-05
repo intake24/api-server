@@ -21,7 +21,7 @@ package uk.ac.ncl.openlab.intake24.foodxml.scripts
 import au.com.bytecode.opencsv.CSVReader
 import java.io.FileReader
 import scala.collection.JavaConversions._
-import net.scran24.fooddef.FoodGroup
+import uk.ac.ncl.openlab.intake24.FoodGroup
 import uk.ac.ncl.openlab.intake24.foodxml.FoodGroupDef
 import uk.ac.ncl.openlab.intake24.foodxml.Util
 

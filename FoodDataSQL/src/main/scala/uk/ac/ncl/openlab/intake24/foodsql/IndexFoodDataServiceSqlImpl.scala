@@ -29,8 +29,8 @@ import anorm.NamedParameter.symbol
 import anorm.SQL
 import anorm.sqlToSimple
 import javax.sql.DataSource
-import net.scran24.fooddef.UserCategoryHeader
-import net.scran24.fooddef.UserFoodHeader
+import uk.ac.ncl.openlab.intake24.UserCategoryHeader
+import uk.ac.ncl.openlab.intake24.UserFoodHeader
 import uk.ac.ncl.openlab.intake24.services.IndexFoodDataService
 
 @Singleton

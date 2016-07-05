@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package net.scran24.fooddef
+package uk.ac.ncl.openlab.intake24
 
 import java.util.UUID
 
@@ -38,11 +38,11 @@ object InheritableAttributes {
 
 case class FoodOld(code: String, description: String, isDrink: Boolean, ndnsCode: Int, path: String, portionSize: Seq[PortionSizeMethod]) extends IndexEntryOld 
 
-case class Food(version: UUID, code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes, localData: FoodLocal)
+case class FoodRecord(version: UUID, code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes, localData: LocalFoodRecord)
 
-case class FoodBase(version: UUID, code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes)
+case class MainFoodRecord(version: UUID, code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes)
 
-case class FoodLocal(version: Option[UUID], localDescription: Option[String], doNotUse: Boolean, nutrientTableCodes: Map[String, String], portionSize: Seq[PortionSizeMethod])
+case class LocalFoodRecord(version: Option[UUID], localDescription: Option[String], doNotUse: Boolean, nutrientTableCodes: Map[String, String], portionSize: Seq[PortionSizeMethod])
 
 case class FoodHeader(code: String, englishDescription: String, localDescription: Option[String], doNotUse: Boolean)
 
@@ -70,7 +70,7 @@ case class DataSource(source: String, locale: String)
 
 case class FoodDataSources(localDescriptionSource: DataSource, nutrientTablesSource: DataSource, portionSizeSource: DataSource, inheritedAttributesSource: DataSource)
 
-case class FoodData(code: String, localDescription: String, nutrientTableCodes: Map[String, String], groupCode: Int,
+case class UserFoodData(code: String, localDescription: String, nutrientTableCodes: Map[String, String], groupCode: Int,
   portionSize: Seq[PortionSizeMethod], readyMealOption: Boolean, sameAsBeforeOption: Boolean, reasonableAmount: Int)
 
 case class SplitList(splitWords: Seq[String], keepPairs: Map[String, Set[String]])
@@ -139,7 +139,7 @@ case class PortionSizeMethodParameter (name: String, value: String)
 
 case class PortionSizeMethod (method: String, description: String, imageUrl: String, useForRecipes: Boolean, parameters: Seq[PortionSizeMethodParameter])
 
-case class Prompt (category: String, promptText: String, linkAsMain: Boolean, genericName: String)
+case class AssociatedFood (category: String, promptText: String, linkAsMain: Boolean, genericName: String)
 
 
 case class FoodGroup (id: Int, englishDescription: String, localDescription: Option[String]) {

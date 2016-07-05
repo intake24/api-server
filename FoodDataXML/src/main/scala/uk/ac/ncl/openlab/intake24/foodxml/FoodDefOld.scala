@@ -25,11 +25,11 @@ import scala.xml.Attribute
 import scala.xml.Text
 import scala.xml.Null
 import scala.xml.Elem
-import net.scran24.fooddef.CategoryV1
-import net.scran24.fooddef.FoodOld
-import net.scran24.fooddef.PortionSizeMethod
+import uk.ac.ncl.openlab.intake24.CategoryV1
+import uk.ac.ncl.openlab.intake24.FoodOld
+import uk.ac.ncl.openlab.intake24.PortionSizeMethod
 import scala.xml.NodeSeq.seqToNodeSeq
-import net.scran24.fooddef.PortionSizeMethodParameter
+import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
 
 object FoodDefOld {
   def toXml(category: CategoryV1): Node =

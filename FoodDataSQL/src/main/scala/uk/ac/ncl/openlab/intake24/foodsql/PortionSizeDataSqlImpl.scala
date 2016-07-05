@@ -22,16 +22,16 @@ import anorm.NamedParameter.symbol
 import anorm.SQL
 import anorm.SqlParser.str
 import anorm.sqlToSimple
-import net.scran24.fooddef.AsServedHeader
-import net.scran24.fooddef.AsServedSet
-import net.scran24.fooddef.GuideHeader
+import uk.ac.ncl.openlab.intake24.AsServedHeader
+import uk.ac.ncl.openlab.intake24.AsServedSet
+import uk.ac.ncl.openlab.intake24.GuideHeader
 import anorm.Macro
-import net.scran24.fooddef.AsServedImage
-import net.scran24.fooddef.GuideImage
-import net.scran24.fooddef.GuideImageWeightRecord
-import net.scran24.fooddef.DrinkwareSet
-import net.scran24.fooddef.DrinkScale
-import net.scran24.fooddef.VolumeFunction
+import uk.ac.ncl.openlab.intake24.AsServedImage
+import uk.ac.ncl.openlab.intake24.GuideImage
+import uk.ac.ncl.openlab.intake24.GuideImageWeightRecord
+import uk.ac.ncl.openlab.intake24.DrinkwareSet
+import uk.ac.ncl.openlab.intake24.DrinkScale
+import uk.ac.ncl.openlab.intake24.VolumeFunction
 import uk.ac.ncl.openlab.intake24.services.ResourceError
 
 trait PortionSizeDataSqlImpl extends SqlDataService {

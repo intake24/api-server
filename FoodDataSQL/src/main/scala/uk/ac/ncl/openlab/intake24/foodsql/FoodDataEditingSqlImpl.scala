@@ -18,27 +18,27 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodsql
 
-import net.scran24.fooddef.Food
-import java.util.UUID
-import com.google.inject.Singleton
-import com.google.inject.Inject
-import com.google.inject.name.Named
-import javax.sql.DataSource
-import org.slf4j.LoggerFactory
 import java.sql.Connection
-import anorm._
-import net.scran24.fooddef.FoodBase
-import net.scran24.fooddef.FoodLocal
+import java.util.UUID
+
 import org.postgresql.util.PSQLException
-import uk.ac.ncl.openlab.intake24.services.SqlException
-import uk.ac.ncl.openlab.intake24.services.VersionConflict
-import uk.ac.ncl.openlab.intake24.services.UpdateResult
-import net.scran24.fooddef.CategoryBase
-import net.scran24.fooddef.CategoryLocal
+
+import com.google.inject.Singleton
+
+import anorm._
+import uk.ac.ncl.openlab.intake24.AssociatedFood
+import uk.ac.ncl.openlab.intake24.CategoryBase
+import uk.ac.ncl.openlab.intake24.CategoryLocal
+import uk.ac.ncl.openlab.intake24.LocalFoodRecord
+import uk.ac.ncl.openlab.intake24.LocalFoodRecord
+import uk.ac.ncl.openlab.intake24.MainFoodRecord
 import uk.ac.ncl.openlab.intake24.services.InvalidRequest
-import uk.ac.ncl.openlab.intake24.services.NewFood
 import uk.ac.ncl.openlab.intake24.services.NewCategory
-import net.scran24.fooddef.Prompt
+import uk.ac.ncl.openlab.intake24.services.NewFood
+import uk.ac.ncl.openlab.intake24.services.SqlException
+import uk.ac.ncl.openlab.intake24.services.UpdateResult
+import uk.ac.ncl.openlab.intake24.services.VersionConflict
+
 
 @Singleton
 trait FoodDataEditingSqlImpl extends SqlDataService {
@@ -144,7 +144,7 @@ trait FoodDataEditingSqlImpl extends SqlDataService {
       }
   }
 
-  def updateFoodBase(foodCode: String, foodBase: FoodBase) = tryWithConnection {
+  def updateFoodBase(foodCode: String, foodBase: MainFoodRecord) = tryWithConnection {
     implicit conn =>
       conn.setAutoCommit(false)
 
@@ -178,7 +178,7 @@ trait FoodDataEditingSqlImpl extends SqlDataService {
       }
   }
 
-  def updateFoodLocal(foodCode: String, locale: String, foodLocal: FoodLocal) = tryWithConnection {
+  def updateFoodLocal(foodCode: String, locale: String, foodLocal: LocalFoodRecord) = tryWithConnection {
     implicit conn =>
       conn.setAutoCommit(false)
 
@@ -459,7 +459,7 @@ trait FoodDataEditingSqlImpl extends SqlDataService {
       }
   }
 
-  def updateAssociatedFoods(foodCode: String, locale: String, foods: Seq[Prompt]): UpdateResult = tryWithConnection {
+  def updateAssociatedFoods(foodCode: String, locale: String, foods: Seq[AssociatedFood]): UpdateResult = tryWithConnection {
     implicit conn =>
       try {
         conn.setAutoCommit(false)

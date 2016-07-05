@@ -35,7 +35,7 @@ DELETE  /admin/categories/:code                       controllers.AdminFoodDataC
 GET     /admin/foods/code-available/:code             controllers.AdminFoodDataController.isFoodCodeAvailable(code: String)
 GET     /admin/foods/:locale/uncategorised            controllers.AdminFoodDataController.uncategorisedFoods(locale: String)
 GET     /admin/foods/:locale/search/:term             controllers.AdminFoodDataController.searchFoods(term: String, locale: String)
-GET     /admin/foods/:locale/:code/definition         controllers.AdminFoodDataController.foodDef(code: String, locale: String)
+GET     /admin/foods/:locale/:code/definition         controllers.AdminFoodDataController.foodRecord(code: String, locale: String)
 GET     /admin/foods/:locale/:code/parent-categories  controllers.AdminFoodDataController.foodParentCategories(code: String, locale: String)
 GET     /admin/foods/:locale/:code/all-categories     controllers.AdminFoodDataController.foodAllCategories(code: String, locale: String)
 GET     /admin/foods/:locale/:code/problems           controllers.ProblemChecker.checkFood(code: String, locale: String)

@@ -21,9 +21,9 @@ package uk.ac.ncl.openlab.intake24.foodxml.scripts
 import java.io.File
 import java.io.PrintWriter
 import scala.xml.XML
-import net.scran24.fooddef.FoodOld
-import net.scran24.fooddef.CategoryV1
-import net.scran24.fooddef.IndexEntryOld
+import uk.ac.ncl.openlab.intake24.FoodOld
+import uk.ac.ncl.openlab.intake24.CategoryV1
+import uk.ac.ncl.openlab.intake24.IndexEntryOld
 import uk.ac.ncl.openlab.intake24.foodxml.FoodDefOld
 import uk.ac.ncl.openlab.intake24.foodxml.Util
 import uk.ac.ncl.openlab.intake24.foodxml.FoodDef

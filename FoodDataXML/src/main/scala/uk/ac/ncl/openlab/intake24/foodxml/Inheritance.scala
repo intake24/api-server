@@ -18,8 +18,8 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodxml
 
-import net.scran24.fooddef.InheritableAttributes
-import net.scran24.fooddef.Category
+import uk.ac.ncl.openlab.intake24.InheritableAttributes
+import uk.ac.ncl.openlab.intake24.Category
 
 case class Inheritance(categories: Categories) {
 

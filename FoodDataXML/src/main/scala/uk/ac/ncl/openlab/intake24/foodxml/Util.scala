@@ -22,9 +22,9 @@ import scala.xml.Node
 import scala.xml.PrettyPrinter
 import java.io.PrintWriter
 import java.io.File
-import net.scran24.fooddef.CategoryV1
-import net.scran24.fooddef.FoodOld
-import net.scran24.fooddef.IndexEntryOld
+import uk.ac.ncl.openlab.intake24.CategoryV1
+import uk.ac.ncl.openlab.intake24.FoodOld
+import uk.ac.ncl.openlab.intake24.IndexEntryOld
 
 object Util {
   def mapFoods (rootCats: Map[String, CategoryV1], f: FoodOld => FoodOld) : Map[String, CategoryV1] = {

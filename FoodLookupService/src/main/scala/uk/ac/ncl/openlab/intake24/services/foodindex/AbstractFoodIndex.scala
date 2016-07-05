@@ -18,24 +18,16 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.services.foodindex
 
-import org.workcraft.phrasesearch.CaseInsensitiveString
-import org.workcraft.phrasesearch.PhraseIndex
-import org.workcraft.phrasesearch.MatchFewer
 import org.slf4j.LoggerFactory
+import org.workcraft.phrasesearch.CaseInsensitiveString
 import org.workcraft.phrasesearch.InterpretedPhrase
-import net.scran24.fooddef.Food
-import net.scran24.fooddef.CategoryHeader
-import net.scran24.fooddef.FoodHeader
-import net.scran24.fooddef.CategoryHeader
-import com.google.inject.Singleton
-import com.google.inject.Inject
-import com.google.inject.name.Named
-import org.workcraft.phrasesearch.Metaphone3Encoder
+import org.workcraft.phrasesearch.MatchFewer
 import org.workcraft.phrasesearch.PhoneticEncoder
+import org.workcraft.phrasesearch.PhraseIndex
 import org.workcraft.phrasesearch.WordStemmer
+
+import uk.ac.ncl.openlab.intake24.UserFoodHeader
 import uk.ac.ncl.openlab.intake24.services.IndexFoodDataService
-import net.scran24.fooddef.UserFoodHeader
-import net.scran24.fooddef.UserFoodHeader
 
 abstract class AbstractFoodIndex (foodData: IndexFoodDataService, phoneticEncoder: Option[PhoneticEncoder], stemmer: WordStemmer, indexFilter: Seq[String], nonIndexedWords: Seq[String], localSpecialFoods: LocalSpecialFoodNames, locale: String) extends FoodIndex {
 

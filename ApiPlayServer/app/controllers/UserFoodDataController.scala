@@ -86,6 +86,15 @@ class UserFoodDataController @Inject() (service: UserFoodDataService, deadbolt: 
       }
     }
   }
+  
+  def associatedFoodPrompts(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
+    Action {
+      service.associatedFoods(code, locale) match {
+        case Left(_) => NotFound
+        case Right(foods) => Ok(write(foods)).as(ContentTypes.JSON) 
+      }
+    }
+  }
 
   def brandNames(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
@@ -108,12 +117,6 @@ class UserFoodDataController @Inject() (service: UserFoodDataService, deadbolt: 
   def guideDef(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       Ok(write(service.guideDef(id))).as(ContentTypes.JSON)
-    }
-  }
-
-  def associatedFoodPrompts(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
-      Ok(write(service.associatedFoodPrompts(code, locale))).as(ContentTypes.JSON)
     }
   }
 }
