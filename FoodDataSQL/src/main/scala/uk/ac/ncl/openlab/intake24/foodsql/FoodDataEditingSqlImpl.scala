@@ -27,8 +27,8 @@ import com.google.inject.Singleton
 
 import anorm._
 import uk.ac.ncl.openlab.intake24.AssociatedFood
-import uk.ac.ncl.openlab.intake24.CategoryBase
-import uk.ac.ncl.openlab.intake24.CategoryLocal
+import uk.ac.ncl.openlab.intake24.MainCategoryRecord
+import uk.ac.ncl.openlab.intake24.LocalCategoryRecord
 import uk.ac.ncl.openlab.intake24.LocalFoodRecord
 import uk.ac.ncl.openlab.intake24.LocalFoodRecord
 import uk.ac.ncl.openlab.intake24.MainFoodRecord
@@ -253,7 +253,7 @@ trait FoodDataEditingSqlImpl extends SqlDataService {
       }
   }
 
-  def updateCategoryBase(categoryCode: String, categoryBase: CategoryBase) = tryWithConnection {
+  def updateCategoryBase(categoryCode: String, categoryBase: MainCategoryRecord) = tryWithConnection {
     implicit conn =>
       conn.setAutoCommit(false)
 
@@ -288,7 +288,7 @@ trait FoodDataEditingSqlImpl extends SqlDataService {
       }
   }
 
-  def updateCategoryLocal(categoryCode: String, locale: String, categoryLocal: CategoryLocal) = tryWithConnection {
+  def updateCategoryLocal(categoryCode: String, locale: String, categoryLocal: LocalCategoryRecord) = tryWithConnection {
     implicit conn =>
       conn.setAutoCommit(false)
 

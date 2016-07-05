@@ -20,11 +20,11 @@ package uk.ac.ncl.openlab.intake24.services
 
 import uk.ac.ncl.openlab.intake24.AsServedHeader
 import uk.ac.ncl.openlab.intake24.AssociatedFood
-import uk.ac.ncl.openlab.intake24.Category
-import uk.ac.ncl.openlab.intake24.CategoryBase
+import uk.ac.ncl.openlab.intake24.CategoryRecord
+import uk.ac.ncl.openlab.intake24.MainCategoryRecord
 import uk.ac.ncl.openlab.intake24.CategoryContents
 import uk.ac.ncl.openlab.intake24.CategoryHeader
-import uk.ac.ncl.openlab.intake24.CategoryLocal
+import uk.ac.ncl.openlab.intake24.LocalCategoryRecord
 import uk.ac.ncl.openlab.intake24.DrinkwareHeader
 import uk.ac.ncl.openlab.intake24.FoodGroup
 import uk.ac.ncl.openlab.intake24.FoodHeader
@@ -76,7 +76,7 @@ trait AdminFoodDataService {
 
   def categoryAllCategories(code: String, locale: String): Seq[CategoryHeader]
 
-  def categoryDef(code: String, locale: String): Category
+  def categoryRecord(code: String, locale: String): Either[CodeError, CategoryRecord]
   
   def allAsServedSets(): Seq[AsServedHeader]
  
@@ -108,9 +108,9 @@ trait AdminFoodDataService {
   
   def deleteFood(foodCode: String): UpdateResult
   
-  def updateCategoryBase(categoryCode: String, categoryBase: CategoryBase): UpdateResult
+  def updateCategoryBase(categoryCode: String, categoryBase: MainCategoryRecord): UpdateResult
   
-  def updateCategoryLocal(categoryCode: String, locale: String, categoryLocal: CategoryLocal): UpdateResult
+  def updateCategoryLocal(categoryCode: String, locale: String, categoryLocal: LocalCategoryRecord): UpdateResult
   
   def isCategoryCodeAvailable(code: String): Boolean
   

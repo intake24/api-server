@@ -40,10 +40,10 @@ import uk.ac.ncl.openlab.intake24.AsServedHeader
 import uk.ac.ncl.openlab.intake24.AsServedImage
 import uk.ac.ncl.openlab.intake24.AsServedSet
 import uk.ac.ncl.openlab.intake24.AssociatedFood
-import uk.ac.ncl.openlab.intake24.Category
+import uk.ac.ncl.openlab.intake24.CategoryRecord
 import uk.ac.ncl.openlab.intake24.CategoryContents
 import uk.ac.ncl.openlab.intake24.CategoryHeader
-import uk.ac.ncl.openlab.intake24.CategoryLocal
+import uk.ac.ncl.openlab.intake24.LocalCategoryRecord
 import uk.ac.ncl.openlab.intake24.DrinkScale
 import uk.ac.ncl.openlab.intake24.DrinkwareHeader
 import uk.ac.ncl.openlab.intake24.DrinkwareSet
@@ -62,6 +62,7 @@ import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
 import uk.ac.ncl.openlab.intake24.VolumeFunction
 import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService
 import uk.ac.ncl.openlab.intake24.services.CodeError
+import uk.ac.ncl.openlab.intake24.MainCategoryRecord
 
 @Singleton
 class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends SqlDataService
@@ -225,8 +226,8 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
       SQL(foodQuery).on('food_code -> code, 'locale_id -> locale).executeQuery().as(foodRowParser.singleOpt) match {
         case Some(result) =>
           Right(FoodRecord(
-              MainFoodRecord(result.version, result.code, result.description, result.food_group_id.toInt,
-            InheritableAttributes(result.ready_meal_option, result.same_as_before_option, result.reasonable_amount)),
+            MainFoodRecord(result.version, result.code, result.description, result.food_group_id.toInt,
+              InheritableAttributes(result.ready_meal_option, result.same_as_before_option, result.reasonable_amount)),
             LocalFoodRecord(result.local_version, result.local_description, result.do_not_use.getOrElse(false), nutrientTableCodes, portionSizeMethods)))
         case None => Left(CodeError.UndefinedCode)
       }
@@ -303,7 +304,7 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
         .map(_.asCategoryHeader)
   }
 
-  def categoryDef(code: String, locale: String): Category = tryWithConnection {
+  def categoryRecord(code: String, locale: String): Either[CodeError, CategoryRecord] = tryWithConnection {
     implicit conn =>
       val psmResults =
         SQL(categoryPortionSizeMethodsQuery).on('category_code -> code, 'locale_id -> locale).executeQuery().as(psmResultRowParser.*)
@@ -320,16 +321,14 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
 
       val categoryRowParser = Macro.namedParser[CategoryResultRow]
 
-      val results = SQL(categoryQuery).on('category_code -> code, 'locale_id -> locale).executeQuery().as(categoryRowParser.*)
-
-      if (results.isEmpty)
-        throw new RuntimeException(s"Category ${code} does not exist")
-      else {
-        val result = results(0)
-
-        Category(result.version, result.code, result.description, result.is_hidden,
-          InheritableAttributes(result.ready_meal_option, result.same_as_before_option, result.reasonable_amount),
-          CategoryLocal(result.local_version, result.local_description, portionSizeMethods))
+      SQL(categoryQuery).on('category_code -> code, 'locale_id -> locale).executeQuery().as(categoryRowParser.singleOpt) match {
+        case Some(record) => {
+          Right(CategoryRecord(
+            MainCategoryRecord(record.version, record.code, record.description, record.is_hidden,
+              InheritableAttributes(record.ready_meal_option, record.same_as_before_option, record.reasonable_amount)),
+            LocalCategoryRecord(record.local_version, record.local_description, portionSizeMethods)))
+        }
+        case None => Left(CodeError.UndefinedCode)
       }
   }
 

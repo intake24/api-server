@@ -56,11 +56,11 @@ case class CategoryHeader(code: String, englishDescription: String, localDescrip
 
 case class UserCategoryHeader(code: String, localDescription: String)
 
-case class Category(version: UUID, code: String, englishDescription: String, isHidden: Boolean, attributes: InheritableAttributes, localData: CategoryLocal)
+case class CategoryRecord(main: MainCategoryRecord, local: LocalCategoryRecord)
 
-case class CategoryBase(version: UUID, code: String, englishDescription: String, isHidden: Boolean, attributes: InheritableAttributes)
+case class MainCategoryRecord(version: UUID, code: String, englishDescription: String, isHidden: Boolean, attributes: InheritableAttributes)
 
-case class CategoryLocal(version: Option[UUID], localDescription: Option[String], portionSize: Seq[PortionSizeMethod])
+case class LocalCategoryRecord(version: Option[UUID], localDescription: Option[String], portionSize: Seq[PortionSizeMethod])
 
 case class CategoryContents(foods: Seq[FoodHeader], subcategories: Seq[CategoryHeader])
 

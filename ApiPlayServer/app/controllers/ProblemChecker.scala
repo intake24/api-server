@@ -40,14 +40,14 @@ class ProblemChecker @Inject() (userData: UserFoodDataService, adminData: AdminF
   val SingleItem = "single_item_in_category"
 
   val maxReturnedProblems = 10
-  
+
   def translationRequired(localeCode: String) = {
     val currentLocale = locales.get(localeCode).get
-    
+
     currentLocale.prototypeLocale match {
       case Some(prototypeLocaleCode) => {
         val prototypeLocale = locales.get(prototypeLocaleCode).get
-        
+
         currentLocale.respondentLanguage != prototypeLocale.respondentLanguage
       }
       case None => true
@@ -58,7 +58,7 @@ class ProblemChecker @Inject() (userData: UserFoodDataService, adminData: AdminF
     val foodDef = adminData.foodRecord(code, locale)
     val userFoodData = userData.foodData(code, locale)
     val uncatFoods = adminData.uncategorisedFoods(locale)
-    
+
     val problems = Buffer[String]()
 
     (foodDef, userFoodData) match {
@@ -101,12 +101,17 @@ class ProblemChecker @Inject() (userData: UserFoodDataService, adminData: AdminF
     if (size == 1)
       problems += SingleItem
 
-    val categoryDef = adminData.categoryDef(code, locale)
+    adminData.categoryRecord(code, locale) match {
 
-    if (categoryDef.localData.localDescription.isEmpty && translationRequired(locale))
-      problems += LocalDescriptionMissing
+      case Right(record) => {
+        if (record.local.localDescription.isEmpty && translationRequired(locale))
+          problems += LocalDescriptionMissing
+        problems.toSeq.map(pcode => CategoryProblem(code, record.local.localDescription.getOrElse(record.main.englishDescription), pcode))
+      }
+      // FIXME: Return Either instead
+      case _ => Seq()
+    }
 
-    problems.toSeq.map(pcode => CategoryProblem(code, categoryDef.localData.localDescription.getOrElse(categoryDef.englishDescription), pcode))
   }
 
   def recursiveCategoryProblems(code: String, locale: String, maxProblems: Int): RecursiveCategoryProblems = {

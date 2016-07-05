@@ -29,8 +29,8 @@ import play.api.mvc.Controller
 import play.api.mvc.Result
 import security.Roles
 import uk.ac.ncl.openlab.intake24.AssociatedFood
-import uk.ac.ncl.openlab.intake24.CategoryBase
-import uk.ac.ncl.openlab.intake24.CategoryLocal
+import uk.ac.ncl.openlab.intake24.MainCategoryRecord
+import uk.ac.ncl.openlab.intake24.LocalCategoryRecord
 import uk.ac.ncl.openlab.intake24.MainFoodRecord
 import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService
 import uk.ac.ncl.openlab.intake24.services.CodeError
@@ -48,8 +48,11 @@ import upickle.default.macroW
 import upickle.default.read
 import upickle.default.write
 import uk.ac.ncl.openlab.intake24.LocalFoodRecord
+import uk.ac.ncl.openlab.intake24.services.UserFoodDataService
+import models.AdminFoodRecord
+import models.AdminCategoryRecord
 
-class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt: DeadboltActions) extends Controller with PickleErrorHandler {
+class AdminFoodDataController @Inject() (service: AdminFoodDataService, userService: UserFoodDataService, deadbolt: DeadboltActions) extends Controller with PickleErrorHandler {
 
   // Read 
   def rootCategories(locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
@@ -84,16 +87,25 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt
 
   def foodRecord(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      service.foodRecord(code, locale) match {
-        case Right(d) => Ok(write(d)).as(ContentTypes.JSON)
-        case Left(CodeError.UndefinedCode) => NotFound 
+      val result = for {
+        record <- service.foodRecord(code, locale).right
+        brandNames <- userService.brandNames(code, locale).right
+        associatedFoods <- userService.associatedFoods(code, locale).right
+      } yield AdminFoodRecord(record.main, record.local, brandNames, associatedFoods)
+      
+      result match {
+        case Left(CodeError.UndefinedCode) => NotFound
+        case Right(record) => Ok(write(record)).as(ContentTypes.JSON)
       }
     }
   }
 
-  def categoryDef(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
+  def categoryRecord(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      Ok(write(service.categoryDef(code, locale))).as(ContentTypes.JSON)
+      service.categoryRecord(code, locale) match {
+        case Left(CodeError.UndefinedCode) => NotFound
+        case Right(record) => Ok(write(AdminCategoryRecord(record.main, record.local))).as(ContentTypes.JSON)
+      }      
     }
   }
 
@@ -169,8 +181,6 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt
     case SqlException(message) => InternalServerError(Json.obj("error" -> "sql_exception", "message" -> message))
   }
 
-
-
   def updateFoodBase(foodCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
@@ -186,14 +196,14 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt
       }
     }
   }
-  
+
   def updateAssociatedFoodPrompts(foodCode: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
         translateUpdateResult(service.updateAssociatedFoods(foodCode, locale, read[Seq[AssociatedFood]](request.body)))
       }
     }
-  } 
+  }
 
   def isFoodCodeAvailable(code: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
@@ -208,13 +218,13 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt
       }
     }
   }
-  
+
   def createFoodWithTempCode() = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
         service.createFoodWithTempCode(read[NewFood](request.body)) match {
           case Left(error) => translateUpdateResult(error)
-          case Right(tempCode) => Ok(tempCode) 
+          case Right(tempCode) => Ok(tempCode)
         }
       }
     }
@@ -268,7 +278,7 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt
   def updateCategoryBase(categoryCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
-        translateUpdateResult(service.updateCategoryBase(categoryCode, read[CategoryBase](request.body)))
+        translateUpdateResult(service.updateCategoryBase(categoryCode, read[MainCategoryRecord](request.body)))
       }
     }
   }
@@ -276,7 +286,7 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, deadbolt
   def updateCategoryLocal(categoryCode: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
-        translateUpdateResult(service.updateCategoryLocal(categoryCode, locale, read[CategoryLocal](request.body)))
+        translateUpdateResult(service.updateCategoryLocal(categoryCode, locale, read[LocalCategoryRecord](request.body)))
       }
     }
   }

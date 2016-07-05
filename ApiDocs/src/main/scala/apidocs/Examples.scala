@@ -19,8 +19,8 @@ limitations under the License.
 package apidocs
 
 
-import uk.ac.ncl.openlab.intake24.Category
-import uk.ac.ncl.openlab.intake24.CategoryLocal
+import uk.ac.ncl.openlab.intake24.CategoryRecord
+import uk.ac.ncl.openlab.intake24.LocalCategoryRecord
 import uk.ac.ncl.openlab.intake24.InheritableAttributes
 import java.io.StringReader
 import upickle.default._
@@ -36,7 +36,7 @@ import uk.ac.ncl.openlab.intake24.api.Intake24Credentials
 import uk.ac.ncl.openlab.intake24.services.NewFood
 
 import uk.ac.ncl.openlab.intake24.services.NewCategory
-import uk.ac.ncl.openlab.intake24.CategoryBase
+import uk.ac.ncl.openlab.intake24.MainCategoryRecord
 import uk.ac.ncl.openlab.intake24.FoodGroup
 
 import uk.ac.ncl.openlab.intake24.MainFoodRecord
@@ -69,15 +69,15 @@ object Examples {
 
   val food1PsmJson = prettyPrint(write(food1.local.portionSize(0)))
 
-  val cat = Category(xmlVersionId, "BRED", "Bread/crumpets/pancakes/yorkshire puddings", false, InheritableAttributes(None, None, None),
-    CategoryLocal(Some(xmlVersionId), Some("Хлебобулочные изделия/блины/пудинги"), Seq()))
+  val cat = CategoryRecord(MainCategoryRecord(xmlVersionId, "BRED", "Bread/crumpets/pancakes/yorkshire puddings", false, InheritableAttributes(None, None, None)),
+    LocalCategoryRecord(Some(xmlVersionId), Some("Хлебобулочные изделия/блины/пудинги"), Seq()))
 
-  val cat2 = Category(xmlVersionId, "BSCT", "Biscuits & crackers", false, InheritableAttributes(None, None, None),
-    CategoryLocal(Some(xmlVersionId), Some("Печенье и крекеры"), Seq()))
+  val cat2 = CategoryRecord(MainCategoryRecord(xmlVersionId, "BSCT", "Biscuits & crackers", false, InheritableAttributes(None, None, None)),
+    LocalCategoryRecord(Some(xmlVersionId), Some("Печенье и крекеры"), Seq()))
 
   val catJson = prettyPrint(write(cat))
 
-  val catHeader = CategoryHeader(cat.code, cat.englishDescription, cat.localData.localDescription, cat.isHidden)
+  val catHeader = CategoryHeader(cat.main.code, cat.main.englishDescription, cat.local.localDescription, cat.main.isHidden)
 
   val catHeaderJson = prettyPrint(write(catHeader))
 
@@ -105,9 +105,9 @@ object Examples {
       Seq(PortionSizeMethodParameter("serving-image-set", "lasagne"),
         PortionSizeMethodParameter("leftovers-image-set", "lasagne_leftovers")))))))
         
-  val categoryBase = prettyPrint(write(CategoryBase(xmlVersionId, "C001", "Updated category", true, InheritableAttributes(Some(true), None, None))))
+  val categoryBase = prettyPrint(write(MainCategoryRecord(xmlVersionId, "C001", "Updated category", true, InheritableAttributes(Some(true), None, None))))
         
-  val categoryLocal = prettyPrint(write(CategoryLocal(Some(xmlVersionId), Some("Хлебобулочные изделия/блины/пудинги"),  Seq(PortionSizeMethod("as-served", "Use an image", "portion/lasagne.jpg", false,
+  val categoryLocal = prettyPrint(write(LocalCategoryRecord(Some(xmlVersionId), Some("Хлебобулочные изделия/блины/пудинги"),  Seq(PortionSizeMethod("as-served", "Use an image", "portion/lasagne.jpg", false,
       Seq(PortionSizeMethodParameter("serving-image-set", "lasagne"),
         PortionSizeMethodParameter("leftovers-image-set", "lasagne_leftovers")))))))
         

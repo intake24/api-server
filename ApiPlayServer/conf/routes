@@ -17,7 +17,7 @@ GET     /admin/categories/:locale                 controllers.AdminFoodDataContr
 
 GET     /admin/categories/:locale/search/:term    controllers.AdminFoodDataController.searchCategories(term: String, locale: String)
 GET     /admin/categories/:locale/:code           controllers.AdminFoodDataController.categoryContents(code: String, locale: String)
-GET     /admin/categories/:locale/:code/definition           controllers.AdminFoodDataController.categoryDef(code: String, locale: String)
+GET     /admin/categories/:locale/:code/definition           controllers.AdminFoodDataController.categoryRecord(code: String, locale: String)
 GET     /admin/categories/:locale/:code/parent-categories    controllers.AdminFoodDataController.categoryParentCategories(code: String, locale: String)
 GET     /admin/categories/:locale/:code/all-categories       controllers.AdminFoodDataController.categoryAllCategories(code: String, locale: String)
 GET     /admin/categories/:locale/:code/problems             controllers.ProblemChecker.checkCategory(code: String, locale: String)
