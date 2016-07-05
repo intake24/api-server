@@ -38,7 +38,7 @@ object InheritableAttributes {
 
 case class FoodOld(code: String, description: String, isDrink: Boolean, ndnsCode: Int, path: String, portionSize: Seq[PortionSizeMethod]) extends IndexEntryOld 
 
-case class FoodRecord(version: UUID, code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes, localData: LocalFoodRecord)
+case class FoodRecord(main: MainFoodRecord, local: LocalFoodRecord)
 
 case class MainFoodRecord(version: UUID, code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes)
 

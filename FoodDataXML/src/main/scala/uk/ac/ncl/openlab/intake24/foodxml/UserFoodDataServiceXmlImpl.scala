@@ -74,14 +74,14 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends UserFoo
     val f = data.foods.find(code)
 
     val portionSizeMethods = {
-      val ps = f.localData.portionSize
+      val ps = f.local.portionSize
       if (ps.isEmpty) {
         data.inheritance.foodInheritedPortionSize(code)
       } else
         ps
     }
 
-    val readyMealOption = f.attributes.readyMealOption match {
+    val readyMealOption = f.main.attributes.readyMealOption match {
       case Some(value) => value
       case None => data.inheritance.foodInheritedAttribute(code, _.readyMealOption) match {
         case Some(value) => value
@@ -89,7 +89,7 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends UserFoo
       }
     }
 
-    val sameAsBeforeOption = f.attributes.sameAsBeforeOption match {
+    val sameAsBeforeOption = f.main.attributes.sameAsBeforeOption match {
       case Some(value) => value
       case None => data.inheritance.foodInheritedAttribute(code, _.sameAsBeforeOption) match {
         case Some(value) => value
@@ -97,7 +97,7 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends UserFoo
       }
     }
 
-    val reasonableAmount = f.attributes.reasonableAmount match {
+    val reasonableAmount = f.main.attributes.reasonableAmount match {
       case Some(value) => value
       case None => data.inheritance.foodInheritedAttribute(code, _.reasonableAmount) match {
         case Some(value) => value
@@ -105,7 +105,7 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends UserFoo
       }
     }
 
-    Right((UserFoodData(f.code, f.englishDescription, f.localData.nutrientTableCodes, f.groupCode, portionSizeMethods, readyMealOption, sameAsBeforeOption, reasonableAmount), null))
+    Right((UserFoodData(f.main.code, f.main.englishDescription, f.local.nutrientTableCodes, f.main.groupCode, portionSizeMethods, readyMealOption, sameAsBeforeOption, reasonableAmount), null))
   }
 
   def asServedDef(id: String) = data.asServedSets.get(id) match {

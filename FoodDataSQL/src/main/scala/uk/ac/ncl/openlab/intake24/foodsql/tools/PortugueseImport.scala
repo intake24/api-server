@@ -114,7 +114,7 @@ object PortugueseImport extends App {
 
       dataService.foodRecord(header.code, portugueseLocaleCode) match {
         case Right(fooddef) => {
-          val localData = fooddef.localData
+          val localData = fooddef.local
 
           if (doNotUseCodes.contains(header.code)) {
             println(s""","Not using in Portuguese locale"""")

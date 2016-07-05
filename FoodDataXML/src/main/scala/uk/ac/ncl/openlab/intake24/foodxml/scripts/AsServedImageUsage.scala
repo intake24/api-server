@@ -17,12 +17,12 @@ object AsServedImageUsage extends App {
 
   val refs = foods.flatMap {
     food =>
-      val as = food.localData.portionSize.filter(_.method == "as-served")
+      val as = food.local.portionSize.filter(_.method == "as-served")
 
       as.flatMap {
         m =>
-          val serving = m.parameters.find(_.name == "serving-image-set").map(p => Reference(p.value, food.englishDescription, food.code))
-          val leftovers = m.parameters.find(_.name == "leftovers-image-set").map(p => Reference(p.value, food.englishDescription, food.code))
+          val serving = m.parameters.find(_.name == "serving-image-set").map(p => Reference(p.value, food.main.englishDescription, food.main.code))
+          val leftovers = m.parameters.find(_.name == "leftovers-image-set").map(p => Reference(p.value, food.main.englishDescription, food.main.code))
           Seq(serving, leftovers).flatten
       }
   }

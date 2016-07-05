@@ -44,7 +44,7 @@ object ParseAssociatedFoods {
         val pdefs = rows.map( row => AssociatedFood(row(2), row(3), row(1).toBoolean, row(4)))
 
         pdefs.foreach(p => {
-          if (!(cats.exists(_.code == p.category) || foods.exists(_.code == p.category)))
+          if (!(cats.exists(_.code == p.category) || foods.exists(_.main.code == p.category)))
             println("Undefined category or food " + p.category + " in row \n" + rows)
         })
         

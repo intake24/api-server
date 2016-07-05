@@ -23,9 +23,9 @@ object AddNZFoodCodes extends App {
   
   val updated = foods.map {
     food =>
-      if (map.contains(food.code)) {
-        println ("Using " + map(food.code) + " as NZ code for " + food.code)
-        food.copy(localData = food.localData.copy(nutrientTableCodes = food.localData.nutrientTableCodes + ("NZ" -> map(food.code))))
+      if (map.contains(food.main.code)) {
+        println ("Using " + map(food.main.code) + " as NZ code for " + food.main.code)
+        food.copy(local = food.local.copy(nutrientTableCodes = food.local.nutrientTableCodes + ("NZ" -> map(food.main.code))))
       }
       else
         food
@@ -33,10 +33,10 @@ object AddNZFoodCodes extends App {
   
   updated.foreach {
     food =>
-      if (food.localData.nutrientTableCodes.isEmpty)
-        println("No nutrient table code: " + food.code)
-      if (food.localData.nutrientTableCodes.get("NZ").nonEmpty && food.localData.nutrientTableCodes.get("NDNS").nonEmpty)
-        println("Both tables: " + food.code)
+      if (food.local.nutrientTableCodes.isEmpty)
+        println("No nutrient table code: " + food.main.code)
+      if (food.local.nutrientTableCodes.get("NZ").nonEmpty && food.local.nutrientTableCodes.get("NDNS").nonEmpty)
+        println("Both tables: " + food.main.code)
   }
   
   XML.save("/home/ivan/Projects/Intake24/intake24-data-NEW ZEALAND/foods-nzcodes.xml", FoodDef.toXml(updated))

@@ -34,6 +34,7 @@ import java.util.UUID
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.LocalFoodRecord
 import uk.ac.ncl.openlab.intake24.FoodRecord
+import uk.ac.ncl.openlab.intake24.MainFoodRecord
 
 object FoodDef {
   
@@ -54,11 +55,11 @@ object FoodDef {
 
   def toXml(food: FoodRecord): Node =
     addInheritableAttributes(
-      <food code={ food.code } description={ food.englishDescription } groupCode={ food.groupCode.toString }>
-        { toXml(food.localData.nutrientTableCodes) }
-        { food.localData.portionSize.map(toXml) }
+      <food code={ food.main.code } description={ food.main.englishDescription } groupCode={ food.main.groupCode.toString }>
+        { toXml(food.local.nutrientTableCodes) }
+        { food.local.portionSize.map(toXml) }
       </food>,
-      food.attributes)
+      food.main.attributes)
 
   def toXml(foods: Seq[FoodRecord]): Node =
     <foods>
@@ -120,6 +121,8 @@ object FoodDef {
         case _ => parseNutrientTableCodes(fnode)
       }
 
-      FoodRecord(UUID.randomUUID(), code, desc, groupCode, attribs, LocalFoodRecord(Some(UUID.randomUUID()), Some(desc), false, nutrientTables , psm))
+      FoodRecord(
+          MainFoodRecord(UUID.randomUUID(), code, desc, groupCode, attribs), 
+          LocalFoodRecord(Some(UUID.randomUUID()), Some(desc), false, nutrientTables , psm))
     })
 }

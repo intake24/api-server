@@ -42,7 +42,7 @@ object FoodsByPortionSizeMethod extends App {
 
   foods.foreach {
     food =>
-      food.localData.portionSize.foreach {
+      food.local.portionSize.foreach {
         method =>
           method.method match {
             case "as-served" =>
@@ -75,7 +75,7 @@ object FoodsByPortionSizeMethod extends App {
     set =>
       asServed(set).foreach {
         food =>
-          writer.writeNext(Array(asServedSets(set).id, asServedSets(set).description, food.code, food.englishDescription))
+          writer.writeNext(Array(asServedSets(set).id, asServedSets(set).description, food.main.code, food.main.englishDescription))
       }
   }
 
@@ -91,7 +91,7 @@ object FoodsByPortionSizeMethod extends App {
     id =>
       guide(id).foreach {
         food =>
-          writer2.writeNext(Array(guideDef(id).id, guideDef(id).description, food.code, food.englishDescription))
+          writer2.writeNext(Array(guideDef(id).id, guideDef(id).description, food.main.code, food.main.englishDescription))
       }
   }
 

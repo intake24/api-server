@@ -27,7 +27,7 @@ object StandardisePsmDescriptionsApply extends App {
  
   val processed = foods.map {
     food =>
-      food.copy(localData = food.localData.copy(portionSize = food.localData.portionSize.map(ps => ps.copy( description =  descMap(ps.description.trim().toLowerCase()))))) 
+      food.copy(local = food.local.copy(portionSize = food.local.portionSize.map(ps => ps.copy( description =  descMap(ps.description.trim().toLowerCase()))))) 
   }
   
    Util.writeXml(FoodDef.toXml(processed), "/home/ivan/Projects/Intake24/intake24-data/foods.xml")

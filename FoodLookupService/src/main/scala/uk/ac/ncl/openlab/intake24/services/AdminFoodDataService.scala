@@ -98,7 +98,7 @@ trait AdminFoodDataService {
   
   def updateFoodBase(foodCode: String, foodBase: MainFoodRecord): UpdateResult
   
-  def updateFoodLocal(foodCode: String, locale: String, foodLocal: LocalFoodRecord): UpdateResult 
+  def updateFoodLocal(foodCode: String, locale: String, foodLocal: LocalFoodRecord): UpdateResult
   
   def isFoodCodeAvailable(code: String): Boolean
   

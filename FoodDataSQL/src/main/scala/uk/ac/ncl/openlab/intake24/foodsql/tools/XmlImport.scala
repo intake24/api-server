@@ -83,12 +83,12 @@ class XmlImporter(implicit val dbConn: Connection) {
       
       val foodParams = foods.map {
         f => 
-          val truncatedEnglishDesc = f.englishDescription.take(128)
-          if (f.englishDescription.length() > 128) {
-            logger.warn(s"English description too long for ${f.code}, truncating")
-            logger.warn(f.englishDescription)
+          val truncatedEnglishDesc = f.main.englishDescription.take(128)
+          if (f.main.englishDescription.length() > 128) {
+            logger.warn(s"English description too long for ${f.main.code}, truncating")
+            logger.warn(f.main.englishDescription)
           }
-          Seq[NamedParameter]('code -> f.code, 'description -> truncatedEnglishDesc, 'food_group_id -> f.groupCode, 'version -> f.version)      
+          Seq[NamedParameter]('code -> f.main.code, 'description -> truncatedEnglishDesc, 'food_group_id -> f.main.groupCode, 'version -> f.main.version)
       }
 
       try {
@@ -99,15 +99,15 @@ class XmlImporter(implicit val dbConn: Connection) {
 
       val foodLocalParams = foods.map {
         f =>
-          val truncatedLocalDesc = f.localData.localDescription.map(_.take(128))
-          f.localData.localDescription match {
+          val truncatedLocalDesc = f.local.localDescription.map(_.take(128))
+          f.local.localDescription match {
             case Some(desc) if desc.length() > 128 => {
-              logger.warn(s"Local description too long for ${f.code}, truncating")
+              logger.warn(s"Local description too long for ${f.main.code}, truncating")
               logger.warn(desc)
             }
             case _ => ()
           }
-          Seq[NamedParameter]('food_code -> f.code, 'locale_id -> defaultLocale, 'local_description -> truncatedLocalDesc, 'do_not_use -> false, 'version -> f.localData.version)
+          Seq[NamedParameter]('food_code -> f.main.code, 'locale_id -> defaultLocale, 'local_description -> truncatedLocalDesc, 'do_not_use -> false, 'version -> f.local.version)
       }
 
       try {
@@ -119,8 +119,8 @@ class XmlImporter(implicit val dbConn: Connection) {
       val foodNutritionTableParams =
         foods.flatMap {
           food =>
-            food.localData.nutrientTableCodes.map {
-              case (table_id, table_code) => Seq[NamedParameter]('food_code -> food.code, 'locale_id -> defaultLocale, 'nutrient_table_id -> table_id, 'nutrient_table_code -> table_code)
+            food.local.nutrientTableCodes.map {
+              case (table_id, table_code) => Seq[NamedParameter]('food_code -> food.main.code, 'locale_id -> defaultLocale, 'nutrient_table_id -> table_id, 'nutrient_table_code -> table_code)
             }
         }
 
@@ -133,20 +133,20 @@ class XmlImporter(implicit val dbConn: Connection) {
       logger.info("Writing " + foods.size + " food attribute records to database")
 
       val foodAttributeParams =
-        foods.map(f => Seq[NamedParameter]('food_code -> f.code, 'same_as_before_option -> f.attributes.sameAsBeforeOption,
-          'ready_meal_option -> f.attributes.readyMealOption, 'reasonable_amount -> f.attributes.reasonableAmount))
+        foods.map(f => Seq[NamedParameter]('food_code -> f.main.code, 'same_as_before_option -> f.main.attributes.sameAsBeforeOption,
+          'ready_meal_option -> f.main.attributes.readyMealOption, 'reasonable_amount -> f.main.attributes.reasonableAmount))
 
       BatchSql(Queries.foodsAttributesInsert, foodAttributeParams).execute()
 
       val psmParams =
-        foods.flatMap(f => f.localData.portionSize.map(ps => Seq[NamedParameter]('food_code -> f.code, 'locale_id -> defaultLocale, 'method -> ps.method, 'description -> ps.description, 'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes)))
+        foods.flatMap(f => f.local.portionSize.map(ps => Seq[NamedParameter]('food_code -> f.main.code, 'locale_id -> defaultLocale, 'method -> ps.method, 'description -> ps.description, 'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes)))
 
       if (!psmParams.isEmpty) {
         logger.info("Writing " + psmParams.size + " food portion size method records to database")
 
         val ids = Util.batchKeys(BatchSql(Queries.foodsPortionSizeMethodsInsert, psmParams))
 
-        val psmParamParams = foods.flatMap(_.localData.portionSize).zip(ids).flatMap {
+        val psmParamParams = foods.flatMap(_.local.portionSize).zip(ids).flatMap {
           case (psm, id) => psm.parameters.map(param => Seq[NamedParameter]('portion_size_method_id -> id, 'name -> param.name, 'value -> param.value))
         }
 

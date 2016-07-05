@@ -78,7 +78,7 @@ class ProblemChecker @Inject() (userData: UserFoodDataService, adminData: AdminF
         if (userFoodData.portionSize.size > 1 && userFoodData.portionSize.exists(x => x.description == "no description" || x.imageUrl == "images/placeholder.jpg"))
           problems += NoMethodDescOrImage
 
-        if (foodDef.localData.localDescription.isEmpty && !foodDef.localData.doNotUse && translationRequired(locale))
+        if (foodDef.local.localDescription.isEmpty && !foodDef.local.doNotUse && translationRequired(locale))
           problems += LocalDescriptionMissing
 
         problems.toSeq.map(pcode => FoodProblem(code, userFoodData.localDescription, pcode))

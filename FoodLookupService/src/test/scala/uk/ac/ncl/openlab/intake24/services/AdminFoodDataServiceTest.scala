@@ -36,6 +36,7 @@ import uk.ac.ncl.openlab.intake24.AssociatedFood
 import uk.ac.ncl.openlab.intake24.LocalFoodRecord
 import uk.ac.ncl.openlab.intake24.UserFoodData
 import uk.ac.ncl.openlab.intake24.FoodRecord
+import uk.ac.ncl.openlab.intake24.MainFoodRecord
 
 abstract class AdminFoodDataServiceTest extends FunSuite {
 
@@ -109,27 +110,27 @@ abstract class AdminFoodDataServiceTest extends FunSuite {
 
   test("Get food definition") {
     val expected1 =
-      FoodRecord(defaultVersion, "F000", "Food definition test 1", 1, InheritableAttributes(Some(true), None, None),
+      FoodRecord(MainFoodRecord(defaultVersion, "F000", "Food definition test 1", 1, InheritableAttributes(Some(true), None, None)),
         LocalFoodRecord(Some(defaultVersion), Some("Food definition test 1"), false, Map("NDNS" -> "100"),
           Seq(PortionSizeMethod("as-served", "Test", "portion/placeholder.jpg", false,
             Seq(PortionSizeMethodParameter("serving-image-set", "as_served_1"), PortionSizeMethodParameter("leftovers-image-set", "as_served_1_leftovers"))))))
     val expected2 =
-      FoodRecord(defaultVersion, "F004", "Food definition test 2", 10, InheritableAttributes(None, Some(true), None),
+      FoodRecord(MainFoodRecord(defaultVersion, "F004", "Food definition test 2", 10, InheritableAttributes(None, Some(true), None)),
         LocalFoodRecord(Some(defaultVersion), Some("Food definition test 2"), false, Map("NDNS" -> "200"), Seq()))
     val expected3 =
-      FoodRecord(defaultVersion, "F005", "Food definition test 3", 20, InheritableAttributes(None, None, Some(1234)),
+      FoodRecord(MainFoodRecord(defaultVersion, "F005", "Food definition test 3", 20, InheritableAttributes(None, None, Some(1234))),
         LocalFoodRecord(None, Some("Food definition test 3"), false, Map("NDNS" -> "300"), Seq()))
 
     // This hack is required because version codes are generated randomly on import
         
     val actual1 = service.foodRecord("F000", defaultLocale).right.get
-    val versionOverride1 = actual1.copy(version = defaultVersion, localData = actual1.localData.copy(version = Some(defaultVersion)))
+    val versionOverride1 = actual1.copy(main = actual1.main.copy(version = defaultVersion), local = actual1.local.copy(version = Some(defaultVersion)))
         
     val actual2 = service.foodRecord("F004", defaultLocale).right.get
-    val versionOverride2 = actual2.copy(version = defaultVersion, localData = actual2.localData.copy(version = Some(defaultVersion)))
+    val versionOverride2 = actual2.copy(main = actual2.main.copy(version = defaultVersion), local = actual2.local.copy(version = Some(defaultVersion)))
     
     val actual3 = service.foodRecord("F005", defaultLocale).right.get
-    val versionOverride3 = actual3.copy(version = defaultVersion, localData = actual3.localData.copy(version = None))
+    val versionOverride3 = actual3.copy(main = actual3.main.copy(version = defaultVersion), local = actual3.local.copy(version = None))
     
     assert( versionOverride1 === expected1)
     assert( versionOverride2 === expected2)
@@ -148,14 +149,14 @@ abstract class AdminFoodDataServiceTest extends FunSuite {
     // check that definition is correct
     val expected1 =
       FoodRecord(
-        defaultVersion, "F008", "PSM test 1", 0, InheritableAttributes(None, None, None),
+        MainFoodRecord(defaultVersion, "F008", "PSM test 1", 0, InheritableAttributes(None, None, None)),
         LocalFoodRecord(Some(defaultVersion), Some("PSM test 1"), false, Map(), portionSizeMethods))
 
     // then check that uninherited PSM data is returned correctly
     // val expected2 = FoodData("F008", "PSM test 1", Map(), 0, portionSizeMethods, false, false, 1000)
 
     val actual1 = service.foodRecord("F008", defaultLocale).right.get
-    val versionOverride1 = actual1.copy(version = defaultVersion, localData = actual1.localData.copy(version = Some(defaultVersion)))
+    val versionOverride1 = actual1.copy(main = actual1.main.copy(version = defaultVersion), local = actual1.local.copy(version = Some(defaultVersion)))
     
     assert(versionOverride1 === expected1)
     //assert(service.foodData("F008", defaultLocale) === expected2)

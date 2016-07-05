@@ -59,16 +59,15 @@ object Examples {
 
   val signInRequestJson = prettyPrint(write(signInRequest))
 
-  val food1 = FoodRecord(xmlVersionId, "MLAS", "Meat lasagne (includes homemade)", 107, InheritableAttributes(Some(true), None, None),
-    LocalFoodRecord(Some(xmlVersionId), Some("Лазанья с мясом (в том числе домашнего приготовления)"), false, Map("NDNS" -> "1348"), Seq(PortionSizeMethod("as-served", "Use an image", "portion/lasagne.jpg", false,
+  val food1 = FoodRecord(MainFoodRecord(xmlVersionId, "MLAS", "Meat lasagne (includes homemade)", 107, InheritableAttributes(Some(true), None, None)),    LocalFoodRecord(Some(xmlVersionId), Some("Лазанья с мясом (в том числе домашнего приготовления)"), false, Map("NDNS" -> "1348"), Seq(PortionSizeMethod("as-served", "Use an image", "portion/lasagne.jpg", false,
       Seq(PortionSizeMethodParameter("serving-image-set", "lasagne"),
         PortionSizeMethodParameter("leftovers-image-set", "lasagne_leftovers"))))))
 
   val food1Json = prettyPrint(write(food1))
 
-  val food1AttrJson = prettyPrint(write(food1.attributes))
+  val food1AttrJson = prettyPrint(write(food1.main.attributes))
 
-  val food1PsmJson = prettyPrint(write(food1.localData.portionSize(0)))
+  val food1PsmJson = prettyPrint(write(food1.local.portionSize(0)))
 
   val cat = Category(xmlVersionId, "BRED", "Bread/crumpets/pancakes/yorkshire puddings", false, InheritableAttributes(None, None, None),
     CategoryLocal(Some(xmlVersionId), Some("Хлебобулочные изделия/блины/пудинги"), Seq()))
@@ -82,7 +81,7 @@ object Examples {
 
   val catHeaderJson = prettyPrint(write(catHeader))
 
-  val foodHeader = FoodHeader(food1.code, food1.englishDescription, food1.localData.localDescription, false)
+  val foodHeader = FoodHeader(food1.main.code, food1.main.englishDescription, food1.local.localDescription, false)
 
   val foodHeaderJson = prettyPrint(write(foodHeader))
 

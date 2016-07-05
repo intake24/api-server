@@ -47,20 +47,21 @@ import uk.ac.ncl.openlab.intake24.CategoryLocal
 import uk.ac.ncl.openlab.intake24.DrinkScale
 import uk.ac.ncl.openlab.intake24.DrinkwareHeader
 import uk.ac.ncl.openlab.intake24.DrinkwareSet
-import uk.ac.ncl.openlab.intake24.FoodRecord
 import uk.ac.ncl.openlab.intake24.FoodGroup
 import uk.ac.ncl.openlab.intake24.FoodHeader
+import uk.ac.ncl.openlab.intake24.FoodRecord
 import uk.ac.ncl.openlab.intake24.GuideHeader
 import uk.ac.ncl.openlab.intake24.GuideImage
 import uk.ac.ncl.openlab.intake24.GuideImageWeightRecord
 import uk.ac.ncl.openlab.intake24.InheritableAttributes
+import uk.ac.ncl.openlab.intake24.LocalFoodRecord
+import uk.ac.ncl.openlab.intake24.MainFoodRecord
 import uk.ac.ncl.openlab.intake24.NutrientTable
 import uk.ac.ncl.openlab.intake24.PortionSizeMethod
 import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
 import uk.ac.ncl.openlab.intake24.VolumeFunction
 import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService
 import uk.ac.ncl.openlab.intake24.services.CodeError
-import uk.ac.ncl.openlab.intake24.LocalFoodRecord
 
 @Singleton
 class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends SqlDataService
@@ -223,8 +224,9 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
 
       SQL(foodQuery).on('food_code -> code, 'locale_id -> locale).executeQuery().as(foodRowParser.singleOpt) match {
         case Some(result) =>
-          Right(FoodRecord(result.version, result.code, result.description, result.food_group_id.toInt,
-            InheritableAttributes(result.ready_meal_option, result.same_as_before_option, result.reasonable_amount),
+          Right(FoodRecord(
+              MainFoodRecord(result.version, result.code, result.description, result.food_group_id.toInt,
+            InheritableAttributes(result.ready_meal_option, result.same_as_before_option, result.reasonable_amount)),
             LocalFoodRecord(result.local_version, result.local_description, result.do_not_use.getOrElse(false), nutrientTableCodes, portionSizeMethods)))
         case None => Left(CodeError.UndefinedCode)
       }

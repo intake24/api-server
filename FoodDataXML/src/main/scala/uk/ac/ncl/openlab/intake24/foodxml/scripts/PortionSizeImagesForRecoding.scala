@@ -120,15 +120,15 @@ object PortionSizeImagesForRecoding extends App {
 
   writer.writeNext(Array("Intake24 food code", "Intake24 description", "Portion size images"))
 
-  val foodMap = foods.map(f => (f.code, f)).toMap
+  val foodMap = foods.map(f => (f.main.code, f)).toMap
 
   codes.foreach {
     code =>
       foodMap.get(code) match {
         case Some(food) => {
-          val header = Array(food.code, food.englishDescription)
+          val header = Array(food.main.code, food.main.englishDescription)
 
-          val psmImages = food.localData.portionSize.map {
+          val psmImages = food.local.portionSize.map {
             psm => s"${generateImageLink(psm)}"
           }.toArray
 

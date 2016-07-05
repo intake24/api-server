@@ -31,12 +31,12 @@ object CheckPortionSizeSelectionImages extends App {
    
   foods.foreach {
     food =>
-      if (food.localData.portionSize.size > 1) {
-        food.localData.portionSize.foreach {
+      if (food.local.portionSize.size > 1) {
+        food.local.portionSize.foreach {
           ps =>
             val file = new File(imageDir.getAbsolutePath + File.separator + ps.imageUrl)
             if (!file.exists())
-              println(s"Image ${ps.imageUrl} missing for ${food.code}") 
+              println(s"Image ${ps.imageUrl} missing for ${food.main.code}") 
         }
       }
   }

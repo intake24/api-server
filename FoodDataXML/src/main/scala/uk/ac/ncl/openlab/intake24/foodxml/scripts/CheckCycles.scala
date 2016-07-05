@@ -57,8 +57,8 @@ object CheckCycles extends App {
 
   foods.foreach {
     food =>
-      findCycles(food.code) match {
-        case Some(cats) => println("Cycle: " + food.code + " " + cats)
+      findCycles(food.main.code) match {
+        case Some(cats) => println("Cycle: " + food.main.code + " " + cats)
         case _ => ()
       }
   }
