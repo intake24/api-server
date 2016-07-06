@@ -20,7 +20,7 @@ addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.6")
 
 addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.4.2")
 
-addSbtPlugin("com.lihaoyi" % "scalatex-sbt-plugin" % "0.3.2-SNAPSHOT")
+addSbtPlugin("com.lihaoyi" % "scalatex-sbt-plugin" % "0.3.3")
 
 addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.7.5")
 
