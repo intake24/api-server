@@ -69,10 +69,14 @@ trait AdminFoodDataService {
 
   def foodParentCategories(code: String, locale: String): Seq[CategoryHeader]
 
+  def foodAllCategories(code: String): Seq[String]
+  
   def foodAllCategories(code: String, locale: String): Seq[CategoryHeader]
 
   // Categories are alphabetically sorted
   def categoryParentCategories(code: String, locale: String): Seq[CategoryHeader]
+  
+  def categoryAllCategories(code: String): Seq[String]
 
   def categoryAllCategories(code: String, locale: String): Seq[CategoryHeader]
 

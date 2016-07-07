@@ -32,6 +32,7 @@ resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases/"
 
 libraryDependencies ++= Seq(
   jdbc,
+  cache,
   "net.codingwell" %% "scala-guice" % "4.0.0",
   "com.mohiva" %% "play-silhouette" % "3.0.0",
   "be.objectify" %% "deadbolt-scala" % "2.4.2",  

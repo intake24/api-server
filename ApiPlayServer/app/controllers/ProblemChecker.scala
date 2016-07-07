@@ -18,6 +18,9 @@ import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService
 import uk.ac.ncl.openlab.intake24.services.UserFoodDataService
 import uk.ac.ncl.openlab.intake24.services.FoodDataError
 import uk.ac.ncl.openlab.intake24.services.LocaleManagementService
+import org.slf4j.LoggerFactory
+import uk.ac.ncl.openlab.intake24.services.util.Timing
+import play.api.cache.CacheApi
 
 case class CategoryProblem(categoryCode: String, categoryName: String, problemCode: String)
 
@@ -28,7 +31,17 @@ case class RecursiveCategoryProblems(foodProblems: Seq[FoodProblem], categoryPro
   def ++(other: RecursiveCategoryProblems) = RecursiveCategoryProblems(foodProblems ++ other.foodProblems, categoryProblems ++ other.categoryProblems)
 }
 
-class ProblemChecker @Inject() (userData: UserFoodDataService, adminData: AdminFoodDataService, locales: LocaleManagementService, deadbolt: DeadboltActions) extends Controller {
+object ProblemChecker {
+  def foodProblemsCacheKey(code: String, locale: String) = s"problems.foodProblems.$locale.$code"
+  def categoryProblemsCacheKey(code: String, locale: String) = s"problems.categoryProblems.$locale.$code"
+  def recursiveCategoryProblemsCacheKey(code: String, locale: String) = s"problems.recursiveCategoryProblems.$locale.$code"
+}
+
+class ProblemChecker @Inject() (userData: UserFoodDataService, adminData: AdminFoodDataService, locales: LocaleManagementService, deadbolt: DeadboltActions, cache: CacheApi) extends Controller with Timing {
+
+  import ProblemChecker._
+
+  val log = LoggerFactory.getILoggerFactory.getLogger(classOf[ProblemChecker].getName)
 
   val NutrientCodeMissing = "nutrient_code_missing"
   val NotAssignedToGroup = "not_assigned_to_group"
@@ -41,7 +54,8 @@ class ProblemChecker @Inject() (userData: UserFoodDataService, adminData: AdminF
 
   val maxReturnedProblems = 10
 
-  def translationRequired(localeCode: String) = {
+  def translationRequired(localeCode: String): Boolean = time("translationRequired", log) {
+
     val currentLocale = locales.get(localeCode).get
 
     currentLocale.prototypeLocale match {
@@ -50,105 +64,112 @@ class ProblemChecker @Inject() (userData: UserFoodDataService, adminData: AdminF
 
         currentLocale.respondentLanguage != prototypeLocale.respondentLanguage
       }
-      case None => true
+      case None => {
+        true
+      }
     }
   }
 
-  def foodProblems(code: String, locale: String): Seq[FoodProblem] = {
-    val foodDef = adminData.foodRecord(code, locale)
-    val userFoodData = userData.foodData(code, locale)
-    val uncatFoods = adminData.uncategorisedFoods(locale)
+  def foodProblems(code: String, locale: String): Seq[FoodProblem] = time(s"foodProblems for $code", log) {
+    cache.getOrElse(foodProblemsCacheKey(code, locale)) {
 
-    val problems = Buffer[String]()
+      val foodDef = adminData.foodRecord(code, locale)
+      val userFoodData = userData.foodData(code, locale)
+      val uncatFoods = adminData.uncategorisedFoods(locale)
 
-    (foodDef, userFoodData) match {
-      case (Right(foodDef), Right((userFoodData, _))) => {
-        if (userFoodData.nutrientTableCodes.isEmpty)
-          problems += NutrientCodeMissing
+      val problems = Buffer[String]()
 
-        if (userFoodData.groupCode == 0)
-          problems += NotAssignedToGroup
+      (foodDef, userFoodData) match {
+        case (Right(foodDef), Right((userFoodData, _))) => {
+          if (userFoodData.nutrientTableCodes.isEmpty)
+            problems += NutrientCodeMissing
 
-        if (uncatFoods.contains(code))
-          problems += NotAssignedToCategory
+          if (userFoodData.groupCode == 0)
+            problems += NotAssignedToGroup
 
-        if (userFoodData.portionSize.isEmpty)
-          problems += PortionSizeMethodsEmpty
+          if (uncatFoods.contains(code))
+            problems += NotAssignedToCategory
 
-        if (userFoodData.portionSize.size > 1 && userFoodData.portionSize.exists(x => x.description == "no description" || x.imageUrl == "images/placeholder.jpg"))
-          problems += NoMethodDescOrImage
+          if (userFoodData.portionSize.isEmpty)
+            problems += PortionSizeMethodsEmpty
 
-        if (foodDef.local.localDescription.isEmpty && !foodDef.local.doNotUse && translationRequired(locale))
-          problems += LocalDescriptionMissing
+          if (userFoodData.portionSize.size > 1 && userFoodData.portionSize.exists(x => x.description == "no description" || x.imageUrl == "images/placeholder.jpg"))
+            problems += NoMethodDescOrImage
 
-        problems.toSeq.map(pcode => FoodProblem(code, userFoodData.localDescription, pcode))
+          if (foodDef.local.localDescription.isEmpty && !foodDef.local.doNotUse && translationRequired(locale))
+            problems += LocalDescriptionMissing
+
+          problems.toSeq.map(pcode => FoodProblem(code, userFoodData.localDescription, pcode))
+        }
+        case _ => Seq()
       }
-      case _ => Seq()
     }
-
   }
 
-  def categoryProblems(code: String, locale: String): Seq[CategoryProblem] = {
-    val contents = adminData.categoryContents(code, locale)
-
-    val size = contents.foods.size + contents.subcategories.size
-
-    val problems = Buffer[String]()
-
-    if (size == 0)
-      problems += EmptyCategory
-
-    if (size == 1)
-      problems += SingleItem
-
-    adminData.categoryRecord(code, locale) match {
-
-      case Right(record) => {
-        if (record.local.localDescription.isEmpty && translationRequired(locale))
-          problems += LocalDescriptionMissing
-        problems.toSeq.map(pcode => CategoryProblem(code, record.local.localDescription.getOrElse(record.main.englishDescription), pcode))
-      }
-      // FIXME: Return Either instead
-      case _ => Seq()
-    }
-
-  }
-
-  def recursiveCategoryProblems(code: String, locale: String, maxProblems: Int): RecursiveCategoryProblems = {
-
-    def collectSubcategoryProblems(rem: Seq[CategoryHeader], problems: RecursiveCategoryProblems, slots: Int): RecursiveCategoryProblems = {
-      if (rem.isEmpty || slots <= 0)
-        problems
-      else {
-        val p = recursiveCategoryProblems(rem.head.code, locale, slots)
-        collectSubcategoryProblems(rem.tail, problems ++ p, slots - p.count)
-      }
-    }
-
-    if (maxProblems <= 0)
-      RecursiveCategoryProblems(Seq(), Seq())
-    else {
+  def categoryProblems(code: String, locale: String): Seq[CategoryProblem] = time(s"categoryProblems for $code", log) {
+    cache.getOrElse[Seq[CategoryProblem]](categoryProblemsCacheKey(code, locale)) {
       val contents = adminData.categoryContents(code, locale)
 
-      var remainingProblemSlots = maxProblems
+      val size = contents.foods.size + contents.subcategories.size
 
-      val ownProblems = categoryProblems(code, locale).take(remainingProblemSlots)
+      val problems = Buffer[String]()
 
-      remainingProblemSlots -= ownProblems.size
+      if (size == 0)
+        problems += EmptyCategory
 
-      val fdProblems = contents.foods.sortBy(fh => fh.localDescription.getOrElse(fh.englishDescription)).flatMap(fh => foodProblems(fh.code, locale)).take(remainingProblemSlots)
+      if (size == 1)
+        problems += SingleItem
 
-      remainingProblemSlots -= fdProblems.length
+      adminData.categoryRecord(code, locale) match {
 
-      val subcatProblems =
-        if (remainingProblemSlots > 0)
-          contents.subcategories.sortBy(ch => ch.localDescription.getOrElse(ch.englishDescription)).flatMap(ch => categoryProblems(ch.code, locale)).take(remainingProblemSlots)
-        else
-          Seq()
+        case Right(record) => {
+          if (record.local.localDescription.isEmpty && translationRequired(locale))
+            problems += LocalDescriptionMissing
+          problems.toSeq.map(pcode => CategoryProblem(code, record.local.localDescription.getOrElse(record.main.englishDescription), pcode))
+        }
+        // FIXME: Return Either instead
+        case _ => Seq()
+      }
+    }
+  }
 
-      remainingProblemSlots -= subcatProblems.length
+  def recursiveCategoryProblems(code: String, locale: String, maxProblems: Int): RecursiveCategoryProblems = time(s"recursiveCategoryProblems for $code", log) {
+    cache.getOrElse[RecursiveCategoryProblems](recursiveCategoryProblemsCacheKey(code, locale)) {
 
-      collectSubcategoryProblems(contents.subcategories, RecursiveCategoryProblems(fdProblems, ownProblems ++ subcatProblems), remainingProblemSlots)
+      def collectSubcategoryProblems(rem: Seq[CategoryHeader], problems: RecursiveCategoryProblems, slots: Int): RecursiveCategoryProblems = {
+        if (rem.isEmpty || slots <= 0)
+          problems
+        else {
+          val p = recursiveCategoryProblems(rem.head.code, locale, slots)
+          collectSubcategoryProblems(rem.tail, problems ++ p, slots - p.count)
+        }
+      }
+
+      if (maxProblems <= 0)
+        RecursiveCategoryProblems(Seq(), Seq())
+      else {
+        val contents = adminData.categoryContents(code, locale)
+
+        var remainingProblemSlots = maxProblems
+
+        val ownProblems = categoryProblems(code, locale).take(remainingProblemSlots)
+
+        remainingProblemSlots -= ownProblems.size
+
+        val fdProblems = contents.foods.sortBy(fh => fh.localDescription.getOrElse(fh.englishDescription)).flatMap(fh => foodProblems(fh.code, locale)).take(remainingProblemSlots)
+
+        remainingProblemSlots -= fdProblems.length
+
+        val subcatProblems =
+          if (remainingProblemSlots > 0)
+            contents.subcategories.sortBy(ch => ch.localDescription.getOrElse(ch.englishDescription)).flatMap(ch => categoryProblems(ch.code, locale)).take(remainingProblemSlots)
+          else
+            Seq()
+
+        remainingProblemSlots -= subcatProblems.length
+
+        collectSubcategoryProblems(contents.subcategories, RecursiveCategoryProblems(fdProblems, ownProblems ++ subcatProblems), remainingProblemSlots)
+      }
     }
   }
 

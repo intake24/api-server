@@ -51,8 +51,10 @@ import uk.ac.ncl.openlab.intake24.LocalFoodRecord
 import uk.ac.ncl.openlab.intake24.services.UserFoodDataService
 import models.AdminFoodRecord
 import models.AdminCategoryRecord
+import play.api.cache.CacheApi
+import uk.ac.ncl.openlab.intake24.services.LocaleManagementService
 
-class AdminFoodDataController @Inject() (service: AdminFoodDataService, userService: UserFoodDataService, deadbolt: DeadboltActions) extends Controller with PickleErrorHandler {
+class AdminFoodDataController @Inject() (service: AdminFoodDataService, localeService: LocaleManagementService, userService: UserFoodDataService, deadbolt: DeadboltActions, cache: CacheApi) extends Controller with PickleErrorHandler {
 
   // Read 
   def rootCategories(locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
@@ -92,7 +94,7 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, userServ
         brandNames <- userService.brandNames(code, locale).right
         associatedFoods <- userService.associatedFoods(code, locale).right
       } yield AdminFoodRecord(record.main, record.local, brandNames, associatedFoods)
-      
+
       result match {
         case Left(CodeError.UndefinedCode) => NotFound
         case Right(record) => Ok(write(record)).as(ContentTypes.JSON)
@@ -105,7 +107,7 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, userServ
       service.categoryRecord(code, locale) match {
         case Left(CodeError.UndefinedCode) => NotFound
         case Right(record) => Ok(write(AdminCategoryRecord(record.main, record.local))).as(ContentTypes.JSON)
-      }      
+      }
     }
   }
 
@@ -174,6 +176,37 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, userServ
 
   // Write
 
+  def localFoodRecordCacheKey(code: String, locale: String) = s"food.local.$locale.$code"
+
+  def localCategoryRecordCacheKey(code: String, locale: String) = s"category.local.$locale.$code"
+
+  def mainFoodRecordCacheKey(code: String) = s"food.main.$code"
+
+  def mainCategoryRecordCacheKey(code: String) = s"category.main.$code"
+
+  def invalidateLocalFoodRecord(code: String, locale: String) = cache.remove(localFoodRecordCacheKey(code, locale))
+
+  def invalidateMainFoodRecord(code: String) = cache.remove(mainFoodRecordCacheKey(code))
+
+  def invalidateProblemsForFood(code: String, locale: String) = {
+    cache.remove(ProblemChecker.foodProblemsCacheKey(code, locale))
+    service.foodAllCategories(code, locale).foreach {
+      header =>
+        cache.remove(ProblemChecker.recursiveCategoryProblemsCacheKey(header.code, locale))
+        cache.remove(ProblemChecker.categoryProblemsCacheKey(header.code, locale))
+    }
+  }
+
+  def invalidateProblemsForCategory(code: String, locale: String) = {
+    cache.remove(ProblemChecker.categoryProblemsCacheKey(code, locale))
+    cache.remove(ProblemChecker.recursiveCategoryProblemsCacheKey(code, locale))
+    service.categoryAllCategories(code, locale).foreach {
+      header =>
+        cache.remove(ProblemChecker.recursiveCategoryProblemsCacheKey(header.code, locale))
+        cache.remove(ProblemChecker.categoryProblemsCacheKey(header.code, locale))
+    }
+  }
+
   def translateUpdateResult(result: UpdateResult): Result = result match {
     case Success => Ok
     case VersionConflict => Conflict
@@ -184,7 +217,21 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, userServ
   def updateFoodBase(foodCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
-        translateUpdateResult(service.updateFoodBase(foodCode, read[MainFoodRecord](request.body)))
+        val result = service.updateFoodBase(foodCode, read[MainFoodRecord](request.body))
+
+        if (result == Success) {
+          
+          invalidateMainFoodRecord(foodCode)
+          
+          val categories = service.foodAllCategories(foodCode)
+
+          localeService.list.foreach {
+            locale =>
+              invalidateProblemsForFood(foodCode, locale.id)
+          }
+        }
+
+        translateUpdateResult(result)
       }
     }
   }
@@ -192,7 +239,14 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, userServ
   def updateFoodLocal(foodCode: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
-        translateUpdateResult(service.updateFoodLocal(foodCode, locale, read[LocalFoodRecord](request.body)))
+        val result = service.updateFoodLocal(foodCode, locale, read[LocalFoodRecord](request.body))
+
+        if (result == Success) {
+          invalidateLocalFoodRecord(foodCode, locale)
+          invalidateProblemsForFood(foodCode, locale)
+        }
+
+        translateUpdateResult(result)
       }
     }
   }
@@ -232,32 +286,93 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, userServ
 
   def deleteFood(code: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateUpdateResult(service.deleteFood(code))
+
+      // Race condition :(
+
+      val categories = service.foodAllCategories(code)
+
+      val result = service.deleteFood(code)
+
+      if (result == Success) {
+        invalidateMainFoodRecord(code)
+
+        localeService.list.foreach {
+          locale =>
+            invalidateLocalFoodRecord(code, locale.id)
+            invalidateProblemsForFood(code, locale.id)
+
+            categories.foreach {
+              categoryCode =>
+                invalidateProblemsForCategory(categoryCode, locale.id)
+            }
+        }
+      }
+
+      translateUpdateResult(result)
     }
   }
 
   def addFoodToCategory(categoryCode: String, foodCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateUpdateResult(service.addFoodToCategory(categoryCode, foodCode))
+      val result = service.addFoodToCategory(categoryCode, foodCode)
 
+      if (result == Success) {
+        localeService.list.foreach {
+          locale =>
+            invalidateProblemsForFood(foodCode, locale.id)
+            invalidateProblemsForCategory(categoryCode, locale.id)
+        }
+      }
+
+      translateUpdateResult(result)
     }
   }
+
   def removeFoodFromCategory(categoryCode: String, foodCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateUpdateResult(service.removeFoodFromCategory(categoryCode, foodCode))
+      val result = service.removeFoodFromCategory(categoryCode, foodCode)
+
+      if (result == Success) {
+        localeService.list.foreach {
+          locale =>
+            invalidateProblemsForFood(foodCode, locale.id)
+            invalidateProblemsForCategory(categoryCode, locale.id)
+        }
+      }
+
+      translateUpdateResult(result)
     }
   }
 
   def addSubcategoryToCategory(categoryCode: String, subcategoryCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateUpdateResult(service.addSubcategoryToCategory(categoryCode, subcategoryCode))
+      val result = service.addSubcategoryToCategory(categoryCode, subcategoryCode)
+
+      if (result == Success) {
+        localeService.list.foreach {
+          locale =>
+            invalidateProblemsForCategory(categoryCode, locale.id)
+            invalidateProblemsForCategory(subcategoryCode, locale.id)
+        }
+      }
+
+      translateUpdateResult(result)
     }
   }
 
   def removeSubcategoryFromCategory(categoryCode: String, subcategoryCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateUpdateResult(service.removeSubcategoryFromCategory(categoryCode, subcategoryCode))
-
+      val result = service.removeSubcategoryFromCategory(categoryCode, subcategoryCode)
+      
+      if (result == Success) {
+        localeService.list.foreach {
+          locale =>
+            invalidateProblemsForCategory(categoryCode, locale.id)
+            invalidateProblemsForCategory(subcategoryCode, locale.id)
+        }        
+      }
+      
+      translateUpdateResult(result)
     }
   }
 
@@ -278,7 +393,14 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, userServ
   def updateCategoryBase(categoryCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
-        translateUpdateResult(service.updateCategoryBase(categoryCode, read[MainCategoryRecord](request.body)))
+        
+        val result = service.updateCategoryBase(categoryCode, read[MainCategoryRecord](request.body))
+        
+        if (result == Success) {
+          
+        }
+        
+        translateUpdateResult(result)
       }
     }
   }
