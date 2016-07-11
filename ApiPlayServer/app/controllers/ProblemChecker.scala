@@ -22,26 +22,11 @@ import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.services.util.Timing
 import play.api.cache.CacheApi
 
-case class CategoryProblem(categoryCode: String, categoryName: String, problemCode: String)
-
-case class FoodProblem(foodCode: String, foodName: String, problemCode: String)
-
-case class RecursiveCategoryProblems(foodProblems: Seq[FoodProblem], categoryProblems: Seq[CategoryProblem]) {
-  def count = foodProblems.size + categoryProblems.size
-  def ++(other: RecursiveCategoryProblems) = RecursiveCategoryProblems(foodProblems ++ other.foodProblems, categoryProblems ++ other.categoryProblems)
-}
-
-object ProblemChecker {
-  def foodProblemsCacheKey(code: String, locale: String) = s"problems.foodProblems.$locale.$code"
-  def categoryProblemsCacheKey(code: String, locale: String) = s"problems.categoryProblems.$locale.$code"
-  def recursiveCategoryProblemsCacheKey(code: String, locale: String) = s"problems.recursiveCategoryProblems.$locale.$code"
-}
-
 class ProblemChecker @Inject() (userData: UserFoodDataService, adminData: AdminFoodDataService, locales: LocaleManagementService, deadbolt: DeadboltActions, cache: CacheApi) extends Controller with Timing {
 
   import ProblemChecker._
 
-  val log = LoggerFactory.getILoggerFactory.getLogger(classOf[ProblemChecker].getName)
+  val log = LoggerFactory.getLogger(classOf[ProblemChecker])
 
   val NutrientCodeMissing = "nutrient_code_missing"
   val NotAssignedToGroup = "not_assigned_to_group"
