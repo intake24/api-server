@@ -21,12 +21,13 @@ import uk.ac.ncl.openlab.intake24.services.LocaleManagementService
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.services.util.Timing
 import play.api.cache.CacheApi
-import controllers.FoodProblem
-import controllers.CategoryProblem
-import controllers.RecursiveCategoryProblems
+import models.FoodProblem
+import models.CategoryProblem
+import models.RecursiveCategoryProblems
+import modules.ProblemCheckerService
 
 class CachedProblemChecker @Inject() (userData: UserFoodDataService, adminData: AdminFoodDataService, locales: LocaleManagementService, cache: CacheApi)
-    extends ProblemCheckerCache with Timing {
+    extends ProblemCheckerService with ProblemCheckerCache with Timing {
 
   val log = LoggerFactory.getLogger(classOf[CachedProblemChecker])
 

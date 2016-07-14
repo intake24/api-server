@@ -23,7 +23,9 @@ import uk.ac.ncl.openlab.intake24.LocalCategoryRecord
 import uk.ac.ncl.openlab.intake24.services.NewCategory
 import uk.ac.ncl.openlab.intake24.AssociatedFood
 
-class CachedAdminFoodDataService @Inject() (service: AdminFoodDataService, localeService: LocaleManagementService, cache: CacheApi) extends AdminFoodDataService 
+import modules.UncachedImpl
+
+class CachedAdminFoodDataService @Inject() (@UncachedImpl service: AdminFoodDataService, localeService: LocaleManagementService, cache: CacheApi) extends AdminFoodDataService 
   with ProblemCheckerCache with AssociatedFoodsCache {
 
   def uncategorisedFoodsCacheKey(locale: String) = s"AdminFoodDataService.uncategorisedFoods.$locale"

@@ -20,8 +20,8 @@ GET     /admin/categories/:locale/:code           controllers.AdminFoodDataContr
 GET     /admin/categories/:locale/:code/definition           controllers.AdminFoodDataController.categoryRecord(code: String, locale: String)
 GET     /admin/categories/:locale/:code/parent-categories    controllers.AdminFoodDataController.categoryParentCategories(code: String, locale: String)
 GET     /admin/categories/:locale/:code/all-categories       controllers.AdminFoodDataController.categoryAllCategories(code: String, locale: String)
-GET     /admin/categories/:locale/:code/problems             controllers.ProblemChecker.checkCategory(code: String, locale: String)
-GET     /admin/categories/:locale/:code/problems/recursive   controllers.ProblemChecker.checkCategoryRecursive(code: String, locale: String)
+GET     /admin/categories/:locale/:code/problems             controllers.ProblemCheckerController.checkCategory(code: String, locale: String)
+GET     /admin/categories/:locale/:code/problems/recursive   controllers.ProblemCheckerController.checkCategoryRecursive(code: String, locale: String)
 
 PUT     /admin/categories/:categoryCode/foods/:foodCode                  controllers.AdminFoodDataController.addFoodToCategory(categoryCode: String, foodCode: String)
 DELETE  /admin/categories/:categoryCode/foods/:foodCode                  controllers.AdminFoodDataController.removeFoodFromCategory(categoryCode: String, foodCode: String)
@@ -38,7 +38,7 @@ GET     /admin/foods/:locale/search/:term             controllers.AdminFoodDataC
 GET     /admin/foods/:locale/:code/definition         controllers.AdminFoodDataController.foodRecord(code: String, locale: String)
 GET     /admin/foods/:locale/:code/parent-categories  controllers.AdminFoodDataController.foodParentCategories(code: String, locale: String)
 GET     /admin/foods/:locale/:code/all-categories     controllers.AdminFoodDataController.foodAllCategories(code: String, locale: String)
-GET     /admin/foods/:locale/:code/problems           controllers.ProblemChecker.checkFood(code: String, locale: String)
+GET     /admin/foods/:locale/:code/problems           controllers.ProblemCheckerController.checkFood(code: String, locale: String)
 
 
 
