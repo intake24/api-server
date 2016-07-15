@@ -247,6 +247,24 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
         .as(Macro.namedParser[CategoryHeaderRow].*)
         .map(_.asCategoryHeader)
   }
+  
+  def foodAllCategories(code: String): Seq[String] = tryWithConnection {
+    implicit conn =>
+      val query =
+        """|WITH RECURSIVE t(code, level) AS (
+           |(SELECT category_code as code, 0 as level FROM foods_categories WHERE food_code = {food_code} ORDER BY code)
+           | UNION ALL
+           |(SELECT category_code as code, level + 1 as level FROM t JOIN categories_categories ON subcategory_code = code ORDER BY code)
+           |)
+           |SELECT code 
+           |FROM t 
+           |ORDER BY level""".stripMargin
+
+      SQL(query)
+        .on('food_code -> code)
+        .executeQuery()
+        .as(SqlParser.str("code").*)        
+  }
 
   def foodAllCategories(code: String, locale: String): Seq[CategoryHeader] = tryWithConnection {
     implicit conn =>
@@ -281,6 +299,24 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
         .executeQuery()
         .as(Macro.namedParser[CategoryHeaderRow].*)
         .map(_.asCategoryHeader)
+  }
+  
+  def categoryAllCategories(code: String): Seq[String] = tryWithConnection {
+    implicit conn =>
+      val query =
+        """|WITH RECURSIVE t(code, level) AS (
+           |(SELECT category_code AS code, 0 AS level FROM categories_categories WHERE subcategory_code = {category_code} ORDER BY code)
+           | UNION ALL
+           |(SELECT category_code AS code, level + 1 AS level FROM t JOIN categories_categories ON subcategory_code = code ORDER BY code)
+           |)
+           |SELECT code 
+           |FROM t 
+           |ORDER BY level""".stripMargin
+
+      SQL(query)
+        .on('category_code -> code)
+        .executeQuery()
+        .as(SqlParser.str("code").*)        
   }
 
   def categoryAllCategories(code: String, locale: String): Seq[CategoryHeader] = tryWithConnection {

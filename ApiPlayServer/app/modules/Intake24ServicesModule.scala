@@ -42,9 +42,15 @@ import uk.ac.ncl.openlab.intake24.services.foodindex.english.EnglishWordStemmer
 import uk.ac.ncl.openlab.intake24.services.foodindex.english.FoodIndexImpl_en_GB
 import uk.ac.ncl.openlab.intake24.services.LocaleManagementService
 import uk.ac.ncl.openlab.intake24.foodsql.LocaleManagementSqlImpl
+import java.lang.annotation.Retention
+import com.google.inject.BindingAnnotation
+import java.lang.annotation.RetentionPolicy
+import java.lang.annotation.Annotation
+import cache.CachedAdminFoodDataService
+import cache.CachedProblemChecker
+
 
 class Intake24ServicesModule(env: Environment, config: Configuration) extends AbstractModule {
-
   @Provides
   @Singleton
   def foodIndexes(injector: Injector): Map[String, FoodIndex] =
@@ -60,10 +66,22 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
 
   def configure() = {
     bind(classOf[DataStoreScala]).to(classOf[DataStoreSqlImpl])
+    
+    // Utility services
+    
+    bind(classOf[EnglishWordStemmer]).to(classOf[EnglishStemmerPlingImpl])
+    
+    // Uncached internal food data services
+    
     bind(classOf[UserFoodDataService]).to(classOf[UserFoodDataServiceSqlImpl])
-    bind(classOf[AdminFoodDataService]).to(classOf[AdminFoodDataServiceSqlImpl])
     bind(classOf[IndexFoodDataService]).to(classOf[IndexFoodDataServiceSqlImpl])
     bind(classOf[LocaleManagementService]).to(classOf[LocaleManagementSqlImpl])
-    bind(classOf[EnglishWordStemmer]).to(classOf[EnglishStemmerPlingImpl])
+    bind(classOf[AdminFoodDataService]).annotatedWith(classOf[UncachedImpl]).to(classOf[AdminFoodDataServiceSqlImpl])
+    
+    // User-facing (cached) food data services
+    
+    bind(classOf[AdminFoodDataService]).to(classOf[CachedAdminFoodDataService])
+    bind(classOf[ProblemCheckerService]).to(classOf[CachedProblemChecker])
+    
   }
 }
