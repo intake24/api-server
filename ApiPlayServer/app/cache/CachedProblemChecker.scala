@@ -26,7 +26,7 @@ import models.CategoryProblem
 import models.RecursiveCategoryProblems
 import modules.ProblemCheckerService
 
-class CachedProblemChecker @Inject() (userData: UserFoodDataService, adminData: AdminFoodDataService, locales: LocaleManagementService, cache: CacheApi)
+case class CachedProblemChecker @Inject() (userData: UserFoodDataService, adminData: AdminFoodDataService, locales: LocaleManagementService, cache: CacheApi)
     extends ProblemCheckerService with ProblemCheckerCache with Timing {
 
   val log = LoggerFactory.getLogger(classOf[CachedProblemChecker])

@@ -24,8 +24,9 @@ import uk.ac.ncl.openlab.intake24.services.NewCategory
 import uk.ac.ncl.openlab.intake24.AssociatedFood
 
 import modules.UncachedImpl
+import uk.ac.ncl.openlab.intake24.FoodGroup
 
-class CachedAdminFoodDataService @Inject() (@UncachedImpl service: AdminFoodDataService, localeService: LocaleManagementService, cache: CacheApi) extends AdminFoodDataService 
+case class CachedAdminFoodDataService @Inject() (@UncachedImpl service: AdminFoodDataService, localeService: LocaleManagementService, cache: CacheApi) extends AdminFoodDataService 
   with ProblemCheckerCache with AssociatedFoodsCache {
 
   def uncategorisedFoodsCacheKey(locale: String) = s"AdminFoodDataService.uncategorisedFoods.$locale"
@@ -57,7 +58,7 @@ class CachedAdminFoodDataService @Inject() (@UncachedImpl service: AdminFoodData
   def foodRecord(code: String, locale: String): Either[CodeError, FoodRecord] = {
     val key = foodRecordCacheKey(code, locale)
 
-    cache.get(key) match {
+    cache.get[FoodRecord](key) match {
       case Some(record) => Right(record)
       case None => service.foodRecord(code, locale) match {
         case result @ Right(record) => {
@@ -132,7 +133,7 @@ class CachedAdminFoodDataService @Inject() (@UncachedImpl service: AdminFoodData
   def categoryRecord(code: String, locale: String): Either[CodeError, CategoryRecord] = {
     val key = categoryRecordCacheKey(code, locale)
 
-    cache.get(key) match {
+    cache.get[CategoryRecord](key) match {
       case Some(record) => Right(record)
       case None => service.categoryRecord(code, locale) match {
         case result @ Right(record) => {
@@ -175,7 +176,7 @@ class CachedAdminFoodDataService @Inject() (@UncachedImpl service: AdminFoodData
 
   def foodGroup(code: Int, locale: String) = {
     val key = foodGroupCacheKey(code, locale)
-    cache.get(key) match {
+    cache.get[FoodGroup](key) match {
 
       case Some(group) => Some(group)
       case None => service.foodGroup(code, locale) match {

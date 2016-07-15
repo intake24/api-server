@@ -49,8 +49,6 @@ import java.lang.annotation.Annotation
 import cache.CachedAdminFoodDataService
 import cache.CachedProblemChecker
 
-@Retention(RetentionPolicy.RUNTIME) @BindingAnnotation
-class UncachedImpl extends Annotation{}
 
 class Intake24ServicesModule(env: Environment, config: Configuration) extends AbstractModule {
   @Provides
