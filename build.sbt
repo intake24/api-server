@@ -30,7 +30,9 @@ lazy val services = Project(id = "services", base = file("FoodLookupService")).d
 
 lazy val foodDataXml = Project(id = "foodDataXml", base = file("FoodDataXML")).dependsOn(services, sharedTypes)
 
-lazy val foodDataSql = Project(id = "foodDataSql", base = file("FoodDataSQL")).dependsOn(services % "compile->compile;test->test", sharedTypes, foodDataXml)
+lazy val nutrientsNdns = Project(id = "nutrientsNdns", base = file("NutrientsNDNS")).dependsOn(services, sharedTypes)
+
+lazy val foodDataSql = Project(id = "foodDataSql", base = file("FoodDataSQL")).dependsOn(services % "compile->compile;test->test", sharedTypes, foodDataXml, nutrientsNdns)
 
 lazy val dataStoreMongo = Project(id = "dataStoreMongo", base = file ("DataStoreMongo")).dependsOn(services, dataStore)
 

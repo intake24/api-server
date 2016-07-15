@@ -56,12 +56,47 @@ CREATE TABLE food_groups_local
 );
 
 -- Food nutrient tables
+
+CREATE TABLE nutrient_types
+(
+	id integer NOT NULL,
+	description character varying(512) NOT NULL,
+
+	CONSTRAINT nutrient_types_pk PRIMARY KEY(id)
+);
+
 CREATE TABLE nutrient_tables
 (
   id character varying(32) NOT NULL,
   description character varying(512) NOT NULL,
 
   CONSTRAINT nutrient_tables_pk PRIMARY KEY (id)
+);
+
+CREATE TABLE nutrient_units
+(
+	id integer NOT NULL,
+	description character varying(512) NOT NULL,
+	symbol character varying(32) NOT NULL,
+
+	CONSTRAINT nutrient_units_pk PRIMARY KEY(id)
+);
+
+CREATE TABLE nutrient_table_records
+(
+	code character varying(32) NOT NULL,
+	nutrient_table_id character varying(32) NOT NULL,
+	nutrient_type_id integer NOT NULL,
+	nutrient_unit_id integer NOT NULL,
+	units_per_100g double precision,
+
+	CONSTRAINT nutrient_records_pk PRIMARY KEY(code, nutrient_table_id, nutrient_id),
+	CONSTRAINT nutrient_records_nutrient_tables_id_fk FOREIGN KEY (nutrient_table_id)
+		REFERENCES nutrient_tables(id) ON UPDATE CASCADE ON DELETE CASCADE,
+	CONSTRAINT nutrient_records_nutrient_id_fk FOREIGN KEY (nutrient_id)
+		REFERENCES nutrient_types(id) ON UPDATE CASCADE ON DELETE CASCADE,
+	CONSTRAINT nutrient_records_nutrient_unit_fk FOREIGN KEY (nutrient_unit_id)
+		REFERENCES nutrient_units(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 -- Foods

@@ -22,58 +22,26 @@ import java.util.Properties
 import java.io.PrintWriter
 import com.zaxxer.hikari.HikariConfig
 
-object PortugueseImport extends App {
+object PortugueseImport extends App with WarningMessage with DatabaseConnection {
 
   val portugueseLocaleCode = "pt_PT"
   val baseLocaleCode = "en_GB"
   val portugueseNutrientTableCode = "PT"
+  
+  val logger = LoggerFactory.getLogger(getClass)
 
   case class Options(arguments: Seq[String]) extends ScallopConf(arguments) {
     version("Intake24 Portuguese localisation data import tool 16.7")
 
     val csvPath = opt[String](required = true, noshort = true)
     val logPath = opt[String](required = false, noshort = true)
-
-    val pgHost = opt[String](required = true, noshort = true)
-    val pgDatabase = opt[String](required = true, noshort = true)
-    val pgUser = opt[String](required = true, noshort = true)
-    val pgPassword = opt[String](noshort = true)
-    val pgUseSsl = opt[Boolean](noshort = true)
   }
-
+  
   val opts = Options(args)
+  
+  displayWarningMessage("WARNING: THIS WILL OVERWRITE CURRENT PORTUGUESE DATA!")
 
-  println("""|======================================================
-             |WARNING: THIS WILL OVERWRITE CURRENT PORTUGUESE DATA!
-             |======================================================
-             |""".stripMargin)
-
-  var proceed = false;
-
-  val reader = new BufferedReader(new InputStreamReader(System.in))
-
-  while (!proceed) {
-    println("Are you sure you wish to continue? Type 'yes' to proceed, or press Control-C to exit.")
-    val input = reader.readLine()
-    if (input == "yes") proceed = true;
-    if (input == "no") System.exit(0);
-  }
-
-  val logger = LoggerFactory.getLogger(getClass)
-
-  DriverManager.registerDriver(new org.postgresql.Driver)
-
-  val dbConnectionProps = new Properties();
-  dbConnectionProps.setProperty("dataSourceClassName", "org.postgresql.ds.PGSimpleDataSource")
-  dbConnectionProps.setProperty("dataSource.user", opts.pgUser())
-  dbConnectionProps.setProperty("dataSource.databaseName", opts.pgDatabase())
-  dbConnectionProps.setProperty("dataSource.serverName", opts.pgHost())
-  dbConnectionProps.put("dataSource.logWriter", new PrintWriter(System.out))
-
-  opts.pgPassword.foreach(pw => dbConnectionProps.setProperty("dataSource.password", pw))
-  opts.pgUseSsl.foreach(ssl => dbConnectionProps.setProperty("dataSource.ssl", ssl.toString()))
-
-  val dataSource = new HikariDataSource(new HikariConfig(dbConnectionProps))
+  val dataSource = getDataSource(args) 
 
   val dataService = new AdminFoodDataServiceSqlImpl(dataSource)
 

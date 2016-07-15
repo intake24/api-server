@@ -148,4 +148,12 @@ case class FoodGroup (id: Int, englishDescription: String, localDescription: Opt
 
 case class NutrientTable(id: String, description: String)
 
+case class NutrientType(id: Int, description: String)
+
+case class NutrientUnit(id: Int, symbol: String)
+
+case class NutrientTableRecord(table_id: String, tableCode: String, nutrient_id: Int, unitsPer100g: Double, unit_id: Int)
+
+case class NutrientData(nutrient_id: Int, unitsPer100g: Double, unitName: String)
+
 case class Locale(id: String, englishName: String, localName: String, respondentLanguage: String, adminLanguage: String, flagCode: String, prototypeLocale: Option[String])

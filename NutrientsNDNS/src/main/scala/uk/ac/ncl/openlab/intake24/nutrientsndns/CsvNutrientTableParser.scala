@@ -19,10 +19,11 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.nutrientsndns
 
 import org.slf4j.LoggerFactory
-import net.scran24.fooddef.nutrients._
+import uk.ac.ncl.openlab.intake24.nutrients._
 import au.com.bytecode.opencsv.CSVReader
 import java.io.FileReader
 import scala.collection.JavaConversions._
+
 
 object CsvNutrientTableParser {
   import Nutrient._

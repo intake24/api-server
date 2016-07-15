@@ -450,82 +450,20 @@ class XmlImporter(implicit val dbConn: Connection) {
 }
 
 case class Options(arguments: Seq[String]) extends ScallopConf(arguments) {
-  version("Intake24 XML to SQL food database migration tool 16.1-SNAPSHOT")
+  version("Intake24 XML to SQL food database migration tool 16.7-SNAPSHOT")
 
   val xmlPath = opt[String](required = true, noshort = true)
-
-  val pgHost = opt[String](required = true, noshort = true)
-  val pgDatabase = opt[String](required = true, noshort = true)
-  val pgUser = opt[String](required = true, noshort = true)
-  val pgPassword = opt[String](noshort = true)
-  val pgUseSsl = opt[Boolean](noshort = true)
 }
 
-object XmlImport extends App {
-
-  val opts = Options(args)
-
-  println("""|=============================================================
-              |WARNING: THIS WILL DESTROY ALL EXISTING DATA IN THE DATABASE!
-              |=============================================================
-              |""".stripMargin)
-
-  var proceed = false;
-
-  val reader = new BufferedReader(new InputStreamReader(System.in))
-
-  while (!proceed) {
-    println("Are you sure you wish to continue? Type 'yes' to proceed, or hit Control-C to exit.")
-    val input = reader.readLine()
-    if (input == "yes") proceed = true;
-    if (input == "no") System.exit(0);
-  }
+object XmlImport extends App with WarningMessage with DatabaseConnection {
 
   val logger = LoggerFactory.getLogger(getClass)
-
-  DriverManager.registerDriver(new org.postgresql.Driver)
   
-  val dataSource = new org.postgresql.ds.PGSimpleDataSource()
+  val opts = Options(args)
   
-  dataSource.setServerName(opts.pgHost())
-  dataSource.setDatabaseName(opts.pgDatabase())
-  dataSource.setUser(opts.pgUser())
-  
-  opts.pgPassword.foreach(pw => dataSource.setPassword(pw))
-  opts.pgUseSsl.foreach(ssl => dataSource.setSsl(ssl))
-  
+  val dataSource = getDataSource(args)
+      
   implicit val dbConn = dataSource.getConnection
-
-  def separateSqlStatements(sql: String) =
-    // Regex matches on semicolons that neither precede nor follow other semicolons
-    sql.split("(?<!;);(?!;)").map(_.trim.replace(";;", ";")).filterNot(_.isEmpty)
-
-  def stripComments(s: String) = """(?m)/\*(\*(?!/)|[^*])*\*/""".r.replaceAllIn(s, "")
-
-  val initDbStatements = separateSqlStatements(stripComments(scala.io.Source.fromInputStream(getClass.getResourceAsStream("/sql/init_foods_db.sql"), "utf-8").mkString))
-
-  val dropTableStatements =
-    SQL("""SELECT 'DROP TABLE IF EXISTS ' || tablename || ' CASCADE;' AS query FROM pg_tables WHERE schemaname='public'""")
-      .executeQuery()
-      .as(SqlParser.str("query").*)
-
-  val dropSequenceStatements =
-    SQL("""SELECT 'DROP SEQUENCE IF EXISTS ' || relname || ' CASCADE;' AS query FROM pg_class WHERE relkind = 'S'""")
-      .executeQuery()
-      .as(SqlParser.str("query").*)
-
-  val clearDbStatements = dropTableStatements ++ dropSequenceStatements
-
-  clearDbStatements.foreach {
-    statement =>
-      logger.debug(statement)
-      SQL(statement).execute()
-  }
-
-  initDbStatements.foreach { statement =>
-    logger.debug(statement)
-    SQL(statement).execute()
-  }
 
   val importer = new XmlImporter()
 
