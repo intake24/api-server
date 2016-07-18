@@ -57,12 +57,24 @@ CREATE TABLE food_groups_local
 
 -- Food nutrient tables
 
+CREATE TABLE nutrient_units
+(
+	id integer NOT NULL,
+	description character varying(512) NOT NULL,
+	symbol character varying(32) NOT NULL,
+
+	CONSTRAINT nutrient_units_pk PRIMARY KEY(id)
+);
+
 CREATE TABLE nutrient_types
 (
 	id integer NOT NULL,
 	description character varying(512) NOT NULL,
+	unit_id integer NOT NULL,
 
-	CONSTRAINT nutrient_types_pk PRIMARY KEY(id)
+	CONSTRAINT nutrient_types_pk PRIMARY KEY(id),
+	CONSTRAINT nutrient_types_nutrient_unit_fk FOREIGN KEY(unit_id)
+		REFERENCES nutrient_units(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE TABLE nutrient_tables
@@ -73,31 +85,22 @@ CREATE TABLE nutrient_tables
   CONSTRAINT nutrient_tables_pk PRIMARY KEY (id)
 );
 
-CREATE TABLE nutrient_units
-(
-	id integer NOT NULL,
-	description character varying(512) NOT NULL,
-	symbol character varying(32) NOT NULL,
-
-	CONSTRAINT nutrient_units_pk PRIMARY KEY(id)
-);
-
 CREATE TABLE nutrient_table_records
 (
 	code character varying(32) NOT NULL,
 	nutrient_table_id character varying(32) NOT NULL,
 	nutrient_type_id integer NOT NULL,
-	nutrient_unit_id integer NOT NULL,
-	units_per_100g double precision,
+	units_per_100g double precision NOT NULL,
 
-	CONSTRAINT nutrient_records_pk PRIMARY KEY(code, nutrient_table_id, nutrient_id),
+	CONSTRAINT nutrient_records_pk PRIMARY KEY(code, nutrient_table_id, nutrient_type_id),
 	CONSTRAINT nutrient_records_nutrient_tables_id_fk FOREIGN KEY (nutrient_table_id)
 		REFERENCES nutrient_tables(id) ON UPDATE CASCADE ON DELETE CASCADE,
-	CONSTRAINT nutrient_records_nutrient_id_fk FOREIGN KEY (nutrient_id)
+	CONSTRAINT nutrient_records_nutrient_type_id_fk FOREIGN KEY (nutrient_type_id)
 		REFERENCES nutrient_types(id) ON UPDATE CASCADE ON DELETE CASCADE,
-	CONSTRAINT nutrient_records_nutrient_unit_fk FOREIGN KEY (nutrient_unit_id)
-		REFERENCES nutrient_units(id) ON UPDATE CASCADE ON DELETE CASCADE
+	CONSTRAINT nutrient_table_records_unique UNIQUE(code, nutrient_table_id)
 );
+
+CREATE INDEX nutrient_table_records_index ON nutrient_table_records(code, nutrient_table_id);
 
 -- Foods
 
@@ -155,7 +158,9 @@ CREATE TABLE foods_nutrient_tables
   CONSTRAINT foods_nutrient_tables_locale_id_fk FOREIGN KEY (locale_id)
     REFERENCES locales(id) ON UPDATE CASCADE ON DELETE CASCADE,
   CONSTRAINT foods_nutrient_tables_nutrient_table_id_fk FOREIGN KEY (nutrient_table_id)
-    REFERENCES nutrient_tables(id)
+    REFERENCES nutrient_tables(id),
+	CONSTRAINT foods_nutrient_tables_nutrient_table_record_fk FOREIGN KEY(nutrient_table_code, nutrient_table_id)
+		REFERENCES nutrient_table_records(code, nutrient_table_id)
 );
 
 CREATE TABLE foods_portion_size_methods
@@ -525,4 +530,30 @@ CREATE TABLE attribute_defaults
 INSERT INTO attribute_defaults VALUES (DEFAULT, false, false, 1000);
 
 INSERT INTO locales VALUES('en_GB', 'United Kingdom', 'United Kingdom', 'en_GB', 'en', 'gb', NULL);
-INSERT INTO nutrient_tables VALUES('NDNS', 'UK National Diet and Nutrition Survey');
+
+INSERT INTO nutrient_units VALUES(1, 'Gram', 'g');
+INSERT INTO nutrient_units VALUES(2, 'Milligram', 'mg');
+INSERT INTO nutrient_units VALUES(3, 'Microgram', 'µg');
+INSERT INTO nutrient_units VALUES(4, 'Kilocalorie', 'kcal');
+INSERT INTO nutrient_units VALUES(5, 'Kilojoule', 'kJ');
+
+INSERT INTO nutrient_types VALUES(1, 'Protein', 1);
+INSERT INTO nutrient_types VALUES(2, 'Fat', 1);
+INSERT INTO nutrient_types VALUES(3, 'Carbohydrate', 1);
+INSERT INTO nutrient_types VALUES(4, 'Energy', 4);
+INSERT INTO nutrient_types VALUES(5, 'Energy', 5);
+INSERT INTO nutrient_types VALUES(6, 'Alcohol', 1);
+INSERT INTO nutrient_types VALUES(7, 'Total sugars', 1);
+INSERT INTO nutrient_types VALUES(8, 'Non-milk extrinsic sugars', 1);
+INSERT INTO nutrient_types VALUES(9, 'Saturated fat', 1);
+INSERT INTO nutrient_types VALUES(10, 'Cholesterol', 2);
+INSERT INTO nutrient_types VALUES(11, 'Vitamin A', 3);
+INSERT INTO nutrient_types VALUES(12, 'Vitamin D', 3);
+INSERT INTO nutrient_types VALUES(13, 'Vitamin C', 2);
+INSERT INTO nutrient_types VALUES(14, 'Vitamin E', 2);
+INSERT INTO nutrient_types VALUES(15, 'Folate', 1);
+INSERT INTO nutrient_types VALUES(16, 'Sodium', 2);
+INSERT INTO nutrient_types VALUES(17, 'Calcium', 2);
+INSERT INTO nutrient_types VALUES(18, 'Iron', 2);
+INSERT INTO nutrient_types VALUES(19, 'Zinc', 2);
+INSERT INTO nutrient_types VALUES(20, 'Selenium', 3);

@@ -152,7 +152,7 @@ case class NutrientType(id: Int, description: String)
 
 case class NutrientUnit(id: Int, symbol: String)
 
-case class NutrientTableRecord(table_id: String, tableCode: String, nutrient_id: Int, unitsPer100g: Double, unit_id: Int)
+case class NutrientTableRecord(table_id: String, tableCode: String, nutrient_id: Int, unitsPer100g: Double)
 
 case class NutrientData(nutrient_id: Int, unitsPer100g: Double, unitName: String)
 

@@ -32,8 +32,9 @@ import uk.ac.ncl.openlab.intake24.NutrientTableRecord
 import anorm.NamedParameter
 import anorm.BatchSql
 import java.sql.BatchUpdateException
+import uk.ac.ncl.openlab.intake24.NutrientType
 
-class NutrientDataManagementSqlImpl @Inject() @Named("intake24_foods") val dataSource: DataSource) extends NutrientDataManagementService with SqlDataService {
+class NutrientDataManagementSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends NutrientDataManagementService with SqlDataService {
 
   def nutrientTables(): Seq[NutrientTable] = tryWithConnection {
     implicit conn =>
@@ -74,25 +75,24 @@ class NutrientDataManagementSqlImpl @Inject() @Named("intake24_foods") val dataS
 
   def createNutrientTableRecords(records: Seq[NutrientTableRecord]) = tryWithConnection {
     implicit conn =>
-      val query = """INSERT INTO nutrient_table_records VALUES({code},{nutrient_table_id},{nutrient_type_id},{nutrient_unit_id},{units_per_100g})"""
+      val query = """INSERT INTO nutrient_table_records VALUES({code},{nutrient_table_id},{nutrient_type_id},{units_per_100g})"""
 
       val params =
-        records.map(r => Seq[NamedParameter]('code -> r.tableCode, 'nutrient_table_id -> r.table_id, 'nutrient_type_id -> r.nutrient_id, 'nutrient_unit_id -> r.unit_id, 'units_per_100g -> r.unitsPer100g))
+        records.map(r => Seq[NamedParameter]('code -> r.tableCode, 'nutrient_table_id -> r.table_id, 'nutrient_type_id -> r.nutrient_id, 'units_per_100g -> r.unitsPer100g))
 
       try {
         BatchSql(query, params).execute()
       } catch {
         case e: BatchUpdateException => throw new RuntimeException(e.getMessage, e.getNextException)
       }
-
   }
 
-  def createNutrientTypes(record: Seq[NutrientType]) = {
+  /*def createNutrientTypes(records: Seq[NutrientType]) = tryWithConnection {
     implicit conn =>
-      val query = """INSERT INTO nutrient_table_records VALUES({code},{nutrient_table_id},{nutrient_type_id},{nutrient_unit_id},{units_per_100g})"""
+      val query = """INSERT INTO nutrient_types VALUES({code},{nutrient_table_id},{nutrient_type_id},{nutrient_unit_id},{units_per_100g})"""
 
       val params =
-        records.map(r => Seq[NamedParameter]('code -> r.tableCode, 'nutrient_table_id -> r.table_id, 'nutrient_type_id -> r.nutrient_id, 'nutrient_unit_id -> r.unit_id, 'units_per_100g -> r.unitsPer100g))
+        records.map(r => Seq[NamedParameter]('id -> r.id, 'description -> r.description))
 
       try {
         BatchSql(query, params).execute()
@@ -100,6 +100,6 @@ class NutrientDataManagementSqlImpl @Inject() @Named("intake24_foods") val dataS
         case e: BatchUpdateException => throw new RuntimeException(e.getMessage, e.getNextException)
       }
 
-  }
+  }*/
 
 }

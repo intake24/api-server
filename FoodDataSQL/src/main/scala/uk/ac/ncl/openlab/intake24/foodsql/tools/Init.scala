@@ -24,25 +24,18 @@ import org.rogach.scallop.ScallopConf
 import anorm._
 
 
-case class InitOptions(arguments: Seq[String]) extends ScallopConf(arguments) {
-  version("Intake24 SQL system database setup tool 16.7-SNAPSHOT")
-
-  val pgHost = opt[String](required = true, noshort = true)
-  val pgDatabase = opt[String](required = true, noshort = true)
-  val pgUser = opt[String](required = true, noshort = true)
-  val pgPassword = opt[String](noshort = true)
-  val pgUseSsl = opt[Boolean](noshort = true)
-}
 
 object Init extends App with WarningMessage with DatabaseConnection with SqlUtil {
 
   val logger = LoggerFactory.getLogger(getClass)
   
-  val opts = InitOptions(args)
-  
   displayWarningMessage("WARNING: THIS WILL DESTROY ALL DATA IN THE DATABASE!")
   
-  val dataSource = getDataSource(args)
+  val options = new ScallopConf(args) with DatabaseOptions
+  
+  options.afterInit()
+  
+  val dataSource = getDataSource(options)
 
   implicit val dbConn = dataSource.getConnection
 
@@ -68,7 +61,7 @@ object Init extends App with WarningMessage with DatabaseConnection with SqlUtil
       SQL(statement).execute()
   }
 
-  logger.info("Creating tables")
+  logger.info("Creating tables and default records")
 
   initDbStatements.foreach { statement =>
     logger.debug(statement)

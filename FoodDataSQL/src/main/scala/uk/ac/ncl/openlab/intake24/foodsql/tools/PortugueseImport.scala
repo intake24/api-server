@@ -16,7 +16,7 @@ import com.zaxxer.hikari.pool.HikariPool
 import uk.ac.ncl.openlab.intake24.foodsql.IndexFoodDataServiceSqlImpl
 import uk.ac.ncl.openlab.intake24.foodsql.LocaleManagementSqlImpl
 import uk.ac.ncl.openlab.intake24.Locale
-import uk.ac.ncl.openlab.intake24.foodsql.NutrientTableManagementSqlImpl
+import uk.ac.ncl.openlab.intake24.foodsql.NutrientDataManagementSqlImpl
 import uk.ac.ncl.openlab.intake24.NutrientTable
 import java.util.Properties
 import java.io.PrintWriter
@@ -30,18 +30,18 @@ object PortugueseImport extends App with WarningMessage with DatabaseConnection 
   
   val logger = LoggerFactory.getLogger(getClass)
 
-  case class Options(arguments: Seq[String]) extends ScallopConf(arguments) {
+  trait Options extends ScallopConf {
     version("Intake24 Portuguese localisation data import tool 16.7")
 
     val csvPath = opt[String](required = true, noshort = true)
     val logPath = opt[String](required = false, noshort = true)
   }
   
-  val opts = Options(args)
+  val options = new ScallopConf(args) with Options with DatabaseOptions
   
   displayWarningMessage("WARNING: THIS WILL OVERWRITE CURRENT PORTUGUESE DATA!")
 
-  val dataSource = getDataSource(args) 
+  val dataSource = getDataSource(options) 
 
   val dataService = new AdminFoodDataServiceSqlImpl(dataSource)
 
@@ -52,23 +52,23 @@ object PortugueseImport extends App with WarningMessage with DatabaseConnection 
   localeService.delete(portugueseLocaleCode)
   localeService.create(Locale(portugueseLocaleCode, "Portuguese (Portugal)", "Português", portugueseLocaleCode, "pt", "pt", Some(baseLocaleCode)))
 
-  val nutrientTableService = new NutrientTableManagementSqlImpl(dataSource)
-  nutrientTableService.delete(portugueseNutrientTableCode)
-  nutrientTableService.create(NutrientTable(portugueseNutrientTableCode, "Portuguese food composition database"))
+  val nutrientService = new NutrientDataManagementSqlImpl(dataSource)
+  nutrientService.deleteNutrientTable(portugueseNutrientTableCode)
+  nutrientService.createNutrientTable(NutrientTable(portugueseNutrientTableCode, "Portuguese food composition database"))
 
-  val doNotUseReader = new CSVReader(new FileReader(opts.csvPath() + "/do_not_use.csv"))
+  val doNotUseReader = new CSVReader(new FileReader(options.csvPath() + "/do_not_use.csv"))
 
   val doNotUseCodes = doNotUseReader.readAll().tail.map(_(0)).toSet
 
   doNotUseReader.close()
 
-  val useUkReader = new CSVReader(new FileReader(opts.csvPath() + "/use_uk.csv"))
+  val useUkReader = new CSVReader(new FileReader(options.csvPath() + "/use_uk.csv"))
 
   val useUk = useUkReader.readAll().tail.map(row => row(0) -> row(9)).toMap
 
   useUkReader.close()
 
-  val usePtReader = new CSVReader(new FileReader(opts.csvPath() + "/use_pt.csv"))
+  val usePtReader = new CSVReader(new FileReader(options.csvPath() + "/use_pt.csv"))
 
   val usePt = usePtReader.readAll().tail.map(row => row(0) -> (row(7), row(9))).toMap
 

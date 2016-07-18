@@ -13,7 +13,7 @@ trait NutrientDataManagementService {
   
   //def nutrientTypes(): Seq[NutrientType]
   //def nutrientType(id: Int): Option[NutrientType]
-  def createNutrientType(record: NutrientType)
+  //def createNutrientTypes(record: Seq[NutrientType])
   //def updateNutrientType(id: Int, record: NutrientType)
   //def deleteNutrientType(id: Int)
     

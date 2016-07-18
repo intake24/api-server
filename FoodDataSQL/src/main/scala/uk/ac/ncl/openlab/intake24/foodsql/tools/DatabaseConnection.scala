@@ -7,7 +7,7 @@ import java.util.Properties
 import java.io.PrintWriter
 import org.rogach.scallop.ScallopConf
 
-case class DatabaseOptions(arguments: Seq[String]) extends ScallopConf(arguments) {
+trait DatabaseOptions extends ScallopConf {
   val pgHost = opt[String](required = true, noshort = true)
   val pgDatabase = opt[String](required = true, noshort = true)
   val pgUser = opt[String](required = true, noshort = true)
@@ -17,10 +17,8 @@ case class DatabaseOptions(arguments: Seq[String]) extends ScallopConf(arguments
 
 trait DatabaseConnection {
   
-  def getDataSource(arguments: Seq[String]) = {
+  def getDataSource(options: DatabaseOptions) = {
     
-    val options = DatabaseOptions(arguments)
-
     DriverManager.registerDriver(new org.postgresql.Driver)
 
     val dbConnectionProps = new Properties();
