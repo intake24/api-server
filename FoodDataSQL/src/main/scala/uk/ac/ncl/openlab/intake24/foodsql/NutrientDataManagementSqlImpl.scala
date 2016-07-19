@@ -75,15 +75,39 @@ class NutrientDataManagementSqlImpl @Inject() (@Named("intake24_foods") val data
 
   def createNutrientTableRecords(records: Seq[NutrientTableRecord]) = tryWithConnection {
     implicit conn =>
-      val query = """INSERT INTO nutrient_table_records VALUES({code},{nutrient_table_id},{nutrient_type_id},{units_per_100g})"""
 
-      val params =
-        records.map(r => Seq[NamedParameter]('code -> r.tableCode, 'nutrient_table_id -> r.table_id, 'nutrient_type_id -> r.nutrient_id, 'units_per_100g -> r.unitsPer100g))
+      conn.setAutoCommit(false)
 
       try {
-        BatchSql(query, params).execute()
+        val recordQuery = """INSERT INTO nutrient_table_records VALUES({id},{nutrient_table_id})"""
+
+        val recordParams =
+          records.map(r => Seq[NamedParameter]('id -> r.record_id, 'nutrient_table_id -> r.table_id))
+
+        val nutrientsQuery = """INSERT INTO nutrient_table_records_nutrients VALUES({record_id},{nutrient_table_id},{nutrient_type_id},{units_per_100g})"""
+
+        val nutrientParams =
+          records.flatMap {
+            record =>
+              record.nutrients.map {
+                case (nutrientType, unitsPer100g) =>
+                  Seq[NamedParameter]('record_id -> record.record_id, 'nutrient_table_id -> record.table_id, 'nutrient_type_id -> nutrientType.id, 'units_per_100g -> unitsPer100g)
+              } 
+          }
+
+        try {
+          BatchSql(recordQuery, recordParams).execute()
+          BatchSql(nutrientsQuery, nutrientParams).execute()
+        } catch {
+          case e: BatchUpdateException => throw new RuntimeException(e.getMessage, e.getNextException)
+        }
+
+        conn.commit()
       } catch {
-        case e: BatchUpdateException => throw new RuntimeException(e.getMessage, e.getNextException)
+        case e: Throwable => {
+          conn.rollback()
+          throw e
+        }
       }
   }
 

@@ -26,3 +26,4 @@ version := "15.9-SNAPSHOT"
 
 scalaVersion := "2.11.7"
 
+libraryDependencies += "ca.mrvisser" %% "sealerate" % "0.0.4"

@@ -193,7 +193,7 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
       mkPortionSizeMethods(rows.takeWhile(_.category_code == firstCategoryCode).map(r => PsmResultRow(r.id, r.method, r.description, r.image_url, r.use_for_recipes, r.param_name, r.param_value)))
     }
 
-  case class NutrientTableRow(nutrient_table_id: String, nutrient_table_code: String)
+  case class NutrientTableRow(nutrient_table_id: String, nutrient_table_record_id: String)
 
   def foodRecord(code: String, locale: String): Either[CodeError, FoodRecord] = tryWithConnection {
     // This is divided into two queries because the portion size estimation method list
@@ -207,7 +207,7 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
       val portionSizeMethods = mkPortionSizeMethods(psmResults)
 
       val nutrientTableCodes =
-        SQL("""SELECT nutrient_table_id, nutrient_table_code FROM foods_nutrient_tables WHERE food_code = {food_code} AND locale_id = {locale_id}""")
+        SQL("""SELECT nutrient_table_id, nutrient_table_record_id FROM foods_nutrient_mapping WHERE food_code = {food_code} AND locale_id = {locale_id}""")
           .on('food_code -> code, 'locale_id -> locale)
           .as(Macro.namedParser[NutrientTableRow].*).map {
             case NutrientTableRow(id, code) => (id -> code)

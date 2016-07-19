@@ -24,13 +24,10 @@ import au.com.bytecode.opencsv.CSVReader
 import java.io.FileReader
 import scala.collection.JavaConversions._
 
-
 object CsvNutrientTableParser {
   import Nutrient._
 
   val log = LoggerFactory.getLogger(CsvNutrientTableParser.getClass)
-
-  val zeroData = Nutrient.list.map(n => (n.key, 0.0)).toMap
 
   def excelColumnToOffset(colRef: String) = {
     def r(s: String) = s.foldRight((0, 1)) {
@@ -39,35 +36,32 @@ object CsvNutrientTableParser {
     r(colRef)._1
   }
 
-  def parseTable(fileName: String, rowOffset: Int, tableMapping: Map[Nutrient, Int]): NutrientData = {
+  def parseTable(fileName: String, rowOffset: Int, idColumn: Int, tableMapping: Nutrient => Option[Int]): NutrientTable = {
     val rows = new CSVReader(new FileReader(fileName)).readAll().toSeq.map(_.toIndexedSeq)
 
-    val descriptions: Map[String, String] = Nutrient.list.map(n => {
-      val colNum = tableMapping(n)
-      (n.key, if (colNum == -1) "N/A" else rows.head(colNum - 1))
-    }).toMap
-
-    def readRow(row: IndexedSeq[String], rowIndex: Int): Map[String, java.lang.Double] = Nutrient.list.map(n => {
-      try {
-        val colNum = tableMapping(n)
-        val v: java.lang.Double = if (colNum == -1) 0 else row(colNum - 1).toDouble
-        (n.key, v)
-      } catch {
-        case e: Throwable => {
-          log.warn("Failed to read " + n.toString + " in row " + rowIndex + ", assuming 0")
-          (n.key, 0.0: java.lang.Double)
+    def readRow(row: IndexedSeq[String], rowIndex: Int): Map[Nutrient, Double] = Nutrient.types.foldLeft(Map[Nutrient, Double]()) {
+      (acc, n) =>
+        {
+          try {
+            tableMapping(n) match {
+              case Some(colNum) => acc + (n -> row(colNum - 1).toDouble)
+              case None => acc
+            }
+          } catch {
+            case e: Throwable => {
+              log.warn("Failed to read " + n.toString + " in row " + rowIndex + ", assuming data N/A")
+              acc
+            }
+          }
         }
-      }
-    }).toMap
+    }
 
-    val values = rows.zipWithIndex.drop(rowOffset).foldLeft(Map[String, Map[String, java.lang.Double]]()) {
+    rows.zipWithIndex.drop(rowOffset).foldLeft(Map[String, Map[Nutrient, Double]]()) {
       case (map, row) => {
         val (rowSeq, rowIndex) = row
 
-        map + (rowSeq(0) -> readRow(rowSeq, rowIndex))
+        map + (rowSeq(idColumn) -> readRow(rowSeq, rowIndex))
       }
     }
-
-    NutrientData(descriptions, values)
   }
 }

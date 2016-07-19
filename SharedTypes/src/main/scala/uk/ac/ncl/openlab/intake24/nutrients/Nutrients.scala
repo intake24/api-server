@@ -20,6 +20,8 @@ package uk.ac.ncl.openlab.intake24.nutrients
 
 import scala.collection.JavaConversions._
 
+import ca.mrvisser.sealerate
+
 sealed trait Nutrient {
   val key: String
   val id: Int
@@ -33,7 +35,7 @@ case object EnergyKj extends Nutrient { val key = "energy_kj"; val id = 5 }
 case object Alcohol extends Nutrient { val key = "alcohol"; val id = 6 }
 case object TotalSugars extends Nutrient { val key = "total_sugars"; val id = 7 }
 case object Nmes extends Nutrient { val key = "nmes"; val id = 8 }
-case object SatdFa extends Nutrient { val key = "satd_fa"; val id = 9 }
+case object SaturatedFattyAcids extends Nutrient { val key = "satd_fa"; val id = 9 }
 case object Cholesterol extends Nutrient { val key = "cholesterol"; val id = 10 }
 case object VitaminA extends Nutrient { val key = "vitamin_a"; val id = 11 }
 case object VitaminD extends Nutrient { val key = "vitamin_d"; val id = 12 }
@@ -45,13 +47,15 @@ case object Calcium extends Nutrient { val key = "calcium"; val id = 17 }
 case object Iron extends Nutrient { val key = "iron"; val id = 18 }
 case object Zinc extends Nutrient { val key = "zinc"; val id = 19 }
 case object Selenium extends Nutrient { val key = "selenium"; val id = 20 }
+case object DietaryFiber extends Nutrient { val key = "dietary_fiber"; val id = 21 }
+case object TotalMonosaccharides extends Nutrient { val key = "total_monosac"; val id = 22 }
+case object OrganicAcids extends Nutrient { val key = "organic_acids"; val id = 23 }
+case object PolyunsaturatedFattyAcids extends Nutrient { val key = "pufa"; val id = 24 }
+case object NaCl extends Nutrient { val key = "nacl"; val id = 25 }
+case object Ash extends Nutrient { val key = "ash"; val id = 26 }
 
-object Nutrient {
-  val list: Seq[Nutrient] = Seq(Protein, Fat, Carbohydrate, EnergyKcal, EnergyKj, Alcohol, TotalSugars, Nmes, SatdFa, Cholesterol,
-    VitaminA, VitaminD, VitaminC, VitaminE, Folate, Sodium, Calcium, Iron, Zinc, Selenium)
-    
-  val javaList: java.util.List[Nutrient] = list
+object Nutrient {  
+  // See https://github.com/mrvisser/sealerate for macro explanation
+  
+  def types: Set[Nutrient] = sealerate.values[Nutrient]
 }
-
-case class NutrientData(description: Map[String, String], value: Map[String, Map[String, java.lang.Double]])
-

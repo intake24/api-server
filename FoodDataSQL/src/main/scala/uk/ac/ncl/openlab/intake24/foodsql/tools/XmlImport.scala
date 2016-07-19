@@ -53,6 +53,10 @@ class XmlImporter(implicit val dbConn: Connection) {
   val defaultLocale = "en_GB"
 
   def importFoodGroups(foodGroupsPath: String) = {
+    logger.info("Deleting existing food groups")
+    
+    SQL("DELETE FROM food_groups").execute()
+    
     logger.info("Loading food groups from " + foodGroupsPath)
 
     val foodGroups = FoodGroupDef.parseXml(XML.load(foodGroupsPath))
@@ -74,6 +78,10 @@ class XmlImporter(implicit val dbConn: Connection) {
   }
 
   def importFoods(foodsPath: String) = {
+    logger.info("Deleting existing food records")
+    
+    SQL("DELETE FROM foods").execute()
+   
     logger.info("Loading foods from " + foodsPath)
 
     val foods = FoodDef.parseXml(XML.load(foodsPath))
@@ -163,6 +171,11 @@ class XmlImporter(implicit val dbConn: Connection) {
   }
 
   def importCategories(categoriesPath: String) = {
+    logger.info("Deleting existing categories")
+    
+    SQL("DELETE FROM categories").execute()
+    
+    
     logger.info("Loading categories from " + categoriesPath)
 
     val categories = CategoryDef.parseXml(XML.load(categoriesPath))
@@ -239,6 +252,10 @@ class XmlImporter(implicit val dbConn: Connection) {
   }
 
   def importAsServed(asServedPath: String) = {
+    logger.info("Deleting existing as served image definitions")
+    
+    SQL("DELETE FROM as_served_sets").execute()
+    
     logger.info("Loading as served image definitions from " + asServedPath)
     val asServed = AsServedDef.parseXml(XML.load(asServedPath)).values.toSeq.sortBy(_.id)
 
@@ -267,6 +284,10 @@ class XmlImporter(implicit val dbConn: Connection) {
   }
 
   def importGuide(guidePath: String, imageMapsPath: String) = {
+    logger.info("Deleting existing guide image definitions")
+    
+    SQL("DELETE FROM guide_images").execute()    
+    
     logger.info("Loading guide image definitions from " + guidePath)
     val guideImages = GuideImageDef.parseXml(XML.load(guidePath))
 
@@ -307,6 +328,10 @@ class XmlImporter(implicit val dbConn: Connection) {
   }
 
   def importBrands(brandsPath: String) = {
+    logger.info("Deleting existing brand definitions")
+    
+    SQL("DELETE FROM brands").execute()
+    
     logger.info("Loading brands definitions from " + brandsPath)
     val brands = BrandDef.parseXml(XML.load(brandsPath))
 
@@ -323,6 +348,10 @@ class XmlImporter(implicit val dbConn: Connection) {
   }
 
   def importDrinkware(drinkwarePath: String) = {
+    logger.info("Deleting existing drinkware definitions")
+    
+    SQL("DELETE FROM drinkware_sets").execute()
+    
     logger.info("Loading drinkware definitions from " + drinkwarePath)
     val drinkware = DrinkwareDef.parseXml(XML.load(drinkwarePath))
 
@@ -365,6 +394,10 @@ class XmlImporter(implicit val dbConn: Connection) {
   }
 
   def importAssociatedFoodPrompts(promptsPath: String) = {
+    logger.info("Deleting existing associated food prompts")
+    
+    SQL("DELETE FROM associated_food_prompts").execute()
+    
     logger.info("Loading associated food prompts from " + promptsPath)
     val prompts = PromptDef.parseXml(XML.load(promptsPath))
 
@@ -390,6 +423,11 @@ class XmlImporter(implicit val dbConn: Connection) {
   }
 
   def importSplitList(path: String) {
+    logger.info("Deleting existing split list")
+    
+    SQL("DELETE FROM split_words").execute()
+    SQL("DELETE FROM split_list").execute()
+    
     logger.info("Loading split list from " + path)
     val lines = scala.io.Source.fromFile(path).getLines().toSeq
 
@@ -418,6 +456,10 @@ class XmlImporter(implicit val dbConn: Connection) {
   }
 
   def importSynonymSets(path: String) = {
+    logger.info("Deleting existing synonym sets")
+    
+    SQL("DELETE FROM synonym_sets").execute()
+    
     logger.info("Loading synonym sets from " + path)
     val lines = scala.io.Source.fromFile(path).getLines().toSeq
 
@@ -460,6 +502,8 @@ object XmlImport extends App with WarningMessage with DatabaseConnection {
   val logger = LoggerFactory.getLogger(getClass)
   
   val options = new ScallopConf(args) with Options with DatabaseOptions
+  
+  options.afterInit()
   
   val dataSource = getDataSource(options)
       

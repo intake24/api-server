@@ -18,12 +18,16 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.services.nutrition
 
-case class NutrientDescription(key: String, description: String, unit: String)
+import uk.ac.ncl.openlab.intake24.nutrients.Nutrient
+
+import uk.ac.ncl.openlab.intake24.services.NutrientMappingError
+
+case class NutrientDescription(nutrientType: Nutrient, description: String, unit: String)
 
 trait NutrientMappingService {
-  def nutrientDescriptions(): Seq[NutrientDescription]
-  def nutrientsFor(foodCode: String, weight: Double): Map[String, Double]
-  def javaNutrientsFor(foodCode: String, weight: Double): java.util.Map[String, java.lang.Double] = {   
-    scala.collection.JavaConversions.mapAsJavaMap(nutrientsFor(foodCode, weight).mapValues(new java.lang.Double(_)))      
-  }
+  def supportedNutrients(): Seq[NutrientDescription]
+  def nutrientsFor(table_id: String, record_id: String, weight: Double): Either[NutrientMappingError, Map[Nutrient, Double]]
+
+  def javaNutrientsFor(table_id: String, record_id: String, weight: Double): Either[NutrientMappingError, java.util.Map[Nutrient, java.lang.Double]] =
+    nutrientsFor(table_id, record_id, weight).right.map(scalaMap => scala.collection.JavaConversions.mapAsJavaMap(scalaMap.mapValues(new java.lang.Double(_))))
 }

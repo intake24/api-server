@@ -18,6 +18,13 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.services
 
+sealed trait NutrientMappingError
+
+object NutrientMappingError {
+  case object TableNotFound extends NutrientMappingError
+  case object RecordNotFound extends NutrientMappingError
+}
+
 sealed trait CodeError
 
 object CodeError {

@@ -87,20 +87,27 @@ CREATE TABLE nutrient_tables
 
 CREATE TABLE nutrient_table_records
 (
-	code character varying(32) NOT NULL,
+	id character varying(32) NOT NULL,
+	nutrient_table_id character varying(32) NOT NULL,
+
+	CONSTRAINT nutrient_table_records_pk PRIMARY KEY(id, nutrient_table_id),
+	CONSTRAINT nutrient_records_nutrient_tables_id_fk FOREIGN KEY (nutrient_table_id)
+		REFERENCES nutrient_tables(id) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+CREATE TABLE nutrient_table_records_nutrients
+(
+	nutrient_table_record_id character varying(32) NOT NULL,
 	nutrient_table_id character varying(32) NOT NULL,
 	nutrient_type_id integer NOT NULL,
 	units_per_100g double precision NOT NULL,
 
-	CONSTRAINT nutrient_records_pk PRIMARY KEY(code, nutrient_table_id, nutrient_type_id),
-	CONSTRAINT nutrient_records_nutrient_tables_id_fk FOREIGN KEY (nutrient_table_id)
-		REFERENCES nutrient_tables(id) ON UPDATE CASCADE ON DELETE CASCADE,
-	CONSTRAINT nutrient_records_nutrient_type_id_fk FOREIGN KEY (nutrient_type_id)
-		REFERENCES nutrient_types(id) ON UPDATE CASCADE ON DELETE CASCADE,
-	CONSTRAINT nutrient_table_records_unique UNIQUE(code, nutrient_table_id)
+	CONSTRAINT nutrient_table_records_nutrients_pk PRIMARY KEY(nutrient_table_record_id, nutrient_table_id, nutrient_type_id),
+	CONSTRAINT nutrient_table_records_nutrients_record_fk FOREIGN KEY (nutrient_table_record_id, nutrient_table_id)
+		REFERENCES nutrient_table_records(id, nutrient_table_id) ON UPDATE CASCADE ON DELETE CASCADE,
+	CONSTRAINT nutrient_table_records_nutrients_type_fk FOREIGN KEY (nutrient_type_id)
+		REFERENCES nutrient_types(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
-
-CREATE INDEX nutrient_table_records_index ON nutrient_table_records(code, nutrient_table_id);
 
 -- Foods
 
@@ -145,22 +152,22 @@ CREATE TABLE foods_restrictions
     REFERENCES locales(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE TABLE foods_nutrient_tables
+CREATE TABLE foods_nutrient_mapping
 (
   food_code character varying(8) NOT NULL,
   locale_id character varying(16) NOT NULL,
   nutrient_table_id character varying(64) NOT NULL,
-  nutrient_table_code character varying(64) NOT NULL,
+  nutrient_table_record_id character varying(64) NOT NULL,
 
-  CONSTRAINT foods_nutrient_tables_pk PRIMARY KEY (food_code, locale_id,nutrient_table_id),
+  CONSTRAINT foods_nutrient_tables_pk PRIMARY KEY (food_code, locale_id, nutrient_table_id, nutrient_table_record_id),
   CONSTRAINT foods_nutrient_tables_food_code_fk FOREIGN KEY (food_code)
     REFERENCES foods(code) ON UPDATE CASCADE ON DELETE CASCADE,
   CONSTRAINT foods_nutrient_tables_locale_id_fk FOREIGN KEY (locale_id)
     REFERENCES locales(id) ON UPDATE CASCADE ON DELETE CASCADE,
   CONSTRAINT foods_nutrient_tables_nutrient_table_id_fk FOREIGN KEY (nutrient_table_id)
     REFERENCES nutrient_tables(id),
-	CONSTRAINT foods_nutrient_tables_nutrient_table_record_fk FOREIGN KEY(nutrient_table_code, nutrient_table_id)
-		REFERENCES nutrient_table_records(code, nutrient_table_id)
+	CONSTRAINT foods_nutrient_tables_nutrient_table_record_fk FOREIGN KEY(nutrient_table_record_id, nutrient_table_id)
+		REFERENCES nutrient_table_records(id, nutrient_table_id)
 );
 
 CREATE TABLE foods_portion_size_methods
@@ -557,3 +564,9 @@ INSERT INTO nutrient_types VALUES(17, 'Calcium', 2);
 INSERT INTO nutrient_types VALUES(18, 'Iron', 2);
 INSERT INTO nutrient_types VALUES(19, 'Zinc', 2);
 INSERT INTO nutrient_types VALUES(20, 'Selenium', 3);
+INSERT INTO nutrient_types VALUES(21, 'Dietary fiber', 1);
+INSERT INTO nutrient_types VALUES(22, 'Total monosaccharides', 1);
+INSERT INTO nutrient_types VALUES(23, 'Organic acids', 1);
+INSERT INTO nutrient_types VALUES(24, 'Polyunsaturated fatty acids', 1);
+INSERT INTO nutrient_types VALUES(25, 'NaCl', 2);
+INSERT INTO nutrient_types VALUES(26, 'Ash', 1);

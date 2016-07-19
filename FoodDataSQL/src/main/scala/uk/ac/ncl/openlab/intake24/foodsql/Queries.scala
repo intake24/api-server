@@ -33,9 +33,9 @@ object Queries {
   
   val foodsLocalDelete = """DELETE FROM foods_local WHERE food_code={food_code} AND locale_id={locale_id}"""
   
-  val foodNutrientTablesInsert = """INSERT INTO foods_nutrient_tables VALUES ({food_code}, {locale_id}, {nutrient_table_id}, {nutrient_table_code})"""
+  val foodNutrientTablesInsert = """INSERT INTO foods_nutrient_mapping VALUES ({food_code}, {locale_id}, {nutrient_table_id}, {nutrient_table_code})"""
   
-  val foodNutrientTablesDelete = """DELETE FROM foods_nutrient_tables WHERE food_code={food_code} AND locale_id={locale_id}"""
+  val foodNutrientTablesDelete = """DELETE FROM foods_nutrient_mapping WHERE food_code={food_code} AND locale_id={locale_id}"""
   
   val foodsAttributesInsert = """INSERT INTO foods_attributes VALUES (DEFAULT, {food_code}, {same_as_before_option}, {ready_meal_option}, {reasonable_amount})"""
   

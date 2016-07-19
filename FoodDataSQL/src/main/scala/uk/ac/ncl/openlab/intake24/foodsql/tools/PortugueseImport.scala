@@ -39,6 +39,8 @@ object PortugueseImport extends App with WarningMessage with DatabaseConnection 
   
   val options = new ScallopConf(args) with Options with DatabaseOptions
   
+  options.afterInit()
+  
   displayWarningMessage("WARNING: THIS WILL OVERWRITE CURRENT PORTUGUESE DATA!")
 
   val dataSource = getDataSource(options) 
@@ -51,10 +53,6 @@ object PortugueseImport extends App with WarningMessage with DatabaseConnection 
   val localeService = new LocaleManagementSqlImpl(dataSource)
   localeService.delete(portugueseLocaleCode)
   localeService.create(Locale(portugueseLocaleCode, "Portuguese (Portugal)", "Português", portugueseLocaleCode, "pt", "pt", Some(baseLocaleCode)))
-
-  val nutrientService = new NutrientDataManagementSqlImpl(dataSource)
-  nutrientService.deleteNutrientTable(portugueseNutrientTableCode)
-  nutrientService.createNutrientTable(NutrientTable(portugueseNutrientTableCode, "Portuguese food composition database"))
 
   val doNotUseReader = new CSVReader(new FileReader(options.csvPath() + "/do_not_use.csv"))
 

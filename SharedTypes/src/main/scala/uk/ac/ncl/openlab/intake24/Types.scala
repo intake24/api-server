@@ -19,6 +19,7 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24
 
 import java.util.UUID
+import uk.ac.ncl.openlab.intake24.nutrients.Nutrient
 
 sealed trait IndexEntryOld {
   val description: String
@@ -152,7 +153,7 @@ case class NutrientType(id: Int, description: String)
 
 case class NutrientUnit(id: Int, symbol: String)
 
-case class NutrientTableRecord(table_id: String, tableCode: String, nutrient_id: Int, unitsPer100g: Double)
+case class NutrientTableRecord(table_id: String, record_id: String, nutrients: Map[Nutrient, Double])
 
 case class NutrientData(nutrient_id: Int, unitsPer100g: Double, unitName: String)
 
