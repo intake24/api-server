@@ -31,8 +31,12 @@ import org.workcraft.gwt.shared.client.Pair;
 
 import uk.ac.ncl.openlab.intake24.foodxml.IndexFoodDataServiceXmlImpl;
 import uk.ac.ncl.openlab.intake24.foodxml.UserFoodDataServiceXmlImpl;
-import uk.ac.ncl.openlab.intake24.nutrientsndns.NdnsNutrientMappingServiceImpl;
-import uk.ac.ncl.openlab.intake24.nutrientsndns.NzNutrientMappingServiceImpl;
+import uk.ac.ncl.openlab.intake24.nutrientsndns.CsvNutrientTableParser;
+import uk.ac.ncl.openlab.intake24.nutrientsndns.LegacyNutrientMappingServiceImpl;
+import uk.ac.ncl.openlab.intake24.nutrientsndns.LegacyNutrientTables;
+
+import uk.ac.ncl.openlab.intake24.nutrientsndns.NutrientTable;
+
 import uk.ac.ncl.openlab.intake24.services.IndexFoodDataService;
 import uk.ac.ncl.openlab.intake24.services.UserFoodDataService;
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex;
@@ -76,10 +80,12 @@ public class NZConfig extends AbstractModule {
 
 	@Provides
 	@Singleton
-	protected List<Pair<String, ? extends NutrientMappingService>> nutrientTables(Injector injector) {
-		List<Pair<String, ? extends NutrientMappingService>> result = new ArrayList<Pair<String, ? extends NutrientMappingService>>();
-		result.add(Pair.create("NZ", new NzNutrientMappingServiceImpl(webXmlConfig.get("nz-data-path"))));
-		result.add(Pair.create("NDNS", new NdnsNutrientMappingServiceImpl(webXmlConfig.get("ndns-data-path"))));		
+	protected Map<String, NutrientTable> nutrientTables() {
+		Map<String, NutrientTable> result = new HashMap<String, NutrientTable>();
+				
+		result.put("NDNS", CsvNutrientTableParser.parseTable(webXmlConfig.get("ndns-data-path"), LegacyNutrientTables.ndnsCsvTableMapping()));
+		result.put("NZ", CsvNutrientTableParser.parseTable(webXmlConfig.get("nz-data-path"), LegacyNutrientTables.nzCsvTableMapping()));
+		
 		return result;
 	}
 
@@ -101,5 +107,6 @@ public class NZConfig extends AbstractModule {
 		bindConstant().annotatedWith(Names.named("xml-data-path")).to(webXmlConfig.get("xml-data-path"));
 		bind(IndexFoodDataService.class).to(IndexFoodDataServiceXmlImpl.class);
 		bind(UserFoodDataService.class).to(UserFoodDataServiceXmlImpl.class);
+		bind(NutrientMappingService.class).to(LegacyNutrientMappingServiceImpl.class);
 	}
 }

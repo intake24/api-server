@@ -8,6 +8,7 @@ import uk.ac.ncl.openlab.intake24.nutrients.Nutrient
 import uk.ac.ncl.openlab.intake24.NutrientTableRecord
 import uk.ac.ncl.openlab.intake24.nutrients._
 import uk.ac.ncl.openlab.intake24.nutrientsndns.CsvNutrientTableParser
+import uk.ac.ncl.openlab.intake24.nutrientsndns.CsvNutrientTableMapping
 
 object PtNutrientImport extends App with WarningMessage with DatabaseConnection {
 
@@ -69,9 +70,9 @@ object PtNutrientImport extends App with WarningMessage with DatabaseConnection 
 
   nutrientTableService.createNutrientTable(NutrientTable(ptTableCode, ptTableDescription))
 
-  val table = CsvNutrientTableParser.parseTable(options.csvPath(), csvRowOffset, csvIdColumnOffset, tableMapping)
+  val table = CsvNutrientTableParser.parseTable(options.csvPath(), CsvNutrientTableMapping(csvRowOffset, csvIdColumnOffset, tableMapping))
 
-  val records = table.map {
+  val records = table.records.map {
     case (code, nmap) =>
       NutrientTableRecord(ptTableCode, code, nmap)
   }.toSeq

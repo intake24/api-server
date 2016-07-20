@@ -26,31 +26,31 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package net.scran24.dbtool
 
-import net.scran24.fooddef.Food
-import net.scran24.fooddef.CategoryV2
+import uk.ac.ncl.openlab.intake24.FoodRecord
+import uk.ac.ncl.openlab.intake24.CategoryV2
 import Util._
 
 class ProblemChecker(foods: MutableFoods, categories: MutableCategories, portionSize: PortionSizeResolver) {
 
-  def checkMultipleChoice(food: Food) = {
-    if (food.localData.portionSize.size > 1)
-      food.localData.portionSize.map(p => p.description.toLowerCase() == "no description" || p.imageUrl.toLowerCase() == "portion/placeholder.jpg").exists(x => x)
+  def checkMultipleChoice(food: FoodRecord) = {
+    if (food.local.portionSize.size > 1)
+      food.local.portionSize.map(p => p.description.toLowerCase() == "no description" || p.imageUrl.toLowerCase() == "portion/placeholder.jpg").exists(x => x)
     else false
   }
   
-  def checkDescriptionInRecipe(food: Food) = {
-    if (food.localData.portionSize.exists(_.useForRecipes))
-      food.localData.portionSize.map(p => p.description.toLowerCase() == "no description" || p.imageUrl.toLowerCase() == "portion/placeholder.jpg").exists(x => x)
+  def checkDescriptionInRecipe(food: FoodRecord) = {
+    if (food.local.portionSize.exists(_.useForRecipes))
+      food.local.portionSize.map(p => p.description.toLowerCase() == "no description" || p.imageUrl.toLowerCase() == "portion/placeholder.jpg").exists(x => x)
     else false
   }
 
-  def problems(food: Food): Seq[String] = Seq(
-    conditional(food.localData.nutrientTableCodes.isEmpty, "\"" + food.englishDescription + "\" does not have a nutrient table code assigned"),
-    conditional(food.groupCode == 0 || food.groupCode == -1, "\"" + food.englishDescription + "\" is not assigned to a food group"),
-    conditional(categories.foodSuperCategories(food.code).isEmpty, "\"" + food.englishDescription + "\" is not assigned to any category"),
-    conditional( food.localData.portionSize.isEmpty && portionSize.foodInheritedPortionSize(food.code).isEmpty, "Portion size method cannot be resolved for \"" + food.englishDescription + "\""),
-    conditional(checkMultipleChoice(food), "No description or image for multiple-choice portion estimation for \"" + food.englishDescription + "\""),
-    conditional(checkDescriptionInRecipe(food), "No description or image for portion estimation for \"" + food.englishDescription + "\" (description and image required because it can be used as a recipe ingredient)")).flatten
+  def problems(food: FoodRecord): Seq[String] = Seq(
+    conditional(food.local.nutrientTableCodes.isEmpty, "\"" + food.main.englishDescription + "\" does not have a nutrient table code assigned"),
+    conditional(food.main.groupCode == 0 || food.main.groupCode == -1, "\"" + food.main.englishDescription + "\" is not assigned to a food group"),
+    conditional(categories.foodSuperCategories(food.main.code).isEmpty, "\"" + food.main.englishDescription + "\" is not assigned to any category"),
+    conditional( food.local.portionSize.isEmpty && portionSize.foodInheritedPortionSize(food.main.code).isEmpty, "Portion size method cannot be resolved for \"" + food.main.englishDescription + "\""),
+    conditional(checkMultipleChoice(food), "No description or image for multiple-choice portion estimation for \"" + food.main.englishDescription + "\""),
+    conditional(checkDescriptionInRecipe(food), "No description or image for portion estimation for \"" + food.main.englishDescription + "\" (description and image required because it can be used as a recipe ingredient)")).flatten
 
   def subProblems(category: CategoryV2): Seq[String] = {
     val (missingFoods, okFoods) = category.foods.partition(foods.find(_).isEmpty)

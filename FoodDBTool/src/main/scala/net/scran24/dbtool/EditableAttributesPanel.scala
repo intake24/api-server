@@ -27,15 +27,15 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 package net.scran24.dbtool
 
 import javax.swing.JPanel
-import net.scran24.fooddef.InheritableAttributes
+import uk.ac.ncl.openlab.intake24.InheritableAttributes
 import javax.swing.JLabel
 import javax.swing.JCheckBox
-import net.scran24.fooddef.InheritableAttributes
+import uk.ac.ncl.openlab.intake24.InheritableAttributes
 import javax.swing.JButton
 import SwingUtil._
 import java.awt.event.ItemListener
 import java.awt.event.ItemEvent
-import net.scran24.fooddef.InheritableAttributes
+import uk.ac.ncl.openlab.intake24.InheritableAttributes
 import java.awt.FlowLayout
 import java.awt.Insets
 import java.awt.Dimension

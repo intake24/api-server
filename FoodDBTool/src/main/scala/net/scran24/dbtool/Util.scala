@@ -26,7 +26,7 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package net.scran24.dbtool
 
-import net.scran24.fooddef.PortionSizeMethod
+import uk.ac.ncl.openlab.intake24.PortionSizeMethod
 
 object Util {
   def conditional[A](cond: Boolean, value: A) = if (cond) Some(value) else None

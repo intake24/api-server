@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import net.scran24.fooddef.PortionSizeMethodParameter;
+import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter;
 import net.scran24.user.shared.CategoryHeader;
 import net.scran24.user.shared.FoodData;
 import net.scran24.user.shared.FoodHeader;
@@ -43,47 +43,47 @@ public class ScalaConversions {
 			return Option.none();		
 	}	
 	
-	public static FoodHeader toJavaFoodHeader(net.scran24.fooddef.UserFoodHeader header) {
+	public static FoodHeader toJavaFoodHeader(uk.ac.ncl.openlab.intake24.UserFoodHeader header) {
 		return new FoodHeader(header.code(), header.localDescription());
 	}
 	
-	public static List<FoodHeader> toJavaFoodHeaders(Seq<net.scran24.fooddef.UserFoodHeader> headers) {
-		Iterator<net.scran24.fooddef.UserFoodHeader> iter = headers.iterator();
+	public static List<FoodHeader> toJavaFoodHeaders(Seq<uk.ac.ncl.openlab.intake24.UserFoodHeader> headers) {
+		Iterator<uk.ac.ncl.openlab.intake24.UserFoodHeader> iter = headers.iterator();
 		
 		List<FoodHeader> result = new ArrayList<FoodHeader>();
 
 		while (iter.hasNext()) {			
-			net.scran24.fooddef.UserFoodHeader header = iter.next();
+			uk.ac.ncl.openlab.intake24.UserFoodHeader header = iter.next();
 			result.add(toJavaFoodHeader(header));
 		}
 
 		return result;		
 	}
 	
-	public static CategoryHeader toJavaCategoryHeader(net.scran24.fooddef.UserCategoryHeader header) {
+	public static CategoryHeader toJavaCategoryHeader(uk.ac.ncl.openlab.intake24.UserCategoryHeader header) {
 		return new CategoryHeader(header.code(), header.localDescription());
 	}
 	
-	public static List<CategoryHeader> toJavaCategoryHeaders(Seq<net.scran24.fooddef.UserCategoryHeader> headers) {
-		Iterator<net.scran24.fooddef.UserCategoryHeader> iter = headers.iterator();
+	public static List<CategoryHeader> toJavaCategoryHeaders(Seq<uk.ac.ncl.openlab.intake24.UserCategoryHeader> headers) {
+		Iterator<uk.ac.ncl.openlab.intake24.UserCategoryHeader> iter = headers.iterator();
 		
 		List<CategoryHeader> result = new ArrayList<CategoryHeader>();
 
 		while (iter.hasNext()) {			
-			net.scran24.fooddef.UserCategoryHeader header = iter.next();
+			uk.ac.ncl.openlab.intake24.UserCategoryHeader header = iter.next();
 			result.add(toJavaCategoryHeader(header));
 		}
 
 		return result;		
 	}
 	
-	public static List<PortionSizeMethod> toJavaPortionSizeMethods(Seq<net.scran24.fooddef.PortionSizeMethod> methods, String imageUrlBase) {
-		Iterator<net.scran24.fooddef.PortionSizeMethod> iter = methods.iterator();
+	public static List<PortionSizeMethod> toJavaPortionSizeMethods(Seq<uk.ac.ncl.openlab.intake24.PortionSizeMethod> methods, String imageUrlBase) {
+		Iterator<uk.ac.ncl.openlab.intake24.PortionSizeMethod> iter = methods.iterator();
 
 		ArrayList<PortionSizeMethod> result = new ArrayList<PortionSizeMethod>();
 
 		while (iter.hasNext()) {
-			net.scran24.fooddef.PortionSizeMethod next = iter.next();
+			uk.ac.ncl.openlab.intake24.PortionSizeMethod next = iter.next();
 			Iterator<PortionSizeMethodParameter> paramIter = next.parameters().iterator();
 
 			HashMap<String, String> params = new HashMap<String, String>();
@@ -100,12 +100,12 @@ public class ScalaConversions {
 		return result;
 	}
 	
-	public static FoodPrompt toJavaPrompt(net.scran24.fooddef.Prompt prompt) {
+	public static FoodPrompt toJavaPrompt(uk.ac.ncl.openlab.intake24.AssociatedFood prompt) {
 		return new FoodPrompt(prompt.category(), true, prompt.promptText(), prompt.linkAsMain(), prompt.genericName());
 	}
 	
-	public static List<FoodPrompt> toJavaPrompts(Seq<net.scran24.fooddef.Prompt> prompts) {
-		Iterator<net.scran24.fooddef.Prompt> iter = prompts.iterator();
+	public static List<FoodPrompt> toJavaPrompts(Seq<uk.ac.ncl.openlab.intake24.AssociatedFood> prompts) {
+		Iterator<uk.ac.ncl.openlab.intake24.AssociatedFood> iter = prompts.iterator();
 		
 		List<FoodPrompt> result = new ArrayList<FoodPrompt>();
 		
@@ -128,11 +128,11 @@ public class ScalaConversions {
 		return result;
 	}
 
-	public static FoodData buildJavaFoodData(net.scran24.fooddef.FoodData data, double calPer100g, Seq<net.scran24.fooddef.Prompt> prompts, Seq<String> brands, Seq<net.scran24.fooddef.CategoryHeader> allSuperCategories, String imageUrlBase) {
+	public static FoodData buildJavaFoodData(uk.ac.ncl.openlab.intake24.UserFoodData data, double calPer100g, Seq<uk.ac.ncl.openlab.intake24.AssociatedFood> prompts, Seq<String> brands, Seq<uk.ac.ncl.openlab.intake24.CategoryHeader> allSuperCategories, String imageUrlBase) {
 		
 		ArrayList<String> categoryCodes = new ArrayList<String>();
 		
-		Iterator<net.scran24.fooddef.CategoryHeader> i = allSuperCategories.iterator();
+		Iterator<uk.ac.ncl.openlab.intake24.CategoryHeader> i = allSuperCategories.iterator();
 		
 		while (i.hasNext())
 			categoryCodes.add(i.next().code());

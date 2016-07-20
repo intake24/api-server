@@ -39,11 +39,11 @@ import javax.swing.JFileChooser
 import SwingUtil._
 import java.io.File
 import java.io.PrintWriter
-import net.scran24.fooddef.Food
-import net.scran24.fooddef.AsServedSet
-import net.scran24.fooddef.DrinkwareSet
-import net.scran24.fooddef.GuideImage
-import net.scran24.fooddef.CategoryV2
+import uk.ac.ncl.openlab.intake24.FoodRecord
+import uk.ac.ncl.openlab.intake24.AsServedSet
+import uk.ac.ncl.openlab.intake24.DrinkwareSet
+import uk.ac.ncl.openlab.intake24.GuideImage
+import uk.ac.ncl.openlab.intake24.CategoryV2
 import javax.swing.JOptionPane
 import java.awt.event.InputEvent
 import javax.swing.WindowConstants
@@ -56,7 +56,7 @@ import javax.swing.filechooser.FileFilter
 import au.com.bytecode.opencsv.CSVWriter
 import java.io.FileWriter
 import scala.collection.JavaConversions._
-import net.scran24.fooddef.FoodGroup
+import uk.ac.ncl.openlab.intake24.FoodGroup
 import uk.ac.ncl.openlab.intake24.foodxml.FoodDef
 import uk.ac.ncl.openlab.intake24.foodxml.GuideImageDef
 import uk.ac.ncl.openlab.intake24.foodxml.FoodGroupDef
@@ -64,7 +64,7 @@ import uk.ac.ncl.openlab.intake24.foodxml.DrinkwareDef
 import uk.ac.ncl.openlab.intake24.foodxml.CategoryDef
 import uk.ac.ncl.openlab.intake24.foodxml.AsServedDef
 
-case class Intake24Data(foods: Seq[Food], foodGroups: Seq[FoodGroup], categories: Seq[CategoryV2], asServedSets: Seq[AsServedSet], guideImages: Seq[GuideImage], drinkwareSets: Seq[DrinkwareSet])
+case class Intake24Data(foods: Seq[FoodRecord], foodGroups: Seq[FoodGroup], categories: Seq[CategoryV2], asServedSets: Seq[AsServedSet], guideImages: Seq[GuideImage], drinkwareSets: Seq[DrinkwareSet])
 
 case class Intake24DataPaths(foods: String, foodGroups: String, categories: String, asServedSets: String, guideImages: String, drinkwareSets: String)
 
@@ -201,7 +201,7 @@ class MainWindow extends JFrame("Intake24 database tool") {
 
       if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
         val writer = new CSVWriter(new FileWriter(fileChooser.getSelectedFile()))
-        val lines = Array("Intake24 code", "Food description", "NDNS code") +: editor.mutableFoods.snapshot.sortBy(_.englishDescription).map(f => Array(f.code, f.englishDescription, f.localData.nutrientTableCodes("NDNS"))) 
+        val lines = Array("Intake24 code", "Food description", "NDNS code") +: editor.mutableFoods.snapshot.sortBy(_.main.englishDescription).map(f => Array(f.main.code, f.main.englishDescription, f.local.nutrientTableCodes("NDNS"))) 
         writer.writeAll(lines)
         writer.close()
       }

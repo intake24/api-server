@@ -29,7 +29,7 @@ package net.scran24.dbtool
 import javax.swing.JPanel
 import org.workcraft.gui.SimpleFlowLayout
 import javax.swing.JOptionPane
-import net.scran24.fooddef.PortionSizeMethod
+import uk.ac.ncl.openlab.intake24.PortionSizeMethod
 import javax.swing.JLabel
 import java.awt.Color
 import java.awt.Font

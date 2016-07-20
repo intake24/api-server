@@ -24,6 +24,14 @@ import au.com.bytecode.opencsv.CSVReader
 import java.io.FileReader
 import scala.collection.JavaConversions._
 
+case class CsvNutrientTableMapping(rowOffset: Int, idColumn: Int, nutrientMapping: Nutrient => Option[Int])
+
+/* This is a silly type to work around the issues with Java-based dependency injection in Webapp 
+ * The Scala type Map[Nutrient, Double] is compiled to Map<Nutrient, Object> in Java which breaks 
+ * the injection.
+ * */
+case class NutrientTable(records: Map[String, Map[Nutrient, Double]])
+
 object CsvNutrientTableParser {
   import Nutrient._
 
@@ -36,14 +44,14 @@ object CsvNutrientTableParser {
     r(colRef)._1
   }
 
-  def parseTable(fileName: String, rowOffset: Int, idColumn: Int, tableMapping: Nutrient => Option[Int]): NutrientTable = {
+  def parseTable(fileName: String, mapping: CsvNutrientTableMapping): NutrientTable = {
     val rows = new CSVReader(new FileReader(fileName)).readAll().toSeq.map(_.toIndexedSeq)
 
     def readRow(row: IndexedSeq[String], rowIndex: Int): Map[Nutrient, Double] = Nutrient.types.foldLeft(Map[Nutrient, Double]()) {
       (acc, n) =>
         {
           try {
-            tableMapping(n) match {
+            mapping.nutrientMapping(n) match {
               case Some(colNum) => acc + (n -> row(colNum - 1).toDouble)
               case None => acc
             }
@@ -56,12 +64,14 @@ object CsvNutrientTableParser {
         }
     }
 
-    rows.zipWithIndex.drop(rowOffset).foldLeft(Map[String, Map[Nutrient, Double]]()) {
+    val records = rows.zipWithIndex.drop(mapping.rowOffset).foldLeft(Map[String, Map[Nutrient, Double]]()) {
       case (map, row) => {
         val (rowSeq, rowIndex) = row
 
-        map + (rowSeq(idColumn) -> readRow(rowSeq, rowIndex))
+        map + (rowSeq(mapping.idColumn) -> readRow(rowSeq, rowIndex))
       }
     }
+    
+    NutrientTable(records)
   }
 }

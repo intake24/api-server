@@ -26,8 +26,8 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package net.scran24.dbtool
 
-import net.scran24.fooddef.CategoryV2
-import net.scran24.fooddef.Food
+import uk.ac.ncl.openlab.intake24.CategoryV2
+import uk.ac.ncl.openlab.intake24.FoodRecord
 
 class DataException(message: String) extends Throwable
 
@@ -57,8 +57,8 @@ class MutableCategories(categories: Seq[CategoryV2]) {
   def rootCategories: Seq[CategoryV2] =
     map.values.filter(isRoot).toSeq.sortBy(_.description)
 
-  def uncategorisedFoods(foods: Seq[Food]) =
-    foods.filter(f => foodSuperCategories(f.code).isEmpty)
+  def uncategorisedFoods(foods: Seq[FoodRecord]) =
+    foods.filter(f => foodSuperCategories(f.main.code).isEmpty)
 
   def snapshot(): Seq[CategoryV2] =
     map.values.toSeq.sortBy(_.description)

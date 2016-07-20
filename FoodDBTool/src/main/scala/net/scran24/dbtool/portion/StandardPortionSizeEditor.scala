@@ -27,7 +27,7 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 package net.scran24.dbtool.portion
 
 import javax.swing.JPanel
-import net.scran24.fooddef.PortionSizeMethod
+import uk.ac.ncl.openlab.intake24.PortionSizeMethod
 import org.workcraft.gui.SimpleFlowLayout
 import javax.swing.JLabel
 import javax.swing.JButton
@@ -38,13 +38,13 @@ import javax.swing.ImageIcon
 import javax.swing.JCheckBox
 import net.scran24.dbtool.SwingUtil._
 import net.scran24.dbtool.Util._
-import net.scran24.fooddef.AsServedSet
+import uk.ac.ncl.openlab.intake24.AsServedSet
 import net.scran24.dbtool.SelectionDialog
-import net.scran24.fooddef.GuideImage
+import uk.ac.ncl.openlab.intake24.GuideImage
 import java.awt.SystemColor
 import java.awt.FlowLayout
 import uk.ac.ncl.openlab.intake24.foodxml.StandardUnitDef
-import net.scran24.fooddef.PortionSizeMethodParameter
+import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
 
 
 class StandardPortionSizeEditor(params: Seq[PortionSizeMethodParameter], changesMade: () => Unit) extends PortionSizeEditor {

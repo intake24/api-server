@@ -31,8 +31,8 @@ import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreeModel
 import javax.swing.JPanel
 import java.awt.BorderLayout
-import net.scran24.fooddef.Food
-import net.scran24.fooddef.CategoryV2
+import uk.ac.ncl.openlab.intake24.FoodRecord
+import uk.ac.ncl.openlab.intake24.CategoryV2
 import javax.swing.tree.DefaultTreeCellRenderer
 import javax.swing.ImageIcon
 import javax.swing.JLabel
@@ -54,8 +54,8 @@ case class CategoryWrapper(category: CategoryV2) extends FoodTreeNode {
   override def toString = category.description
 }
 
-case class FoodWrapper(food: Food) extends FoodTreeNode {
-  override def toString = food.englishDescription
+case class FoodWrapper(food: FoodRecord) extends FoodTreeNode {
+  override def toString = food.main.englishDescription
 }
 case object RootNode extends FoodTreeNode {
   override def toString = "All foods"
@@ -122,9 +122,9 @@ class FoodTree(foods: MutableFoods, categories: MutableCategories, portionSize: 
     })
   }
 
-  def createFoodNode(food: Food) = {
+  def createFoodNode(food: FoodRecord) = {
     val node = new DefaultMutableTreeNode(FoodWrapper(food))
-    nodes += (food.code -> (node :: nodes(food.code)))
+    nodes += (food.main.code -> (node :: nodes(food.main.code)))
     node
   }
   
@@ -166,17 +166,17 @@ class FoodTree(foods: MutableFoods, categories: MutableCategories, portionSize: 
     selectEntry(code)
   }
 
-  def foodAdded(food: Food): Unit = {
+  def foodAdded(food: FoodRecord): Unit = {
     def node = createFoodNode(food)
     
-    val superCats = categories.foodSuperCategories(food.code)
+    val superCats = categories.foodSuperCategories(food.main.code)
     
     if (superCats.isEmpty) {
       insertNode(uncatNode, node)
       model.nodeChanged(uncatNode)
     }
     
-    entryAdded(food.code, superCats, node)
+    entryAdded(food.main.code, superCats, node)
   }
 
   def categoryAdded(category: CategoryV2): Unit = {
@@ -205,7 +205,7 @@ class FoodTree(foods: MutableFoods, categories: MutableCategories, portionSize: 
     nodes += (category.code -> (catNode :: nodes(category.code)))
 
     category.subcategories.flatMap (categories.find(_)).sortBy(_.description).foreach (c => catNode.add(createCategoryNode(c)))
-    category.foods.flatMap(foods.find(_)).sortBy(_.englishDescription).foreach (f => catNode.add(createFoodNode(f)))
+    category.foods.flatMap(foods.find(_)).sortBy(_.main.englishDescription).foreach (f => catNode.add(createFoodNode(f)))
 
     catNode
   }
@@ -222,7 +222,7 @@ class FoodTree(foods: MutableFoods, categories: MutableCategories, portionSize: 
 
   root.add(uncatNode)
 
-  categories.uncategorisedFoods(foods.snapshot).sortBy(_.englishDescription).foreach(f => uncatNode.add(createFoodNode(f)))
+  categories.uncategorisedFoods(foods.snapshot).sortBy(_.main.englishDescription).foreach(f => uncatNode.add(createFoodNode(f)))
   
   categories.rootCategories.foreach(cat => root.add(createCategoryNode(cat)))
 

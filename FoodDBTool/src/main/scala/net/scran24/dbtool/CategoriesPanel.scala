@@ -27,7 +27,7 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 package net.scran24.dbtool
 
 import javax.swing.JPanel
-import net.scran24.fooddef.CategoryV2
+import uk.ac.ncl.openlab.intake24.CategoryV2
 import org.workcraft.gui.SimpleFlowLayout
 import java.awt.BorderLayout
 import javax.swing.BorderFactory

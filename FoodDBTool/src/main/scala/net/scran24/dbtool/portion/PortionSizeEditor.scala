@@ -30,7 +30,7 @@ import javax.swing.JPanel
 import net.scran24.dbtool.SwingUtil._
 import java.awt.SystemColor
 import org.workcraft.gui.SimpleFlowLayout
-import net.scran24.fooddef.PortionSizeMethodParameter
+import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
 
 abstract class PortionSizeEditor extends JPanel {
   setLayout(new SimpleFlowLayout(400))

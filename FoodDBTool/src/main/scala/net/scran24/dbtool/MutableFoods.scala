@@ -10,22 +10,22 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package net.scran24.dbtool
 
-import net.scran24.fooddef.Food
+import uk.ac.ncl.openlab.intake24.FoodRecord
 
-class MutableFoods (foods: Seq[Food]) {
-  var map = foods.map ( f => (f.code, f)).toMap
+class MutableFoods (foods: Seq[FoodRecord]) {
+  var map = foods.map ( f => (f.main.code, f)).toMap
   
-  def find(code: String): Option[Food] = map.get(code)
+  def find(code: String): Option[FoodRecord] = map.get(code)
   
-  def create(food: Food) = 
-    if (map.contains(food.code)) throw new DataException(s"Food with code ${food.code} already exists")
-    else map = map + (food.code -> food)
+  def create(food: FoodRecord) = 
+    if (map.contains(food.main.code)) throw new DataException(s"Food with code ${food.main.code} already exists")
+    else map = map + (food.main.code -> food)
     
   def delete(code: String) = map = map - code
   
-  def update(code: String, food: Food) = map = map + (code -> food)
+  def update(code: String, food: FoodRecord) = map = map + (code -> food)
   
-  def snapshot(): Seq[Food] = map.values.toSeq.sortBy(_.code)
+  def snapshot(): Seq[FoodRecord] = map.values.toSeq.sortBy(_.main.code)
   
   def tempcode() = {
       def mkCode (counter: Int) = "F%03d".format(counter)

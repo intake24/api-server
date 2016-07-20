@@ -27,28 +27,29 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 package net.scran24.user.server.services;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
 import net.scran24.datastore.NutritionMappedFood;
 import net.scran24.datastore.NutritionMappedMeal;
 import net.scran24.datastore.NutritionMappedSurvey;
-import net.scran24.fooddef.Food;
-import net.scran24.fooddef.FoodData;
-import net.scran24.fooddef.FoodGroup;
 import net.scran24.user.shared.CompletedFood;
 import net.scran24.user.shared.CompletedMeal;
 import net.scran24.user.shared.CompletedSurvey;
 
 import org.workcraft.gwt.shared.client.Option;
-import org.workcraft.gwt.shared.client.Pair;
 
 import scala.Tuple2;
 import scala.util.Either;
+import uk.ac.ncl.openlab.intake24.FoodGroup;
+import uk.ac.ncl.openlab.intake24.FoodRecord;
+import uk.ac.ncl.openlab.intake24.UserFoodData;
+import uk.ac.ncl.openlab.intake24.nutrients.Nutrient;
 import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService;
 import uk.ac.ncl.openlab.intake24.services.CodeError;
 import uk.ac.ncl.openlab.intake24.services.FoodDataError;
 import uk.ac.ncl.openlab.intake24.services.FoodDataSources;
+import uk.ac.ncl.openlab.intake24.services.NutrientMappingError;
 import uk.ac.ncl.openlab.intake24.services.UserFoodDataService;
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService;
 
@@ -57,14 +58,14 @@ import com.google.inject.Singleton;
 
 @Singleton
 public class NutrientMapper {
-	private final List<Pair<String, ? extends NutrientMappingService>> nutrientTables;
+
 	private final AdminFoodDataService adminDataService;
 	private final UserFoodDataService userDataService;
+	private final NutrientMappingService nutrientMappingService;
 
 	@Inject
-	public NutrientMapper(List<Pair<String, ? extends NutrientMappingService>> nutrientTables, UserFoodDataService userDataService,
-			AdminFoodDataService adminDataService) {
-		this.nutrientTables = nutrientTables;
+	public NutrientMapper(NutrientMappingService nutrientMappingService, UserFoodDataService userDataService, AdminFoodDataService adminDataService) {
+		this.nutrientMappingService = nutrientMappingService;
 		this.userDataService = userDataService;
 		this.adminDataService = adminDataService;
 
@@ -73,51 +74,65 @@ public class NutrientMapper {
 	private NutritionMappedFood mapFood(CompletedFood food, String locale) {
 		final double weight = food.portionSize.servingWeight() - food.portionSize.leftoversWeight();
 
-		Either<FoodDataError, Tuple2<FoodData, FoodDataSources>> foodDataResult = userDataService.foodData(food.code, locale);
-		
-		Either<CodeError, Food> foodDefResult = adminDataService.foodDef(food.code, locale);
-		
+		Either<FoodDataError, Tuple2<UserFoodData, FoodDataSources>> foodDataResult = userDataService.foodData(food.code, locale);
+
+		Either<CodeError, FoodRecord> foodDefResult = adminDataService.foodRecord(food.code, locale);
+
 		if (foodDefResult.isLeft())
 			throw new RuntimeException("Cannot retreive food record for " + food.code);
-		
-		Food foodDef = foodDefResult.right().get();
+
+		FoodRecord foodDef = foodDefResult.right().get();
 
 		if (foodDataResult.isLeft())
 			throw new RuntimeException("Cannot retreive data for food code " + food.code);
 		else {
-			
-			FoodData foodData = foodDataResult.right().get()._1();
 
-			Map<String, Double> nutrients = null;
-			String nutrientTableID = null;
-			String nutrientTableCode = null;
+			UserFoodData foodData = foodDataResult.right().get()._1();
 
-			for (Pair<String, ? extends NutrientMappingService> table : nutrientTables) {
-				if (foodData.nutrientTableCodes().contains(table.left)) {
-					nutrientTableID = table.left;
-					nutrientTableCode = foodData.nutrientTableCodes().apply(nutrientTableID);
-					nutrients = table.right.javaNutrientsFor(nutrientTableCode, weight);
-					break;
+			// FIXME: Undefined behaviour: only the first nutrient table code
+			// (in random order) will be used
+
+			scala.Option<Tuple2<String, String>> tableCode = foodData.nutrientTableCodes().headOption();
+
+			if (tableCode.isEmpty())
+				throw new RuntimeException(String.format("Food %s (%s) has no nutrient table codes", foodData.localDescription(), foodData.code()));
+			else {
+				String nutrientTableId = tableCode.get()._1;
+				String nutrientTableRecordId = tableCode.get()._2;
+
+				Either<NutrientMappingError, Map<Nutrient, Double>> nutrientsResult = nutrientMappingService.javaNutrientsFor(nutrientTableId,
+						nutrientTableRecordId, weight);
+
+				if (nutrientsResult.isLeft())
+					throw new RuntimeException(String.format("Failed to look up nutrients for %s in nutrient table %s", nutrientTableRecordId,
+							nutrientTableId));
+				else {
+					
+					Map<Nutrient, Double> nutrients = nutrientsResult.right().get();
+					
+					final FoodGroup foodGroup = adminDataService.foodGroup(foodData.groupCode(), locale).get();
+
+					final boolean reasonableAmount = (weight <= foodData.reasonableAmount());
+
+					Option<String> localDescription;
+
+					if (foodGroup.localDescription().isDefined())
+						localDescription = Option.some(foodGroup.localDescription().get());
+					else
+						localDescription = Option.none();
+					
+					final Map<String, Double> legacyNutrientMap = new HashMap<String, Double>();
+					
+					for (Nutrient nutrientType : nutrients.keySet()) 
+						legacyNutrientMap.put(nutrientType.key(), nutrients.get(nutrientType));
+
+					return new NutritionMappedFood(food.code, foodDef.main().englishDescription(), ScalaConversions.toJavaOption(foodDef.local()
+							.localDescription()), nutrientTableId, nutrientTableRecordId, food.isReadyMeal, food.searchTerm, food.portionSize,
+							foodGroup.id(), foodGroup.englishDescription(), localDescription, reasonableAmount, food.brand, legacyNutrientMap,
+							food.customData);
 				}
+
 			}
-
-			if (nutrients == null || nutrientTableID == null || nutrientTableCode == null)
-				throw new RuntimeException("No supported nutrient table ID found");
-
-			final FoodGroup foodGroup = adminDataService.foodGroup(foodData.groupCode(), locale).get();
-
-			final boolean reasonableAmount = (weight <= foodData.reasonableAmount());
-
-			Option<String> localDescription;
-
-			if (foodGroup.localDescription().isDefined())
-				localDescription = Option.some(foodGroup.localDescription().get());
-			else
-				localDescription = Option.none();
-
-			return new NutritionMappedFood(food.code, foodDef.englishDescription(), ScalaConversions.toJavaOption(foodDef.localData().localDescription()),
-					nutrientTableID, nutrientTableCode, food.isReadyMeal, food.searchTerm, food.portionSize, foodGroup.id(),
-					foodGroup.englishDescription(), localDescription, reasonableAmount, food.brand, nutrients, food.customData);
 		}
 	}
 

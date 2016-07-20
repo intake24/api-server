@@ -32,6 +32,7 @@ import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Set;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
@@ -48,8 +49,9 @@ import net.scran24.datastore.shared.CustomDataScheme;
 import net.scran24.datastore.shared.CustomDataScheme.CustomFieldDef;
 import net.scran24.datastore.shared.DataSchemeMap;
 import net.scran24.datastore.shared.SurveySchemes;
-import net.scran24.fooddef.nutrients.Nutrient;
-import net.scran24.fooddef.nutrients.Nutrient$;
+import scala.collection.convert.Decorators.AsJava;
+import uk.ac.ncl.openlab.intake24.nutrients.Nutrient;
+import uk.ac.ncl.openlab.intake24.nutrients.Nutrient$;
 import net.scran24.user.shared.MissingFood;
 
 import org.workcraft.gwt.shared.client.Callback1;
@@ -132,8 +134,8 @@ public class DownloadSurveyDataService extends HttpServlet {
 			header.add("Missing food description");
 			header.add("Missing food portion size");
 			header.add("Missing food leftovers");
-
-			for (Nutrient n : Nutrient$.MODULE$.javaList())
+						 
+			for (Nutrient n : scala.collection.JavaConverters.setAsJavaSetConverter(Nutrient$.MODULE$.types()).asJava())
 				header.add(n.key());
 
 			writer.writeNext(header.toArray(new String[header.size()]));
@@ -233,7 +235,7 @@ public class DownloadSurveyDataService extends HttpServlet {
 							row.add(missingFoodPortionSize);
 							row.add(missingFoodLeftovers);
 
-							for (Nutrient n : Nutrient$.MODULE$.javaList())
+							for (Nutrient n : scala.collection.JavaConverters.setAsJavaSetConverter(Nutrient$.MODULE$.types()).asJava())
 								row.add(String.format("%.2f", food.nutrients.get(n.key())));
 
 							writer.writeNext(row.toArray(new String[row.size()]));

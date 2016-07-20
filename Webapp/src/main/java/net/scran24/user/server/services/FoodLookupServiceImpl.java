@@ -46,11 +46,11 @@ import javax.servlet.ServletException;
 
 import net.scran24.datastore.DataStore;
 import net.scran24.datastore.DataStoreException;
-import net.scran24.fooddef.AsServedSet;
-import net.scran24.fooddef.DrinkwareSet;
-import net.scran24.fooddef.GuideImage;
-import net.scran24.fooddef.Prompt;
-import net.scran24.fooddef.UserCategoryContents;
+import uk.ac.ncl.openlab.intake24.AsServedSet;
+import uk.ac.ncl.openlab.intake24.DrinkwareSet;
+import uk.ac.ncl.openlab.intake24.GuideImage;
+import uk.ac.ncl.openlab.intake24.AssociatedFood;
+import uk.ac.ncl.openlab.intake24.UserCategoryContents;
 import net.scran24.user.client.services.FoodLookupService;
 import net.scran24.user.shared.CategoryHeader;
 import net.scran24.user.shared.FoodData;
@@ -72,9 +72,12 @@ import scala.collection.Iterator;
 import scala.collection.JavaConversions;
 import scala.collection.Seq;
 import scala.util.Either;
+import uk.ac.ncl.openlab.intake24.nutrients.Nutrient;
+import uk.ac.ncl.openlab.intake24.nutrients.EnergyKcal$;
 import uk.ac.ncl.openlab.intake24.services.CodeError;
 import uk.ac.ncl.openlab.intake24.services.FoodDataError;
 import uk.ac.ncl.openlab.intake24.services.FoodDataSources;
+import uk.ac.ncl.openlab.intake24.services.NutrientMappingError;
 import uk.ac.ncl.openlab.intake24.services.ResourceError;
 import uk.ac.ncl.openlab.intake24.services.UserFoodDataService;
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex;
@@ -98,7 +101,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 
 	private Map<String, FoodIndex> foodIndexes;
 	private Map<String, Splitter> splitters;
-	private List<Pair<String, ? extends NutrientMappingService>> nutrientTables;
+	private NutrientMappingService nutrientMappingService;
 
 	private String imageUrlBase;
 	private String thumbnailUrlBase;
@@ -121,8 +124,8 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 			}));
 			splitters = injector.getInstance(Key.get(new TypeLiteral<Map<String, Splitter>>() {
 			}));
-			nutrientTables = injector.getInstance(Key.get(new TypeLiteral<List<Pair<String, ? extends NutrientMappingService>>>() {
-			}));
+
+			nutrientMappingService = injector.getInstance(NutrientMappingService.class);
 
 			imageUrlBase = getServletContext().getInitParameter("image-url-base");
 
@@ -155,7 +158,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 			while (iter.hasNext()) {
 				MatchedFood next = iter.next();
 
-				net.scran24.fooddef.UserFoodHeader header = next.food();
+				uk.ac.ncl.openlab.intake24.UserFoodHeader header = next.food();
 
 				// boolean isHidden = true;
 
@@ -271,12 +274,12 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 		crashIfDebugOptionSet("crash-on-split");
 
 		ArrayList<String> result = new ArrayList<String>();
-		
+
 		Splitter splitter = splitters.get(locale);
-		
-		if (splitter != null) {		
+
+		if (splitter != null) {
 			Iterator<String> iter = splitter.split(description).iterator();
-			
+
 			while (iter.hasNext())
 				result.add(iter.next());
 		} else {
@@ -296,17 +299,17 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 		if (asServedDef.isLeft())
 			throw new RuntimeException("As served set not found: " + asServedSet);
 		else {
-			net.scran24.fooddef.AsServedSet set = asServedDef.right().get();
+			uk.ac.ncl.openlab.intake24.AsServedSet set = asServedDef.right().get();
 
 			int size = set.images().size();
 
 			AsServedDef.ImageInfo[] info = new AsServedDef.ImageInfo[size];
 
-			Iterator<net.scran24.fooddef.AsServedImage> iter = set.images().iterator();
+			Iterator<uk.ac.ncl.openlab.intake24.AsServedImage> iter = set.images().iterator();
 
 			int i = 0;
 			while (iter.hasNext()) {
-				net.scran24.fooddef.AsServedImage img = iter.next();
+				uk.ac.ncl.openlab.intake24.AsServedImage img = iter.next();
 
 				info[i++] = new AsServedDef.ImageInfo(new ImageDef(imageUrlBase + "/" + img.url(), thumbnailUrlBase + "/" + img.url(),
 						labelForAsServed(img.weight())), img.weight());
@@ -336,14 +339,14 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 			throw new RuntimeException("Guide image not found: " + guideId);
 		else {
 
-			net.scran24.fooddef.GuideImage image = guideDef.right().get();
+			uk.ac.ncl.openlab.intake24.GuideImage image = guideDef.right().get();
 
 			Map<Integer, Double> weights = new TreeMap<Integer, Double>();
 
-			Iterator<net.scran24.fooddef.GuideImageWeightRecord> iter = image.weights().iterator();
+			Iterator<uk.ac.ncl.openlab.intake24.GuideImageWeightRecord> iter = image.weights().iterator();
 
 			while (iter.hasNext()) {
-				net.scran24.fooddef.GuideImageWeightRecord wr = iter.next();
+				uk.ac.ncl.openlab.intake24.GuideImageWeightRecord wr = iter.next();
 				weights.put(wr.objectId(), wr.weight());
 			}
 
@@ -360,14 +363,14 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 		if (drinkwareDef.isLeft())
 			throw new RuntimeException("Drinkware definition not found: " + drinkwareId);
 		else {
-			net.scran24.fooddef.DrinkwareSet set = drinkwareDef.right().get();
+			uk.ac.ncl.openlab.intake24.DrinkwareSet set = drinkwareDef.right().get();
 
 			ArrayList<DrinkScaleDef> scaleDefs = new ArrayList<DrinkScaleDef>();
 
-			Iterator<net.scran24.fooddef.DrinkScale> iter = set.scaleDefs().iterator();
+			Iterator<uk.ac.ncl.openlab.intake24.DrinkScale> iter = set.scaleDefs().iterator();
 
 			while (iter.hasNext()) {
-				net.scran24.fooddef.DrinkScale def = iter.next();
+				uk.ac.ncl.openlab.intake24.DrinkScale def = iter.next();
 
 				scaleDefs.add(new DrinkScaleDef(def.choice_id(), imageUrlBase + "/" + def.baseImage(), imageUrlBase + "/" + def.overlayImage(), def
 						.width(), def.height(), def.emptyLevel(), def.fullLevel(), def.vf().asArray()));
@@ -381,18 +384,18 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 	public List<FoodPrompt> getFoodPrompts(String foodCode, String locale) {
 		crashIfDebugOptionSet("crash-on-get-food-prompts");
 
-		Either<CodeError, Seq<Prompt>> associatedFoodPrompts = foodData.associatedFoodPrompts(foodCode, locale);
+		Either<CodeError, Seq<AssociatedFood>> associatedFoodPrompts = foodData.associatedFoods(foodCode, locale);
 
 		if (associatedFoodPrompts.isLeft()) {
 			throw new RuntimeException("Food code " + foodCode + " is not defined");
 		} else {
 
-			Iterator<net.scran24.fooddef.Prompt> iter = associatedFoodPrompts.right().get().iterator();
+			Iterator<uk.ac.ncl.openlab.intake24.AssociatedFood> iter = associatedFoodPrompts.right().get().iterator();
 
 			ArrayList<FoodPrompt> result = new ArrayList<FoodPrompt>();
 
 			while (iter.hasNext()) {
-				net.scran24.fooddef.Prompt next = iter.next();
+				uk.ac.ncl.openlab.intake24.AssociatedFood next = iter.next();
 
 				if (foodData.isCategoryCode(next.category()))
 					result.add(new FoodPrompt(next.category(), true, next.promptText(), next.linkAsMain(), next.genericName()));
@@ -417,33 +420,40 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 	public FoodData getFoodData(String foodCode, String locale) {
 		crashIfDebugOptionSet("crash-on-get-food-data");
 
-		Either<FoodDataError, Tuple2<net.scran24.fooddef.FoodData, FoodDataSources>> foodDataResult = foodData.foodData(foodCode, locale);
+		Either<FoodDataError, Tuple2<uk.ac.ncl.openlab.intake24.UserFoodData, FoodDataSources>> foodDataResult = foodData.foodData(foodCode, locale);
 
 		if (foodDataResult.isLeft())
 			throw new RuntimeException("Food code not found or local description missing: " + foodCode);
 		else {
 
-			net.scran24.fooddef.FoodData data = foodDataResult.right().get()._1();
+			uk.ac.ncl.openlab.intake24.UserFoodData data = foodDataResult.right().get()._1();
 
 			log.debug(data.toString());
 
-			double kcal_per_100g = 0;
+			// FIXME: Undefined behaviour: only the first nutrient table code
+			// (in random order) will be used
 
-			for (Pair<String, ? extends NutrientMappingService> table : nutrientTables) {
-				if (data.nutrientTableCodes().contains(table.left)) {
-					String nutrientTableID = table.left;
-					String nutrientTableCode = data.nutrientTableCodes().apply(nutrientTableID);
-					Map<String, Double> nutrients = table.right.javaNutrientsFor(nutrientTableCode, 100.0);
-					kcal_per_100g = nutrients.get("energy_kcal");
-					break;
+			scala.Option<Tuple2<String, String>> tableCode = data.nutrientTableCodes().headOption();
+
+			if (tableCode.isEmpty())
+				throw new RuntimeException(String.format("Food %s (%s) has no nutrient table codes", data.localDescription(), data.code()));
+			else {
+				String nutrientTableId = tableCode.get()._1;
+				String nutrientTableRecordId = tableCode.get()._2;
+
+				Either<NutrientMappingError, Map<Nutrient, Double>> nutrientsResult = nutrientMappingService.javaNutrientsFor(nutrientTableId,
+						nutrientTableRecordId, 100.0);
+
+				if (nutrientsResult.isLeft())
+					throw new RuntimeException(String.format("Failed to look up nutrients for %s in nutrient table %s", nutrientTableRecordId,
+							nutrientTableId));
+				else {
+					return new FoodData(data.code(), data.readyMealOption(), data.sameAsBeforeOption(), nutrientsResult.right().get().get(EnergyKcal$.MODULE$), data.localDescription(),
+							toJavaPortionSizeMethods(data.portionSize(), imageUrlBase), getFoodPrompts(foodCode, locale), getBrandNames(foodCode,
+									locale), toJavaList(foodData.foodAllCategories(foodCode)));
 				}
 			}
 
-			return new FoodData(data.code(), data.readyMealOption(), data.sameAsBeforeOption(), kcal_per_100g, data.localDescription(),
-					toJavaPortionSizeMethods(data.portionSize(), imageUrlBase), getFoodPrompts(foodCode, locale), getBrandNames(foodCode, locale),
-					toJavaList(foodData.foodAllCategories(foodCode)));
-
 		}
 	}
-
 }

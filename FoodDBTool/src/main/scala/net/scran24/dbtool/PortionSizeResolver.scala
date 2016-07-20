@@ -26,10 +26,10 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package net.scran24.dbtool
 
-import net.scran24.fooddef.PortionSizeMethod
+import uk.ac.ncl.openlab.intake24.PortionSizeMethod
 import scala.collection.immutable.ListSet
-import net.scran24.fooddef.InheritableAttributes
-import net.scran24.fooddef.CategoryV2
+import uk.ac.ncl.openlab.intake24.InheritableAttributes
+import uk.ac.ncl.openlab.intake24.CategoryV2
 
 case class PortionSizeResolver(foods: MutableFoods, categories: MutableCategories) {
 

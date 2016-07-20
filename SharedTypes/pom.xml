@@ -77,6 +77,11 @@ limitations under the License.
 			<artifactId>slf4j-api</artifactId>
 			<version>1.7.12</version>
 		</dependency>
+		<dependency>
+			<groupId>ca.mrvisser</groupId>
+			<artifactId>sealerate_2.11</artifactId>
+			<version>0.0.4</version>
+		</dependency>
 	</dependencies>
 
 	<build>

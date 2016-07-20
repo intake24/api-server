@@ -10,8 +10,8 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package net.scran24.dbtool
 
-import net.scran24.fooddef.GuideImage
-import net.scran24.fooddef.AsServedSet
-import net.scran24.fooddef.DrinkwareSet
+import uk.ac.ncl.openlab.intake24.GuideImage
+import uk.ac.ncl.openlab.intake24.AsServedSet
+import uk.ac.ncl.openlab.intake24.DrinkwareSet
 
 case class PortionResources (asServedSets: Seq[AsServedSet], guideImages: Seq[GuideImage], drinkwareSets: Seq[DrinkwareSet])

@@ -35,8 +35,8 @@ import uk.ac.ncl.openlab.intake24.datastoresql.DataStoreScala;
 import uk.ac.ncl.openlab.intake24.datastoresql.DataStoreSqlImpl;
 import uk.ac.ncl.openlab.intake24.foodsql.AdminFoodDataServiceSqlImpl;
 import uk.ac.ncl.openlab.intake24.foodsql.IndexFoodDataServiceSqlImpl;
+import uk.ac.ncl.openlab.intake24.foodsql.NutrientMappingServiceSqlImpl;
 import uk.ac.ncl.openlab.intake24.foodsql.UserFoodDataServiceSqlImpl;
-import uk.ac.ncl.openlab.intake24.nutrientsndns.NdnsNutrientMappingServiceImpl;
 import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService;
 import uk.ac.ncl.openlab.intake24.services.AutoReloadIndex;
 import uk.ac.ncl.openlab.intake24.services.IndexFoodDataService;
@@ -97,14 +97,7 @@ public class SqlConfig extends AbstractModule {
 		result.put("pt_PT", new SplitterImpl_pt_PT(foodDataService));
 		return result;
 	}
-
-	@Provides
-	@Singleton
-	protected List<Pair<String, ? extends NutrientMappingService>> nutrientTables(Injector injector) {
-		List<Pair<String, ? extends NutrientMappingService>> result = new ArrayList<Pair<String, ? extends NutrientMappingService>>();
-		result.add(Pair.create("NDNS", new NdnsNutrientMappingServiceImpl(webXmlConfig.get("ndns-data-path"))));
-		return result;
-	}
+	
 
 	@Provides
 	@Singleton
@@ -149,10 +142,20 @@ public class SqlConfig extends AbstractModule {
 
 		return new IndexFoodDataServiceSqlImpl(new HikariDataSource(cpConfig));		
 	}
+	
+	@Provides
+	@Singleton
+	protected NutrientMappingService nutrientMappingServiceSqlImpl(Injector injector) {
+		HikariConfig cpConfig = new HikariConfig();
+		cpConfig.setJdbcUrl(webXmlConfig.get("sql-foods-db-url"));
+		cpConfig.setUsername(webXmlConfig.get("sql-foods-db-user"));
+		cpConfig.setPassword(webXmlConfig.get("sql-foods-db-password"));
+
+		return new NutrientMappingServiceSqlImpl(new HikariDataSource(cpConfig));		
+	}
 
 	@Override
 	protected void configure() {
 		bind(DataStore.class).to(DataStoreJavaAdapter.class);
 	}
-
 }

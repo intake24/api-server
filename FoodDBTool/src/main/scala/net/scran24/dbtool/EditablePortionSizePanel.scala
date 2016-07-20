@@ -34,16 +34,16 @@ import javax.swing.JLabel
 import java.awt.Dimension
 import javax.swing.BorderFactory
 import java.awt.Color
-import net.scran24.fooddef.PortionSizeMethod
+import uk.ac.ncl.openlab.intake24.PortionSizeMethod
 import org.workcraft.gui.SimpleFlowLayout.LineBreak
 import javax.swing.JButton
 import net.scran24.dbtool.portion.AsServedPortionSizeEditor
 import java.awt.SystemColor
-import net.scran24.fooddef.AsServedSet
+import uk.ac.ncl.openlab.intake24.AsServedSet
 import net.scran24.dbtool.portion.GuidePortionSizeEditor
-import net.scran24.fooddef.GuideImage
+import uk.ac.ncl.openlab.intake24.GuideImage
 import net.scran24.dbtool.portion.DrinkScalePortionSizeEditor
-import net.scran24.fooddef.DrinkwareSet
+import uk.ac.ncl.openlab.intake24.DrinkwareSet
 import SwingUtil._
 import Util._
 import java.awt.BorderLayout
@@ -61,7 +61,7 @@ import net.scran24.dbtool.portion.MilkInHotDrinkPortionSizeEditor
 import javax.swing.JCheckBox
 import javax.swing.event.ChangeListener
 import javax.swing.event.ChangeEvent
-import net.scran24.fooddef.PortionSizeMethodParameter
+import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
 import java.awt.event.ActionEvent
 import java.awt.event.ActionListener
 

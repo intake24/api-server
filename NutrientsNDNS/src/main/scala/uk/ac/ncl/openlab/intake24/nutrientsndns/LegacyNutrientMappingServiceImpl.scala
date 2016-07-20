@@ -30,7 +30,7 @@ import uk.ac.ncl.openlab.intake24.services.NutrientMappingError
 
 @Singleton
 case class LegacyNutrientMappingServiceImpl @Inject() (tables: Map[String, NutrientTable]) extends NutrientMappingService {
-
+  
   private def legacyDescription(nutrientType: Nutrient) = nutrientType match {
     case Protein => NutrientDescription(Protein, "Protein", "g")
     case Fat => NutrientDescription(Fat, "Fat", "g")
@@ -65,7 +65,7 @@ case class LegacyNutrientMappingServiceImpl @Inject() (tables: Map[String, Nutri
   val log = LoggerFactory.getLogger(classOf[LegacyNutrientMappingServiceImpl])
 
   def nutrientsFor(table_id: String, record_id: String, weight: Double): Either[NutrientMappingError, Map[Nutrient, Double]] = tables.get(table_id) match {
-    case Some(table) => table.get(record_id) match {
+    case Some(table) => table.records.get(record_id) match {
       case Some(record) => Right(record.mapValues(v => v / 100.0 * weight))
       case None => Left(NutrientMappingError.RecordNotFound)
     }

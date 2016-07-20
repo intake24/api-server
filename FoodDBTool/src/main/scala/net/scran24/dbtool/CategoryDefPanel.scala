@@ -27,7 +27,7 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 package net.scran24.dbtool
 
 import javax.swing.JPanel
-import net.scran24.fooddef.Food
+
 import javax.swing.BoxLayout
 import javax.swing.JLabel
 import javax.swing.JTextField
@@ -43,17 +43,17 @@ import java.awt.event.ActionListener
 import javax.swing.BorderFactory
 import java.awt.event.ActionEvent
 import javax.swing.JOptionPane
-import net.scran24.fooddef.CategoryV2
+import uk.ac.ncl.openlab.intake24.CategoryV2
 import javax.swing.ImageIcon
 import SwingUtil._
-import net.scran24.fooddef.AsServedSet
-import net.scran24.fooddef.GuideImage
-import net.scran24.fooddef.DrinkwareSet
-import net.scran24.fooddef.PortionSizeMethod
+import uk.ac.ncl.openlab.intake24.AsServedSet
+import uk.ac.ncl.openlab.intake24.GuideImage
+import uk.ac.ncl.openlab.intake24.DrinkwareSet
+import uk.ac.ncl.openlab.intake24.PortionSizeMethod
 import javax.swing.JCheckBox
 import java.awt.event.ItemListener
 import java.awt.event.ItemEvent
-import net.scran24.fooddef.InheritableAttributes
+import uk.ac.ncl.openlab.intake24.InheritableAttributes
 import uk.ac.ncl.openlab.intake24.foodxml.CategoryDef
 import java.util.UUID
 
