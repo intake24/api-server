@@ -58,4 +58,6 @@ object Nutrient {
   // See https://github.com/mrvisser/sealerate for macro explanation
   
   def types: Set[Nutrient] = sealerate.values[Nutrient]
+  
+  def for_id(id: Int) = types.find(_.id == id)
 }
