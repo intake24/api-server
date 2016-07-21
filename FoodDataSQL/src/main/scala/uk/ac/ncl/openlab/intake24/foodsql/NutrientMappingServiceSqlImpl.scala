@@ -26,7 +26,7 @@ class NutrientMappingServiceSqlImpl @Inject() (@Named("intake24_foods") val data
         }
   }
 
-  private case class NutrientsRow(id: Int, units_per_100g: Double)
+  private case class NutrientsRow(nutrient_type_id: Int, units_per_100g: Double)
 
   def nutrientsFor(table_id: String, record_id: String, weight: Double): Either[NutrientMappingError, Map[Nutrient, Double]] = tryWithConnection {
     implicit conn =>
@@ -37,7 +37,7 @@ class NutrientMappingServiceSqlImpl @Inject() (@Named("intake24_foods") val data
       if (rows.isEmpty)
         Left(NutrientMappingError.RecordNotFound)
       else
-        Right(rows.map(row => (Nutrient.for_id(row.id).get -> (weight * row.units_per_100g / 100.0))).toMap)
+        Right(rows.map(row => (Nutrient.for_id(row.nutrient_type_id).get -> (weight * row.units_per_100g / 100.0))).toMap)
   }
 
 }

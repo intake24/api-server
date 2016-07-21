@@ -235,8 +235,11 @@ public class DownloadSurveyDataService extends HttpServlet {
 							row.add(missingFoodPortionSize);
 							row.add(missingFoodLeftovers);
 
-							for (Nutrient n : scala.collection.JavaConverters.setAsJavaSetConverter(Nutrient$.MODULE$.types()).asJava())
-								row.add(String.format("%.2f", food.nutrients.get(n.key())));
+							for (Nutrient n : scala.collection.JavaConverters.setAsJavaSetConverter(Nutrient$.MODULE$.types()).asJava())								
+								if (food.nutrients.containsKey(n.key())) 
+									row.add(String.format("%.2f", food.nutrients.get(n.key())));
+								else
+									row.add("N/A");
 
 							writer.writeNext(row.toArray(new String[row.size()]));
 							foodId++;

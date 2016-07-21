@@ -48,7 +48,7 @@ trait FoodDataSqlImpl extends SqlDataService {
 
   private case class FoodRow(code: String, local_description: Option[String], prototype_description: Option[String], food_group_id: Long)
 
-  private case class NutrientTableRow(nutrient_table_id: String, nutrient_table_code: String)
+  private case class NutrientTableRow(nutrient_table_id: String, nutrient_table_record_id: String)
 
   private val psmResultRowParser = Macro.namedParser[PsmResultRow]
 
@@ -145,7 +145,7 @@ trait FoodDataSqlImpl extends SqlDataService {
   }
 
   private def localNutrientTableCodes(code: String, locale: String)(implicit conn: Connection) = {
-    SQL("""SELECT nutrient_table_id, nutrient_table_code FROM foods_nutrient_tables WHERE food_code = {food_code} AND locale_id = {locale_id}""")
+    SQL("""SELECT nutrient_table_id, nutrient_table_record_id FROM foods_nutrient_mapping WHERE food_code = {food_code} AND locale_id = {locale_id}""")
       .on('food_code -> code, 'locale_id -> locale)
       .as(Macro.namedParser[NutrientTableRow].*).map {
         case NutrientTableRow(id, code) => (id -> code)
