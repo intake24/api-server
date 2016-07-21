@@ -7,7 +7,7 @@ import au.com.bytecode.opencsv.CSVWriter
 import java.io.File
 import java.io.FileWriter
 
-object StandardiseUnits extends App {
+object StandardiseUnitsPrepare extends App {
 
   case class UnitReference(unitName: String, foodName: String, foodCode: String)
 
