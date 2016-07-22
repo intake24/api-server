@@ -29,7 +29,7 @@ object StandardiseUnitsApply extends App {
   val reader = new CSVReader(new FileReader(new File(csvPath)))
   
   
-  def convertToIdentifier(s: String) = s.replaceAll(" ", "_").replaceAll("\\(", "").replaceAll("\\)", "").replaceAll("\\/", "_").replaceAll("-","_")
+  def convertToIdentifier(s: String) = s.replaceAll(" ", "_").replaceAll("\\(", "").replaceAll("\\)", "").replaceAll("\\/", "_").replaceAll("-","_").replaceAll("^1", "one")
 
   val unitMap = reader.readAll().toSeq.foldLeft(Map[String, ReplacementUnit]()) {
     (acc, row) =>
@@ -45,17 +45,28 @@ object StandardiseUnitsApply extends App {
   val unique_ids = unitMap.values.toSeq.map(_.unit_id).distinct
   
   val w1 = new CSVWriter(new FileWriter(new File("/home/ivan/tmp/standard_unit_translation.csv")))
+  val w2 = new PrintWriter(new File("/home/ivan/tmp/standard_unit_java_template.java"));
+  val w3 = new PrintWriter(new File("/home/ivan/tmp/standard_unit_properties.properties"));
   
   w1.writeNext(Array("Unit identifier", "English unit name", "Translated unit name, locative", "Translated unit name, genitive"))
   w1.writeNext(Array("", "", "E.g.: estimate in small bags", "E.g.: how many small bags"))
   
   unique_ids.sorted.foreach { 
     x => 
-      w1.writeNext(Array(convertToIdentifier(x), x, "", ""))
+      val id = convertToIdentifier(x)
+      w1.writeNext(Array(id, x, "", ""))
+      w2.println(s"public String ${id}_locative();")
+      w2.println(s"public String ${id}_genitive();")
+      w2.println()
+      w3.println(s"${id}_locative = $x")
+      w3.println(s"${id}_genitive = $x")
+      w3.println()
   }
   
   w1.close()
-
+  w2.close()
+  w3.close()
+  
   def replaceUnits(params: Seq[PortionSizeMethodParameter]) = {
     val count = params.find(_.name == "units-count").get.value.toInt
 
@@ -71,7 +82,7 @@ object StandardiseUnitsApply extends App {
       unit =>
         unitMap.get(unit.description).map {
           repl =>
-            StandardUnit(repl.unit_id, repl.omitFoodDescription, unit.weight)
+            StandardUnit(convertToIdentifier(repl.unit_id), repl.omitFoodDescription, unit.weight)
         }
     }
 

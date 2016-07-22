@@ -33,6 +33,7 @@ import static net.scran24.user.client.survey.portionsize.experimental.PortionSiz
 
 import java.util.List;
 
+import net.scran24.user.client.survey.StandardUnits;
 import net.scran24.user.client.survey.flat.PromptUtil;
 import net.scran24.user.client.survey.flat.SimplePrompt;
 import net.scran24.user.client.survey.prompts.messages.PromptMessages;
@@ -42,15 +43,15 @@ import org.pcollections.client.PMap;
 import org.workcraft.gwt.shared.client.Function1;
 import org.workcraft.gwt.shared.client.Option;
 
-import com.google.gwt.core.shared.GWT;
 import com.google.gwt.safehtml.shared.SafeHtmlUtils;
 
 public class StandardPortionScript implements PortionSizeScript {
 	public static final String name = "standard-portion";
 	public final List<StandardUnitDef> units;
 	
-	private final PromptMessages messages = GWT.create(PromptMessages.class);
-
+	private final static PromptMessages messages = PromptMessages.Util.getInstance();
+	private final static StandardUnits unitNames = StandardUnits.Util.getInstance();
+	
 	public StandardPortionScript(List<StandardUnitDef> units) {
 		this.units = units;
 	}
@@ -60,9 +61,9 @@ public class StandardPortionScript implements PortionSizeScript {
 		StandardUnitDef unit = units.get(unitChoice); 
 		
 		if (unit.omitFoodDesc)
-			message = messages.standardUnit_quantityPromptText_omitFood(SafeHtmlUtils.htmlEscape(unit.name));
+			message = messages.standardUnit_quantityPromptText_omitFood(SafeHtmlUtils.htmlEscape(unitNames.getString(unit.name + "_genitive")));
 		else
-			message = messages.standardUnit_quantityPromptText_includeFood(SafeHtmlUtils.htmlEscape(unit.name), SafeHtmlUtils.htmlEscape(foodDesc.toLowerCase()));
+			message = messages.standardUnit_quantityPromptText_includeFood(SafeHtmlUtils.htmlEscape(unitNames.getString(unit.name + "_genitive")), SafeHtmlUtils.htmlEscape(foodDesc.toLowerCase()));
 		
 		
 		return Option.some(withBackLink(PromptUtil.map(
@@ -92,7 +93,7 @@ public class StandardPortionScript implements PortionSizeScript {
 						SafeHtmlUtils.fromSafeConstant(messages.standardUnit_unitChoicePromptText()), messages.standardUnit_unitChoiceContinueButtonLabel(), units, new Function1<StandardUnitDef, String>() {
 							@Override
 							public String apply(StandardUnitDef argument) {
-								return messages.standardUnit_choiceLabel(SafeHtmlUtils.htmlEscape(argument.name.toLowerCase()));							
+								return messages.standardUnit_choiceLabel(SafeHtmlUtils.htmlEscape(unitNames.getString(argument.name + "_locative")));
 						}},"unit-choice")));
 			else
 				return mkQuantityPrompt(data, 0, foodData.description());
