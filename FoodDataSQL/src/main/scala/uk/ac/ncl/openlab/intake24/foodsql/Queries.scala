@@ -55,7 +55,7 @@ object Queries {
  
   val categoriesDelete = """DELETE FROM categories WHERE code={category_code}"""
   
-  val categoriesLocalInsert = """INSERT INTO categories_local VALUES({category_code}, {locale_id}, {local_description}, {do_not_use}, {version}::uuid)"""
+  val categoriesLocalInsert = """INSERT INTO categories_local VALUES({category_code}, {locale_id}, {local_description}, {version}::uuid)"""
   
   val categoriesLocalUpdate = """UPDATE categories_local SET version = {new_version}::uuid, local_description = {local_description} WHERE category_code = {category_code} AND locale_id = {locale_id} AND version = {base_version}::uuid"""
   

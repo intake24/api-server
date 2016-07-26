@@ -71,6 +71,10 @@ object PortugueseImport extends App with WarningMessage with DatabaseConnection 
   val usePt = usePtReader.readAll().tail.map(row => row(0) -> (row(7), row(9))).toMap
 
   usePtReader.close()
+  
+  val categoryReader = new CSVReader(new FileReader(options.csvPath() + "/categories.csv"))
+  
+  val categories = categoryReader.readAll().tail.map(row => row(0) -> row(2))
 
   val indexableFoods = indexDataService.indexableFoods(baseLocaleCode)
   
@@ -102,6 +106,17 @@ object PortugueseImport extends App with WarningMessage with DatabaseConnection 
           }
         }
         case _ => throw new RuntimeException(s"Could not retrieve food definition for ${header.localDescription} (${header.code})")
+      }
+  }
+  
+  categories.foreach {
+    case (code, translation) =>
+      dataService.categoryRecord(code, portugueseLocaleCode) match {
+        case Right(record) => {
+          val localData = record.local
+          dataService.updateCategoryLocal(code, portugueseLocaleCode, localData.copy(localDescription = Some(translation)))
+        }
+        case _ => throw new RuntimeException(s"Could not retrieve category record for ${code}")
       }
   }
 }

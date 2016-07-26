@@ -236,25 +236,12 @@ CREATE TABLE categories_local
   category_code character varying(8) NOT NULL,
   locale_id character varying(16) NOT NULL,
   local_description character varying(128) NOT NULL,
-	do_not_use boolean NOT NULL DEFAULT false,
   version uuid NOT NULL,
 
   CONSTRAINT categories_local_pk PRIMARY KEY(category_code, locale_id),
   CONSTRAINT categories_local_category_code_fk FOREIGN KEY(category_code)
     REFERENCES categories(code) ON UPDATE CASCADE ON DELETE CASCADE,
   CONSTRAINT categories_local_locale_id_fk FOREIGN KEY (locale_id)
-    REFERENCES locales(id) ON UPDATE CASCADE ON DELETE CASCADE
-);
-
-CREATE TABLE categories_restrictions
-(
-  category_code character varying(8) NOT NULL,
-  locale_id character varying(16) NOT NULL,
-
-  CONSTRAINT categories_restrictions_pk PRIMARY KEY (category_code, locale_id),
-  CONSTRAINT categories_restrictions_food_code_fk FOREIGN KEY (category_code)
-    REFERENCES categories(code) ON UPDATE CASCADE ON DELETE CASCADE,
-  CONSTRAINT categories_restrictions_locale_id_fk FOREIGN KEY (locale_id)
     REFERENCES locales(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 

@@ -190,7 +190,7 @@ class XmlImporter(implicit val dbConn: Connection) {
       BatchSql(Queries.categoriesInsert, categoryParams).execute()
 
       val localCategoryParams =
-        categories.map(c => Seq[NamedParameter]('category_code -> c.code, 'locale_id -> defaultLocale, 'local_description -> c.description, 'do_not_use -> false, 'version -> UUID.randomUUID()))
+        categories.map(c => Seq[NamedParameter]('category_code -> c.code, 'locale_id -> defaultLocale, 'local_description -> c.description, 'version -> UUID.randomUUID()))
 
       BatchSql(Queries.categoriesLocalInsert, localCategoryParams).execute()
 
@@ -504,6 +504,8 @@ object XmlImport extends App with WarningMessage with DatabaseConnection {
   val options = new ScallopConf(args) with Options with DatabaseOptions
   
   options.afterInit()
+  
+  displayWarningMessage("THIS WILL DESTROY ALL FOOD AND CATEGORY RECORDS IN THE DATABASE!")
   
   val dataSource = getDataSource(options)
       
