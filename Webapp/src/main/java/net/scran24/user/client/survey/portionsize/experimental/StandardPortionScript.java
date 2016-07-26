@@ -61,9 +61,9 @@ public class StandardPortionScript implements PortionSizeScript {
 		StandardUnitDef unit = units.get(unitChoice); 
 		
 		if (unit.omitFoodDesc)
-			message = messages.standardUnit_quantityPromptText_omitFood(SafeHtmlUtils.htmlEscape(unitNames.getString(unit.name + "_genitive")));
+			message = messages.standardUnit_quantityPromptText_omitFood(SafeHtmlUtils.htmlEscape(unitNames.getString(unit.name + "_how_many")));
 		else
-			message = messages.standardUnit_quantityPromptText_includeFood(SafeHtmlUtils.htmlEscape(unitNames.getString(unit.name + "_genitive")), SafeHtmlUtils.htmlEscape(foodDesc.toLowerCase()));
+			message = messages.standardUnit_quantityPromptText_includeFood(SafeHtmlUtils.htmlEscape(unitNames.getString(unit.name + "_how_many")), SafeHtmlUtils.htmlEscape(foodDesc.toLowerCase()));
 		
 		
 		return Option.some(withBackLink(PromptUtil.map(
@@ -93,7 +93,7 @@ public class StandardPortionScript implements PortionSizeScript {
 						SafeHtmlUtils.fromSafeConstant(messages.standardUnit_unitChoicePromptText()), messages.standardUnit_unitChoiceContinueButtonLabel(), units, new Function1<StandardUnitDef, String>() {
 							@Override
 							public String apply(StandardUnitDef argument) {
-								return messages.standardUnit_choiceLabel(SafeHtmlUtils.htmlEscape(unitNames.getString(argument.name + "_locative")));
+								return messages.standardUnit_choiceLabel(SafeHtmlUtils.htmlEscape(unitNames.getString(argument.name + "_estimate_in")));
 						}},"unit-choice")));
 			else
 				return mkQuantityPrompt(data, 0, foodData.description());

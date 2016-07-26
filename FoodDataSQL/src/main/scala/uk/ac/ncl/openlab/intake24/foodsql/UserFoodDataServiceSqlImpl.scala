@@ -57,16 +57,10 @@ class UserFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSou
 
   def categoryContents(code: String, locale: String) = tryWithConnection {
     implicit conn =>
-      val categoryAllowed = (SQL(categoryRestrictions).on('category_code -> code, 'locale_id -> locale).executeQuery().as(SqlParser.long(1).single) == 1)
-
-      if (!categoryAllowed)
-        Left(CodeError.UndefinedCode)
-      else {
         val foodRows = SQL(categoryContentsFoodsQuery).on('category_code -> code, 'locale_id -> locale).executeQuery().as(Macro.namedParser[CategoryContentsFoodRow].*)
         val categoryRows = SQL(categoryContentsSubcategoriesQuery).on('category_code -> code, 'locale_id -> locale).executeQuery().as(Macro.namedParser[CategoryContentsCategoryRow].*)
         
-        Right(UserCategoryContents(foodRows.map(row => UserFoodHeader(row.food_code, row.local_description)), categoryRows.map(row => UserCategoryHeader(row.subcategory_code, row.local_description))))
-      }
+        Right(UserCategoryContents(foodRows.map(row => UserFoodHeader(row.food_code, row.local_description)), categoryRows.map(row => UserCategoryHeader(row.subcategory_code, row.local_description))))      
   }
 
   case class AssociatedFoodPromptsRow(category_code: Option[String], text: Option[String], link_as_main: Option[Boolean], generic_name: Option[String], locale_id: Option[String])

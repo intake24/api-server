@@ -55,11 +55,11 @@ object StandardiseUnitsApply extends App {
     x => 
       val id = convertToIdentifier(x)
       w1.writeNext(Array(id, x, "", ""))
-      w2.println(s"public String ${id}_locative();")
-      w2.println(s"public String ${id}_genitive();")
+      w2.println(s"public String ${id}_estimate_in();")
+      w2.println(s"public String ${id}_how_many();")
       w2.println()
-      w3.println(s"${id}_locative = $x")
-      w3.println(s"${id}_genitive = $x")
+      w3.println(s"${id}_estimate_in = $x")
+      w3.println(s"${id}_how_many = How many $x")
       w3.println()
   }
   
