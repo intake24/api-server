@@ -46,12 +46,13 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 	<extend-property name="locale" values="en_GB" />
 	<extend-property name="locale" values="pt_PT" />
+	<extend-property name="locale" values="da_DK" />
 
 	<set-property-fallback name="locale" value="en_GB" />
 
 <!-- required to get rid of default locale,   
      see  https://github.com/gwtproject/gwt/issues/5768 -->
-	<set-property name="locale" value="en_GB, pt_PT" /> <!--  ,ar_AE -->  
+	<set-property name="locale" value="en_GB, pt_PT, da_DK" /> <!--  ,ar_AE -->  
 
 	<source path='client' />
 	<source path='shared' />
