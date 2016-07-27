@@ -165,9 +165,9 @@ CREATE TABLE foods_nutrient_mapping
   CONSTRAINT foods_nutrient_tables_locale_id_fk FOREIGN KEY (locale_id)
     REFERENCES locales(id) ON UPDATE CASCADE ON DELETE CASCADE,
   CONSTRAINT foods_nutrient_tables_nutrient_table_id_fk FOREIGN KEY (nutrient_table_id)
-    REFERENCES nutrient_tables(id),
+    REFERENCES nutrient_tables(id) ON UPDATE CASCADE ON DELETE CASCADE,
 	CONSTRAINT foods_nutrient_tables_nutrient_table_record_fk FOREIGN KEY(nutrient_table_record_id, nutrient_table_id)
-		REFERENCES nutrient_table_records(id, nutrient_table_id)
+		REFERENCES nutrient_table_records(id, nutrient_table_id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE TABLE foods_portion_size_methods
