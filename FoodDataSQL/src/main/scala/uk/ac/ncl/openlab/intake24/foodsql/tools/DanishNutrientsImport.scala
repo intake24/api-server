@@ -10,16 +10,18 @@ import uk.ac.ncl.openlab.intake24.nutrients._
 import uk.ac.ncl.openlab.intake24.nutrientsndns.CsvNutrientTableParser
 import uk.ac.ncl.openlab.intake24.nutrientsndns.CsvNutrientTableMapping
 
-object PortugueseNutrientsImport extends App with WarningMessage with DatabaseConnection {
+object DanishNutrientsImport extends App with WarningMessage with DatabaseConnection {
 
-  val ptTableCode = "PT_INSA"
-  val ptTableDescription = "Portuguese Food Composition Table (INSA)"
+  val dkTableCode = "DK_DTU"
+  val dkTableDescription = "Danish Food Composition Table (DTU)"
   
   import CsvNutrientTableParser.{ excelColumnToOffset => col, parseTable }  
   
-  val csvIdColumnOffset = 0
+  val csvIdColumnOffset = 2
   
-  val csvRowOffset = 3
+  val csvRowOffset = 2
+  
+  // Junk data for now
   
   def tableMapping(nutrient: Nutrient): Option[Int] = nutrient match {
     case Protein => Some(col("H"))
@@ -66,15 +68,15 @@ object PortugueseNutrientsImport extends App with WarningMessage with DatabaseCo
 
   val nutrientTableService = new NutrientDataManagementSqlImpl(dataSource)
 
-  nutrientTableService.deleteNutrientTable(ptTableCode)
+  nutrientTableService.deleteNutrientTable(dkTableCode)
 
-  nutrientTableService.createNutrientTable(NutrientTable(ptTableCode, ptTableDescription))
+  nutrientTableService.createNutrientTable(NutrientTable(dkTableCode, dkTableDescription))
 
   val table = CsvNutrientTableParser.parseTable(options.csvPath(), CsvNutrientTableMapping(csvRowOffset, csvIdColumnOffset, tableMapping))
 
   val records = table.records.map {
     case (code, nmap) =>
-      NutrientTableRecord(ptTableCode, code, nmap)
+      NutrientTableRecord(dkTableCode, code, nmap)
   }.toSeq
 
   nutrientTableService.createNutrientTableRecords(records)

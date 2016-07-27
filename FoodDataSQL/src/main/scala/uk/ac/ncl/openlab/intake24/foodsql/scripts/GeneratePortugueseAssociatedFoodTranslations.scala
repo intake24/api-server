@@ -25,7 +25,7 @@ object GeneratePortugueseAssociatedFoodTranslations extends App with DatabaseScr
     foodHeader =>
       dataService.associatedFoods(foodHeader.code, baseLocaleCode) match {
         case Right(prompts) => prompts.toArray.map {
-          prompt => Array(foodHeader.code, prompt.category, baseLocaleFoods(foodHeader.code).localDescription, foodHeader.localDescription, prompt.promptText, "", prompt.genericName, "")
+          prompt => Array(foodHeader.code, prompt.category, prompt.linkAsMain.toString, baseLocaleFoods(foodHeader.code).localDescription, foodHeader.localDescription, prompt.promptText, "", prompt.genericName, "")
         }
         
         case _ => throw new RuntimeException("Failed to associated foods data for " + foodHeader.code)
@@ -35,7 +35,8 @@ object GeneratePortugueseAssociatedFoodTranslations extends App with DatabaseScr
   
   val csv = new CSVWriter(new FileWriter("/home/ivan/Projects/Intake24/recoding/Portuguese/associated_food_prompts_010716.csv"))
     
-  csv.writeNext(Array("Food code", "Associated food or category", "English food description", "Portuguese food description", "English prompt text", "Portuguese prompt text", "English generic food name", "Portuguese generic food name"))
+  csv.writeNext(Array("Food code", "Associated food or category", "Link as main", "English food description", "Portuguese food description", "English prompt text", "Portuguese prompt text", "English generic food name", "Portuguese generic food name"))
   csv.writeAll(csvRows)
+  csv.close()
     
 }

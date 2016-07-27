@@ -21,13 +21,12 @@ import uk.ac.ncl.openlab.intake24.NutrientTable
 import java.util.Properties
 import java.io.PrintWriter
 import com.zaxxer.hikari.HikariConfig
-import uk.ac.ncl.openlab.intake24.AssociatedFood
 
-object PortugueseFoodsImport extends App with WarningMessage with DatabaseConnection {
+object DanishFoodsImport extends App with WarningMessage with DatabaseConnection {
 
   val portugueseLocaleCode = "pt_PT"
   val baseLocaleCode = "en_GB"
-  val portugueseNutrientTableCode = "PT_INSA"
+  val portugueseNutrientTableCode = "PT"
   
   val logger = LoggerFactory.getLogger(getClass)
 
@@ -76,23 +75,6 @@ object PortugueseFoodsImport extends App with WarningMessage with DatabaseConnec
   val categoryReader = new CSVReader(new FileReader(options.csvPath() + "/categories.csv"))
   
   val categories = categoryReader.readAll().tail.map(row => row(0) -> row(2))
-  
-  val associatedFoodsReader = new CSVReader(new FileReader(options.csvPath() + "/pt_food_prompts2.csv"))
-  
-  val associatedFoods = associatedFoodsReader.readAll().foldLeft(Map[String, Seq[AssociatedFood]]()) {
-    (m, row) =>
-      val foodCode = row(0)
-      val assocCode = row(1)
-      val linkAsMain = row(2).toBoolean
-      val text = row(6)
-      val genericName = row(7)
-      
-      text match {
-        case "N/A" => m
-        case "" => m 
-        case _ => m + (foodCode -> (m.get(foodCode).getOrElse(Seq()) :+ AssociatedFood(assocCode, text, linkAsMain, genericName))) 
-      }
-  }
 
   val indexableFoods = indexDataService.indexableFoods(baseLocaleCode)
   
@@ -106,7 +88,7 @@ object PortugueseFoodsImport extends App with WarningMessage with DatabaseConnec
 
           if (doNotUseCodes.contains(header.code)) {
             println(s""","Not using in Portuguese locale"""")
-            dataService.updateFoodLocal(header.code, portugueseLocaleCode, localData.copy(doNotUse = true))            
+            dataService.updateFoodLocal(header.code, portugueseLocaleCode, localData.copy(doNotUse = true))
           } else useUk.get(header.code) match {
             case Some(portugueseDescription) => {
               println(s""","Inheriting UK food database code", "$portugueseDescription"""")
@@ -121,14 +103,6 @@ object PortugueseFoodsImport extends App with WarningMessage with DatabaseConnec
                 println(""","Not in Portuguese recoding tables!"""")
               }
             }
-          }
-          
-          if (!doNotUseCodes.contains(header.code)) {
-            associatedFoods.get(header.code) match {
-              case Some(prompts) =>
-                dataService.updateAssociatedFoods(header.code, portugueseLocaleCode, prompts)
-              case None => ()
-            }            
           }
         }
         case _ => throw new RuntimeException(s"Could not retrieve food definition for ${header.localDescription} (${header.code})")
