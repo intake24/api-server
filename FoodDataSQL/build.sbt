@@ -35,7 +35,9 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "anorm" % "2.5.0",
   "org.slf4j" % "slf4j-api" % "1.7.12",
   "org.slf4j" % "slf4j-simple" % "1.7.12", 
-  "com.lihaoyi" %% "upickle" % "0.3.4",
+  "com.lihaoyi" %% "upickle" % "0.3.4",  
   "org.scalatest" %% "scalatest" % "2.2.5" % "test",
-  "org.rogach" %% "scallop" % "0.9.5"
+  "org.rogach" %% "scallop" % "0.9.5",  
+  "org.apache.poi" % "poi-ooxml" % "3.9"
+
 )

@@ -1,4 +1,4 @@
-package uk.ac.ncl.openlab.intake24.foodsql.tools
+package uk.ac.ncl.openlab.intake24.foodsql.tools.localisation
 
 import org.slf4j.LoggerFactory
 import org.rogach.scallop.ScallopConf
@@ -9,6 +9,10 @@ import uk.ac.ncl.openlab.intake24.NutrientTableRecord
 import uk.ac.ncl.openlab.intake24.nutrients._
 import uk.ac.ncl.openlab.intake24.nutrientsndns.CsvNutrientTableParser
 import uk.ac.ncl.openlab.intake24.nutrientsndns.CsvNutrientTableMapping
+import com.google.inject.Inject
+import uk.ac.ncl.openlab.intake24.foodsql.tools.DatabaseConnection
+import uk.ac.ncl.openlab.intake24.foodsql.tools.DatabaseOptions
+import uk.ac.ncl.openlab.intake24.foodsql.tools.WarningMessage
 
 object DanishNutrientsImport extends App with WarningMessage with DatabaseConnection {
 
@@ -53,7 +57,7 @@ object DanishNutrientsImport extends App with WarningMessage with DatabaseConnec
   val logger = LoggerFactory.getLogger(getClass)
 
   trait Options extends ScallopConf {
-    version("Intake24 Portuguese food composition table import tool 16.7")
+    version("Intake24 Danish food composition table import tool 16.7")
 
     val csvPath = opt[String](required = true, noshort = true)
   }
@@ -62,7 +66,7 @@ object DanishNutrientsImport extends App with WarningMessage with DatabaseConnec
 
   options.afterInit()
 
-  displayWarningMessage("WARNING: THIS WILL DESTROY ALL FOOD RECORDS HAVING PT FOOD COMPOSITION CODES!")
+  displayWarningMessage("WARNING: THIS WILL DESTROY ALL FOOD RECORDS HAVING DK_DTU FOOD COMPOSITION CODES!")
 
   val dataSource = getDataSource(options)
 

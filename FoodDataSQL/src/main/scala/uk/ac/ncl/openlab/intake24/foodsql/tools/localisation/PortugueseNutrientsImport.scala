@@ -1,4 +1,4 @@
-package uk.ac.ncl.openlab.intake24.foodsql.tools
+package uk.ac.ncl.openlab.intake24.foodsql.tools.localisation
 
 import org.slf4j.LoggerFactory
 import org.rogach.scallop.ScallopConf
@@ -9,6 +9,10 @@ import uk.ac.ncl.openlab.intake24.NutrientTableRecord
 import uk.ac.ncl.openlab.intake24.nutrients._
 import uk.ac.ncl.openlab.intake24.nutrientsndns.CsvNutrientTableParser
 import uk.ac.ncl.openlab.intake24.nutrientsndns.CsvNutrientTableMapping
+import com.google.inject.Inject
+import uk.ac.ncl.openlab.intake24.foodsql.tools.DatabaseConnection
+import uk.ac.ncl.openlab.intake24.foodsql.tools.DatabaseOptions
+import uk.ac.ncl.openlab.intake24.foodsql.tools.WarningMessage
 
 object PortugueseNutrientsImport extends App with WarningMessage with DatabaseConnection {
 

@@ -1,17 +1,18 @@
-package uk.ac.ncl.openlab.intake24.foodsql.tools
+package uk.ac.ncl.openlab.intake24.foodsql.tools.localisation
 
 import org.rogach.scallop.ScallopConf
 import org.slf4j.LoggerFactory
-
 import com.google.inject.Inject
-
 import uk.ac.ncl.openlab.intake24.NutrientTable
 import uk.ac.ncl.openlab.intake24.NutrientTableRecord
 import uk.ac.ncl.openlab.intake24.foodsql.NutrientDataManagementSqlImpl
 import uk.ac.ncl.openlab.intake24.nutrientsndns.CsvNutrientTableParser
 import uk.ac.ncl.openlab.intake24.nutrientsndns.LegacyNutrientTables
+import uk.ac.ncl.openlab.intake24.foodsql.tools.DatabaseConnection
+import uk.ac.ncl.openlab.intake24.foodsql.tools.DatabaseOptions
+import uk.ac.ncl.openlab.intake24.foodsql.tools.WarningMessage
 
-object NzImport extends App with WarningMessage with DatabaseConnection {
+object NewZealandNutrientsImport extends App with WarningMessage with DatabaseConnection {
 
   val nzTableCode = "NZ"
   val nzTableDescription = "New Zealand Nutrient Database"
