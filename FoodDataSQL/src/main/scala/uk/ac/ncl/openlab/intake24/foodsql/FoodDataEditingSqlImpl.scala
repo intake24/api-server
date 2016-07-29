@@ -464,14 +464,17 @@ trait FoodDataEditingSqlImpl extends SqlDataService {
       try {
         conn.setAutoCommit(false)
 
-        SQL("DELETE FROM associated_food_prompts WHERE food_code={food_code} AND locale_id={locale_id}").execute()
+        SQL("DELETE FROM associated_food_prompts WHERE food_code={food_code} AND locale_id={locale_id}")
+        .on('food_code -> foodCode, 'locale_id -> locale)
+        .execute()
 
         if (foods.nonEmpty) {
 
           val params = foods.map(p => Seq[NamedParameter]('food_code -> foodCode, 'locale_id -> locale, 'category_code -> p.category, 'text -> p.promptText,
             'link_as_main -> p.linkAsMain, 'generic_name -> p.genericName))
 
-          BatchSql("INSERT INTO associated_food_prompts VALUES (DEFAULT, {food_code}, {locale_id}, {category_code}, {text}, {link_as_main}, {generic_name})").execute()
+          BatchSql("INSERT INTO associated_food_prompts VALUES (DEFAULT, {food_code}, {locale_id}, {category_code}, {text}, {link_as_main}, {generic_name})", params)
+          .execute()
         }
 
         conn.commit()
