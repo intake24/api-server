@@ -18,16 +18,11 @@ limitations under the License.
 
 package net.scran24.user.server.services;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import net.scran24.datastore.DataStore;
-
-import org.workcraft.gwt.shared.client.Pair;
-
 import scala.concurrent.duration.Duration;
 import scala.runtime.AbstractFunction0;
 import uk.ac.ncl.openlab.intake24.datastoresql.DataStoreJavaAdapter;
@@ -44,6 +39,8 @@ import uk.ac.ncl.openlab.intake24.services.UserFoodDataService;
 import uk.ac.ncl.openlab.intake24.services.foodindex.AbstractFoodIndex;
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex;
 import uk.ac.ncl.openlab.intake24.services.foodindex.Splitter;
+import uk.ac.ncl.openlab.intake24.services.foodindex.danish.FoodIndexImpl_da_DK;
+import uk.ac.ncl.openlab.intake24.services.foodindex.danish.SplitterImpl_da_DK;
 import uk.ac.ncl.openlab.intake24.services.foodindex.english.FoodIndexImpl_en_GB;
 import uk.ac.ncl.openlab.intake24.services.foodindex.english.SplitterImpl_en_GB;
 import uk.ac.ncl.openlab.intake24.services.foodindex.portuguese.FoodIndexImpl_pt_PT;
@@ -83,6 +80,14 @@ public class SqlConfig extends AbstractModule {
 				return new FoodIndexImpl_pt_PT(foodDataService);
 			}
 		}, Duration.create(30, TimeUnit.MINUTES), Duration.create(60, TimeUnit.MINUTES), "Portuguese"));
+		
+		result.put("da_DK", new AutoReloadIndex(new AbstractFunction0<AbstractFoodIndex>() {
+			@Override
+			public AbstractFoodIndex apply() {
+				return new FoodIndexImpl_da_DK(foodDataService);
+			}
+		}, Duration.create(30, TimeUnit.MINUTES), Duration.create(60, TimeUnit.MINUTES), "Danish"));
+		
 
 		return result;
 	}
@@ -95,6 +100,7 @@ public class SqlConfig extends AbstractModule {
 		Map<String, Splitter> result = new HashMap<String, Splitter>();
 		result.put("en_GB", new SplitterImpl_en_GB(foodDataService));
 		result.put("pt_PT", new SplitterImpl_pt_PT(foodDataService));
+		result.put("da_DK", new SplitterImpl_da_DK(foodDataService));
 		return result;
 	}
 	
