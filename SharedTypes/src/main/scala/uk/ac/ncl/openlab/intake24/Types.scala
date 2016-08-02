@@ -144,6 +144,8 @@ case class AssociatedFoodV1 (category: String, promptText: String, linkAsMain: B
 
 case class AssociatedFoodRecord (foodOrCategoryCode: Either[String, String], promptText: String, linkAsMain: Boolean, genericName: String)
 
+case class UserAssociatedFood (foodOrCategory: Either[UserFoodHeader, UserCategoryHeader], promptText: String, linkAsMain: Boolean, genericName: String)
+
 case class FoodGroup (id: Int, englishDescription: String, localDescription: Option[String]) {
   override def toString = id.toString + ". " + englishDescription
 }

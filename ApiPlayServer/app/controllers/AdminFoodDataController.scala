@@ -28,7 +28,6 @@ import play.api.mvc.Action
 import play.api.mvc.Controller
 import play.api.mvc.Result
 import security.Roles
-
 import uk.ac.ncl.openlab.intake24.MainCategoryRecord
 import uk.ac.ncl.openlab.intake24.LocalCategoryRecord
 import uk.ac.ncl.openlab.intake24.MainFoodRecord
@@ -43,16 +42,17 @@ import uk.ac.ncl.openlab.intake24.services.UpdateResult
 import uk.ac.ncl.openlab.intake24.services.VersionConflict
 import uk.ac.ncl.openlab.intake24.LocalFoodRecord
 import uk.ac.ncl.openlab.intake24.services.UserFoodDataService
-import models.AdminFoodRecord
+
 import models.AdminCategoryRecord
+import models.AdminFoodRecord
 
 import upickle.default.write
-import upickle.default.read 
-
+import upickle.default.read
 import uk.ac.ncl.openlab.intake24.AssociatedFoodRecord
 import uk.ac.ncl.openlab.intake24.UserFoodHeader
 import uk.ac.ncl.openlab.intake24.UserCategoryHeader
-import uk.ac.ncl.openlab.intake24.huh.UserAssociatedFood
+import uk.ac.ncl.openlab.intake24.UserAssociatedFood
+
 
 class AdminFoodDataController @Inject() (service: AdminFoodDataService, userService: UserFoodDataService, deadbolt: DeadboltActions) extends Controller with PickleErrorHandler {
 
@@ -87,24 +87,13 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, userServ
     }
   }
   
-  case class Bozo(main: MainFoodRecord, local: LocalFoodRecord, brands: Seq[String], associatedFoods: Seq[UserAssociatedFood])
-  
-  case class Qwe(x: Int)
-  
-  case class Test (foodOrCategory: Either[UserFoodHeader, UserCategoryHeader], promptText: String, linkAsMain: Boolean, genericName: String)
-  
-  case class Kozo(local: LocalFoodRecord, main: MainFoodRecord, brands: Seq[String], associatedFoods: Seq[UserAssociatedFood])
-
   def foodRecord(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       val result = for {
         record <- service.foodRecord(code, locale).right
-        brandNames <- userService.brandNames(code, locale).right
+        brandNames <- userService.brandNames(code, locale).right 
         associatedFoods <- userService.associatedFoods(code, locale).right
       } yield AdminFoodRecord(record.main, record.local, brandNames, associatedFoods)
-      
-      val t = Kozo(null, null, null, null)
-      val w = write(t)
       
       result match {
         case Left(CodeError.UndefinedCode) => NotFound
