@@ -40,7 +40,7 @@ import uk.ac.ncl.openlab.intake24.services.CodeError
 
 @Singleton
 class UserFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends UserFoodDataService
-    with SqlDataService with FoodDataSqlImpl with PortionSizeDataSqlImpl {
+    with SqlDataService with FoodDataSqlImpl with PortionSizeDataSqlImpl with AssociatedFoodsReader {
 
   import UserFoodDataServiceSqlImpl._
 
@@ -57,43 +57,17 @@ class UserFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSou
 
   def categoryContents(code: String, locale: String) = tryWithConnection {
     implicit conn =>
-        val foodRows = SQL(categoryContentsFoodsQuery).on('category_code -> code, 'locale_id -> locale).executeQuery().as(Macro.namedParser[CategoryContentsFoodRow].*)
-        val categoryRows = SQL(categoryContentsSubcategoriesQuery).on('category_code -> code, 'locale_id -> locale).executeQuery().as(Macro.namedParser[CategoryContentsCategoryRow].*)
-        
-        Right(UserCategoryContents(foodRows.map(row => UserFoodHeader(row.food_code, row.local_description)), categoryRows.map(row => UserCategoryHeader(row.subcategory_code, row.local_description))))      
+      val foodRows = SQL(categoryContentsFoodsQuery).on('category_code -> code, 'locale_id -> locale).executeQuery().as(Macro.namedParser[CategoryContentsFoodRow].*)
+      val categoryRows = SQL(categoryContentsSubcategoriesQuery).on('category_code -> code, 'locale_id -> locale).executeQuery().as(Macro.namedParser[CategoryContentsCategoryRow].*)
+
+      Right(UserCategoryContents(foodRows.map(row => UserFoodHeader(row.food_code, row.local_description)), categoryRows.map(row => UserCategoryHeader(row.subcategory_code, row.local_description))))
   }
+  
+  
+  def associatedFoods(foodCode: String, locale: String) = associatedFoodsImpl(foodCode, locale, true)
 
-  case class AssociatedFoodPromptsRow(category_code: Option[String], text: Option[String], link_as_main: Option[Boolean], generic_name: Option[String], locale_id: Option[String])
 
-  def associatedFoods(foodCode: String, locale: String): Either[CodeError, Seq[AssociatedFood]] = tryWithConnection {
-    implicit conn =>
-      val query =
-        """|SELECT category_code, text, link_as_main, generic_name, locale_id
-           |FROM foods
-	         |  LEFT JOIN associated_food_prompts 
-		       |    ON foods.code = associated_food_prompts.food_code
-           |WHERE 
-           |  foods.code = {food_code} 
-           |  AND (locale_id = {locale_id} OR locale_id IS NULL OR locale_id IN (SELECT prototype_locale_id FROM locales WHERE id = {locale_id})) 
-           |ORDER BY id""".stripMargin
-
-      val rows = SQL(query).on('food_code -> foodCode, 'locale_id -> locale).executeQuery().as(Macro.namedParser[AssociatedFoodPromptsRow].*)
-
-      def mkPrompt(row: AssociatedFoodPromptsRow) = AssociatedFood(row.category_code.get, row.text.get, row.link_as_main.get, row.generic_name.get)
-
-      if (rows.isEmpty)
-        Left(CodeError.UndefinedCode)
-      else if (rows.head.category_code.isEmpty)
-        Right(Seq())
-      else {
-        val (local, prototype) = rows.partition(_.locale_id.get == locale)
-
-        if (local.nonEmpty)
-          Right(local.map(mkPrompt))
-        else
-          Right(prototype.map(mkPrompt))
-      }
-  }
+ 
 
   case class BrandNamesRow(name: Option[String], locale_id: Option[String])
 

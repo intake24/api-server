@@ -19,12 +19,12 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.services
 
 import uk.ac.ncl.openlab.intake24.AsServedSet
-import uk.ac.ncl.openlab.intake24.AssociatedFood
 import uk.ac.ncl.openlab.intake24.DrinkwareSet
 import uk.ac.ncl.openlab.intake24.GuideImage
 import uk.ac.ncl.openlab.intake24.UserCategoryContents
 import uk.ac.ncl.openlab.intake24.UserCategoryHeader
 import uk.ac.ncl.openlab.intake24.UserFoodData
+import uk.ac.ncl.openlab.intake24.UserAssociatedFood
 
 sealed trait SourceRecord
 
@@ -76,6 +76,6 @@ trait UserFoodDataService {
 
   def brandNames(foodCode: String, locale: String): Either[CodeError, Seq[String]]
   
-  def associatedFoods(foodCode: String, locale: String): Either[CodeError, Seq[AssociatedFood]]
+  def associatedFoods(foodCode: String, locale: String): Either[CodeError, Seq[UserAssociatedFood]]
 
 }

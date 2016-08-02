@@ -36,7 +36,7 @@ libraryDependencies ++= Seq(
   "net.codingwell" %% "scala-guice" % "4.0.0",
   "com.mohiva" %% "play-silhouette" % "3.0.0",
   "be.objectify" %% "deadbolt-scala" % "2.4.2",  
-  "com.lihaoyi" %% "upickle" % "0.3.4",
+  "com.lihaoyi" %% "upickle" % "0.4.1",
   "org.apache.shiro" % "shiro-core" % "1.2.3", // for v1.0 authentication support
   "com.typesafe.play" % "play-integration-test_2.11" % "2.4.3" % "test"  
 )

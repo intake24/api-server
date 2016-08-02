@@ -26,7 +26,7 @@ import org.postgresql.util.PSQLException
 import com.google.inject.Singleton
 
 import anorm._
-import uk.ac.ncl.openlab.intake24.AssociatedFood
+
 import uk.ac.ncl.openlab.intake24.MainCategoryRecord
 import uk.ac.ncl.openlab.intake24.LocalCategoryRecord
 import uk.ac.ncl.openlab.intake24.LocalFoodRecord
@@ -38,7 +38,7 @@ import uk.ac.ncl.openlab.intake24.services.NewFood
 import uk.ac.ncl.openlab.intake24.services.SqlException
 import uk.ac.ncl.openlab.intake24.services.UpdateResult
 import uk.ac.ncl.openlab.intake24.services.VersionConflict
-
+import uk.ac.ncl.openlab.intake24.AssociatedFoodRecord
 
 @Singleton
 trait FoodDataEditingSqlImpl extends SqlDataService {
@@ -459,26 +459,33 @@ trait FoodDataEditingSqlImpl extends SqlDataService {
       }
   }
 
-  def updateAssociatedFoods(foodCode: String, locale: String, foods: Seq[AssociatedFood]): UpdateResult = tryWithConnection {
+  def updateAssociatedFoods(foodCode: String, locale: String, foods: Seq[AssociatedFoodRecord]): UpdateResult = tryWithConnection {
     implicit conn =>
       try {
         conn.setAutoCommit(false)
 
         SQL("DELETE FROM associated_food_prompts WHERE food_code={food_code} AND locale_id={locale_id}")
-        .on('food_code -> foodCode, 'locale_id -> locale)
-        .execute()
+          .on('food_code -> foodCode, 'locale_id -> locale)
+          .execute()
 
         if (foods.nonEmpty) {
 
-          val params = foods.map(p => Seq[NamedParameter]('food_code -> foodCode, 'locale_id -> locale, 'category_code -> p.category, 'text -> p.promptText,
-            'link_as_main -> p.linkAsMain, 'generic_name -> p.genericName))
+          val params = foods.map {
+            p =>
 
-          BatchSql("INSERT INTO associated_food_prompts VALUES (DEFAULT, {food_code}, {locale_id}, {category_code}, {text}, {link_as_main}, {generic_name})", params)
-          .execute()
+              val foodOption = p.foodOrCategoryCode.left.toOption
+              val categoryOption = p.foodOrCategoryCode.right.toOption
+
+              Seq[NamedParameter]('food_code -> foodCode, 'locale_id -> locale, 'associated_food_code -> foodOption,
+                'associated_category_code -> categoryOption, 'text -> p.promptText, 'link_as_main -> p.linkAsMain, 'generic_name -> p.genericName)
+          }
+
+          BatchSql("INSERT INTO associated_food_prompts VALUES (DEFAULT, {food_code}, {locale_id}, {associated_category_code}, {associated_food_code}, {text}, {link_as_main}, {generic_name})", params)
+            .execute()
         }
 
         conn.commit()
-        
+
         uk.ac.ncl.openlab.intake24.services.Success
       } catch {
         case e: PSQLException => SqlException(e.getServerErrorMessage.getMessage)

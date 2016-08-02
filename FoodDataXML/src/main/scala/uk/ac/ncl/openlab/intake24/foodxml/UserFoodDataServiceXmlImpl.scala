@@ -25,7 +25,7 @@ import uk.ac.ncl.openlab.intake24.AsServedSet
 import uk.ac.ncl.openlab.intake24.DrinkwareSet
 import uk.ac.ncl.openlab.intake24.GuideImage
 import uk.ac.ncl.openlab.intake24.InheritableAttributes
-import uk.ac.ncl.openlab.intake24.AssociatedFood
+
 import uk.ac.ncl.openlab.intake24.UserCategoryContents
 import uk.ac.ncl.openlab.intake24.UserCategoryHeader
 import uk.ac.ncl.openlab.intake24.services.UserFoodDataService
@@ -33,6 +33,8 @@ import uk.ac.ncl.openlab.intake24.services.foodindex.Util.mkHeader
 import uk.ac.ncl.openlab.intake24.services.ResourceError
 import uk.ac.ncl.openlab.intake24.services.CodeError
 import uk.ac.ncl.openlab.intake24.UserFoodData
+import uk.ac.ncl.openlab.intake24.UserAssociatedFood
+import uk.ac.ncl.openlab.intake24.UserFoodHeader
 
 @Singleton
 class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends UserFoodDataService {
@@ -126,7 +128,18 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends UserFoo
   def associatedFoods(foodCode: String, locale: String) = {
     checkLocale(locale)
     data.prompts.get(foodCode) match {
-      case Some(seq) => Right(seq)
+      case Some(seq) => {
+        Right(seq.map {
+          v1 =>
+            data.categories.categoryMap.get(v1.category) match {
+              case Some(category) => UserAssociatedFood(Right(UserCategoryHeader(category.code, category.description)), v1.promptText, v1.linkAsMain, v1.genericName)
+              case None => {
+                val food = data.foods.find(v1.category)
+                UserAssociatedFood(Left(UserFoodHeader(food.main.code, food.main.englishDescription)), v1.promptText, v1.linkAsMain, v1.genericName)
+              }
+            }
+        })
+      }
       case None => Left(CodeError.UndefinedCode)
     }
   }

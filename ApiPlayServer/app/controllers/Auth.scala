@@ -39,13 +39,12 @@ import security.AuthenticationException
 import security.DatabaseAccessException
 import security.DatabaseFormatException
 import upickle.Invalid
-import upickle.default.macroR
-import upickle.default.macroW
 import upickle.default.read
-import upickle.default.write
-import uk.ac.ncl.openlab.intake24.api.Intake24Credentials
+
 import play.api.libs.iteratee.Enumerator
 import play.api.http.Writeable
+
+import security.Intake24Credentials
 
 class Auth @Inject() (
   val messagesApi: MessagesApi,

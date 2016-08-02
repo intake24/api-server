@@ -19,7 +19,7 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.services
 
 import uk.ac.ncl.openlab.intake24.AsServedHeader
-import uk.ac.ncl.openlab.intake24.AssociatedFood
+
 import uk.ac.ncl.openlab.intake24.CategoryRecord
 import uk.ac.ncl.openlab.intake24.MainCategoryRecord
 import uk.ac.ncl.openlab.intake24.CategoryContents
@@ -34,6 +34,8 @@ import uk.ac.ncl.openlab.intake24.InheritableAttributes
 import uk.ac.ncl.openlab.intake24.LocalFoodRecord
 import uk.ac.ncl.openlab.intake24.MainFoodRecord
 import uk.ac.ncl.openlab.intake24.NutrientTable
+import uk.ac.ncl.openlab.intake24.AssociatedFoodRecord
+import uk.ac.ncl.openlab.intake24.UserAssociatedFood
 
 sealed trait UpdateResult 
 
@@ -130,5 +132,9 @@ trait AdminFoodDataService {
   
   def removeSubcategoryFromCategory(categoryCode: String, foodCode: String): UpdateResult
   
-  def updateAssociatedFoods(foodCode: String, locale: String, associatedFoods: Seq[AssociatedFood]): UpdateResult
+  // Associated foods
+  
+  def associatedFoods(foodCode: String, locale: String): Either[CodeError, Seq[UserAssociatedFood]]
+  
+  def updateAssociatedFoods(foodCode: String, locale: String, associatedFoods: Seq[AssociatedFoodRecord]): UpdateResult
 }

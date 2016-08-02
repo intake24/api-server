@@ -20,8 +20,8 @@ package security
 
 import play.api.libs.json.Json
 import com.mohiva.play.silhouette.api.util.Credentials
-import uk.ac.ncl.openlab.intake24.api.Intake24Credentials
 
+case class Intake24Credentials(survey_id: String, username: String, password: String)
 
 case class Intake24UserKey(userName: String, surveyName: String) {
   override def toString = userName + Intake24UserKey.separatorChar + surveyName

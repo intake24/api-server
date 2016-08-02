@@ -22,7 +22,7 @@ import java.io.FileReader
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.JavaConversions.seqAsJavaList
 import au.com.bytecode.opencsv.CSVReader
-import uk.ac.ncl.openlab.intake24.AssociatedFood
+import uk.ac.ncl.openlab.intake24.AssociatedFoodV1
 import scala.xml.XML
 import uk.ac.ncl.openlab.intake24.foodxml.CategoryDef
 import uk.ac.ncl.openlab.intake24.foodxml.FoodDef
@@ -41,7 +41,7 @@ object ParseAssociatedFoods {
 
     val prompts = rows.map(_.filterNot(_.isEmpty)).filter(_.length > 1).tail.groupBy(_(0)).mapValues(rows =>
       {
-        val pdefs = rows.map( row => AssociatedFood(row(2), row(3), row(1).toBoolean, row(4)))
+        val pdefs = rows.map( row => AssociatedFoodV1(row(2), row(3), row(1).toBoolean, row(4)))
 
         pdefs.foreach(p => {
           if (!(cats.exists(_.code == p.category) || foods.exists(_.main.code == p.category)))

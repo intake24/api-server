@@ -19,11 +19,10 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.foodxml.scripts
 
 import java.io.FileReader
+
 import scala.collection.JavaConversions.asScalaBuffer
-import scala.collection.JavaConversions.seqAsJavaList
+
 import au.com.bytecode.opencsv.CSVReader
-import uk.ac.ncl.openlab.intake24.AssociatedFood
-import scala.xml.XML
 import uk.ac.ncl.openlab.intake24.foodxml.Util
 
 object ParseBrandNames {

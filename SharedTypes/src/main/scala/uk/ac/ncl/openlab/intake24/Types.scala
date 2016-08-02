@@ -140,8 +140,9 @@ case class PortionSizeMethodParameter (name: String, value: String)
 
 case class PortionSizeMethod (method: String, description: String, imageUrl: String, useForRecipes: Boolean, parameters: Seq[PortionSizeMethodParameter])
 
-case class AssociatedFood (category: String, promptText: String, linkAsMain: Boolean, genericName: String)
+case class AssociatedFoodV1 (category: String, promptText: String, linkAsMain: Boolean, genericName: String)
 
+case class AssociatedFoodRecord (foodOrCategoryCode: Either[String, String], promptText: String, linkAsMain: Boolean, genericName: String)
 
 case class FoodGroup (id: Int, englishDescription: String, localDescription: Option[String]) {
   override def toString = id.toString + ". " + englishDescription

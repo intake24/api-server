@@ -32,7 +32,7 @@ import uk.ac.ncl.openlab.intake24.GuideImageWeightRecord
 import uk.ac.ncl.openlab.intake24.DrinkwareSet
 import uk.ac.ncl.openlab.intake24.DrinkScale
 import uk.ac.ncl.openlab.intake24.VolumeFunction
-import uk.ac.ncl.openlab.intake24.AssociatedFood
+
 import uk.ac.ncl.openlab.intake24.LocalFoodRecord
 import uk.ac.ncl.openlab.intake24.UserFoodData
 import uk.ac.ncl.openlab.intake24.FoodRecord

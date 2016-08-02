@@ -393,28 +393,45 @@ class XmlImporter(implicit val dbConn: Connection) {
       logger.warn("Drinkware file contains no records")
   }
 
-  def importAssociatedFoodPrompts(promptsPath: String) = {
+  def importAssociatedFoodPrompts(foodsPath: String, categoryPath: String, promptsPath: String) = {
     logger.info("Deleting existing associated food prompts")
     
-    SQL("DELETE FROM associated_food_prompts").execute()
+    SQL("DELETE FROM associated_foods").execute()
     
     logger.info("Loading associated food prompts from " + promptsPath)
+    
     val prompts = PromptDef.parseXml(XML.load(promptsPath))
+    
+    logger.info("Indexing foods and categories for associated type resolution" + promptsPath)
+    
+    val foods = FoodDef.parseXml(XML.load(foodsPath)).map(_.main.code).toSet 
+    val categories = CategoryDef.parseXml(XML.load(categoryPath)).map(_.code).toSet
 
     if (!prompts.isEmpty) {
       logger.info("Writing " + prompts.size + " associated food prompts to database")
 
       val promptParams = prompts.keySet.toSeq.flatMap {
         foodCode =>
+          
           prompts(foodCode).map {
             prompt =>
-              Seq[NamedParameter]('food_code -> foodCode, 'locale_id -> defaultLocale, 'category_code -> prompt.category, 'text -> prompt.promptText, 'link_as_main -> prompt.linkAsMain,
+              
+              val (assocFoodCode, assocCategoryCode) =
+                if (categories.contains(prompt.category)) {
+                  logger.info(s"Resolved ${prompt.category} as category")
+                  (None, Some(prompt.category))
+                } else {
+                  logger.info(s"Resolved ${prompt.category} as food")
+                  (Some(prompt.category), None)
+                }
+              
+              Seq[NamedParameter]('food_code -> foodCode, 'locale_id -> defaultLocale, 'associated_food_code -> assocFoodCode, 'associated_category_code -> assocCategoryCode, 'text -> prompt.promptText, 'link_as_main -> prompt.linkAsMain,
                 'generic_name -> prompt.genericName)
           }
       }
 
       try {
-        BatchSql("""INSERT INTO associated_food_prompts VALUES (DEFAULT, {food_code}, {locale_id}, {category_code}, {text}, {link_as_main}, {generic_name})""", promptParams).execute()
+        BatchSql("""INSERT INTO associated_foods VALUES (DEFAULT, {food_code}, {locale_id}, {associated_food_code}, {associated_category_code}, {text}, {link_as_main}, {generic_name})""", promptParams).execute()
       } catch {
         case e: java.sql.BatchUpdateException => e.getNextException.printStackTrace()
       }
@@ -485,7 +502,7 @@ class XmlImporter(implicit val dbConn: Connection) {
     importGuide(dataDirectory + File.separator + "guide.xml", dataDirectory + File.separator + "CompiledImageMaps")
     importBrands(dataDirectory + File.separator + "brands.xml")
     importDrinkware(dataDirectory + File.separator + "drinkware.xml")
-    importAssociatedFoodPrompts(dataDirectory + File.separator + "prompts.xml")
+    importAssociatedFoodPrompts(dataDirectory + File.separator + "foods.xml", dataDirectory + File.separator + "categories.xml", dataDirectory + File.separator + "prompts.xml")
     importSplitList(dataDirectory + File.separator + "split_list")
     importSynonymSets(dataDirectory + File.separator + "synsets")
   }
