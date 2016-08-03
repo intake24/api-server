@@ -497,11 +497,12 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
       val query =
         """|SELECT code, description, local_description, do_not_use
            |FROM foods LEFT JOIN foods_local ON foods.code = foods_local.food_code 
-           |WHERE lower(local_description) LIKE {pattern} OR lower(description) LIKE {pattern} OR lower(code) LIKE {pattern} 
+           |WHERE (lower(local_description) LIKE {pattern} OR lower(description) LIKE {pattern} OR lower(code) LIKE {pattern})
+           |AND foods_local.locale_id = {locale_id} 
            |ORDER BY local_description DESC
-           |LIMIT 50""".stripMargin
+           |LIMIT 30""".stripMargin
 
-      SQL(query).on('pattern -> s"%${lowerCaseTerm}%").executeQuery().as(Macro.namedParser[FoodHeaderRow].*).map(_.asFoodHeader)
+      SQL(query).on('pattern -> s"%${lowerCaseTerm}%", 'locale_id -> locale).executeQuery().as(Macro.namedParser[FoodHeaderRow].*).map(_.asFoodHeader)
   }
 
   def searchCategories(searchTerm: String, locale: String): Seq[CategoryHeader] = tryWithConnection {
@@ -511,11 +512,12 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
       val query =
         """|SELECT code, description, local_description, is_hidden
            |FROM categories LEFT JOIN categories_local ON categories.code = categories_local.category_code
-           |WHERE lower(local_description) LIKE {pattern} OR lower(description) LIKE {pattern} OR lower(code) LIKE {pattern}
+           |WHERE (lower(local_description) LIKE {pattern} OR lower(description) LIKE {pattern} OR lower(code) LIKE {pattern})
+           |AND categories_local.locale_id = {locale_id}
            |ORDER BY local_description DESC
-           |LIMIT 50""".stripMargin
+           |LIMIT 30""".stripMargin
 
-      SQL(query).on('pattern -> s"%${lowerCaseTerm}%").executeQuery().as(Macro.namedParser[CategoryHeaderRow].*).map(_.asCategoryHeader)
+      SQL(query).on('pattern -> s"%${lowerCaseTerm}%", 'locale_id -> locale).executeQuery().as(Macro.namedParser[CategoryHeaderRow].*).map(_.asCategoryHeader)
 
   }
 
