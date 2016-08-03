@@ -120,7 +120,8 @@ CREATE TABLE foods
 
   CONSTRAINT foods_code_pk PRIMARY KEY (code),
   CONSTRAINT food_group_id_fk FOREIGN KEY (food_group_id)
-    REFERENCES food_groups (id) ON UPDATE CASCADE ON DELETE CASCADE
+    REFERENCES food_groups (id) ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT min_code_length CHECK (char_length(code)>3)
 );
 
 CREATE INDEX foods_food_group_index ON foods (food_group_id);
