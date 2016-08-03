@@ -38,8 +38,7 @@ trait AdminAssociatedFoodsImpl extends SqlDataService {
        |  LEFT JOIN categories as c1 ON associated_foods.associated_category_code = c1.code
 	     |  LEFT JOIN categories_local ON associated_foods.associated_category_code = categories_local.category_code AND categories_local.locale_id = {locale_id}
        |WHERE
-       |  foods.code = {food_code}
-       |  AND associated_foods.locale_id = {locale_id}
+       |  foods.code = {food_code} AND (associated_foods.locale_id = {locale_id} OR associated_foods.locale_id IS NULL) 
        |ORDER BY id""".stripMargin
 
   def associatedFoods(foodCode: String, locale: String): Either[CodeError, Seq[AssociatedFoodWithHeader]] = tryWithConnection {
