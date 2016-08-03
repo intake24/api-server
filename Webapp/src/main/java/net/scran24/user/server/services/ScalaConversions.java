@@ -100,8 +100,11 @@ public class ScalaConversions {
 		return result;
 	}
 	
-	public static FoodPrompt toJavaPrompt(uk.ac.ncl.openlab.intake24.AssociatedFood prompt) {
-		return new FoodPrompt(prompt.category(), true, prompt.promptText(), prompt.linkAsMain(), prompt.genericName());
+	public static FoodPrompt toJavaPrompt(uk.ac.ncl.openlab.intake24.AssociatedFood prompt) {		
+		if (prompt.foodOrCategoryCode().isRight())
+			return new FoodPrompt(prompt.foodOrCategoryCode().right().get(), true, prompt.promptText(), prompt.linkAsMain(), prompt.genericName());
+		else
+			return new FoodPrompt(prompt.foodOrCategoryCode().left().get(), false, prompt.promptText(), prompt.linkAsMain(), prompt.genericName());
 	}
 	
 	public static List<FoodPrompt> toJavaPrompts(Seq<uk.ac.ncl.openlab.intake24.AssociatedFood> prompts) {

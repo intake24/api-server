@@ -396,11 +396,11 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 
 			while (iter.hasNext()) {
 				uk.ac.ncl.openlab.intake24.AssociatedFood next = iter.next();
-
-				if (foodData.isCategoryCode(next.category()))
-					result.add(new FoodPrompt(next.category(), true, next.promptText(), next.linkAsMain(), next.genericName()));
+				
+				if (next.foodOrCategoryCode().isRight())
+					result.add(new FoodPrompt(next.foodOrCategoryCode().right().get(), true, next.promptText(), next.linkAsMain(), next.genericName()));
 				else
-					result.add(new FoodPrompt(next.category(), false, next.promptText(), next.linkAsMain(), next.genericName()));
+					result.add(new FoodPrompt(next.foodOrCategoryCode().left().get(), false, next.promptText(), next.linkAsMain(), next.genericName()));
 			}
 
 			return result;
