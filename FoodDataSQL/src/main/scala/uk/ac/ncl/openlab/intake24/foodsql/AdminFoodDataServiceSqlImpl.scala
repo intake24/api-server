@@ -39,7 +39,6 @@ import javax.sql.DataSource
 import uk.ac.ncl.openlab.intake24.AsServedHeader
 import uk.ac.ncl.openlab.intake24.AsServedImage
 import uk.ac.ncl.openlab.intake24.AsServedSet
-import uk.ac.ncl.openlab.intake24.AssociatedFood
 import uk.ac.ncl.openlab.intake24.CategoryRecord
 import uk.ac.ncl.openlab.intake24.CategoryContents
 import uk.ac.ncl.openlab.intake24.CategoryHeader
@@ -66,7 +65,11 @@ import uk.ac.ncl.openlab.intake24.MainCategoryRecord
 
 @Singleton
 class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends SqlDataService
-    with AdminFoodDataService with SplitterDataSqlImpl with SynsetsDataSqlImpl with FoodDataEditingSqlImpl {
+    with AdminFoodDataService
+    with SplitterDataSqlImpl
+    with SynsetsDataSqlImpl
+    with FoodDataEditingSqlImpl
+    with AdminAssociatedFoodsImpl {
 
   val logger = LoggerFactory.getLogger(classOf[AdminFoodDataServiceSqlImpl])
 
@@ -247,7 +250,7 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
         .as(Macro.namedParser[CategoryHeaderRow].*)
         .map(_.asCategoryHeader)
   }
-  
+
   def foodAllCategories(code: String): Seq[String] = tryWithConnection {
     implicit conn =>
       val query =
@@ -263,7 +266,7 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
       SQL(query)
         .on('food_code -> code)
         .executeQuery()
-        .as(SqlParser.str("code").*)        
+        .as(SqlParser.str("code").*)
   }
 
   def foodAllCategories(code: String, locale: String): Seq[CategoryHeader] = tryWithConnection {
@@ -300,7 +303,7 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
         .as(Macro.namedParser[CategoryHeaderRow].*)
         .map(_.asCategoryHeader)
   }
-  
+
   def categoryAllCategories(code: String): Seq[String] = tryWithConnection {
     implicit conn =>
       val query =
@@ -316,7 +319,7 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
       SQL(query)
         .on('category_code -> code)
         .executeQuery()
-        .as(SqlParser.str("code").*)        
+        .as(SqlParser.str("code").*)
   }
 
   def categoryAllCategories(code: String, locale: String): Seq[CategoryHeader] = tryWithConnection {
@@ -451,14 +454,6 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
       DrinkwareSet(id, result.head.description, result.head.guide_image_id, scales)
   }
 
-  def associatedFoods(foodCode: String, locale: String): Seq[AssociatedFood] = tryWithConnection {
-    implicit conn =>
-      val query =
-        """SELECT category_code, text, link_as_main, generic_name FROM associated_food_prompts WHERE food_code = {food_code} AND locale_id = {locale_id} ORDER BY id"""
-
-      SQL(query).on('food_code -> foodCode, 'locale_id -> locale).executeQuery().as(Macro.parser[AssociatedFood]("category_code", "text", "link_as_main", "generic_name").*)
-  }
-
   def brandNames(foodCode: String, locale: String): Seq[String] = tryWithConnection {
     implicit conn =>
       SQL("""SELECT name FROM brands WHERE food_code = {food_code} AND locale_id = {locale_id} ORDER BY id""")
@@ -499,11 +494,12 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
       val query =
         """|SELECT code, description, local_description, do_not_use
            |FROM foods LEFT JOIN foods_local ON foods.code = foods_local.food_code 
-           |WHERE lower(local_description) LIKE {pattern} OR lower(description) LIKE {pattern} OR lower(code) LIKE {pattern} 
+           |WHERE (lower(local_description) LIKE {pattern} OR lower(description) LIKE {pattern} OR lower(code) LIKE {pattern})
+           |AND foods_local.locale_id = {locale_id}
            |ORDER BY local_description DESC
-           |LIMIT 50""".stripMargin
+           |LIMIT 30""".stripMargin
 
-      SQL(query).on('pattern -> s"%${lowerCaseTerm}%").executeQuery().as(Macro.namedParser[FoodHeaderRow].*).map(_.asFoodHeader)
+      SQL(query).on('pattern -> s"%${lowerCaseTerm}%", 'locale_id -> locale).executeQuery().as(Macro.namedParser[FoodHeaderRow].*).map(_.asFoodHeader)
   }
 
   def searchCategories(searchTerm: String, locale: String): Seq[CategoryHeader] = tryWithConnection {
@@ -513,11 +509,12 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
       val query =
         """|SELECT code, description, local_description, is_hidden
            |FROM categories LEFT JOIN categories_local ON categories.code = categories_local.category_code
-           |WHERE lower(local_description) LIKE {pattern} OR lower(description) LIKE {pattern} OR lower(code) LIKE {pattern}
+           |WHERE (lower(local_description) LIKE {pattern} OR lower(description) LIKE {pattern} OR lower(code) LIKE {pattern})
+           |AND categories_local.locale_id = {locale_id}
            |ORDER BY local_description DESC
-           |LIMIT 50""".stripMargin
+           |LIMIT 30""".stripMargin
 
-      SQL(query).on('pattern -> s"%${lowerCaseTerm}%").executeQuery().as(Macro.namedParser[CategoryHeaderRow].*).map(_.asCategoryHeader)
+      SQL(query).on('pattern -> s"%${lowerCaseTerm}%", 'locale_id -> locale).executeQuery().as(Macro.namedParser[CategoryHeaderRow].*).map(_.asCategoryHeader)
 
   }
 

@@ -28,7 +28,7 @@ import uk.ac.ncl.openlab.intake24.GuideImage
 import uk.ac.ncl.openlab.intake24.GuideImageWeightRecord
 import uk.ac.ncl.openlab.intake24.PortionSizeMethod
 import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
-import uk.ac.ncl.openlab.intake24.AssociatedFood
+
 import uk.ac.ncl.openlab.intake24.UserCategoryHeader
 import uk.ac.ncl.openlab.intake24.VolumeFunction
 import uk.ac.ncl.openlab.intake24.UserFoodData
@@ -129,11 +129,11 @@ abstract class UserFoodDataServiceTest extends FunSuite {
     assert(service.drinkwareDef("mugs") === expected)
   }
 
-  test("Get associated food prompts") {
-    val expected = Seq(AssociatedFood("C000", "Prompt 1", false, "name1"), AssociatedFood("C001", "Prompt 2", true, "name2"))
+  /*test("Get associated food prompts") {
+    val expected = Seq(UserAssociatedFood("C000", "Prompt 1", false, "name1"), AssociatedFood("C001", "Prompt 2", true, "name2"))
 
     assert(service.associatedFoods("F000", defaultLocale).right.get === expected)
-  }
+  }*/
 
   test("Get brand names") {
     val expected1 = Seq("brand1", "brand2")

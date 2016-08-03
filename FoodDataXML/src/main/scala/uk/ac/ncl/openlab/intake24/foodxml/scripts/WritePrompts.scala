@@ -22,7 +22,7 @@ import java.io.FileReader
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.JavaConversions.seqAsJavaList
 import au.com.bytecode.opencsv.CSVReader
-import uk.ac.ncl.openlab.intake24.AssociatedFood
+import uk.ac.ncl.openlab.intake24.AssociatedFoodV1
 import scala.xml.XML
 import au.com.bytecode.opencsv.CSVWriter
 import java.io.FileWriter

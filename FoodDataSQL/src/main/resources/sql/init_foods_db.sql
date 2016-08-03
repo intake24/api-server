@@ -446,29 +446,30 @@ CREATE INDEX drinkware_volume_samples_drinkware_scale_id_index ON drinkware_volu
 
 -- Associated food prompts
 
-CREATE TABLE associated_food_prompts
+CREATE TABLE associated_foods
 (
-  id serial NOT NULL,
+	id serial NOT NULL,
   food_code character varying(8) NOT NULL,
   locale_id character varying(16) NOT NULL,
-  category_code character varying(8) NOT NULL,
-  text text NOT NULL,
+	associated_food_code character varying(8),
+  associated_category_code character varying(8),
+  text character varying(1024) NOT NULL,
   link_as_main boolean NOT NULL,
   generic_name character varying (128) NOT NULL,
   CONSTRAINT associated_food_prompts_pk PRIMARY KEY (id),
   CONSTRAINT associated_food_prompts_food_code_fk FOREIGN KEY (food_code)
     REFERENCES foods (code) ON UPDATE CASCADE ON DELETE CASCADE,
   CONSTRAINT associated_food_prompts_locale_id_fk FOREIGN KEY (locale_id)
-    REFERENCES locales (id) ON UPDATE CASCADE ON DELETE CASCADE
-
-
-  -- category code is not an FK (although it should be)
-  -- because it can be either a food or a category
+    REFERENCES locales (id) ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT associated_food_prompts_assoc_food_fk FOREIGN KEY(associated_food_code)
+    REFERENCES foods (code) ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT associated_food_prompts_assoc_category_fk FOREIGN KEY(associated_category_code)
+    REFERENCES categories (code) ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT either_food_or_category
+    CHECK ((associated_food_code IS NOT NULL AND associated_category_code IS NULL) OR (associated_food_code IS NULL AND associated_category_code IS NOT NULL))
 );
 
-CREATE INDEX associated_food_prompts_food_code_index ON associated_food_prompts (food_code);
-
-CREATE INDEX associated_food_prompts_food_locale_index ON associated_food_prompts (locale_id);
+CREATE INDEX associated_foods_index ON associated_foods(food_code, locale_id);
 
 CREATE TABLE split_words
 (

@@ -19,12 +19,12 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.foodxml
 
 import scala.xml._
-import uk.ac.ncl.openlab.intake24.AssociatedFood
+import uk.ac.ncl.openlab.intake24.AssociatedFoodV1
 import scala.xml.NodeSeq.seqToNodeSeq
-import uk.ac.ncl.openlab.intake24.AssociatedFood
+import uk.ac.ncl.openlab.intake24.AssociatedFoodV1
 
 object PromptDef {
-  def toXml(prompts: Map[String, Seq[AssociatedFood]]) =
+  def toXml(prompts: Map[String, Seq[AssociatedFoodV1]]) =
     prompts.keys.toSeq.sorted.map(foodCode =>
       <food>
         {
@@ -36,7 +36,7 @@ object PromptDef {
         }
       </food> % Attribute(None, "code", Text(foodCode), Null))
 
-  def writeXml(path: String, prompts: Map[String, Seq[AssociatedFood]]) = {
+  def writeXml(path: String, prompts: Map[String, Seq[AssociatedFoodV1]]) = {
     val doc = <scran24-food-prompts>
                 {
                   toXml(prompts)
@@ -45,11 +45,11 @@ object PromptDef {
     XML.save(path, doc, "utf-8", true, null);
   }
 
-  def parseXml(root: NodeSeq): Map[String, Seq[AssociatedFood]] = {
+  def parseXml(root: NodeSeq): Map[String, Seq[AssociatedFoodV1]] = {
     (root \ "food").map(food => {
       val code = food.attribute("code").get.text
       
-      val prompts = (food \ "prompt").map ( promptNode => AssociatedFood(promptNode.attribute("category").get.text, promptNode.attribute("text").get.text, promptNode.attribute("linkAsMain").get.text == "true", promptNode.attribute("genericName").get.text))
+      val prompts = (food \ "prompt").map ( promptNode => AssociatedFoodV1(promptNode.attribute("category").get.text, promptNode.attribute("text").get.text, promptNode.attribute("linkAsMain").get.text == "true", promptNode.attribute("genericName").get.text))
 
       (code, prompts)
     }).toMap

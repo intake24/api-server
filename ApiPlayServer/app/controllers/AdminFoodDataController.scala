@@ -28,7 +28,6 @@ import play.api.mvc.Action
 import play.api.mvc.Controller
 import play.api.mvc.Result
 import security.Roles
-import uk.ac.ncl.openlab.intake24.AssociatedFood
 import uk.ac.ncl.openlab.intake24.MainCategoryRecord
 import uk.ac.ncl.openlab.intake24.LocalCategoryRecord
 import uk.ac.ncl.openlab.intake24.MainFoodRecord
@@ -41,16 +40,19 @@ import uk.ac.ncl.openlab.intake24.services.SqlException
 import uk.ac.ncl.openlab.intake24.services.Success
 import uk.ac.ncl.openlab.intake24.services.UpdateResult
 import uk.ac.ncl.openlab.intake24.services.VersionConflict
-import upickle.default.SeqishR
-import upickle.default.SeqishW
-import upickle.default.macroR
-import upickle.default.macroW
-import upickle.default.read
-import upickle.default.write
 import uk.ac.ncl.openlab.intake24.LocalFoodRecord
 import uk.ac.ncl.openlab.intake24.services.UserFoodDataService
-import models.AdminFoodRecord
+
 import models.AdminCategoryRecord
+import models.AdminFoodRecord
+
+import upickle.default.write
+import upickle.default.read
+
+import uk.ac.ncl.openlab.intake24.UserFoodHeader
+import uk.ac.ncl.openlab.intake24.UserCategoryHeader
+import uk.ac.ncl.openlab.intake24.AssociatedFood
+
 
 class AdminFoodDataController @Inject() (service: AdminFoodDataService, userService: UserFoodDataService, deadbolt: DeadboltActions) extends Controller with PickleErrorHandler {
 
@@ -84,13 +86,13 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, userServ
       Ok(write(service.foodAllCategories(code, locale))).as(ContentTypes.JSON)
     }
   }
-
+  
   def foodRecord(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       val result = for {
         record <- service.foodRecord(code, locale).right
-        brandNames <- userService.brandNames(code, locale).right
-        associatedFoods <- userService.associatedFoods(code, locale).right
+        brandNames <- userService.brandNames(code, locale).right 
+        associatedFoods <- service.associatedFoods(code, locale).right
       } yield AdminFoodRecord(record.main, record.local, brandNames, associatedFoods)
       
       result match {
