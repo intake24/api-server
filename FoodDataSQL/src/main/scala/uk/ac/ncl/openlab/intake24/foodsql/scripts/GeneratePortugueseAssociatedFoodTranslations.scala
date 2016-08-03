@@ -26,8 +26,8 @@ object GeneratePortugueseAssociatedFoodTranslations extends App with DatabaseScr
       dataService.associatedFoods(foodHeader.code, baseLocaleCode) match {
         case Right(prompts) => prompts.toArray.map {
           prompt =>
-            val assocFood = prompt.foodOrCategory.left.toOption.map(_.code).getOrElse("")
-            val assocCategory = prompt.foodOrCategory.right.toOption.map(_.code).getOrElse("")
+            val assocFood = prompt.foodOrCategoryCode.left.toOption.getOrElse("")
+            val assocCategory = prompt.foodOrCategoryCode.right.toOption.getOrElse("")
             
             Array(foodHeader.code, assocFood, assocCategory, prompt.linkAsMain.toString, baseLocaleFoods(foodHeader.code).localDescription, foodHeader.localDescription, prompt.promptText, "", prompt.genericName, "")
         }

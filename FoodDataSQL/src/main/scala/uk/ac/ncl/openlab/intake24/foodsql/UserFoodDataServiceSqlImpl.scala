@@ -37,10 +37,11 @@ import anorm.AnormException
 import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService
 import uk.ac.ncl.openlab.intake24.services.UserFoodDataService
 import uk.ac.ncl.openlab.intake24.services.CodeError
+import uk.ac.ncl.openlab.intake24.foodsql.user.UserAssociatedFoodsImpl
 
 @Singleton
 class UserFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends UserFoodDataService
-    with SqlDataService with FoodDataSqlImpl with PortionSizeDataSqlImpl with AssociatedFoodsReader {
+    with SqlDataService with FoodDataSqlImpl with PortionSizeDataSqlImpl with UserAssociatedFoodsImpl {
 
   import UserFoodDataServiceSqlImpl._
 
@@ -62,12 +63,6 @@ class UserFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSou
 
       Right(UserCategoryContents(foodRows.map(row => UserFoodHeader(row.food_code, row.local_description)), categoryRows.map(row => UserCategoryHeader(row.subcategory_code, row.local_description))))
   }
-  
-  
-  def associatedFoods(foodCode: String, locale: String) = associatedFoodsImpl(foodCode, locale, true)
-
-
- 
 
   case class BrandNamesRow(name: Option[String], locale_id: Option[String])
 

@@ -24,7 +24,7 @@ import uk.ac.ncl.openlab.intake24.GuideImage
 import uk.ac.ncl.openlab.intake24.UserCategoryContents
 import uk.ac.ncl.openlab.intake24.UserCategoryHeader
 import uk.ac.ncl.openlab.intake24.UserFoodData
-import uk.ac.ncl.openlab.intake24.UserAssociatedFood
+import uk.ac.ncl.openlab.intake24.AssociatedFood
 
 sealed trait SourceRecord
 
@@ -76,6 +76,6 @@ trait UserFoodDataService {
 
   def brandNames(foodCode: String, locale: String): Either[CodeError, Seq[String]]
   
-  def associatedFoods(foodCode: String, locale: String): Either[CodeError, Seq[UserAssociatedFood]]
+  def associatedFoods(foodCode: String, locale: String): Either[CodeError, Seq[AssociatedFood]]
 
 }

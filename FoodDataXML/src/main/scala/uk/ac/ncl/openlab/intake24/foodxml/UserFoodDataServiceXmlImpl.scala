@@ -33,8 +33,9 @@ import uk.ac.ncl.openlab.intake24.services.foodindex.Util.mkHeader
 import uk.ac.ncl.openlab.intake24.services.ResourceError
 import uk.ac.ncl.openlab.intake24.services.CodeError
 import uk.ac.ncl.openlab.intake24.UserFoodData
-import uk.ac.ncl.openlab.intake24.UserAssociatedFood
+
 import uk.ac.ncl.openlab.intake24.UserFoodHeader
+import uk.ac.ncl.openlab.intake24.AssociatedFood
 
 @Singleton
 class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends UserFoodDataService {
@@ -132,10 +133,10 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends UserFoo
         Right(seq.map {
           v1 =>
             data.categories.categoryMap.get(v1.category) match {
-              case Some(category) => UserAssociatedFood(Right(UserCategoryHeader(category.code, category.description)), v1.promptText, v1.linkAsMain, v1.genericName)
+              case Some(category) => AssociatedFood(Right(category.code), v1.promptText, v1.linkAsMain, v1.genericName)
               case None => {
                 val food = data.foods.find(v1.category)
-                UserAssociatedFood(Left(UserFoodHeader(food.main.code, food.main.englishDescription)), v1.promptText, v1.linkAsMain, v1.genericName)
+                AssociatedFood(Left(food.main.code), v1.promptText, v1.linkAsMain, v1.genericName)
               }
             }
         })

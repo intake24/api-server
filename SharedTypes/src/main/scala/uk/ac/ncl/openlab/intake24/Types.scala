@@ -142,9 +142,9 @@ case class PortionSizeMethod (method: String, description: String, imageUrl: Str
 
 case class AssociatedFoodV1 (category: String, promptText: String, linkAsMain: Boolean, genericName: String)
 
-case class AssociatedFoodRecord (foodOrCategoryCode: Either[String, String], promptText: String, linkAsMain: Boolean, genericName: String)
+case class AssociatedFood (foodOrCategoryCode: Either[String, String], promptText: String, linkAsMain: Boolean, genericName: String)
 
-case class UserAssociatedFood (foodOrCategory: Either[UserFoodHeader, UserCategoryHeader], promptText: String, linkAsMain: Boolean, genericName: String)
+case class AssociatedFoodWithHeader (foodOrCategoryHeader: Either[FoodHeader, CategoryHeader], promptText: String, linkAsMain: Boolean, genericName: String)
 
 case class FoodGroup (id: Int, englishDescription: String, localDescription: Option[String]) {
   override def toString = id.toString + ". " + englishDescription

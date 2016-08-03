@@ -38,7 +38,7 @@ import uk.ac.ncl.openlab.intake24.services.NewFood
 import uk.ac.ncl.openlab.intake24.services.SqlException
 import uk.ac.ncl.openlab.intake24.services.UpdateResult
 import uk.ac.ncl.openlab.intake24.services.VersionConflict
-import uk.ac.ncl.openlab.intake24.AssociatedFoodRecord
+import uk.ac.ncl.openlab.intake24.AssociatedFood
 
 @Singleton
 trait FoodDataEditingSqlImpl extends SqlDataService {
@@ -454,39 +454,6 @@ trait FoodDataEditingSqlImpl extends SqlDataService {
           uk.ac.ncl.openlab.intake24.services.Success
         else
           InvalidRequest(subcategoryNotInCategoryCode, subcategoryNotInCategoryMessage(categoryCode, subcategoryCode))
-      } catch {
-        case e: PSQLException => SqlException(e.getServerErrorMessage.getMessage)
-      }
-  }
-
-  def updateAssociatedFoods(foodCode: String, locale: String, foods: Seq[AssociatedFoodRecord]): UpdateResult = tryWithConnection {
-    implicit conn =>
-      try {
-        conn.setAutoCommit(false)
-
-        SQL("DELETE FROM associated_food_prompts WHERE food_code={food_code} AND locale_id={locale_id}")
-          .on('food_code -> foodCode, 'locale_id -> locale)
-          .execute()
-
-        if (foods.nonEmpty) {
-
-          val params = foods.map {
-            p =>
-
-              val foodOption = p.foodOrCategoryCode.left.toOption
-              val categoryOption = p.foodOrCategoryCode.right.toOption
-
-              Seq[NamedParameter]('food_code -> foodCode, 'locale_id -> locale, 'associated_food_code -> foodOption,
-                'associated_category_code -> categoryOption, 'text -> p.promptText, 'link_as_main -> p.linkAsMain, 'generic_name -> p.genericName)
-          }
-
-          BatchSql("INSERT INTO associated_food_prompts VALUES (DEFAULT, {food_code}, {locale_id}, {associated_category_code}, {associated_food_code}, {text}, {link_as_main}, {generic_name})", params)
-            .execute()
-        }
-
-        conn.commit()
-
-        uk.ac.ncl.openlab.intake24.services.Success
       } catch {
         case e: PSQLException => SqlException(e.getServerErrorMessage.getMessage)
       }

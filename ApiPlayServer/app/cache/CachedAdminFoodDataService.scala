@@ -25,8 +25,8 @@ import uk.ac.ncl.openlab.intake24.services.NewCategory
 
 import modules.UncachedImpl
 import uk.ac.ncl.openlab.intake24.FoodGroup
-import uk.ac.ncl.openlab.intake24.AssociatedFoodRecord
-import uk.ac.ncl.openlab.intake24.UserAssociatedFood
+import uk.ac.ncl.openlab.intake24.AssociatedFoodWithHeader
+import uk.ac.ncl.openlab.intake24.AssociatedFood
 
 case class CachedAdminFoodDataService @Inject() (@UncachedImpl service: AdminFoodDataService, localeService: LocaleManagementService, cache: CacheApi) extends AdminFoodDataService 
   with ProblemCheckerCache with AssociatedFoodsCache {
@@ -422,11 +422,11 @@ case class CachedAdminFoodDataService @Inject() (@UncachedImpl service: AdminFoo
     result
   }
   
-  def associatedFoods(foodCode: String, locale: String): Either[CodeError, Seq[UserAssociatedFood]] = cache.getOrElse(associatedFoodsCacheKey(foodCode, locale)) {
+  def associatedFoods(foodCode: String, locale: String): Either[CodeError, Seq[AssociatedFoodWithHeader]] = cache.getOrElse(associatedFoodsCacheKey(foodCode, locale)) {
     service.associatedFoods(foodCode, locale)
   }
 
-  def updateAssociatedFoods(foodCode: String, locale: String, associatedFoods: Seq[AssociatedFoodRecord]): UpdateResult = {
+  def updateAssociatedFoods(foodCode: String, locale: String, associatedFoods: Seq[AssociatedFood]): UpdateResult = {
     val result = service.updateAssociatedFoods(foodCode, locale, associatedFoods)
     
     if (result == Success)

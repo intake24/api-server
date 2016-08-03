@@ -28,7 +28,7 @@ import uk.ac.ncl.openlab.intake24.GuideImage
 import uk.ac.ncl.openlab.intake24.GuideImageWeightRecord
 import uk.ac.ncl.openlab.intake24.PortionSizeMethod
 import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
-import uk.ac.ncl.openlab.intake24.UserAssociatedFood
+
 import uk.ac.ncl.openlab.intake24.UserCategoryHeader
 import uk.ac.ncl.openlab.intake24.VolumeFunction
 import uk.ac.ncl.openlab.intake24.UserFoodData

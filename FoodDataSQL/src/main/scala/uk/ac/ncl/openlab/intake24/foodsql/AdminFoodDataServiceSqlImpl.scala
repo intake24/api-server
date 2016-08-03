@@ -62,7 +62,6 @@ import uk.ac.ncl.openlab.intake24.VolumeFunction
 import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService
 import uk.ac.ncl.openlab.intake24.services.CodeError
 import uk.ac.ncl.openlab.intake24.MainCategoryRecord
-import uk.ac.ncl.openlab.intake24.UserAssociatedFood
 
 @Singleton
 class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends SqlDataService
@@ -70,7 +69,7 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
     with SplitterDataSqlImpl
     with SynsetsDataSqlImpl
     with FoodDataEditingSqlImpl
-    with AssociatedFoodsReader {
+    with AdminAssociatedFoodsImpl {
 
   val logger = LoggerFactory.getLogger(classOf[AdminFoodDataServiceSqlImpl])
 
@@ -454,8 +453,6 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
 
       DrinkwareSet(id, result.head.description, result.head.guide_image_id, scales)
   }
-
-  def associatedFoods(foodCode: String, locale: String) = associatedFoodsImpl(foodCode, locale, false)
 
   def brandNames(foodCode: String, locale: String): Seq[String] = tryWithConnection {
     implicit conn =>

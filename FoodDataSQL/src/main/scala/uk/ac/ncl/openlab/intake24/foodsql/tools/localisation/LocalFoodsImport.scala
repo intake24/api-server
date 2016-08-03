@@ -18,7 +18,8 @@ import uk.ac.ncl.openlab.intake24.foodsql.LocaleManagementSqlImpl
 import uk.ac.ncl.openlab.intake24.foodsql.tools.DatabaseConnection
 import uk.ac.ncl.openlab.intake24.foodsql.tools.DatabaseOptions
 import uk.ac.ncl.openlab.intake24.foodsql.tools.WarningMessage
-import uk.ac.ncl.openlab.intake24.AssociatedFoodRecord
+import uk.ac.ncl.openlab.intake24.AssociatedFood
+
 
 sealed trait FoodCodingDecision
 
@@ -105,7 +106,7 @@ case class LocalFoodsImport(localeCode: String, englishLocaleName: String, local
                 val prompts = oldPrompts.map {
                   v1 =>
                     val foodOrCategory = if (dataService.isCategoryCode(v1.category)) Right(v1.category) else Left(v1.category)
-                    AssociatedFoodRecord(foodOrCategory, v1.promptText, v1.linkAsMain, v1.genericName)
+                    AssociatedFood(foodOrCategory, v1.promptText, v1.linkAsMain, v1.genericName)
                 }
 
                 dataService.updateAssociatedFoods(header.code, localeCode, prompts)
