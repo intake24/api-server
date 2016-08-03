@@ -92,7 +92,7 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, userServ
       val result = for {
         record <- service.foodRecord(code, locale).right
         brandNames <- userService.brandNames(code, locale).right 
-        associatedFoods <- userService.associatedFoods(code, locale).right
+        associatedFoods <- service.associatedFoods(code, locale).right
       } yield AdminFoodRecord(record.main, record.local, brandNames, associatedFoods)
       
       result match {
