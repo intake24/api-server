@@ -9,9 +9,12 @@ import anorm.SQL
 import anorm.sqlToSimple
 import uk.ac.ncl.openlab.intake24.AssociatedFood
 import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
-import uk.ac.ncl.openlab.intake24.services.CodeError
 
-trait UserAssociatedFoodsImpl extends SqlDataService {
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedCode
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.AssociatedFoodsService
+
+trait AssociatedFoodsUserImpl extends AssociatedFoodsService with SqlDataService {
 
   private case class AssociatedFoodPromptsRow(associated_food_code: Option[String], associated_category_code: Option[String],
     text: Option[String], link_as_main: Option[Boolean], generic_name: Option[String], locale_id: Option[String])
@@ -41,7 +44,7 @@ trait UserAssociatedFoodsImpl extends SqlDataService {
       }
 
       if (rows.isEmpty) // No such food in foods table
-        Left(CodeError.UndefinedCode)
+        Left(UndefinedCode)
       else if (rows.head.text.isEmpty) // All columns will be null if there are no matching associated food records, check
         // the first one that cannot be null
         Right(Seq())

@@ -12,7 +12,7 @@ import uk.ac.ncl.openlab.intake24.services.IndexFoodDataService
 import org.slf4j.LoggerFactory
 import org.rogach.scallop.ScallopConf
 import uk.ac.ncl.openlab.intake24.foodsql.tools.DatabaseOptions
-import uk.ac.ncl.openlab.intake24.foodsql.AdminFoodDataServiceSqlImpl
+import uk.ac.ncl.openlab.intake24.foodsql.admin.AdminFoodDataServiceSqlImpl
 import uk.ac.ncl.openlab.intake24.foodsql.IndexFoodDataServiceSqlImpl
 import uk.ac.ncl.openlab.intake24.foodsql.tools.WarningMessage
 import uk.ac.ncl.openlab.intake24.foodsql.tools.DatabaseConnection

@@ -16,14 +16,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package uk.ac.ncl.openlab.intake24.foodxml.test
+package uk.ac.ncl.openlab.intake24.services.fooddb.admin
 
-import com.google.inject.Inject
-import com.google.inject.Singleton
-import uk.ac.ncl.openlab.intake24.foodxml.UserFoodDataServiceXmlImpl
-import uk.ac.ncl.openlab.intake24.services.UserFoodDataServiceTest
-import uk.ac.ncl.openlab.intake24.foodxml.XmlDataSource
-
-class UserFoodDataServiceXmlImplTest extends UserFoodDataServiceTest {
-  val service = new UserFoodDataServiceXmlImpl(new XmlDataSource(getClass.getResource("/test1").toURI().getPath()))
-}
+trait FoodDatabaseAdminService extends 
+  FoodGroupsAdminService 
+  with FoodBrowsingAdminService
+  with FoodsAdminService 
+  with CategoriesAdminService
+  with QuickSearchService
+  with AssociatedFoodsAdminService { }

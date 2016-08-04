@@ -23,7 +23,7 @@ import com.google.inject.Singleton
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 
-import uk.ac.ncl.openlab.intake24.foodsql.AdminFoodDataServiceSqlImpl
+import uk.ac.ncl.openlab.intake24.foodsql.admin.AdminFoodDataServiceSqlImpl
 import uk.ac.ncl.openlab.intake24.foodsql.tools.XmlImporter
 import uk.ac.ncl.openlab.intake24.services.AdminFoodDataServiceTest
 

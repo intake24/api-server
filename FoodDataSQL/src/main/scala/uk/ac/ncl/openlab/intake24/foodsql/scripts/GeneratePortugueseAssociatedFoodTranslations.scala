@@ -1,7 +1,7 @@
 package uk.ac.ncl.openlab.intake24.foodsql.scripts
 
-import uk.ac.ncl.openlab.intake24.foodsql.AdminFoodDataServiceSqlImpl
-import uk.ac.ncl.openlab.intake24.foodsql.AdminFoodDataServiceSqlImpl
+import uk.ac.ncl.openlab.intake24.foodsql.admin.AdminFoodDataServiceSqlImpl
+import uk.ac.ncl.openlab.intake24.foodsql.admin.AdminFoodDataServiceSqlImpl
 import uk.ac.ncl.openlab.intake24.foodsql.IndexFoodDataServiceSqlImpl
 import uk.ac.ncl.openlab.intake24.foodsql.UserFoodDataServiceSqlImpl
 import java.io.FileWriter

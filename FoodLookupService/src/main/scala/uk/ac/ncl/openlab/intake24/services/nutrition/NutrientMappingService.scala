@@ -20,7 +20,7 @@ package uk.ac.ncl.openlab.intake24.services.nutrition
 
 import uk.ac.ncl.openlab.intake24.nutrients.Nutrient
 
-import uk.ac.ncl.openlab.intake24.services.NutrientMappingError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.NutrientMappingError
 
 case class NutrientDescription(nutrientType: Nutrient, description: String, unit: String)
 

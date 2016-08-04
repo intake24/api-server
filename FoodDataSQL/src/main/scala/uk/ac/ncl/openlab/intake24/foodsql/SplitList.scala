@@ -18,11 +18,12 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodsql
 
-import uk.ac.ncl.openlab.intake24.SplitList
+
 import anorm._
 import anorm.SqlParser._
+import uk.ac.ncl.openlab.intake24.SplitList
 
-trait SplitterDataSqlImpl extends SqlDataService {
+trait SplitLists extends SqlDataService {
 
   private case class SplitListRow(first_word: String, words: String)
 

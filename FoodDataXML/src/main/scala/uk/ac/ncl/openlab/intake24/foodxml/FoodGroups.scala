@@ -18,11 +18,11 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodxml
 
-import uk.ac.ncl.openlab.intake24.FoodGroup
+import uk.ac.ncl.openlab.intake24.FoodGroupMain
 import uk.ac.ncl.openlab.intake24.FoodRecord
 
 
-case class FoodGroups (foods: Seq[FoodRecord], groups: Seq[FoodGroup]) {
+case class FoodGroups (foods: Seq[FoodRecord], groups: Seq[FoodGroupMain]) {
   val groupMap = groups.map( g => (g.id, g)).toMap
   val foodMap = foods.map ( f => (f.main.code, groupMap(f.main.groupCode))).toMap
   

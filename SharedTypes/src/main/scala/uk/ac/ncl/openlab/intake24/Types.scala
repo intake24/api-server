@@ -43,6 +43,10 @@ case class FoodRecord(main: MainFoodRecord, local: LocalFoodRecord)
 
 case class MainFoodRecord(version: UUID, code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes)
 
+case class NewFood(code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes)
+
+case class NewFoodAutoCode(englishDescription: String, groupCode: Int, attributes: InheritableAttributes)
+
 case class LocalFoodRecord(version: Option[UUID], localDescription: Option[String], doNotUse: Boolean, nutrientTableCodes: Map[String, String], portionSize: Seq[PortionSizeMethod])
 
 case class FoodHeader(code: String, englishDescription: String, localDescription: Option[String], doNotUse: Boolean)
@@ -56,6 +60,8 @@ case class CategoryV2(version: UUID, code: String, description: String, foods: S
 case class CategoryHeader(code: String, englishDescription: String, localDescription: Option[String], isHidden: Boolean)
 
 case class UserCategoryHeader(code: String, localDescription: String)
+
+case class NewCategory(code: String, englishDescription: String, isHidden: Boolean, attributes: InheritableAttributes)
 
 case class CategoryRecord(main: MainCategoryRecord, local: LocalCategoryRecord)
 
@@ -146,9 +152,13 @@ case class AssociatedFood (foodOrCategoryCode: Either[String, String], promptTex
 
 case class AssociatedFoodWithHeader (foodOrCategoryHeader: Either[FoodHeader, CategoryHeader], promptText: String, linkAsMain: Boolean, genericName: String)
 
-case class FoodGroup (id: Int, englishDescription: String, localDescription: Option[String]) {
+case class FoodGroupMain (id: Int, englishDescription: String) {
   override def toString = id.toString + ". " + englishDescription
 }
+
+case class FoodGroupLocal (localDescription: Option[String])
+
+case class FoodGroupRecord(main: FoodGroupMain, local: FoodGroupLocal)
 
 case class NutrientTable(id: String, description: String)
 

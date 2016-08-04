@@ -28,17 +28,21 @@ import uk.ac.ncl.openlab.intake24.InheritableAttributes
 
 import uk.ac.ncl.openlab.intake24.UserCategoryContents
 import uk.ac.ncl.openlab.intake24.UserCategoryHeader
-import uk.ac.ncl.openlab.intake24.services.UserFoodDataService
+
 import uk.ac.ncl.openlab.intake24.services.foodindex.Util.mkHeader
-import uk.ac.ncl.openlab.intake24.services.ResourceError
-import uk.ac.ncl.openlab.intake24.services.CodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ResourceError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CodeError
 import uk.ac.ncl.openlab.intake24.UserFoodData
 
 import uk.ac.ncl.openlab.intake24.UserFoodHeader
 import uk.ac.ncl.openlab.intake24.AssociatedFood
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ResourceNotFound
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedCode
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDatabaseService
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 
 @Singleton
-class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends UserFoodDataService {
+class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDatabaseService {
 
   import Util._
 
@@ -49,9 +53,9 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends UserFoo
   def checkLocale(locale: String) = if (locale != defaultLocale)
     log.warn("Locales other than en_GB are not supported by this implementation -- returning en_GB results for debug purposes");
 
-  def rootCategories(locale: String): Seq[UserCategoryHeader] = {
+  def rootCategories(locale: String): Either[DatabaseError, Seq[UserCategoryHeader]] = {
     checkLocale(locale)
-    data.categories.rootCategories.map(mkHeader)
+    Right(data.categories.rootCategories.map(mkHeader))
   }
 
   def categoryContents(code: String, locale: String) = {
@@ -65,9 +69,9 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends UserFoo
     Right(UserCategoryContents(foodHeaders, categoryHeaders))
   }
   
-  def foodAllCategories(code: String) = data.categories.foodAllCategories(code)   
+  def foodAllCategories(code: String) = Right(data.categories.foodAllCategories(code))   
   
-  def categoryAllCategories(code: String) = data.categories.categoryAllCategories(code)
+  def categoryAllCategories(code: String) = Right(data.categories.categoryAllCategories(code))
   
   def isCategoryCode(code: String) = data.categories.categoryMap.contains(code)
   
@@ -111,19 +115,19 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends UserFoo
     Right((UserFoodData(f.main.code, f.main.englishDescription, f.local.nutrientTableCodes, f.main.groupCode, portionSizeMethods, readyMealOption, sameAsBeforeOption, reasonableAmount), null))
   }
 
-  def asServedDef(id: String) = data.asServedSets.get(id) match {
+  def asServedSet(id: String) = data.asServedSets.get(id) match {
     case Some(set) => Right(set)
-    case None => Left(ResourceError.ResourceNotFound)
+    case None => Left(ResourceNotFound)
   }
 
-  def guideDef(id: String) = data.guideImages.get(id) match {
+  def guideImage(id: String) = data.guideImages.get(id) match {
     case Some(image) => Right(image)
-    case None => Left(ResourceError.ResourceNotFound)
+    case None => Left(ResourceNotFound)
   }
 
-  def drinkwareDef(id: String) = data.drinkwareSets.get(id) match {
+  def drinkwareSet(id: String) = data.drinkwareSets.get(id) match {
     case Some(set) => Right(set)
-    case None => Left(ResourceError.ResourceNotFound)
+    case None => Left(ResourceNotFound)
   }
 
   def associatedFoods(foodCode: String, locale: String) = {
@@ -141,7 +145,7 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends UserFoo
             }
         })
       }
-      case None => Left(CodeError.UndefinedCode)
+      case None => Left(UndefinedCode)
     }
   }
 
@@ -149,7 +153,7 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends UserFoo
     checkLocale(locale)
     data.brandNamesMap.get(foodCode) match {
       case Some(map) => Right(map)
-      case None => Left(CodeError.UndefinedCode)
+      case None => Left(UndefinedCode)
     }
   }
 

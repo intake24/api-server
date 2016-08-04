@@ -19,11 +19,12 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.foodxml
 
 import scala.xml._
-import uk.ac.ncl.openlab.intake24.FoodGroup
+
 import scala.xml.NodeSeq.seqToNodeSeq
+import uk.ac.ncl.openlab.intake24.FoodGroupMain
 
 object FoodGroupDef {
-  def toXml(groups: Seq[FoodGroup]) =
+  def toXml(groups: Seq[FoodGroupMain]) =
     <food-groups>
       {
         groups.sortBy(_.id).map(group =>
@@ -36,7 +37,7 @@ object FoodGroupDef {
       val id = group.attribute("id").get.text.toInt
       val description = group.attribute("description").get.text
       
-      FoodGroup(id, description, Some(description))
+      FoodGroupMain(id, description)
     })
   }
 }

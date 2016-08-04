@@ -23,7 +23,7 @@ import anorm.SQL
 import anorm.SqlParser.str
 import anorm.sqlToSimple
 
-trait SynsetsDataSqlImpl extends SqlDataService {
+trait Synsets extends SqlDataService {
   def synsets(locale: String) = tryWithConnection {
     implicit conn =>
       SQL("""SELECT synonyms FROM synonym_sets WHERE locale_id={locale}""")

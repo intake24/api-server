@@ -40,13 +40,20 @@ import org.rogach.scallop.ScallopConf
 import java.util.Properties
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import uk.ac.ncl.openlab.intake24.foodsql.Queries
+
 import java.util.UUID
 import uk.ac.ncl.openlab.intake24.foodsql.Util
 import org.postgresql.util.PSQLException
 import org.rogach.scallop.ScallopOption
+import uk.ac.ncl.openlab.intake24.foodsql.admin.AdminFoodDataServiceSqlImpl
+import uk.ac.ncl.openlab.intake24.services.admin.FoodDatabaseAdminService
+import uk.ac.ncl.openlab.intake24.FoodGroupLocal
 
-class XmlImporter(implicit val dbConn: Connection) {
+import uk.ac.ncl.openlab.intake24.LocalFoodRecord
+import uk.ac.ncl.openlab.intake24.services.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.NewFood
+
+class XmlImporter(adminService: FoodDatabaseAdminService, implicit val dbConn: Connection) {
 
   val logger = LoggerFactory.getLogger(getClass)
 
@@ -54,9 +61,9 @@ class XmlImporter(implicit val dbConn: Connection) {
 
   def importFoodGroups(foodGroupsPath: String) = {
     logger.info("Deleting existing food groups")
-    
-    SQL("DELETE FROM food_groups").execute()
-    
+
+    adminService.deleteAllFoodGroups()
+
     logger.info("Loading food groups from " + foodGroupsPath)
 
     val foodGroups = FoodGroupDef.parseXml(XML.load(foodGroupsPath))
@@ -64,118 +71,46 @@ class XmlImporter(implicit val dbConn: Connection) {
     if (!foodGroups.isEmpty) {
       logger.info("Writing " + foodGroups.size + " food groups to database")
 
-      val foodGroupParams =
-        foodGroups.map(g => Seq[NamedParameter]('id -> g.id, 'description -> g.englishDescription))
+      adminService.createFoodGroups(foodGroups)
 
-      BatchSql("""INSERT INTO food_groups VALUES ({id}, {description})""", foodGroupParams).execute()
+      val baseLocaleData = foodGroups.map {
+        g => (g.id -> g.englishDescription)
+      }.toMap
 
-      val foodGroupLocalParams =
-        foodGroups.map(g => Seq[NamedParameter]('id -> g.id, 'locale_id -> defaultLocale, 'local_description -> g.localDescription))
+      adminService.createLocalFoodGroups(baseLocaleData, defaultLocale)
 
-      BatchSql("""INSERT INTO food_groups_local VALUES ({id}, {locale_id}, {local_description})""", foodGroupLocalParams).execute()
     } else
       logger.warn("Food groups file contains no records")
   }
 
   def importFoods(foodsPath: String) = {
-    logger.info("Deleting existing food records")
-    
-    SQL("DELETE FROM foods").execute()
-   
     logger.info("Loading foods from " + foodsPath)
 
     val foods = FoodDef.parseXml(XML.load(foodsPath))
 
-    if (!foods.isEmpty) {
-      logger.info("Writing " + foods.size + " foods to database")
-      
-      val foodParams = foods.map {
-        f => 
-          val truncatedEnglishDesc = f.main.englishDescription.take(128)
-          if (f.main.englishDescription.length() > 128) {
-            logger.warn(s"English description too long for ${f.main.code}, truncating")
-            logger.warn(f.main.englishDescription)
-          }
-          Seq[NamedParameter]('code -> f.main.code, 'description -> truncatedEnglishDesc, 'food_group_id -> f.main.groupCode, 'version -> f.main.version)
-      }
+    logger.info("Deleting existing food records")
 
-      try {
-        BatchSql(Queries.foodsInsert, foodParams).execute()
-      } catch {
-        case e: BatchUpdateException => throw new RuntimeException(e.getMessage, e.getNextException)
-      }
+    adminService.deleteAllFoods()
 
-      val foodLocalParams = foods.map {
-        f =>
-          val truncatedLocalDesc = f.local.localDescription.map(_.take(128))
-          f.local.localDescription match {
-            case Some(desc) if desc.length() > 128 => {
-              logger.warn(s"Local description too long for ${f.main.code}, truncating")
-              logger.warn(desc)
-            }
-            case _ => ()
-          }
-          Seq[NamedParameter]('food_code -> f.main.code, 'locale_id -> defaultLocale, 'local_description -> truncatedLocalDesc, 'do_not_use -> false, 'version -> f.local.version)
-      }
+    val newFoodRecords = foods.map {
+      f => NewFood(f.main.code, f.main.englishDescription, f.main.groupCode, f.main.attributes)
+    }
 
-      try {
-        BatchSql(Queries.foodsLocalInsert, foodLocalParams).execute()
-      } catch {
-        case e: BatchUpdateException => throw new RuntimeException(e.getMessage, e.getNextException)
-      }
-
-      val foodNutritionTableParams =
-        foods.flatMap {
-          food =>
-            food.local.nutrientTableCodes.map {
-              case (table_id, table_code) => Seq[NamedParameter]('food_code -> food.main.code, 'locale_id -> defaultLocale, 'nutrient_table_id -> table_id, 'nutrient_table_code -> table_code)
-            }
-        }
-
-      try {
-        BatchSql(Queries.foodNutrientTablesInsert, foodNutritionTableParams).execute()
-      } catch {
-        case e: BatchUpdateException => throw new RuntimeException(e.getMessage, e.getNextException)
-      }
-
-      logger.info("Writing " + foods.size + " food attribute records to database")
-
-      val foodAttributeParams =
-        foods.map(f => Seq[NamedParameter]('food_code -> f.main.code, 'same_as_before_option -> f.main.attributes.sameAsBeforeOption,
-          'ready_meal_option -> f.main.attributes.readyMealOption, 'reasonable_amount -> f.main.attributes.reasonableAmount))
-
-      BatchSql(Queries.foodsAttributesInsert, foodAttributeParams).execute()
-
-      val psmParams =
-        foods.flatMap(f => f.local.portionSize.map(ps => Seq[NamedParameter]('food_code -> f.main.code, 'locale_id -> defaultLocale, 'method -> ps.method, 'description -> ps.description, 'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes)))
-
-      if (!psmParams.isEmpty) {
-        logger.info("Writing " + psmParams.size + " food portion size method records to database")
-
-        val ids = Util.batchKeys(BatchSql(Queries.foodsPortionSizeMethodsInsert, psmParams))
-
-        val psmParamParams = foods.flatMap(_.local.portionSize).zip(ids).flatMap {
-          case (psm, id) => psm.parameters.map(param => Seq[NamedParameter]('portion_size_method_id -> id, 'name -> param.name, 'value -> param.value))
-        }
-
-        if (!psmParamParams.isEmpty) {
-          logger.info("Writing " + psmParamParams.size + " food portion size method parameters to database")
-
-          BatchSql(Queries.foodsPortionSizeMethodsParamsInsert, psmParamParams).execute()
-        } else
-          logger.warn("No food portion size method parameters found")
-      } else
-        logger.warn("No food portion size records found")
-    } else
-      logger.warn("Foods file contains no records")
+    val newLocalRecords = foods.map {
+      f => (f.main.code -> LocalFoodRecord(None, f.local.localDescription, f.local.doNotUse, f.local.nutrientTableCodes, f.local.portionSize))
+    }.toMap
+    
+    adminService.createFoods(newFoodRecords).right.flatMap(_ => adminService.createLocalFoods(newLocalRecords)) match {
+      case Left(DatabaseError(message)) => throw new RuntimeException(s"Failed to import foods: $message")
+      case _ => logger.info("Foods import successful")
+    }
   }
 
   def importCategories(categoriesPath: String) = {
     logger.info("Deleting existing categories")
-    
+
     SQL("DELETE FROM categories").execute()
-    
-    
+
     logger.info("Loading categories from " + categoriesPath)
 
     val categories = CategoryDef.parseXml(XML.load(categoriesPath))
@@ -253,9 +188,9 @@ class XmlImporter(implicit val dbConn: Connection) {
 
   def importAsServed(asServedPath: String) = {
     logger.info("Deleting existing as served image definitions")
-    
+
     SQL("DELETE FROM as_served_sets").execute()
-    
+
     logger.info("Loading as served image definitions from " + asServedPath)
     val asServed = AsServedDef.parseXml(XML.load(asServedPath)).values.toSeq.sortBy(_.id)
 
@@ -285,9 +220,9 @@ class XmlImporter(implicit val dbConn: Connection) {
 
   def importGuide(guidePath: String, imageMapsPath: String) = {
     logger.info("Deleting existing guide image definitions")
-    
-    SQL("DELETE FROM guide_images").execute()    
-    
+
+    SQL("DELETE FROM guide_images").execute()
+
     logger.info("Loading guide image definitions from " + guidePath)
     val guideImages = GuideImageDef.parseXml(XML.load(guidePath))
 
@@ -329,9 +264,9 @@ class XmlImporter(implicit val dbConn: Connection) {
 
   def importBrands(brandsPath: String) = {
     logger.info("Deleting existing brand definitions")
-    
+
     SQL("DELETE FROM brands").execute()
-    
+
     logger.info("Loading brands definitions from " + brandsPath)
     val brands = BrandDef.parseXml(XML.load(brandsPath))
 
@@ -349,9 +284,9 @@ class XmlImporter(implicit val dbConn: Connection) {
 
   def importDrinkware(drinkwarePath: String) = {
     logger.info("Deleting existing drinkware definitions")
-    
+
     SQL("DELETE FROM drinkware_sets").execute()
-    
+
     logger.info("Loading drinkware definitions from " + drinkwarePath)
     val drinkware = DrinkwareDef.parseXml(XML.load(drinkwarePath))
 
@@ -395,16 +330,16 @@ class XmlImporter(implicit val dbConn: Connection) {
 
   def importAssociatedFoodPrompts(foodsPath: String, categoryPath: String, promptsPath: String) = {
     logger.info("Deleting existing associated food prompts")
-    
+
     SQL("DELETE FROM associated_foods").execute()
-    
+
     logger.info("Loading associated food prompts from " + promptsPath)
-    
+
     val prompts = PromptDef.parseXml(XML.load(promptsPath))
-    
+
     logger.info("Indexing foods and categories for associated type resolution" + promptsPath)
-    
-    val foods = FoodDef.parseXml(XML.load(foodsPath)).map(_.main.code).toSet 
+
+    val foods = FoodDef.parseXml(XML.load(foodsPath)).map(_.main.code).toSet
     val categories = CategoryDef.parseXml(XML.load(categoryPath)).map(_.code).toSet
 
     if (!prompts.isEmpty) {
@@ -412,10 +347,10 @@ class XmlImporter(implicit val dbConn: Connection) {
 
       val promptParams = prompts.keySet.toSeq.flatMap {
         foodCode =>
-          
+
           prompts(foodCode).map {
             prompt =>
-              
+
               val (assocFoodCode, assocCategoryCode) =
                 if (categories.contains(prompt.category)) {
                   logger.info(s"Resolved ${prompt.category} as category")
@@ -424,7 +359,7 @@ class XmlImporter(implicit val dbConn: Connection) {
                   logger.info(s"Resolved ${prompt.category} as food")
                   (Some(prompt.category), None)
                 }
-              
+
               Seq[NamedParameter]('food_code -> foodCode, 'locale_id -> defaultLocale, 'associated_food_code -> assocFoodCode, 'associated_category_code -> assocCategoryCode, 'text -> prompt.promptText, 'link_as_main -> prompt.linkAsMain,
                 'generic_name -> prompt.genericName)
           }
@@ -441,10 +376,10 @@ class XmlImporter(implicit val dbConn: Connection) {
 
   def importSplitList(path: String) {
     logger.info("Deleting existing split list")
-    
+
     SQL("DELETE FROM split_words").execute()
     SQL("DELETE FROM split_list").execute()
-    
+
     logger.info("Loading split list from " + path)
     val lines = scala.io.Source.fromFile(path).getLines().toSeq
 
@@ -474,9 +409,9 @@ class XmlImporter(implicit val dbConn: Connection) {
 
   def importSynonymSets(path: String) = {
     logger.info("Deleting existing synonym sets")
-    
+
     SQL("DELETE FROM synonym_sets").execute()
-    
+
     logger.info("Loading synonym sets from " + path)
     val lines = scala.io.Source.fromFile(path).getLines().toSeq
 
@@ -517,15 +452,17 @@ trait Options extends ScallopConf {
 object XmlImport extends App with WarningMessage with DatabaseConnection {
 
   val logger = LoggerFactory.getLogger(getClass)
-  
+
   val options = new ScallopConf(args) with Options with DatabaseOptions
-  
+
   options.afterInit()
-  
+
   displayWarningMessage("THIS WILL DESTROY ALL FOOD AND CATEGORY RECORDS IN THE DATABASE!")
-  
+
   val dataSource = getDataSource(options)
-      
+
+  val adminService = new AdminFoodDataServiceSqlImpl(dataSource)
+
   implicit val dbConn = dataSource.getConnection
 
   val importer = new XmlImporter()

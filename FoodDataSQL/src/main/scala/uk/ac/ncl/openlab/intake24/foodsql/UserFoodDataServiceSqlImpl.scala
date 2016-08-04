@@ -34,14 +34,15 @@ import uk.ac.ncl.openlab.intake24._
 import anorm.SqlParser
 import anorm.SqlMappingError
 import anorm.AnormException
-import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService
+
 import uk.ac.ncl.openlab.intake24.services.UserFoodDataService
-import uk.ac.ncl.openlab.intake24.services.CodeError
-import uk.ac.ncl.openlab.intake24.foodsql.user.UserAssociatedFoodsImpl
+import uk.ac.ncl.openlab.intake24.services.errors.CodeError
+import uk.ac.ncl.openlab.intake24.foodsql.user.AssociatedFoodsUserImpl
+import uk.ac.ncl.openlab.intake24.services.errors.UndefinedCode
 
 @Singleton
 class UserFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends UserFoodDataService
-    with SqlDataService with FoodDataSqlImpl with PortionSizeDataSqlImpl with UserAssociatedFoodsImpl {
+    with SqlDataService with FoodDataSqlImpl with PortionSizeDataSqlImpl with AssociatedFoodsUserImpl {
 
   import UserFoodDataServiceSqlImpl._
 
@@ -79,7 +80,7 @@ class UserFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSou
       val rows = SQL(query).on('food_code -> foodCode, 'locale_id -> locale).executeQuery().as(Macro.namedParser[BrandNamesRow].*)
 
       if (rows.isEmpty)
-        Left(CodeError.UndefinedCode)
+        Left(UndefinedCode)
       else if (rows.head.name.isEmpty)
         Right(Seq())
       else {

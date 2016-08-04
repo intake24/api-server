@@ -31,12 +31,14 @@ import anorm.sqlToSimple
 import uk.ac.ncl.openlab.intake24.PortionSizeMethod
 import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
 import uk.ac.ncl.openlab.intake24.UserFoodData
-import uk.ac.ncl.openlab.intake24.services.FoodDataError
+import uk.ac.ncl.openlab.intake24.services.errors.FoodDataError
 import uk.ac.ncl.openlab.intake24.services.FoodDataSources
 import uk.ac.ncl.openlab.intake24.services.InheritableAttributeSource
 import uk.ac.ncl.openlab.intake24.services.InheritableAttributeSources
 import uk.ac.ncl.openlab.intake24.services.SourceLocale
 import uk.ac.ncl.openlab.intake24.services.SourceRecord
+import uk.ac.ncl.openlab.intake24.services.errors.NoLocalDescription
+import uk.ac.ncl.openlab.intake24.services.errors.UndefinedCode
 
 trait FoodDataSqlImpl extends SqlDataService {
 
@@ -289,9 +291,9 @@ trait FoodDataSqlImpl extends SqlDataService {
             val sources = FoodDataSources(SourceLocale.Prototype(locale), nutrientTableCodesSrc, portionSizeMethodsSource, attributes.sources)
             Right((data, sources))
           }
-          case (None, None) => Left(FoodDataError.NoLocalDescription)
+          case (None, None) => Left(NoLocalDescription)
         }
-        case None => Left(FoodDataError.UndefinedCode)
+        case None => Left(UndefinedCode)
       }
   }
 }

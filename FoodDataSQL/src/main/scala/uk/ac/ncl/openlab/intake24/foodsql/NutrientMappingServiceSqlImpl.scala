@@ -8,9 +8,13 @@ import anorm.SQL
 import anorm.sqlToSimple
 import javax.sql.DataSource
 import uk.ac.ncl.openlab.intake24.nutrients.Nutrient
-import uk.ac.ncl.openlab.intake24.services.NutrientMappingError
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientDescription
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService
+import uk.ac.ncl.openlab.intake24.services.errors.NutrientMappingError
+import uk.ac.ncl.openlab.intake24.services.errors.RecordNotFound
+
+import org.postgresql.util.PSQLException
+import uk.ac.ncl.openlab.intake24.services.errors.DatabaseError
 
 class NutrientMappingServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends NutrientMappingService with SqlDataService {
 
@@ -30,14 +34,17 @@ class NutrientMappingServiceSqlImpl @Inject() (@Named("intake24_foods") val data
 
   def nutrientsFor(table_id: String, record_id: String, weight: Double): Either[NutrientMappingError, Map[Nutrient, Double]] = tryWithConnection {
     implicit conn =>
-      val rows = SQL("SELECT nutrient_type_id, units_per_100g FROM nutrient_table_records_nutrients WHERE nutrient_table_record_id={record_id} and nutrient_table_id={table_id}")
-        .on('record_id -> record_id, 'table_id -> table_id)
-        .as(Macro.namedParser[NutrientsRow].*)
+      try {
+        val rows = SQL("SELECT nutrient_type_id, units_per_100g FROM nutrient_table_records_nutrients WHERE nutrient_table_record_id={record_id} and nutrient_table_id={table_id}")
+          .on('record_id -> record_id, 'table_id -> table_id)
+          .as(Macro.namedParser[NutrientsRow].*)
 
-      if (rows.isEmpty)
-        Left(NutrientMappingError.RecordNotFound)
-      else
-        Right(rows.map(row => (Nutrient.for_id(row.nutrient_type_id).get -> (weight * row.units_per_100g / 100.0))).toMap)
+        if (rows.isEmpty)
+          Left(RecordNotFound)
+        else
+          Right(rows.map(row => (Nutrient.for_id(row.nutrient_type_id).get -> (weight * row.units_per_100g / 100.0))).toMap)
+      } catch {
+        case e: PSQLException => Left(DatabaseError(e.getMessage))
+      }
   }
-
 }

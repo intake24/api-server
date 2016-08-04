@@ -16,30 +16,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package uk.ac.ncl.openlab.intake24.services
+package uk.ac.ncl.openlab.intake24.services.fooddb.user
 
-sealed trait NutrientMappingError
-
-object NutrientMappingError {
-  case object TableNotFound extends NutrientMappingError
-  case object RecordNotFound extends NutrientMappingError
-}
-
-sealed trait CodeError
-
-object CodeError {
-  case object UndefinedCode extends CodeError
-}
-
-sealed trait FoodDataError
-
-object FoodDataError {
-  case object UndefinedCode extends FoodDataError
-  case object NoLocalDescription extends FoodDataError
-}
-
-sealed trait ResourceError
-
-object ResourceError {
-  case object ResourceNotFound extends ResourceError
-}
+trait FoodDatabaseService
+  extends FoodBrowsingService
+  with AsServedImageService
+  with GuideImageService
+  with DrinkwareService
+  with AssociatedFoodsService
+  with BrandNamesService {}

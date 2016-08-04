@@ -1,8 +1,7 @@
-package uk.ac.ncl.openlab.intake24.foodsql
+package uk.ac.ncl.openlab.intake24.foodsql.admin
 
 import scala.Left
 import scala.Right
-
 import anorm.Macro
 import anorm.NamedParameter.symbol
 import anorm.SQL
@@ -11,16 +10,21 @@ import uk.ac.ncl.openlab.intake24.AssociatedFood
 import uk.ac.ncl.openlab.intake24.AssociatedFoodWithHeader
 import uk.ac.ncl.openlab.intake24.CategoryHeader
 import uk.ac.ncl.openlab.intake24.FoodHeader
-import uk.ac.ncl.openlab.intake24.services.CodeError
-import uk.ac.ncl.openlab.intake24.UserFoodHeader
-import uk.ac.ncl.openlab.intake24.UserCategoryHeader
+
 import anorm.NamedParameter
-import uk.ac.ncl.openlab.intake24.services.SqlException
+
 import anorm.BatchSql
 import org.postgresql.util.PSQLException
-import uk.ac.ncl.openlab.intake24.services.UpdateResult
 
-trait AdminAssociatedFoodsImpl extends SqlDataService {
+import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedCode
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
+
+trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with SqlDataService {
 
   private case class AssociatedFoodPromptsRow(
     associated_food_code: Option[String], food_english_description: Option[String], food_local_description: Option[String], food_do_not_use: Option[Boolean],
@@ -57,7 +61,7 @@ trait AdminAssociatedFoodsImpl extends SqlDataService {
       }
 
       if (rows.isEmpty) // No such food in foods table
-        Left(CodeError.UndefinedCode)
+        Left(UndefinedCode)
       else if (rows.head.text.isEmpty) // All columns will be null if there are no matching associated food records, check
         // the first one that cannot be null 
         Right(Seq())
@@ -65,36 +69,32 @@ trait AdminAssociatedFoodsImpl extends SqlDataService {
         Right(rows.map(mkPrompt))
   }
 
-  def updateAssociatedFoods(foodCode: String, locale: String, foods: Seq[AssociatedFood]): UpdateResult = tryWithConnection {
+  def updateAssociatedFoods(foodCode: String, locale: String, foods: Seq[AssociatedFood]): Either[UpdateError, Unit] = tryWithConnection {
     implicit conn =>
-      try {
-        conn.setAutoCommit(false)
+      conn.setAutoCommit(false)
 
-        SQL("DELETE FROM associated_food_prompts WHERE food_code={food_code} AND locale_id={locale_id}")
-          .on('food_code -> foodCode, 'locale_id -> locale)
-          .execute()
+      SQL("DELETE FROM associated_food_prompts WHERE food_code={food_code} AND locale_id={locale_id}")
+        .on('food_code -> foodCode, 'locale_id -> locale)
+        .execute()
 
-        if (foods.nonEmpty) {
+      if (foods.nonEmpty) {
 
-          val params = foods.flatMap {
-            p =>
+        val params = foods.flatMap {
+          p =>
 
-              val foodOption = p.foodOrCategoryCode.left.toOption
-              val categoryOption = p.foodOrCategoryCode.right.toOption
+            val foodOption = p.foodOrCategoryCode.left.toOption
+            val categoryOption = p.foodOrCategoryCode.right.toOption
 
-              Seq[NamedParameter]('food_code -> foodCode, 'locale_id -> locale, 'associated_food_code -> foodOption,
-                'associated_category_code -> categoryOption, 'text -> p.promptText, 'link_as_main -> p.linkAsMain, 'generic_name -> p.genericName)
-          }
-
-          BatchSql("INSERT INTO associated_food_prompts VALUES (DEFAULT, {food_code}, {locale_id}, {associated_category_code}, {associated_food_code}, {text}, {link_as_main}, {generic_name})", params)
-            .execute()
+            Seq[NamedParameter]('food_code -> foodCode, 'locale_id -> locale, 'associated_food_code -> foodOption,
+              'associated_category_code -> categoryOption, 'text -> p.promptText, 'link_as_main -> p.linkAsMain, 'generic_name -> p.genericName)
         }
 
-        conn.commit()
-
-        uk.ac.ncl.openlab.intake24.services.Success
-      } catch {
-        case e: PSQLException => SqlException(e.getServerErrorMessage.getMessage)
+        BatchSql("INSERT INTO associated_food_prompts VALUES (DEFAULT, {food_code}, {locale_id}, {associated_category_code}, {associated_food_code}, {text}, {link_as_main}, {generic_name})", params)
+          .execute()
       }
+
+      conn.commit()
+
+      Right(())
   }
 }

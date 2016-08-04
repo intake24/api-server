@@ -12,7 +12,7 @@ import com.google.inject.Singleton
 
 import au.com.bytecode.opencsv.CSVWriter
 import uk.ac.ncl.openlab.intake24.Locale
-import uk.ac.ncl.openlab.intake24.foodsql.AdminFoodDataServiceSqlImpl
+import uk.ac.ncl.openlab.intake24.foodsql.admin.AdminFoodDataServiceSqlImpl
 import uk.ac.ncl.openlab.intake24.foodsql.IndexFoodDataServiceSqlImpl
 import uk.ac.ncl.openlab.intake24.foodsql.LocaleManagementSqlImpl
 import uk.ac.ncl.openlab.intake24.foodsql.tools.DatabaseConnection
