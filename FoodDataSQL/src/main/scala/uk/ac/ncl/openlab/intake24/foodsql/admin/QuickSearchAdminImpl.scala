@@ -4,10 +4,12 @@ import uk.ac.ncl.openlab.intake24.FoodHeader
 import uk.ac.ncl.openlab.intake24.CategoryHeader
 import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
 import anorm._
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.QuickSearchService
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 
-trait AdminQuickSearch extends SqlDataService with AdminHeaderRows {
+trait QuickSearchAdminImpl extends QuickSearchService with SqlDataService with AdminHeaderRows {
   
-  def searchFoods(searchTerm: String, locale: String): Seq[FoodHeader] = tryWithConnection {
+  def searchFoods(searchTerm: String, locale: String): Either[DatabaseError, Seq[FoodHeader]] = tryWithConnection {
     implicit conn =>
       val lowerCaseTerm = searchTerm.toLowerCase
 
@@ -19,10 +21,10 @@ trait AdminQuickSearch extends SqlDataService with AdminHeaderRows {
            |ORDER BY local_description DESC
            |LIMIT 30""".stripMargin
 
-      SQL(query).on('pattern -> s"%${lowerCaseTerm}%", 'locale_id -> locale).executeQuery().as(Macro.namedParser[FoodHeaderRow].*).map(_.asFoodHeader)
+      Right(SQL(query).on('pattern -> s"%${lowerCaseTerm}%", 'locale_id -> locale).executeQuery().as(Macro.namedParser[FoodHeaderRow].*).map(_.asFoodHeader))
   }
 
-  def searchCategories(searchTerm: String, locale: String): Seq[CategoryHeader] = tryWithConnection {
+  def searchCategories(searchTerm: String, locale: String): Either[DatabaseError, Seq[CategoryHeader]] = tryWithConnection {
     implicit conn =>
       val lowerCaseTerm = searchTerm.toLowerCase
 
@@ -34,7 +36,7 @@ trait AdminQuickSearch extends SqlDataService with AdminHeaderRows {
            |ORDER BY local_description DESC
            |LIMIT 30""".stripMargin
 
-      SQL(query).on('pattern -> s"%${lowerCaseTerm}%", 'locale_id -> locale).executeQuery().as(Macro.namedParser[CategoryHeaderRow].*).map(_.asCategoryHeader)
+      Right(SQL(query).on('pattern -> s"%${lowerCaseTerm}%", 'locale_id -> locale).executeQuery().as(Macro.namedParser[CategoryHeaderRow].*).map(_.asCategoryHeader))
 
   }
 }

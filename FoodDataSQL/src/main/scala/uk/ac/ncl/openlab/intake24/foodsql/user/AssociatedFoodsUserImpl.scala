@@ -10,9 +10,9 @@ import anorm.sqlToSimple
 import uk.ac.ncl.openlab.intake24.AssociatedFood
 import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
 
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CodeError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedCode
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.AssociatedFoodsService
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalFoodCodeError
 
 trait AssociatedFoodsUserImpl extends AssociatedFoodsService with SqlDataService {
 
@@ -20,14 +20,17 @@ trait AssociatedFoodsUserImpl extends AssociatedFoodsService with SqlDataService
     text: Option[String], link_as_main: Option[Boolean], generic_name: Option[String], locale_id: Option[String])
 
   private val query =
-    """|SELECT associated_food_code, associated_category_code, text, link_as_main, generic_name, locale_id
-       |  FROM foods LEFT JOIN associated_foods ON foods.code = associated_foods.food_code
-       |WHERE
-       |  foods.code = {food_code} 
-       |  AND (associated_foods.locale_id = {locale_id} OR associated_foods.locale_id IS NULL OR associated_foods.locale_id IN (SELECT prototype_locale_id FROM locales WHERE id = 'locale_id'))
+    """|WITH v AS(
+       |  SELECT (SELECT code FROM foods WHERE code = 'AABL') AS food_code, 
+       |  SELECT (SELECT id FROM locales WHERE id = 'pt_PT') AS locale_id
+       |)
+       |SELECT v.food_code, v.locale_id, associated_foods.id, associated_food_code, associated_category_code, text, link_as_main, generic_name
+       |FROM v LEFT JOIN associated_foods 
+       |   ON v.food_code = associated_foods.food_code 
+       |      AND (v.locale_id = associated_foods.locale_id OR associated_foods.locale_id IN (SELECT prototype_locale_id FROM locales WHERE id = v.locale_id))
        |ORDER BY id""".stripMargin
 
-  def associatedFoods(foodCode: String, locale: String): Either[CodeError, Seq[AssociatedFood]] = tryWithConnection {
+  def associatedFoods(foodCode: String, locale: String): Either[LocalFoodCodeError, Seq[AssociatedFood]] = tryWithConnection {
     implicit conn =>
 
       val rows = SQL(query).on('food_code -> foodCode, 'locale_id -> locale).executeQuery().as(Macro.namedParser[AssociatedFoodPromptsRow].*)

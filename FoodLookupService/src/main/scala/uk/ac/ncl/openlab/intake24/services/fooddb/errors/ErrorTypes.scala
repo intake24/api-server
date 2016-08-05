@@ -25,11 +25,15 @@ object NutrientMappingError
 case object TableNotFound extends NutrientMappingError
 case object RecordNotFound extends NutrientMappingError
 
-sealed trait CodeError
+sealed trait LocalFoodCodeError
 
 sealed trait FoodDataError
 
-case object UndefinedCode extends CodeError with FoodDataError with UpdateError
+sealed trait FoodCodeError
+
+case object UndefinedCode extends FoodCodeError with UpdateError with LocalFoodCodeError
+
+case object UndefinedLocale extends LocalFoodCodeError
 
 case object NoLocalDescription extends FoodDataError
 
@@ -47,5 +51,5 @@ sealed trait CreateError
 
 case object DuplicateCode extends CreateError
 
-case class DatabaseError(message: String, cause: Throwable) extends UpdateError with CodeError with FoodDataError with ResourceError with NutrientMappingError with CreateError
+case class DatabaseError(message: String, cause: Throwable) extends UpdateError with FoodCodeError with LocalFoodCodeError with FoodDataError with ResourceError with NutrientMappingError with CreateError
 

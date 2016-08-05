@@ -2,14 +2,14 @@ package uk.ac.ncl.openlab.intake24.services.fooddb.admin
 
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.FoodCodeError
 import uk.ac.ncl.openlab.intake24.CategoryRecord
 import uk.ac.ncl.openlab.intake24.MainCategoryRecord
 import uk.ac.ncl.openlab.intake24.LocalCategoryRecord
 import uk.ac.ncl.openlab.intake24.NewCategory
 
 trait CategoriesAdminService {
-  def categoryRecord(code: String, locale: String): Either[CodeError, CategoryRecord]
+  def categoryRecord(code: String, locale: String): Either[FoodCodeError, CategoryRecord]
   
   def isCategoryCodeAvailable(code: String): Either[DatabaseError, Boolean]
   def isCategoryCode(code: String): Either[DatabaseError, Boolean]

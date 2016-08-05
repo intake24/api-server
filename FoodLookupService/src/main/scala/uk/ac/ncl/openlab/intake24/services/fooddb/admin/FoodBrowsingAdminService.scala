@@ -1,7 +1,7 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.admin
 
 import uk.ac.ncl.openlab.intake24.FoodHeader
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.FoodCodeError
 import uk.ac.ncl.openlab.intake24.FoodRecord
 import uk.ac.ncl.openlab.intake24.CategoryHeader
 import uk.ac.ncl.openlab.intake24.CategoryContents
@@ -15,7 +15,7 @@ trait FoodBrowsingAdminService {
 
   def categoryContents(code: String, locale: String): Either[DatabaseError, CategoryContents]
 
-  def foodRecord(code: String, locale: String): Either[CodeError, FoodRecord]
+  def foodRecord(code: String, locale: String): Either[FoodCodeError, FoodRecord]
 
   def foodParentCategories(code: String, locale: String): Either[DatabaseError, Seq[CategoryHeader]]
 

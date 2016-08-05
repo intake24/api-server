@@ -31,7 +31,7 @@ import uk.ac.ncl.openlab.intake24.UserCategoryHeader
 
 import uk.ac.ncl.openlab.intake24.services.foodindex.Util.mkHeader
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ResourceError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CodeError
+
 import uk.ac.ncl.openlab.intake24.UserFoodData
 
 import uk.ac.ncl.openlab.intake24.UserFoodHeader

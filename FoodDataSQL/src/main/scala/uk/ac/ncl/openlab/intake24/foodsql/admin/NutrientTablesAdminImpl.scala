@@ -5,15 +5,17 @@ import anorm.SQL
 import anorm.Macro
 import anorm.sqlToSimple
 import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.NutrientTablesAdminService
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 
-trait AdminNutrientTables extends SqlDataService {
+trait NutrientTablesAdminImpl extends NutrientTablesAdminService with SqlDataService {
   private case class NutrientTableDescRow(id: String, description: String) {
     def asNutrientTable = NutrientTable(id, description)
   }
 
-  def nutrientTables(): Seq[NutrientTable] = tryWithConnection {
+  def nutrientTables(): Either[DatabaseError, Seq[NutrientTable]] = tryWithConnection {
     implicit conn =>
       val query = """SELECT id, description FROM nutrient_tables ORDER BY id ASC"""
-      SQL(query).executeQuery().as(Macro.namedParser[NutrientTableDescRow].*).map(_.asNutrientTable)
+      Right(SQL(query).executeQuery().as(Macro.namedParser[NutrientTableDescRow].*).map(_.asNutrientTable))
   }
 }

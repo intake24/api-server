@@ -2,7 +2,7 @@ package uk.ac.ncl.openlab.intake24.services.fooddb.user
 
 import uk.ac.ncl.openlab.intake24.UserCategoryHeader
 import uk.ac.ncl.openlab.intake24.UserCategoryContents
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.FoodCodeError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.FoodDataError
 import uk.ac.ncl.openlab.intake24.UserFoodData
@@ -44,12 +44,12 @@ trait FoodBrowsingService {
   
   def rootCategories(locale: String): Either[DatabaseError, Seq[UserCategoryHeader]]
 
-  def categoryContents(code: String, locale: String): Either[CodeError, UserCategoryContents]
+  def categoryContents(code: String, locale: String): Either[FoodCodeError, UserCategoryContents]
 
   def foodData(code: String, locale: String): Either[FoodDataError, (UserFoodData, FoodDataSources)]
     
   /* The following methods are needed associated foods logic */
-  def foodAllCategories(code: String): Either[CodeError, Seq[String]]
+  def foodAllCategories(code: String): Either[FoodCodeError, Seq[String]]
   
-  def categoryAllCategories(code: String): Either[CodeError, Seq[String]]
+  def categoryAllCategories(code: String): Either[FoodCodeError, Seq[String]]
 }

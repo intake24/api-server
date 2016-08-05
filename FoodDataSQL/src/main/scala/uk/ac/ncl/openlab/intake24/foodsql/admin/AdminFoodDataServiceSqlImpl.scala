@@ -29,12 +29,12 @@ class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
     with FoodsAdminServiceImpl
     with AdminCategories       
     with AdminFoodBrowsing
-    with AdminQuickSearch
+    with QuickSearchAdminImpl
     with FoodGroupsAdminServiceImpl
-    with AdminGuideImages
+    with GuideImageAdminImpl
     with AsServedImageAdminServiceImpl
     with AdminDrinkware
     with AdminHeaderRows
-    with AdminNutrientTables    
+    with NutrientTablesAdminImpl    
     with AssociatedFoodsAdminImpl
     with BrandNamesAdminService { }
