@@ -8,9 +8,12 @@ import uk.ac.ncl.openlab.intake24.CategoryContents
 import anorm.NamedParameter.symbol
 
 import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodBrowsingAdminService
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
 
-trait AdminFoodBrowsing extends SqlDataService with AdminHeaderRows {
- def uncategorisedFoods(locale: String): Seq[FoodHeader] = tryWithConnection {
+trait AdminFoodBrowsing extends SqlDataService with FoodBrowsingAdminService with AdminHeaderRows {
+  def uncategorisedFoods(locale: String): Either[LocaleError, Seq[FoodHeader]] = tryWithConnection {
     implicit conn =>
       val query =
         """|SELECT code, description, local_description, do_not_use
@@ -20,7 +23,6 @@ trait AdminFoodBrowsing extends SqlDataService with AdminHeaderRows {
 
       SQL(query).executeQuery().as(Macro.namedParser[FoodHeaderRow].*).map(_.asFoodHeader)
   }
-
 
   def rootCategories(locale: String): Seq[CategoryHeader] = tryWithConnection {
     implicit conn =>
@@ -36,7 +38,6 @@ trait AdminFoodBrowsing extends SqlDataService with AdminHeaderRows {
 
       SQL(query).on('locale_id -> locale).executeQuery().as(Macro.namedParser[CategoryHeaderRow].*).map(_.asCategoryHeader)
   }
-
 
   def categoryContents(code: String, locale: String): CategoryContents = tryWithConnection {
     implicit conn =>
@@ -62,8 +63,8 @@ trait AdminFoodBrowsing extends SqlDataService with AdminHeaderRows {
 
       CategoryContents(foods, categories)
   }
-  
-   def foodParentCategories(code: String, locale: String): Seq[CategoryHeader] = tryWithConnection {
+
+  def foodParentCategories(code: String, locale: String): Seq[CategoryHeader] = tryWithConnection {
     implicit conn =>
       SQL("""|SELECT code, description, local_description, is_hidden 
              |FROM foods_categories 

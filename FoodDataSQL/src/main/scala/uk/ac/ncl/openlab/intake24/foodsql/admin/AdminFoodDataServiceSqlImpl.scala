@@ -27,7 +27,7 @@ import javax.sql.DataSource
 @Singleton
 class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends AdminFoodDataService      
     with FoodsAdminServiceImpl
-    with AdminCategories       
+    with CategoriesAdminServiceImpl       
     with AdminFoodBrowsing
     with QuickSearchAdminImpl
     with FoodGroupsAdminServiceImpl

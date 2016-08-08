@@ -15,8 +15,6 @@ trait FoodBrowsingAdminService {
 
   def categoryContents(code: String, locale: String): Either[DatabaseError, CategoryContents]
 
-  def foodRecord(code: String, locale: String): Either[FoodCodeError, FoodRecord]
-
   def foodParentCategories(code: String, locale: String): Either[DatabaseError, Seq[CategoryHeader]]
 
   def foodAllCategoriesCodes(code: String): Either[DatabaseError, Seq[String]]

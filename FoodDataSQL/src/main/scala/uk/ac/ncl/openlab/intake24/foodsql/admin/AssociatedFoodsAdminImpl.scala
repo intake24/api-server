@@ -17,12 +17,13 @@ import anorm.BatchSql
 import org.postgresql.util.PSQLException
 
 import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CodeError
+
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedCode
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalFoodCodeError
 
 trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with SqlDataService {
 
@@ -45,8 +46,10 @@ trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with SqlDataS
        |  foods.code = {food_code} AND (associated_foods.locale_id = {locale_id} OR associated_foods.locale_id IS NULL) 
        |ORDER BY id""".stripMargin
 
-  def associatedFoods(foodCode: String, locale: String): Either[CodeError, Seq[AssociatedFoodWithHeader]] = tryWithConnection {
+  def associatedFoods(foodCode: String, locale: String): Either[LocalFoodCodeError, Seq[AssociatedFoodWithHeader]] = tryWithConnection {
     implicit conn =>
+      
+      // TODO: change query to first row validation style
 
       val rows = SQL(query).on('food_code -> foodCode, 'locale_id -> locale).executeQuery().as(Macro.namedParser[AssociatedFoodPromptsRow].*)
 
