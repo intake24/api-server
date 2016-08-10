@@ -154,37 +154,8 @@ trait FoodDataSqlImpl extends SqlDataService {
       }.toMap
   }
 
-  def foodAllCategories(code: String): Seq[String] = tryWithConnection {
-    implicit conn =>
-      val query = """|WITH RECURSIVE t(code, level) AS (
-                   |(SELECT category_code as code, 0 as level FROM foods_categories WHERE food_code = {food_code} ORDER BY code)
-                   | UNION ALL
-                   |(SELECT category_code as code, level + 1 as level FROM t JOIN categories_categories ON subcategory_code = code ORDER BY code)
-                   |)
-                   |SELECT code
-                   |FROM t 
-                   |ORDER BY level""".stripMargin
-      SQL(query).on('food_code -> code).executeQuery().as(SqlParser.str("code").*)
-  }
   
-  def categoryAllCategories(code: String): Seq[String] = tryWithConnection {
-    implicit conn =>
-      val query = """|WITH RECURSIVE t(code, level) AS (
-                   |(SELECT category_code as code, 0 as level FROM categories_categories WHERE subcategory_code = {category_code} ORDER BY code)
-                   | UNION ALL
-                   |(SELECT category_code as code, level + 1 as level FROM t JOIN categories_categories ON subcategory_code = code ORDER BY code)
-                   |)
-                   |SELECT code
-                   |FROM t 
-                   |ORDER BY level""".stripMargin
-      SQL(query).on('category_code -> code).executeQuery().as(SqlParser.str("code").*)
-  }
-  
-  def isCategoryCode(code: String): Boolean = tryWithConnection {
-    implicit conn =>
-      val query = """SELECT COUNT(*) FROM categories WHERE code={category_code}"""
-      (SQL(query).on('category_code -> code).executeQuery().as(SqlParser.long("count").single) == 1)      
-  }
+
 
   private case class InheritableAttributesFinal(sameAsBeforeOption: Boolean, readyMealOption: Boolean, reasonableAmount: Int, sources: InheritableAttributeSources)
 
