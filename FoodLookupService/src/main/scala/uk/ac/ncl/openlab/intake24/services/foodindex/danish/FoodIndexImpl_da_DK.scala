@@ -20,7 +20,7 @@ package uk.ac.ncl.openlab.intake24.services.foodindex.danish
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
-import uk.ac.ncl.openlab.intake24.services.IndexFoodDataService
+import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
 
 @Singleton
-class FoodIndexImpl_da_DK @Inject() (foodData: IndexFoodDataService) extends DanishFoodIndex (foodData, "da_DK")
+class FoodIndexImpl_da_DK @Inject() (foodData: FoodIndexDataService) extends DanishFoodIndex (foodData, "da_DK")

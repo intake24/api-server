@@ -26,7 +26,9 @@ import com.google.inject.Inject
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientDescription
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService
 import uk.ac.ncl.openlab.intake24.nutrients._
-import uk.ac.ncl.openlab.intake24.services.NutrientMappingError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.NutrientMappingError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.TableNotFound
 
 @Singleton
 case class LegacyNutrientMappingServiceImpl @Inject() (tables: Map[String, NutrientTable]) extends NutrientMappingService {
@@ -67,8 +69,8 @@ case class LegacyNutrientMappingServiceImpl @Inject() (tables: Map[String, Nutri
   def nutrientsFor(table_id: String, record_id: String, weight: Double): Either[NutrientMappingError, Map[Nutrient, Double]] = tables.get(table_id) match {
     case Some(table) => table.records.get(record_id) match {
       case Some(record) => Right(record.mapValues(v => v / 100.0 * weight))
-      case None => Left(NutrientMappingError.RecordNotFound)
+      case None => Left(RecordNotFound)
     }
-    case None => Left(NutrientMappingError.TableNotFound)
+    case None => Left(TableNotFound)
   }
 }

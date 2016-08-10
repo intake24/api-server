@@ -20,10 +20,10 @@ package uk.ac.ncl.openlab.intake24.services.foodindex.english
 
 import org.workcraft.phrasesearch.Metaphone3Encoder
 
-import uk.ac.ncl.openlab.intake24.services.IndexFoodDataService
+import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
 import uk.ac.ncl.openlab.intake24.services.foodindex.AbstractFoodIndex
 
-abstract class EnglishFoodIndex(foodData: IndexFoodDataService, locale: String)
+abstract class EnglishFoodIndex(foodData: FoodIndexDataService, locale: String)
   extends AbstractFoodIndex(foodData, Some(Metaphone3Encoder()), EnglishStemmerPlingImpl(), EnglishFoodIndex.indexFilter,
     EnglishFoodIndex.nonIndexedWords, EnglishFoodIndex.specialFoodNames, locale)
 

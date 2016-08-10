@@ -1,21 +1,25 @@
-package uk.ac.ncl.openlab.intake24.foodsql
+package uk.ac.ncl.openlab.intake24.foodsql.user
 
-import uk.ac.ncl.openlab.intake24.DrinkwareHeader
 import anorm.Macro
 import anorm.SQL
 import uk.ac.ncl.openlab.intake24.DrinkwareSet
 import uk.ac.ncl.openlab.intake24.VolumeFunction
 import uk.ac.ncl.openlab.intake24.DrinkScale
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ResourceError
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.DrinkwareService
+import anorm.NamedParameter.symbol
+import anorm.sqlToSimple
+import scala.Right
+import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
 
-
-trait UserDrinkware extends SqlDataService {
+trait DrinkwareUserImpl extends DrinkwareService with SqlDataService {
   protected case class DrinkwareResultRow(id: String, scale_id: Long, description: String, guide_image_id: String,
     width: Int, height: Int, empty_level: Int, full_level: Int, choice_id: Int, base_image_url: String,
     overlay_image_url: String)
 
   protected case class VolumeSampleResultRow(scale_id: Long, fill: Double, volume: Double)
 
-  def drinkwareDef(id: String): DrinkwareSet = tryWithConnection {
+  def drinkwareDef(id: String): Either[ResourceError, DrinkwareSet] = tryWithConnection {
     implicit conn =>
       val drinkwareScalesQuery =
         """|SELECT drinkware_sets.id, drinkware_scales.id as scale_id, description, guide_image_id, 
@@ -38,7 +42,7 @@ trait UserDrinkware extends SqlDataService {
       val scales = result.map(r => DrinkScale(r.choice_id, r.base_image_url, r.overlay_image_url, r.width, r.height, r.empty_level, r.full_level,
         VolumeFunction(volume_sample_results.filter(_.scale_id == r.scale_id).map(s => (s.fill, s.volume)))))
 
-      DrinkwareSet(id, result.head.description, result.head.guide_image_id, scales)
+      Right(DrinkwareSet(id, result.head.description, result.head.guide_image_id, scales))
   }
 
 }

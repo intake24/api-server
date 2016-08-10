@@ -19,11 +19,11 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.services.foodindex.portuguese
 
 import org.workcraft.phrasesearch.Metaphone3Encoder
-import uk.ac.ncl.openlab.intake24.services.IndexFoodDataService
+import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
 import uk.ac.ncl.openlab.intake24.services.foodindex.AbstractFoodIndex
 import uk.ac.ncl.openlab.intake24.services.foodindex.english.EnglishStemmerPlingImpl
 
-abstract class PortugueseFoodIndex(foodData: IndexFoodDataService, locale: String)
+abstract class PortugueseFoodIndex(foodData: FoodIndexDataService, locale: String)
   extends AbstractFoodIndex(foodData, None, EnglishStemmerPlingImpl(), PortugueseFoodIndex.indexFilter, 
     PortugueseFoodIndex.nonIndexedWords, PortugueseFoodIndex.specialFoodNames, locale)
 

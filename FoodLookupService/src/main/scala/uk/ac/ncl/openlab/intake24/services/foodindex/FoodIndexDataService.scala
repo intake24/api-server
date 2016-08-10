@@ -16,13 +16,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package uk.ac.ncl.openlab.intake24.services
+package uk.ac.ncl.openlab.intake24.services.foodindex
 
 import uk.ac.ncl.openlab.intake24.SplitList
 import uk.ac.ncl.openlab.intake24.UserCategoryHeader
 import uk.ac.ncl.openlab.intake24.UserFoodHeader
 
-trait IndexFoodDataService {
+trait FoodIndexDataService {
   def indexableCategories(locale: String): Seq[UserCategoryHeader]
   def indexableFoods(locale: String): Seq[UserFoodHeader]
   def synsets(locale: String): Seq[Set[String]]

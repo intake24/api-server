@@ -10,7 +10,7 @@ import uk.ac.ncl.openlab.intake24.FoodGroupLocal
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 
-trait FoodGroupsAdminServiceImpl extends FoodGroupsAdminService with SqlDataService {
+trait FoodGroupsAdminImpl extends FoodGroupsAdminService with SqlDataService {
   private case class FoodGroupRow(id: Long, description: String, local_description: Option[String])
 
   def allFoodGroups(locale: String): Either[DatabaseError, Seq[FoodGroupRecord]] = tryWithConnection {

@@ -24,8 +24,11 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedCode
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalFoodCodeError
+import org.slf4j.LoggerFactory
 
 trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with SqlDataService {
+
+  private val logger = LoggerFactory.getLogger(classOf[AssociatedFoodsAdminImpl])
 
   private case class AssociatedFoodPromptsRow(
     associated_food_code: Option[String], food_english_description: Option[String], food_local_description: Option[String], food_do_not_use: Option[Boolean],
@@ -48,7 +51,7 @@ trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with SqlDataS
 
   def associatedFoods(foodCode: String, locale: String): Either[LocalFoodCodeError, Seq[AssociatedFoodWithHeader]] = tryWithConnection {
     implicit conn =>
-      
+
       // TODO: change query to first row validation style
 
       val rows = SQL(query).on('food_code -> foodCode, 'locale_id -> locale).executeQuery().as(Macro.namedParser[AssociatedFoodPromptsRow].*)
@@ -99,5 +102,39 @@ trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with SqlDataS
       conn.commit()
 
       Right(())
+  }
+
+  def deleteAllAssociatedFoods(): Either[DatabaseError, Unit] = tryWithConnection {
+    implicit conn =>
+      logger.info("Deleting existing associated food prompts")
+
+      SQL("DELETE FROM associated_foods").execute()
+
+      Right(())
+  }
+
+  def createAssociatedFoods(assocFoods: Map[String, Seq[AssociatedFood]], locale: String): Either[DatabaseError, Unit] = tryWithConnection {
+    implicit conn =>
+      if (!assocFoods.isEmpty) {
+        conn.setAutoCommit(false)
+        logger.info("Writing " + assocFoods.values.map(_.size).foldLeft(0)(_ + _) + " associated food prompts to database")
+
+        val promptParams = assocFoods.flatMap {
+          case (foodCode, foods) =>
+            foods.flatMap {
+              assocFood =>
+                Seq[NamedParameter]('food_code -> foodCode, 'locale_id -> locale, 'associated_food_code -> assocFood.foodOrCategoryCode.left.toOption, 'associated_category_code -> assocFood.foodOrCategoryCode.right.toOption,
+                  'text -> assocFood.promptText, 'link_as_main -> assocFood.linkAsMain, 'generic_name -> assocFood.genericName)
+            }
+        }.toSeq
+
+        BatchSql("""INSERT INTO associated_foods VALUES (DEFAULT, {food_code}, {locale_id}, {associated_food_code}, {associated_category_code}, {text}, {link_as_main}, {generic_name})""", promptParams).execute()
+        conn.commit()
+        Right(())
+      } else {
+        logger.warn("createAssociatedFoods request with empty associated foods map")
+        Right(())
+      }
+
   }
 }

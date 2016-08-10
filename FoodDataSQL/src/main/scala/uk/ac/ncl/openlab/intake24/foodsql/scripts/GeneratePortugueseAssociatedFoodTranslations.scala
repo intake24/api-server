@@ -1,8 +1,8 @@
 package uk.ac.ncl.openlab.intake24.foodsql.scripts
 
-import uk.ac.ncl.openlab.intake24.foodsql.admin.AdminFoodDataServiceSqlImpl
-import uk.ac.ncl.openlab.intake24.foodsql.admin.AdminFoodDataServiceSqlImpl
-import uk.ac.ncl.openlab.intake24.foodsql.IndexFoodDataServiceSqlImpl
+import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
+import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
+import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl
 import uk.ac.ncl.openlab.intake24.foodsql.UserFoodDataServiceSqlImpl
 import java.io.FileWriter
 import au.com.bytecode.opencsv.CSVWriter
@@ -17,11 +17,11 @@ object GeneratePortugueseAssociatedFoodTranslations extends App with DatabaseScr
   val dataSource = getLocalDataSource("intake24_foods_development")
   
   val dataService = new UserFoodDataServiceSqlImpl(dataSource)
-  val indexService = new IndexFoodDataServiceSqlImpl(dataSource)
+  val indexService = new FoodIndexDataImpl(dataSource)
   
-  val baseLocaleFoods = indexService.indexableFoods(baseLocaleCode).map( header => header.code -> header).toMap
+  val baseLocaleFoods = indexService.indexableFoods(baseLocaleCode).right.get.map( header => header.code -> header).toMap
   
-  val csvRows = indexService.indexableFoods(portugueseLocaleCode).flatMap {
+  val csvRows = indexService.indexableFoods(portugueseLocaleCode).right.get.flatMap {
     foodHeader =>
       dataService.associatedFoods(foodHeader.code, baseLocaleCode) match {
         case Right(prompts) => prompts.toArray.map {

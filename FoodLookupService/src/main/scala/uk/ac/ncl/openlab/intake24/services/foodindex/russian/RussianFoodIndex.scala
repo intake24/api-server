@@ -21,9 +21,9 @@ package uk.ac.ncl.openlab.intake24.services.foodindex.russian
 import org.workcraft.phrasesearch.Metaphone3Encoder
 
 import uk.ac.ncl.openlab.intake24.services.foodindex.AbstractFoodIndex
-import uk.ac.ncl.openlab.intake24.services.IndexFoodDataService
+import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
 
-abstract class RussianFoodIndex(foodData: IndexFoodDataService, locale: String)
+abstract class RussianFoodIndex(foodData: FoodIndexDataService, locale: String)
   extends AbstractFoodIndex(foodData, None, RussianStemmerIdentityImpl(), RussianFoodIndex.indexFilter,
     RussianFoodIndex.nonIndexedWords, RussianFoodIndex.specialFoodNames, locale)
 

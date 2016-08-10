@@ -27,9 +27,9 @@ import org.workcraft.phrasesearch.PhraseIndex
 import org.workcraft.phrasesearch.WordStemmer
 
 import uk.ac.ncl.openlab.intake24.UserFoodHeader
-import uk.ac.ncl.openlab.intake24.services.IndexFoodDataService
+import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
 
-abstract class AbstractFoodIndex (foodData: IndexFoodDataService, phoneticEncoder: Option[PhoneticEncoder], stemmer: WordStemmer, indexFilter: Seq[String], nonIndexedWords: Seq[String], localSpecialFoods: LocalSpecialFoodNames, locale: String) extends FoodIndex {
+abstract class AbstractFoodIndex (foodData: FoodIndexDataService, phoneticEncoder: Option[PhoneticEncoder], stemmer: WordStemmer, indexFilter: Seq[String], nonIndexedWords: Seq[String], localSpecialFoods: LocalSpecialFoodNames, locale: String) extends FoodIndex {
 
   val log = LoggerFactory.getLogger(classOf[AbstractFoodIndex])
   

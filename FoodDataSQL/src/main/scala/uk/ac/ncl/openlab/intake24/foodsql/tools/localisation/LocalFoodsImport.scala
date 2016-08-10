@@ -12,8 +12,8 @@ import com.google.inject.Singleton
 
 import au.com.bytecode.opencsv.CSVWriter
 import uk.ac.ncl.openlab.intake24.Locale
-import uk.ac.ncl.openlab.intake24.foodsql.admin.AdminFoodDataServiceSqlImpl
-import uk.ac.ncl.openlab.intake24.foodsql.IndexFoodDataServiceSqlImpl
+import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
+import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl
 import uk.ac.ncl.openlab.intake24.foodsql.LocaleManagementSqlImpl
 import uk.ac.ncl.openlab.intake24.foodsql.tools.DatabaseConnection
 import uk.ac.ncl.openlab.intake24.foodsql.tools.DatabaseOptions
@@ -67,16 +67,16 @@ case class LocalFoodsImport(localeCode: String, englishLocaleName: String, local
 
   val dataSource = getDataSource(options)
 
-  val dataService = new AdminFoodDataServiceSqlImpl(dataSource)
+  val dataService = new FoodDatabaseAdminImpl(dataSource)
 
-  val indexDataService = new IndexFoodDataServiceSqlImpl(dataSource)
+  val indexDataService = new FoodIndexDataImpl(dataSource)
 
   // Should be an insert-update loop, but this is just a one-time script so using unsafe way
   val localeService = new LocaleManagementSqlImpl(dataSource)
   localeService.delete(localeCode)
   localeService.create(Locale(localeCode, englishLocaleName, localLocaleName, respondentLanguageCode, adminLanguageCode, flagCode, Some(baseLocaleCode)))
 
-  val indexableFoods = indexDataService.indexableFoods(baseLocaleCode)
+  val indexableFoods = indexDataService.indexableFoods(baseLocaleCode).right.get
 
   val logWriter = new CSVWriter(options.logPath.get.map(logPath => new FileWriter(new File(logPath))).getOrElse(new OutputStreamWriter(System.out)))
 
@@ -105,7 +105,7 @@ case class LocalFoodsImport(localeCode: String, englishLocaleName: String, local
 
                 val prompts = oldPrompts.map {
                   v1 =>
-                    val foodOrCategory = if (dataService.isCategoryCode(v1.category)) Right(v1.category) else Left(v1.category)
+                    val foodOrCategory = if (dataService.isCategoryCode(v1.category).right.get) Right(v1.category) else Left(v1.category)
                     AssociatedFood(foodOrCategory, v1.promptText, v1.linkAsMain, v1.genericName)
                 }
 
@@ -120,16 +120,16 @@ case class LocalFoodsImport(localeCode: String, englishLocaleName: String, local
             recodingTable.existingFoodsCoding.get(header.code) match {
               case Some(DoNotUse) => {
                 logWriter.writeNext(headerCols ++ Array(s"Not using in $englishLocaleName locale"))
-                dataService.updateFoodLocal(header.code, localeCode, localData.copy(doNotUse = true))
+                dataService.updateLocalFoodRecord(header.code, localeCode, localData.copy(doNotUse = true))
               }
               case Some(UseUKFoodTable(localDescription)) => {
                 logWriter.writeNext(headerCols ++ Array("Inheriting UK food composition table code", localDescription))
-                dataService.updateFoodLocal(header.code, localeCode, localData.copy(localDescription = Some(localDescription), doNotUse = false))
+                dataService.updateLocalFoodRecord(header.code, localeCode, localData.copy(localDescription = Some(localDescription), doNotUse = false))
                 updateAssociatedFoods()
               }
               case Some(UseLocalFoodTable(localDescription, localTableRecordId)) => {
                 logWriter.writeNext(headerCols ++ Array(s"Using $localNutrientTableId food composition table code", localDescription, localTableRecordId))
-                dataService.updateFoodLocal(header.code, localeCode, localData.copy(localDescription = Some(localDescription), nutrientTableCodes = Map(localNutrientTableId -> localTableRecordId), doNotUse = false))
+                dataService.updateLocalFoodRecord(header.code, localeCode, localData.copy(localDescription = Some(localDescription), nutrientTableCodes = Map(localNutrientTableId -> localTableRecordId), doNotUse = false))
                 updateAssociatedFoods()
               }
               case None =>
@@ -148,7 +148,7 @@ case class LocalFoodsImport(localeCode: String, englishLocaleName: String, local
 
   val categoryTranslations = categoryTranslationParser.parseCategoryTranslations(options.categoryTranslationPath())
 
-  val indexableCategories = indexDataService.indexableCategories(baseLocaleCode)
+  val indexableCategories = indexDataService.indexableCategories(baseLocaleCode).right.get
 
   indexableCategories.foreach {
     header =>

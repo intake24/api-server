@@ -15,6 +15,8 @@ trait CategoriesAdminService {
   def isCategoryCode(code: String): Either[DatabaseError, Boolean]
   
   def createCategory(newCategory: NewCategory): Either[DatabaseError, Unit]
+  def createCategories(newCategories: Seq[NewCategory]): Either[DatabaseError, Unit]
+  def createLocalCategories(localCategoryRecords: Map[String, LocalCategoryRecord]): Either[DatabaseError, Unit]
   
   def deleteAllCategories(): Either[DatabaseError, Unit]
   def deleteCategory(categoryCode: String): Either[DatabaseError, Unit]

@@ -31,14 +31,14 @@ import anorm.sqlToSimple
 import uk.ac.ncl.openlab.intake24.PortionSizeMethod
 import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
 import uk.ac.ncl.openlab.intake24.UserFoodData
-import uk.ac.ncl.openlab.intake24.services.errors.FoodDataError
-import uk.ac.ncl.openlab.intake24.services.FoodDataSources
-import uk.ac.ncl.openlab.intake24.services.InheritableAttributeSource
-import uk.ac.ncl.openlab.intake24.services.InheritableAttributeSources
-import uk.ac.ncl.openlab.intake24.services.SourceLocale
-import uk.ac.ncl.openlab.intake24.services.SourceRecord
-import uk.ac.ncl.openlab.intake24.services.errors.NoLocalDescription
-import uk.ac.ncl.openlab.intake24.services.errors.UndefinedCode
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.NoLocalDescription
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.InheritableAttributeSources
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.FoodDataError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedCode
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.SourceLocale
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDataSources
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.SourceRecord
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.InheritableAttributeSource
 
 trait FoodDataSqlImpl extends SqlDataService {
 

@@ -6,14 +6,12 @@ import java.io.FileReader
 import scala.collection.JavaConverters._
 import uk.ac.ncl.openlab.intake24.GuideImage
 import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
-import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService
-import uk.ac.ncl.openlab.intake24.services.IndexFoodDataService
 
 import org.slf4j.LoggerFactory
 import org.rogach.scallop.ScallopConf
 import uk.ac.ncl.openlab.intake24.foodsql.tools.DatabaseOptions
-import uk.ac.ncl.openlab.intake24.foodsql.admin.AdminFoodDataServiceSqlImpl
-import uk.ac.ncl.openlab.intake24.foodsql.IndexFoodDataServiceSqlImpl
+import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
+import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl
 import uk.ac.ncl.openlab.intake24.foodsql.tools.WarningMessage
 import uk.ac.ncl.openlab.intake24.foodsql.tools.DatabaseConnection
 
@@ -37,22 +35,22 @@ object PortuguesePsmImport extends App with WarningMessage with DatabaseConnecti
 
   val dataSource = getDataSource(options)
 
-  val dataService = new AdminFoodDataServiceSqlImpl(dataSource)
+  val dataService = new FoodDatabaseAdminImpl(dataSource)
 
-  val indexDataService = new IndexFoodDataServiceSqlImpl(dataSource)
+  val indexDataService = new FoodIndexDataImpl(dataSource)
 
   logger.info("Retrieving guide image headers")
   
-  val guideImages = dataService.allGuideImages().map(_.id).toSet
+  val guideImages = dataService.allGuideImages().right.get.map(_.id).toSet
 
   logger.info("Retrieving as served set headers")
-  val asServedSets = dataService.allAsServedSets().map(_.id).toSet
+  val asServedSets = dataService.allAsServedSets().right.get.map(_.id).toSet
 
   logger.info("Building PSM index")
 
   case class PsmIndex(guide: Map[String, PortionSizeMethod], asServed: Map[String, PortionSizeMethod])
 
-  val psmIndex = indexDataService.indexableFoods(referenceLocaleId).foldLeft(PsmIndex(Map(), Map())) {
+  val psmIndex = indexDataService.indexableFoods(referenceLocaleId).right.get.foldLeft(PsmIndex(Map(), Map())) {
     (index, header) =>
       logger.info(s"Processing ${header.toString}")
 
@@ -128,7 +126,7 @@ object PortuguesePsmImport extends App with WarningMessage with DatabaseConnecti
       dataService.foodRecord(key, "pt_PT") match {
         case Right(record) => {
           val updatedLocal = record.local.copy(portionSize = methods(key))
-          dataService.updateFoodLocal(key, "pt_PT", updatedLocal)
+          dataService.updateLocalFoodRecord(key, "pt_PT", updatedLocal)
         }
         case _ => throw new RuntimeException(s"Couldn't retrieve record for $key")
       }

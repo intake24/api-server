@@ -20,7 +20,7 @@ package uk.ac.ncl.openlab.intake24.services.foodindex.russian
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
-import uk.ac.ncl.openlab.intake24.services.IndexFoodDataService
+import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
 
 @Singleton
-class FoodIndexImpl_ru_RU @Inject() (foodData: IndexFoodDataService) extends RussianFoodIndex(foodData, "ru_RU")
+class FoodIndexImpl_ru_RU @Inject() (foodData: FoodIndexDataService) extends RussianFoodIndex(foodData, "ru_RU")

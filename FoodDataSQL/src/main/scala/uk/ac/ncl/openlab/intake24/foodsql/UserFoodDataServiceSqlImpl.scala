@@ -35,14 +35,13 @@ import anorm.SqlParser
 import anorm.SqlMappingError
 import anorm.AnormException
 
-import uk.ac.ncl.openlab.intake24.services.UserFoodDataService
-import uk.ac.ncl.openlab.intake24.services.errors.CodeError
 import uk.ac.ncl.openlab.intake24.foodsql.user.AssociatedFoodsUserImpl
-import uk.ac.ncl.openlab.intake24.services.errors.UndefinedCode
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDatabaseService
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedCode
 
 @Singleton
-class UserFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends UserFoodDataService
-    with SqlDataService with FoodDataSqlImpl with PortionSizeDataSqlImpl with AssociatedFoodsUserImpl {
+class UserFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends FoodDatabaseService
+    with SqlDataService with FoodDataSqlImpl with AssociatedFoodsUserImpl {
 
   import UserFoodDataServiceSqlImpl._
 

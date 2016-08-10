@@ -15,8 +15,9 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.user.AssociatedFoodsService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalFoodCodeError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
+import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
 
-trait AssociatedFoodsUserImpl extends AssociatedFoodsService with SqlDataService {
+trait AssociatedFoodsUserImpl extends AssociatedFoodsService with SqlDataService with FirstRowValidation {
 
   private case class AssociatedFoodPromptsRow(associated_food_code: Option[String], associated_category_code: Option[String],
     text: String, link_as_main: Boolean, generic_name: String, locale_id: String)

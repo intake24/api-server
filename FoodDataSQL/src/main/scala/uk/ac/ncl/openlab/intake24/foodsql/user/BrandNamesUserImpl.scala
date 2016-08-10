@@ -9,8 +9,9 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedCode
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
+import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
 
-trait BrandNamesUserImpl extends BrandNamesService with SqlDataService {
+trait BrandNamesUserImpl extends BrandNamesService with SqlDataService with FirstRowValidation {
 
   private case class Validation(foodCodeValid: Boolean, localeIdValid: Boolean, hasRows: Boolean)
 

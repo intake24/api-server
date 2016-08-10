@@ -16,13 +16,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package uk.ac.ncl.openlab.intake24.services
+package uk.ac.ncl.openlab.intake24.services.foodindex
 
-import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex
-import uk.ac.ncl.openlab.intake24.services.foodindex.IndexLookupResult
 import java.util.concurrent.atomic.AtomicReference
-import uk.ac.ncl.openlab.intake24.services.foodindex.AbstractFoodIndex
-import java.util.Timer
+
 import java.util.TimerTask
 import scala.concurrent.duration._
 import org.slf4j.LoggerFactory

@@ -21,20 +21,20 @@ package uk.ac.ncl.openlab.intake24.foodsql.admin
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.google.inject.name.Named
-import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService
 import javax.sql.DataSource
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
 
 @Singleton
-class AdminFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends AdminFoodDataService      
-    with FoodsAdminServiceImpl
-    with CategoriesAdminServiceImpl       
-    with AdminFoodBrowsing
+class FoodDatabaseAdminImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends FoodDatabaseAdminService      
+    with FoodsAdminImpl
+    with CategoriesAdminImpl       
+    with FoodBrowsingAdminImpl
     with QuickSearchAdminImpl
-    with FoodGroupsAdminServiceImpl
+    with FoodGroupsAdminImpl
     with GuideImageAdminImpl
-    with AsServedImageAdminServiceImpl
-    with AdminDrinkware
+    with AsServedImageAdminImpl
+    with DrinkwareAdminImpl
     with AdminHeaderRows
     with NutrientTablesAdminImpl    
     with AssociatedFoodsAdminImpl
-    with BrandNamesAdminService { }
+    with BrandNamesAdminImpl { }

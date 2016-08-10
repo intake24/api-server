@@ -16,30 +16,30 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package uk.ac.ncl.openlab.intake24.foodsql
+package uk.ac.ncl.openlab.intake24.foodsql.foodindex
 
 import org.slf4j.LoggerFactory
-
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.google.inject.name.Named
-
-import anorm.Macro
 import anorm.NamedParameter.symbol
-import anorm.SQL
 import anorm.sqlToSimple
 import javax.sql.DataSource
 import uk.ac.ncl.openlab.intake24.UserCategoryHeader
 import uk.ac.ncl.openlab.intake24.UserFoodHeader
-import uk.ac.ncl.openlab.intake24.services.IndexFoodDataService
+import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
+import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
+import anorm.Macro
+import anorm.SQL
 
 @Singleton
-class IndexFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends SqlDataService 
-  with IndexFoodDataService with SplitLists with Synsets {
+class FoodIndexDataImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends SqlDataService 
+  with FoodIndexDataService with FoodIndexDataSharedImpl {
 
-  val logger = LoggerFactory.getLogger(classOf[IndexFoodDataServiceSqlImpl])
+  val logger = LoggerFactory.getLogger(classOf[FoodIndexDataImpl])
     
-  def indexableFoods(locale: String): Seq[UserFoodHeader] = tryWithConnection {
+  def indexableFoods(locale: String): Either[LocaleError, Seq[UserFoodHeader]] = tryWithConnection {
     implicit conn =>
       val query =
         """|SELECT code, COALESCE(t1.local_description, t2.local_description) AS local_description
@@ -53,10 +53,10 @@ class IndexFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
            |AND (foods_restrictions.locale_id = {locale_id} OR foods_restrictions.locale_id IS NULL)
            |ORDER BY local_description""".stripMargin
            
-      SQL(query).on('locale_id -> locale).executeQuery().as(Macro.indexedParser[UserFoodHeader].*)
+      Right(SQL(query).on('locale_id -> locale).executeQuery().as(Macro.indexedParser[UserFoodHeader].*))
   }
 
-  def indexableCategories(locale: String): Seq[UserCategoryHeader] = tryWithConnection {
+  def indexableCategories(locale: String): Either[LocaleError, Seq[UserCategoryHeader]] = tryWithConnection {
     implicit conn =>
       val query =
         """|SELECT code, COALESCE(t1.local_description, t2.local_description) AS local_description
@@ -67,6 +67,6 @@ class IndexFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
            |(t1.local_description IS NOT NULL OR t2.local_description IS NOT NULL) 
            |ORDER BY local_description""".stripMargin
 
-      SQL(query).on('locale_id -> locale).executeQuery().as(Macro.indexedParser[UserCategoryHeader].*)
+      Right(SQL(query).on('locale_id -> locale).executeQuery().as(Macro.indexedParser[UserCategoryHeader].*))
   }
 }

@@ -19,10 +19,11 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.services
 
 import org.scalatest.FunSuite
+import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
 
 abstract class IndexFoodDataServiceTest extends FunSuite {
 
-  val service: IndexFoodDataService
+  val service: FoodIndexDataService
 
   val defaultLocale = "en_GB"
   

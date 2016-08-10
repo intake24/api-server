@@ -34,10 +34,11 @@ import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.FoodCodeError
+import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
 
-trait FoodsAdminServiceImpl extends FoodsAdminService with SqlDataService with AdminPortionSizeShared with AdminErrorMessagesShared {
+trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with FirstRowValidation with AdminPortionSizeShared with AdminErrorMessagesShared {
 
-  val logger = LoggerFactory.getLogger(classOf[FoodsAdminServiceImpl])
+  val logger = LoggerFactory.getLogger(classOf[FoodsAdminImpl])
 
   private def foodCodePkConstraintFailedMessage(foodCode: String) =
     s"Food code $foodCode already exists. Duplicate food codes are not allowed."
@@ -254,11 +255,11 @@ trait FoodsAdminServiceImpl extends FoodsAdminService with SqlDataService with A
 
   val foodPsmParamsInsertQuery = "INSERT INTO foods_portion_size_method_params VALUES(DEFAULT, {portion_size_method_id}, {name}, {value})"
 
-  def createLocalFoods(localFoodRecordsq: Map[String, LocalFoodRecord], locale: String): Either[DatabaseError, Unit] = tryWithConnection {
+  def createLocalFoods(localFoodRecords: Map[String, LocalFoodRecord], locale: String): Either[DatabaseError, Unit] = tryWithConnection {
     implicit conn =>
-      if (localFoodRecordsq.nonEmpty) {
+      if (localFoodRecords.nonEmpty) {
 
-        val localFoodRecordsSeq = localFoodRecordsq.toSeq
+        val localFoodRecordsSeq = localFoodRecords.toSeq
 
         logger.info(s"Writing ${localFoodRecordsSeq.size} new local food records to database")
 

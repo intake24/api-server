@@ -1,12 +1,15 @@
-package uk.ac.ncl.openlab.intake24.foodsql
+package uk.ac.ncl.openlab.intake24.foodsql.user
 
-import uk.ac.ncl.openlab.intake24.AsServedHeader
 import uk.ac.ncl.openlab.intake24.AsServedSet
 import anorm._
 import uk.ac.ncl.openlab.intake24.AsServedImage
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.AsServedImageService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ResourceError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ResourceNotFound
+import anorm.NamedParameter.symbol
+import scala.Left
+import scala.Right
+import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
 
 trait AsServedImageServiceImpl extends AsServedImageService with SqlDataService {
   

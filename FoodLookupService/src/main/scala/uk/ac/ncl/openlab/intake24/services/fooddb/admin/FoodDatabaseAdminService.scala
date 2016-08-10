@@ -24,4 +24,10 @@ trait FoodDatabaseAdminService extends
   with FoodsAdminService 
   with CategoriesAdminService
   with QuickSearchService
-  with AssociatedFoodsAdminService { }
+  with AssociatedFoodsAdminService
+  with AsServedImageAdminService
+  with GuideImageAdminService
+  with BrandNamesAdminService
+  with DrinkwareAdminService
+  with FoodIndexDataAdminService  
+  { }

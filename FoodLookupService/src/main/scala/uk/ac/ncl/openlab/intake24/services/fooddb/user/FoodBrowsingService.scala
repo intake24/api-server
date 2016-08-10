@@ -46,8 +46,6 @@ trait FoodBrowsingService {
 
   def categoryContents(code: String, locale: String): Either[FoodCodeError, UserCategoryContents]
 
-  def foodData(code: String, locale: String): Either[FoodDataError, (UserFoodData, FoodDataSources)]
-    
   /* The following methods are needed associated foods logic */
   def foodAllCategories(code: String): Either[FoodCodeError, Seq[String]]
   
