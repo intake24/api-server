@@ -1,63 +1,77 @@
 package uk.ac.ncl.openlab.intake24.foodsql.user
 
-import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodBrowsingService
-import anorm.SqlParser
+import scala.Right
+
+import anorm.Macro
+import anorm.NamedParameter.symbol
+import anorm.SQL
+import anorm.sqlToSimple
 import uk.ac.ncl.openlab.intake24.UserCategoryContents
 import uk.ac.ncl.openlab.intake24.UserCategoryHeader
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.FoodCodeError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.UserFoodHeader
+import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
+import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
+import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
+import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalCategoryCodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodBrowsingService
 
-trait FoodBrowsingUserImpl extends FoodBrowsingService with SqlDataService {
+trait FoodBrowsingUserImpl extends FoodBrowsingService with SqlDataService with SqlResourceLoader with FirstRowValidation {
+
+  private lazy val rootCategoriesQuery = sqlFromResource("user/root_categories.sql")
+
+  private case class UserCategoryHeaderRow(code: String, description: String, local_description: Option[String]) {
+    def mkUserHeader = UserCategoryHeader(code, local_description.getOrElse(description))
+  }
 
   def rootCategories(locale: String): Either[LocaleError, Seq[UserCategoryHeader]] = tryWithConnection {
     implicit conn =>
-      val query =
-        """|WITH v AS(
-           |  SELECT (SELECT id FROM locales WHERE id='en_GB') AS locale_id
-           |), t AS(
-           |SELECT DISTINCT c.code, c.description, c.is_hidden
-           |  FROM categories AS c 
-           |    LEFT JOIN categories_categories AS cc1 ON c.code=cc1.subcategory_code
-           |  WHERE cc1.category_code IS NULL OR NOT EXISTS(SELECT is_hidden FROM categories_categories AS cc2 INNER JOIN categories AS c2 ON cc2.category_code=c2.code WHERE NOT is_hidden AND cc2.subcategory_code=c.code)
-           |)
-           |SELECT v.locale_id, t.code, t.description, t.is_hidden, local_description FROM v CROSS JOIN t LEFT JOIN categories_local ON v.locale_id = categories_local.locale_id AND t.code=categories_local.category_code
-           |  UNION ALL
-           |SELECT v.locale_id, NULL, NULL, NULL, NULL FROM v WHERE NOT EXISTS(SELECT 1 FROM t)
-           |ORDER BY local_description""".stripMargin
+      val result = SQL(rootCategoriesQuery).on('locale_id -> locale).executeQuery()
 
-      val result = SQL(query).on('locale_id -> locale).executeQuery()
-
-      parseWithLocaleValidation(result, Macro.namedParser[CategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map(_.map(_.asCategoryHeader))
-  }
+      parseWithLocaleValidation(result, Macro.namedParser[UserCategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map {
+        _.map {
+          _.mkUserHeader
+        }
+      }
   }
 
-  def categoryContents(code: String, locale: String): Either[FoodCodeError, UserCategoryContents]
+  private lazy val categoryFoodContentsQuery = sqlFromResource("user/category_contents_foods.sql")
 
-  def foodAllCategories(code: String): Seq[String] = tryWithConnection {
+  private case class UserFoodHeaderRow(code: String, description: String, local_description: Option[String]) {
+    def mkUserHeader = UserFoodHeader(code, local_description.getOrElse(description))
+  }
+
+  private def categoryFoodContentsImpl(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalCategoryCodeError, Seq[UserFoodHeader]] = {
+
+    val result = SQL(categoryFoodContentsQuery).on('category_code -> code, 'locale_id -> locale).executeQuery()
+
+    parseWithLocaleAndCategoryValidation(result, Macro.namedParser[UserFoodHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map {
+      _.map {
+        _.mkUserHeader
+      }
+    }
+  }
+
+  private lazy val categorySubcategoryContentsQuery = sqlFromResource("user/category_contents_subcategories.sql")
+
+  private def categorySubcategoryContentsImpl(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalCategoryCodeError, Seq[UserCategoryHeader]] = {
+    val result = SQL(categorySubcategoryContentsQuery).on('category_code -> code, 'locale_id -> locale).executeQuery()
+
+    parseWithLocaleAndCategoryValidation(result, Macro.namedParser[UserCategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map {
+      _.map {
+        _.mkUserHeader
+      }
+    }
+  }
+
+  def categoryContents(code: String, locale: String): Either[LocalCategoryCodeError, UserCategoryContents] = tryWithConnection {
     implicit conn =>
-      val query = """|WITH RECURSIVE t(code, level) AS (
-                   |(SELECT category_code as code, 0 as level FROM foods_categories WHERE food_code = {food_code} ORDER BY code)
-                   | UNION ALL
-                   |(SELECT category_code as code, level + 1 as level FROM t JOIN categories_categories ON subcategory_code = code ORDER BY code)
-                   |)
-                   |SELECT code
-                   |FROM t 
-                   |ORDER BY level""".stripMargin
-      SQL(query).on('food_code -> code).executeQuery().as(SqlParser.str("code").*)
+      for (
+        foods <- categoryFoodContentsImpl(code, locale).right;
+        subcategories <- categorySubcategoryContentsImpl(code, locale).right
+      ) yield {
+        UserCategoryContents(foods, subcategories)
+      }
   }
-
-  def categoryAllCategories(code: String): Seq[String] = tryWithConnection {
-    implicit conn =>
-      val query = """|WITH RECURSIVE t(code, level) AS (
-                   |(SELECT category_code as code, 0 as level FROM categories_categories WHERE subcategory_code = {category_code} ORDER BY code)
-                   | UNION ALL
-                   |(SELECT category_code as code, level + 1 as level FROM t JOIN categories_categories ON subcategory_code = code ORDER BY code)
-                   |)
-                   |SELECT code
-                   |FROM t 
-                   |ORDER BY level""".stripMargin
-      SQL(query).on('category_code -> code).executeQuery().as(SqlParser.str("code").*)
-  }
-
 }

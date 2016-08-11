@@ -3,7 +3,7 @@ package uk.ac.ncl.openlab.intake24.foodsql.admin
 import uk.ac.ncl.openlab.intake24.CategoryHeader
 import uk.ac.ncl.openlab.intake24.FoodHeader
 
-trait AdminHeaderRows {
+trait HeaderRows {
 
   protected case class CategoryHeaderRow(code: String, description: String, local_description: Option[String], is_hidden: Boolean) {
     def asCategoryHeader = CategoryHeader(code, description, local_description, is_hidden)

@@ -37,8 +37,9 @@ import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
 import org.slf4j.LoggerFactory
 import java.sql.BatchUpdateException
 import scala.collection.mutable.ArrayBuffer
+import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
 
-trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService with FirstRowValidation with AdminPortionSizeShared with AdminErrorMessagesShared {
+trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService with SqlResourceLoader with FirstRowValidation with AdminPortionSizeShared with AdminErrorMessagesShared {
 
   val logger = LoggerFactory.getLogger(classOf[CategoriesAdminImpl])
 
@@ -74,22 +75,10 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
 
   def isCategoryCodeAvailable(code: String): Either[DatabaseError, Boolean] = isCategoryCode(code).right.map(!_)
 
+  private lazy val categoryPsmQuery = sqlFromResource("shared/category_portion_size_methods.sql")
+
   def categoryPortionSizeMethods(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalCategoryCodeError, Seq[PortionSizeMethod]] = {
-    val psmResults =
-      SQL("""|WITH v AS(
-             | SELECT
-             |  (SELECT code FROM categories WHERE code={category_code}) AS category_code,
-             |  (SELECT id FROM locales WHERE id={locale_id}) AS locale_id
-             |)
-             |SELECT v.category_code, v.locale_id, categories_portion_size_methods.id, method, description, image_url, use_for_recipes,
-             |categories_portion_size_method_params.id as param_id, name as param_name, value as param_value
-             |FROM v 
-             |LEFT JOIN categories_portion_size_methods 
-             |  ON categories_portion_size_methods.category_code = v.category_code AND categories_portion_size_methods.locale_id = v.locale_id
-             |LEFT JOIN categories_portion_size_method_params 
-             |  ON categories_portion_size_methods.id = categories_portion_size_method_params.portion_size_method_id
-             |ORDER BY param_id""".stripMargin)
-        .on('category_code -> code, 'locale_id -> locale).executeQuery()
+    val psmResults = SQL(categoryPsmQuery).on('category_code -> code, 'locale_id -> locale).executeQuery()
 
     parseWithLocaleAndCategoryValidation(psmResults, psmResultRowParser.+)(Seq(FirstRowValidationClause("id", Right(List())))).right.map(mkPortionSizeMethods)
   }
@@ -97,25 +86,13 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
   case class CategoryResultRow(version: UUID, local_version: Option[UUID], code: String, description: String, local_description: Option[String], is_hidden: Boolean, same_as_before_option: Option[Boolean],
     ready_meal_option: Option[Boolean], reasonable_amount: Option[Int])
 
+  private lazy val categoryRecordQuery = sqlFromResource("admin/category_record.sql")
+
   def categoryRecord(code: String, locale: String): Either[LocalCategoryCodeError, CategoryRecord] = tryWithConnection {
     implicit conn =>
-
-      val categoryQuery = """|WITH v AS(
-                             |  SELECT
-                             |    (SELECT code FROM categories WHERE code={category_code}) AS category_code,
-                             |    (SELECT id FROM locales WHERE id={locale_id}) AS locale_id
-                             |)
-                             |SELECT v.category_code, v.locale_id, code, description, local_description, is_hidden, 
-                             |  same_as_before_option, ready_meal_option, reasonable_amount, categories.version as version, 
-                             |  categories_local.version as local_version 
-                             |FROM v
-                             |  LEFT JOIN categories ON v.category_code=categories.code
-                             |  LEFT JOIN foods_attributes ON v.category_code=categories_attributes.category_code
-                             |  LEFT JOIN categories_local ON v.category_code=categories_local.category_code AND v.locale_id=categories_local.locale_id""".stripMargin
-
       categoryPortionSizeMethods(code, locale).right.flatMap {
         psm =>
-          val categoryQueryResult = SQL(categoryQuery).on('category_code -> code, 'locale_id -> locale).executeQuery()
+          val categoryQueryResult = SQL(categoryRecordQuery).on('category_code -> code, 'locale_id -> locale).executeQuery()
 
           parseWithLocaleAndCategoryValidation(categoryQueryResult, Macro.namedParser[CategoryResultRow].single)().right.map {
             result =>

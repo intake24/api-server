@@ -23,6 +23,7 @@ import com.google.inject.Singleton
 import com.google.inject.name.Named
 import javax.sql.DataSource
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
+import uk.ac.ncl.openlab.intake24.foodsql.admin.HeaderRows
 
 @Singleton
 class FoodDatabaseAdminImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends FoodDatabaseAdminService      
@@ -34,7 +35,7 @@ class FoodDatabaseAdminImpl @Inject() (@Named("intake24_foods") val dataSource: 
     with GuideImageAdminImpl
     with AsServedImageAdminImpl
     with DrinkwareAdminImpl
-    with AdminHeaderRows
+    with HeaderRows
     with NutrientTablesAdminImpl    
     with AssociatedFoodsAdminImpl
     with BrandNamesAdminImpl { }

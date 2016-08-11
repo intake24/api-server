@@ -35,8 +35,9 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.FoodCodeError
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
+import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
 
-trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with FirstRowValidation with AdminPortionSizeShared with AdminErrorMessagesShared {
+trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with SqlResourceLoader with FirstRowValidation with AdminPortionSizeShared with AdminErrorMessagesShared {
 
   val logger = LoggerFactory.getLogger(classOf[FoodsAdminImpl])
 
@@ -61,39 +62,19 @@ trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with FirstRow
     same_as_before_option: Option[Boolean], ready_meal_option: Option[Boolean], reasonable_amount: Option[Int], local_version: Option[UUID])
 
   private case class NutrientTableRow(nutrient_table_id: String, nutrient_table_record_id: String)
+  
+  private lazy val foodPsmQuery = sqlFromResource("shared/food_portion_size_methods.sql")
 
   def foodPortionSizeMethods(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalFoodCodeError, Seq[PortionSizeMethod]] = {
-    val psmResults =
-      SQL("""|WITH v AS(
-               | SELECT
-               |  (SELECT code FROM foods WHERE code={food_code}) AS food_code,
-               |  (SELECT id FROM locales WHERE id={locale_id}) AS locale_id
-               |)
-               |SELECT v.food_code, v.locale_id, foods_portion_size_methods.id, method, description, image_url, use_for_recipes,
-               |foods_portion_size_method_params.id as param_id, name as param_name, value as param_value
-               |FROM v 
-               |LEFT JOIN foods_portion_size_methods 
-               |  ON foods_portion_size_methods.food_code = v.food_code AND foods_portion_size_methods.locale_id = v.locale_id
-               |LEFT JOIN foods_portion_size_method_params 
-               |  ON foods_portion_size_methods.id = foods_portion_size_method_params.portion_size_method_id
-               |ORDER BY param_id""".stripMargin)
-        .on('food_code -> code, 'locale_id -> locale).executeQuery()
+    val psmResults = SQL(foodPsmQuery).on('food_code -> code, 'locale_id -> locale).executeQuery()
 
     parseWithLocaleAndFoodValidation(psmResults, psmResultRowParser.+)(Seq(FirstRowValidationClause("id", Right(List())))).right.map(mkPortionSizeMethods)
   }
 
+  private lazy val foodNutrientTableCodesQuery = sqlFromResource("admin/food_nutrient_table_codes.sql")
+  
   def foodNutrientTableCodes(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalFoodCodeError, Map[String, String]] = {
-    val nutrientTableCodesResult =
-      SQL("""|WITH v AS(
-             |  SELECT
-             |   (SELECT code FROM foods WHERE code={food_code}) AS food_code,
-             |   (SELECT id FROM locales WHERE id={locale_id}) AS locale_id
-             |)
-             |SELECT v.food_code, v.locale_id, nutrient_table_id, nutrient_table_record_id 
-             |  FROM v LEFT JOIN foods_nutrient_mapping 
-             |    ON v.food_code=foods_nutrient_mapping.food_code AND v.locale_id = foods_nutrient_mapping.locale_id""".stripMargin)
-        .on('food_code -> code, 'locale_id -> locale)
-        .executeQuery()
+    val nutrientTableCodesResult = SQL(foodNutrientTableCodesQuery).on('food_code -> code, 'locale_id -> locale).executeQuery()
 
     val parsed = parseWithLocaleAndFoodValidation(nutrientTableCodesResult, Macro.namedParser[NutrientTableRow].+)(Seq(FirstRowValidationClause("nutrient_table_id", Right(List()))))
 
@@ -103,28 +84,17 @@ trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with FirstRow
       }.toMap
     }
   }
-
+  
+  private lazy val foodRecordQuery = sqlFromResource("admin/food_record.sql")
+  
   def foodRecord(code: String, locale: String): Either[LocalFoodCodeError, FoodRecord] = tryWithConnection {
     implicit conn =>
-
-      val foodQuery = """|WITH v AS(
-                         |  SELECT
-                         |    (SELECT code FROM foods WHERE code={food_code}) AS food_code,
-                         |    (SELECT id FROM locales WHERE id={locale_id}) AS locale_id
-                         |)
-                         |SELECT v.food_code, v.locale_id, code, description, local_description, do_not_use, food_group_id, 
-                         |  same_as_before_option, ready_meal_option, reasonable_amount, foods.version as version, 
-                         |  foods_local.version as local_version 
-                         |FROM v
-                         |  LEFT JOIN foods ON v.food_code=foods.code
-                         |  LEFT JOIN foods_attributes ON v.food_code=foods_attributes.food_code
-                         |  LEFT JOIN foods_local ON v.food_code=foods_local.food_code AND v.locale_id=foods_local.locale_id""".stripMargin
 
       foodNutrientTableCodes(code, locale).right.flatMap {
         ntc =>
           foodPortionSizeMethods(code, locale).right.flatMap {
             psm =>
-              val foodQueryResult = SQL(foodQuery).on('food_code -> code, 'locale_id -> locale).executeQuery()
+              val foodQueryResult = SQL(foodRecordQuery).on('food_code -> code, 'locale_id -> locale).executeQuery()
 
               parseWithLocaleAndFoodValidation(foodQueryResult, Macro.namedParser[FoodResultRow].single)().right.map {
                 result =>

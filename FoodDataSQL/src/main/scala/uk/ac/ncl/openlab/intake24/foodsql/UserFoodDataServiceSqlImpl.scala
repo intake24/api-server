@@ -41,7 +41,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedCode
 
 @Singleton
 class UserFoodDataServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends FoodDatabaseService
-    with SqlDataService with FoodDataSqlImpl with AssociatedFoodsUserImpl {
+    with SqlDataService with FoodDataUserImpl with AssociatedFoodsUserImpl {
 
   import UserFoodDataServiceSqlImpl._
 

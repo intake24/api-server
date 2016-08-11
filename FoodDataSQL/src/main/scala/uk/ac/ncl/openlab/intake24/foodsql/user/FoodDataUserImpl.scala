@@ -39,8 +39,9 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.user.SourceLocale
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDataSources
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.SourceRecord
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.InheritableAttributeSource
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDataService
 
-trait FoodDataSqlImpl extends SqlDataService {
+trait FoodDataUserImpl extends FoodDataService with SqlDataService {
 
   val fallbackLocale = "en_GB"
 
@@ -58,19 +59,6 @@ trait FoodDataSqlImpl extends SqlDataService {
 
   private val foodRowParser = Macro.namedParser[FoodRow]
 
-  val foodPortionSizeMethodsQuery =
-    """|SELECT foods_portion_size_methods.id, method, description, image_url, use_for_recipes,
-       |foods_portion_size_method_params.id as param_id, name as param_name, value as param_value
-       |FROM foods_portion_size_methods LEFT JOIN foods_portion_size_method_params 
-       |  ON foods_portion_size_methods.id = foods_portion_size_method_params.portion_size_method_id
-       |WHERE food_code = {food_code} AND locale_id = {locale_id} ORDER BY param_id""".stripMargin
-
-  val categoryPortionSizeMethodsQuery =
-    """|SELECT categories_portion_size_methods.id, method, description, image_url, use_for_recipes,
-       |categories_portion_size_method_params.id as param_id, name as param_name, value as param_value
-       |FROM categories_portion_size_methods LEFT JOIN categories_portion_size_method_params 
-       |  ON categories_portion_size_methods.id = categories_portion_size_method_params.portion_size_method_id
-       |WHERE category_code = {category_code} AND locale_id = {locale_id} ORDER BY param_id""".stripMargin
 
   private def mkPortionSizeMethods(rows: Seq[PsmResultRow]) =
     // FIXME: surely there is a better method to group records preserving order...

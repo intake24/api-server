@@ -6,8 +6,9 @@ import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
 import anorm._
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.QuickSearchService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.foodsql.admin.HeaderRows
 
-trait QuickSearchAdminImpl extends QuickSearchService with SqlDataService with AdminHeaderRows {
+trait QuickSearchAdminImpl extends QuickSearchService with SqlDataService with HeaderRows {
   
   def searchFoods(searchTerm: String, locale: String): Either[DatabaseError, Seq[FoodHeader]] = tryWithConnection {
     implicit conn =>
