@@ -73,10 +73,6 @@ case class CategoryContents(foods: Seq[FoodHeader], subcategories: Seq[CategoryH
 
 case class UserCategoryContents(foods: Seq[UserFoodHeader], subcategories: Seq[UserCategoryHeader])
 
-case class DataSource(source: String, locale: String)
-
-case class FoodDataSources(localDescriptionSource: DataSource, nutrientTablesSource: DataSource, portionSizeSource: DataSource, inheritedAttributesSource: DataSource)
-
 case class UserFoodData(code: String, localDescription: String, nutrientTableCodes: Map[String, String], groupCode: Int,
   portionSize: Seq[PortionSizeMethod], readyMealOption: Boolean, sameAsBeforeOption: Boolean, reasonableAmount: Int)
 

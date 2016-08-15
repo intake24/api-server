@@ -3,11 +3,12 @@ package uk.ac.ncl.openlab.intake24.foodsql.scripts
 import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
 import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
 import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl
-import uk.ac.ncl.openlab.intake24.foodsql.UserFoodDataServiceSqlImpl
+
 import java.io.FileWriter
 import au.com.bytecode.opencsv.CSVWriter
 
 import scala.collection.JavaConversions._
+import uk.ac.ncl.openlab.intake24.foodsql.user.FoodDataUserImpl
 
 object GeneratePortugueseAssociatedFoodTranslations extends App with DatabaseScript {
   
@@ -16,7 +17,7 @@ object GeneratePortugueseAssociatedFoodTranslations extends App with DatabaseScr
   
   val dataSource = getLocalDataSource("intake24_foods_development")
   
-  val dataService = new UserFoodDataServiceSqlImpl(dataSource)
+  val dataService = new FoodDatabaseImpl(dataSource)
   val indexService = new FoodIndexDataImpl(dataSource)
   
   val baseLocaleFoods = indexService.indexableFoods(baseLocaleCode).right.get.map( header => header.code -> header).toMap

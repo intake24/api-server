@@ -18,6 +18,7 @@ sealed trait SourceRecord
 object SourceRecord {
   case class FoodRecord(code: String) extends SourceRecord
   case class CategoryRecord(code: String) extends SourceRecord
+  case object NoRecord extends SourceRecord
 }
 
 sealed trait InheritableAttributeSource
@@ -33,7 +34,6 @@ sealed trait SourceLocale
 object SourceLocale {
   case class Current(locale: String) extends SourceLocale
   case class Prototype(locale: String) extends SourceLocale
-  case class Fallback(locale: String) extends SourceLocale
 }
 
 case class InheritableAttributeSources(sameAsBeforeOptionSource: InheritableAttributeSource, readyMealOptionSource: InheritableAttributeSource, reasonableAmountSource: InheritableAttributeSource)

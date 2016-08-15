@@ -38,8 +38,9 @@ import org.slf4j.LoggerFactory
 import java.sql.BatchUpdateException
 import scala.collection.mutable.ArrayBuffer
 import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
+import uk.ac.ncl.openlab.intake24.foodsql.shared.FoodPortionSizeShared
 
-trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService with SqlResourceLoader with FirstRowValidation with AdminPortionSizeShared with AdminErrorMessagesShared {
+trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService with SqlResourceLoader with FirstRowValidation with FoodPortionSizeShared with AdminErrorMessagesShared {
 
   val logger = LoggerFactory.getLogger(classOf[CategoriesAdminImpl])
 

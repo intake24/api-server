@@ -62,7 +62,7 @@ case class LegacyNutrientMappingServiceImpl @Inject() (tables: Map[String, Nutri
     case Ash => NutrientDescription(Selenium, "Ash", "g")
   }
 
-  def supportedNutrients() = Nutrient.types.toSeq.sortBy(_.id).map(legacyDescription)
+  def supportedNutrients() = Right(Nutrient.types.toSeq.sortBy(_.id).map(legacyDescription))
 
   val log = LoggerFactory.getLogger(classOf[LegacyNutrientMappingServiceImpl])
 

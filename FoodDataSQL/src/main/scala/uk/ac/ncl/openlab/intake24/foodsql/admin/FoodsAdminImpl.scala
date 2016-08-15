@@ -36,8 +36,9 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.FoodCodeError
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
 import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
+import uk.ac.ncl.openlab.intake24.foodsql.shared.FoodPortionSizeShared
 
-trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with SqlResourceLoader with FirstRowValidation with AdminPortionSizeShared with AdminErrorMessagesShared {
+trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with SqlResourceLoader with FirstRowValidation with FoodPortionSizeShared with AdminErrorMessagesShared {
 
   val logger = LoggerFactory.getLogger(classOf[FoodsAdminImpl])
 
@@ -62,14 +63,6 @@ trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with SqlResou
     same_as_before_option: Option[Boolean], ready_meal_option: Option[Boolean], reasonable_amount: Option[Int], local_version: Option[UUID])
 
   private case class NutrientTableRow(nutrient_table_id: String, nutrient_table_record_id: String)
-  
-  private lazy val foodPsmQuery = sqlFromResource("shared/food_portion_size_methods.sql")
-
-  def foodPortionSizeMethods(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalFoodCodeError, Seq[PortionSizeMethod]] = {
-    val psmResults = SQL(foodPsmQuery).on('food_code -> code, 'locale_id -> locale).executeQuery()
-
-    parseWithLocaleAndFoodValidation(psmResults, psmResultRowParser.+)(Seq(FirstRowValidationClause("id", Right(List())))).right.map(mkPortionSizeMethods)
-  }
 
   private lazy val foodNutrientTableCodesQuery = sqlFromResource("admin/food_nutrient_table_codes.sql")
   
@@ -92,7 +85,7 @@ trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with SqlResou
 
       foodNutrientTableCodes(code, locale).right.flatMap {
         ntc =>
-          foodPortionSizeMethods(code, locale).right.flatMap {
+          foodPortionSizeMethodsImpl(code, locale).right.flatMap {
             psm =>
               val foodQueryResult = SQL(foodRecordQuery).on('food_code -> code, 'locale_id -> locale).executeQuery()
 

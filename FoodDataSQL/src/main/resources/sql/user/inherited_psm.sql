@@ -1,6 +1,6 @@
 WITH RECURSIVE v AS(
-  SELECT (SELECT code FROM foods WHERE code={food_code}) AS food_code,
-         (SELECT id FROM locales WHERE id={locale_id}) AS locale_id
+  SELECT (SELECT code FROM foods WHERE code='DRNK') AS food_code,
+         (SELECT id FROM locales WHERE id='en_GB') AS locale_id
 ), t(code, level) AS (
   (SELECT category_code as code, 0 as level FROM foods_categories WHERE food_code IN (SELECT food_code FROM v) ORDER BY code)
     UNION

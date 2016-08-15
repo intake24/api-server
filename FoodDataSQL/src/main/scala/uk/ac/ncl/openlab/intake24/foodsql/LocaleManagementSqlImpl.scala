@@ -24,6 +24,9 @@ import com.google.inject.Inject
 import com.google.inject.name.Named
 import uk.ac.ncl.openlab.intake24.Locale
 import anorm._
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
 
 class LocaleManagementSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends LocaleManagementService with SqlDataService {
 
@@ -31,43 +34,56 @@ class LocaleManagementSqlImpl @Inject() (@Named("intake24_foods") val dataSource
     def mkLocale = Locale(id, english_name, local_name, respondent_language_id, admin_language_id, country_flag_code, prototype_locale_id)
   }
 
-  def list: Seq[Locale] = tryWithConnection {
+  def allLocales(): Either[DatabaseError, Seq[Locale]] = tryWithConnection {
     implicit conn =>
 
       var query = """SELECT id, english_name, local_name, respondent_language_id, admin_language_id, country_flag_code, prototype_locale_id FROM locales ORDER BY english_name"""
 
-      SQL(query).executeQuery().as(Macro.namedParser[LocaleRow].*).map(_.mkLocale)
+      Right(SQL(query).executeQuery().as(Macro.namedParser[LocaleRow].*).map(_.mkLocale))
   }
 
-  def get(id: String): Option[Locale] = tryWithConnection {
+  def get(id: String): Either[LocaleError, Locale] = tryWithConnection {
     implicit conn =>
       var query = """SELECT id, english_name, local_name, respondent_language_id, admin_language_id, country_flag_code, prototype_locale_id FROM locales WHERE id = {locale_id} ORDER BY english_name"""
 
-      SQL(query).on('locale_id -> id).executeQuery().as(Macro.namedParser[LocaleRow].singleOpt).map(_.mkLocale)
+      SQL(query).on('locale_id -> id).executeQuery().as(Macro.namedParser[LocaleRow].singleOpt).map(_.mkLocale) match {
+        case Some(locale) => Right(locale)
+        case None => Left(UndefinedLocale)
+      }
   }
 
-  def create(data: Locale) = tryWithConnection {
+  def create(data: Locale): Either[DatabaseError, Unit] = tryWithConnection {
     implicit conn =>
       var query = """INSERT INTO locales VALUES({id}, {english_name}, {local_name}, {respondent_language_code}, {admin_language_code}, {country_flag_code}, {prototype_locale_id})"""
 
       SQL(query).on('id -> data.id, 'english_name -> data.englishName, 'local_name -> data.localName, 'respondent_language_code -> data.respondentLanguage,
         'admin_language_code -> data.adminLanguage, 'country_flag_code -> data.flagCode, 'prototype_locale_id -> data.prototypeLocale).execute()
 
+      Right(())
   }
 
-  def update(id: String, data: Locale) = tryWithConnection {
+  def update(id: String, data: Locale): Either[LocaleError, Unit] = tryWithConnection {
     implicit conn =>
       var query = """UPDATE locales SET id={new_id}, english_name={english_name}, local_name={local_name}, respondent_language_code={respondent_language_code}, admin_language_code={admin_language_code}, country_flag_code={country_flag_code}, prototype_locale_id={prototype_locale_id} WHERE id = {id}"""
 
-      SQL(query).on('id -> id, 'new_id -> data.id, 'english_name -> data.englishName, 'local_name -> data.localName, 'respondent_language_code -> data.respondentLanguage,
-        'admin_language_code -> data.adminLanguage, 'country_flag_code -> data.flagCode, 'prototype_locale_id -> data.prototypeLocale).execute()
-
+      val updatedRows = SQL(query).on('id -> id, 'new_id -> data.id, 'english_name -> data.englishName, 'local_name -> data.localName, 'respondent_language_code -> data.respondentLanguage,
+        'admin_language_code -> data.adminLanguage, 'country_flag_code -> data.flagCode, 'prototype_locale_id -> data.prototypeLocale).executeUpdate()
+        
+      if (updatedRows == 0)
+        Left(UndefinedLocale)
+      else
+        Right(())
   }
 
-  def delete(id: String) = tryWithConnection {
+  def delete(id: String): Either[LocaleError, Unit] = tryWithConnection {
     implicit conn =>
       val query = """DELETE FROM locales WHERE id={id}"""
+
+      val updatedRows = SQL(query).on('id -> id).executeUpdate()
       
-      SQL(query).on('id -> id).execute()
+      if (updatedRows == 0)
+        Left(UndefinedLocale)
+      else
+        Right(())
   }
 }
