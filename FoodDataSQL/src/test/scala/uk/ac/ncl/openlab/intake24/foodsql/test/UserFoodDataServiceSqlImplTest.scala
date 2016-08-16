@@ -34,8 +34,8 @@ import uk.ac.ncl.openlab.intake24.UserCategoryContents
 import uk.ac.ncl.openlab.intake24.UserCategoryHeader
 import uk.ac.ncl.openlab.intake24.UserFoodData
 import uk.ac.ncl.openlab.intake24.UserFoodHeader
-import uk.ac.ncl.openlab.intake24.foodsql.UserFoodDataServiceSqlImpl
-import uk.ac.ncl.openlab.intake24.services.CodeError
+import uk.ac.ncl.openlab.intake24.foodsql.user.FoodDatabaseUserImpl
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedCode
 
 class UserFoodDataServiceSqlImplTest extends FunSuite with TestDB {
 
@@ -55,7 +55,7 @@ class UserFoodDataServiceSqlImplTest extends FunSuite with TestDB {
       SQL(stmt).execute()
   }
 
-  val service = new UserFoodDataServiceSqlImpl(dataSource)
+  val service = new FoodDatabaseUserImpl(dataSource)
   
    val defaultVersion = java.util.UUID.fromString("454a02a5-785e-4ca8-af52-81b11c28f56e")
 
@@ -125,7 +125,7 @@ class UserFoodDataServiceSqlImplTest extends FunSuite with TestDB {
   }
   
   test("Restricted category should be treated as missing") { 
-    assert(service.categoryContents("C005", "test2") === Left(CodeError.UndefinedCode))
+    assert(service.categoryContents("C005", "test2") === Left(UndefinedCode))
   }
       
   test("Category contents") {

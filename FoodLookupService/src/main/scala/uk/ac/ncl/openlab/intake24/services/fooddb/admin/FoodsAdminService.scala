@@ -8,9 +8,10 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.FoodCodeError
 import uk.ac.ncl.openlab.intake24.NewFood
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalFoodCodeError
 
 trait FoodsAdminService {
-  def foodRecord(code: String, locale: String): Either[FoodCodeError, FoodRecord]
+  def foodRecord(code: String, locale: String): Either[LocalFoodCodeError, FoodRecord]
   
   def isFoodCodeAvailable(code: String): Either[DatabaseError, Boolean]
   def isFoodCode(code: String): Either[DatabaseError, Boolean]
@@ -18,7 +19,7 @@ trait FoodsAdminService {
   def createFood(newFood: NewFood): Either[CreateError, Unit]
   def createFoodWithTempCode(newFood: NewFood): Either[DatabaseError, String]
   def createFoods(newFoods: Seq[NewFood]): Either[DatabaseError, Unit]
-  def createLocalFoods(localFoodRecords: Map[String, LocalFoodRecord]): Either[DatabaseError, Unit]
+  def createLocalFoods(localFoodRecords: Map[String, LocalFoodRecord], locale: String): Either[DatabaseError, Unit]
 
   def updateMainFoodRecord(foodCode: String, foodBase: MainFoodRecord): Either[UpdateError, Unit]
   def updateLocalFoodRecord(foodCode: String, locale: String, foodLocal: LocalFoodRecord): Either[UpdateError, Unit]

@@ -7,6 +7,6 @@ trait BrandNamesAdminService extends BrandNamesService {
   
   def deleteAllBrandNames(): Either[DatabaseError, Unit]
   
-  def createBrandNames(brandNames: Map[String, Seq[String]]): Either[DatabaseError, Unit]
+  def createBrandNames(brandNames: Map[String, Seq[String]], locale: String): Either[DatabaseError, Unit]
   
 }

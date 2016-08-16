@@ -105,7 +105,7 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
     (for (
       _ <- adminService.deleteAllFoods().right;
       _ <- adminService.createFoods(newFoodRecords).right;
-      _ <- adminService.createLocalFoods(newLocalRecords).right
+      _ <- adminService.createLocalFoods(newLocalRecords, defaultLocale).right
     ) yield ()) match {
       case Left(DatabaseError(message, _)) => throw new RuntimeException(s"Failed to import foods due to database error: $message")
       case _ => logger.info("Foods import successful")
@@ -128,7 +128,7 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
     (for (
       _ <- adminService.deleteAllCategories().right;
       _ <- adminService.createCategories(newCategoryRecords).right;
-      _ <- adminService.createLocalCategories(newLocalRecords).right
+      _ <- adminService.createLocalCategories(newLocalRecords, defaultLocale).right
     ) yield ()) match {
       case Left(DatabaseError(message, _)) => throw new RuntimeException(s"Failed to import categories due to database error: $message")
       case _ => logger.info("Categories import successful")
@@ -186,7 +186,7 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
     val brands = BrandDef.parseXml(XML.load(brandsPath))
     (for (
       _ <- adminService.deleteAllBrandNames().right;
-      _ <- adminService.createBrandNames(brands).right
+      _ <- adminService.createBrandNames(brands, defaultLocale).right
     ) yield ()) match {
       case Left(DatabaseError(message, _)) => throw new RuntimeException(s"Failed to import guide images due to database error: $message")
       case _ => logger.info("As served image sets import successful")

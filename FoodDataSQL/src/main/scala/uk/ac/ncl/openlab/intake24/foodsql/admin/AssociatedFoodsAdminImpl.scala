@@ -75,7 +75,7 @@ trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with SqlDataS
         Right(rows.map(mkPrompt))
   }
 
-  def updateAssociatedFoods(foodCode: String, locale: String, foods: Seq[AssociatedFood]): Either[UpdateError, Unit] = tryWithConnection {
+  def updateAssociatedFoods(foodCode: String, locale: String, foods: Seq[AssociatedFood]): Either[LocalFoodCodeError, Unit] = tryWithConnection {
     implicit conn =>
       conn.setAutoCommit(false)
 
@@ -104,11 +104,11 @@ trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with SqlDataS
       Right(())
   }
 
-  def deleteAllAssociatedFoods(): Either[DatabaseError, Unit] = tryWithConnection {
+  def deleteAllAssociatedFoods(locale: String): Either[DatabaseError, Unit] = tryWithConnection {
     implicit conn =>
       logger.info("Deleting existing associated food prompts")
 
-      SQL("DELETE FROM associated_foods").execute()
+      SQL("DELETE FROM associated_foods WHERE locale_id={locale_id}").on('locale_id -> locale).execute()
 
       Right(())
   }

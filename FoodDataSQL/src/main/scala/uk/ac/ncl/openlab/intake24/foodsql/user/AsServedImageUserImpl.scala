@@ -11,11 +11,11 @@ import scala.Left
 import scala.Right
 import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
 
-trait AsServedImageServiceImpl extends AsServedImageService with SqlDataService {
-  
+trait AsServedImageUserImpl extends AsServedImageService with SqlDataService {
+
   protected case class AsServedResultRow(id: String, description: String, weight: Double, url: String)
 
-    def asServedDef(id: String): Either[ResourceError, AsServedSet] = tryWithConnection {
+  def asServedSet(id: String): Either[ResourceError, AsServedSet] = tryWithConnection {
     implicit conn =>
       val query =
         """|SELECT as_served_sets.id, description, weight, url

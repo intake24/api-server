@@ -73,8 +73,8 @@ case class LocalFoodsImport(localeCode: String, englishLocaleName: String, local
 
   // Should be an insert-update loop, but this is just a one-time script so using unsafe way
   val localeService = new LocaleManagementSqlImpl(dataSource)
-  localeService.delete(localeCode)
-  localeService.create(Locale(localeCode, englishLocaleName, localLocaleName, respondentLanguageCode, adminLanguageCode, flagCode, Some(baseLocaleCode)))
+  localeService.deleteLocale(localeCode)
+  localeService.createLocale(Locale(localeCode, englishLocaleName, localLocaleName, respondentLanguageCode, adminLanguageCode, flagCode, Some(baseLocaleCode)))
 
   val indexableFoods = indexDataService.indexableFoods(baseLocaleCode).right.get
 
@@ -159,7 +159,7 @@ case class LocalFoodsImport(localeCode: String, englishLocaleName: String, local
         case Some(translation) => dataService.categoryRecord(header.code, localeCode) match {
           case Right(record) => {
             val localData = record.local
-            dataService.updateCategoryLocal(header.code, localeCode, localData.copy(localDescription = Some(translation)))
+            dataService.updateCategoryLocalRecord(header.code, localeCode, localData.copy(localDescription = Some(translation)))
           }
           case _ => throw new RuntimeException(s"Could not retrieve ${englishLocaleName} category record for ${header.localDescription} (${header.code})")
         }

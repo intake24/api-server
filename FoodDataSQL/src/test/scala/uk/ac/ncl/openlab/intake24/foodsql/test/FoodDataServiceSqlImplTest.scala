@@ -25,11 +25,12 @@ import com.zaxxer.hikari.HikariDataSource
 
 import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
 import uk.ac.ncl.openlab.intake24.foodsql.tools.XmlImporter
-import uk.ac.ncl.openlab.intake24.services.AdminFoodDataServiceTest
 
-class FoodDataServiceSqlImplTest extends AdminFoodDataServiceTest with TestDB {
+// AdminFoodDataServiceTest with 
 
-  new XmlImporter().importXmlData(getClass.getResource("/test1").toURI().getPath())
+class FoodDataServiceSqlImplTest extends TestDB {
+
+  // new XmlImporter().importXmlData(getClass.getResource("/test1").toURI().getPath())
 
   val hikariConfig = new HikariConfig()
 

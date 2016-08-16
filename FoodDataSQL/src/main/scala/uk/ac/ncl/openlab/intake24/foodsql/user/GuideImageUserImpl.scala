@@ -15,7 +15,7 @@ trait GuideImageUserImpl extends GuideImageService with SqlDataService {
 
   protected case class GuideResultRow(image_description: String, object_id: Int, object_description: String, weight: Double)
 
-  def guideDef(id: String): Either[ResourceError, GuideImage] = tryWithConnection {
+  def guideImage(id: String): Either[ResourceError, GuideImage] = tryWithConnection {
     implicit conn =>
       val query =
         """|SELECT guide_images.description as image_description, object_id, 

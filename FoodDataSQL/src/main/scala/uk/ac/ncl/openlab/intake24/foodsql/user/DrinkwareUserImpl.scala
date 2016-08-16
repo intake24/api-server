@@ -19,7 +19,7 @@ trait DrinkwareUserImpl extends DrinkwareService with SqlDataService {
 
   protected case class VolumeSampleResultRow(scale_id: Long, fill: Double, volume: Double)
 
-  def drinkwareDef(id: String): Either[ResourceError, DrinkwareSet] = tryWithConnection {
+  def drinkwareSet(id: String): Either[ResourceError, DrinkwareSet] = tryWithConnection {
     implicit conn =>
       val drinkwareScalesQuery =
         """|SELECT drinkware_sets.id, drinkware_scales.id as scale_id, description, guide_image_id, 

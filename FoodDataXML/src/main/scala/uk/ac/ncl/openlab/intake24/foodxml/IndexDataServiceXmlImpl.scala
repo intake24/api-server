@@ -40,24 +40,24 @@ class FoodIndexDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodIn
   def checkLocale(locale: String) = if (locale != defaultLocale)
     log.warn("Locales other than en_GB are not supported by this implementation -- returning en_GB results for debug purposes");
 
-  def indexableCategories(locale: String): Seq[UserCategoryHeader] = {
+  def indexableCategories(locale: String) = {
     checkLocale(locale)
-    data.categories.categories.filterNot(_.isHidden).map(mkHeader)
+    Right(data.categories.categories.filterNot(_.isHidden).map(mkHeader))
   }
 
-  def indexableFoods(locale: String): Seq[UserFoodHeader] = {
+  def indexableFoods(locale: String) = {
     checkLocale(locale)
-    data.foods.foods.map(mkHeader)
+    Right(data.foods.foods.map(mkHeader))
   }
 
-  def splitList(locale: String): SplitList = {
+  def splitList(locale: String) = {
     checkLocale(locale)
-    data.split
+    Right(data.split)
   }
 
-  def synsets(locale: String): Seq[Set[String]] = {
+  def synsets(locale: String) = {
     checkLocale(locale)
-    data.synSets
+    Right(data.synSets)
   }
 
 }

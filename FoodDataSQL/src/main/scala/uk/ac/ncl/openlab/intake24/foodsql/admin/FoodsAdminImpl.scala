@@ -40,7 +40,7 @@ import uk.ac.ncl.openlab.intake24.foodsql.shared.FoodPortionSizeShared
 
 trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with SqlResourceLoader with FirstRowValidation with FoodPortionSizeShared with AdminErrorMessagesShared {
 
-  val logger = LoggerFactory.getLogger(classOf[FoodsAdminImpl])
+  private val logger = LoggerFactory.getLogger(classOf[FoodsAdminImpl])
 
   private def foodCodePkConstraintFailedMessage(foodCode: String) =
     s"Food code $foodCode already exists. Duplicate food codes are not allowed."

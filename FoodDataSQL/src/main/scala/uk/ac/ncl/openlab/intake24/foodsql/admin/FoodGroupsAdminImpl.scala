@@ -9,6 +9,8 @@ import uk.ac.ncl.openlab.intake24.FoodGroupMain
 import uk.ac.ncl.openlab.intake24.FoodGroupLocal
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ResourceNotFound
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ResourceError
 
 trait FoodGroupsAdminImpl extends FoodGroupsAdminService with SqlDataService {
   private case class FoodGroupRow(id: Long, description: String, local_description: Option[String])
@@ -24,16 +26,19 @@ trait FoodGroupsAdminImpl extends FoodGroupsAdminService with SqlDataService {
         .map(r => FoodGroupRecord(FoodGroupMain(r.id.toInt, r.description), FoodGroupLocal(r.local_description))))
   }
 
-  def foodGroup(id: Int, locale: String): Either[DatabaseError, Option[FoodGroupRecord]] = tryWithConnection {
+  def foodGroup(id: Int, locale: String): Either[ResourceError, FoodGroupRecord] = tryWithConnection {
     implicit conn =>
-      Right(SQL("""|SELECT description, local_description 
+      SQL("""|SELECT description, local_description 
                         |FROM food_groups 
                         |     LEFT JOIN food_groups_local ON food_groups_local.food_group_id = food_groups.id AND food_groups_local.locale_id = {locale_id}
                         |WHERE id = {id}""".stripMargin)
         .on('id -> id, 'locale_id -> locale)
         .executeQuery()
         .as((str("description") ~ str("local_description").?).singleOpt)
-        .map(desc => FoodGroupRecord(FoodGroupMain(id, desc._1), FoodGroupLocal(desc._2))))
+        .map(desc => FoodGroupRecord(FoodGroupMain(id, desc._1), FoodGroupLocal(desc._2))) match {
+          case Some(record) => Right(record)
+          case None => Left(ResourceNotFound)
+        }
   }
 
   def deleteAllFoodGroups(): Either[DatabaseError, Unit] = tryWithConnection {
@@ -74,8 +79,8 @@ trait FoodGroupsAdminImpl extends FoodGroupsAdminService with SqlDataService {
 
       BatchSql("""INSERT INTO food_groups_local VALUES ({id}, {locale_id}, {local_description})""", foodGroupLocalParams)
         .execute()
-        
-     Right(())
+
+      Right(())
   }
 
 }

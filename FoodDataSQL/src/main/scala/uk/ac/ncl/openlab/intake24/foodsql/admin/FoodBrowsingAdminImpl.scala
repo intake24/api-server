@@ -17,7 +17,6 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalCategoryCodeError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.FoodCodeError
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CategoryCodeError
-import uk.ac.ncl.openlab.intake24.foodsql.admin.HeaderRows
 import uk.ac.ncl.openlab.intake24.foodsql.shared.SuperCategoriesImpl
 import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
 
@@ -90,11 +89,11 @@ trait FoodBrowsingAdminImpl extends FoodBrowsingAdminService
       parseWithLocaleAndFoodValidation(result, Macro.namedParser[CategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map(_.map(_.asCategoryHeader))
   }
 
-  def foodAllCategories(code: String): Either[FoodCodeError, Seq[String]] = tryWithConnection {
+  def foodAllCategoriesCodes(code: String): Either[FoodCodeError, Seq[String]] = tryWithConnection {
     implicit conn => foodAllCategoriesImpl(code)
   }
 
-  def foodAllCategories(code: String, locale: String): Either[LocalFoodCodeError, Seq[CategoryHeader]] = tryWithConnection {
+  def foodAllCategoriesHeaders(code: String, locale: String): Either[LocalFoodCodeError, Seq[CategoryHeader]] = tryWithConnection {
     implicit conn => foodAllCategoriesImpl(code, locale)
   }
 
@@ -116,11 +115,11 @@ trait FoodBrowsingAdminImpl extends FoodBrowsingAdminService
       parseWithLocaleAndCategoryValidation(result, Macro.namedParser[CategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map(_.map(_.asCategoryHeader))
   }
 
-  def categoryAllCategories(code: String): Either[CategoryCodeError, Seq[String]] = tryWithConnection {
+  def categoryAllCategoriesCodes(code: String): Either[CategoryCodeError, Seq[String]] = tryWithConnection {
     implicit conn => categoryAllCategoriesImpl(code)
   }
 
-  def categoryAllCategories(code: String, locale: String): Either[LocalCategoryCodeError, Seq[CategoryHeader]] = tryWithConnection {
+  def categoryAllCategoriesHeaders(code: String, locale: String): Either[LocalCategoryCodeError, Seq[CategoryHeader]] = tryWithConnection {
     implicit conn => categoryAllCategoriesImpl(code, locale)
   }
 }

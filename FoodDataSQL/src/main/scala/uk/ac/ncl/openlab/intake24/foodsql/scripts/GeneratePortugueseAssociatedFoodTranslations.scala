@@ -8,7 +8,8 @@ import java.io.FileWriter
 import au.com.bytecode.opencsv.CSVWriter
 
 import scala.collection.JavaConversions._
-import uk.ac.ncl.openlab.intake24.foodsql.user.FoodDataUserImpl
+
+import uk.ac.ncl.openlab.intake24.foodsql.user.FoodDatabaseUserImpl
 
 object GeneratePortugueseAssociatedFoodTranslations extends App with DatabaseScript {
   
@@ -17,7 +18,7 @@ object GeneratePortugueseAssociatedFoodTranslations extends App with DatabaseScr
   
   val dataSource = getLocalDataSource("intake24_foods_development")
   
-  val dataService = new FoodDatabaseImpl(dataSource)
+  val dataService = new FoodDatabaseUserImpl(dataSource)
   val indexService = new FoodIndexDataImpl(dataSource)
   
   val baseLocaleFoods = indexService.indexableFoods(baseLocaleCode).right.get.map( header => header.code -> header).toMap

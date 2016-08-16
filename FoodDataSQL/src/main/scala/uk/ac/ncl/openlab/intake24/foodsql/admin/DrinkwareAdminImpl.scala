@@ -16,7 +16,7 @@ trait DrinkwareAdminImpl extends DrinkwareAdminService with DrinkwareUserImpl {
 
   private val logger = LoggerFactory.getLogger(classOf[DrinkwareAdminImpl])
 
-  def allDrinkware(): Either[DatabaseError, Seq[DrinkwareHeader]] = tryWithConnection {
+  def allDrinkwareSets(): Either[DatabaseError, Seq[DrinkwareHeader]] = tryWithConnection {
     implicit conn =>
       Right(SQL("""SELECT id, description FROM drinkware_sets ORDER BY description ASC""").executeQuery().as(Macro.namedParser[DrinkwareHeader].*))
   }
@@ -54,7 +54,7 @@ trait DrinkwareAdminImpl extends DrinkwareAdminService with DrinkwareUserImpl {
                   .executeInsert()
                   .get
 
-                val volumeSampleParams = scale.vf.sortedSamples.map {
+                val volumeSampleParams = scale.vf.sortedSamples.flatMap {
                   case (fill, volume) =>
                     Seq[NamedParameter]('scale_id -> scaleId, 'fill -> fill, 'volume -> volume)
                 }

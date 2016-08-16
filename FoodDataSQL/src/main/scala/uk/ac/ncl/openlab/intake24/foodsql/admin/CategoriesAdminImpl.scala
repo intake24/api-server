@@ -42,7 +42,7 @@ import uk.ac.ncl.openlab.intake24.foodsql.shared.FoodPortionSizeShared
 
 trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService with SqlResourceLoader with FirstRowValidation with FoodPortionSizeShared with AdminErrorMessagesShared {
 
-  val logger = LoggerFactory.getLogger(classOf[CategoriesAdminImpl])
+  private val logger = LoggerFactory.getLogger(classOf[CategoriesAdminImpl])
 
   private def categoryCodeFkConstraintFailedMessage(categoryCode: String) =
     s"Category code $categoryCode is not defined. Either an invalid code was supplied or the category was deleted or had its code changed by someone else."
@@ -105,7 +105,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
       }
   }
 
-  def updateCategoryBase(categoryCode: String, categoryBase: MainCategoryRecord): Either[UpdateError, Unit] = tryWithConnection {
+  def updateCategoryMainRecord(categoryCode: String, categoryBase: MainCategoryRecord): Either[UpdateError, Unit] = tryWithConnection {
     implicit conn =>
       conn.setAutoCommit(false)
 
@@ -147,7 +147,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
 
   val categoriesPsmInsertQuery = "INSERT INTO categories_portion_size_methods VALUES(DEFAULT, {category_code}, {locale_id}, {method}, {description}, {image_url}, {use_for_recipes})"
 
-  def updateCategoryLocal(categoryCode: String, locale: String, categoryLocal: LocalCategoryRecord): Either[LocalUpdateError, Unit] = tryWithConnection {
+  def updateCategoryLocalRecord(categoryCode: String, locale: String, categoryLocal: LocalCategoryRecord): Either[LocalUpdateError, Unit] = tryWithConnection {
     implicit conn =>
       conn.setAutoCommit(false)
 
@@ -236,7 +236,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
         val foodCategoryParams =
           categoryFoods.flatMap {
             case (code, foods) =>
-              foods.map(f => Seq[NamedParameter]('food_code -> f, 'category_code -> code))
+              foods.flatMap(f => Seq[NamedParameter]('food_code -> f, 'category_code -> code))
           }.toSeq
 
         if (!foodCategoryParams.isEmpty) {
@@ -296,7 +296,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
             val categoryCategoryParams =
               categorySubcategories.flatMap {
                 case (code, subcats) =>
-                  subcats.map(c => Seq[NamedParameter]('subcategory_code -> c, 'category_code -> code))
+                  subcats.flatMap(c => Seq[NamedParameter]('subcategory_code -> c, 'category_code -> code))
               }.toSeq
 
             if (!categoryCategoryParams.isEmpty) {
@@ -354,12 +354,12 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
         logger.info("Writing " + categories.size + " categories to database")
 
         val categoryParams =
-          categories.map(c => Seq[NamedParameter]('code -> c.code, 'description -> c.englishDescription, 'is_hidden -> c.isHidden, 'version -> UUID.randomUUID()))
+          categories.flatMap(c => Seq[NamedParameter]('code -> c.code, 'description -> c.englishDescription, 'is_hidden -> c.isHidden, 'version -> UUID.randomUUID()))
 
         BatchSql(categoriesInsertQuery, categoryParams).execute()
 
         val categoryAttributeParams =
-          categories.map(c => Seq[NamedParameter]('category_code -> c.code, 'same_as_before_option -> c.attributes.sameAsBeforeOption,
+          categories.flatMap(c => Seq[NamedParameter]('category_code -> c.code, 'same_as_before_option -> c.attributes.sameAsBeforeOption,
             'ready_meal_option -> c.attributes.readyMealOption, 'reasonable_amount -> c.attributes.reasonableAmount))
 
         BatchSql(categoriesAttributesInsertQuery, categoryAttributeParams).execute()
@@ -395,7 +395,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
         val psmParams =
           localCategoryRecordsSeq.flatMap {
             case (code, local) =>
-              local.portionSize.map {
+              local.portionSize.flatMap {
                 ps =>
                   Seq[NamedParameter]('category_code -> code, 'locale_id -> locale, 'method -> ps.method,
                     'description -> ps.description, 'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes)
@@ -417,7 +417,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
           }
 
           val psmParamParams = localCategoryRecordsSeq.flatMap(_._2.portionSize).zip(buf).flatMap {
-            case (psm, id) => psm.parameters.map(param => Seq[NamedParameter]('portion_size_method_id -> id, 'name -> param.name, 'value -> param.value))
+            case (psm, id) => psm.parameters.flatMap(param => Seq[NamedParameter]('portion_size_method_id -> id, 'name -> param.name, 'value -> param.value))
           }
 
           if (!psmParamParams.isEmpty) {
@@ -444,6 +444,12 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
         Right(())
       else
         Left(UndefinedCode)
+  }
+  
+  def deleteAllCategories(): Either[DatabaseError, Unit] = tryWithConnection {
+    implicit conn =>
+      SQL("DELETE FROM categories").execute()
+      Right(())
   }
 
   def removeFoodFromCategory(categoryCode: String, foodCode: String): Either[UpdateError, Unit] = tryWithConnection {

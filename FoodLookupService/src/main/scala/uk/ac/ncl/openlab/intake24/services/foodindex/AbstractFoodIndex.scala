@@ -27,7 +27,6 @@ import org.workcraft.phrasesearch.PhraseIndex
 import org.workcraft.phrasesearch.WordStemmer
 
 import uk.ac.ncl.openlab.intake24.UserFoodHeader
-import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
 
 abstract class AbstractFoodIndex (foodData: FoodIndexDataService, phoneticEncoder: Option[PhoneticEncoder], stemmer: WordStemmer, indexFilter: Seq[String], nonIndexedWords: Seq[String], localSpecialFoods: LocalSpecialFoodNames, locale: String) extends FoodIndex {
 
@@ -35,13 +34,15 @@ abstract class AbstractFoodIndex (foodData: FoodIndexDataService, phoneticEncode
   
   val ft0 = System.currentTimeMillis()
   
-  val indexableFoods = foodData.indexableFoods(locale)
+  // FIXME: Error handling  
+  val indexableFoods = foodData.indexableFoods(locale).right.get
   
   log.debug(s"Indexable foods loaded in ${System.currentTimeMillis() - ft0} ms")
   
   val ct0 = System.currentTimeMillis()
   
-  val indexableCategories = foodData.indexableCategories(locale)
+  // FIXME: Error handling
+  val indexableCategories = foodData.indexableCategories(locale).right.get
   
   log.debug(s"Indexable categories loaded in ${System.currentTimeMillis() - ct0} ms")
 
@@ -49,7 +50,8 @@ abstract class AbstractFoodIndex (foodData: FoodIndexDataService, phoneticEncode
 
   val it0 = System.currentTimeMillis()
   
-  val index = new PhraseIndex(indexEntries, indexFilter.map(CaseInsensitiveString(_)), nonIndexedWords.map(CaseInsensitiveString(_)), phoneticEncoder, stemmer, foodData.synsets(locale).map(_.map(CaseInsensitiveString(_))))
+  // FIXME: Error handling
+  val index = new PhraseIndex(indexEntries, indexFilter.map(CaseInsensitiveString(_)), nonIndexedWords.map(CaseInsensitiveString(_)), phoneticEncoder, stemmer, foodData.synsets(locale).right.get.map(_.map(CaseInsensitiveString(_))))
   
   log.debug(s"Indexing complete in ${System.currentTimeMillis() - it0} ms")
   

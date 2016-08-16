@@ -12,6 +12,9 @@ import uk.ac.ncl.openlab.intake24.AsServedSet
 import uk.ac.ncl.openlab.intake24.GuideImage
 import uk.ac.ncl.openlab.intake24.DrinkwareSet
 import uk.ac.ncl.openlab.intake24.AssociatedFood
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalCategoryCodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CategoryCodeError
 
 sealed trait SourceRecord
 
@@ -42,12 +45,12 @@ case class FoodDataSources(localDescriptionSource: SourceLocale, nutrientTablesS
 
 trait FoodBrowsingService {
   
-  def rootCategories(locale: String): Either[DatabaseError, Seq[UserCategoryHeader]]
+  def rootCategories(locale: String): Either[LocaleError, Seq[UserCategoryHeader]]
 
-  def categoryContents(code: String, locale: String): Either[FoodCodeError, UserCategoryContents]
+  def categoryContents(code: String, locale: String): Either[LocalCategoryCodeError, UserCategoryContents]
 
   /* The following methods are needed associated foods logic */
   def foodAllCategories(code: String): Either[FoodCodeError, Seq[String]]
   
-  def categoryAllCategories(code: String): Either[FoodCodeError, Seq[String]]
+  def categoryAllCategories(code: String): Either[CategoryCodeError, Seq[String]]
 }

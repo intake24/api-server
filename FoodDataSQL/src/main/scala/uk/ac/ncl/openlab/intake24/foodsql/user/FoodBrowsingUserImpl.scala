@@ -16,8 +16,11 @@ import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalCategoryCodeError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodBrowsingService
+import uk.ac.ncl.openlab.intake24.foodsql.shared.SuperCategoriesImpl
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.FoodCodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CategoryCodeError
 
-trait FoodBrowsingUserImpl extends FoodBrowsingService with SqlDataService with SqlResourceLoader with FirstRowValidation {
+trait FoodBrowsingUserImpl extends FoodBrowsingService with SqlDataService with SqlResourceLoader with FirstRowValidation with SuperCategoriesImpl {
 
   private lazy val rootCategoriesQuery = sqlFromResource("user/root_categories.sql")
 
@@ -73,5 +76,13 @@ trait FoodBrowsingUserImpl extends FoodBrowsingService with SqlDataService with 
       ) yield {
         UserCategoryContents(foods, subcategories)
       }
+  }
+
+  def foodAllCategories(code: String): Either[FoodCodeError, Seq[String]] = tryWithConnection {
+    implicit conn => foodAllCategoriesImpl(code)
+  }
+
+  def categoryAllCategories(code: String): Either[CategoryCodeError, Seq[String]] = tryWithConnection {
+    implicit conn => categoryAllCategoriesImpl(code)
   }
 }

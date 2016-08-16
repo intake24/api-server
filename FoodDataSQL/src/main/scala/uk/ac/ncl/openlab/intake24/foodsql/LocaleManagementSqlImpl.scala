@@ -42,7 +42,7 @@ class LocaleManagementSqlImpl @Inject() (@Named("intake24_foods") val dataSource
       Right(SQL(query).executeQuery().as(Macro.namedParser[LocaleRow].*).map(_.mkLocale))
   }
 
-  def get(id: String): Either[LocaleError, Locale] = tryWithConnection {
+  def locale(id: String): Either[LocaleError, Locale] = tryWithConnection {
     implicit conn =>
       var query = """SELECT id, english_name, local_name, respondent_language_id, admin_language_id, country_flag_code, prototype_locale_id FROM locales WHERE id = {locale_id} ORDER BY english_name"""
 
@@ -52,7 +52,7 @@ class LocaleManagementSqlImpl @Inject() (@Named("intake24_foods") val dataSource
       }
   }
 
-  def create(data: Locale): Either[DatabaseError, Unit] = tryWithConnection {
+  def createLocale(data: Locale): Either[DatabaseError, Unit] = tryWithConnection {
     implicit conn =>
       var query = """INSERT INTO locales VALUES({id}, {english_name}, {local_name}, {respondent_language_code}, {admin_language_code}, {country_flag_code}, {prototype_locale_id})"""
 
@@ -62,7 +62,7 @@ class LocaleManagementSqlImpl @Inject() (@Named("intake24_foods") val dataSource
       Right(())
   }
 
-  def update(id: String, data: Locale): Either[LocaleError, Unit] = tryWithConnection {
+  def updateLocale(id: String, data: Locale): Either[LocaleError, Unit] = tryWithConnection {
     implicit conn =>
       var query = """UPDATE locales SET id={new_id}, english_name={english_name}, local_name={local_name}, respondent_language_code={respondent_language_code}, admin_language_code={admin_language_code}, country_flag_code={country_flag_code}, prototype_locale_id={prototype_locale_id} WHERE id = {id}"""
 
@@ -75,7 +75,7 @@ class LocaleManagementSqlImpl @Inject() (@Named("intake24_foods") val dataSource
         Right(())
   }
 
-  def delete(id: String): Either[LocaleError, Unit] = tryWithConnection {
+  def deleteLocale(id: String): Either[LocaleError, Unit] = tryWithConnection {
     implicit conn =>
       val query = """DELETE FROM locales WHERE id={id}"""
 

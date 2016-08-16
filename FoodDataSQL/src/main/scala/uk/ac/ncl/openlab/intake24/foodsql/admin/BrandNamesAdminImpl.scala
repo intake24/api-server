@@ -37,7 +37,7 @@ trait BrandNamesAdminImpl extends BrandNamesAdminService with SqlDataService {
       if (!brandNames.isEmpty) {
         conn.setAutoCommit(false)
         logger.info("Writing " + brandNames.size + " brands to database")
-        val brandParams = brandNames.keySet.toSeq.flatMap(k => brandNames(k).map(name => Seq[NamedParameter]('food_code -> k, 'locale_id -> locale, 'name -> name)))
+        val brandParams = brandNames.keySet.toSeq.flatMap(k => brandNames(k).flatMap(name => Seq[NamedParameter]('food_code -> k, 'locale_id -> locale, 'name -> name)))
 
         BatchSql("""INSERT INTO brands VALUES(DEFAULT, {food_code}, {locale_id}, {name})""", brandParams).execute()
         conn.commit()

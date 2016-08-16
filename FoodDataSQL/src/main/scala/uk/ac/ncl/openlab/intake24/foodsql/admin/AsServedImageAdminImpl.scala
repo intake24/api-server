@@ -2,15 +2,15 @@ package uk.ac.ncl.openlab.intake24.foodsql.admin
 
 import uk.ac.ncl.openlab.intake24.AsServedHeader
 import anorm._
-import uk.ac.ncl.openlab.intake24.foodsql.user.AsServedImageServiceImpl
+import uk.ac.ncl.openlab.intake24.foodsql.user.AsServedImageUserImpl
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AsServedImageAdminService
 import uk.ac.ncl.openlab.intake24.AsServedSet
 import org.slf4j.LoggerFactory
 
-trait AsServedImageAdminImpl extends AsServedImageAdminService with AsServedImageServiceImpl {
+trait AsServedImageAdminImpl extends AsServedImageAdminService with AsServedImageUserImpl {
 
-  val logger = LoggerFactory.getLogger(classOf[AsServedImageAdminImpl])
+  private val logger = LoggerFactory.getLogger(classOf[AsServedImageAdminImpl])
 
   def allAsServedSets(): Either[DatabaseError, Seq[AsServedHeader]] = tryWithConnection {
     implicit conn =>
@@ -31,10 +31,10 @@ trait AsServedImageAdminImpl extends AsServedImageAdminService with AsServedImag
         conn.setAutoCommit(false)
         logger.info("Writing " + sets.size + " as served sets to database")
         
-        val asServedSetParams = sets.map(set => Seq[NamedParameter]('id -> set.id, 'description -> set.description))
+        val asServedSetParams = sets.flatMap(set => Seq[NamedParameter]('id -> set.id, 'description -> set.description))
         BatchSql("""INSERT INTO as_served_sets VALUES({id}, {description})""", asServedSetParams).execute()
 
-        val asServedImageParams = sets.flatMap(set => set.images.map(image => Seq[NamedParameter]('as_served_set_id -> set.id, 'weight -> image.weight, 'url -> image.url)))
+        val asServedImageParams = sets.flatMap(set => set.images.flatMap(image => Seq[NamedParameter]('as_served_set_id -> set.id, 'weight -> image.weight, 'url -> image.url)))
         if (!asServedImageParams.isEmpty) {
           logger.info("Writing " + asServedImageParams.size + " as served images to database")
           BatchSql("""INSERT INTO as_served_images VALUES(DEFAULT, {as_served_set_id}, {weight}, {url})""", asServedImageParams).execute()
