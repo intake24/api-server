@@ -1,7 +1,7 @@
 package uk.ac.ncl.openlab.intake24.foodsql.user
 
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.SourceLocale
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalFoodCodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
@@ -14,7 +14,7 @@ trait InheritedNutrientTableCodesImpl extends SqlResourceLoader with FirstRowVal
 
   private lazy val inheritedTableCodesQuery = sqlFromResource("user/inherited_nutrient_table_codes.sql")
 
-  private def localNutrientTableCodes(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalFoodCodeError, Map[String, String]] = {
+  private def localNutrientTableCodes(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Map[String, String]] = {
     val result = SQL(inheritedTableCodesQuery).on('food_code -> code, 'locale_id -> locale).executeQuery()
 
     parseWithLocaleAndFoodValidation(result, Macro.namedParser[NutrientTableRow].+)(Seq(FirstRowValidationClause("nutrient_table_id", Right(List())))).right.map {
@@ -26,7 +26,7 @@ trait InheritedNutrientTableCodesImpl extends SqlResourceLoader with FirstRowVal
 
   protected case class ResolvedNutrientTableCodes(codes: Map[String, String], sourceLocale: SourceLocale)
 
-  protected def resolveNutrientTableCodes(foodCode: String, locale: String, prototypeLocale: Option[String])(implicit conn: java.sql.Connection): Either[LocalFoodCodeError, ResolvedNutrientTableCodes] = {
+  protected def resolveNutrientTableCodes(foodCode: String, locale: String, prototypeLocale: Option[String])(implicit conn: java.sql.Connection): Either[LocalLookupError, ResolvedNutrientTableCodes] = {
     localNutrientTableCodes(foodCode, locale).right.flatMap {
       localCodes =>
         (localCodes.isEmpty, prototypeLocale) match {

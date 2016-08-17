@@ -21,9 +21,9 @@ import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedCode
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalFoodCodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import org.slf4j.LoggerFactory
 
 trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with SqlDataService {
@@ -49,7 +49,7 @@ trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with SqlDataS
        |  foods.code = {food_code} AND (associated_foods.locale_id = {locale_id} OR associated_foods.locale_id IS NULL) 
        |ORDER BY id""".stripMargin
 
-  def associatedFoods(foodCode: String, locale: String): Either[LocalFoodCodeError, Seq[AssociatedFoodWithHeader]] = tryWithConnection {
+  def getAssociatedFoods(foodCode: String, locale: String): Either[LocalLookupError, Seq[AssociatedFoodWithHeader]] = tryWithConnection {
     implicit conn =>
 
       // TODO: change query to first row validation style
@@ -67,7 +67,7 @@ trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with SqlDataS
       }
 
       if (rows.isEmpty) // No such food in foods table
-        Left(UndefinedCode)
+        Left(RecordNotFound)
       else if (rows.head.text.isEmpty) // All columns will be null if there are no matching associated food records, check
         // the first one that cannot be null 
         Right(Seq())
@@ -75,7 +75,7 @@ trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with SqlDataS
         Right(rows.map(mkPrompt))
   }
 
-  def updateAssociatedFoods(foodCode: String, locale: String, foods: Seq[AssociatedFood]): Either[LocalFoodCodeError, Unit] = tryWithConnection {
+  def updateAssociatedFoods(foodCode: String, locale: String, foods: Seq[AssociatedFood]): Either[LocalLookupError, Unit] = tryWithConnection {
     implicit conn =>
       conn.setAutoCommit(false)
 

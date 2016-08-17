@@ -2,18 +2,18 @@ package uk.ac.ncl.openlab.intake24.foodsql.shared
 
 import anorm.SqlParser
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.FoodCodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.CategoryHeader
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalFoodCodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import anorm.Macro
 import anorm.SQL
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalCategoryCodeError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CategoryCodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.foodsql.admin.HeaderRows
 
 trait SuperCategoriesImpl extends FirstRowValidation with HeaderRows {
-  protected def foodAllCategoriesImpl(code: String)(implicit conn: java.sql.Connection): Either[FoodCodeError, Seq[String]] = {
+  protected def foodAllCategoriesImpl(code: String)(implicit conn: java.sql.Connection): Either[LookupError, Seq[String]] = {
     val query =
       """|WITH RECURSIVE t(code, level) AS (
          |  (SELECT category_code as code, 0 as level FROM foods_categories WHERE food_code={food_code} ORDER BY code)
@@ -30,7 +30,7 @@ trait SuperCategoriesImpl extends FirstRowValidation with HeaderRows {
     parseWithFoodValidation(result, SqlParser.str("code").+)(Seq(FirstRowValidationClause("code", Right(List()))))
   }
 
-  protected def foodAllCategoriesImpl(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalFoodCodeError, Seq[CategoryHeader]] = {
+  protected def foodAllCategoriesImpl(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[CategoryHeader]] = {
     val query =
       """|WITH RECURSIVE t(code, level) AS (
          |(SELECT category_code as code, 0 as level FROM foods_categories WHERE food_code = {food_code} ORDER BY code)
@@ -49,7 +49,7 @@ trait SuperCategoriesImpl extends FirstRowValidation with HeaderRows {
     parseWithLocaleAndFoodValidation(result, Macro.namedParser[CategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map(_.map(_.asCategoryHeader))
   }
 
-  def categoryAllCategoriesImpl(code: String)(implicit conn: java.sql.Connection): Either[CategoryCodeError, Seq[String]] = {
+  def categoryAllCategoriesImpl(code: String)(implicit conn: java.sql.Connection): Either[LookupError, Seq[String]] = {
     val query =
       """|WITH RECURSIVE t(code, level) AS (
          |(SELECT category_code as code, 0 as level FROM categories_categories WHERE subcategory_code = {category_code} ORDER BY code)
@@ -68,7 +68,7 @@ trait SuperCategoriesImpl extends FirstRowValidation with HeaderRows {
     parseWithCategoryValidation(result, SqlParser.str("code").+)(Seq(FirstRowValidationClause("code", Right(List()))))
   }
 
-  def categoryAllCategoriesImpl(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalCategoryCodeError, Seq[CategoryHeader]] = {
+  def categoryAllCategoriesImpl(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[CategoryHeader]] = {
     val query =
       """|WITH RECURSIVE t(code, level) AS (
          |(SELECT category_code as code, 0 as level FROM categories_categories WHERE subcategory_code = {category_code} ORDER BY code)

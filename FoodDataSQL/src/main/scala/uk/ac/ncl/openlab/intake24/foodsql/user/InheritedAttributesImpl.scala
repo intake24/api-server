@@ -4,11 +4,11 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.user.InheritableAttributeSourc
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.InheritableAttributeSources
 import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.FoodCodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import anorm.SQL
 import anorm.Macro
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalFoodCodeError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedCode
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 
 trait InheritedAttributesImpl extends SqlResourceLoader with FirstRowValidation {
 
@@ -18,7 +18,7 @@ trait InheritedAttributesImpl extends SqlResourceLoader with FirstRowValidation 
 
   private lazy val inheritedAttributesQuery = sqlFromResource("user/inherited_attributes.sql")
 
-  private def attributeRows(code: String)(implicit conn: java.sql.Connection): Either[FoodCodeError, Seq[RecursiveAttributesRow]] = {
+  private def attributeRows(code: String)(implicit conn: java.sql.Connection): Either[LookupError, Seq[RecursiveAttributesRow]] = {
 
     val result = SQL(inheritedAttributesQuery).on('food_code -> code).executeQuery()
 
@@ -42,7 +42,7 @@ trait InheritedAttributesImpl extends SqlResourceLoader with FirstRowValidation 
     case None => InheritableAttributeSource.Default
   }
 
-  protected def resolveInheritableAttributes(foodCode: String)(implicit conn: java.sql.Connection): Either[FoodCodeError, ResolvedInheritableAttributes] = {
+  protected def resolveInheritableAttributes(foodCode: String)(implicit conn: java.sql.Connection): Either[LookupError, ResolvedInheritableAttributes] = {
     attributeRows(foodCode).right.map {
       attrRows =>
 

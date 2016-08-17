@@ -23,7 +23,7 @@ import java.sql.DriverManager
 import anorm.SQL
 import uk.ac.ncl.openlab.intake24.foodsql.tools.XmlImporter
 
-class XmlImporterTest extends FunSuite with TestDB {
+class XmlImporterTest extends FunSuite with TestFoodDatabase {
 
   test("XmlImporter should not crash when importing empty files") {
    //  new XmlImporter().importXmlData(getClass.getResource("/empty").toURI().getPath())

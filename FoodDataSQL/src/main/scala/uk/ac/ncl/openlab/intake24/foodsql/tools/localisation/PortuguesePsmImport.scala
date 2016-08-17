@@ -44,7 +44,7 @@ object PortuguesePsmImport extends App with WarningMessage with DatabaseConnecti
   val guideImages = dataService.allGuideImages().right.get.map(_.id).toSet
 
   logger.info("Retrieving as served set headers")
-  val asServedSets = dataService.allAsServedSets().right.get.map(_.id).toSet
+  val asServedSets = dataService.listAsServedSets().right.get.keySet
 
   logger.info("Building PSM index")
 

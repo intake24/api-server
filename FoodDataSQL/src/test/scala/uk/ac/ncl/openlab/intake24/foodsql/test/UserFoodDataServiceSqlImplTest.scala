@@ -35,29 +35,13 @@ import uk.ac.ncl.openlab.intake24.UserCategoryHeader
 import uk.ac.ncl.openlab.intake24.UserFoodData
 import uk.ac.ncl.openlab.intake24.UserFoodHeader
 import uk.ac.ncl.openlab.intake24.foodsql.user.FoodDatabaseUserImpl
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedCode
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 
-class UserFoodDataServiceSqlImplTest extends FunSuite with TestDB {
+class UserFoodDataServiceSqlImplTest extends FunSuite with TestFoodDatabase {
 
-  val hikariConfig = new HikariConfig()
-
-  hikariConfig.setJdbcUrl(s"jdbc:postgresql://localhost/intake24_foods_test")
-  hikariConfig.setDriverClassName("org.postgresql.Driver")
-  hikariConfig.setUsername("postgres")
-
-  val dataSource = new HikariDataSource(hikariConfig)
+  val service = new FoodDatabaseUserImpl(testDataSource)
   
-  val testDataStatements = loadStatementsFromResource("/sql/test/user_test_data.sql")
-  
-  testDataStatements.foreach {
-    stmt =>
-      logger.debug(stmt)
-      SQL(stmt).execute()
-  }
-
-  val service = new FoodDatabaseUserImpl(dataSource)
-  
-   val defaultVersion = java.util.UUID.fromString("454a02a5-785e-4ca8-af52-81b11c28f56e")
+  val defaultVersion = java.util.UUID.fromString("454a02a5-785e-4ca8-af52-81b11c28f56e")
 
   val en_GB_c0 = UserCategoryHeader("C000", "Category 1")
   val en_GB_c1 = UserCategoryHeader("C001", "Category 2")
@@ -125,7 +109,7 @@ class UserFoodDataServiceSqlImplTest extends FunSuite with TestDB {
   }
   
   test("Restricted category should be treated as missing") { 
-    assert(service.categoryContents("C005", "test2") === Left(UndefinedCode))
+    assert(service.categoryContents("C005", "test2") === Left(RecordNotFound))
   }
       
   test("Category contents") {

@@ -4,14 +4,14 @@ import uk.ac.ncl.openlab.intake24.NutrientTable
 import uk.ac.ncl.openlab.intake24.NutrientType
 import uk.ac.ncl.openlab.intake24.NutrientTableRecord
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ResourceError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 
 trait NutrientDataManagementService {
   def allNutrientTables(): Either[DatabaseError, Seq[NutrientTable]]
-  def nutrientTable(id: String): Either[ResourceError, NutrientTable]
+  def nutrientTable(id: String): Either[LookupError, NutrientTable]
   def createNutrientTable(data: NutrientTable): Either[DatabaseError, Unit]
-  def updateNutrientTable(id: String, data: NutrientTable): Either[ResourceError, Unit]
-  def deleteNutrientTable(id: String): Either[ResourceError, Unit]
+  def updateNutrientTable(id: String, data: NutrientTable): Either[LookupError, Unit]
+  def deleteNutrientTable(id: String): Either[LookupError, Unit]
   
   //def nutrientTypes(): Seq[NutrientType]
   //def nutrientType(id: Int): Option[NutrientType]

@@ -82,7 +82,9 @@ case class AsServedImage(url: String, weight: Double)
 
 case class AsServedHeader (id: String, description: String)
 
-case class AsServedSet (id: String, description: String, images: Seq[AsServedImage])
+case class AsServedSet (id: String, description: String, images: Seq[AsServedImage]) {
+  def toHeader = AsServedHeader(id, description)
+}
 
 case class GuideHeader(id: String, description: String)
 

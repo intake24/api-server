@@ -13,12 +13,12 @@ import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
 import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
 import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalCategoryCodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodBrowsingService
 import uk.ac.ncl.openlab.intake24.foodsql.shared.SuperCategoriesImpl
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.FoodCodeError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CategoryCodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 
 trait FoodBrowsingUserImpl extends FoodBrowsingService with SqlDataService with SqlResourceLoader with FirstRowValidation with SuperCategoriesImpl {
 
@@ -45,7 +45,7 @@ trait FoodBrowsingUserImpl extends FoodBrowsingService with SqlDataService with 
     def mkUserHeader = UserFoodHeader(code, local_description.getOrElse(description))
   }
 
-  private def categoryFoodContentsImpl(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalCategoryCodeError, Seq[UserFoodHeader]] = {
+  private def categoryFoodContentsImpl(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[UserFoodHeader]] = {
 
     val result = SQL(categoryFoodContentsQuery).on('category_code -> code, 'locale_id -> locale).executeQuery()
 
@@ -58,7 +58,7 @@ trait FoodBrowsingUserImpl extends FoodBrowsingService with SqlDataService with 
 
   private lazy val categorySubcategoryContentsQuery = sqlFromResource("user/category_contents_subcategories.sql")
 
-  private def categorySubcategoryContentsImpl(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalCategoryCodeError, Seq[UserCategoryHeader]] = {
+  private def categorySubcategoryContentsImpl(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[UserCategoryHeader]] = {
     val result = SQL(categorySubcategoryContentsQuery).on('category_code -> code, 'locale_id -> locale).executeQuery()
 
     parseWithLocaleAndCategoryValidation(result, Macro.namedParser[UserCategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map {
@@ -68,7 +68,7 @@ trait FoodBrowsingUserImpl extends FoodBrowsingService with SqlDataService with 
     }
   }
 
-  def categoryContents(code: String, locale: String): Either[LocalCategoryCodeError, UserCategoryContents] = tryWithConnection {
+  def categoryContents(code: String, locale: String): Either[LocalLookupError, UserCategoryContents] = tryWithConnection {
     implicit conn =>
       for (
         foods <- categoryFoodContentsImpl(code, locale).right;
@@ -78,11 +78,11 @@ trait FoodBrowsingUserImpl extends FoodBrowsingService with SqlDataService with 
       }
   }
 
-  def foodAllCategories(code: String): Either[FoodCodeError, Seq[String]] = tryWithConnection {
+  def foodAllCategories(code: String): Either[LookupError, Seq[String]] = tryWithConnection {
     implicit conn => foodAllCategoriesImpl(code)
   }
 
-  def categoryAllCategories(code: String): Either[CategoryCodeError, Seq[String]] = tryWithConnection {
+  def categoryAllCategories(code: String): Either[LookupError, Seq[String]] = tryWithConnection {
     implicit conn => categoryAllCategoriesImpl(code)
   }
 }

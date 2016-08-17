@@ -1,15 +1,16 @@
 package uk.ac.ncl.openlab.intake24.foodsql
 
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalCategoryCodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.FoodCodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
 import anorm.SqlQueryResult
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalFoodCodeError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedCode
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import anorm.ResultSetParser
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CategoryCodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
+import anorm.Column
 
 case class FirstRowValidationClause[E, T](columnName: String, resultIfNull: Either[E, T])
 
@@ -18,9 +19,10 @@ trait FirstRowValidation {
     result.withResult {
       cursorOpt =>
         val firstRow = cursorOpt.get.row
-        val columns = firstRow.asMap
-
-        def isNull(columnName: String) = columns(columnName) match {
+        
+        firstRow.asMap
+        
+        def isNull(columnName: String) = firstRow(columnName) match {
           case None => true
           case _ => false
         }
@@ -43,30 +45,30 @@ trait FirstRowValidation {
   def localeValidation[T]: Seq[FirstRowValidationClause[LocaleError, T]] =
     Seq(FirstRowValidationClause("locale_id", Left(UndefinedLocale)))
     
-  def foodValidation[T]: Seq[FirstRowValidationClause[FoodCodeError, T]] =
-    Seq(FirstRowValidationClause("food_code", Left(UndefinedCode)))
+  def foodValidation[T]: Seq[FirstRowValidationClause[LookupError, T]] =
+    Seq(FirstRowValidationClause("food_code", Left(RecordNotFound)))
     
-  def categoryValidation[T]: Seq[FirstRowValidationClause[CategoryCodeError, T]] =
-    Seq(FirstRowValidationClause("category_code", Left(UndefinedCode)))    
+  def categoryValidation[T]: Seq[FirstRowValidationClause[LookupError, T]] =
+    Seq(FirstRowValidationClause("category_code", Left(RecordNotFound)))    
 
-  def localeAndFoodCodeValidation[T]: Seq[FirstRowValidationClause[LocalFoodCodeError, T]] =
-    Seq(FirstRowValidationClause("food_code", Left(UndefinedCode)), FirstRowValidationClause("locale_id", Left(UndefinedLocale)))
+  def localeAndFoodCodeValidation[T]: Seq[FirstRowValidationClause[LocalLookupError, T]] =
+    Seq(FirstRowValidationClause("food_code", Left(RecordNotFound)), FirstRowValidationClause("locale_id", Left(UndefinedLocale)))
 
-  def localeAndCategoryCodeValidation[T]: Seq[FirstRowValidationClause[LocalCategoryCodeError, T]] =
-    Seq(FirstRowValidationClause("category_code", Left(UndefinedCode)), FirstRowValidationClause("locale_id", Left(UndefinedLocale)))
+  def localeAndCategoryCodeValidation[T]: Seq[FirstRowValidationClause[LocalLookupError, T]] =
+    Seq(FirstRowValidationClause("category_code", Left(RecordNotFound)), FirstRowValidationClause("locale_id", Left(UndefinedLocale)))
 
   def parseWithLocaleValidation[T](result: SqlQueryResult, parser: ResultSetParser[T])(additionalValidation: Seq[FirstRowValidationClause[LocaleError, T]] = Seq())(implicit conn: java.sql.Connection): Either[LocaleError, T] =
     parseWithFirstRowValidation(result, localeValidation[T] ++ additionalValidation, parser)
     
-  def parseWithFoodValidation[T](result: SqlQueryResult, parser: ResultSetParser[T])(additionalValidation: Seq[FirstRowValidationClause[FoodCodeError, T]] = Seq())(implicit conn: java.sql.Connection): Either[FoodCodeError, T] =
+  def parseWithFoodValidation[T](result: SqlQueryResult, parser: ResultSetParser[T])(additionalValidation: Seq[FirstRowValidationClause[LookupError, T]] = Seq())(implicit conn: java.sql.Connection): Either[LookupError, T] =
     parseWithFirstRowValidation(result, foodValidation[T] ++ additionalValidation, parser)
     
-  def parseWithCategoryValidation[T](result: SqlQueryResult, parser: ResultSetParser[T])(additionalValidation: Seq[FirstRowValidationClause[CategoryCodeError, T]] = Seq())(implicit conn: java.sql.Connection): Either[CategoryCodeError, T] =
+  def parseWithCategoryValidation[T](result: SqlQueryResult, parser: ResultSetParser[T])(additionalValidation: Seq[FirstRowValidationClause[LookupError, T]] = Seq())(implicit conn: java.sql.Connection): Either[LookupError, T] =
     parseWithFirstRowValidation(result, categoryValidation[T] ++ additionalValidation, parser)        
     
-  def parseWithLocaleAndFoodValidation[T](result: SqlQueryResult, parser: ResultSetParser[T])(additionalValidation: Seq[FirstRowValidationClause[LocalFoodCodeError, T]] = Seq())(implicit conn: java.sql.Connection): Either[LocalFoodCodeError, T] =
+  def parseWithLocaleAndFoodValidation[T](result: SqlQueryResult, parser: ResultSetParser[T])(additionalValidation: Seq[FirstRowValidationClause[LocalLookupError, T]] = Seq())(implicit conn: java.sql.Connection): Either[LocalLookupError, T] =
     parseWithFirstRowValidation(result, localeAndFoodCodeValidation[T] ++ additionalValidation, parser)
 
-  def parseWithLocaleAndCategoryValidation[T](result: SqlQueryResult, parser: ResultSetParser[T])(additionalValidation: Seq[FirstRowValidationClause[LocalCategoryCodeError, T]] = Seq())(implicit conn: java.sql.Connection): Either[LocalCategoryCodeError, T] =
+  def parseWithLocaleAndCategoryValidation[T](result: SqlQueryResult, parser: ResultSetParser[T])(additionalValidation: Seq[FirstRowValidationClause[LocalLookupError, T]] = Seq())(implicit conn: java.sql.Connection): Either[LocalLookupError, T] =
     parseWithFirstRowValidation(result, localeAndCategoryCodeValidation[T] ++ additionalValidation, parser)
 }

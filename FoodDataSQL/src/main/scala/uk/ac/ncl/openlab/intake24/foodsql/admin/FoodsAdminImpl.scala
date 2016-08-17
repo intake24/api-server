@@ -24,16 +24,16 @@ import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
 import uk.ac.ncl.openlab.intake24.foodsql.Util
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DuplicateCode
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedCode
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.VersionConflict
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedCode
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalFoodCodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.PortionSizeMethod
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.FoodCodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
 import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
 import uk.ac.ncl.openlab.intake24.foodsql.shared.FoodPortionSizeShared
@@ -66,7 +66,7 @@ trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with SqlResou
 
   private lazy val foodNutrientTableCodesQuery = sqlFromResource("admin/food_nutrient_table_codes.sql")
   
-  def foodNutrientTableCodes(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalFoodCodeError, Map[String, String]] = {
+  def foodNutrientTableCodes(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Map[String, String]] = {
     val nutrientTableCodesResult = SQL(foodNutrientTableCodesQuery).on('food_code -> code, 'locale_id -> locale).executeQuery()
 
     val parsed = parseWithLocaleAndFoodValidation(nutrientTableCodesResult, Macro.namedParser[NutrientTableRow].+)(Seq(FirstRowValidationClause("nutrient_table_id", Right(List()))))
@@ -80,7 +80,7 @@ trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with SqlResou
   
   private lazy val foodRecordQuery = sqlFromResource("admin/food_record.sql")
   
-  def foodRecord(code: String, locale: String): Either[LocalFoodCodeError, FoodRecord] = tryWithConnection {
+  def foodRecord(code: String, locale: String): Either[LocalLookupError, FoodRecord] = tryWithConnection {
     implicit conn =>
 
       foodNutrientTableCodes(code, locale).right.flatMap {
@@ -200,23 +200,23 @@ trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with SqlResou
       Right(())
   }
 
-  def deleteFood(foodCode: String): Either[FoodCodeError, Unit] = tryWithConnection {
+  def deleteFood(foodCode: String): Either[LookupError, Unit] = tryWithConnection {
     implicit conn =>
       val rowsAffected = SQL("""DELETE FROM foods WHERE code={food_code}""").on('food_code -> foodCode).executeUpdate()
 
       if (rowsAffected == 1)
         Right(())
       else
-        Left(UndefinedCode)
+        Left(RecordNotFound)
   }
 
-  val foodLocalInsertQuery = "INSERT INTO foods_local VALUES({food_code}, {locale_id}, {local_description}, {do_not_use}, {version}::uuid)"
+  private val foodLocalInsertQuery = "INSERT INTO foods_local VALUES({food_code}, {locale_id}, {local_description}, {do_not_use}, {version}::uuid)"
 
-  val foodNutrientMappingInsertQuery = "INSERT INTO foods_nutrient_mapping VALUES ({food_code}, {locale_id}, {nutrient_table_id}, {nutrient_table_code})"
+  private val foodNutrientMappingInsertQuery = "INSERT INTO foods_nutrient_mapping VALUES ({food_code}, {locale_id}, {nutrient_table_id}, {nutrient_table_code})"
 
-  val foodPsmInsertQuery = "INSERT INTO foods_portion_size_methods VALUES(DEFAULT, {food_code}, {locale_id}, {method}, {description}, {image_url}, {use_for_recipes})"
+  private val foodPsmInsertQuery = "INSERT INTO foods_portion_size_methods VALUES(DEFAULT, {food_code}, {locale_id}, {method}, {description}, {image_url}, {use_for_recipes})"
 
-  val foodPsmParamsInsertQuery = "INSERT INTO foods_portion_size_method_params VALUES(DEFAULT, {portion_size_method_id}, {name}, {value})"
+  private val foodPsmParamsInsertQuery = "INSERT INTO foods_portion_size_method_params VALUES(DEFAULT, {portion_size_method_id}, {name}, {value})"
 
   def createLocalFoods(localFoodRecords: Map[String, LocalFoodRecord], locale: String): Either[DatabaseError, Unit] = tryWithConnection {
     implicit conn =>
@@ -239,7 +239,7 @@ trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with SqlResou
         val foodNutritionTableParams =
           localFoodRecordsSeq.flatMap {
             case (code, local) =>
-              local.nutrientTableCodes.map {
+              local.nutrientTableCodes.flatMap {
                 case (table_id, table_code) => Seq[NamedParameter]('food_code -> code, 'locale_id -> locale, 'nutrient_table_id -> table_id, 'nutrient_table_code -> table_code)
               }
           }.toSeq
@@ -250,14 +250,14 @@ trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with SqlResou
         val psmParams =
           localFoodRecordsSeq.flatMap {
             case (code, local) =>
-              local.portionSize.map(ps => Seq[NamedParameter]('food_code -> code, 'locale_id -> locale, 'method -> ps.method, 'description -> ps.description, 'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes))
+              local.portionSize.flatMap(ps => Seq[NamedParameter]('food_code -> code, 'locale_id -> locale, 'method -> ps.method, 'description -> ps.description, 'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes))
           }.toSeq
 
         if (psmParams.nonEmpty) {
           val ids = Util.batchKeys(BatchSql(foodPsmInsertQuery, psmParams))
 
           val psmParamParams = localFoodRecordsSeq.flatMap(_._2.portionSize).zip(ids).flatMap {
-            case (psm, id) => psm.parameters.map(param => Seq[NamedParameter]('portion_size_method_id -> id, 'name -> param.name, 'value -> param.value))
+            case (psm, id) => psm.parameters.flatMap(param => Seq[NamedParameter]('portion_size_method_id -> id, 'name -> param.name, 'value -> param.value))
           }
 
           if (psmParamParams.nonEmpty)
@@ -297,7 +297,7 @@ trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with SqlResou
       } catch {
         case e: PSQLException => {
           e.getServerErrorMessage.getConstraint match {
-            case "foods_attributes_food_code_fk" => Left(UndefinedCode)
+            case "foods_attributes_food_code_fk" => Left(RecordNotFound)
             case _ => throw e
           }
         }
@@ -370,7 +370,7 @@ trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with SqlResou
       } catch {
         case e: PSQLException => {
           e.getServerErrorMessage.getConstraint match {
-            case "foods_nutrient_tables_food_code_fk" | "foods_portion_size_methods_food_id_fk" | "foods_local_food_code_fk" => Left(UndefinedCode)
+            case "foods_nutrient_tables_food_code_fk" | "foods_portion_size_methods_food_id_fk" | "foods_local_food_code_fk" => Left(RecordNotFound)
             case _ => throw e
           }
         }

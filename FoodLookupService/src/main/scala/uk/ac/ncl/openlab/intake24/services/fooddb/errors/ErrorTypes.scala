@@ -18,53 +18,56 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.services.fooddb.errors
 
-sealed trait NutrientMappingError
 
-object NutrientMappingError
+sealed trait LocalLookupError
 
-case object TableNotFound extends NutrientMappingError
-case object RecordNotFound extends NutrientMappingError
+sealed trait LocaleError extends LocalLookupError with LocalUpdateError with LocalCreateError with LocalDeleteError
 
-sealed trait LocalFoodCodeError
+sealed trait LookupError extends LocalLookupError
 
-sealed trait FoodDataError
 
-sealed trait FoodCodeError
+sealed trait LocalDeleteError
 
-sealed trait LocaleError
+sealed trait DeleteError extends LocalDeleteError
 
-sealed trait CategoryCodeError
 
-sealed trait LocalCategoryCodeError
-
-case object UndefinedCode extends FoodCodeError with UpdateError with LocalUpdateError with LocalFoodCodeError with CategoryCodeError with LocalCategoryCodeError
-
-case object UndefinedLocale extends LocaleError with LocalFoodCodeError with LocalCategoryCodeError with LocalUpdateError
-
-case object NoLocalDescription extends FoodDataError
-
-sealed trait ResourceError
-
-case object ResourceNotFound extends ResourceError
-
-sealed trait UpdateError
 
 sealed trait LocalUpdateError
 
-case object VersionConflict extends UpdateError with LocalUpdateError
+sealed trait UpdateError extends LocalUpdateError
 
-sealed trait CreateError
 
-case object DuplicateCode extends CreateError
+sealed trait LocalCreateError
 
-case class DatabaseError(message: String, cause: Option[Throwable]) extends UpdateError
-  with FoodCodeError
-  with LocalFoodCodeError
-  with CategoryCodeError
-  with LocalCategoryCodeError
-  with FoodDataError
-  with ResourceError
-  with NutrientMappingError
-  with CreateError
+sealed trait CreateError extends LocalCreateError
+
+
+sealed trait NutrientMappingError
+
+case object UndefinedLocale extends LocaleError
+
+case object RecordNotFound extends LookupError with NutrientMappingError with DeleteError with UpdateError 
+
+case object VersionConflict extends UpdateError
+
+case object DuplicateCode extends CreateError with UpdateError
+
+case object TableNotFound extends NutrientMappingError
+
+case class DatabaseError(message: String, cause: Option[Throwable]) 
+  extends LocaleError
+  with LookupError
+  with LocalLookupError
+  with DeleteError
+  with LocalDeleteError
+  with UpdateError
   with LocalUpdateError
-  with LocaleError
+  with CreateError
+  with LocalCreateError
+  with NutrientMappingError
+  
+object test {
+  val q: LocaleError = UndefinedLocale
+  val x: LocalLookupError = q
+  
+}

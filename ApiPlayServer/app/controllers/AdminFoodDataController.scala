@@ -96,7 +96,7 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, userServ
       } yield AdminFoodRecord(record.main, record.local, brandNames, associatedFoods)
       
       result match {
-        case Left(CodeError.UndefinedCode) => NotFound
+        case Left(CodeError.RecordNotFound) => NotFound
         case Right(record) => Ok(write(record)).as(ContentTypes.JSON)
       }
     }
@@ -105,7 +105,7 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, userServ
   def categoryRecord(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       service.categoryRecord(code, locale) match {
-        case Left(CodeError.UndefinedCode) => NotFound
+        case Left(CodeError.RecordNotFound) => NotFound
         case Right(record) => Ok(write(AdminCategoryRecord(record.main, record.local))).as(ContentTypes.JSON)
       }      
     }

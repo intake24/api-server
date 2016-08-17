@@ -5,13 +5,13 @@ import uk.ac.ncl.openlab.intake24.FoodRecord
 import uk.ac.ncl.openlab.intake24.LocalFoodRecord
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.FoodCodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.NewFood
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalFoodCodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 
 trait FoodsAdminService {
-  def foodRecord(code: String, locale: String): Either[LocalFoodCodeError, FoodRecord]
+  def foodRecord(code: String, locale: String): Either[LocalLookupError, FoodRecord]
   
   def isFoodCodeAvailable(code: String): Either[DatabaseError, Boolean]
   def isFoodCode(code: String): Either[DatabaseError, Boolean]
@@ -25,5 +25,5 @@ trait FoodsAdminService {
   def updateLocalFoodRecord(foodCode: String, locale: String, foodLocal: LocalFoodRecord): Either[UpdateError, Unit]
 
   def deleteAllFoods(): Either[DatabaseError, Unit]
-  def deleteFood(foodCode: String): Either[FoodCodeError, Unit]  
+  def deleteFood(foodCode: String): Either[LookupError, Unit]  
 }

@@ -34,8 +34,8 @@ import anorm.BatchSql
 import java.sql.BatchUpdateException
 import uk.ac.ncl.openlab.intake24.NutrientType
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ResourceNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ResourceError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 
 class NutrientDataManagementSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends NutrientDataManagementService with SqlDataService {
 
@@ -47,13 +47,13 @@ class NutrientDataManagementSqlImpl @Inject() (@Named("intake24_foods") val data
       Right(SQL(query).executeQuery().as(Macro.namedParser[NutrientTable].*))
   }
 
-  def nutrientTable(id: String): Either[ResourceError, NutrientTable] = tryWithConnection {
+  def nutrientTable(id: String): Either[LookupError, NutrientTable] = tryWithConnection {
     implicit conn =>
       var query = """SELECT id, description FROM nutrient_tables WHERE id = {id} ORDER BY english_name"""
 
       SQL(query).on('id -> id).executeQuery().as(Macro.namedParser[NutrientTable].singleOpt) match {
         case Some(table) => Right(table)
-        case None => Left(ResourceNotFound)
+        case None => Left(RecordNotFound)
       }
   }
 
@@ -66,26 +66,26 @@ class NutrientDataManagementSqlImpl @Inject() (@Named("intake24_foods") val data
       Right(())
   }
 
-  def updateNutrientTable(id: String, data: NutrientTable): Either[ResourceError, Unit] = tryWithConnection {
+  def updateNutrientTable(id: String, data: NutrientTable): Either[LookupError, Unit] = tryWithConnection {
     implicit conn =>
       var query = """UPDATE nutrient_tables SET id={new_id}, description={description} WHERE id = {id}"""
 
       val affectedRows = SQL(query).on('id -> id, 'new_id -> data.id, 'description -> data.description).executeUpdate()
 
       if (affectedRows == 0)
-        Left(ResourceNotFound)
+        Left(RecordNotFound)
       else
         Right(())
   }
 
-  def deleteNutrientTable(id: String): Either[ResourceError, Unit] = tryWithConnection {
+  def deleteNutrientTable(id: String): Either[LookupError, Unit] = tryWithConnection {
     implicit conn =>
       val query = """DELETE FROM nutrient_tables WHERE id={id}"""
 
       val affectedRows = SQL(query).on('id -> id).executeUpdate()
 
       if (affectedRows == 0)
-        Left(ResourceNotFound)
+        Left(RecordNotFound)
       else
         Right(())
   }

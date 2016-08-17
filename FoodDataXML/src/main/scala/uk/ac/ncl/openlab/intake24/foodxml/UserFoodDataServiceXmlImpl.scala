@@ -30,16 +30,15 @@ import uk.ac.ncl.openlab.intake24.UserCategoryContents
 import uk.ac.ncl.openlab.intake24.UserCategoryHeader
 
 import uk.ac.ncl.openlab.intake24.services.foodindex.Util.mkHeader
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ResourceError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 
 import uk.ac.ncl.openlab.intake24.UserFoodData
 
 import uk.ac.ncl.openlab.intake24.UserFoodHeader
 import uk.ac.ncl.openlab.intake24.AssociatedFood
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ResourceNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedCode
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDatabaseService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 
 @Singleton
 class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDatabaseService {
@@ -115,19 +114,19 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDat
     Right((UserFoodData(f.main.code, f.main.englishDescription, f.local.nutrientTableCodes, f.main.groupCode, portionSizeMethods, readyMealOption, sameAsBeforeOption, reasonableAmount), null))
   }
 
-  def asServedSet(id: String) = data.asServedSets.get(id) match {
+  def getAsServedSet(id: String) = data.asServedSets.get(id) match {
     case Some(set) => Right(set)
-    case None => Left(ResourceNotFound)
+    case None => Left(RecordNotFound)
   }
 
   def guideImage(id: String) = data.guideImages.get(id) match {
     case Some(image) => Right(image)
-    case None => Left(ResourceNotFound)
+    case None => Left(RecordNotFound)
   }
 
   def drinkwareSet(id: String) = data.drinkwareSets.get(id) match {
     case Some(set) => Right(set)
-    case None => Left(ResourceNotFound)
+    case None => Left(RecordNotFound)
   }
 
   def associatedFoods(foodCode: String, locale: String) = {
@@ -145,7 +144,7 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDat
             }
         })
       }
-      case None => Left(UndefinedCode)
+      case None => Left(RecordNotFound)
     }
   }
 
@@ -153,7 +152,7 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDat
     checkLocale(locale)
     data.brandNamesMap.get(foodCode) match {
       case Some(map) => Right(map)
-      case None => Left(UndefinedCode)
+      case None => Left(RecordNotFound)
     }
   }
 

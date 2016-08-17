@@ -4,7 +4,7 @@ import anorm.Macro
 import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
 import uk.ac.ncl.openlab.intake24.PortionSizeMethod
 import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalFoodCodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
 import anorm.SQL
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
@@ -27,7 +27,7 @@ trait FoodPortionSizeShared extends SqlResourceLoader with FirstRowValidation {
   
   private lazy val foodPsmQuery = sqlFromResource("shared/food_portion_size_methods.sql")
 
-  protected def foodPortionSizeMethodsImpl(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalFoodCodeError, Seq[PortionSizeMethod]] = {
+  protected def foodPortionSizeMethodsImpl(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[PortionSizeMethod]] = {
     val psmResults = SQL(foodPsmQuery).on('food_code -> code, 'locale_id -> locale).executeQuery()
 
     parseWithLocaleAndFoodValidation(psmResults, psmResultRowParser.+)(Seq(FirstRowValidationClause("id", Right(List())))).right.map(mkPortionSizeMethods)

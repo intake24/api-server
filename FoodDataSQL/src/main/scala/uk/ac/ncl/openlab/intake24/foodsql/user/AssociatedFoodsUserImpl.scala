@@ -10,9 +10,9 @@ import anorm.sqlToSimple
 import uk.ac.ncl.openlab.intake24.AssociatedFood
 import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
 
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedCode
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.AssociatedFoodsService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalFoodCodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
@@ -33,7 +33,7 @@ trait AssociatedFoodsUserImpl extends AssociatedFoodsService with SqlDataService
        |      AND (v.locale_id = associated_foods.locale_id OR associated_foods.locale_id IN (SELECT prototype_locale_id FROM locales WHERE id = v.locale_id))
        |ORDER BY id""".stripMargin
 
-  def associatedFoods(foodCode: String, locale: String): Either[LocalFoodCodeError, Seq[AssociatedFood]] = tryWithConnection {
+  def associatedFoods(foodCode: String, locale: String): Either[LocalLookupError, Seq[AssociatedFood]] = tryWithConnection {
     implicit conn =>
 
       val result = SQL(query).on('food_code -> foodCode, 'locale_id -> locale).executeQuery()

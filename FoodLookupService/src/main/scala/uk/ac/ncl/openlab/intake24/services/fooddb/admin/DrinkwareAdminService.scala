@@ -1,7 +1,7 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.admin
 
 import uk.ac.ncl.openlab.intake24.DrinkwareSet
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ResourceError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.DrinkwareHeader
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.DrinkwareService

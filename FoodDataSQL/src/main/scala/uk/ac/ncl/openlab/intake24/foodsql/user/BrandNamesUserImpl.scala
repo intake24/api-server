@@ -4,8 +4,8 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.user.BrandNamesService
 import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
 import anorm._
 import anorm.SqlParser.str
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalFoodCodeError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedCode
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
@@ -15,7 +15,7 @@ trait BrandNamesUserImpl extends BrandNamesService with SqlDataService with Firs
 
   private case class Validation(foodCodeValid: Boolean, localeIdValid: Boolean, hasRows: Boolean)
 
-  def brandNames(foodCode: String, locale: String): Either[LocalFoodCodeError, Seq[String]] = tryWithConnection {
+  def brandNames(foodCode: String, locale: String): Either[LocalLookupError, Seq[String]] = tryWithConnection {
     implicit conn =>
 
       // see http://stackoverflow.com/a/38793141/622196 for explanation

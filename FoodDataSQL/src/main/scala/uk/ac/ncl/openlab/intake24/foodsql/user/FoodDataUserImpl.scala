@@ -31,13 +31,13 @@ import anorm.sqlToSimple
 import uk.ac.ncl.openlab.intake24.PortionSizeMethod
 import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
 import uk.ac.ncl.openlab.intake24.UserFoodData
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.NoLocalDescription
+
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.InheritableAttributeSources
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.FoodDataError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedCode
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalFoodCodeError
+
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.foodsql.shared.FoodPortionSizeShared
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.FoodCodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
 import uk.ac.ncl.openlab.intake24.InheritableAttributes
@@ -83,26 +83,26 @@ trait FoodDataUserImpl extends FoodDataService
 
   private lazy val foodRecordQuery = sqlFromResource("user/food_record.sql")
 
-  private def foodRecordImpl(foodCode: String, locale: String, prototypeLocale: Option[String])(implicit conn: java.sql.Connection): Either[LocalFoodCodeError, FoodRow] = {
+  private def foodRecordImpl(foodCode: String, locale: String, prototypeLocale: Option[String])(implicit conn: java.sql.Connection): Either[LocalLookupError, FoodRow] = {
     val result = SQL(foodRecordQuery).on('food_code -> foodCode, 'locale_id -> locale).executeQuery()
 
     parseWithLocaleAndFoodValidation(result, Macro.namedParser[FoodRow].single)()
   }
 
-  private def foodCodeErrorAdapter[T](e: Either[FoodCodeError, T]): Either[LocalFoodCodeError, T] = e.left.map {
-    case UndefinedCode => UndefinedCode
+  private def LookupErrorAdapter[T](e: Either[LookupError, T]): Either[LocalLookupError, T] = e.left.map {
+    case RecordNotFound => RecordNotFound
   }
 
-  private def localeErrorAdapter[T](e: Either[LocaleError, T]): Either[LocalFoodCodeError, T] = e.left.map {
+  private def localeErrorAdapter[T](e: Either[LocaleError, T]): Either[LocalLookupError, T] = e.left.map {
     case UndefinedLocale => UndefinedLocale
   }
 
-  def foodData(foodCode: String, locale: String): Either[LocalFoodCodeError, (UserFoodData, FoodDataSources)] = tryWithConnection {
+  def foodData(foodCode: String, locale: String): Either[LocalLookupError, (UserFoodData, FoodDataSources)] = tryWithConnection {
     implicit conn =>
       for (
         pl <- localeErrorAdapter(prototypeLocale(locale)).right;
         psm <- resolvePortionSizeMethods(foodCode, locale, pl).right;
-        attr <- foodCodeErrorAdapter(resolveInheritableAttributes(foodCode)).right;
+        attr <- LookupErrorAdapter(resolveInheritableAttributes(foodCode)).right;
         nutr <- resolveNutrientTableCodes(foodCode, locale, pl).right;
         foodRow <- foodRecordImpl(foodCode, locale, pl).right
       ) yield {

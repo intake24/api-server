@@ -17,16 +17,16 @@ import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
 import uk.ac.ncl.openlab.intake24.foodsql.Util
 
 import org.postgresql.util.PSQLException
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.FoodCodeError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CategoryCodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalCategoryCodeError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.PortionSizeMethod
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
 
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.VersionConflict
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedCode
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
 import uk.ac.ncl.openlab.intake24.NewCategory
@@ -39,6 +39,7 @@ import java.sql.BatchUpdateException
 import scala.collection.mutable.ArrayBuffer
 import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
 import uk.ac.ncl.openlab.intake24.foodsql.shared.FoodPortionSizeShared
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
 
 trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService with SqlResourceLoader with FirstRowValidation with FoodPortionSizeShared with AdminErrorMessagesShared {
 
@@ -78,7 +79,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
 
   private lazy val categoryPsmQuery = sqlFromResource("shared/category_portion_size_methods.sql")
 
-  def categoryPortionSizeMethods(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalCategoryCodeError, Seq[PortionSizeMethod]] = {
+  def categoryPortionSizeMethods(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[PortionSizeMethod]] = {
     val psmResults = SQL(categoryPsmQuery).on('category_code -> code, 'locale_id -> locale).executeQuery()
 
     parseWithLocaleAndCategoryValidation(psmResults, psmResultRowParser.+)(Seq(FirstRowValidationClause("id", Right(List())))).right.map(mkPortionSizeMethods)
@@ -89,7 +90,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
 
   private lazy val categoryRecordQuery = sqlFromResource("admin/category_record.sql")
 
-  def categoryRecord(code: String, locale: String): Either[LocalCategoryCodeError, CategoryRecord] = tryWithConnection {
+  def categoryRecord(code: String, locale: String): Either[LocalLookupError, CategoryRecord] = tryWithConnection {
     implicit conn =>
       categoryPortionSizeMethods(code, locale).right.flatMap {
         psm =>
@@ -134,18 +135,18 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
       } catch {
         case e: PSQLException => {
           e.getServerErrorMessage.getConstraint match {
-            case "categories_attributes_category_code_fk" => Left(UndefinedCode)
+            case "categories_attributes_category_code_fk" => Left(RecordNotFound)
             case _ => throw e
           }
         }
       }
   }
 
-  val categoriesInsertPsmParamsQuery = "INSERT INTO categories_portion_size_method_params VALUES(DEFAULT, {portion_size_method_id}, {name}, {value})"
+  private val categoriesInsertPsmParamsQuery = "INSERT INTO categories_portion_size_method_params VALUES(DEFAULT, {portion_size_method_id}, {name}, {value})"
 
-  val categoriesInsertLocalQuery = "INSERT INTO categories_local VALUES({category_code}, {locale_id}, {local_description}, {version}::uuid)"
+  private val categoriesInsertLocalQuery = "INSERT INTO categories_local VALUES({category_code}, {locale_id}, {local_description}, {version}::uuid)"
 
-  val categoriesPsmInsertQuery = "INSERT INTO categories_portion_size_methods VALUES(DEFAULT, {category_code}, {locale_id}, {method}, {description}, {image_url}, {use_for_recipes})"
+  private val categoriesPsmInsertQuery = "INSERT INTO categories_portion_size_methods VALUES(DEFAULT, {category_code}, {locale_id}, {method}, {description}, {image_url}, {use_for_recipes})"
 
   def updateCategoryLocalRecord(categoryCode: String, locale: String, categoryLocal: LocalCategoryRecord): Either[LocalUpdateError, Unit] = tryWithConnection {
     implicit conn =>
@@ -204,14 +205,14 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
       } catch {
         case e: PSQLException =>
           e.getServerErrorMessage.getConstraint match {
-            case "categories_portion_size_methods_categories_code_fk" | "categories_local_category_code_fk" => Left(UndefinedCode)
+            case "categories_portion_size_methods_categories_code_fk" | "categories_local_category_code_fk" => Left(RecordNotFound)
             case "categories_portion_size_methods_locale_id_fk" | "categories_local_locale_id_fk" => Left(UndefinedLocale)
             case _ => throw e
           }
       }
   }
 
-  val foodsCategoriesInsertQuery = "INSERT INTO foods_categories VALUES(DEFAULT, {food_code},{category_code})"
+  private val foodsCategoriesInsertQuery = "INSERT INTO foods_categories VALUES(DEFAULT, {food_code},{category_code})"
 
   def addFoodToCategory(categoryCode: String, foodCode: String): Either[UpdateError, Unit] = tryWithConnection {
     implicit conn =>
@@ -223,8 +224,8 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
         case e: PSQLException =>
           e.getServerErrorMessage.getConstraint match {
             case "foods_categories_unique" => Right(())
-            case "foods_categories_category_code_fk" => Left(UndefinedCode)
-            case "foods_categories_food_code_fk" => Left(UndefinedCode)
+            case "foods_categories_category_code_fk" => Left(RecordNotFound)
+            case "foods_categories_food_code_fk" => Left(RecordNotFound)
             case _ => throw e
           }
       }
@@ -253,8 +254,8 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
         case e: BatchUpdateException => e.getNextException match {
           case e2: PSQLException => e2.getServerErrorMessage.getConstraint match {
             case "foods_categories_unique" => Right(())
-            case "foods_categories_category_code_fk" => Left(UndefinedCode)
-            case "foods_categories_food_code_fk" => Left(UndefinedCode)
+            case "foods_categories_category_code_fk" => Left(RecordNotFound)
+            case "foods_categories_food_code_fk" => Left(RecordNotFound)
             case _ => throw e
           }
           case _ => throw e
@@ -262,7 +263,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
       }
   }
 
-  val categoriesCategoriesInsertQuery = "INSERT INTO categories_categories VALUES(DEFAULT, {subcategory_code},{category_code})"
+  private val categoriesCategoriesInsertQuery = "INSERT INTO categories_categories VALUES(DEFAULT, {subcategory_code},{category_code})"
 
   def addSubcategoryToCategory(categoryCode: String, subcategoryCode: String): Either[UpdateError, Unit] = tryWithConnection {
     implicit conn =>
@@ -277,8 +278,8 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
           case e: PSQLException =>
             e.getServerErrorMessage.getConstraint match {
               case "categories_categories_unique" => Right(())
-              case "categories_categories_subcategory_code_fk" => Left(UndefinedCode)
-              case "categories_categories_category_code_fk" => Left(UndefinedCode)
+              case "categories_categories_subcategory_code_fk" => Left(RecordNotFound)
+              case "categories_categories_category_code_fk" => Left(RecordNotFound)
               case _ => throw e
             }
         }
@@ -314,16 +315,16 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
         case e: PSQLException =>
           e.getServerErrorMessage.getConstraint match {
             case "categories_categories_unique" => Right(())
-            case "categories_categories_subcategory_code_fk" => Left(UndefinedCode)
-            case "categories_categories_category_code_fk" => Left(UndefinedCode)
+            case "categories_categories_subcategory_code_fk" => Left(RecordNotFound)
+            case "categories_categories_category_code_fk" => Left(RecordNotFound)
             case _ => throw e
           }
       }
   }
 
-  val categoriesInsertQuery = "INSERT INTO categories VALUES({code},{description},{is_hidden},{version}::uuid)"
+  private val categoriesInsertQuery = "INSERT INTO categories VALUES({code},{description},{is_hidden},{version}::uuid)"
 
-  val categoriesAttributesInsertQuery = "INSERT INTO categories_attributes VALUES (DEFAULT, {category_code}, {same_as_before_option}, {ready_meal_option}, {reasonable_amount})"
+  private val categoriesAttributesInsertQuery = "INSERT INTO categories_attributes VALUES (DEFAULT, {category_code}, {same_as_before_option}, {ready_meal_option}, {reasonable_amount})"
 
   def createCategory(categoryBase: NewCategory): Either[CreateError, Unit] = tryWithConnection {
     implicit conn =>
@@ -436,14 +437,14 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
       }
   }
 
-  def deleteCategory(categoryCode: String): Either[CategoryCodeError, Unit] = tryWithConnection {
+  def deleteCategory(categoryCode: String): Either[DeleteError, Unit] = tryWithConnection {
     implicit conn =>
       val rowsAffected = SQL("DELETE FROM categories WHERE code={category_code}").on('category_code -> categoryCode).executeUpdate()
 
       if (rowsAffected == 1)
         Right(())
       else
-        Left(UndefinedCode)
+        Left(RecordNotFound)
   }
   
   def deleteAllCategories(): Either[DatabaseError, Unit] = tryWithConnection {
@@ -459,7 +460,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
       if (rowsAffected == 1)
         Right(())
       else
-        Left(UndefinedCode)
+        Left(RecordNotFound)
   }
 
   def removeSubcategoryFromCategory(categoryCode: String, subcategoryCode: String): Either[UpdateError, Unit] = tryWithConnection {
@@ -471,6 +472,6 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
       if (rowsAffected == 1)
         Right(())
       else
-        Left(UndefinedCode)
+        Left(RecordNotFound)
   }
 }

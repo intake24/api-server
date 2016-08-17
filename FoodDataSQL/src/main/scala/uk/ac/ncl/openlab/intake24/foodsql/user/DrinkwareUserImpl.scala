@@ -5,7 +5,7 @@ import anorm.SQL
 import uk.ac.ncl.openlab.intake24.DrinkwareSet
 import uk.ac.ncl.openlab.intake24.VolumeFunction
 import uk.ac.ncl.openlab.intake24.DrinkScale
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ResourceError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.DrinkwareService
 import anorm.NamedParameter.symbol
 import anorm.sqlToSimple
@@ -19,7 +19,7 @@ trait DrinkwareUserImpl extends DrinkwareService with SqlDataService {
 
   protected case class VolumeSampleResultRow(scale_id: Long, fill: Double, volume: Double)
 
-  def drinkwareSet(id: String): Either[ResourceError, DrinkwareSet] = tryWithConnection {
+  def drinkwareSet(id: String): Either[LookupError, DrinkwareSet] = tryWithConnection {
     implicit conn =>
       val drinkwareScalesQuery =
         """|SELECT drinkware_sets.id, drinkware_scales.id as scale_id, description, guide_image_id, 

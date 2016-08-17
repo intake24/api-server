@@ -25,20 +25,27 @@ import com.zaxxer.hikari.HikariDataSource
 
 import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
 import uk.ac.ncl.openlab.intake24.foodsql.tools.XmlImporter
+import org.scalatest.FunSuite
+import org.scalatest.BeforeAndAfterAll
 
-// AdminFoodDataServiceTest with 
+import org.scalatest.ConfigMap
+import org.scalatest.Spec
 
-class FoodDataServiceSqlImplTest extends TestDB {
+class FoodDatabaseAdminTest extends Spec with BeforeAndAfterAll with TestFoodDatabase {
 
-  // new XmlImporter().importXmlData(getClass.getResource("/test1").toURI().getPath())
+  override def beforeAll(configMap: ConfigMap) {
+    resetTestDatabase()
+  }
 
-  val hikariConfig = new HikariConfig()
+  override def afterAll(configMap: ConfigMap) {
+    testDataSource.close()
+  }
 
-  hikariConfig.setJdbcUrl(s"jdbc:postgresql://localhost/intake24_foods_test")
-  hikariConfig.setDriverClassName("org.postgresql.Driver")
-  hikariConfig.setUsername("postgres")
+  override def nestedSuites() = {
+    val service = new FoodDatabaseAdminImpl(testDataSource)
 
-  val dataSource = new HikariDataSource(hikariConfig)
-
-  val service = new FoodDatabaseAdminImpl(dataSource)
+    Vector(
+        new AsServedImageAdminSuite(service), 
+        new FoodGroupsAdminSuite(service))
+  }
 }
