@@ -36,6 +36,27 @@ trait SqlDataService {
     BatchSql(query, parameters.head, parameters.tail: _*)
   }
 
+  def tryWithConstraintsCheck[E >: DatabaseError, T](cf: PartialFunction[String, E])(block: => T): Either[E, T] = {
+    def getErrorOrRethrow(e: PSQLException): Either[E, T] = {
+      val constraint = e.getServerErrorMessage.getConstraint
+
+      if (cf.isDefinedAt(constraint))
+        Left(cf(constraint))
+      else
+        throw e
+    }
+
+    try {
+      Right(block)
+    } catch {
+      case e: java.sql.BatchUpdateException => e.getNextException match {
+        case pe: PSQLException => getErrorOrRethrow(pe)
+        case _ => throw e
+      }
+      case pe: PSQLException => getErrorOrRethrow(pe)
+    }
+  }
+  
   def tryWithConstraintCheck[E >: DatabaseError, T](constraint: String, error: => E)(block: => T) = {
     try {
       Right(block)
@@ -45,7 +66,6 @@ trait SqlDataService {
         case _ => throw e
       }
       case pe: PSQLException => if (pe.getServerErrorMessage.getConstraint == constraint) Left(error) else throw pe
-      case other: Throwable => throw other
     }
   }
 

@@ -148,7 +148,7 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDat
     }
   }
 
-  def brandNames(foodCode: String, locale: String) = {
+  def getBrandNames(foodCode: String, locale: String) = {
     checkLocale(locale)
     data.brandNamesMap.get(foodCode) match {
       case Some(map) => Right(map)

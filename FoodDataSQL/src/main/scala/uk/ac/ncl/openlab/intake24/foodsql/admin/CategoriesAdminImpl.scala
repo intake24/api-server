@@ -88,9 +88,9 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
   case class CategoryResultRow(version: UUID, local_version: Option[UUID], code: String, description: String, local_description: Option[String], is_hidden: Boolean, same_as_before_option: Option[Boolean],
     ready_meal_option: Option[Boolean], reasonable_amount: Option[Int])
 
-  private lazy val categoryRecordQuery = sqlFromResource("admin/category_record.sql")
+  private lazy val categoryRecordQuery = sqlFromResource("admin/get_category_record_frv.sql")
 
-  def categoryRecord(code: String, locale: String): Either[LocalLookupError, CategoryRecord] = tryWithConnection {
+  def getCategoryRecord(code: String, locale: String): Either[LocalLookupError, CategoryRecord] = tryWithConnection {
     implicit conn =>
       categoryPortionSizeMethods(code, locale).right.flatMap {
         psm =>
@@ -355,15 +355,15 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
         logger.info("Writing " + categories.size + " categories to database")
 
         val categoryParams =
-          categories.flatMap(c => Seq[NamedParameter]('code -> c.code, 'description -> c.englishDescription, 'is_hidden -> c.isHidden, 'version -> UUID.randomUUID()))
+          categories.map(c => Seq[NamedParameter]('code -> c.code, 'description -> c.englishDescription, 'is_hidden -> c.isHidden, 'version -> UUID.randomUUID()))
 
-        BatchSql(categoriesInsertQuery, categoryParams).execute()
+        batchSql(categoriesInsertQuery, categoryParams).execute()
 
         val categoryAttributeParams =
-          categories.flatMap(c => Seq[NamedParameter]('category_code -> c.code, 'same_as_before_option -> c.attributes.sameAsBeforeOption,
+          categories.map(c => Seq[NamedParameter]('category_code -> c.code, 'same_as_before_option -> c.attributes.sameAsBeforeOption,
             'ready_meal_option -> c.attributes.readyMealOption, 'reasonable_amount -> c.attributes.reasonableAmount))
 
-        BatchSql(categoriesAttributesInsertQuery, categoryAttributeParams).execute()
+        batchSql(categoriesAttributesInsertQuery, categoryAttributeParams).execute()
 
         conn.commit()
 
@@ -381,22 +381,22 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
 
         val localCategoryRecordsSeq = localCategoryRecords.toSeq
 
-        logger.info(s"Writing ${localCategoryRecordsSeq.size} new local category records to database")
+        logger.debug(s"Writing ${localCategoryRecordsSeq.size} new local category records to database")
 
         conn.setAutoCommit(false)
 
         val localCategoryParams =
-          localCategoryRecordsSeq.flatMap {
+          localCategoryRecordsSeq.map {
             case (code, local) =>
               Seq[NamedParameter]('category_code -> code, 'locale_id -> locale, 'local_description -> local.localDescription, 'version -> local.version.getOrElse(UUID.randomUUID()))
           }
 
-        BatchSql(categoriesInsertLocalQuery, localCategoryParams).execute()
+        batchSql(categoriesInsertLocalQuery, localCategoryParams).execute()
 
         val psmParams =
           localCategoryRecordsSeq.flatMap {
             case (code, local) =>
-              local.portionSize.flatMap {
+              local.portionSize.map {
                 ps =>
                   Seq[NamedParameter]('category_code -> code, 'locale_id -> locale, 'method -> ps.method,
                     'description -> ps.description, 'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes)
@@ -404,9 +404,9 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
           }
 
         if (!psmParams.isEmpty) {
-          logger.info("Writing " + psmParams.size + " category portion size method definitions")
+          logger.debug("Writing " + psmParams.size + " category portion size method definitions")
 
-          val statement = BatchSql(categoriesPsmInsertQuery, psmParams).getFilledStatement(conn, true)
+          val statement = batchSql(categoriesPsmInsertQuery, psmParams).getFilledStatement(conn, true)
 
           statement.executeBatch()
 
@@ -418,21 +418,21 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
           }
 
           val psmParamParams = localCategoryRecordsSeq.flatMap(_._2.portionSize).zip(buf).flatMap {
-            case (psm, id) => psm.parameters.flatMap(param => Seq[NamedParameter]('portion_size_method_id -> id, 'name -> param.name, 'value -> param.value))
+            case (psm, id) => psm.parameters.map(param => Seq[NamedParameter]('portion_size_method_id -> id, 'name -> param.name, 'value -> param.value))
           }
 
           if (!psmParamParams.isEmpty) {
-            logger.info("Writing " + psmParamParams.size + " category portion size method parameters")
-            BatchSql(categoriesInsertPsmParamsQuery, psmParamParams).execute()
+            logger.debug("Writing " + psmParamParams.size + " category portion size method parameters")
+            batchSql(categoriesInsertPsmParamsQuery, psmParamParams).execute()
           } else
-            logger.warn("No category portion size method parameters found")
+            logger.debug("No category portion size method parameters found")
         } else
-          logger.warn("No category portion size method records found")
+          logger.debug("No category portion size method records found")
 
         conn.commit()
         Right(())
       } else {
-        logger.warn("Categories file contains no records")
+        logger.debug("Categories file contains no records")
         Right(())
       }
   }

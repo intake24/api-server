@@ -229,7 +229,8 @@ CREATE TABLE categories
   is_hidden boolean NOT NULL,
   version uuid NOT NULL,
 
-  CONSTRAINT categories_pk PRIMARY KEY (code)
+  CONSTRAINT categories_pk PRIMARY KEY (code),
+  CONSTRAINT min_code_length CHECK (char_length(code)>3)
 );
 
 CREATE TABLE categories_local
@@ -525,7 +526,7 @@ CREATE TABLE attribute_defaults
 
 INSERT INTO attribute_defaults VALUES (DEFAULT, false, false, 1000);
 
-INSERT INTO locales VALUES('en_GB', 'United Kingdom', 'United Kingdom', 'en_GB', 'en', 'gb', NULL);
+-- INSERT INTO locales VALUES('en_GB', 'United Kingdom', 'United Kingdom', 'en_GB', 'en', 'gb', NULL);
 
 INSERT INTO nutrient_units VALUES(1, 'Gram', 'g');
 INSERT INTO nutrient_units VALUES(2, 'Milligram', 'mg');

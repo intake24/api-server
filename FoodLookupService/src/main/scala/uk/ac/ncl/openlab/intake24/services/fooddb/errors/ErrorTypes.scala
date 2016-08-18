@@ -21,7 +21,7 @@ package uk.ac.ncl.openlab.intake24.services.fooddb.errors
 
 sealed trait LocalLookupError
 
-sealed trait LocaleError extends LocalLookupError with LocalUpdateError with LocalCreateError with LocalDeleteError
+sealed trait LocaleError extends LocalLookupError with LocalUpdateError with LocalCreateError with LocalDeleteError with LocalDependentCreateError
 
 sealed trait LookupError extends LocalLookupError
 
@@ -42,6 +42,11 @@ sealed trait LocalCreateError
 sealed trait CreateError extends LocalCreateError
 
 
+sealed trait LocalDependentCreateError
+
+sealed trait DependentCreateError extends LocalDependentCreateError
+
+
 sealed trait NutrientMappingError
 
 case object UndefinedLocale extends LocaleError
@@ -50,7 +55,9 @@ case object RecordNotFound extends LookupError with NutrientMappingError with De
 
 case object VersionConflict extends UpdateError
 
-case object DuplicateCode extends CreateError with UpdateError
+case object DuplicateCode extends CreateError with UpdateError with DependentCreateError
+
+case object ParentRecordNotFound extends DependentCreateError
 
 case object TableNotFound extends NutrientMappingError
 

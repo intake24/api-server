@@ -10,41 +10,43 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.admin.BrandNamesAdminService
 import org.slf4j.LoggerFactory
 import anorm.NamedParameter
 import anorm.BatchSql
+import uk.ac.ncl.openlab.intake24.foodsql.user.BrandNamesUserImpl
+import java.sql.Connection
+import uk.ac.ncl.openlab.intake24.foodsql.SimpleValidation
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentCreateError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentRecordNotFound
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
 
-trait BrandNamesAdminImpl extends BrandNamesAdminService with SqlDataService {
+trait BrandNamesAdminImpl extends BrandNamesAdminService with SqlDataService with BrandNamesUserImpl with SimpleValidation {
   private val logger = LoggerFactory.getLogger(classOf[BrandNamesAdminImpl])
 
-  def brandNames(foodCode: String, locale: String): Either[DatabaseError, Seq[String]] = tryWithConnection {
+  def deleteAllBrandNames(locale: String): Either[LocaleError, Unit] = tryWithConnection {
     implicit conn =>
-      // FIXME: check food code
-      Right(SQL("""SELECT name FROM brands WHERE food_code = {food_code} AND locale_id = {locale_id} ORDER BY id""")
-        .on('food_code -> foodCode, 'locale_id -> locale)
-        .executeQuery()
-        .as(str("name").*))
+      logger.debug(s"Deleting all brand definitions for locale $locale")
+
+      withLocaleValidation(locale) {
+        SQL("DELETE FROM brands WHERE locale_id={locale_id}").on('locale_id -> locale).execute()
+      }
   }
 
-  def deleteAllBrandNames(): Either[DatabaseError, Unit] = tryWithConnection {
-    implicit conn =>
-      logger.info("Deleting existing brand definitions")
-
-      SQL("DELETE FROM brands").execute()
-
-      Right(())
-  }
-
-  def createBrandNames(brandNames: Map[String, Seq[String]], locale: String): Either[DatabaseError, Unit] = tryWithConnection {
+  def createBrandNames(brandNames: Map[String, Seq[String]], locale: String): Either[LocalDependentCreateError, Unit] = tryWithConnection {
     implicit conn =>
       if (!brandNames.isEmpty) {
         conn.setAutoCommit(false)
-        logger.info("Writing " + brandNames.size + " brands to database")
-        val brandParams = brandNames.keySet.toSeq.flatMap(k => brandNames(k).flatMap(name => Seq[NamedParameter]('food_code -> k, 'locale_id -> locale, 'name -> name)))
+        logger.debug("Writing " + brandNames.size + " brands to database")
+        val brandParams = brandNames.keySet.toSeq.flatMap(k => brandNames(k).map(name => Seq[NamedParameter]('food_code -> k, 'locale_id -> locale, 'name -> name)))
 
-        BatchSql("""INSERT INTO brands VALUES(DEFAULT, {food_code}, {locale_id}, {name})""", brandParams).execute()
-        conn.commit()
+        val constraintErrors = Map(
+          "brands_food_locale_fk" -> UndefinedLocale,
+          "brands_food_code_fk" -> ParentRecordNotFound)
 
-        Right(())
+        tryWithConstraintsCheck(constraintErrors) {
+          batchSql("""INSERT INTO brands VALUES(DEFAULT, {food_code}, {locale_id}, {name})""", brandParams).execute()
+          conn.commit()
+        }
       } else {
-        logger.warn("createBrandNames request with empty brand names map")
+        logger.debug("createBrandNames request with empty brand names map")
         Right(())
       }
   }

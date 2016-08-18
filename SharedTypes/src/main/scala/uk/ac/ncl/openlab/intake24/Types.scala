@@ -49,7 +49,7 @@ case class NewFoodAutoCode(englishDescription: String, groupCode: Int, attribute
 
 case class LocalFoodRecord(version: Option[UUID], localDescription: Option[String], doNotUse: Boolean, nutrientTableCodes: Map[String, String], portionSize: Seq[PortionSizeMethod])
 
-case class FoodHeader(code: String, englishDescription: String, localDescription: Option[String], doNotUse: Boolean)
+case class FoodHeader(code: String, englishDescription: String, localDescription: Option[String], doNotUse: Option[Boolean])
 
 case class UserFoodHeader(code: String, localDescription: String)
 
@@ -150,9 +150,7 @@ case class AssociatedFood (foodOrCategoryCode: Either[String, String], promptTex
 
 case class AssociatedFoodWithHeader (foodOrCategoryHeader: Either[FoodHeader, CategoryHeader], promptText: String, linkAsMain: Boolean, genericName: String)
 
-case class FoodGroupMain (id: Int, englishDescription: String) {
-  override def toString = id.toString + ". " + englishDescription
-}
+case class FoodGroupMain (id: Int, englishDescription: String)
 
 case class FoodGroupLocal (localDescription: Option[String])
 

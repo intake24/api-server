@@ -14,7 +14,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
 
 trait CategoriesAdminService {
-  def categoryRecord(code: String, locale: String): Either[LocalLookupError, CategoryRecord]
+  def getCategoryRecord(code: String, locale: String): Either[LocalLookupError, CategoryRecord]
   
   def isCategoryCodeAvailable(code: String): Either[DatabaseError, Boolean]
   def isCategoryCode(code: String): Either[DatabaseError, Boolean]

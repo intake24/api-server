@@ -30,8 +30,10 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.scalatest.ConfigMap
 import org.scalatest.Spec
+import org.scalatest.SequentialNestedSuiteExecution
+import org.scalatest.Suite
 
-class FoodDatabaseAdminTest extends Spec with BeforeAndAfterAll with TestFoodDatabase {
+class FoodDatabaseAdminTest extends Spec with SequentialNestedSuiteExecution with BeforeAndAfterAll with TestFoodDatabase {
 
   override def beforeAll(configMap: ConfigMap) {
     resetTestDatabase()
@@ -45,7 +47,12 @@ class FoodDatabaseAdminTest extends Spec with BeforeAndAfterAll with TestFoodDat
     val service = new FoodDatabaseAdminImpl(testDataSource)
 
     Vector(
-        new AsServedImageAdminSuite(service), 
-        new FoodGroupsAdminSuite(service))
+        //new LocalesAdminSuite(service),
+        //new FoodGroupsAdminSuite(service),
+        new CategoriesAdminSuite(service)
+        //new AsServedImageAdminSuite(service),
+        //new AssociatedFoodsAdminSuite(service),
+        //new BrandNamesAdminSuite(service)
+        )
   }
 }

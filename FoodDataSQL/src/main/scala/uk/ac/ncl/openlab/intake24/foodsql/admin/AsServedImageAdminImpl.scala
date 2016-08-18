@@ -34,7 +34,7 @@ trait AsServedImageAdminImpl extends AsServedImageAdminService with AsServedImag
 
       if (sets.nonEmpty) {
         conn.setAutoCommit(false)
-        logger.info("Writing " + sets.size + " as served sets to database")
+        logger.debug("Writing " + sets.size + " as served sets to database")
 
         val asServedSetParams = sets.map(set => Seq[NamedParameter]('id -> set.id, 'description -> set.description))
 
@@ -44,16 +44,16 @@ trait AsServedImageAdminImpl extends AsServedImageAdminService with AsServedImag
           val asServedImageParams = sets.flatMap(set => set.images.map(image => Seq[NamedParameter]('as_served_set_id -> set.id, 'weight -> image.weight, 'url -> image.url)))
 
           if (!asServedImageParams.isEmpty) {
-            logger.info("Writing " + asServedImageParams.size + " as served images to database")
+            logger.debug("Writing " + asServedImageParams.size + " as served images to database")
             batchSql("INSERT INTO as_served_images VALUES(DEFAULT, {as_served_set_id}, {weight}, {url})", asServedImageParams).execute()
           } else
-            logger.warn("As served sets in createAsServedSets request contain no image references")
+            logger.debug("As served sets in createAsServedSets request contain no image references")
 
           conn.commit()          
         }
 
       } else {
-        logger.warn("createAsServedSets request with empty as served set list")
+        logger.debug("createAsServedSets request with empty as served set list")
         Right(())
       }
   }

@@ -29,5 +29,6 @@ trait FoodDatabaseAdminService extends
   with GuideImageAdminService
   with BrandNamesAdminService
   with DrinkwareAdminService
-  with FoodIndexDataAdminService  
+  with FoodIndexDataAdminService
+  with LocalesAdminService
   { }

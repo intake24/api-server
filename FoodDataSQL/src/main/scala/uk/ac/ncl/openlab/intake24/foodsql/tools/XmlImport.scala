@@ -185,7 +185,7 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
     logger.info("Loading brands definitions from " + brandsPath)
     val brands = BrandDef.parseXml(XML.load(brandsPath))
     (for (
-      _ <- adminService.deleteAllBrandNames().right;
+      _ <- adminService.deleteAllBrandNames(defaultLocale).right;
       _ <- adminService.createBrandNames(brands, defaultLocale).right
     ) yield ()) match {
       case Left(DatabaseError(message, _)) => throw new RuntimeException(s"Failed to import guide images due to database error: $message")

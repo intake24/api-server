@@ -14,7 +14,7 @@ import au.com.bytecode.opencsv.CSVWriter
 import uk.ac.ncl.openlab.intake24.Locale
 import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
 import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl
-import uk.ac.ncl.openlab.intake24.foodsql.LocaleManagementSqlImpl
+import uk.ac.ncl.openlab.intake24.foodsql.admin.LocalesAdminImpl
 import uk.ac.ncl.openlab.intake24.foodsql.tools.DatabaseConnection
 import uk.ac.ncl.openlab.intake24.foodsql.tools.DatabaseOptions
 import uk.ac.ncl.openlab.intake24.foodsql.tools.WarningMessage
@@ -72,9 +72,9 @@ case class LocalFoodsImport(localeCode: String, englishLocaleName: String, local
   val indexDataService = new FoodIndexDataImpl(dataSource)
 
   // Should be an insert-update loop, but this is just a one-time script so using unsafe way
-  val localeService = new LocaleManagementSqlImpl(dataSource)
-  localeService.deleteLocale(localeCode)
-  localeService.createLocale(Locale(localeCode, englishLocaleName, localLocaleName, respondentLanguageCode, adminLanguageCode, flagCode, Some(baseLocaleCode)))
+  
+  dataService.deleteLocale(localeCode)
+  dataService.createLocale(Locale(localeCode, englishLocaleName, localLocaleName, respondentLanguageCode, adminLanguageCode, flagCode, Some(baseLocaleCode)))
 
   val indexableFoods = indexDataService.indexableFoods(baseLocaleCode).right.get
 
@@ -156,7 +156,7 @@ case class LocalFoodsImport(localeCode: String, englishLocaleName: String, local
       logger.info(s"Processing category: ${header.localDescription} (${header.code})")
 
       categoryTranslations.get(header.code) match {
-        case Some(translation) => dataService.categoryRecord(header.code, localeCode) match {
+        case Some(translation) => dataService.getCategoryRecord(header.code, localeCode) match {
           case Right(record) => {
             val localData = record.local
             dataService.updateCategoryLocalRecord(header.code, localeCode, localData.copy(localDescription = Some(translation)))

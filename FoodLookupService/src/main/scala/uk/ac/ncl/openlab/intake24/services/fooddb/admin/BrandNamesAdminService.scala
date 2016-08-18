@@ -2,11 +2,12 @@ package uk.ac.ncl.openlab.intake24.services.fooddb.admin
 
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.BrandNamesService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentCreateError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
 
 trait BrandNamesAdminService extends BrandNamesService {
   
-  def deleteAllBrandNames(): Either[DatabaseError, Unit]
+  def deleteAllBrandNames(locale: String): Either[LocaleError, Unit]
   
-  def createBrandNames(brandNames: Map[String, Seq[String]], locale: String): Either[DatabaseError, Unit]
-  
+  def createBrandNames(brandNames: Map[String, Seq[String]], locale: String): Either[LocalDependentCreateError, Unit] 
 }

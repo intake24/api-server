@@ -7,5 +7,5 @@ SELECT v.category_code, v.locale_id, code, description, local_description, is_hi
        categories_local.version as local_version 
 FROM v
   LEFT JOIN categories ON v.category_code=categories.code
-  LEFT JOIN foods_attributes ON v.category_code=categories_attributes.category_code
+  LEFT JOIN categories_attributes ON v.category_code=categories_attributes.category_code
   LEFT JOIN categories_local ON v.category_code=categories_local.category_code AND v.locale_id=categories_local.locale_id

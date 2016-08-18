@@ -5,6 +5,7 @@ import uk.ac.ncl.openlab.intake24.FoodGroupRecord
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
 
 trait FoodGroupsAdminService {
   def listFoodGroups(locale: String): Either[LocaleError, Map[Int, FoodGroupRecord]]
@@ -13,7 +14,7 @@ trait FoodGroupsAdminService {
 
   def deleteAllFoodGroups(): Either[DatabaseError, Unit]
 
-  def createFoodGroups(foodGroups: Seq[FoodGroupMain]): Either[DatabaseError, Unit]
+  def createFoodGroups(foodGroups: Seq[FoodGroupMain]): Either[CreateError, Unit]
 
   def deleteLocalFoodGroups(locale: String): Either[DatabaseError, Unit]
 

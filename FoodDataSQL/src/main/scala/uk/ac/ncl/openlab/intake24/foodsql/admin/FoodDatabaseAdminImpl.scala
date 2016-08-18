@@ -38,4 +38,6 @@ class FoodDatabaseAdminImpl @Inject() (@Named("intake24_foods") val dataSource: 
     with NutrientTablesAdminImpl    
     with AssociatedFoodsAdminImpl
     with BrandNamesAdminImpl 
-    with FoodIndexDataAdminImpl { }
+    with FoodIndexDataAdminImpl
+    with LocalesAdminImpl
+    { }

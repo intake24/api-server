@@ -17,6 +17,8 @@ import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DuplicateCode
 
 trait FoodGroupsAdminImpl extends FoodGroupsAdminService with SqlDataService with FirstRowValidation with SqlResourceLoader {
   private case class FoodGroupRow(id: Long, description: String, local_description: Option[String])
@@ -49,9 +51,6 @@ trait FoodGroupsAdminImpl extends FoodGroupsAdminService with SqlDataService wit
         .right
         .map {
           r => FoodGroupRecord(FoodGroupMain(r.id.toInt, r.description), FoodGroupLocal(r.local_description))
-        } match {
-          case Left(UndefinedLocale) => Left(UndefinedLocale)
-          case Right(x) => Right(x)
         }
   }
 
@@ -61,16 +60,17 @@ trait FoodGroupsAdminImpl extends FoodGroupsAdminService with SqlDataService wit
       Right(())
   }
 
-  def createFoodGroups(foodGroups: Seq[FoodGroupMain]): Either[DatabaseError, Unit] = tryWithConnection {
+  def createFoodGroups(foodGroups: Seq[FoodGroupMain]): Either[CreateError, Unit] = tryWithConnection {
     implicit conn =>
       if (foodGroups.nonEmpty) {
-        val foodGroupParams =
-          foodGroups.map(g => Seq[NamedParameter]('id -> g.id, 'description -> g.englishDescription))
 
-        BatchSql("""INSERT INTO food_groups VALUES ({id}, {description})""", foodGroupParams).execute()
-      }
+        tryWithConstraintCheck("food_groups_id_pk", DuplicateCode) {
+          val foodGroupParams = foodGroups.map(g => Seq[NamedParameter]('id -> g.id, 'description -> g.englishDescription))
 
-      Right(())
+          batchSql("""INSERT INTO food_groups VALUES ({id}, {description})""", foodGroupParams).execute()
+        }
+      } else
+        Right(())
   }
 
   def deleteLocalFoodGroups(locale: String): Either[DatabaseError, Unit] = tryWithConnection {
@@ -85,14 +85,12 @@ trait FoodGroupsAdminImpl extends FoodGroupsAdminService with SqlDataService wit
   def createLocalFoodGroups(localFoodGroups: Map[Int, String], locale: String): Either[DatabaseError, Unit] = tryWithConnection {
     implicit conn =>
 
-      val foodGroupLocalParams =
-        localFoodGroups.flatMap {
-          case (id, localDescription) =>
-            Seq[NamedParameter]('id -> id, 'locale_id -> locale, 'local_description -> localDescription)
-        }.toSeq
+      val foodGroupLocalParams = localFoodGroups.map {
+        case (id, localDescription) =>
+          Seq[NamedParameter]('id -> id, 'locale_id -> locale, 'local_description -> localDescription)
+      }.toSeq
 
-      BatchSql("""INSERT INTO food_groups_local VALUES ({id}, {locale_id}, {local_description})""", foodGroupLocalParams)
-        .execute()
+      batchSql("""INSERT INTO food_groups_local VALUES ({id}, {locale_id}, {local_description})""", foodGroupLocalParams).execute()
 
       Right(())
   }

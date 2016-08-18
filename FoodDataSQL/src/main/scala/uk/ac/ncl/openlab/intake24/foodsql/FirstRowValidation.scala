@@ -10,25 +10,21 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import anorm.ResultSetParser
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import anorm.Column
+import anorm.AnormUtil.isNull
 
 case class FirstRowValidationClause[E, T](columnName: String, resultIfNull: Either[E, T])
 
 trait FirstRowValidation {
+  
+    // see http://stackoverflow.com/a/38793141/622196 for explanation
+  
     def parseWithFirstRowValidation[E >: DatabaseError, T](result: SqlQueryResult, validation: Seq[FirstRowValidationClause[E, T]], parser: ResultSetParser[T])(implicit connection: java.sql.Connection): Either[E, T] = {
     result.withResult {
       cursorOpt =>
         val firstRow = cursorOpt.get.row
-        
-        firstRow.asMap
-        
-        def isNull(columnName: String) = firstRow(columnName) match {
-          case None => true
-          case _ => false
-        }
 
         validation.find {
-          case FirstRowValidationClause(name, _) => isNull(name)
+          case FirstRowValidationClause(name, _) => isNull(firstRow, name)
         } match {
           case Some(FirstRowValidationClause(_, result)) => result
           case None => parser(cursorOpt) match {

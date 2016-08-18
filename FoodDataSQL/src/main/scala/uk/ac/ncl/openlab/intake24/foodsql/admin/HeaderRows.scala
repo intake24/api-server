@@ -10,7 +10,7 @@ trait HeaderRows {
   }
 
   protected case class FoodHeaderRow(code: String, description: String, local_description: Option[String], do_not_use: Option[Boolean]) {
-    def asFoodHeader = FoodHeader(code, description, local_description, do_not_use.getOrElse(false))
+    def asFoodHeader = FoodHeader(code, description, local_description, do_not_use)
   }
 
 }
