@@ -45,14 +45,13 @@ class FoodDatabaseAdminTest extends Spec with SequentialNestedSuiteExecution wit
 
   override def nestedSuites() = {
     val service = new FoodDatabaseAdminImpl(testDataSource)
-
-    Vector(
-        //new LocalesAdminSuite(service),
-        //new FoodGroupsAdminSuite(service),
-        new CategoriesAdminSuite(service)
-        //new AsServedImageAdminSuite(service),
-        //new AssociatedFoodsAdminSuite(service),
-        //new BrandNamesAdminSuite(service)
-        )
+    
+    Vector(new DrinkwareAdminSuite(service),
+      new LocalesAdminSuite(service),
+      new FoodGroupsAdminSuite(service),
+      new CategoriesAdminSuite(service),
+      new AsServedImageAdminSuite(service),
+      new AssociatedFoodsAdminSuite(service),
+      new BrandNamesAdminSuite(service))
   }
 }

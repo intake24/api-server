@@ -69,6 +69,7 @@ trait LocalesAdminImpl extends LocalesAdminService with SqlDataService {
       tryWithConstraintCheck("locales_pk", DuplicateCode) {
         SQL(query).on('id -> data.id, 'english_name -> data.englishName, 'local_name -> data.localName, 'respondent_language_code -> data.respondentLanguage,
           'admin_language_code -> data.adminLanguage, 'country_flag_code -> data.flagCode, 'prototype_locale_id -> data.prototypeLocale).execute()
+        Right(())
       }
   }
 

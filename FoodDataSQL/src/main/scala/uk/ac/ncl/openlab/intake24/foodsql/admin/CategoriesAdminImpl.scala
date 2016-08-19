@@ -40,8 +40,15 @@ import scala.collection.mutable.ArrayBuffer
 import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
 import uk.ac.ncl.openlab.intake24.foodsql.shared.FoodPortionSizeShared
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
+import uk.ac.ncl.openlab.intake24.foodsql.SimpleValidation
 
-trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService with SqlResourceLoader with FirstRowValidation with FoodPortionSizeShared with AdminErrorMessagesShared {
+trait CategoriesAdminImpl extends CategoriesAdminService
+    with SqlDataService
+    with SqlResourceLoader
+    with FirstRowValidation
+    with FoodPortionSizeShared
+    with AdminErrorMessagesShared
+    with SimpleValidation {
 
   private val logger = LoggerFactory.getLogger(classOf[CategoriesAdminImpl])
 
@@ -148,67 +155,77 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
 
   private val categoriesPsmInsertQuery = "INSERT INTO categories_portion_size_methods VALUES(DEFAULT, {category_code}, {locale_id}, {method}, {description}, {image_url}, {use_for_recipes})"
 
+  private def updatePortionSizeMethods(categoryCode: String, locale: String, portionSize: Seq[PortionSizeMethod])(implicit conn: java.sql.Connection): Either[LocalUpdateError, Unit] = {
+    val errors = Map("categories_portion_size_methods_categories_code_fk" -> RecordNotFound,
+      "categories_portion_size_methods_locale_id_fk" -> UndefinedLocale)
+
+    SQL("DELETE FROM categories_portion_size_methods WHERE category_code={category_code} AND locale_id={locale_id}")
+      .on('category_code -> categoryCode, 'locale_id -> locale).execute()
+
+    if (portionSize.nonEmpty) {
+      tryWithConstraintsCheck(errors) {
+        val psmParams = portionSize.map(ps => Seq[NamedParameter]('category_code -> categoryCode, 'locale_id -> locale, 'method -> ps.method, 'description -> ps.description, 'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes))
+
+        val psmKeys = Util.batchKeys(batchSql(categoriesPsmInsertQuery, psmParams))
+
+        val psmParamParams = portionSize.zip(psmKeys).flatMap {
+          case (psm, id) => psm.parameters.map(param => Seq[NamedParameter]('portion_size_method_id -> id, 'name -> param.name, 'value -> param.value))
+        }
+
+        if (psmParamParams.nonEmpty)
+          batchSql(categoriesInsertPsmParamsQuery, psmParamParams).execute()
+
+        Right(())
+      }
+    } else Right(())
+  }
+
+  private def updateCategoryLocalRecordImpl(categoryCode: String, locale: String, categoryLocal: LocalCategoryRecord)(implicit conn: java.sql.Connection): Either[LocalUpdateError, Unit] = {
+    val rowsAffected = SQL("UPDATE categories_local SET version = {new_version}::uuid, local_description = {local_description} WHERE category_code = {category_code} AND locale_id = {locale_id} AND version = {base_version}::uuid")
+      .on('category_code -> categoryCode, 'locale_id -> locale, 'base_version -> categoryLocal.version, 'new_version -> UUID.randomUUID(), 'local_description -> categoryLocal.localDescription)
+      .executeUpdate()
+
+    if (rowsAffected == 1) {
+      Right(())
+    } else {
+      Left(VersionConflict)
+    }
+  }
+
+  private def insertCategoryLocalRecordImpl(categoryCode: String, locale: String, categoryLocal: LocalCategoryRecord)(implicit conn: java.sql.Connection): Either[LocalUpdateError, Unit] = {
+    tryWithConstraintCheck("categories_local_pk", VersionConflict) {
+      SQL(categoriesInsertLocalQuery)
+        .on('category_code -> categoryCode, 'locale_id -> locale, 'local_description -> categoryLocal.localDescription, 'version -> UUID.randomUUID())
+        .execute()
+      Right(())
+    }
+  }
+
   def updateCategoryLocalRecord(categoryCode: String, locale: String, categoryLocal: LocalCategoryRecord): Either[LocalUpdateError, Unit] = tryWithConnection {
     implicit conn =>
       conn.setAutoCommit(false)
+      conn.setTransactionIsolation(java.sql.Connection.TRANSACTION_REPEATABLE_READ)
 
-      try {
-        SQL("DELETE FROM categories_portion_size_methods WHERE category_code={category_code} AND locale_id={locale_id}")
-          .on('category_code -> categoryCode, 'locale_id -> locale).execute()
-
-        if (categoryLocal.portionSize.nonEmpty) {
-          val psmParams = categoryLocal.portionSize.flatMap(ps => Seq[NamedParameter]('category_code -> categoryCode, 'locale_id -> locale, 'method -> ps.method, 'description -> ps.description, 'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes))
-
-          val psmKeys = Util.batchKeys(BatchSql(categoriesPsmInsertQuery, psmParams))
-
-          val psmParamParams = categoryLocal.portionSize.zip(psmKeys).flatMap {
-            case (psm, id) => psm.parameters.flatMap(param => Seq[NamedParameter]('portion_size_method_id -> id, 'name -> param.name, 'value -> param.value))
+      val result = validateCategoryAndLocale(categoryCode, locale).right.flatMap {
+        _ =>
+          updatePortionSizeMethods(categoryCode, locale, categoryLocal.portionSize).right.flatMap {
+            _ =>
+              categoryLocal.version match {
+                case Some(version) => updateCategoryLocalRecordImpl(categoryCode, locale, categoryLocal)
+                case None => insertCategoryLocalRecordImpl(categoryCode, locale, categoryLocal)
+              }
           }
-
-          if (psmParamParams.nonEmpty)
-            BatchSql(categoriesInsertPsmParamsQuery, psmParamParams).execute()
+      }
+      
+      result match {
+        case x@Left(error) => {
+          conn.rollback()
+          x
         }
-
-        categoryLocal.version match {
-          case Some(version) => {
-
-            // categories_local_category_code_fk
-            val rowsAffected = SQL("UPDATE categories_local SET version = {new_version}::uuid, local_description = {local_description} WHERE category_code = {category_code} AND locale_id = {locale_id} AND version = {base_version}::uuid")
-              .on('category_code -> categoryCode, 'locale_id -> locale, 'base_version -> categoryLocal.version, 'new_version -> UUID.randomUUID(), 'local_description -> categoryLocal.localDescription)
-              .executeUpdate()
-
-            if (rowsAffected == 1) {
-              conn.commit()
-              Right(())
-            } else {
-              conn.rollback()
-              Left(VersionConflict)
-            }
-          }
-          case None => {
-            try {
-              SQL(categoriesInsertLocalQuery)
-                .on('category_code -> categoryCode, 'locale_id -> locale, 'local_description -> categoryLocal.localDescription, 'version -> UUID.randomUUID())
-                .execute()
-              conn.commit()
-              Right(())
-            } catch {
-              case e: PSQLException =>
-                if (e.getServerErrorMessage.getConstraint == "categories_local_pk") {
-                  conn.rollback()
-                  Left(VersionConflict)
-                } else
-                  throw e
-            }
-          }
+        case x@Right(()) => {
+          conn.commit()
+          x
         }
-      } catch {
-        case e: PSQLException =>
-          e.getServerErrorMessage.getConstraint match {
-            case "categories_portion_size_methods_categories_code_fk" | "categories_local_category_code_fk" => Left(RecordNotFound)
-            case "categories_portion_size_methods_locale_id_fk" | "categories_local_locale_id_fk" => Left(UndefinedLocale)
-            case _ => throw e
-          }
       }
   }
 
@@ -233,29 +250,30 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
 
   def addFoodsToCategories(categoryFoods: Map[String, Seq[String]]): Either[UpdateError, Unit] = tryWithConnection {
     implicit conn =>
+
       try {
         val foodCategoryParams =
           categoryFoods.flatMap {
             case (code, foods) =>
-              foods.flatMap(f => Seq[NamedParameter]('food_code -> f, 'category_code -> code))
+              foods.map(f => Seq[NamedParameter]('food_code -> f, 'category_code -> code))
           }.toSeq
 
         if (!foodCategoryParams.isEmpty) {
-          conn.setAutoCommit(false)
-          logger.info("Writing " + foodCategoryParams.size + " food parent category records")
-          BatchSql(foodsCategoriesInsertQuery, foodCategoryParams).execute()
+
+          logger.debug("Writing " + foodCategoryParams.size + " food parent category records")
+          batchSql(foodsCategoriesInsertQuery, foodCategoryParams).execute()
           conn.commit()
           Right(())
         } else {
-          logger.warn("No foods contained in any of the categories")
+          logger.debug("No foods contained in any of the categories")
           Right(())
         }
       } catch {
         case e: BatchUpdateException => e.getNextException match {
           case e2: PSQLException => e2.getServerErrorMessage.getConstraint match {
-            case "foods_categories_unique" => Right(())
-            case "foods_categories_category_code_fk" => Left(RecordNotFound)
-            case "foods_categories_food_code_fk" => Left(RecordNotFound)
+            case "foods_categories_unique" => { conn.commit(); Right(()) }
+            case "foods_categories_category_code_fk" => { conn.rollback(); Left(RecordNotFound) }
+            case "foods_categories_food_code_fk" => { conn.rollback(); Left(RecordNotFound) }
             case _ => throw e
           }
           case _ => throw e
@@ -297,17 +315,17 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
             val categoryCategoryParams =
               categorySubcategories.flatMap {
                 case (code, subcats) =>
-                  subcats.flatMap(c => Seq[NamedParameter]('subcategory_code -> c, 'category_code -> code))
+                  subcats.map(c => Seq[NamedParameter]('subcategory_code -> c, 'category_code -> code))
               }.toSeq
 
             if (!categoryCategoryParams.isEmpty) {
               conn.setAutoCommit(false)
-              logger.info("Writing " + categoryCategoryParams.size + " category parent category records")
-              BatchSql(categoriesCategoriesInsertQuery, categoryCategoryParams).execute()
+              logger.debug("Writing " + categoryCategoryParams.size + " category parent category records")
+              batchSql(categoriesCategoriesInsertQuery, categoryCategoryParams).execute()
               conn.commit()
               Right(())
             } else
-              logger.warn("No subcategories contained in any of the categories")
+              logger.debug("No subcategories contained in any of the categories")
             Right(())
           }
         }
@@ -352,24 +370,25 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
       if (!categories.isEmpty) {
         conn.setAutoCommit(false)
 
-        logger.info("Writing " + categories.size + " categories to database")
+        logger.debug("Writing " + categories.size + " categories to database")
 
         val categoryParams =
           categories.map(c => Seq[NamedParameter]('code -> c.code, 'description -> c.englishDescription, 'is_hidden -> c.isHidden, 'version -> UUID.randomUUID()))
 
-        batchSql(categoriesInsertQuery, categoryParams).execute()
+        tryWithConstraintCheck("categories_pk", DuplicateCode) {
+          batchSql(categoriesInsertQuery, categoryParams).execute()
 
-        val categoryAttributeParams =
-          categories.map(c => Seq[NamedParameter]('category_code -> c.code, 'same_as_before_option -> c.attributes.sameAsBeforeOption,
-            'ready_meal_option -> c.attributes.readyMealOption, 'reasonable_amount -> c.attributes.reasonableAmount))
+          val categoryAttributeParams =
+            categories.map(c => Seq[NamedParameter]('category_code -> c.code, 'same_as_before_option -> c.attributes.sameAsBeforeOption,
+              'ready_meal_option -> c.attributes.readyMealOption, 'reasonable_amount -> c.attributes.reasonableAmount))
 
-        batchSql(categoriesAttributesInsertQuery, categoryAttributeParams).execute()
+          batchSql(categoriesAttributesInsertQuery, categoryAttributeParams).execute()
 
-        conn.commit()
-
-        Right(())
+          conn.commit()
+          Right(())
+        }
       } else {
-        logger.warn("Create categories request with empty foods list")
+        logger.debug("Create categories request with empty foods list")
         Right(())
       }
   }
@@ -385,52 +404,46 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
 
         conn.setAutoCommit(false)
 
-        val localCategoryParams =
-          localCategoryRecordsSeq.map {
-            case (code, local) =>
-              Seq[NamedParameter]('category_code -> code, 'locale_id -> locale, 'local_description -> local.localDescription, 'version -> local.version.getOrElse(UUID.randomUUID()))
-          }
+        tryWithConstraintCheck("categories_local_pk", DuplicateCode) {
 
-        batchSql(categoriesInsertLocalQuery, localCategoryParams).execute()
+          val localCategoryParams =
+            localCategoryRecordsSeq.map {
+              case (code, local) =>
+                Seq[NamedParameter]('category_code -> code, 'locale_id -> locale, 'local_description -> local.localDescription, 'version -> local.version.getOrElse(UUID.randomUUID()))
+            }
 
-        val psmParams =
-          localCategoryRecordsSeq.flatMap {
-            case (code, local) =>
-              local.portionSize.map {
-                ps =>
-                  Seq[NamedParameter]('category_code -> code, 'locale_id -> locale, 'method -> ps.method,
-                    'description -> ps.description, 'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes)
-              }
-          }
+          batchSql(categoriesInsertLocalQuery, localCategoryParams).execute()
 
-        if (!psmParams.isEmpty) {
-          logger.debug("Writing " + psmParams.size + " category portion size method definitions")
+          val psmParams =
+            localCategoryRecordsSeq.flatMap {
+              case (code, local) =>
+                local.portionSize.map {
+                  ps =>
+                    Seq[NamedParameter]('category_code -> code, 'locale_id -> locale, 'method -> ps.method,
+                      'description -> ps.description, 'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes)
+                }
+            }
 
-          val statement = batchSql(categoriesPsmInsertQuery, psmParams).getFilledStatement(conn, true)
+          if (!psmParams.isEmpty) {
+            logger.debug("Writing " + psmParams.size + " category portion size method definitions")
 
-          statement.executeBatch()
+            val keys = Util.batchKeys(batchSql(categoriesPsmInsertQuery, psmParams))
 
-          val rs = statement.getGeneratedKeys()
-          val buf = ArrayBuffer[Long]()
+            val psmParamParams = localCategoryRecordsSeq.flatMap(_._2.portionSize).zip(keys).flatMap {
+              case (psm, id) => psm.parameters.map(param => Seq[NamedParameter]('portion_size_method_id -> id, 'name -> param.name, 'value -> param.value))
+            }
 
-          while (rs.next()) {
-            buf += rs.getLong(1)
-          }
-
-          val psmParamParams = localCategoryRecordsSeq.flatMap(_._2.portionSize).zip(buf).flatMap {
-            case (psm, id) => psm.parameters.map(param => Seq[NamedParameter]('portion_size_method_id -> id, 'name -> param.name, 'value -> param.value))
-          }
-
-          if (!psmParamParams.isEmpty) {
-            logger.debug("Writing " + psmParamParams.size + " category portion size method parameters")
-            batchSql(categoriesInsertPsmParamsQuery, psmParamParams).execute()
+            if (!psmParamParams.isEmpty) {
+              logger.debug("Writing " + psmParamParams.size + " category portion size method parameters")
+              batchSql(categoriesInsertPsmParamsQuery, psmParamParams).execute()
+            } else
+              logger.debug("No category portion size method parameters found")
           } else
-            logger.debug("No category portion size method parameters found")
-        } else
-          logger.debug("No category portion size method records found")
+            logger.debug("No category portion size method records found")
 
-        conn.commit()
-        Right(())
+          conn.commit()
+          Right(())
+        }
       } else {
         logger.debug("Categories file contains no records")
         Right(())
@@ -446,7 +459,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService with SqlDataService wit
       else
         Left(RecordNotFound)
   }
-  
+
   def deleteAllCategories(): Either[DatabaseError, Unit] = tryWithConnection {
     implicit conn =>
       SQL("DELETE FROM categories").execute()

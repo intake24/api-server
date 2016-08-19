@@ -25,8 +25,8 @@ import uk.ac.ncl.openlab.intake24.CategoryHeader
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentRecordNotFound
 
 @DoNotDiscover
-class AssociatedFoodsAdminSuite(service: FoodDatabaseAdminService) extends FunSuite with BeforeAndAfterAll {
-  
+class AssociatedFoodsAdminSuite(service: FoodDatabaseAdminService) extends FunSuite with BeforeAndAfterAll with FixedData with RandomData {
+
   /*
    *   def associatedFoods(foodCode: String, locale: String): Either[LocalLookupError, Seq[AssociatedFoodWithHeader]]
   def updateAssociatedFoods(foodCode: String, locale: String, associatedFoods: Seq[AssociatedFood]): Either[LocalLookupError, Unit]
@@ -34,67 +34,75 @@ class AssociatedFoodsAdminSuite(service: FoodDatabaseAdminService) extends FunSu
   def deleteAllAssociatedFoods(locale: String): Either[DatabaseError, Unit]
   def createAssociatedFoods(assocFoods: Map[String, Seq[AssociatedFood]], locale: String): Either[DatabaseError, Unit]
    */
-  
-  
-  val testFood1 = SharedObjects.testFood1
-  val testCat1 = SharedObjects.testCat1
-  
-  val testFoods = Seq(testFood1)
-  
-  val testLocale = SharedObjects.testLocale
-  
-  val af1 = AssociatedFood(Left(testFood1.code), "Prompt text 123", true, "abc")
-  val af2 = AssociatedFood(Right(testCat1.code), "Prompt text 456", false, "xyz")
-  
-  val afmap = Map(testFood1.code -> Seq(af1, af2))
-  
+
+  val foodGroups = randomFoodGroups(2, 10)
+
+  val referenceFoods = randomNewFoods(1, 5, foodGroups.map(_.id))
+  val referenceCategories = randomNewCategories(1, 5)
+
+  val testFoods = randomNewFoods(1, 5, foodGroups.map(_.id))
+
+  val testAssocFoods = randomAssociatedFoods(testFoods.map(_.code), referenceFoods.map(_.code), referenceCategories.map(_.code))
+
   override def beforeAll() = {
     assert(service.createLocale(testLocale) === Right(()))
-    assert(service.createFoodGroups(SharedObjects.testFoodGroups) === Right(()))
-    assert(service.createFood(testFood1) === Right(()))
-    assert(service.createCategory(testCat1) === Right(()))
+    assert(service.createFoodGroups(foodGroups) === Right(()))
+    assert(service.createFoods(referenceFoods) === Right(()))
+    assert(service.createFoods(testFoods) === Right(()))
+    assert(service.createCategories(referenceCategories) === Right(()))
   }
-  
+
   override def afterAll() = {
     assert(service.deleteAllFoodGroups() === Right(()))
     assert(service.deleteAllFoods() === Right(()))
+    assert(service.deleteAllCategories() === Right(()))
     assert(service.deleteLocale(testLocale.id) === Right(()))
   }
-  
-  test("Create an empty associated foods list") {
-    assert(service.createAssociatedFoods(Map(), testLocale.id) === Right(()))
-  }
-  
+
   test("Create associated foods") {
-    assert(service.createAssociatedFoods(afmap, testLocale.id) === Right(()))
+    assert(service.createAssociatedFoods(testAssocFoods, testLocale.id) === Right(()))
   }
-  
+
   test("Attempt to create associated foods for undefined parent food") {
-    assert(service.createAssociatedFoods(Map("BADF00D" -> Seq(af1, af2)), testLocale.id) === Left(ParentRecordNotFound))
+    val foods = randomAssociatedFoods(IndexedSeq(undefinedCode), referenceFoods.map(_.code), referenceCategories.map(_.code))
+    
+    if (foods(undefinedCode).length > 0) // due to implementetion specifics this error will not be generated if there are no assoc foods 
+      assert(service.createAssociatedFoods(foods, testLocale.id) === Left(ParentRecordNotFound))
+      
   }
-  
+
   test("Attempt to create associated foods for undefined locale") {
-    assert(service.createAssociatedFoods(afmap, "no_such_locale") === Left(UndefinedLocale))
+    assert(service.createAssociatedFoods(testAssocFoods, undefinedLocaleId) === Left(UndefinedLocale))
   }
-  
+
   test("Get associated foods with headers") {
+
+    def expected = testAssocFoods.mapValues {
+      _.map {
+        assocFood =>
+          assocFood.foodOrCategoryCode match {
+            case Left(code) => AssociatedFoodWithHeader(Left(referenceFoods.find(_.code == code).get.toHeader), assocFood.promptText, assocFood.linkAsMain, assocFood.genericName)
+            case Right(code) => AssociatedFoodWithHeader(Right(referenceCategories.find(_.code == code).get.toHeader), assocFood.promptText, assocFood.linkAsMain, assocFood.genericName)
+          }
+      }
+    }
     
-    val expected1 = AssociatedFoodWithHeader(Left(FoodHeader(testFood1.code, testFood1.englishDescription, None, None)), af1.promptText, af1.linkAsMain, af1.genericName)
-    val expected2 = AssociatedFoodWithHeader(Right(CategoryHeader(testCat1.code, testCat1.englishDescription, None, false)), af2.promptText, af2.linkAsMain, af2.genericName)
-    
-    assert(service.getAssociatedFoodsWithHeaders(testFood1.code, testLocale.id) === Right(Seq(expected1, expected2)))
+    expected.keySet.foreach {
+      code =>
+        assert(service.getAssociatedFoodsWithHeaders(code, testLocale.id) === Right(expected(code)))
+    }
   }
-  
+
   test("Attempt to get associated foods for undefined food") {
-    assert(service.getAssociatedFoodsWithHeaders("no_such_food", testLocale.id) === Left(RecordNotFound))
+    assert(service.getAssociatedFoodsWithHeaders(undefinedCode, testLocale.id) === Left(RecordNotFound))
   }
 
   test("Attempt to get associated foods for undefined locale") {
-    assert(service.getAssociatedFoodsWithHeaders(testFood1.code, "no_such_locale") === Left(UndefinedLocale))
+    assert(service.getAssociatedFoodsWithHeaders(testFoods(0).code, undefinedLocaleId) === Left(UndefinedLocale))
   }
-  
+
   test("Delete associated foods") {
     assert(service.deleteAllAssociatedFoods(testLocale.id) === Right(()))
-    assert(service.getAssociatedFoodsWithHeaders(testFood1.code, testLocale.id) === Right(Seq()))
+    assert(service.getAssociatedFoodsWithHeaders(testFoods(0).code, testLocale.id) === Right(Seq()))
   }
 }

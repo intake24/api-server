@@ -25,7 +25,7 @@ import uk.ac.ncl.openlab.intake24.CategoryHeader
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentRecordNotFound
 
 @DoNotDiscover
-class BrandNamesAdminSuite(service: FoodDatabaseAdminService) extends FunSuite with BeforeAndAfterAll {
+class BrandNamesAdminSuite(service: FoodDatabaseAdminService) extends FunSuite with BeforeAndAfterAll with FixedData with RandomData {
 
   /*
   def deleteAllBrandNames(locale: String): Either[LocaleError, Unit]
@@ -33,19 +33,16 @@ class BrandNamesAdminSuite(service: FoodDatabaseAdminService) extends FunSuite w
   def createBrandNames(brandNames: Map[String, Seq[String]], locale: String): Either[LocalDependentCreateError, Unit] 
    */
 
-  val testLocale = SharedObjects.testLocale
-
-  val brands = Seq("Brand 1", "Brand 2", "Brand 3")
-
-  val brandsMap = Map(SharedObjects.testFood1.code -> brands, SharedObjects.testFood2.code -> brands)
+  val foodGroups = randomFoodGroups(2, 10)
+  val foods = randomNewFoods(2, 10, foodGroups.map(_.id))
+  val brandNames = randomBrands(foods.map(_.code))
 
   override def beforeAll() = {
     assert(service.createLocale(testLocale) === Right(()))
-    assert(service.createFoodGroups(SharedObjects.testFoodGroups) === Right(()))
-    assert(service.createFood(SharedObjects.testFood1) === Right(()))
-    assert(service.createFood(SharedObjects.testFood2) === Right(()))
+    assert(service.createFoodGroups(foodGroups) === Right(()))
+    assert(service.createFoods(foods) === Right(()))
   }
-  
+
   override def afterAll() = {
     assert(service.deleteAllFoodGroups() === Right(()))
     assert(service.deleteAllFoods() === Right(()))
@@ -53,27 +50,31 @@ class BrandNamesAdminSuite(service: FoodDatabaseAdminService) extends FunSuite w
   }
 
   test("Create brand names") {
-    assert(service.createBrandNames(brandsMap, testLocale.id) === Right(()))
+    assert(service.createBrandNames(brandNames, testLocale.id) === Right(()))
   }
 
   test("Attempt to create brand names for undefined locale") {
-    assert(service.createBrandNames(brandsMap, "no_such_locale") === Left(UndefinedLocale))
+    assert(service.createBrandNames(brandNames, undefinedLocaleId) === Left(UndefinedLocale))
   }
 
   test("Attempt to create brand names for undefined parent food") {
-    assert(service.createBrandNames(Map("BADF00D" -> brands), testLocale.id) === Left(ParentRecordNotFound))
+    assert(service.createBrandNames(Map(undefinedCode -> Seq(randomDescription)), testLocale.id) === Left(ParentRecordNotFound))
   }
 
   test("Get brand names") {
-    assert(service.getBrandNames(SharedObjects.testFood1.code, testLocale.id) === Right(brands))
+
+    brandNames.keySet.foreach {
+      code =>
+        assert(service.getBrandNames(code, testLocale.id) === Right(brandNames(code)))
+    }
   }
-  
+
   test("Attempt to delete brand names for undefined locale") {
-    assert(service.deleteAllBrandNames("no_such_locale") === Left(UndefinedLocale))
+    assert(service.deleteAllBrandNames(undefinedLocaleId) === Left(UndefinedLocale))
   }
 
   test("Delete brand names") {
     assert(service.deleteAllBrandNames(testLocale.id) === Right(()))
-    assert(service.getBrandNames(SharedObjects.testFood1.code, testLocale.id) === Right(Seq()))
+    assert(service.getBrandNames(foods(0).code, testLocale.id) === Right(Seq()))
   }
 }

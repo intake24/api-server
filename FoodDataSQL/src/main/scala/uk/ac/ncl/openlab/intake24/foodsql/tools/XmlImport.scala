@@ -80,7 +80,7 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
       adminService.createFoodGroups(foodGroups)
 
       val baseLocaleData = foodGroups.map {
-        g => (g.id -> g.englishDescription)
+        g => (g.id -> FoodGroupLocal(Some(g.englishDescription)))
       }.toMap
 
       adminService.createLocalFoodGroups(baseLocaleData, defaultLocale)

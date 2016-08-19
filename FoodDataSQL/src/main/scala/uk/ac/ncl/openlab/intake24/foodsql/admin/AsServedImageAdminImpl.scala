@@ -49,7 +49,8 @@ trait AsServedImageAdminImpl extends AsServedImageAdminService with AsServedImag
           } else
             logger.debug("As served sets in createAsServedSets request contain no image references")
 
-          conn.commit()          
+          conn.commit() 
+          Right(())
         }
 
       } else {

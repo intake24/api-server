@@ -19,7 +19,7 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.services.fooddb.errors
 
 
-sealed trait LocalLookupError
+sealed trait LocalLookupError extends LocalUpdateError
 
 sealed trait LocaleError extends LocalLookupError with LocalUpdateError with LocalCreateError with LocalDeleteError with LocalDependentCreateError
 
@@ -72,6 +72,8 @@ case class DatabaseError(message: String, cause: Option[Throwable])
   with CreateError
   with LocalCreateError
   with NutrientMappingError
+  with DependentCreateError
+  with LocalDependentCreateError
   
 object test {
   val q: LocaleError = UndefinedLocale

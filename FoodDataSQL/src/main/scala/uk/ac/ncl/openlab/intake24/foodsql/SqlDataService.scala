@@ -35,19 +35,37 @@ trait SqlDataService {
   def batchSql(query: String, parameters: Seq[Seq[NamedParameter]]) = {
     BatchSql(query, parameters.head, parameters.tail: _*)
   }
+  
+  def withTransaction[E, T](block: => Either[E, T])(implicit conn: java.sql.Connection): Either[E, T] = {
+    conn.setAutoCommit(false)
+    conn.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ)
+    
+    block match {
+      case result: Left[E, T] => {
+        conn.rollback()
+        result
+      }
+      case result: Right[E, T] => {
+        conn.commit()
+        result
+      }
+    }
+  }
 
-  def tryWithConstraintsCheck[E >: DatabaseError, T](cf: PartialFunction[String, E])(block: => T): Either[E, T] = {
+  def tryWithConstraintsCheck[E >: DatabaseError, T](cf: PartialFunction[String, E])(block: => Either[E, T])(implicit conn: java.sql.Connection): Either[E, T] = {
     def getErrorOrRethrow(e: PSQLException): Either[E, T] = {
       val constraint = e.getServerErrorMessage.getConstraint
 
-      if (cf.isDefinedAt(constraint))
+      if (cf.isDefinedAt(constraint)) {
+        if (!conn.getAutoCommit())
+          conn.rollback()
         Left(cf(constraint))
-      else
+      } else
         throw e
     }
 
     try {
-      Right(block)
+      block
     } catch {
       case e: java.sql.BatchUpdateException => e.getNextException match {
         case pe: PSQLException => getErrorOrRethrow(pe)
@@ -56,16 +74,24 @@ trait SqlDataService {
       case pe: PSQLException => getErrorOrRethrow(pe)
     }
   }
-  
-  def tryWithConstraintCheck[E >: DatabaseError, T](constraint: String, error: => E)(block: => T) = {
+
+  def tryWithConstraintCheck[E >: DatabaseError, T](constraint: String, error: => E)(block: => Either[E, T])(implicit conn: java.sql.Connection): Either[E, T] = {
     try {
-      Right(block)
+      block
     } catch {
       case e: java.sql.BatchUpdateException => e.getNextException match {
-        case pe: PSQLException => if (pe.getServerErrorMessage.getConstraint == constraint) Left(error) else throw e
+        case pe: PSQLException => if (pe.getServerErrorMessage.getConstraint == constraint) {
+          if (!conn.getAutoCommit())
+            conn.rollback()
+          Left(error)
+        } else throw e
         case _ => throw e
       }
-      case pe: PSQLException => if (pe.getServerErrorMessage.getConstraint == constraint) Left(error) else throw pe
+      case pe: PSQLException => if (pe.getServerErrorMessage.getConstraint == constraint) {
+        if (!conn.getAutoCommit())
+          conn.rollback()
+        Left(error)
+      } else throw pe
     }
   }
 
@@ -77,7 +103,8 @@ trait SqlDataService {
       case batchException: java.sql.BatchUpdateException => Left(DatabaseError(batchException.getNextException.getMessage, Some(batchException)))
       case sqlException: PSQLException => Left(DatabaseError(sqlException.getServerErrorMessage.getMessage, Some(sqlException)))
     } finally {
-      // rollback will be called automatically if commit wasn't called
+      if (!conn.getAutoCommit())
+        conn.rollback()
       conn.close()
     }
   }

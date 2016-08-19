@@ -59,6 +59,8 @@ trait FoodGroupsAdminImpl extends FoodGroupsAdminService with SqlDataService wit
       SQL("DELETE FROM food_groups").execute()
       Right(())
   }
+  
+  def createFoodGroup(foodGroup: FoodGroupMain): Either[CreateError, Unit] = createFoodGroups(Seq(foodGroup))
 
   def createFoodGroups(foodGroups: Seq[FoodGroupMain]): Either[CreateError, Unit] = tryWithConnection {
     implicit conn =>
@@ -68,6 +70,7 @@ trait FoodGroupsAdminImpl extends FoodGroupsAdminService with SqlDataService wit
           val foodGroupParams = foodGroups.map(g => Seq[NamedParameter]('id -> g.id, 'description -> g.englishDescription))
 
           batchSql("""INSERT INTO food_groups VALUES ({id}, {description})""", foodGroupParams).execute()
+          Right(())
         }
       } else
         Right(())
@@ -82,12 +85,12 @@ trait FoodGroupsAdminImpl extends FoodGroupsAdminService with SqlDataService wit
       Right(())
   }
 
-  def createLocalFoodGroups(localFoodGroups: Map[Int, String], locale: String): Either[DatabaseError, Unit] = tryWithConnection {
+  def createLocalFoodGroups(localFoodGroups: Map[Int, FoodGroupLocal], locale: String): Either[DatabaseError, Unit] = tryWithConnection {
     implicit conn =>
 
       val foodGroupLocalParams = localFoodGroups.map {
-        case (id, localDescription) =>
-          Seq[NamedParameter]('id -> id, 'locale_id -> locale, 'local_description -> localDescription)
+        case (id, local) =>
+          Seq[NamedParameter]('id -> id, 'locale_id -> locale, 'local_description -> local.localDescription)
       }.toSeq
 
       batchSql("""INSERT INTO food_groups_local VALUES ({id}, {locale_id}, {local_description})""", foodGroupLocalParams).execute()

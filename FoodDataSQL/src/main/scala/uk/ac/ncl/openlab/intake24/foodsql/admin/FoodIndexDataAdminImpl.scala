@@ -5,7 +5,7 @@ import scala.Right
 import org.slf4j.LoggerFactory
 
 import anorm.SQL
-import anorm.BatchSql
+
 import anorm.sqlToSimple
 import uk.ac.ncl.openlab.intake24.SplitList
 import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
@@ -50,7 +50,7 @@ trait FoodIndexDataAdminImpl extends FoodIndexDataAdminService with SqlDataServi
             Seq[NamedParameter]('locale -> locale, 'synonyms -> set.mkString(" "))
         }
 
-        BatchSql("""INSERT INTO synonym_sets VALUES (DEFAULT, {locale}, {synonyms})""", synonymSetsParams).execute()
+        batchSql("""INSERT INTO synonym_sets VALUES (DEFAULT, {locale}, {synonyms})""", synonymSetsParams).execute()
       } else
         logger.warn("Synonym sets file is empty")
 
@@ -76,7 +76,7 @@ trait FoodIndexDataAdminImpl extends FoodIndexDataAdminService with SqlDataServi
         }.toSeq
 
         if (!splitListParams.isEmpty)
-          BatchSql("""INSERT INTO split_list VALUES (DEFAULT, {locale}, {first_word}, {words})""", splitListParams).execute()
+          batchSql("""INSERT INTO split_list VALUES (DEFAULT, {locale}, {first_word}, {words})""", splitListParams).execute()
         else
           logger.warn("Split list parameter list is empty")
       } else

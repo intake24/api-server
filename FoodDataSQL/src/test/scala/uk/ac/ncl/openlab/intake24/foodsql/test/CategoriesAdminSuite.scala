@@ -29,7 +29,7 @@ import uk.ac.ncl.openlab.intake24.MainCategoryRecord
 import uk.ac.ncl.openlab.intake24.CategoryRecord
 
 @DoNotDiscover
-class CategoriesAdminSuite(service: FoodDatabaseAdminService) extends FunSuite with BeforeAndAfterAll {
+class CategoriesAdminSuite(service: FoodDatabaseAdminService) extends FunSuite with BeforeAndAfterAll with FixedData with RandomData {
 
   /*
   def categoryRecord(code: String, locale: String): Either[LocalLookupError, CategoryRecord]
@@ -53,22 +53,24 @@ class CategoriesAdminSuite(service: FoodDatabaseAdminService) extends FunSuite w
   def removeSubcategoryFromCategory(categoryCode: String, foodCode: String): Either[UpdateError, Unit]  
    */
 
-  val testLocale = SharedObjects.testLocale
-
-  val testCat1 = SharedObjects.testCat1
-  val testCat2 = SharedObjects.testCat2
-
-  val catLocal1 = LocalCategoryRecord(None, Some("Категория 1"), Seq(SharedObjects.testPsm1))
-  val catLocal2 = LocalCategoryRecord(None, Some("Категория 2"), Seq(SharedObjects.testPsm1, SharedObjects.testPsm2))
-
+  val foodGroups = randomFoodGroups(2, 10)
+  val foods = randomNewFoods(2, 10, foodGroups.map(_.id))
+  val randomCategories = randomNewCategories(3, 10)
+  val singleCategory = randomCategories.head
+  val categories = randomCategories.tail
+  val categoriesLocal = randomLocalCategoryRecords(categories.map(_.code))
   val dummyVersion = UUID.randomUUID()
 
   override def beforeAll() = {
     assert(service.createLocale(testLocale) === Right(()))
+    assert(service.createFoodGroups(foodGroups) === Right(()))
+    assert(service.createFoods(foods) === Right(()))
   }
 
   override def afterAll() = {
     assert(service.deleteLocale(testLocale.id) === Right(()))
+    assert(service.deleteAllFoods() === Right(()))
+    assert(service.deleteAllFoodGroups() === Right(()))
   }
 
   def overrideVersion[E](result: Either[E, CategoryRecord]) = result.right.map {
@@ -76,80 +78,145 @@ class CategoriesAdminSuite(service: FoodDatabaseAdminService) extends FunSuite w
   }
 
   test("Create single category") {
-    assert(service.createCategory(testCat1) === Right(()))
+    assert(service.createCategory(singleCategory) === Right(()))
   }
 
   test("Attempt to create a category with invalid code") {
     // Too short
-    assert(service.createCategory(testCat1.copy(code = "1")).isLeft)
+    assert(service.createCategory(singleCategory.copy(code = "1")).isLeft)
     // Too long
-    assert(service.createCategory(testCat1.copy(code = "1234567890")).isLeft)
+    assert(service.createCategory(singleCategory.copy(code = "1234567890")).isLeft)
   }
 
   test("Attempt to create a category with duplicate code") {
-    assert(service.createCategory(testCat1) === Left(DuplicateCode))
+    assert(service.createCategory(singleCategory) === Left(DuplicateCode))
   }
 
   test("Test if category code exists") {
-    assert(service.isCategoryCode(testCat1.code) === Right(true))
+    assert(service.isCategoryCode(singleCategory.code) === Right(true))
   }
 
   test("Test if category code is available") {
-    assert(service.isCategoryCodeAvailable("MEGACODE") === Right(true))
+    assert(service.isCategoryCodeAvailable(undefinedCode) === Right(true))
   }
 
   test("Delete single category") {
-    assert(service.deleteCategory(testCat1.code) === Right(()))
-    assert(service.isCategoryCode(testCat1.code) === Right(false))
+    assert(service.deleteCategory(singleCategory.code) === Right(()))
+    assert(service.isCategoryCode(singleCategory.code) === Right(false))
   }
 
   test("Attempt to delete undefined category") {
-    assert(service.deleteCategory("BADCODE") === Left(RecordNotFound))
+    assert(service.deleteCategory(undefinedCode) === Left(RecordNotFound))
   }
 
   test("Batch create categories") {
-    assert(service.createCategories(Seq(testCat1, testCat2)) === Right(()))
+    assert(service.createCategories(categories) === Right(()))
+  }
+
+  test("Attempt to batch create duplicate categories") {
+    assert(service.createCategories(categories) === Left(DuplicateCode))
   }
 
   test("Batch create local category records") {
-    assert(service.createLocalCategories(Map(testCat1.code -> catLocal1, testCat2.code -> catLocal2), testLocale.id) === Right(()))
+    assert(service.createLocalCategories(categoriesLocal, testLocale.id) === Right(()))
   }
-  
-  test("Attempt to batch create duplicate codes") {
-    assert(service.createLocalCategories(Map(testCat1.code -> catLocal1, testCat2.code -> catLocal2), testLocale.id) === Left(DuplicateCode))
+
+  test("Attempt to batch create duplicate local records") {
+    assert(service.createLocalCategories(categoriesLocal, testLocale.id) === Left(DuplicateCode))
   }
 
   test("Get category record") {
-    val expected1 = CategoryRecord(MainCategoryRecord(dummyVersion, testCat1.code, testCat1.englishDescription, testCat1.isHidden, testCat1.attributes),
-      LocalCategoryRecord(Some(dummyVersion), catLocal1.localDescription, catLocal1.portionSize))
+    categories.foreach {
+      category =>
 
-    val expected2 = CategoryRecord(MainCategoryRecord(dummyVersion, testCat2.code, testCat2.englishDescription, testCat2.isHidden, testCat2.attributes),
-      LocalCategoryRecord(Some(dummyVersion), catLocal2.localDescription, catLocal2.portionSize))
+        val expected = CategoryRecord(MainCategoryRecord(dummyVersion, category.code, category.englishDescription, category.isHidden, category.attributes),
+          LocalCategoryRecord(Some(dummyVersion), categoriesLocal(category.code).localDescription, categoriesLocal(category.code).portionSize))
 
-    assert(overrideVersion(service.getCategoryRecord(testCat1.code, testLocale.id)) === Right(expected1))
-    assert(overrideVersion(service.getCategoryRecord(testCat2.code, testLocale.id)) === Right(expected2))
+        assert(overrideVersion(service.getCategoryRecord(category.code, testLocale.id)) === Right(expected))
+    }
   }
-  
+
   test("Attempt to get a category record for undefined category") {
-    assert(service.getCategoryRecord("BADCODE", testLocale.id) === Left(RecordNotFound))
+    assert(service.getCategoryRecord(undefinedCode, testLocale.id) === Left(RecordNotFound))
   }
-  
+
   test("Attempt to get a category record for undefined locale") {
-    assert(service.getCategoryRecord(testCat1.code, "no_such_locale") === Left(UndefinedLocale))
+    assert(service.getCategoryRecord(categories(0).code, undefinedLocaleId) === Left(UndefinedLocale))
   }
 
   test("Update main record") {
 
+    val newCode = randomUniqueId(categories.map(_.code).toSet, randomCode)
+    val newDescription = randomDescription
+    val newAttributes = randomAttributes
+
     // Get current version and update
-    assert(service.getCategoryRecord(testCat1.code, testLocale.id).right.flatMap {
+    assert(service.getCategoryRecord(categories(0).code, testLocale.id).right.flatMap {
       catRec =>
-        service.updateCategoryMainRecord(catRec.main.code, catRec.main.copy(englishDescription = "Hello", code = "TEST123"))
+        service.updateCategoryMainRecord(catRec.main.code, catRec.main.copy(englishDescription = newDescription, code = newCode, attributes = newAttributes))
     } === Right(()))
 
     // Check upated description
-    assert(service.getCategoryRecord("TEST123", testLocale.id).right.map {
-      rec => rec.main.englishDescription
-    } === Right("Hello"))
+    assert(service.getCategoryRecord(newCode, testLocale.id).right.map {
+      rec => (rec.main.englishDescription, rec.main.attributes)
+    } === Right((newDescription, newAttributes)))
+  }
+
+  test("Update local record") {
+
+    val newPsm = randomPortionSizeMethods
+    val newDescription = Some(randomDescription)
+
+    // Get current version and update
+    assert(service.getCategoryRecord(categories(1).code, testLocale.id).right.flatMap {
+      catRec =>
+        service.updateCategoryLocalRecord(categories(1).code, testLocale.id, catRec.local.copy(localDescription = newDescription, portionSize = newPsm))
+    } === Right(()))
+
+    // Check upated description
+    assert(service.getCategoryRecord(categories(1).code, testLocale.id).right.map {
+      rec => (rec.local.localDescription, rec.local.portionSize)
+    } === Right((newDescription, newPsm)))
+  }
+
+  test("Attempt to update an undefined category main record") {
+    assert(service.updateCategoryMainRecord(undefinedCode, MainCategoryRecord(dummyVersion, categories(1).code, categories(1).englishDescription, categories(1).isHidden, categories(1).attributes)) === Left(RecordNotFound))
+  }
+
+  test("Attempt to update an undefined category local record") {
+    assert(service.updateCategoryLocalRecord(undefinedCode, testLocale.id, LocalCategoryRecord(Some(dummyVersion), categoriesLocal(categories(1).code).localDescription, categoriesLocal(categories(1).code).portionSize)) === Left(RecordNotFound))
+  }
+
+  test("Attempt to update an category local record for undefined locale") {
+    assert(service.updateCategoryLocalRecord(categories(1).code, undefinedLocaleId, LocalCategoryRecord(Some(dummyVersion), categoriesLocal(categories(1).code).localDescription, categoriesLocal(categories(1).code).portionSize)) === Left(UndefinedLocale))
+  }
+
+  test("Recreate categories for following tests") {
+    assert(service.deleteAllCategories() === Right(()))
+    assert(service.createCategories(categories) === Right(()))
+  }
+
+  test("Add food to category") {    
+    foods.foreach {
+      food =>
+        assert(service.addFoodToCategory(randomElement(categories).code, food.code) === Right(()))
+    }
+  }
+
+  test("Add subcategory to category") {
+    assert(service.addSubcategoryToCategory(categories(0).code, categories(1).code) === Right(()))
+  }
+
+  test("Attempt to add a category to itself") {
+    assert(service.addSubcategoryToCategory(categories(1).code, categories(1).code).isLeft)
+  }
+
+  test("Attempt to create a cycle") {
+    // no cycle checks right now :(
+  }
+
+  test("Clean up categories") {
+    assert(service.deleteAllCategories() === Right(()))
   }
 
 }

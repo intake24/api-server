@@ -43,7 +43,9 @@ case class FoodRecord(main: MainFoodRecord, local: LocalFoodRecord)
 
 case class MainFoodRecord(version: UUID, code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes)
 
-case class NewFood(code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes)
+case class NewFood(code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes) {
+  def toHeader = FoodHeader(code, englishDescription, None, None)
+}
 
 case class NewFoodAutoCode(englishDescription: String, groupCode: Int, attributes: InheritableAttributes)
 
@@ -61,7 +63,9 @@ case class CategoryHeader(code: String, englishDescription: String, localDescrip
 
 case class UserCategoryHeader(code: String, localDescription: String)
 
-case class NewCategory(code: String, englishDescription: String, isHidden: Boolean, attributes: InheritableAttributes)
+case class NewCategory(code: String, englishDescription: String, isHidden: Boolean, attributes: InheritableAttributes) {
+  def toHeader = CategoryHeader(code, englishDescription, None, isHidden)
+}
 
 case class CategoryRecord(main: MainCategoryRecord, local: LocalCategoryRecord)
 

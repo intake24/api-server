@@ -5,5 +5,5 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 
 trait DrinkwareService {
 
-  def drinkwareSet(id: String): Either[LookupError, DrinkwareSet]
+  def getDrinkwareSet(id: String): Either[LookupError, DrinkwareSet]
 }

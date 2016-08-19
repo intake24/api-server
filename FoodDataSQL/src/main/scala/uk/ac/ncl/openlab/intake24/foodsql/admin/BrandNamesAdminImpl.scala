@@ -9,7 +9,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.BrandNamesAdminService
 import org.slf4j.LoggerFactory
 import anorm.NamedParameter
-import anorm.BatchSql
+
 import uk.ac.ncl.openlab.intake24.foodsql.user.BrandNamesUserImpl
 import java.sql.Connection
 import uk.ac.ncl.openlab.intake24.foodsql.SimpleValidation
@@ -25,8 +25,14 @@ trait BrandNamesAdminImpl extends BrandNamesAdminService with SqlDataService wit
     implicit conn =>
       logger.debug(s"Deleting all brand definitions for locale $locale")
 
-      withLocaleValidation(locale) {
-        SQL("DELETE FROM brands WHERE locale_id={locale_id}").on('locale_id -> locale).execute()
+      withTransaction {
+        validateLocale(locale).right.flatMap {
+          _ =>
+            {
+              SQL("DELETE FROM brands WHERE locale_id={locale_id}").on('locale_id -> locale).execute()
+              Right(())
+            }
+        }
       }
   }
 
@@ -44,6 +50,7 @@ trait BrandNamesAdminImpl extends BrandNamesAdminService with SqlDataService wit
         tryWithConstraintsCheck(constraintErrors) {
           batchSql("""INSERT INTO brands VALUES(DEFAULT, {food_code}, {locale_id}, {name})""", brandParams).execute()
           conn.commit()
+          Right(())
         }
       } else {
         logger.debug("createBrandNames request with empty brand names map")

@@ -13,7 +13,6 @@ import uk.ac.ncl.openlab.intake24.FoodHeader
 
 import anorm.NamedParameter
 
-import anorm.BatchSql
 import org.postgresql.util.PSQLException
 
 import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
@@ -46,19 +45,22 @@ trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with SqlDataS
 
   def getAssociatedFoodsWithHeaders(foodCode: String, locale: String): Either[LocalLookupError, Seq[AssociatedFoodWithHeader]] = tryWithConnection {
     implicit conn =>
+      withTransaction {
+        validateFoodAndLocale(foodCode, locale).right.flatMap {
+          _ =>
+            val rows = SQL(getAssociatedFoodsQuery).on('food_code -> foodCode, 'locale_id -> locale).executeQuery().as(Macro.namedParser[AssociatedFoodPromptsRow].*)
 
-      withFoodAndLocaleValidation(foodCode, locale) {
-        val rows = SQL(getAssociatedFoodsQuery).on('food_code -> foodCode, 'locale_id -> locale).executeQuery().as(Macro.namedParser[AssociatedFoodPromptsRow].*)
+            Right(rows.map {
+              row =>
+                val foodOrCategory: Either[FoodHeader, CategoryHeader] =
+                  if (row.food_english_description.nonEmpty)
+                    Left(FoodHeader(row.associated_food_code.get, row.food_english_description.get, row.food_local_description, row.food_do_not_use))
+                  else
+                    Right(CategoryHeader(row.associated_category_code.get, row.category_english_description.get, row.category_local_description, row.category_is_hidden.get))
 
-        rows.map {
-          row =>
-            val foodOrCategory: Either[FoodHeader, CategoryHeader] =
-              if (row.food_english_description.nonEmpty)
-                Left(FoodHeader(row.associated_food_code.get, row.food_english_description.get, row.food_local_description, row.food_do_not_use))
-              else
-                Right(CategoryHeader(row.associated_category_code.get, row.category_english_description.get, row.category_local_description, row.category_is_hidden.get))
+                AssociatedFoodWithHeader(foodOrCategory, row.text.get, row.link_as_main.get, row.generic_name.get)
 
-            AssociatedFoodWithHeader(foodOrCategory, row.text.get, row.link_as_main.get, row.generic_name.get)
+            })
         }
       }
   }
@@ -73,7 +75,7 @@ trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with SqlDataS
 
       if (foods.nonEmpty) {
 
-        val params = foods.flatMap {
+        val params = foods.map {
           p =>
 
             val foodOption = p.foodOrCategoryCode.left.toOption
@@ -83,7 +85,7 @@ trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with SqlDataS
               'associated_category_code -> categoryOption, 'text -> p.promptText, 'link_as_main -> p.linkAsMain, 'generic_name -> p.genericName)
         }
 
-        BatchSql("INSERT INTO associated_food_prompts VALUES (DEFAULT, {food_code}, {locale_id}, {associated_category_code}, {associated_food_code}, {text}, {link_as_main}, {generic_name})", params)
+        batchSql("INSERT INTO associated_food_prompts VALUES (DEFAULT, {food_code}, {locale_id}, {associated_category_code}, {associated_food_code}, {text}, {link_as_main}, {generic_name})", params)
           .execute()
       }
 
@@ -94,7 +96,7 @@ trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with SqlDataS
 
   def deleteAllAssociatedFoods(locale: String): Either[DatabaseError, Unit] = tryWithConnection {
     implicit conn =>
-      logger.info("Deleting existing associated food prompts")
+      logger.debug("Deleting existing associated food prompts")
 
       SQL("DELETE FROM associated_foods WHERE locale_id={locale_id}").on('locale_id -> locale).execute()
 
@@ -103,17 +105,18 @@ trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with SqlDataS
 
   def createAssociatedFoods(assocFoods: Map[String, Seq[AssociatedFood]], locale: String): Either[LocalDependentCreateError, Unit] = tryWithConnection {
     implicit conn =>
-      if (!assocFoods.isEmpty) {
-        val promptParams = assocFoods.flatMap {
-          case (foodCode, foods) =>
-            foods.map {
-              assocFood =>
-                Seq[NamedParameter]('food_code -> foodCode, 'locale_id -> locale, 'associated_food_code -> assocFood.foodOrCategoryCode.left.toOption, 'associated_category_code -> assocFood.foodOrCategoryCode.right.toOption,
-                  'text -> assocFood.promptText, 'link_as_main -> assocFood.linkAsMain, 'generic_name -> assocFood.genericName)
-            }
-        }.toSeq
+      val promptParams = assocFoods.flatMap {
+        case (foodCode, foods) =>
+          foods.map {
+            assocFood =>
+              Seq[NamedParameter]('food_code -> foodCode, 'locale_id -> locale, 'associated_food_code -> assocFood.foodOrCategoryCode.left.toOption, 'associated_category_code -> assocFood.foodOrCategoryCode.right.toOption,
+                'text -> assocFood.promptText, 'link_as_main -> assocFood.linkAsMain, 'generic_name -> assocFood.genericName)
+          }
+      }.toSeq
 
-        logger.info("Writing " + assocFoods.values.map(_.size).foldLeft(0)(_ + _) + " associated food prompts to database")
+      if (promptParams.nonEmpty) {
+
+        logger.debug("Writing " + assocFoods.values.map(_.size).foldLeft(0)(_ + _) + " associated food prompts to database")
 
         val constraintErrors = Map(
           "associated_food_prompts_assoc_category_fk" -> ParentRecordNotFound,
@@ -127,10 +130,7 @@ trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with SqlDataS
           conn.commit()
           Right(())
         }
-      } else {
-        logger.warn("createAssociatedFoods request with empty associated foods map")
+      } else
         Right(())
-      }
-
   }
 }

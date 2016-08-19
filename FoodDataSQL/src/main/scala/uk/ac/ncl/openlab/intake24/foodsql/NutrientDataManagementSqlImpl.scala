@@ -111,8 +111,8 @@ class NutrientDataManagementSqlImpl @Inject() (@Named("intake24_foods") val data
             }
         }
 
-      BatchSql(recordQuery, recordParams).execute()
-      BatchSql(nutrientsQuery, nutrientParams).execute()
+      batchSql(recordQuery, recordParams).execute()
+      batchSql(nutrientsQuery, nutrientParams).execute()
 
       conn.commit()
       

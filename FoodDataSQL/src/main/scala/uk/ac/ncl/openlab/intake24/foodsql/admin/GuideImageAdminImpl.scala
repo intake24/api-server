@@ -35,7 +35,7 @@ trait GuideImageAdminImpl extends GuideImageAdminService with GuideImageUserImpl
           image => Seq[NamedParameter]('id -> image.id, 'description -> image.description, 'base_image_url -> (image.id + ".jpg"))
         }.toSeq
 
-        BatchSql("""INSERT INTO guide_images VALUES ({id},{description},{base_image_url})""", guideImageParams).execute()
+        batchSql("""INSERT INTO guide_images VALUES ({id},{description},{base_image_url})""", guideImageParams).execute()
 
         val weightParams = guideImages.flatMap {
           case image =>
@@ -47,7 +47,7 @@ trait GuideImageAdminImpl extends GuideImageAdminService with GuideImageUserImpl
 
         if (!weightParams.isEmpty) {
           logger.info("Writing " + weightParams.size + " guide image weight records to database")
-          BatchSql("""INSERT INTO guide_image_weights VALUES (DEFAULT,{guide_image_id},{object_id},{description},{weight})""", weightParams).execute()
+          batchSql("""INSERT INTO guide_image_weights VALUES (DEFAULT,{guide_image_id},{object_id},{description},{weight})""", weightParams).execute()
         } else
           logger.warn("Guide image file contains no object weight records")
 

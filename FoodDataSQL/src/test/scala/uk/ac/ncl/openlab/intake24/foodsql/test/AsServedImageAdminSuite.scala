@@ -11,38 +11,18 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DuplicateCode
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 
 @DoNotDiscover
-class AsServedImageAdminSuite(service: AsServedImageAdminService) extends FunSuite {
+class AsServedImageAdminSuite(service: AsServedImageAdminService) extends FunSuite with RandomData {
   
-  private val img11 = AsServedImage("1_1.jpg", 10)
-  private val img12 = AsServedImage("1_2.jpg", 20)
-  private val img13 = AsServedImage("1_3.jpg", 30)
+  private val sets = randomAsServedSets
   
-  private val img21 = AsServedImage("2_1.jpg", 15)
-  private val img22 = AsServedImage("2_2.jpg", 50)
-  private val img23 = AsServedImage("2_3.jpg", 35)
-    
-  private val set1 = AsServedSet("set1", "Test set 1", Seq(img11, img12, img13)) 
-  private val set2 = AsServedSet("set2", "Test set 2", Seq(img21, img22, img23))
-  private val set3 = AsServedSet("set3", "Test set 3", Seq())
-  
-  private val allSets = Seq(set1, set2, set3)
-  
-  private val headers = allSets.map(_.toHeader).map(h => (h.id, h)).toMap
-  
-  test("Batch create with an empty set list") {
-    assert(service.createAsServedSets(Seq()).isRight)
-  }
-  
-  test("Create a set with an empty image list") {
-    assert(service.createAsServedSets(Seq(set3)).isRight)
-  }
+  private val headers = sets.map(_.toHeader).map(h => (h.id, h)).toMap
   
   test("Batch create as served images sets") {
-    assert(service.createAsServedSets(Seq(set1, set2)).isRight)
+    assert(service.createAsServedSets(sets) === Right(()))
   }
   
   test("Attempt to create a set with existing id") {
-    assert(service.createAsServedSets(Seq(AsServedSet("set3", "Duplicate", Seq()))) === Left(DuplicateCode))
+    assert(service.createAsServedSets(sets.take(1)) === Left(DuplicateCode))
   }
   
   test("Get all as served image sets") {
@@ -51,17 +31,22 @@ class AsServedImageAdminSuite(service: AsServedImageAdminService) extends FunSui
   
   test("Get a defined as served set") {
     
-    service.getAsServedSet("set1") match {
-      case Left(_) => fail("Unexpected error")
+    service.getAsServedSet(sets(0).id) match {
+      case Left(error) => fail("Unexpected error: " + error)
       case Right(set) => {
-        assert(set.id === set1.id)
-        assert(set.images.sortBy(_.weight) === set1.images)
+        assert(set.id === sets(0).id)
+        assert(set.images.sortBy(_.weight) === sets(0).images.sortBy(_.weight))
       }
     }    
   }
   
-  test("Get an undefined as served set") {
+  test("Attempt to get an undefined as served set") {
     assert(service.getAsServedSet("no_such_set") === Left(RecordNotFound))
+  }
+  
+  test("Delete all as served sets") {
+    assert(service.deleteAllAsServedSets() === Right(()))
+    assert(service.listAsServedSets() === Right(Map()))
   }
   
 }
