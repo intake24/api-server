@@ -49,7 +49,7 @@ trait FoodBrowsingService {
   def categoryContents(code: String, locale: String): Either[LocalLookupError, UserCategoryContents]
 
   /* The following methods are needed associated foods logic */
-  def foodAllCategories(code: String): Either[LookupError, Seq[String]]
+  def foodAllCategories(code: String): Either[LookupError, Set[String]]
   
-  def categoryAllCategories(code: String): Either[LookupError, Seq[String]]
+  def categoryAllCategories(code: String): Either[LookupError, Set[String]]
 }

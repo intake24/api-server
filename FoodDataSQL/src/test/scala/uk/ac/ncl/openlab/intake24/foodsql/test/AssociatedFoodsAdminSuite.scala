@@ -65,14 +65,15 @@ class AssociatedFoodsAdminSuite(service: FoodDatabaseAdminService) extends FunSu
 
   test("Attempt to create associated foods for undefined parent food") {
     val foods = randomAssociatedFoods(IndexedSeq(undefinedCode), referenceFoods.map(_.code), referenceCategories.map(_.code))
-    
+
     if (foods(undefinedCode).length > 0) // due to implementetion specifics this error will not be generated if there are no assoc foods 
       assert(service.createAssociatedFoods(foods, testLocale.id) === Left(ParentRecordNotFound))
-      
+
   }
 
   test("Attempt to create associated foods for undefined locale") {
-    assert(service.createAssociatedFoods(testAssocFoods, undefinedLocaleId) === Left(UndefinedLocale))
+    if (testAssocFoods.size > 0)
+      assert(service.createAssociatedFoods(testAssocFoods, undefinedLocaleId) === Left(UndefinedLocale))
   }
 
   test("Get associated foods with headers") {
@@ -86,7 +87,7 @@ class AssociatedFoodsAdminSuite(service: FoodDatabaseAdminService) extends FunSu
           }
       }
     }
-    
+
     expected.keySet.foreach {
       code =>
         assert(service.getAssociatedFoodsWithHeaders(code, testLocale.id) === Right(expected(code)))

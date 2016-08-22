@@ -27,9 +27,10 @@ import uk.ac.ncl.openlab.intake24.LocalCategoryRecord
 import java.util.UUID
 import uk.ac.ncl.openlab.intake24.MainCategoryRecord
 import uk.ac.ncl.openlab.intake24.CategoryRecord
+import uk.ac.ncl.openlab.intake24.CategoryContents
 
 @DoNotDiscover
-class FoodBrowsingAdminSuite(service: FoodDatabaseAdminService) extends FunSuite with BeforeAndAfterAll {
+class FoodBrowsingAdminSuite(service: FoodDatabaseAdminService) extends FunSuite with BeforeAndAfterAll with FixedData with RandomData {
 
   /*
   
@@ -50,168 +51,184 @@ class FoodBrowsingAdminSuite(service: FoodDatabaseAdminService) extends FunSuite
   def categoryAllCategoriesCodes(code: String): Either[LookupError, Seq[String]]
   
   def categoryAllCategoriesHeaders(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]] 
-   
+   */
 
-  val testLocale = FixedData.testLocale
+  val foodGroups = randomFoodGroups(2, 10)
+  val nutrientTables = randomNutrientTables(2, 10)
+  val nutrientTableRecords = randomNutrientTableRecords(nutrientTables, 2, 10)
 
-  val testCat1 = FixedData.testCat1
-  val testCat2 = FixedData.testCat2
-  
-  val testFood1 = FixedData.testFood1
-
-  val catLocal1 = LocalCategoryRecord(None, Some("Категория 1"), Seq(FixedData.testPsm1))
-  val catLocal2 = LocalCategoryRecord(None, Some("Категория 2"), Seq(FixedData.testPsm1, FixedData.testPsm2))
-
+  val categories = randomNewCategories(10, 10)
+  val categoriesLocal = randomLocalCategoryRecords(categories.map(_.code))
   val dummyVersion = UUID.randomUUID()
+
+  val foods = randomNewFoods(2, 10, foodGroups.map(_.id))
+  val localFoods = randomLocalFoods(foods.map(_.code), nutrientTableRecords)
+
+  val foodHeaders = foods.map {
+    food => FoodHeader(food.code, food.englishDescription, localFoods(food.code).localDescription, Some(localFoods(food.code).doNotUse))
+  }.sortBy(_.code)
+
+  val foodHeadersMap = foodHeaders.map {
+    h => h.code -> h
+  }.toMap
+
+  val categoryHeaders = categories.map {
+    cat => CategoryHeader(cat.code, cat.englishDescription, categoriesLocal(cat.code).localDescription, cat.isHidden)
+  }.sortBy(_.code)
+
+  val categoryHeadersMap = categoryHeaders.map {
+    h => h.code -> h
+  }.toMap
 
   override def beforeAll() = {
     assert(service.createLocale(testLocale) === Right(()))
-    assert(service.createFoodGroups(FixedData.testFoodGroups) === Right(()))
-    assert(service.createFood(FixedData.testFood1) === Right(()))    
+    assert(service.createFoodGroups(foodGroups) === Right(()))
+
+    nutrientTables.foreach {
+      table => assert(service.createNutrientTable(table) === Right(()))
+    }
+
+    assert(service.createNutrientTableRecords(nutrientTableRecords) === Right(()))
+
   }
 
   override def afterAll() = {
-    assert(service.deleteLocale(testLocale.id) === Right(()))
-    assert(service.deleteAllFoods() === Right(()))
     assert(service.deleteAllFoodGroups() === Right(()))
+    assert(service.deleteAllNutrientTables() === Right(()))
+    assert(service.deleteLocale(testLocale.id) === Right(()))
   }
 
-  def overrideVersion[E](result: Either[E, CategoryRecord]) = result.right.map {
-    record => CategoryRecord(record.main.copy(version = dummyVersion), record.local.copy(version = Some(dummyVersion)))
+  test("Create test food records") {
+    assert(service.createCategories(categories) === Right(()))
+    assert(service.createLocalCategories(categoriesLocal, testLocale.id) === Right(()))
+    assert(service.createFoods(foods) === Right(()))
+    assert(service.createLocalFoods(localFoods, testLocale.id) === Right(()))
   }
 
-  test("Create single category") {
-    assert(service.createCategory(testCat1) === Right(()))
+  test("All foods should be uncategorised") {
+
+    val uncategorisedFoods = service.getUncategorisedFoods(testLocale.id).right.map(_.sortBy(_.code))
+
+    assert(uncategorisedFoods === Right(foodHeaders))
   }
 
-  test("Attempt to create a category with invalid code") {
-    // Too short
-    assert(service.createCategory(testCat1.copy(code = "1")).isLeft)
-    // Too long
-    assert(service.createCategory(testCat1.copy(code = "1234567890")).isLeft)
+  test("Some foods should be uncategorised") {
+    assert(service.addFoodToCategory(categories.head.code, foods.head.code) === Right(()))
+
+    val headers = foodHeaders.filterNot(_.code == foods.head.code)
+
+    assert(service.getUncategorisedFoods(testLocale.id).right.map(_.sortBy(_.code)) === Right(headers))
+
   }
 
-  test("Attempt to create a category with duplicate code") {
-    assert(service.createCategory(testCat1) === Left(DuplicateCode))
+  test("No foods should be uncategorised") {
+    foods.tail.foreach {
+      food =>
+        assert(service.addFoodToCategory(categories(0).code, food.code) === Right(()))
+    }
+
+    assert(service.getUncategorisedFoods(testLocale.id) === Right(Seq()))
   }
 
-  test("Test if category code exists") {
-    assert(service.isCategoryCode(testCat1.code) === Right(true))
+  // Category is not root if it has at least one non-hidden parent
+  test("All categories should be root") {
+    assert(service.getRootCategories(testLocale.id).right.map(_.sortBy(_.code)) === Right(categoryHeaders))
   }
 
-  test("Test if category code is available") {
-    assert(service.isCategoryCodeAvailable("MEGACODE") === Right(true))
+  private def makeHidden(categoryCode: String) = {
+    service.getCategoryRecord(categoryCode, testLocale.id).right.flatMap {
+      record =>
+        service.updateCategoryMainRecord(categoryCode, record.main.copy(isHidden = true))
+    }
   }
 
-  test("Delete single category") {
-    assert(service.deleteCategory(testCat1.code) === Right(()))
-    assert(service.isCategoryCode(testCat1.code) === Right(false))
-  }
-
-  test("Attempt to delete undefined category") {
-    assert(service.deleteCategory("BADCODE") === Left(RecordNotFound))
-  }
-
-  test("Batch create categories") {
-    assert(service.createCategories(Seq(testCat1, testCat2)) === Right(()))
+  private def makeNonHidden(categoryCode: String) = {
+    service.getCategoryRecord(categoryCode, testLocale.id).right.flatMap {
+      record =>
+        service.updateCategoryMainRecord(categoryCode, record.main.copy(isHidden = false))
+    }
   }
   
-  test("Attempt to batch create duplicate categories") {
-    assert(service.createCategories(Seq(testCat1, testCat2)) === Left(DuplicateCode))
+
+  test("Category that has only hidden parents should be root") {
+    assert(makeHidden(categories(0).code) === Right(()))
+    assert(makeHidden(categories(1).code) === Right(()))
+
+    assert(service.addSubcategoryToCategory(categories(0).code, categories(9).code) === Right(()))
+    assert(service.addSubcategoryToCategory(categories(1).code, categories(9).code) === Right(()))
+
+    assert(service.getRootCategories(testLocale.id).right.map(_.exists(_.code == categories(9).code)) === Right(true))
   }
 
-  test("Batch create local category records") {
-    assert(service.createLocalCategories(Map(testCat1.code -> catLocal1, testCat2.code -> catLocal2), testLocale.id) === Right(()))
+  test("Category that has at least one non-hidden parent should not be root") {
+    assert(makeNonHidden(categories(2).code) === Right(()))
+    assert(service.addSubcategoryToCategory(categories(2).code, categories(9).code) === Right(()))
+
+    assert(service.getRootCategories(testLocale.id).right.map(_.exists(_.code == categories(9).code)) === Right(false))
   }
 
-  test("Attempt to batch create duplicate local records") {
-    assert(service.createLocalCategories(Map(testCat1.code -> catLocal1, testCat2.code -> catLocal2), testLocale.id) === Left(DuplicateCode))
+   test("Restore hidden flags") {
+     categories.foreach {
+       cat =>
+         val result = service.getCategoryRecord(cat.code, testLocale.id).right.flatMap {
+           rec =>
+             service.updateCategoryMainRecord(cat.code, rec.main.copy(isHidden = cat.isHidden))
+         }
+         assert(result === Right(()))
+     }
   }
 
-  test("Get category record") {
-    val expected1 = CategoryRecord(MainCategoryRecord(dummyVersion, testCat1.code, testCat1.englishDescription, testCat1.isHidden, testCat1.attributes),
-      LocalCategoryRecord(Some(dummyVersion), catLocal1.localDescription, catLocal1.portionSize))
+  def sorted(c: CategoryContents) =
+    CategoryContents(c.foods.sortBy(_.code), c.subcategories.sortBy(_.code))
 
-    val expected2 = CategoryRecord(MainCategoryRecord(dummyVersion, testCat2.code, testCat2.englishDescription, testCat2.isHidden, testCat2.attributes),
-      LocalCategoryRecord(Some(dummyVersion), catLocal2.localDescription, catLocal2.portionSize))
+  test("Category contents") {
 
-    assert(overrideVersion(service.getCategoryRecord(testCat1.code, testLocale.id)) === Right(expected1))
-    assert(overrideVersion(service.getCategoryRecord(testCat2.code, testLocale.id)) === Right(expected2))
+    val expected = CategoryContents(foodHeaders, Seq(categoryHeadersMap(categories(9).code)))
+
+    assert(service.getCategoryContents(categories(0).code, testLocale.id).right.map(sorted(_)) === Right(sorted(expected)))
+  }
+  
+  test("Add test food to more categories") {
+    assert(service.addFoodToCategory(categories(1).code, foods(0).code) === Right(()))
   }
 
-  test("Attempt to get a category record for undefined category") {
-    assert(service.getCategoryRecord("BADCODE", testLocale.id) === Left(RecordNotFound))
+  test("Food parent categories") {
+    val expected = Seq(categoryHeadersMap(categories(0).code), categoryHeadersMap(categories(1).code)).sortBy(_.code)
+    assert(service.getFoodParentCategories(foods(0).code, testLocale.id).right.map(_.sortBy(_.code)) === Right(expected))
   }
-
-  test("Attempt to get a category record for undefined locale") {
-    assert(service.getCategoryRecord(testCat1.code, "no_such_locale") === Left(UndefinedLocale))
+  
+  test("Food all categories codes") {
+    assert(service.addSubcategoryToCategory(categories(3).code, categories(0).code) === Right(()))
+    assert(service.addSubcategoryToCategory(categories(3).code, categories(1).code) === Right(()))
+    assert(service.getFoodAllCategoriesCodes(foods(0).code) === Right(Set(categories(0).code, categories(1).code, categories(3).code)))
   }
-
-  test("Update main record") {
-
-    // Get current version and update
-    assert(service.getCategoryRecord(testCat1.code, testLocale.id).right.flatMap {
-      catRec =>
-        service.updateCategoryMainRecord(catRec.main.code, catRec.main.copy(englishDescription = "Hello", code = "TEST123", attributes = FixedData.someInheritableAttr))
-    } === Right(()))
-
-    // Check upated description
-    assert(service.getCategoryRecord("TEST123", testLocale.id).right.map {
-      rec => (rec.main.englishDescription, rec.main.attributes)
-    } === Right(("Hello", FixedData.someInheritableAttr)))
-  }
-
-  test("Update local record") {
+  
+  test("Food all categories headers") {
+    val expected = Seq(categoryHeadersMap(categories(0).code), categoryHeadersMap(categories(1).code), categoryHeadersMap(categories(3).code)).sortBy(_.code)
     
-    val testPsm = Seq(FixedData.testPsm2, FixedData.testPsm3)
+    assert(service.getFoodAllCategoriesHeaders(foods(0).code, testLocale.id).right.map(_.sortBy(_.code)) === Right(expected))
+  }
+  
+  test("Category parent categories") {
+    val expected = Seq(categoryHeadersMap(categories(3).code))
     
-    // Get current version and update
-    assert(service.getCategoryRecord("TEST123", testLocale.id).right.flatMap {
-      catRec =>
-        service.updateCategoryLocalRecord("TEST123", testLocale.id, catRec.local.copy(localDescription = Some("Bonjour"), portionSize = testPsm))
-    } === Right(()))
+    assert(service.getCategoryParentCategories(categories(0).code, testLocale.id) === Right(expected))
+  }
+  
+  test("Category all categories codes") {
+    assert(service.addSubcategoryToCategory(categories(4).code, categories(3).code) === Right(()))
+    assert(service.addSubcategoryToCategory(categories(5).code, categories(4).code) === Right(()))
+    
+    val expected = Set(categories(3).code, categories(4).code, categories(5).code)
+    
+    assert(service.getCategoryAllCategoriesCodes(categories(0).code) === Right(expected))
+  }
+  
+  test("Category all categories headers") {
+    
+    val expected = Seq(categoryHeadersMap(categories(3).code), categoryHeadersMap(categories(4).code), categoryHeadersMap(categories(5).code)).sortBy(_.code)
+    
+    assert(service.getCategoryAllCategoriesHeaders(categories(0).code, testLocale.id).right.map(_.sortBy(_.code)) === Right(expected))
+  }
 
-    // Check upated description
-    assert(service.getCategoryRecord("TEST123", testLocale.id).right.map {
-      rec => (rec.local.localDescription, rec.local.portionSize)
-    } === Right((Some("Bonjour"), testPsm)))
-  }
-
-  test("Attempt to update an undefined category main record") {
-    assert(service.updateCategoryMainRecord(":D", MainCategoryRecord(dummyVersion, testCat2.code, testCat2.englishDescription, testCat2.isHidden, testCat2.attributes)) === Left(RecordNotFound))
-  }
-  
-  test("Attempt to update an undefined category local record") {
-    assert(service.updateCategoryLocalRecord(":D", testLocale.id, LocalCategoryRecord(Some(dummyVersion), catLocal2.localDescription, catLocal2.portionSize)) === Left(RecordNotFound))
-  }
-  
-  test("Attempt to update an category local record for undefined locale") {
-    assert(service.updateCategoryLocalRecord("TEST123", "no_such_locale", LocalCategoryRecord(Some(dummyVersion), catLocal2.localDescription, catLocal2.portionSize)) === Left(UndefinedLocale))
-  }
-  
-  test("Recreate categories for following tests") {
-    assert(service.deleteAllCategories() === Right(()))
-    assert(service.createCategories(Seq(testCat1, testCat2)) === Right(()))
-  }
-  
-  test("Add food to category") {
-    assert(service.addFoodToCategory(testCat1.code, testFood1.code) === Right(()))
-  }
-  
-  test("Add subcategory to category") {
-    assert(service.addSubcategoryToCategory(testCat2.code, testCat1.code) === Right(()))
-  }
-  
-  test("Attempt to add a category to itself") {
-    assert(service.addSubcategoryToCategory(testCat2.code, testCat2.code).isLeft)
-  }
-  
-  test("Attempt to create a cycle") {
-    // no cycle checks right now :(
-  }
-  
-  test("Clean up categories") {
-    assert(service.deleteAllCategories() === Right(()))
-  }
-*/
 }

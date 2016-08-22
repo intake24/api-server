@@ -38,10 +38,11 @@ trait BrandNamesAdminImpl extends BrandNamesAdminService with SqlDataService wit
 
   def createBrandNames(brandNames: Map[String, Seq[String]], locale: String): Either[LocalDependentCreateError, Unit] = tryWithConnection {
     implicit conn =>
-      if (!brandNames.isEmpty) {
+      val brandParams = brandNames.keySet.toSeq.flatMap(k => brandNames(k).map(name => Seq[NamedParameter]('food_code -> k, 'locale_id -> locale, 'name -> name)))
+      
+      if (!brandParams.isEmpty) {
         conn.setAutoCommit(false)
         logger.debug("Writing " + brandNames.size + " brands to database")
-        val brandParams = brandNames.keySet.toSeq.flatMap(k => brandNames(k).map(name => Seq[NamedParameter]('food_code -> k, 'locale_id -> locale, 'name -> name)))
 
         val constraintErrors = Map(
           "brands_food_locale_fk" -> UndefinedLocale,

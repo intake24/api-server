@@ -2,7 +2,7 @@ package uk.ac.ncl.openlab.intake24.foodsql.tools.localisation
 
 import org.slf4j.LoggerFactory
 import org.rogach.scallop.ScallopConf
-import uk.ac.ncl.openlab.intake24.foodsql.NutrientDataManagementSqlImpl
+
 import uk.ac.ncl.openlab.intake24.NutrientTable
 import uk.ac.ncl.openlab.intake24.nutrients.Nutrient
 import uk.ac.ncl.openlab.intake24.NutrientTableRecord
@@ -13,6 +13,7 @@ import com.google.inject.Inject
 import uk.ac.ncl.openlab.intake24.foodsql.tools.DatabaseConnection
 import uk.ac.ncl.openlab.intake24.foodsql.tools.DatabaseOptions
 import uk.ac.ncl.openlab.intake24.foodsql.tools.WarningMessage
+import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
 
 object PortugueseNutrientsImport extends App with WarningMessage with DatabaseConnection {
 
@@ -68,7 +69,7 @@ object PortugueseNutrientsImport extends App with WarningMessage with DatabaseCo
 
   val dataSource = getDataSource(options)
 
-  val nutrientTableService = new NutrientDataManagementSqlImpl(dataSource)
+  val nutrientTableService = new FoodDatabaseAdminImpl(dataSource)
 
   nutrientTableService.deleteNutrientTable(ptTableCode)
 

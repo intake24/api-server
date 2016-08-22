@@ -52,6 +52,7 @@ class FoodDatabaseAdminTest extends Spec with SequentialNestedSuiteExecution wit
       new CategoriesAdminSuite(service),
       new AsServedImageAdminSuite(service),
       new AssociatedFoodsAdminSuite(service),
-      new BrandNamesAdminSuite(service))
+      new BrandNamesAdminSuite(service),
+      new FoodBrowsingAdminSuite(service))
   }
 }

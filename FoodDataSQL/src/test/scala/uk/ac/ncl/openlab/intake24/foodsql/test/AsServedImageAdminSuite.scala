@@ -30,14 +30,13 @@ class AsServedImageAdminSuite(service: AsServedImageAdminService) extends FunSui
   }
   
   test("Get a defined as served set") {
-    
     service.getAsServedSet(sets(0).id) match {
       case Left(error) => fail("Unexpected error: " + error)
       case Right(set) => {
         assert(set.id === sets(0).id)
         assert(set.images.sortBy(_.weight) === sets(0).images.sortBy(_.weight))
       }
-    }    
+    }
   }
   
   test("Attempt to get an undefined as served set") {

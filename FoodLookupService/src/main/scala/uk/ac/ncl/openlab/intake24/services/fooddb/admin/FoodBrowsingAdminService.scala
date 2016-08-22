@@ -13,21 +13,21 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 
 trait FoodBrowsingAdminService {
   
-  def uncategorisedFoods(locale: String): Either[LocaleError, Seq[FoodHeader]]
+  def getUncategorisedFoods(locale: String): Either[LocaleError, Seq[FoodHeader]]
 
-  def rootCategories(locale: String): Either[LocaleError, Seq[CategoryHeader]]
+  def getRootCategories(locale: String): Either[LocaleError, Seq[CategoryHeader]]
 
-  def categoryContents(code: String, locale: String): Either[LocalLookupError, CategoryContents]
+  def getCategoryContents(code: String, locale: String): Either[LocalLookupError, CategoryContents]
 
-  def foodParentCategories(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]]
+  def getFoodParentCategories(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]]
 
-  def foodAllCategoriesCodes(code: String): Either[LookupError, Seq[String]]
+  def getFoodAllCategoriesCodes(code: String): Either[LookupError, Set[String]]
 
-  def foodAllCategoriesHeaders(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]]
+  def getFoodAllCategoriesHeaders(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]]
   
-  def categoryParentCategories(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]]
+  def getCategoryParentCategories(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]]
   
-  def categoryAllCategoriesCodes(code: String): Either[LookupError, Seq[String]]
+  def getCategoryAllCategoriesCodes(code: String): Either[LookupError, Set[String]]
   
-  def categoryAllCategoriesHeaders(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]]
+  def getCategoryAllCategoriesHeaders(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]]
 }

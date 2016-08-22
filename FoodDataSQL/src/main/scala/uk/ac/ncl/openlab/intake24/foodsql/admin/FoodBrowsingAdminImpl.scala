@@ -29,7 +29,7 @@ trait FoodBrowsingAdminImpl extends FoodBrowsingAdminService
 
   lazy private val uncategorisedFoodsQuery = sqlFromResource("admin/uncategorised_foods.sql")
 
-  def uncategorisedFoods(locale: String): Either[LocaleError, Seq[FoodHeader]] = tryWithConnection {
+  def getUncategorisedFoods(locale: String): Either[LocaleError, Seq[FoodHeader]] = tryWithConnection {
     implicit conn =>
       val result = SQL(uncategorisedFoodsQuery).on('locale_id -> locale).executeQuery()
       parseWithLocaleValidation(result, Macro.namedParser[FoodHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map(_.map(_.asFoodHeader))
@@ -37,7 +37,7 @@ trait FoodBrowsingAdminImpl extends FoodBrowsingAdminService
 
   lazy private val rootCategoriesQuery = sqlFromResource("admin/root_categories.sql")
 
-  def rootCategories(locale: String): Either[LocaleError, Seq[CategoryHeader]] = tryWithConnection {
+  def getRootCategories(locale: String): Either[LocaleError, Seq[CategoryHeader]] = tryWithConnection {
     implicit conn =>
       val result = SQL(rootCategoriesQuery).on('locale_id -> locale).executeQuery()
 
@@ -60,7 +60,7 @@ trait FoodBrowsingAdminImpl extends FoodBrowsingAdminService
     parseWithLocaleAndCategoryValidation(result, Macro.namedParser[CategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map(_.map(_.asCategoryHeader))
   }
 
-  def categoryContents(code: String, locale: String): Either[LocalLookupError, CategoryContents] = tryWithConnection {
+  def getCategoryContents(code: String, locale: String): Either[LocalLookupError, CategoryContents] = tryWithConnection {
     implicit conn =>
       categoryFoodContentsImpl(code, locale).right.flatMap {
         foods =>
@@ -71,7 +71,7 @@ trait FoodBrowsingAdminImpl extends FoodBrowsingAdminService
       }
   }
 
-  def foodParentCategories(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]] = tryWithConnection {
+  def getFoodParentCategories(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]] = tryWithConnection {
     implicit conn =>
       val result =
         SQL("""|WITH v AS(
@@ -89,15 +89,15 @@ trait FoodBrowsingAdminImpl extends FoodBrowsingAdminService
       parseWithLocaleAndFoodValidation(result, Macro.namedParser[CategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map(_.map(_.asCategoryHeader))
   }
 
-  def foodAllCategoriesCodes(code: String): Either[LookupError, Seq[String]] = tryWithConnection {
+  def getFoodAllCategoriesCodes(code: String): Either[LookupError, Set[String]] = tryWithConnection {
     implicit conn => foodAllCategoriesImpl(code)
   }
 
-  def foodAllCategoriesHeaders(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]] = tryWithConnection {
+  def getFoodAllCategoriesHeaders(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]] = tryWithConnection {
     implicit conn => foodAllCategoriesImpl(code, locale)
   }
 
-  def categoryParentCategories(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]] = tryWithConnection {
+  def getCategoryParentCategories(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]] = tryWithConnection {
     implicit conn =>
       val query =
         """|WITH v AS(
@@ -115,11 +115,11 @@ trait FoodBrowsingAdminImpl extends FoodBrowsingAdminService
       parseWithLocaleAndCategoryValidation(result, Macro.namedParser[CategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map(_.map(_.asCategoryHeader))
   }
 
-  def categoryAllCategoriesCodes(code: String): Either[LookupError, Seq[String]] = tryWithConnection {
+  def getCategoryAllCategoriesCodes(code: String): Either[LookupError, Set[String]] = tryWithConnection {
     implicit conn => categoryAllCategoriesImpl(code)
   }
 
-  def categoryAllCategoriesHeaders(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]] = tryWithConnection {
+  def getCategoryAllCategoriesHeaders(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]] = tryWithConnection {
     implicit conn => categoryAllCategoriesImpl(code, locale)
   }
 }

@@ -68,9 +68,9 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDat
     Right(UserCategoryContents(foodHeaders, categoryHeaders))
   }
   
-  def foodAllCategories(code: String) = Right(data.categories.foodAllCategories(code))   
+  def foodAllCategories(code: String) = Right(data.categories.foodAllCategories(code).toSet)   
   
-  def categoryAllCategories(code: String) = Right(data.categories.categoryAllCategories(code))
+  def categoryAllCategories(code: String) = Right(data.categories.categoryAllCategories(code).toSet)
   
   def isCategoryCode(code: String) = data.categories.categoryMap.contains(code)
   

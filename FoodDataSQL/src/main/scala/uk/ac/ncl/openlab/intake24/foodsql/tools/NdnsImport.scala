@@ -2,12 +2,14 @@ package uk.ac.ncl.openlab.intake24.foodsql.tools
 
 import org.slf4j.LoggerFactory
 import org.rogach.scallop.ScallopConf
-import uk.ac.ncl.openlab.intake24.foodsql.NutrientDataManagementSqlImpl
+
 import uk.ac.ncl.openlab.intake24.NutrientTable
 import uk.ac.ncl.openlab.intake24.nutrients.Nutrient
 import uk.ac.ncl.openlab.intake24.NutrientTableRecord
 import uk.ac.ncl.openlab.intake24.nutrientsndns.CsvNutrientTableParser
 import uk.ac.ncl.openlab.intake24.nutrientsndns.LegacyNutrientTables
+import uk.ac.ncl.openlab.intake24.foodsql.admin.NutrientTablesAdminImpl
+import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
 
 object NdnsImport extends App with WarningMessage with DatabaseConnection {
 
@@ -30,7 +32,7 @@ object NdnsImport extends App with WarningMessage with DatabaseConnection {
 
   val dataSource = getDataSource(options)
 
-  val nutrientTableService = new NutrientDataManagementSqlImpl(dataSource)
+  val nutrientTableService = new FoodDatabaseAdminImpl (dataSource)
 
   nutrientTableService.deleteNutrientTable(ndnsTableCode)
 

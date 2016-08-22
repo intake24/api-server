@@ -14,13 +14,25 @@ import uk.ac.ncl.openlab.intake24.LocalCategoryRecord
 import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
 import uk.ac.ncl.openlab.intake24.PortionSizeMethod
 import uk.ac.ncl.openlab.intake24.FoodGroupLocal
+import uk.ac.ncl.openlab.intake24.LocalFoodRecord
+import uk.ac.ncl.openlab.intake24.NutrientTable
+import uk.ac.ncl.openlab.intake24.NutrientTableRecord
+import uk.ac.ncl.openlab.intake24.nutrients.Nutrient
 
 trait RandomData {
 
   def randomString(length: Int) = Random.alphanumeric.take(length).mkString
 
   val undefinedCode = "bad_code"
-
+    
+  def randomCount(min: Int, max: Int) = {
+    def bound = max - min
+    if (bound <= 0)
+      max
+    else
+      Random.nextInt(bound) + min
+  }
+  
   def randomCode(): String = {
     val t = randomString(Random.nextInt(3) + 4)
     if (t == undefinedCode)
@@ -66,7 +78,7 @@ trait RandomData {
   def randomNewFood(code: String, groupCodes: IndexedSeq[Int]) = NewFood(code, randomDescription, randomElement(groupCodes), randomAttributes)
 
   def randomNewFoods(min: Int, max: Int, groupCodes: IndexedSeq[Int]) = {
-    val count = Random.nextInt(max - min) + min
+    val count = randomCount(min, max)
 
     val codes = randomUniqueIds(count, randomCode).toIndexedSeq
 
@@ -76,12 +88,48 @@ trait RandomData {
   def randomNewCategory(code: String) = NewCategory(code, randomDescription, Random.nextBoolean(), randomAttributes)
 
   def randomNewCategories(min: Int, max: Int) = {
-    val count = Random.nextInt(max - min) + min
+    val count = randomCount(min, max)
 
     val codes = randomUniqueIds(count, randomCode).toIndexedSeq
 
     codes.map(randomNewCategory(_))
   }
+
+  def randomLocalFoods(forFoods: Seq[String], nutrientTableRecords: IndexedSeq[NutrientTableRecord]) = {
+    forFoods.foldLeft(Map[String, LocalFoodRecord]()) {
+      (map, code) => map + (code -> randomLocalFoodRecord(nutrientTableRecords))
+    }
+  }
+
+  def randomNutrientTables(min: Int, max: Int) = {
+    val count = randomCount(min, max)
+
+    IndexedSeq.fill(count) {
+      NutrientTable(randomIdentifier, randomDescription)
+    }
+  }
+
+  def randomNutrientTableRecords(forTables: IndexedSeq[NutrientTable], min: Int, max: Int) = {
+    forTables.flatMap {
+      table =>
+        val count = randomCount(min, max)
+        Seq.fill(count) {
+          NutrientTableRecord(table.id, randomIdentifier, Nutrient.types.map(n => (n -> Random.nextDouble() * 100.0)).toMap)
+        }
+    }
+  }
+
+  def randomNutrientCodes(nutrientTableRecords: IndexedSeq[NutrientTableRecord]) =
+    nutrientTableRecords.groupBy(_.table_id).foldLeft(Map[String, String]()) {
+      case (result, (tableCode, records)) =>
+        if (Random.nextBoolean())
+          result + (tableCode -> randomElement(records).record_id)
+        else
+          result
+    }
+
+  def randomLocalFoodRecord(nutrientTableRecords: IndexedSeq[NutrientTableRecord]) =
+    LocalFoodRecord(None, Some(randomDescription), Random.nextBoolean(), randomNutrientCodes(nutrientTableRecords), randomPortionSizeMethods)
 
   def randomPortionSizeMethod = {
 
@@ -113,16 +161,16 @@ trait RandomData {
   def randomFoodGroup(id: Int) = FoodGroupMain(id, randomDescription)
 
   def randomFoodGroups(min: Int, max: Int) = {
-    val count = Random.nextInt(max - min) + min
+    val count = randomCount(min, max)
 
     val ids = randomUniqueIds(count, Random.nextInt()).toIndexedSeq
 
     ids.map(randomFoodGroup(_))
   }
-  
+
   def randomLocalFoodGroups(forGroups: Seq[FoodGroupMain]) = forGroups.foldLeft(Map[Int, FoodGroupLocal]()) {
     (map, group) =>
-      map + (group.id -> FoodGroupLocal(Some(randomDescription))) 
+      map + (group.id -> FoodGroupLocal(Some(randomDescription)))
   }
 
   def randomAsServedImage = AsServedImage(randomIdentifier, Random.nextDouble() * 100)

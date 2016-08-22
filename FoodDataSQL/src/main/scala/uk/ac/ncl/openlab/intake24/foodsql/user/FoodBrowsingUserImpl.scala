@@ -78,11 +78,11 @@ trait FoodBrowsingUserImpl extends FoodBrowsingService with SqlDataService with 
       }
   }
 
-  def foodAllCategories(code: String): Either[LookupError, Seq[String]] = tryWithConnection {
+  def foodAllCategories(code: String): Either[LookupError, Set[String]] = tryWithConnection {
     implicit conn => foodAllCategoriesImpl(code)
   }
 
-  def categoryAllCategories(code: String): Either[LookupError, Seq[String]] = tryWithConnection {
+  def categoryAllCategories(code: String): Either[LookupError, Set[String]] = tryWithConnection {
     implicit conn => categoryAllCategoriesImpl(code)
   }
 }

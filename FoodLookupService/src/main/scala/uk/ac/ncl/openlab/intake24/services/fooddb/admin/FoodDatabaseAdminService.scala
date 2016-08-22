@@ -31,4 +31,5 @@ trait FoodDatabaseAdminService extends
   with DrinkwareAdminService
   with FoodIndexDataAdminService
   with LocalesAdminService
+  with NutrientTablesAdminService
   { }
