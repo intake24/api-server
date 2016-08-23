@@ -15,7 +15,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
 
 trait FoodsAdminService {
-  def foodRecord(code: String, locale: String): Either[LocalLookupError, FoodRecord]
+  def getFoodRecord(code: String, locale: String): Either[LocalLookupError, FoodRecord]
   
   def isFoodCodeAvailable(code: String): Either[DatabaseError, Boolean]
   def isFoodCode(code: String): Either[DatabaseError, Boolean]

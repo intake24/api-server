@@ -29,25 +29,22 @@ import play.api.db.Database
 import play.db.NamedDatabase
 import uk.ac.ncl.openlab.intake24.datastoresql.DataStoreScala
 import uk.ac.ncl.openlab.intake24.datastoresql.DataStoreSqlImpl
-import uk.ac.ncl.openlab.intake24.foodsql.AdminFoodDataServiceSqlImpl
-import uk.ac.ncl.openlab.intake24.foodsql.FoodDataEditingSqlImpl
-import uk.ac.ncl.openlab.intake24.foodsql.IndexFoodDataServiceSqlImpl
-import uk.ac.ncl.openlab.intake24.foodsql.UserFoodDataServiceSqlImpl
-import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService
-import uk.ac.ncl.openlab.intake24.services.IndexFoodDataService
-import uk.ac.ncl.openlab.intake24.services.UserFoodDataService
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex
 import uk.ac.ncl.openlab.intake24.services.foodindex.english.EnglishStemmerPlingImpl
 import uk.ac.ncl.openlab.intake24.services.foodindex.english.EnglishWordStemmer
 import uk.ac.ncl.openlab.intake24.services.foodindex.english.FoodIndexImpl_en_GB
-import uk.ac.ncl.openlab.intake24.services.LocaleManagementService
-import uk.ac.ncl.openlab.intake24.foodsql.LocaleManagementSqlImpl
 import java.lang.annotation.Retention
 import com.google.inject.BindingAnnotation
 import java.lang.annotation.RetentionPolicy
 import java.lang.annotation.Annotation
 import cache.CachedAdminFoodDataService
 import cache.CachedProblemChecker
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDatabaseService
+import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
+import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
+import uk.ac.ncl.openlab.intake24.foodsql.user.FoodDatabaseUserImpl
+import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl
 
 
 class Intake24ServicesModule(env: Environment, config: Configuration) extends AbstractModule {
@@ -73,14 +70,13 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     
     // Uncached internal food data services
     
-    bind(classOf[UserFoodDataService]).to(classOf[UserFoodDataServiceSqlImpl])
-    bind(classOf[IndexFoodDataService]).to(classOf[IndexFoodDataServiceSqlImpl])
-    bind(classOf[LocaleManagementService]).to(classOf[LocaleManagementSqlImpl])
-    bind(classOf[AdminFoodDataService]).annotatedWith(classOf[UncachedImpl]).to(classOf[AdminFoodDataServiceSqlImpl])
+    bind(classOf[FoodDatabaseService]).to(classOf[FoodDatabaseUserImpl])
+    bind(classOf[FoodIndexDataService]).to(classOf[FoodIndexDataImpl])
+    bind(classOf[FoodDatabaseAdminService]).annotatedWith(classOf[UncachedImpl]).to(classOf[FoodDatabaseAdminImpl])
     
     // User-facing (cached) food data services
     
-    bind(classOf[AdminFoodDataService]).to(classOf[CachedAdminFoodDataService])
+    bind(classOf[FoodDatabaseAdminService]).to(classOf[CachedFoodDatabaseAdminService])
     bind(classOf[ProblemCheckerService]).to(classOf[CachedProblemChecker])
     
   }

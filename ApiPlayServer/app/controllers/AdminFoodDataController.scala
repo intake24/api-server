@@ -31,17 +31,7 @@ import security.Roles
 import uk.ac.ncl.openlab.intake24.MainCategoryRecord
 import uk.ac.ncl.openlab.intake24.LocalCategoryRecord
 import uk.ac.ncl.openlab.intake24.MainFoodRecord
-import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService
-import uk.ac.ncl.openlab.intake24.services.CodeError
-import uk.ac.ncl.openlab.intake24.services.InvalidRequest
-import uk.ac.ncl.openlab.intake24.services.NewCategory
-import uk.ac.ncl.openlab.intake24.services.NewFood
-import uk.ac.ncl.openlab.intake24.services.SqlException
-import uk.ac.ncl.openlab.intake24.services.Success
-import uk.ac.ncl.openlab.intake24.services.UpdateResult
-import uk.ac.ncl.openlab.intake24.services.VersionConflict
 import uk.ac.ncl.openlab.intake24.LocalFoodRecord
-import uk.ac.ncl.openlab.intake24.services.UserFoodDataService
 
 import models.AdminCategoryRecord
 import models.AdminFoodRecord
@@ -52,53 +42,71 @@ import upickle.default.read
 import uk.ac.ncl.openlab.intake24.UserFoodHeader
 import uk.ac.ncl.openlab.intake24.UserCategoryHeader
 import uk.ac.ncl.openlab.intake24.AssociatedFood
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDatabaseService
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 
+class AdminFoodDataController @Inject() (adminService: FoodDatabaseAdminService, deadbolt: DeadboltActions) extends Controller with PickleErrorHandler {
 
-class AdminFoodDataController @Inject() (service: AdminFoodDataService, userService: UserFoodDataService, deadbolt: DeadboltActions) extends Controller with PickleErrorHandler {
-
-  // Read 
-  def rootCategories(locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
-      Ok(write(service.rootCategories(locale))).as(ContentTypes.JSON)
-    }
+  def translateResult[T](result: Either[LookupError, T]) = result match {
+    case Right(result) => Ok(write(result)).as(ContentTypes.JSON)
+    case Left(RecordNotFound) => NotFound.as(ContentTypes.JSON)
   }
 
-  def uncategorisedFoods(locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
-      Ok(write(service.uncategorisedFoods(locale))).as(ContentTypes.JSON)
-    }
-  }
-
-  def categoryContents(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
-      Ok(write(service.categoryContents(code, locale))).as(ContentTypes.JSON)
-    }
-  }
-
-  def foodParentCategories(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
-      Ok(write(service.foodParentCategories(code, locale))).as(ContentTypes.JSON)
-    }
-  }
-
-  def foodAllCategories(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
-      Ok(write(service.foodAllCategories(code, locale))).as(ContentTypes.JSON)
-    }
+  def translateResult[T](result: Either[LocaleError, T]) = result match {
+    case Right(result) => Ok(write(result)).as(ContentTypes.JSON)
+    case Left(UndefinedLocale) => NotFound.as(ContentTypes.JSON)
   }
   
+  def translateResult[T](result: Either[LocalLookupError, T]) = result match {
+    case Right(result) => Ok(write(result)).as(ContentTypes.JSON)
+    case Left(UndefinedLocale) => NotFound.as(ContentTypes.JSON)
+  }
+  
+
+  def getRootCategories(locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
+    Action {
+      translateResult(adminService.getRootCategories(locale))
+    }
+  }
+
+  def getUncategorisedFoods(locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
+    Action {
+      translateResult(adminService.getUncategorisedFoods(locale))
+    }
+  }
+
+  def getCategoryContents(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
+    Action {
+      translateResult(adminService.getCategoryContents(code, locale))
+    }
+  }
+
+  def getFoodParentCategories(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
+    Action {
+      translateResult(adminService.getFoodParentCategories(code, locale))
+    }
+  }
+
+  def getFoodAllCategories(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
+    Action {
+      translateResult(adminService.getFoodAllCategoriesHeaders(code, locale))
+    }
+  }
+
   def foodRecord(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       val result = for {
-        record <- service.foodRecord(code, locale).right
-        brandNames <- userService.brandNames(code, locale).right 
-        associatedFoods <- service.associatedFoods(code, locale).right
+        record <- adminService.getFoodRecord(code, locale).right;
+        brandNames <- adminService.getBrandNames(code, locale).right;
+        associatedFoods <- adminService.getAssociatedFoods(code, locale).right
       } yield AdminFoodRecord(record.main, record.local, brandNames, associatedFoods)
       
-      result match {
-        case Left(CodeError.RecordNotFound) => NotFound
-        case Right(record) => Ok(write(record)).as(ContentTypes.JSON)
-      }
+      translateResult(result)
     }
   }
 
@@ -107,7 +115,7 @@ class AdminFoodDataController @Inject() (service: AdminFoodDataService, userServ
       service.categoryRecord(code, locale) match {
         case Left(CodeError.RecordNotFound) => NotFound
         case Right(record) => Ok(write(AdminCategoryRecord(record.main, record.local))).as(ContentTypes.JSON)
-      }      
+      }
     }
   }
 

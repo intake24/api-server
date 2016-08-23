@@ -14,10 +14,6 @@ import be.objectify.deadbolt.scala.DeadboltActions
 import be.objectify.deadbolt.core.PatternType
 import scala.collection.mutable.Buffer
 import uk.ac.ncl.openlab.intake24.CategoryHeader
-import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService
-import uk.ac.ncl.openlab.intake24.services.UserFoodDataService
-import uk.ac.ncl.openlab.intake24.services.FoodDataError
-import uk.ac.ncl.openlab.intake24.services.LocaleManagementService
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.services.util.Timing
 import play.api.cache.CacheApi
@@ -25,8 +21,11 @@ import models.FoodProblem
 import models.CategoryProblem
 import models.RecursiveCategoryProblems
 import modules.ProblemCheckerService
+import uk.ac.ncl.openlab.intake24.foodsql.user.FoodDatabaseUserImpl
+import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 
-case class CachedProblemChecker @Inject() (userData: UserFoodDataService, adminData: AdminFoodDataService, locales: LocaleManagementService, cache: CacheApi)
+case class CachedProblemChecker @Inject() (userData: FoodDatabaseUserImpl, adminData: FoodDatabaseAdminImpl, cache: CacheApi)
     extends ProblemCheckerService with ProblemCheckerCache with Timing {
 
   val log = LoggerFactory.getLogger(classOf[CachedProblemChecker])
@@ -42,12 +41,12 @@ case class CachedProblemChecker @Inject() (userData: UserFoodDataService, adminD
 
   val maxReturnedProblems = 10
 
-  def translationRequired(localeCode: String): Boolean = cache.getOrElse(translationRequiredCacheKey(localeCode)) {
-    val currentLocale = locales.get(localeCode).get
+  private def isTranslationRequired(localeCode: String): Boolean = cache.getOrElse(translationRequiredCacheKey(localeCode)) {
+    val currentLocale = adminData.getLocale(localeCode).right.get
 
     currentLocale.prototypeLocale match {
       case Some(prototypeLocaleCode) => {
-        val prototypeLocale = locales.get(prototypeLocaleCode).get
+        val prototypeLocale = adminData.getLocale(prototypeLocaleCode).right.get
 
         currentLocale.respondentLanguage != prototypeLocale.respondentLanguage
       }
@@ -57,101 +56,112 @@ case class CachedProblemChecker @Inject() (userData: UserFoodDataService, adminD
     }
   }
 
-  def foodProblems(code: String, locale: String): Seq[FoodProblem] = cache.getOrElse(foodProblemsCacheKey(code, locale)) {
+  def getFoodProblems(code: String, locale: String): Either[LocalLookupError, Seq[FoodProblem]] = cache.getOrElse(foodProblemsCacheKey(code, locale)) {
 
-    val foodDef = adminData.foodRecord(code, locale)
-    val userFoodData = userData.foodData(code, locale)
-    val uncatFoods = adminData.uncategorisedFoods(locale)
+    for (
+      adminFoodRecord <- adminData.getFoodRecord(code, locale).right;
+      userFoodRecord <- userData.foodData(code, locale).right.map(_._1).right;
+      uncategorisedFoods <- adminData.getUncategorisedFoods(locale).right
+    ) yield {
+      val problems = Buffer[String]()
 
-    val problems = Buffer[String]()
+      if (userFoodRecord.nutrientTableCodes.isEmpty)
+        problems += NutrientCodeMissing
 
-    (foodDef, userFoodData) match {
-      case (Right(foodDef), Right((userFoodData, _))) => {
-        if (userFoodData.nutrientTableCodes.isEmpty)
-          problems += NutrientCodeMissing
+      if (userFoodRecord.groupCode == 0)
+        problems += NotAssignedToGroup
 
-        if (userFoodData.groupCode == 0)
-          problems += NotAssignedToGroup
+      if (uncategorisedFoods.exists(_.code == code))
+        problems += NotAssignedToCategory
 
-        if (uncatFoods.contains(code))
-          problems += NotAssignedToCategory
+      if (userFoodRecord.portionSize.isEmpty)
+        problems += PortionSizeMethodsEmpty
 
-        if (userFoodData.portionSize.isEmpty)
-          problems += PortionSizeMethodsEmpty
+      if (userFoodRecord.portionSize.size > 1 && userFoodRecord.portionSize.exists(x => x.description == "no description" || x.imageUrl == "images/placeholder.jpg"))
+        problems += NoMethodDescOrImage
 
-        if (userFoodData.portionSize.size > 1 && userFoodData.portionSize.exists(x => x.description == "no description" || x.imageUrl == "images/placeholder.jpg"))
-          problems += NoMethodDescOrImage
+      if (adminFoodRecord.local.localDescription.isEmpty && !adminFoodRecord.local.doNotUse && isTranslationRequired(locale))
+        problems += LocalDescriptionMissing
 
-        if (foodDef.local.localDescription.isEmpty && !foodDef.local.doNotUse && translationRequired(locale))
-          problems += LocalDescriptionMissing
+      problems.toSeq.map(pcode => FoodProblem(code, userFoodRecord.localDescription, pcode))
 
-        problems.toSeq.map(pcode => FoodProblem(code, userFoodData.localDescription, pcode))
-      }
-      case _ => Seq()
+    }
+
+  }
+
+  def getCategoryProblems(code: String, locale: String): Either[LocalLookupError, Seq[CategoryProblem]] = cache.getOrElse(categoryProblemsCacheKey(code, locale)) {
+    for (
+      contents <- adminData.getCategoryContents(code, locale).right;
+      record <- adminData.getCategoryRecord(code, locale).right
+    ) yield {
+      val size = contents.foods.size + contents.subcategories.size
+
+      val problems = Buffer[String]()
+
+      if (size == 0)
+        problems += EmptyCategory
+
+      if (size == 1)
+        problems += SingleItem
+
+      if (record.local.localDescription.isEmpty && isTranslationRequired(locale))
+        problems += LocalDescriptionMissing
+      problems.toSeq.map(pcode => CategoryProblem(code, record.local.localDescription.getOrElse(record.main.englishDescription), pcode))
     }
   }
 
-  def categoryProblems(code: String, locale: String): Seq[CategoryProblem] = cache.getOrElse[Seq[CategoryProblem]](categoryProblemsCacheKey(code, locale)) {
-    val contents = adminData.categoryContents(code, locale)
-
-    val size = contents.foods.size + contents.subcategories.size
-
-    val problems = Buffer[String]()
-
-    if (size == 0)
-      problems += EmptyCategory
-
-    if (size == 1)
-      problems += SingleItem
-
-    adminData.categoryRecord(code, locale) match {
-
-      case Right(record) => {
-        if (record.local.localDescription.isEmpty && translationRequired(locale))
-          problems += LocalDescriptionMissing
-        problems.toSeq.map(pcode => CategoryProblem(code, record.local.localDescription.getOrElse(record.main.englishDescription), pcode))
-      }
-      // FIXME: Return Either instead
-      case _ => Seq()
-    }
+  def sequence[E, T](s: Seq[Either[E, T]]): Either[E, Seq[T]] = {
+    val z: Either[E, Seq[T]] = Right(Seq())
+    s.foldLeft(z) {
+      (result, next) =>
+        for (
+          ts <- result.right;
+          t <- next.right
+        ) yield (t +: ts)
+    }.right.map(_.reverse)
   }
 
-  def recursiveCategoryProblems(code: String, locale: String, maxProblems: Int): RecursiveCategoryProblems =
-    cache.getOrElse[RecursiveCategoryProblems](recursiveCategoryProblemsCacheKey(code, locale)) {
+  def recursiveCategoryProblems(code: String, locale: String, maxProblems: Int): Either[LocalLookupError, RecursiveCategoryProblems] =
+    cache.getOrElse(recursiveCategoryProblemsCacheKey(code, locale)) {
 
-      def collectSubcategoryProblems(rem: Seq[CategoryHeader], problems: RecursiveCategoryProblems, slots: Int): RecursiveCategoryProblems = {
+      def collectSubcategoryProblems(rem: Seq[CategoryHeader], problems: Either[LocalLookupError, RecursiveCategoryProblems], slots: Int): Either[LocalLookupError, RecursiveCategoryProblems] = {
         if (rem.isEmpty || slots <= 0)
           problems
         else {
-          val p = recursiveCategoryProblems(rem.head.code, locale, slots)
-          collectSubcategoryProblems(rem.tail, problems ++ p, slots - p.count)
+          recursiveCategoryProblems(rem.head.code, locale, slots).right.flatMap {
+            p =>
+              collectSubcategoryProblems(rem.tail, problems.right.map(_ ++ p), slots - p.count)
+          }
         }
       }
 
       if (maxProblems <= 0)
-        RecursiveCategoryProblems(Seq(), Seq())
+        Right(RecursiveCategoryProblems(Seq(), Seq()))
       else {
-        val contents = adminData.categoryContents(code, locale)
+        for (
+          contents <- adminData.getCategoryContents(code, locale).right;
+          ownProblems <- getCategoryProblems(code, locale).right;
+          foodProblems <- sequence(contents.foods.map(h => getFoodProblems(h.code, locale))).right.map(_.flatten).right;
+          subcategoryProblems <- sequence(contents.subcategories.map(h => getCategoryProblems(h.code, locale))).right.map(_.flatten).right;
+          result <- {
+            var remainingProblemSlots = maxProblems
 
-        var remainingProblemSlots = maxProblems
+            val truncatedOwnProblems = ownProblems.take(remainingProblemSlots)
 
-        val ownProblems = categoryProblems(code, locale).take(remainingProblemSlots)
+            remainingProblemSlots = Math.max(0, remainingProblemSlots - ownProblems.size)
 
-        remainingProblemSlots -= ownProblems.size
+            val truncatedFoodProblems = foodProblems.take(remainingProblemSlots)
 
-        val fdProblems = contents.foods.sortBy(fh => fh.localDescription.getOrElse(fh.englishDescription)).flatMap(fh => foodProblems(fh.code, locale)).take(remainingProblemSlots)
+            remainingProblemSlots = Math.max(0, remainingProblemSlots - foodProblems.size)
 
-        remainingProblemSlots -= fdProblems.length
+            val truncatedSubcategoryProblems = subcategoryProblems.take(remainingProblemSlots)
 
-        val subcatProblems =
-          if (remainingProblemSlots > 0)
-            contents.subcategories.sortBy(ch => ch.localDescription.getOrElse(ch.englishDescription)).flatMap(ch => categoryProblems(ch.code, locale)).take(remainingProblemSlots)
-          else
-            Seq()
+            remainingProblemSlots = Math.max(0, remainingProblemSlots - subcategoryProblems.size)
 
-        remainingProblemSlots -= subcatProblems.length
+            collectSubcategoryProblems(contents.subcategories, Right(RecursiveCategoryProblems(truncatedFoodProblems, truncatedOwnProblems ++ truncatedSubcategoryProblems)), remainingProblemSlots)
 
-        collectSubcategoryProblems(contents.subcategories, RecursiveCategoryProblems(fdProblems, ownProblems ++ subcatProblems), remainingProblemSlots)
+          }.right
+        ) yield result
       }
     }
 }

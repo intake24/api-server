@@ -119,7 +119,7 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDat
     case None => Left(RecordNotFound)
   }
 
-  def guideImage(id: String) = data.guideImages.get(id) match {
+  def getGuideImage(id: String) = data.guideImages.get(id) match {
     case Some(image) => Right(image)
     case None => Left(RecordNotFound)
   }

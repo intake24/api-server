@@ -7,7 +7,7 @@ import uk.ac.ncl.openlab.intake24.GuideImage
 
 trait GuideImageAdminService extends GuideImageService {
   
-  def allGuideImages(): Either[DatabaseError, Seq[GuideHeader]]
+  def listGuideImages(): Either[DatabaseError, Seq[GuideHeader]]
   
   def deleteAllGuideImages(): Either[DatabaseError, Unit]
   

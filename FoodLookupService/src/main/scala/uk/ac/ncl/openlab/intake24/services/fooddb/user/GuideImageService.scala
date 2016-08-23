@@ -5,5 +5,5 @@ import uk.ac.ncl.openlab.intake24.GuideImage
 
 trait GuideImageService {
   
-  def guideImage(id: String): Either[LookupError, GuideImage]
+  def getGuideImage(id: String): Either[LookupError, GuideImage]
 }

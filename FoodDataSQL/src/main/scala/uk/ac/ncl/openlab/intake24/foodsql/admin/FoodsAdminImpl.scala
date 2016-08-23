@@ -82,7 +82,7 @@ trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with SqlResou
 
   private lazy val foodRecordQuery = sqlFromResource("admin/food_record.sql")
 
-  def foodRecord(code: String, locale: String): Either[LocalLookupError, FoodRecord] = tryWithConnection {
+  def getFoodRecord(code: String, locale: String): Either[LocalLookupError, FoodRecord] = tryWithConnection {
     implicit conn =>
 
       foodNutrientTableCodes(code, locale).right.flatMap {

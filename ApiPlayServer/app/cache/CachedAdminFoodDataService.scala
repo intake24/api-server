@@ -1,101 +1,108 @@
 package cache
 
-import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService
 import com.google.inject.Inject
 import play.api.cache.CacheApi
 import uk.ac.ncl.openlab.intake24.FoodHeader
 import uk.ac.ncl.openlab.intake24.CategoryHeader
 import uk.ac.ncl.openlab.intake24.CategoryContents
-import uk.ac.ncl.openlab.intake24.services.CodeError
+
 import uk.ac.ncl.openlab.intake24.FoodRecord
 import uk.ac.ncl.openlab.intake24.CategoryRecord
 import uk.ac.ncl.openlab.intake24.AsServedHeader
 import uk.ac.ncl.openlab.intake24.MainFoodRecord
-import uk.ac.ncl.openlab.intake24.services.UpdateResult
+
 import uk.ac.ncl.openlab.intake24.MainFoodRecord
-import uk.ac.ncl.openlab.intake24.services.Success
-import uk.ac.ncl.openlab.intake24.services.LocaleManagementService
 import uk.ac.ncl.openlab.intake24.LocalFoodRecord
-import uk.ac.ncl.openlab.intake24.services.NewFood
-import uk.ac.ncl.openlab.intake24.services.InvalidRequest
 import uk.ac.ncl.openlab.intake24.MainCategoryRecord
 import uk.ac.ncl.openlab.intake24.LocalCategoryRecord
-import uk.ac.ncl.openlab.intake24.services.NewCategory
-
 
 import modules.UncachedImpl
-import uk.ac.ncl.openlab.intake24.FoodGroup
+
 import uk.ac.ncl.openlab.intake24.AssociatedFoodWithHeader
 import uk.ac.ncl.openlab.intake24.AssociatedFood
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
+import uk.ac.ncl.openlab.intake24.NewFood
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentCreateError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
+import uk.ac.ncl.openlab.intake24.NewCategory
 
-case class CachedAdminFoodDataService @Inject() (@UncachedImpl service: AdminFoodDataService, localeService: LocaleManagementService, cache: CacheApi) extends AdminFoodDataService 
-  with ProblemCheckerCache with AssociatedFoodsCache {
+case class CachedFoodDatabaseAdminService @Inject() (@UncachedImpl service: FoodDatabaseAdminService, cache: CacheApi) extends FoodDatabaseAdminService
+    with ProblemCheckerCache with AssociatedFoodsCache {
 
   def uncategorisedFoodsCacheKey(locale: String) = s"AdminFoodDataService.uncategorisedFoods.$locale"
 
-  def uncategorisedFoods(locale: String): Seq[FoodHeader] = cache.getOrElse(uncategorisedFoodsCacheKey(locale)) {
-    service.uncategorisedFoods(locale)
+  def cacheResult[E, T](key: String)(block: => Either[E, T])(implicit ev: scala.reflect.ClassTag[T]) = cache.get[T](key) match {
+    case Some(cached) => Right(cached)
+    case None => block match {
+      case Right(result) => {
+        cache.set(key, result)
+        Right(result)
+      }
+      case error => error
+    }
+  }
+
+  def getUncategorisedFoods(locale: String): Either[LocaleError, Seq[FoodHeader]] = cacheResult(uncategorisedFoodsCacheKey(locale)) {
+    service.getUncategorisedFoods(locale)
   }
 
   def invalidateUncategorisedFoods(locale: String) = cache.remove(uncategorisedFoodsCacheKey(locale))
 
   def rootCategoriesCacheKey(locale: String) = s"AdminFoodDataService.rootCategories.$locale"
 
-  def rootCategories(locale: String): Seq[CategoryHeader] = cache.getOrElse(rootCategoriesCacheKey(locale)) {
-    service.rootCategories(locale)
+  def getRootCategories(locale: String): Either[LocaleError, Seq[CategoryHeader]] = cacheResult(rootCategoriesCacheKey(locale)) {
+    service.getRootCategories(locale)
   }
 
   def invalidateRootCategories(locale: String) = cache.remove(rootCategoriesCacheKey(locale))
 
   def categoryContentsCacheKey(code: String, locale: String) = s"AdminFoodDataService.rootCategories.$locale.$code"
 
-  def categoryContents(code: String, locale: String): CategoryContents = cache.getOrElse(categoryContentsCacheKey(code, locale)) {
-    service.categoryContents(code, locale)
+  def getCategoryContents(code: String, locale: String): Either[LocalLookupError, CategoryContents] = cacheResult(categoryContentsCacheKey(code, locale)) {
+    service.getCategoryContents(code, locale)
   }
 
   def invalidateCategoryContents(code: String, locale: String) = cache.remove(categoryContentsCacheKey(code, locale))
 
   def foodRecordCacheKey(code: String, locale: String) = s"AdminFoodDataService.foodRecord.$locale.$code"
 
-  def foodRecord(code: String, locale: String): Either[CodeError, FoodRecord] = {
-    val key = foodRecordCacheKey(code, locale)
-
-    cache.get[FoodRecord](key) match {
-      case Some(record) => Right(record)
-      case None => service.foodRecord(code, locale) match {
-        case result @ Right(record) => {
-          cache.set(key, record)
-          result
-        }
-        case result => result
-      }
-    }
+  def getFoodRecord(code: String, locale: String): Either[LocalLookupError, FoodRecord] = cacheResult(foodRecordCacheKey(code, locale)) {
+    service.getFoodRecord(code, locale)
   }
 
   def invalidateFoodRecord(code: String, locale: String) = cache.remove(foodRecordCacheKey(code, locale))
 
-  def isCategoryCode(code: String): Boolean = service.isCategoryCode(code)
+  def isCategoryCode(code: String): Either[LookupError, Boolean] = service.isCategoryCode(code)
 
-  def isFoodCode(code: String): Boolean = service.isFoodCode(code)
+  def isFoodCode(code: String): Either[LookupError, Boolean] = service.isFoodCode(code)
 
   def foodParentCategoriesCacheKey(code: String, locale: String) = s"AdminFoodDataService.foodParentCategories.$locale.$code"
 
-  def foodParentCategories(code: String, locale: String): Seq[CategoryHeader] = cache.getOrElse(foodParentCategoriesCacheKey(code, locale)) {
-    service.foodParentCategories(code, locale)
+  def getFoodParentCategories(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]] = cacheResult(foodParentCategoriesCacheKey(code, locale)) {
+    service.getFoodParentCategories(code, locale)
   }
 
   def invalidateFoodParentCategories(code: String, locale: String) = cache.remove(foodParentCategoriesCacheKey(code, locale))
 
   def foodAllCategoriesGlobalCacheKey(code: String) = s"AdminFoodDataService.foodAllCategoriesGlobal.$code"
 
-  def foodAllCategories(code: String): Seq[String] = cache.getOrElse(foodAllCategoriesGlobalCacheKey(code)) {
-    service.foodAllCategories(code)
+  def getFoodAllCategoriesCodes(code: String): Either[LookupError, Set[String]] = cache.getOrElse(foodAllCategoriesGlobalCacheKey(code)) {
+    service.getFoodAllCategoriesCodes(code)
   }
 
   def foodAllCategoriesLocalCacheKey(code: String, locale: String) = s"AdminFoodDataService.foodAllCategoriesLocal.$locale.$code"
 
-  def foodAllCategories(code: String, locale: String): Seq[CategoryHeader] = cache.getOrElse(foodAllCategoriesLocalCacheKey(code, locale)) {
-    service.foodAllCategories(code, locale)
+  def getFoodAllCategoriesHeaders(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]] = cacheResult(foodAllCategoriesLocalCacheKey(code, locale)) {
+    service.getFoodAllCategoriesHeaders(code, locale)
   }
 
   def invalidateFoodAllCategories(code: String, locale: String) = {
@@ -105,8 +112,8 @@ case class CachedAdminFoodDataService @Inject() (@UncachedImpl service: AdminFoo
 
   def categoryParentCategoriesCacheKey(code: String, locale: String) = s"AdminFoodDataService.categoryParentCategories.$locale.$code"
 
-  def categoryParentCategories(code: String, locale: String): Seq[CategoryHeader] = cache.getOrElse(categoryParentCategoriesCacheKey(code, locale)) {
-    service.categoryParentCategories(code, locale)
+  def getCategoryParentCategoriesHeaders(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]] = cacheResult(categoryParentCategoriesCacheKey(code, locale)) {
+    service.getCategoryParentCategories(code, locale)
   }
 
   def invalidateCategoryParentCategories(code: String, locale: String) = {
@@ -115,14 +122,14 @@ case class CachedAdminFoodDataService @Inject() (@UncachedImpl service: AdminFoo
 
   def categoryAllCategoriesGlobalCacheKey(code: String) = s"AdminFoodDataService.categoryAllCategoriesGlobal.$code"
 
-  def categoryAllCategories(code: String): Seq[String] = cache.getOrElse(categoryAllCategoriesGlobalCacheKey(code)) {
-    service.categoryAllCategories(code)
+  def getCategoryAllCategoriesCodes(code: String): Either[LookupError, Set[String]] = cacheResult(categoryAllCategoriesGlobalCacheKey(code)) {
+    service.getCategoryAllCategoriesCodes(code)
   }
 
   def categoryAllCategoriesLocalCacheKey(code: String, locale: String) = s"AdminFoodDataService.categoryAllCategoriesLocal.$locale.$code"
 
-  def categoryAllCategories(code: String, locale: String): Seq[CategoryHeader] = cache.getOrElse(categoryAllCategoriesLocalCacheKey(code, locale)) {
-    service.categoryAllCategories(code, locale)
+  def getCategoryAllCategoriesHeaders(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]] = cacheResult(categoryAllCategoriesLocalCacheKey(code, locale)) {
+    service.getCategoryAllCategoriesHeaders(code, locale)
   }
 
   def invalidateCategoryAllCategories(code: String, locale: String) = {
@@ -132,19 +139,8 @@ case class CachedAdminFoodDataService @Inject() (@UncachedImpl service: AdminFoo
 
   def categoryRecordCacheKey(code: String, locale: String) = s"AdminFoodDataService.categoryRecord.$locale.$code"
 
-  def categoryRecord(code: String, locale: String): Either[CodeError, CategoryRecord] = {
-    val key = categoryRecordCacheKey(code, locale)
-
-    cache.get[CategoryRecord](key) match {
-      case Some(record) => Right(record)
-      case None => service.categoryRecord(code, locale) match {
-        case result @ Right(record) => {
-          cache.set(key, record)
-          result
-        }
-        case result => result
-      }
-    }
+  def getCategoryRecord(code: String, locale: String): Either[LocalLookupError, CategoryRecord] = cacheResult(categoryRecordCacheKey(code, locale)) {
+    service.getCategoryRecord(code, locale)
   }
 
   def invalidateCategoryRecord(code: String, locale: String) =
@@ -152,287 +148,258 @@ case class CachedAdminFoodDataService @Inject() (@UncachedImpl service: AdminFoo
 
   def allAsServedSetsCacheKey() = s"AdminFoodDataService.allAsServedSets"
 
-  def allAsServedSets() = cache.getOrElse(allAsServedSetsCacheKey()) {
-    service.allAsServedSets()
+  def listAsServedSets(): Either[DatabaseError, Map[String, AsServedHeader]] = cacheResult(allAsServedSetsCacheKey()) {
+    service.listAsServedSets()
   }
 
   def allGuideImagesCacheKey() = s"AdminFoodDataService.allGuideImages"
 
-  def allGuideImages() = cache.getOrElse(allGuideImagesCacheKey()) {
-    service.allGuideImages()
+  def listGuideImages() = cacheResult(allGuideImagesCacheKey()) {
+    service.listGuideImages()
   }
 
   def allDrinkwareCacheKey() = s"AdminFoodDataService.allDrinkware"
 
-  def allDrinkware() = cache.getOrElse(allDrinkwareCacheKey()) {
-    service.allDrinkware()
+  def listDrinkwareSets() = cacheResult(allDrinkwareCacheKey()) {
+    service.listDrinkwareSets()
   }
 
   def allFoodGroupsCacheKey(locale: String) = s"AdminFoodDataService.allFoodGroups.$locale"
 
-  def allFoodGroups(locale: String) = cache.getOrElse(allFoodGroupsCacheKey(locale)) {
-    service.allFoodGroups(locale)
+  def listFoodGroups(locale: String) = cacheResult(allFoodGroupsCacheKey(locale)) {
+    service.listFoodGroups(locale)
   }
 
   def foodGroupCacheKey(code: Int, locale: String) = s"AdminFoodDataService.foodGroup.$locale.$code"
 
-  def foodGroup(code: Int, locale: String) = {
-    val key = foodGroupCacheKey(code, locale)
-    cache.get[FoodGroup](key) match {
-
-      case Some(group) => Some(group)
-      case None => service.foodGroup(code, locale) match {
-        case x @ Some(group) => {
-          cache.set(key, group)
-          x
-        }
-        case x => x
-      }
-    }
+  def getrFoodGroup(code: Int, locale: String) = cacheResult(foodGroupCacheKey(code, locale)) {
+    service.getFoodGroup(code, locale)
   }
 
   def nutrientTablesCacheKey() = s"AdminFoodDataService.nutrientTables"
 
-  def nutrientTables() = cache.getOrElse(nutrientTablesCacheKey()) {
-    service.nutrientTables()
+  def listNutrientTables() = cacheResult(nutrientTablesCacheKey()) {
+    service.listNutrientTables()
   }
 
   // These are intentionally uncached
 
-  def searchFoods(searchTerm: String, locale: String): Seq[FoodHeader] = service.searchFoods(searchTerm, locale)
+  def searchFoods(searchTerm: String, locale: String): Either[LocaleError, Seq[FoodHeader]] = service.searchFoods(searchTerm, locale)
 
-  def searchCategories(searchTerm: String, locale: String): Seq[CategoryHeader] = service.searchCategories(searchTerm, locale)
+  def searchCategories(searchTerm: String, locale: String): Either[LocaleError, Seq[CategoryHeader]] = service.searchCategories(searchTerm, locale)
 
   // Write
-  
+
   def invalidateProblemsForFood(code: String, locale: String) = {
-    
+
     invalidateFoodProblems(code, locale)
-    
-    foodAllCategories(code, locale).foreach {
-      header =>
-        invalidateRecursiveCategoryProblems(header.code, locale)
+
+    getFoodAllCategoriesCodes(code).right.get.foreach {
+      code =>
+        invalidateRecursiveCategoryProblems(code, locale)
     }
   }
 
   def invalidateProblemsForCategory(code: String, locale: String) = {
     invalidateCategoryProblems(code, locale)
-    
-    categoryAllCategories(code, locale).foreach {
-      header =>
+
+    getCategoryAllCategoriesCodes(code).right.get.foreach {
+      code =>
         invalidateRecursiveCategoryProblems(code, locale)
     }
   }
 
-  def updateFoodBase(foodCode: String, foodBase: MainFoodRecord): UpdateResult = {
-    val result = service.updateFoodBase(foodCode, foodBase)
+  def updateMainFoodRecord(foodCode: String, foodBase: MainFoodRecord): Either[UpdateError, Unit] = {
+    service.updateMainFoodRecord(foodCode, foodBase).right.map {
+      _ =>
 
-    if (result == Success) {
+        val codes = service.getFoodAllCategoriesCodes(foodCode).right.get
+        val locales = service.listLocales().right.get
 
-      val categories = foodAllCategories(foodCode)
+        locales.keySet.foreach {
+          locale_id =>
+            invalidateFoodRecord(foodCode, locale_id)
+            invalidateProblemsForFood(foodCode, locale_id)
 
-      localeService.list.foreach {
-        locale =>
-          invalidateFoodRecord(foodCode, locale.id)
-          invalidateProblemsForFood(foodCode, locale.id)
-      }
+            codes.foreach(invalidateRecursiveCategoryProblems(_, locale_id))
+        }
     }
-
-    result
   }
 
-  def updateFoodLocal(foodCode: String, locale: String, foodLocal: LocalFoodRecord): UpdateResult = {
-    val result = service.updateFoodLocal(foodCode, locale, foodLocal)
+  def updateFoodLocal(foodCode: String, locale: String, foodLocal: LocalFoodRecord): Either[LocalUpdateError, Unit] = {
+    service.updateLocalFoodRecord(foodCode, locale, foodLocal).right.map {
+      _ =>
 
-    if (result == Success) {
-      invalidateFoodRecord(foodCode, locale)
-      invalidateProblemsForFood(foodCode, locale)
+        val codes = service.getFoodAllCategoriesCodes(foodCode).right.get
+
+        invalidateFoodRecord(foodCode, locale)
+        invalidateProblemsForFood(foodCode, locale)
+
+        codes.foreach(invalidateRecursiveCategoryProblems(_, locale))
     }
-
-    result
   }
 
   // Intentionally uncached
-  def isFoodCodeAvailable(code: String): Boolean = service.isFoodCodeAvailable(code)
+  def isFoodCodeAvailable(code: String): Either[LookupError, Boolean] = service.isFoodCodeAvailable(code)
 
-  // Does not affect cache
-  def createFood(newFood: NewFood): UpdateResult = service.createFood(newFood)
+  def createFood(newFood: NewFood): Either[DependentCreateError, Unit] = service.createFood(newFood).right.map {
+    _ =>
+      val locales = service.listLocales().right.get
+      locales.keySet.foreach(invalidateUncategorisedFoods(_))
+  }
 
-  // Does not affect cache
-  def createFoodWithTempCode(newFood: NewFood): Either[InvalidRequest, String] = service.createFoodWithTempCode(newFood)
+  def createFoodWithTempCode(newFood: NewFood): Either[DependentCreateError, String] =
+    service.createFoodWithTempCode(newFood).right.map {
+      code =>
+        val locales = service.listLocales().right.get
+        locales.keySet.foreach(invalidateUncategorisedFoods(_))
+        code
+    }
 
-  def deleteFood(foodCode: String): UpdateResult = {
-    val categories = foodAllCategories(foodCode)
+  def deleteFood(foodCode: String): Either[DeleteError, Unit] = service.deleteFood(foodCode).right.map {
+    _ =>
+      val categories = service.getFoodAllCategoriesCodes(foodCode).right.get
+      val locales = service.listLocales().right.get
 
-    val result = service.deleteFood(foodCode)
+      locales.keySet.foreach {
+        locale_id =>
 
-    if (result == Success) {
-
-      localeService.list.foreach {
-        locale =>
-          invalidateFoodRecord(foodCode, locale.id)
-          invalidateProblemsForFood(foodCode, locale.id)
-          invalidateFoodParentCategories(foodCode, locale.id)
+          invalidateFoodRecord(foodCode, locale_id)
+          invalidateProblemsForFood(foodCode, locale_id)
+          invalidateFoodParentCategories(foodCode, locale_id)
 
           if (categories.isEmpty)
-            invalidateUncategorisedFoods(locale.id)
+            invalidateUncategorisedFoods(locale_id)
 
           categories.foreach {
             categoryCode =>
-              invalidateProblemsForCategory(categoryCode, locale.id)
-              invalidateCategoryContents(categoryCode, locale.id)
+              invalidateProblemsForCategory(categoryCode, locale_id)
+              invalidateCategoryContents(categoryCode, locale_id)
           }
       }
-    }
-
-    result
   }
 
-  def updateCategoryBase(categoryCode: String, categoryBase: MainCategoryRecord): UpdateResult = {
-    val result = service.updateCategoryBase(categoryCode, categoryBase)
+  def updateCategoryMainRecord(categoryCode: String, categoryBase: MainCategoryRecord): Either[UpdateError, Unit] =
+    service.updateCategoryMainRecord(categoryCode, categoryBase).right.map {
+      _ =>
+        val categories = service.getCategoryAllCategoriesCodes(categoryCode).right.get
+        val locales = service.listLocales().right.get
 
-    if (result == Success) {
+        locales.keySet.foreach {
+          locale_id =>
+            invalidateCategoryRecord(categoryCode, locale_id)
+            invalidateProblemsForCategory(categoryCode, locale_id)
 
-      val categories = categoryAllCategories(categoryCode)
-
-      localeService.list.foreach {
-        locale =>
-          invalidateCategoryRecord(categoryCode, locale.id)
-          invalidateProblemsForCategory(categoryCode, locale.id)
-      }
+            categories.foreach(invalidateRecursiveCategoryProblems(_, locale_id))
+        }
     }
 
-    result
-  }
+  def updateCategoryLocalRecord(categoryCode: String, locale: String, categoryLocal: LocalCategoryRecord): Either[LocalUpdateError, Unit] =
+    service.updateCategoryLocalRecord(categoryCode, locale, categoryLocal).right.map {
+      _ =>
+        val categories = service.getCategoryAllCategoriesCodes(categoryCode).right.get
 
-  def updateCategoryLocal(categoryCode: String, locale: String, categoryLocal: LocalCategoryRecord): UpdateResult = {
-    val result = service.updateCategoryLocal(categoryCode, locale, categoryLocal)
+        invalidateCategoryRecord(categoryCode, locale)
+        invalidateProblemsForCategory(categoryCode, locale)
 
-    if (result == Success) {
-      invalidateCategoryRecord(categoryCode, locale)
-      invalidateProblemsForCategory(categoryCode, locale)
+        categories.foreach(invalidateRecursiveCategoryProblems(_, locale))
     }
-
-    result
-  }
 
   // Intentionally uncached
-  def isCategoryCodeAvailable(code: String): Boolean = service.isCategoryCodeAvailable(code)
+  def isCategoryCodeAvailable(code: String): Either[LookupError, Boolean] = service.isCategoryCodeAvailable(code)
 
-  // Does not affect cache
-  def createCategory(newCategory: NewCategory): UpdateResult = service.createCategory(newCategory)
+  def createCategory(newCategory: NewCategory): Either[CreateError, Unit] = service.createCategory(newCategory) // root categories?
 
-  def deleteCategory(categoryCode: String): UpdateResult = {
-    val categories = categoryAllCategories(categoryCode)
-
-    val result = service.deleteCategory(categoryCode)
-
-    if (result == Success) {
-
-      localeService.list.foreach {
-        locale =>
-          invalidateCategoryRecord(categoryCode, locale.id)
-          invalidateProblemsForCategory(categoryCode, locale.id)
-          invalidateCategoryParentCategories(categoryCode, locale.id)
-          invalidateRootCategories(locale.id)
+  def deleteCategory(categoryCode: String): Either[DeleteError, Unit] = service.deleteCategory(categoryCode).right.map {
+    _ =>
+      val categories = getCategoryAllCategoriesCodes(categoryCode).right.get
+      val locales = listLocales().right.get
+      locales.keySet.foreach {
+        locale_id =>
+          invalidateCategoryRecord(categoryCode, locale_id)
+          invalidateProblemsForCategory(categoryCode, locale_id)
+          invalidateCategoryParentCategories(categoryCode, locale_id)
+          invalidateRootCategories(locale_id)
 
           categories.foreach {
             categoryCode =>
-              invalidateProblemsForCategory(categoryCode, locale.id)
-              invalidateCategoryContents(categoryCode, locale.id)
+              invalidateProblemsForCategory(categoryCode, locale_id)
+              invalidateCategoryContents(categoryCode, locale_id)
           }
       }
-    }
-
-    result
   }
 
-  def addFoodToCategory(categoryCode: String, foodCode: String): UpdateResult = {
-    val result = service.addFoodToCategory(categoryCode, foodCode)
+  def addFoodToCategory(categoryCode: String, foodCode: String): Either[UpdateError, Unit] = service.addFoodToCategory(categoryCode, foodCode).right.map {
+    _ =>
+      val locales = service.listLocales().right.get
 
-    if (result == Success) {
-      localeService.list.foreach {
-        locale =>
-          invalidateFoodParentCategories(foodCode, locale.id)
-          invalidateCategoryContents(categoryCode, locale.id)
-          invalidateUncategorisedFoods(locale.id)
+      locales.keySet.foreach {
+        locale_id =>
+          invalidateFoodParentCategories(foodCode, locale_id)
+          invalidateCategoryContents(categoryCode, locale_id)
+          invalidateUncategorisedFoods(locale_id)
 
-          invalidateProblemsForFood(foodCode, locale.id)
-          invalidateProblemsForCategory(categoryCode, locale.id)
+          invalidateProblemsForFood(foodCode, locale_id)
+          invalidateProblemsForCategory(categoryCode, locale_id)
       }
+  }
+
+  def addSubcategoryToCategory(categoryCode: String, subcategoryCode: String): Either[UpdateError, Unit] =
+    service.addSubcategoryToCategory(categoryCode, subcategoryCode).right.map {
+      _ =>
+        val locales = service.listLocales().right.get
+        locales.keySet.foreach {
+          locale_id =>
+            invalidateRootCategories(locale_id)
+
+            invalidateCategoryParentCategories(subcategoryCode, locale_id)
+            invalidateCategoryContents(categoryCode, locale_id)
+
+            invalidateProblemsForCategory(subcategoryCode, locale_id)
+            invalidateProblemsForCategory(categoryCode, locale_id)
+        }
     }
 
-    result
-  }
+  def removeFoodFromCategory(categoryCode: String, foodCode: String): Either[UpdateError, Unit] =
+    service.removeFoodFromCategory(categoryCode, foodCode).right.map {
+      _ =>
+        val locales = service.listLocales().right.get
+        locales.keySet.foreach {
+          locale_id =>
+            invalidateFoodAllCategories(foodCode, locale_id)
+            invalidateFoodParentCategories(foodCode, locale_id)
+            invalidateCategoryContents(categoryCode, locale_id)
+            invalidateUncategorisedFoods(locale_id)
 
-  def addSubcategoryToCategory(categoryCode: String, subcategoryCode: String): UpdateResult = {
-    val result = service.addSubcategoryToCategory(categoryCode, subcategoryCode)
-
-    if (result == Success) {
-      localeService.list.foreach {
-        locale =>
-          invalidateRootCategories(locale.id)
-
-          invalidateCategoryParentCategories(subcategoryCode, locale.id)
-          invalidateCategoryContents(categoryCode, locale.id)
-
-          invalidateProblemsForCategory(subcategoryCode, locale.id)
-          invalidateProblemsForCategory(categoryCode, locale.id)
-      }
-    }
-    
-    result
-  }
-
-  def removeFoodFromCategory(categoryCode: String, foodCode: String): UpdateResult = {
-    val result = service.removeFoodFromCategory(categoryCode, foodCode)
-
-    if (result == Success) {
-      localeService.list.foreach {
-        locale =>
-          invalidateFoodAllCategories(foodCode, locale.id)
-          invalidateFoodParentCategories(foodCode, locale.id)
-          invalidateCategoryContents(categoryCode, locale.id)
-          invalidateUncategorisedFoods(locale.id)
-
-          invalidateProblemsForFood(foodCode, locale.id)
-          invalidateProblemsForCategory(categoryCode, locale.id)
-      }
+            invalidateProblemsForFood(foodCode, locale_id)
+            invalidateProblemsForCategory(categoryCode, locale_id)
+        }
     }
 
-    result
-  }
+  def removeSubcategoryFromCategory(categoryCode: String, subcategoryCode: String): Either[UpdateError, Unit] =
+    service.removeSubcategoryFromCategory(categoryCode, subcategoryCode).right.map {
+      _ =>
+        val locales = service.listLocales().right.get
+        locales.keySet.foreach {
+          locale_id =>
+            invalidateCategoryAllCategories(subcategoryCode, locale_id)
+            invalidateCategoryParentCategories(subcategoryCode, locale_id)
+            invalidateCategoryContents(categoryCode, locale_id)
+            invalidateRootCategories(locale_id)
 
-  def removeSubcategoryFromCategory(categoryCode: String, subcategoryCode: String): UpdateResult = {
-    val result = service.removeSubcategoryFromCategory(categoryCode, subcategoryCode)
-
-    if (result == Success) {
-      localeService.list.foreach {
-        locale =>
-          invalidateCategoryAllCategories(subcategoryCode, locale.id)
-          invalidateCategoryParentCategories(subcategoryCode, locale.id)
-          invalidateCategoryContents(categoryCode, locale.id)
-          invalidateRootCategories(locale.id)
-          
-          invalidateProblemsForCategory(categoryCode, locale.id)
-          invalidateProblemsForCategory(subcategoryCode, locale.id)
-      }
+            invalidateProblemsForCategory(categoryCode, locale_id)
+            invalidateProblemsForCategory(subcategoryCode, locale_id)
+        }
     }
-    
-    result
-  }
-  
-  def associatedFoods(foodCode: String, locale: String): Either[CodeError, Seq[AssociatedFoodWithHeader]] = cache.getOrElse(associatedFoodsCacheKey(foodCode, locale)) {
-    service.associatedFoods(foodCode, locale)
+
+  def getAssociatedFoodsWithHeaders(foodCode: String, locale: String): Either[LocalLookupError, Seq[AssociatedFoodWithHeader]] = cacheResult(associatedFoodsCacheKey(foodCode, locale)) {
+    service.getAssociatedFoodsWithHeaders(foodCode, locale)
   }
 
-  def updateAssociatedFoods(foodCode: String, locale: String, associatedFoods: Seq[AssociatedFood]): UpdateResult = {
-    val result = service.updateAssociatedFoods(foodCode, locale, associatedFoods)
-    
-    if (result == Success)
-      invalidateAssociatedFoods(foodCode, locale)
-    
-    result
-  }
+  def updateAssociatedFoods(foodCode: String, locale: String, associatedFoods: Seq[AssociatedFood]): Either[LocalUpdateError, Unit] =
+    service.updateAssociatedFoods(foodCode, locale, associatedFoods).right.map {
+      _ =>
+        invalidateAssociatedFoods(foodCode, locale)
+    }
 
 }

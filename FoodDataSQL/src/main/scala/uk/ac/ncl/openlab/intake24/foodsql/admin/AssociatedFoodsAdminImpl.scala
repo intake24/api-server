@@ -31,8 +31,9 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentCreateErr
 import anorm.SqlParser
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentRecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
+import uk.ac.ncl.openlab.intake24.foodsql.user.AssociatedFoodsUserImpl
 
-trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with SqlDataService with SqlResourceLoader with SimpleValidation {
+trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with AssociatedFoodsUserImpl with SqlDataService with SqlResourceLoader with SimpleValidation {
 
   private val logger = LoggerFactory.getLogger(classOf[AssociatedFoodsAdminImpl])
 
