@@ -90,11 +90,11 @@ trait FoodBrowsingAdminImpl extends FoodBrowsingAdminService
   }
 
   def getFoodAllCategoriesCodes(code: String): Either[LookupError, Set[String]] = tryWithConnection {
-    implicit conn => foodAllCategoriesImpl(code)
+    implicit conn => foodAllCategoriesCodesImpl(code)
   }
 
   def getFoodAllCategoriesHeaders(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]] = tryWithConnection {
-    implicit conn => foodAllCategoriesImpl(code, locale)
+    implicit conn => foodAllCategoriesHeadersImpl(code, locale)
   }
 
   def getCategoryParentCategories(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]] = tryWithConnection {
@@ -116,10 +116,10 @@ trait FoodBrowsingAdminImpl extends FoodBrowsingAdminService
   }
 
   def getCategoryAllCategoriesCodes(code: String): Either[LookupError, Set[String]] = tryWithConnection {
-    implicit conn => categoryAllCategoriesImpl(code)
+    implicit conn => categoryAllCategoriesCodesImpl(code)
   }
 
   def getCategoryAllCategoriesHeaders(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]] = tryWithConnection {
-    implicit conn => categoryAllCategoriesImpl(code, locale)
+    implicit conn => categoryAllCategoriesHeadersImpl(code, locale)
   }
 }
