@@ -9,27 +9,25 @@ import play.api.mvc.Action
 import upickle.default._
 import play.api.http.ContentTypes
 
-class ProblemCheckerController @Inject() (service: ProblemCheckerService, deadbolt: DeadboltActions) extends Controller {
+class ProblemCheckerController @Inject() (service: ProblemCheckerService, deadbolt: DeadboltActions) extends Controller with ApiErrorHandler {
 
   val maxReturnedProblems = 10
 
   def checkFood(code: String, locale: String) = deadbolt.Restrict(List(Array("superuser"))) {
     Action {
-      Ok(write(service.foodProblems(code, locale))).as(ContentTypes.JSON)
+      translateResult(service.getFoodProblems(code, locale))
     }
   }
 
   def checkCategory(code: String, locale: String) = deadbolt.Restrict(List(Array("superuser"))) {
     Action {
-
-      Ok(write(service.categoryProblems(code, locale))).as(ContentTypes.JSON)
+      translateResult(service.getCategoryProblems(code, locale))
     }
   }
 
   def checkCategoryRecursive(code: String, locale: String) = deadbolt.Restrict(List(Array("superuser"))) {
     Action {
-
-      Ok(write(service.recursiveCategoryProblems(code, locale, maxReturnedProblems))).as(ContentTypes.JSON)
+      translateResult(service.getRecursiveCategoryProblems(code, locale, maxReturnedProblems))
     }
   }
 }

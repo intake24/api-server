@@ -5,5 +5,5 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 
 trait AssociatedFoodsService {
 
-  def associatedFoods(foodCode: String, locale: String): Either[LocalLookupError, Seq[AssociatedFood]]
+  def getAssociatedFoods(foodCode: String, locale: String): Either[LocalLookupError, Seq[AssociatedFood]]
 }

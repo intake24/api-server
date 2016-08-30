@@ -138,14 +138,14 @@ class FoodBrowsingAdminSuite(service: FoodDatabaseAdminService) extends FunSuite
   private def makeHidden(categoryCode: String) = {
     service.getCategoryRecord(categoryCode, testLocale.id).right.flatMap {
       record =>
-        service.updateCategoryMainRecord(categoryCode, record.main.copy(isHidden = true))
+        service.updateMainCategoryRecord(categoryCode, record.main.copy(isHidden = true))
     }
   }
 
   private def makeNonHidden(categoryCode: String) = {
     service.getCategoryRecord(categoryCode, testLocale.id).right.flatMap {
       record =>
-        service.updateCategoryMainRecord(categoryCode, record.main.copy(isHidden = false))
+        service.updateMainCategoryRecord(categoryCode, record.main.copy(isHidden = false))
     }
   }
   
@@ -172,7 +172,7 @@ class FoodBrowsingAdminSuite(service: FoodDatabaseAdminService) extends FunSuite
        cat =>
          val result = service.getCategoryRecord(cat.code, testLocale.id).right.flatMap {
            rec =>
-             service.updateCategoryMainRecord(cat.code, rec.main.copy(isHidden = cat.isHidden))
+             service.updateMainCategoryRecord(cat.code, rec.main.copy(isHidden = cat.isHidden))
          }
          assert(result === Right(()))
      }

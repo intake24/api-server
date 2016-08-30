@@ -37,7 +37,7 @@ import java.lang.annotation.Retention
 import com.google.inject.BindingAnnotation
 import java.lang.annotation.RetentionPolicy
 import java.lang.annotation.Annotation
-import cache.CachedAdminFoodDataService
+
 import cache.CachedProblemChecker
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDatabaseService
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
@@ -45,6 +45,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
 import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
 import uk.ac.ncl.openlab.intake24.foodsql.user.FoodDatabaseUserImpl
 import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl
+import cache.CachedFoodDatabaseAdminService
 
 
 class Intake24ServicesModule(env: Environment, config: Configuration) extends AbstractModule {

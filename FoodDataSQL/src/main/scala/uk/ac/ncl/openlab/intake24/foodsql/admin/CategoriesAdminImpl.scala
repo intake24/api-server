@@ -113,7 +113,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService
       }
   }
 
-  def updateCategoryMainRecord(categoryCode: String, categoryBase: MainCategoryRecord): Either[UpdateError, Unit] = tryWithConnection {
+  def updateMainCategoryRecord(categoryCode: String, categoryBase: MainCategoryRecord): Either[UpdateError, Unit] = tryWithConnection {
     implicit conn =>
       conn.setAutoCommit(false)
 
@@ -201,7 +201,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService
     }
   }
 
-  def updateCategoryLocalRecord(categoryCode: String, locale: String, categoryLocal: LocalCategoryRecord): Either[LocalUpdateError, Unit] = tryWithConnection {
+  def updateLocalCategoryRecord(categoryCode: String, locale: String, categoryLocal: LocalCategoryRecord): Either[LocalUpdateError, Unit] = tryWithConnection {
     implicit conn =>
       conn.setAutoCommit(false)
       conn.setTransactionIsolation(java.sql.Connection.TRANSACTION_REPEATABLE_READ)

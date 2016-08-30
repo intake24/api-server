@@ -129,7 +129,7 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDat
     case None => Left(RecordNotFound)
   }
 
-  def associatedFoods(foodCode: String, locale: String) = {
+  def getAssociatedFoods(foodCode: String, locale: String) = {
     checkLocale(locale)
     data.prompts.get(foodCode) match {
       case Some(seq) => {

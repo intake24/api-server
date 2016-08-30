@@ -31,25 +31,22 @@ import javax.inject.Inject
 import be.objectify.deadbolt.scala.DeadboltActions
 import be.objectify.deadbolt.core.PatternType
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex
-import uk.ac.ncl.openlab.intake24.services.LocaleManagementService
 import security.Permissions
 import security.Roles
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.LocalesAdminService
 
 
-class LocaleController @Inject() (service: LocaleManagementService, deadbolt: DeadboltActions) extends Controller {
+class LocalesAdminController @Inject() (service: LocalesAdminService, deadbolt: DeadboltActions) extends Controller with ApiErrorHandler {
   
-  def list = deadbolt.Restrict(List(Array(Roles.superuser))) {
+  def listLocales() = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      Ok(write(service.list)).as(ContentTypes.JSON)
+      translateResult(service.listLocales())
     }
   }
   
-  def get(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
+  def getLocale(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      service.get(id) match {
-        case None => NotFound
-        case Some(locale) => Ok(write(locale)).as(ContentTypes.JSON)
-      }
+      translateResult(service.getLocale(id))
     }
   }
 }

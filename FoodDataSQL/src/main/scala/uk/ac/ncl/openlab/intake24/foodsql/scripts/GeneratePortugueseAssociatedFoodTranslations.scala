@@ -25,7 +25,7 @@ object GeneratePortugueseAssociatedFoodTranslations extends App with DatabaseScr
   
   val csvRows = indexService.indexableFoods(portugueseLocaleCode).right.get.flatMap {
     foodHeader =>
-      dataService.associatedFoods(foodHeader.code, baseLocaleCode) match {
+      dataService.getAssociatedFoods(foodHeader.code, baseLocaleCode) match {
         case Right(prompts) => prompts.toArray.map {
           prompt =>
             val assocFood = prompt.foodOrCategoryCode.left.toOption.getOrElse("")

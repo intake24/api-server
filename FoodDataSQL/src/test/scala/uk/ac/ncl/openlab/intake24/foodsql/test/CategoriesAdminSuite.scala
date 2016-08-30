@@ -153,7 +153,7 @@ class CategoriesAdminSuite(service: FoodDatabaseAdminService) extends FunSuite w
     // Get current version and update
     assert(service.getCategoryRecord(categories(0).code, testLocale.id).right.flatMap {
       catRec =>
-        service.updateCategoryMainRecord(catRec.main.code, catRec.main.copy(englishDescription = newDescription, code = newCode, attributes = newAttributes))
+        service.updateMainCategoryRecord(catRec.main.code, catRec.main.copy(englishDescription = newDescription, code = newCode, attributes = newAttributes))
     } === Right(()))
 
     // Check upated description
@@ -170,7 +170,7 @@ class CategoriesAdminSuite(service: FoodDatabaseAdminService) extends FunSuite w
     // Get current version and update
     assert(service.getCategoryRecord(categories(1).code, testLocale.id).right.flatMap {
       catRec =>
-        service.updateCategoryLocalRecord(categories(1).code, testLocale.id, catRec.local.copy(localDescription = newDescription, portionSize = newPsm))
+        service.updateLocalCategoryRecord(categories(1).code, testLocale.id, catRec.local.copy(localDescription = newDescription, portionSize = newPsm))
     } === Right(()))
 
     // Check upated description
@@ -180,15 +180,15 @@ class CategoriesAdminSuite(service: FoodDatabaseAdminService) extends FunSuite w
   }
 
   test("Attempt to update an undefined category main record") {
-    assert(service.updateCategoryMainRecord(undefinedCode, MainCategoryRecord(dummyVersion, categories(1).code, categories(1).englishDescription, categories(1).isHidden, categories(1).attributes)) === Left(RecordNotFound))
+    assert(service.updateMainCategoryRecord(undefinedCode, MainCategoryRecord(dummyVersion, categories(1).code, categories(1).englishDescription, categories(1).isHidden, categories(1).attributes)) === Left(RecordNotFound))
   }
 
   test("Attempt to update an undefined category local record") {
-    assert(service.updateCategoryLocalRecord(undefinedCode, testLocale.id, LocalCategoryRecord(Some(dummyVersion), categoriesLocal(categories(1).code).localDescription, categoriesLocal(categories(1).code).portionSize)) === Left(RecordNotFound))
+    assert(service.updateLocalCategoryRecord(undefinedCode, testLocale.id, LocalCategoryRecord(Some(dummyVersion), categoriesLocal(categories(1).code).localDescription, categoriesLocal(categories(1).code).portionSize)) === Left(RecordNotFound))
   }
 
   test("Attempt to update an category local record for undefined locale") {
-    assert(service.updateCategoryLocalRecord(categories(1).code, undefinedLocaleId, LocalCategoryRecord(Some(dummyVersion), categoriesLocal(categories(1).code).localDescription, categoriesLocal(categories(1).code).portionSize)) === Left(UndefinedLocale))
+    assert(service.updateLocalCategoryRecord(categories(1).code, undefinedLocaleId, LocalCategoryRecord(Some(dummyVersion), categoriesLocal(categories(1).code).localDescription, categoriesLocal(categories(1).code).portionSize)) === Left(UndefinedLocale))
   }
 
   test("Recreate categories for following tests") {

@@ -26,7 +26,7 @@ import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 
 case class CachedProblemChecker @Inject() (userData: FoodDatabaseUserImpl, adminData: FoodDatabaseAdminImpl, cache: CacheApi)
-    extends ProblemCheckerService with ProblemCheckerCache with Timing {
+    extends ProblemCheckerService with ProblemCheckerCacheKeys with Timing {
 
   val log = LoggerFactory.getLogger(classOf[CachedProblemChecker])
 
@@ -121,14 +121,14 @@ case class CachedProblemChecker @Inject() (userData: FoodDatabaseUserImpl, admin
     }.right.map(_.reverse)
   }
 
-  def recursiveCategoryProblems(code: String, locale: String, maxProblems: Int): Either[LocalLookupError, RecursiveCategoryProblems] =
+  def getRecursiveCategoryProblems(code: String, locale: String, maxProblems: Int): Either[LocalLookupError, RecursiveCategoryProblems] =
     cache.getOrElse(recursiveCategoryProblemsCacheKey(code, locale)) {
 
       def collectSubcategoryProblems(rem: Seq[CategoryHeader], problems: Either[LocalLookupError, RecursiveCategoryProblems], slots: Int): Either[LocalLookupError, RecursiveCategoryProblems] = {
         if (rem.isEmpty || slots <= 0)
           problems
         else {
-          recursiveCategoryProblems(rem.head.code, locale, slots).right.flatMap {
+          getRecursiveCategoryProblems(rem.head.code, locale, slots).right.flatMap {
             p =>
               collectSubcategoryProblems(rem.tail, problems.right.map(_ ++ p), slots - p.count)
           }

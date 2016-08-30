@@ -2,7 +2,7 @@ package cache
 
 import play.api.cache.CacheApi
 
-trait ProblemCheckerCache {
+trait ProblemCheckerCacheKeys {
   
   val cache: CacheApi
   

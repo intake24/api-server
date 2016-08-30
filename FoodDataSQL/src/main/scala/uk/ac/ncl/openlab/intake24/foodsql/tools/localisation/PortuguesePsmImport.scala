@@ -41,7 +41,7 @@ object PortuguesePsmImport extends App with WarningMessage with DatabaseConnecti
 
   logger.info("Retrieving guide image headers")
   
-  val guideImages = dataService.allGuideImages().right.get.map(_.id).toSet
+  val guideImages = dataService.listGuideImages().right.get.map(_.id).toSet
 
   logger.info("Retrieving as served set headers")
   val asServedSets = dataService.listAsServedSets().right.get.keySet
@@ -54,7 +54,7 @@ object PortuguesePsmImport extends App with WarningMessage with DatabaseConnecti
     (index, header) =>
       logger.info(s"Processing ${header.toString}")
 
-      dataService.foodRecord(header.code, "en_GB") match {
+      dataService.getFoodRecord(header.code, "en_GB") match {
         case Right(record) =>
           record.local.portionSize.foldLeft(index) {
             (index, psm) =>
@@ -123,7 +123,7 @@ object PortuguesePsmImport extends App with WarningMessage with DatabaseConnecti
     key => 
       logger.info(s"Updating $key")
       
-      dataService.foodRecord(key, "pt_PT") match {
+      dataService.getFoodRecord(key, "pt_PT") match {
         case Right(record) => {
           val updatedLocal = record.local.copy(portionSize = methods(key))
           dataService.updateLocalFoodRecord(key, "pt_PT", updatedLocal)

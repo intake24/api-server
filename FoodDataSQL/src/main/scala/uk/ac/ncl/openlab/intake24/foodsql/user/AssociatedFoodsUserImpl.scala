@@ -33,7 +33,7 @@ trait AssociatedFoodsUserImpl extends AssociatedFoodsService with SqlDataService
        |      AND (v.locale_id = associated_foods.locale_id OR associated_foods.locale_id IN (SELECT prototype_locale_id FROM locales WHERE id = v.locale_id))
        |ORDER BY id""".stripMargin
 
-  def associatedFoods(foodCode: String, locale: String): Either[LocalLookupError, Seq[AssociatedFood]] = tryWithConnection {
+  def getAssociatedFoods(foodCode: String, locale: String): Either[LocalLookupError, Seq[AssociatedFood]] = tryWithConnection {
     implicit conn =>
 
       val result = SQL(query).on('food_code -> foodCode, 'locale_id -> locale).executeQuery()

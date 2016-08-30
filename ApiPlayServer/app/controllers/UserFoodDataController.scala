@@ -24,22 +24,22 @@ import javax.inject.Inject
 import play.api.http.ContentTypes
 import play.api.mvc.Action
 import play.api.mvc.Controller
-import uk.ac.ncl.openlab.intake24.services.UserFoodDataService
+
 import upickle.default._
-import uk.ac.ncl.openlab.intake24.services.FoodDataError
+
 import upickle.Js
-import uk.ac.ncl.openlab.intake24.services.FoodDataSources
-import uk.ac.ncl.openlab.intake24.services.SourceLocale
-import uk.ac.ncl.openlab.intake24.services.SourceRecord
-import uk.ac.ncl.openlab.intake24.services.InheritableAttributeSource
 import security.Roles
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.SourceLocale
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.SourceRecord
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.SourceRecord
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.InheritableAttributeSource
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDatabaseService
 
 object FoodSourceWriters {
   implicit val sourceLocaleWriter = upickle.default.Writer[SourceLocale] {
     case t => t match {
       case SourceLocale.Current(locale) => Js.Obj(("source", Js.Str("current")), ("id", Js.Str(locale)))
       case SourceLocale.Prototype(locale) => Js.Obj(("source", Js.Str("prototype")), ("id", Js.Str(locale)))
-      case SourceLocale.Fallback(locale) => Js.Obj(("source", Js.Str("fallback")), ("id", Js.Str(locale)))
     }
   }
 
@@ -59,64 +59,55 @@ object FoodSourceWriters {
   }
 }
 
-class UserFoodDataController @Inject() (service: UserFoodDataService, deadbolt: DeadboltActions) extends Controller {
+class UserFoodDataController @Inject() (service: FoodDatabaseService, deadbolt: DeadboltActions) extends Controller with ApiErrorHandler {
 
   import FoodSourceWriters._
-  
+
   def categoryContents(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      Ok(write(service.categoryContents(code, locale))).as(ContentTypes.JSON)
+      translateResult(service.categoryContents(code, locale))
     }
   }
 
   def foodData(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      service.foodData(code, locale) match {
-        case Left(_) => NotFound
-        case Right((data, _)) => Ok(write(data)).as(ContentTypes.JSON)
-      }
+      translateResult(service.foodData(code, locale))
     }
   }
 
   def foodDataWithSources(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      service.foodData(code, locale) match {
-        case Left(_) => NotFound
-        case Right(data) => Ok(write(data)).as(ContentTypes.JSON)
-      }
+      translateResult(service.foodData(code, locale))
     }
   }
-  
+
   def associatedFoodPrompts(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      service.associatedFoods(code, locale) match {
-        case Left(_) => NotFound
-        case Right(foods) => Ok(write(foods)).as(ContentTypes.JSON) 
-      }
+      translateResult(service.getAssociatedFoods(code, locale))
     }
   }
 
   def brandNames(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      Ok(write(service.brandNames(code, locale))).as(ContentTypes.JSON)
+      translateResult(service.getBrandNames(code, locale))
     }
   }
 
   def asServedDef(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      Ok(write(service.asServedDef(id))).as(ContentTypes.JSON)
+      translateResult(service.getAsServedSet(id))
     }
   }
 
   def drinkwareDef(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      Ok(write(service.drinkwareDef(id))).as(ContentTypes.JSON)
+      translateResult(service.getDrinkwareSet(id))
     }
   }
 
   def guideDef(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      Ok(write(service.guideDef(id))).as(ContentTypes.JSON)
+      translateResult(service.getGuideImage(id))
     }
   }
 }
