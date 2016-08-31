@@ -97,4 +97,21 @@ trait LocalesAdminImpl extends LocalesAdminService with SqlDataService {
       else
         Right(())
   }
+
+  /**
+   * Is translation for descriptions, associated food prompts etc. strictly required for this locale
+   * (false if it can be inherited from the prototype locale)
+   */
+  def isTranslationRequired(id: String): Either[LookupError, Boolean] =
+    getLocale(id).right.flatMap {
+      currentLocale =>
+        currentLocale.prototypeLocale match {
+          case Some(prototypeLocaleCode) => getLocale(prototypeLocaleCode).right.map {
+            prototypeLocale =>
+              currentLocale.respondentLanguage != prototypeLocale.respondentLanguage
+          }
+          case None => Right(true)
+        }
+    }
+
 }

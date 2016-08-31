@@ -45,8 +45,6 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
 import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
 import uk.ac.ncl.openlab.intake24.foodsql.user.FoodDatabaseUserImpl
 import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl
-import cache.CachedFoodDatabaseAdminService
-
 
 class Intake24ServicesModule(env: Environment, config: Configuration) extends AbstractModule {
   @Provides
@@ -77,7 +75,7 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     
     // User-facing (cached) food data services
     
-    bind(classOf[FoodDatabaseAdminService]).to(classOf[CachedFoodDatabaseAdminService])
+    //bind(classOf[FoodDatabaseAdminService]).to(classOf[CachedFoodDatabaseAdminService])
     bind(classOf[ProblemCheckerService]).to(classOf[CachedProblemChecker])
     
   }

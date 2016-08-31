@@ -28,7 +28,7 @@ trait FoodBrowsingUserImpl extends FoodBrowsingService with SqlDataService with 
     def mkUserHeader = UserCategoryHeader(code, local_description.getOrElse(description))
   }
 
-  def rootCategories(locale: String): Either[LocaleError, Seq[UserCategoryHeader]] = tryWithConnection {
+  def getRootCategories(locale: String): Either[LocaleError, Seq[UserCategoryHeader]] = tryWithConnection {
     implicit conn =>
       val result = SQL(rootCategoriesQuery).on('locale_id -> locale).executeQuery()
 
@@ -68,7 +68,7 @@ trait FoodBrowsingUserImpl extends FoodBrowsingService with SqlDataService with 
     }
   }
 
-  def categoryContents(code: String, locale: String): Either[LocalLookupError, UserCategoryContents] = tryWithConnection {
+  def getCategoryContents(code: String, locale: String): Either[LocalLookupError, UserCategoryContents] = tryWithConnection {
     implicit conn =>
       for (
         foods <- categoryFoodContentsImpl(code, locale).right;
@@ -78,11 +78,11 @@ trait FoodBrowsingUserImpl extends FoodBrowsingService with SqlDataService with 
       }
   }
 
-  def foodAllCategories(code: String): Either[LookupError, Set[String]] = tryWithConnection {
+  def getFoodAllCategories(code: String): Either[LookupError, Set[String]] = tryWithConnection {
     implicit conn => foodAllCategoriesCodesImpl(code)
   }
 
-  def categoryAllCategories(code: String): Either[LookupError, Set[String]] = tryWithConnection {
+  def getCategoryAllCategories(code: String): Either[LookupError, Set[String]] = tryWithConnection {
     implicit conn => categoryAllCategoriesCodesImpl(code)
   }
 }

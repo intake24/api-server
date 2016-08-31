@@ -76,26 +76,26 @@ class FoodsAdminController @Inject() (service: FoodsAdminService, deadbolt: Dead
 
   def getFoodRecord(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.getFoodRecord(code, locale))
+      translateLocalLookupError(service.getFoodRecord(code, locale))
     }
   }
 
   def isFoodCodeAvailable(code: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.isFoodCodeAvailable(code))
+      translateDatabaseError(service.isFoodCodeAvailable(code))
     }
   }
 
   def isFoodCode(code: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.isFoodCode(code))
+      translateDatabaseError(service.isFoodCode(code))
     }
   }
 
   def createFood() = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
-        translateResult(service.createFood(read[NewFood](request.body)))
+        translateDependentCreateError(service.createFood(read[NewFood](request.body)))
       }
     }
   }
@@ -103,7 +103,7 @@ class FoodsAdminController @Inject() (service: FoodsAdminService, deadbolt: Dead
   def createFoodWithTempCode() = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
-        translateResult(service.createFoodWithTempCode(read[NewFood](request.body)))
+        translateDependentCreateError(service.createFoodWithTempCode(read[NewFood](request.body)))
       }
     }
   }
@@ -111,7 +111,7 @@ class FoodsAdminController @Inject() (service: FoodsAdminService, deadbolt: Dead
   def updateMainFoodRecord(foodCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
-        translateResult(service.updateMainFoodRecord(foodCode, read[MainFoodRecord](request.body)))
+        translateUpdateError(service.updateMainFoodRecord(foodCode, read[MainFoodRecord](request.body)))
       }
     }
   }
@@ -119,14 +119,14 @@ class FoodsAdminController @Inject() (service: FoodsAdminService, deadbolt: Dead
   def updateLocalFoodRecord(foodCode: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
-        translateResult(service.updateLocalFoodRecord(foodCode, locale, read[LocalFoodRecord](request.body)))
+        translateLocalUpdateError(service.updateLocalFoodRecord(foodCode, locale, read[LocalFoodRecord](request.body)))
       }
     }
   }
 
   def deleteFood(code: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.deleteFood(code))
+      translateDeleteError(service.deleteFood(code))
     }
   }
 

@@ -80,8 +80,8 @@ GET     /admin/food-groups/:locale/:id                       controllers.FoodGro
 
 # Associated foods
 
-GET     /admin/associated-foods/:locale/:code                controllers.AssoicatedFoodsAdminController.getAssociatedFoodPrompts(code: String, locale: String)
-POST    /admin/associated-foods/:locale/:code                controllers.AssoicatedFoodsAdminController.updateAssociatedFoodPrompts(code: String, locale: String)
+GET     /admin/associated-foods/:locale/:code                controllers.AssociatedFoodsAdminController.getAssociatedFoods(code: String, locale: String)
+POST    /admin/associated-foods/:locale/:code                controllers.AssociatedFoodsAdminController.updateAssociatedFoods(code: String, locale: String)
 
 # Portion size methods
 
@@ -89,15 +89,15 @@ GET     /admin/portion-size/as-served                        controllers.AsServe
 GET     /admin/portion-size/as-served/:id                    controllers.AsServedImageAdminController.getAsServedSet(id: String)
 
 GET     /admin/portion-size/guide-image                      controllers.GuideImageAdminController.listGuideImages()
-GET     /admin/portion-size/guide-image/:id                  controllers.GuideImageAdminController.guideDef(id: String)
+GET     /admin/portion-size/guide-image/:id                  controllers.GuideImageAdminController.getGuideImage(id: String)
 
-GET     /admin/portion-size/drinkware                        controllers.DrinkwareAdminController.listDrinkware()
-GET     /admin/portion-size/drinkware/:id                    controllers.DrinkwareAdminController.drinkwareDef(id: String)
+GET     /admin/portion-size/drinkware                        controllers.DrinkwareAdminController.listDrinkwareSets()
+GET     /admin/portion-size/drinkware/:id                    controllers.DrinkwareAdminController.getDrinkwareSet(id: String)
 
-GET     /user/foods/:locale/:code                            controllers.UserFoodDataController.foodData(code: String, locale: String)
-GET     /user/foods/:locale/:code/with-sources               controllers.UserFoodDataController.foodDataWithSources(code: String, locale: String)
-GET     /user/foods/:locale/:code/brand-names                controllers.UserFoodDataController.brandNames(code: String, locale: String)
-GET     /user/foods/:locale/:code/associated-foods           controllers.UserFoodDataController.associatedFoodPrompts(code: String, locale: String)
+GET     /user/foods/:locale/:code                            controllers.UserFoodDataController.getFoodData(code: String, locale: String)
+GET     /user/foods/:locale/:code/with-sources               controllers.UserFoodDataController.getFoodDataWithSources(code: String, locale: String)
+GET     /user/foods/:locale/:code/brand-names                controllers.UserFoodDataController.getBrandNames(code: String, locale: String)
+GET     /user/foods/:locale/:code/associated-foods           controllers.UserFoodDataController.getAssociatedFoodPrompts(code: String, locale: String)
 
 # Nutrient tables
 

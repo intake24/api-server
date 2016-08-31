@@ -57,43 +57,43 @@ class FoodBrowsingAdminController @Inject() (service: FoodBrowsingAdminService, 
 
   def getUncategorisedFoods(locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.getUncategorisedFoods(locale))
+      translateLocaleError(service.getUncategorisedFoods(locale))
     }
   }
 
   def getRootCategories(locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.getRootCategories(locale))
+      translateLocaleError(service.getRootCategories(locale))
     }
   }
 
   def getCategoryContents(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.getCategoryContents(code, locale))
+      translateLocalLookupError(service.getCategoryContents(code, locale))
     }
   }
 
   def getFoodParentCategories(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.getFoodParentCategories(code, locale))
+      translateLocalLookupError(service.getFoodParentCategories(code, locale))
     }
   }
 
-  def getFoodAllCategoriesHeaders(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
+  def getFoodAllCategories(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.getFoodAllCategoriesHeaders(code, locale))
+      translateLocalLookupError(service.getFoodAllCategoriesHeaders(code, locale))
     }
   }
   
   def getCategoryParentCategories(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.getCategoryParentCategories(code, locale))
+      translateLocalLookupError(service.getCategoryParentCategories(code, locale))
     }
   }
 
-  def getCategoryAllCategoriesHeaders(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
+  def getCategoryAllCategories(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.getCategoryAllCategoriesHeaders(code, locale))
+      translateLocalLookupError(service.getCategoryAllCategoriesHeaders(code, locale))
     }
   }
 

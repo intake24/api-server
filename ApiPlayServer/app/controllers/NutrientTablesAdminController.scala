@@ -25,13 +25,13 @@ import play.api.mvc.Controller
 import security.Roles
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.NutrientTablesAdminService
 
-class NutrientTablesAdminServices @Inject() (service: NutrientTablesAdminService, deadbolt: DeadboltActions) extends Controller
+class NutrientTablesAdminController @Inject() (service: NutrientTablesAdminService, deadbolt: DeadboltActions) extends Controller
     with PickleErrorHandler
     with ApiErrorHandler {
   
   def listNutrientTables() = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.listNutrientTables())
+      translateDatabaseError(service.listNutrientTables())
     }
   }
 }

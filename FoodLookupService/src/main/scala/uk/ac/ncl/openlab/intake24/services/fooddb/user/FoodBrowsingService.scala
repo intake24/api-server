@@ -44,12 +44,12 @@ case class FoodDataSources(localDescriptionSource: SourceLocale, nutrientTablesS
 
 trait FoodBrowsingService {
   
-  def rootCategories(locale: String): Either[LocaleError, Seq[UserCategoryHeader]]
+  def getRootCategories(locale: String): Either[LocaleError, Seq[UserCategoryHeader]]
 
-  def categoryContents(code: String, locale: String): Either[LocalLookupError, UserCategoryContents]
+  def getCategoryContents(code: String, locale: String): Either[LocalLookupError, UserCategoryContents]
 
   /* The following methods are needed associated foods logic */
-  def foodAllCategories(code: String): Either[LookupError, Set[String]]
+  def getFoodAllCategories(code: String): Either[LookupError, Set[String]]
   
-  def categoryAllCategories(code: String): Either[LookupError, Set[String]]
+  def getCategoryAllCategories(code: String): Either[LookupError, Set[String]]
 }

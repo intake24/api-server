@@ -47,6 +47,7 @@ object FoodSourceWriters {
     case t => t match {
       case SourceRecord.CategoryRecord(code) => Js.Obj(("source", Js.Str("category")), ("code", Js.Str(code)))
       case SourceRecord.FoodRecord(code) => Js.Obj(("source", Js.Str("food")), ("code", Js.Str(code)))
+      case SourceRecord.NoRecord => Js.Obj(("source", Js.Str("none")))
     }
   }
 
@@ -63,51 +64,51 @@ class UserFoodDataController @Inject() (service: FoodDatabaseService, deadbolt: 
 
   import FoodSourceWriters._
 
-  def categoryContents(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
+  def getCategoryContents(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.categoryContents(code, locale))
+      translateLocalLookupError(service.getCategoryContents(code, locale))
     }
   }
 
-  def foodData(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
+  def getFoodData(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.foodData(code, locale))
+      translateLocalLookupError(service.getFoodData(code, locale))
     }
   }
 
-  def foodDataWithSources(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
+  def getFoodDataWithSources(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.foodData(code, locale))
+      translateLocalLookupError(service.getFoodData(code, locale))
     }
   }
 
-  def associatedFoodPrompts(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
+  def getAssociatedFoodPrompts(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.getAssociatedFoods(code, locale))
+      translateLocalLookupError(service.getAssociatedFoods(code, locale))
     }
   }
 
-  def brandNames(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
+  def getBrandNames(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.getBrandNames(code, locale))
+      translateLocalLookupError(service.getBrandNames(code, locale))
     }
   }
 
-  def asServedDef(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
+  def getAsServedSet(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.getAsServedSet(id))
+      translateLookupError(service.getAsServedSet(id))
     }
   }
 
-  def drinkwareDef(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
+  def getDrinkwareSet(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.getDrinkwareSet(id))
+      translateLookupError(service.getDrinkwareSet(id))
     }
   }
 
-  def guideDef(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
+  def getGuideImage(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.getGuideImage(id))
+      translateLookupError(service.getGuideImage(id))
     }
   }
 }

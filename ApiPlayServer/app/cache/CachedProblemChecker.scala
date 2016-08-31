@@ -24,11 +24,29 @@ import modules.ProblemCheckerService
 import uk.ac.ncl.openlab.intake24.foodsql.user.FoodDatabaseUserImpl
 import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDataService
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodBrowsingAdminService
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
 
-case class CachedProblemChecker @Inject() (userData: FoodDatabaseUserImpl, adminData: FoodDatabaseAdminImpl, cache: CacheApi)
-    extends ProblemCheckerService with ProblemCheckerCacheKeys with Timing {
+case class CachedProblemChecker @Inject() (
+  categories: ObservableCategoriesAdminService,
+  foods: ObservableFoodsAdminService,
+  locales: ObservableLocalesAdminService,
+  userFoods: FoodDataService,
+  adminBrowsing: FoodBrowsingAdminService,
+  cache: CacheApi)
+    extends ProblemCheckerService
+    with Timing
+    with CacheResult
+    with CategoriesAdminObserver
+    with FoodsAdminObserver
+    with LocalesAdminObserver {
 
   val log = LoggerFactory.getLogger(classOf[CachedProblemChecker])
+  
+  var knownCacheKeys = Set[String]()
 
   val NutrientCodeMissing = "nutrient_code_missing"
   val NotAssignedToGroup = "not_assigned_to_group"
@@ -39,29 +57,29 @@ case class CachedProblemChecker @Inject() (userData: FoodDatabaseUserImpl, admin
   val EmptyCategory = "empty_category"
   val SingleItem = "single_item_in_category"
 
-  val maxReturnedProblems = 10
+  def foodProblemsCacheKey(code: String, locale: String) = s"CachedProblemChecker.foodProblems.$locale.$code"
+  def categoryProblemsCacheKey(code: String, locale: String) = s"CachedProblemChecker.categoryProblems.$locale.$code"
+  def recursiveCategoryProblemsCacheKey(code: String, locale: String) = s"CachedProblemChecker.recursiveCategoryProblems.$locale.$code"
 
-  private def isTranslationRequired(localeCode: String): Boolean = cache.getOrElse(translationRequiredCacheKey(localeCode)) {
-    val currentLocale = adminData.getLocale(localeCode).right.get
-
-    currentLocale.prototypeLocale match {
-      case Some(prototypeLocaleCode) => {
-        val prototypeLocale = adminData.getLocale(prototypeLocaleCode).right.get
-
-        currentLocale.respondentLanguage != prototypeLocale.respondentLanguage
-      }
-      case None => {
-        true
-      }
-    }
+  def sequence[E, T](s: Seq[Either[E, T]]): Either[E, Seq[T]] = {
+    val z: Either[E, Seq[T]] = Right(Seq())
+    s.foldLeft(z) {
+      (result, next) =>
+        for (
+          ts <- result.right;
+          t <- next.right
+        ) yield (t +: ts)
+    }.right.map(_.reverse)
   }
 
-  def getFoodProblems(code: String, locale: String): Either[LocalLookupError, Seq[FoodProblem]] = cache.getOrElse(foodProblemsCacheKey(code, locale)) {
+  val maxReturnedProblems = 10
 
+  def getFoodProblems(code: String, locale: String): Either[LocalLookupError, Seq[FoodProblem]] = cachePositiveResult(foodProblemsCacheKey(code, locale)) {
     for (
-      adminFoodRecord <- adminData.getFoodRecord(code, locale).right;
-      userFoodRecord <- userData.foodData(code, locale).right.map(_._1).right;
-      uncategorisedFoods <- adminData.getUncategorisedFoods(locale).right
+      adminFoodRecord <- foods.getFoodRecord(code, locale).right;
+      userFoodRecord <- userFoods.getFoodData(code, locale).right.map(_._1).right;
+      uncategorisedFoods <- adminBrowsing.getUncategorisedFoods(locale).right;
+      translationRequired <- locales.isTranslationRequired(locale).right
     ) yield {
       val problems = Buffer[String]()
 
@@ -80,19 +98,19 @@ case class CachedProblemChecker @Inject() (userData: FoodDatabaseUserImpl, admin
       if (userFoodRecord.portionSize.size > 1 && userFoodRecord.portionSize.exists(x => x.description == "no description" || x.imageUrl == "images/placeholder.jpg"))
         problems += NoMethodDescOrImage
 
-      if (adminFoodRecord.local.localDescription.isEmpty && !adminFoodRecord.local.doNotUse && isTranslationRequired(locale))
+      if (adminFoodRecord.local.localDescription.isEmpty && !adminFoodRecord.local.doNotUse && translationRequired)
         problems += LocalDescriptionMissing
 
       problems.toSeq.map(pcode => FoodProblem(code, userFoodRecord.localDescription, pcode))
 
     }
-
   }
 
-  def getCategoryProblems(code: String, locale: String): Either[LocalLookupError, Seq[CategoryProblem]] = cache.getOrElse(categoryProblemsCacheKey(code, locale)) {
+  def getCategoryProblems(code: String, locale: String): Either[LocalLookupError, Seq[CategoryProblem]] = cachePositiveResult(categoryProblemsCacheKey(code, locale)) {
     for (
-      contents <- adminData.getCategoryContents(code, locale).right;
-      record <- adminData.getCategoryRecord(code, locale).right
+      contents <- adminBrowsing.getCategoryContents(code, locale).right;
+      record <- categories.getCategoryRecord(code, locale).right;
+      translationRequired <- locales.isTranslationRequired(locale).right
     ) yield {
       val size = contents.foods.size + contents.subcategories.size
 
@@ -104,25 +122,14 @@ case class CachedProblemChecker @Inject() (userData: FoodDatabaseUserImpl, admin
       if (size == 1)
         problems += SingleItem
 
-      if (record.local.localDescription.isEmpty && isTranslationRequired(locale))
+      if (record.local.localDescription.isEmpty && translationRequired)
         problems += LocalDescriptionMissing
       problems.toSeq.map(pcode => CategoryProblem(code, record.local.localDescription.getOrElse(record.main.englishDescription), pcode))
     }
   }
 
-  def sequence[E, T](s: Seq[Either[E, T]]): Either[E, Seq[T]] = {
-    val z: Either[E, Seq[T]] = Right(Seq())
-    s.foldLeft(z) {
-      (result, next) =>
-        for (
-          ts <- result.right;
-          t <- next.right
-        ) yield (t +: ts)
-    }.right.map(_.reverse)
-  }
-
   def getRecursiveCategoryProblems(code: String, locale: String, maxProblems: Int): Either[LocalLookupError, RecursiveCategoryProblems] =
-    cache.getOrElse(recursiveCategoryProblemsCacheKey(code, locale)) {
+    cachePositiveResult(recursiveCategoryProblemsCacheKey(code, locale)) {
 
       def collectSubcategoryProblems(rem: Seq[CategoryHeader], problems: Either[LocalLookupError, RecursiveCategoryProblems], slots: Int): Either[LocalLookupError, RecursiveCategoryProblems] = {
         if (rem.isEmpty || slots <= 0)
@@ -139,7 +146,7 @@ case class CachedProblemChecker @Inject() (userData: FoodDatabaseUserImpl, admin
         Right(RecursiveCategoryProblems(Seq(), Seq()))
       else {
         for (
-          contents <- adminData.getCategoryContents(code, locale).right;
+          contents <- adminBrowsing.getCategoryContents(code, locale).right;
           ownProblems <- getCategoryProblems(code, locale).right;
           foodProblems <- sequence(contents.foods.map(h => getFoodProblems(h.code, locale))).right.map(_.flatten).right;
           subcategoryProblems <- sequence(contents.subcategories.map(h => getCategoryProblems(h.code, locale))).right.map(_.flatten).right;
@@ -164,4 +171,111 @@ case class CachedProblemChecker @Inject() (userData: FoodDatabaseUserImpl, admin
         ) yield result
       }
     }
+
+  def invalidateLocalFoodProblems(code: String, locale: String) = adminBrowsing.getFoodAllCategoriesCodes(code).right.map {
+    superCategories =>
+      removeCached(foodProblemsCacheKey(code, locale))
+      superCategories.foreach {
+        categoryCode =>
+          invalidateChildProblems(categoryCode, locale)
+      }
+  }
+
+  def invalidateFoodProblems(code: String): Either[DatabaseError, Unit] = locales.listLocales().right.map {
+    locales =>
+      locales.keySet.foreach {
+        locale => invalidateLocalFoodProblems(code, locale)
+      }
+  }
+
+  def invalidateLocalCategoryProblems(code: String, locale: String) = adminBrowsing.getCategoryAllCategoriesCodes(code).right.map {
+    superCategories =>
+      removeCached(categoryProblemsCacheKey(code, locale))
+      superCategories.foreach {
+        categoryCode =>
+          invalidateChildProblems(categoryCode, locale)
+      }
+  }
+
+  def invalidateCategoryProblems(code: String) = locales.listLocales().right.map {
+    locales =>
+      locales.keySet.foreach {
+        locale => invalidateLocalCategoryProblems(code, locale)
+      }
+  }
+
+  def invalidateChildProblems(code: String, locale: String) = removeCached(recursiveCategoryProblemsCacheKey(code, locale))
+
+  def onMainCategoryRecordUpdated(code: String) = invalidateCategoryProblems(code)
+
+  def onLocalCategoryRecordUpdated(code: String, locale: String) = invalidateLocalCategoryProblems(code, locale)
+
+  def onCategoryDeleted(code: String) = invalidateCategoryProblems(code)
+
+  def onFoodAddedToCategory(categoryCode: String, foodCode: String) = {
+    invalidateCategoryProblems(categoryCode)
+    invalidateFoodProblems(foodCode)
+  }
+
+  def onFoodRemovedFromCategory(categoryCode: String, foodCode: String) = {
+    invalidateCategoryProblems(categoryCode)
+    invalidateFoodProblems(foodCode)
+  }
+
+  def onSubcategoryAddedToCategory(categoryCode: String, subcategoryCode: String) = {
+    invalidateCategoryProblems(categoryCode)
+    invalidateCategoryProblems(subcategoryCode)
+  }
+
+  def onSubcategoryRemovedFromCategory(categoryCode: String, subcategoryCode: String) = {
+    invalidateCategoryProblems(categoryCode)
+    invalidateCategoryProblems(subcategoryCode)
+  }
+
+  def onLocaleDeleted(id: String) = {
+    removeCachedByPredicate {
+      k =>
+        k.startsWith(foodProblemsCacheKey("", id)) ||
+          k.startsWith(categoryProblemsCacheKey("", id)) ||
+          k.startsWith(recursiveCategoryProblemsCacheKey("", id))
+    }
+  }
+
+  def onAllCategoriesDeleted() = {
+    removeAllCachedResults()
+  }
+
+  def onCategoryCreated(code: String) = {}
+
+  def onLocalCategoryRecordCreated(code: String, locale: String) = {
+    invalidateLocalCategoryProblems(code, locale)
+  }
+
+  def onAllFoodsDeleted() = {
+    removeAllCachedResults()
+  }
+
+  def onFoodCreated(code: String) = {
+    invalidateFoodProblems(code)
+  }
+
+  def onFoodDeleted(code: String) = {
+    invalidateFoodProblems(code)
+  }
+
+  def onLocalFoodRecordCreated(code: String, locale: String) = {
+    invalidateLocalFoodProblems(code, locale)
+  }
+
+  def onLocalFoodRecordUpdated(code: String, locale: String) = {
+    invalidateLocalFoodProblems(code, locale)
+  }
+
+  def onMainFoodRecordUpdated(code: String) = {
+    invalidateFoodProblems(code)
+  }
+
+  def onLocaleCreated(id: String) = {}
+  
+  def onLocaleUpdated(id: String) = {}
 }

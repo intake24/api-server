@@ -97,7 +97,7 @@ trait FoodDataUserImpl extends FoodDataService
     case UndefinedLocale => UndefinedLocale
   }
 
-  def foodData(foodCode: String, locale: String): Either[LocalLookupError, (UserFoodData, FoodDataSources)] = tryWithConnection {
+  def getFoodData(foodCode: String, locale: String): Either[LocalLookupError, (UserFoodData, FoodDataSources)] = tryWithConnection {
     implicit conn =>
       for (
         pl <- localeErrorAdapter(prototypeLocale(locale)).right;

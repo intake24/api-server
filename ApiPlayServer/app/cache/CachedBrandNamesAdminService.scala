@@ -20,11 +20,14 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentCreateError
 
 case class CachedBrandNamesAdminService @Inject() (@UncachedImpl service: BrandNamesAdminService, cache: CacheApi)
-    extends AsServedImageAdminService
+    extends BrandNamesAdminService
     with CacheResult {
+
+  var knownCacheKeys = Set[String]()
 
   def deleteAllBrandNames(locale: String): Either[LocaleError, Unit] = notSupported
 
   def createBrandNames(brandNames: Map[String, Seq[String]], locale: String): Either[LocalDependentCreateError, Unit] = notSupported
 
+  def getBrandNames(foodCode: String, locale: String): Either[LocalLookupError, Seq[String]] = service.getBrandNames(foodCode, locale)
 }

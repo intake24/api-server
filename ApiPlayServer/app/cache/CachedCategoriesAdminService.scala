@@ -20,57 +20,49 @@ import uk.ac.ncl.openlab.intake24.NewCategory
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.LocalesAdminService
 import uk.ac.ncl.openlab.intake24.LocalCategoryRecord
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoriesAdminService
+import uk.ac.ncl.openlab.intake24.MainCategoryRecord
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
 
-case class CachedCategoriesAdminService @Inject() (@UncachedImpl service: CachedCategoriesAdminService, localeService: LocalesAdminService, cache: CacheApi)
-    extends AsServedImageAdminService
-    with CacheResult
-    with FoodBrowsingCacheKeys 
-    with ProblemCheckerCacheKeys
-    {
-
-  def categoryRecordCacheKey(code: String, locale: String) = s"CachedCategoriesAdminService.categoryRecord.$locale.$code"
+case class CachedCategoriesAdminService @Inject() (@UncachedImpl service: CategoriesAdminService, localeService: LocalesAdminService, cache: CacheApi)
+    extends CategoriesAdminService
+    with CacheResult {
+  
+  var knownCacheKeys = Set[String]()
+  
+  def categoryRecordCacheKey(code: String) = s"CachedCategoriesAdminService.categoryRecordCacheKey.$code"
+  
+  def localCategoryRecordCacheKey(code: String, locale: String) = s"CachedCategoriesAdminService.localCategoryRecord.$locale.$code"
+  
+  
 
   def getCategoryRecord(code: String, locale: String): Either[LocalLookupError, CategoryRecord] =
-    cachePositiveResult(categoryRecordCacheKey(code, locale)) {
+    cachePositiveResult(categoryRecordCacheKey(code)) {
       service.getCategoryRecord(code, locale)
     }
 
   def isCategoryCodeAvailable(code: String): Either[DatabaseError, Boolean] = service.isCategoryCodeAvailable(code)
   def isCategoryCode(code: String): Either[DatabaseError, Boolean] = service.isCategoryCode(code)
 
-  def createCategory(newCategory: NewCategory): Either[CreateError, Unit] = service.createCategory(newCategory).right.map {
-    _ =>
-      localeService.listLocales().right.map {
-        locales =>
-          locales.keySet.foreach {
-            locale =>
-              invalidateRootCategories(locale)
-          }
-      }
-  }
-
-  def createCategories(newCategories: Seq[NewCategory]): Either[CreateError, Unit] = service.createCategories(newCategories).right.map {
-    _ =>
-      localeService.listLocales().right.map {
-        locales =>
-          locales.keySet.foreach {
-            locale =>
-              invalidateRootCategories(locale)
-          }
-      }
-  }
-
-  def createLocalCategories(localCategoryRecords: Map[String, LocalCategoryRecord], locale: String): Either[CreateError, Unit] = notSupported 
-
-  def deleteAllCategories(): Either[DatabaseError, Unit] = notSupported 
+  def createCategory(newCategory: NewCategory): Either[CreateError, Unit] = service.createCategory(newCategory)
   
-  def deleteCategory(categoryCode: String): Either[DeleteError, Unit] = 
+  def createCategories(newCategories: Seq[NewCategory]): Either[CreateError, Unit] = service.createCategories(newCategories)
+    
+  def createLocalCategories(localCategoryRecords: Map[String, LocalCategoryRecord], locale: String): Either[CreateError, Unit] = service.createLocalCategories(localCategoryRecords, locale)
 
-  def updateMainCategoryRecord(categoryCode: String, categoryMain: MainCategoryRecord): Either[UpdateError, Unit]
-  def updateLocalCategoryRecord(categoryCode: String, locale: String, categoryLocal: LocalCategoryRecord): Either[LocalUpdateError, Unit]
+  def deleteAllCategories(): Either[DatabaseError, Unit] = service.deleteAllCategories()
+  
+  def deleteCategory(categoryCode: String): Either[DeleteError, Unit] = service.deleteCategory(categoryCode)
 
-  def addFoodToCategory(categoryCode: String, foodCode: String): Either[UpdateError, Unit]
-  def addSubcategoryToCategory(categoryCode: String, subcategoryCode: String): Either[UpdateError, Unit]
-  def removeFoodFromCategory(categoryCode: String, foodCode: String): Either[UpdateError, Unit]
-  def removeSubcategoryFromCategory(categoryCode: String, foodCode: String): Either[UpdateError, Unit]
+  def updateMainCategoryRecord(categoryCode: String, categoryMain: MainCategoryRecord): Either[UpdateError, Unit] = service.updateMainCategoryRecord(categoryCode, categoryMain) 
+    
+  def updateLocalCategoryRecord(categoryCode: String, locale: String, categoryLocal: LocalCategoryRecord): Either[LocalUpdateError, Unit] = service.updateLocalCategoryRecord(categoryCode, locale, categoryLocal)
+
+  def addFoodToCategory(categoryCode: String, foodCode: String): Either[UpdateError, Unit] = service.addFoodToCategory(categoryCode, foodCode)
+  
+  def addSubcategoryToCategory(categoryCode: String, subcategoryCode: String): Either[UpdateError, Unit] = service.addSubcategoryToCategory(categoryCode, subcategoryCode)
+  
+  def removeFoodFromCategory(categoryCode: String, foodCode: String): Either[UpdateError, Unit] = service.removeFoodFromCategory(categoryCode, foodCode)
+  
+  def removeSubcategoryFromCategory(categoryCode: String, foodCode: String): Either[UpdateError, Unit] = service.removeSubcategoryFromCategory(categoryCode, foodCode)
 }

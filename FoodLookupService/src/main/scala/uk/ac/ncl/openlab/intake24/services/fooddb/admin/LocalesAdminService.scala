@@ -14,4 +14,5 @@ trait LocalesAdminService {
   def createLocale(data: Locale): Either[CreateError, Unit]
   def updateLocale(id: String, data: Locale): Either[UpdateError, Unit]
   def deleteLocale(id: String): Either[DeleteError, Unit]
+  def isTranslationRequired(id: String): Either[LookupError, Boolean]
 }

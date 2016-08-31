@@ -15,6 +15,8 @@ case class CachedAsServedImageAdminService @Inject() (@UncachedImpl service: AsS
     extends AsServedImageAdminService
     with CacheResult {
   
+  var knownCacheKeys = Set[String]()
+  
   val listAsServedSetsCacheKey = "CachedAsServedImageAdminService.listAsServedSets"
   
   def asServedSetCacheKey(id: String) = s"CachedAsServedImageAdminService.asServedSet.$id"

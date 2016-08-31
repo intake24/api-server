@@ -31,13 +31,13 @@ class AsServedImageAdminController @Inject() (service: AsServedImageAdminService
   
   def listAsServedSets() = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.listAsServedSets())
+      translateDatabaseError(service.listAsServedSets())
     }
   }
   
   def getAsServedSet(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.getAsServedSet(id))
+      translateLookupError(service.getAsServedSet(id))
     }
   } 
 }

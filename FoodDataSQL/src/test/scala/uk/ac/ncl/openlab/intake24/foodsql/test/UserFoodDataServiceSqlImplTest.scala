@@ -98,7 +98,7 @@ class UserFoodDataServiceSqlImplTest extends FunSuite with TestFoodDatabase {
     // C006 is only contained in hidden categories and must be root (unless itself is hidden)
     val expected = Seq(en_GB_c0, en_GB_c1, en_GB_c3, en_GB_c6)
 
-    assert(service.rootCategories("en_GB") === expected)
+    assert(service.getRootCategories("en_GB") === expected)
   }
   
   test("Get root categories for test1") {
@@ -109,20 +109,20 @@ class UserFoodDataServiceSqlImplTest extends FunSuite with TestFoodDatabase {
   }
   
   test("Restricted category should be treated as missing") { 
-    assert(service.categoryContents("C005", "test2") === Left(RecordNotFound))
+    assert(service.getCategoryContents("C005", "test2") === Left(RecordNotFound))
   }
       
   test("Category contents") {
-    assert(service.categoryContents("C005", "en_GB") === Right(UserCategoryContents(Seq(/* alphabetical order */ en_GB_f6, en_GB_f2), Seq())))    
+    assert(service.getCategoryContents("C005", "en_GB") === Right(UserCategoryContents(Seq(/* alphabetical order */ en_GB_f6, en_GB_f2), Seq())))    
   }
   
   test("Empty category due to restrictions") {
-    assert(service.categoryContents("C005", "test1") === Right(UserCategoryContents(Seq(), Seq())))
+    assert(service.getCategoryContents("C005", "test1") === Right(UserCategoryContents(Seq(), Seq())))
   }  
   
   test("Default attribute values") {
     val expected = Right(UserFoodData("F007", "Default attributes test", Map(), 0, Seq(), false, false, 1000))
     
-    assert(service.foodData("F007", "en_GB") === expected)
+    assert(service.getFoodData("F007", "en_GB") === expected)
   }
 }

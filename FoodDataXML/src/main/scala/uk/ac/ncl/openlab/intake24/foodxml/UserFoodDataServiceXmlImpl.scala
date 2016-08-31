@@ -52,12 +52,12 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDat
   def checkLocale(locale: String) = if (locale != defaultLocale)
     log.warn("Locales other than en_GB are not supported by this implementation -- returning en_GB results for debug purposes");
 
-  def rootCategories(locale: String): Either[DatabaseError, Seq[UserCategoryHeader]] = {
+  def getRootCategories(locale: String): Either[DatabaseError, Seq[UserCategoryHeader]] = {
     checkLocale(locale)
     Right(data.categories.rootCategories.map(mkHeader))
   }
 
-  def categoryContents(code: String, locale: String) = {
+  def getCategoryContents(code: String, locale: String) = {
     checkLocale(locale)
 
     val cat = data.categories.find(code)
@@ -68,13 +68,13 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDat
     Right(UserCategoryContents(foodHeaders, categoryHeaders))
   }
   
-  def foodAllCategories(code: String) = Right(data.categories.foodAllCategories(code).toSet)   
+  def getFoodAllCategories(code: String) = Right(data.categories.foodAllCategories(code).toSet)   
   
-  def categoryAllCategories(code: String) = Right(data.categories.categoryAllCategories(code).toSet)
+  def getCategoryAllCategories(code: String) = Right(data.categories.categoryAllCategories(code).toSet)
   
   def isCategoryCode(code: String) = data.categories.categoryMap.contains(code)
   
-  def foodData(code: String, locale: String) = {
+  def getFoodData(code: String, locale: String) = {
     checkLocale(locale)
 
     val f = data.foods.find(code)

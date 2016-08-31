@@ -31,13 +31,13 @@ class DrinkwareAdminController @Inject() (service: DrinkwareAdminService, deadbo
   
   def listDrinkwareSets() = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.listDrinkwareSets())
+      translateDatabaseError(service.listDrinkwareSets())
     }
   }
 
   def getDrinkwareSet(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.getDrinkwareSet(id))
+      translateLookupError(service.getDrinkwareSet(id))
     }
   } 
 }

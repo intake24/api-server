@@ -56,25 +56,25 @@ class CategoriesAdminController @Inject() (service: CategoriesAdminService, dead
 
   def getCategoryRecord(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.getCategoryRecord(code, locale))
+      translateLocalLookupError(service.getCategoryRecord(code, locale))
     }
   }
   def isCategoryCodeAvailable(code: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.isCategoryCodeAvailable(code))
+      translateDatabaseError(service.isCategoryCodeAvailable(code))
     }
   }
 
   def isCategoryCode(code: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.isCategoryCodeAvailable(code))
+      translateDatabaseError(service.isCategoryCodeAvailable(code))
     }
   }
 
   def createCategory() = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
-        translateResult(service.createCategory(read[NewCategory](request.body)))
+        translateCreateError(service.createCategory(read[NewCategory](request.body)))
       }
     }
   }
@@ -82,21 +82,21 @@ class CategoriesAdminController @Inject() (service: CategoriesAdminService, dead
   def createCategories() = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
-        translateResult(service.createCategories(read[Seq[NewCategory]](request.body)))
+        translateCreateError(service.createCategories(read[Seq[NewCategory]](request.body)))
       }
     }
   }
 
   def deleteCategory(categoryCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.deleteCategory(categoryCode))
+      translateDeleteError(service.deleteCategory(categoryCode))
     }
   }
 
   def updateMainCategoryRecord(categoryCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
-        translateResult(service.updateMainCategoryRecord(categoryCode, read[MainCategoryRecord](request.body)))
+        translateUpdateError(service.updateMainCategoryRecord(categoryCode, read[MainCategoryRecord](request.body)))
       }
     }
   }
@@ -104,32 +104,32 @@ class CategoriesAdminController @Inject() (service: CategoriesAdminService, dead
   def updateLocalCategoryRecord(categoryCode: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
-        translateResult(service.updateLocalCategoryRecord(categoryCode, locale, read[LocalCategoryRecord](request.body)))
+        translateLocalUpdateError(service.updateLocalCategoryRecord(categoryCode, locale, read[LocalCategoryRecord](request.body)))
       }
     }
   }
 
   def addFoodToCategory(categoryCode: String, foodCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.addFoodToCategory(categoryCode, foodCode))
+      translateUpdateError(service.addFoodToCategory(categoryCode, foodCode))
 
     }
   }
   def removeFoodFromCategory(categoryCode: String, foodCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.removeFoodFromCategory(categoryCode, foodCode))
+      translateUpdateError(service.removeFoodFromCategory(categoryCode, foodCode))
     }
   }
 
   def addSubcategoryToCategory(categoryCode: String, subcategoryCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.addSubcategoryToCategory(categoryCode, subcategoryCode))
+      translateUpdateError(service.addSubcategoryToCategory(categoryCode, subcategoryCode))
     }
   }
 
   def removeSubcategoryFromCategory(categoryCode: String, subcategoryCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateResult(service.removeSubcategoryFromCategory(categoryCode, subcategoryCode))
+      translateUpdateError(service.removeSubcategoryFromCategory(categoryCode, subcategoryCode))
     }
   }
 }
