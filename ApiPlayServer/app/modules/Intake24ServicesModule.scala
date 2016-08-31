@@ -45,6 +45,32 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
 import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
 import uk.ac.ncl.openlab.intake24.foodsql.user.FoodDatabaseUserImpl
 import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AsServedImageAdminService
+import uk.ac.ncl.openlab.intake24.foodsql.admin.AsServedImageAdminImpl
+import uk.ac.ncl.openlab.intake24.foodsql.admin.AssociatedFoodsAdminImpl
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoriesAdminService
+import uk.ac.ncl.openlab.intake24.foodsql.admin.CategoriesAdminImpl
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.DrinkwareAdminService
+import uk.ac.ncl.openlab.intake24.foodsql.admin.DrinkwareAdminImpl
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodBrowsingAdminService
+import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodBrowsingAdminImpl
+import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodGroupsAdminImpl
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
+import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodsAdminImpl
+import uk.ac.ncl.openlab.intake24.foodsql.admin.GuideImageAdminImpl
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.GuideImageAdminService
+import uk.ac.ncl.openlab.intake24.foodsql.admin.LocalesAdminImpl
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.LocalesAdminService
+import uk.ac.ncl.openlab.intake24.foodsql.admin.NutrientTablesAdminImpl
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.NutrientTablesAdminService
+import cache.ObservableFoodsAdminService
+import cache.ObservableFoodsAdminServiceImpl
+import cache.ObservableCategoriesAdminService
+import cache.ObservableCategoriesAdminServiceImpl
+import cache.ObservableLocalesAdminService
+import cache.ObservableLocalesAdminServiceImpl
 
 class Intake24ServicesModule(env: Environment, config: Configuration) extends AbstractModule {
   @Provides
@@ -67,16 +93,36 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     
     bind(classOf[EnglishWordStemmer]).to(classOf[EnglishStemmerPlingImpl])
     
-    // Uncached internal food data services
+    // Basic admin services -- uncached for now
     
-    bind(classOf[FoodDatabaseService]).to(classOf[FoodDatabaseUserImpl])
-    bind(classOf[FoodIndexDataService]).to(classOf[FoodIndexDataImpl])
-    bind(classOf[FoodDatabaseAdminService]).annotatedWith(classOf[UncachedImpl]).to(classOf[FoodDatabaseAdminImpl])
+    bind(classOf[AsServedImageAdminService]).to(classOf[AsServedImageAdminImpl])
+    bind(classOf[AssociatedFoodsAdminService]).to(classOf[AssociatedFoodsAdminImpl])
+    bind(classOf[CategoriesAdminService]).to(classOf[CategoriesAdminImpl])
+    bind(classOf[DrinkwareAdminService]).to(classOf[DrinkwareAdminImpl])
+    bind(classOf[FoodBrowsingAdminService]).to(classOf[FoodBrowsingAdminImpl])
+    bind(classOf[FoodGroupsAdminService]).to(classOf[FoodGroupsAdminImpl])
+    bind(classOf[FoodsAdminService]).to(classOf[FoodsAdminImpl])
+    bind(classOf[GuideImageAdminService]).to(classOf[GuideImageAdminImpl])
+    bind(classOf[LocalesAdminService]).to(classOf[LocalesAdminImpl])
+    bind(classOf[NutrientTablesAdminService]).to(classOf[NutrientTablesAdminImpl])
     
-    // User-facing (cached) food data services
+    // Observable admin services for higher-level cached services
     
-    //bind(classOf[FoodDatabaseAdminService]).to(classOf[CachedFoodDatabaseAdminService])
+    bind(classOf[ObservableFoodsAdminService]).to(classOf[ObservableFoodsAdminServiceImpl])
+    bind(classOf[ObservableCategoriesAdminService]).to(classOf[ObservableCategoriesAdminServiceImpl])
+    bind(classOf[ObservableLocalesAdminService]).to(classOf[ObservableLocalesAdminServiceImpl])
+    
+    // Admin services -- cached
+    
     bind(classOf[ProblemCheckerService]).to(classOf[CachedProblemChecker])
     
+    // Food index service
+    
+    bind(classOf[FoodIndexDataService]).to(classOf[FoodIndexDataImpl])
+    
+    // User food database service
+    
+    bind(classOf[FoodDatabaseService]).to(classOf[FoodDatabaseUserImpl])
+       
   }
 }

@@ -43,10 +43,15 @@ case class CachedProblemChecker @Inject() (
     with CategoriesAdminObserver
     with FoodsAdminObserver
     with LocalesAdminObserver {
-
+  
   val log = LoggerFactory.getLogger(classOf[CachedProblemChecker])
   
   var knownCacheKeys = Set[String]()
+  
+  categories.addObserver(this)
+  foods.addObserver(this)
+  locales.addObserver(this)
+  
 
   val NutrientCodeMissing = "nutrient_code_missing"
   val NotAssignedToGroup = "not_assigned_to_group"

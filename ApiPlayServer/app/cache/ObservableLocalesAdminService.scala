@@ -15,9 +15,17 @@ trait LocalesAdminObserver {
   def onLocaleDeleted(id: String): Unit  
 }
 
-class ObservableLocalesAdminService @Inject() (service: LocalesAdminService) extends LocalesAdminService {
+trait ObservableLocalesAdminService extends LocalesAdminService {
+  
+  def addObserver(observer: LocalesAdminObserver): Unit
+  
+}
+
+class ObservableLocalesAdminServiceImpl @Inject() (service: LocalesAdminService) extends ObservableLocalesAdminService {
   
   private var observers = List[LocalesAdminObserver]()
+  
+  def addObserver(observer: LocalesAdminObserver) = observers ::= observer
   
   def listLocales(): Either[DatabaseError, Map[String, Locale]] = service.listLocales()
   def getLocale(id: String): Either[LookupError, Locale] = service.getLocale(id)

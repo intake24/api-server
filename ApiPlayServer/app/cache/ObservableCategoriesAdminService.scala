@@ -26,9 +26,15 @@ trait CategoriesAdminObserver {
   def onSubcategoryRemovedFromCategory(categoryCode: String, subcategoryCode: String): Unit
 }
 
-class ObservableCategoriesAdminService @Inject() (service: CategoriesAdminService) extends CategoriesAdminService {
+trait ObservableCategoriesAdminService extends CategoriesAdminService {
+  def addObserver(observer: CategoriesAdminObserver): Unit
+}
+
+class ObservableCategoriesAdminServiceImpl @Inject() (service: CategoriesAdminService) extends ObservableCategoriesAdminService {
 
   private var observers = List[CategoriesAdminObserver]()
+  
+  def addObserver(observer: CategoriesAdminObserver) = observers ::= observer
 
   def getCategoryRecord(code: String, locale: String): Either[LocalLookupError, CategoryRecord] = service.getCategoryRecord(code, locale)
 

@@ -28,7 +28,11 @@ trait FoodsAdminObserver {
   def onAllFoodsDeleted(): Unit
 }
 
-class ObservableFoodsAdminService @Inject() (service: FoodsAdminService) extends FoodsAdminService {
+trait ObservableFoodsAdminService extends FoodsAdminService {
+  def addObserver(observer: FoodsAdminObserver): Unit
+}
+
+class ObservableFoodsAdminServiceImpl @Inject() (service: FoodsAdminService) extends ObservableFoodsAdminService {
 
   private var observers = List[FoodsAdminObserver]()
 

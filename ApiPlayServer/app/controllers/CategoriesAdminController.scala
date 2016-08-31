@@ -53,7 +53,6 @@ class CategoriesAdminController @Inject() (service: CategoriesAdminService, dead
     with PickleErrorHandler
     with ApiErrorHandler {
 
-
   def getCategoryRecord(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       translateLocalLookupError(service.getCategoryRecord(code, locale))
