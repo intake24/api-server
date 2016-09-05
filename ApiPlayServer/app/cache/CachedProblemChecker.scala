@@ -44,7 +44,7 @@ case class CachedProblemChecker @Inject() (
     with FoodsAdminObserver
     with LocalesAdminObserver {
   
-  val log = LoggerFactory.getLogger(classOf[CachedProblemChecker])
+  val logger = LoggerFactory.getLogger(classOf[CachedProblemChecker])
   
   var knownCacheKeys = Set[String]()
   
@@ -81,7 +81,7 @@ case class CachedProblemChecker @Inject() (
 
   def getFoodProblems(code: String, locale: String): Either[LocalLookupError, Seq[FoodProblem]] = cachePositiveResult(foodProblemsCacheKey(code, locale)) {
     for (
-      adminFoodRecord <- foods.getFoodRecord(code, locale).right;
+      adminFoodRecord <- foods.getFoodRecord(code, locale).right; 
       userFoodRecord <- userFoods.getFoodData(code, locale).right.map(_._1).right;
       uncategorisedFoods <- adminBrowsing.getUncategorisedFoods(locale).right;
       translationRequired <- locales.isTranslationRequired(locale).right

@@ -49,6 +49,11 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDataService
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.SourceRecord
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.SourceLocale
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDataSources
+import com.google.inject.name.Named
+import javax.inject.Inject
+import javax.sql.DataSource
+
+class FoodDataUserStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends FoodDataUserImpl
 
 trait FoodDataUserImpl extends FoodDataService
     with SqlDataService
@@ -58,7 +63,7 @@ trait FoodDataUserImpl extends FoodDataService
     with InheritedPortionSizeMethodsImpl
     with InheritedNutrientTableCodesImpl {
 
-  private case class FoodRow(code: String, english_description: String, local_description: Option[String], prototype_description: Option[String], food_group_id: Long)
+  private case class FoodRow(food_code: String, english_description: String, local_description: Option[String], prototype_description: Option[String], food_group_id: Long)
 
   private def prototypeLocale(locale: String)(implicit conn: java.sql.Connection): Either[LocaleError, Option[String]] = {
     SQL("""SELECT prototype_locale_id FROM locales WHERE id = {locale_id}""")
@@ -86,16 +91,12 @@ trait FoodDataUserImpl extends FoodDataService
   private def foodRecordImpl(foodCode: String, locale: String, prototypeLocale: Option[String])(implicit conn: java.sql.Connection): Either[LocalLookupError, FoodRow] = {
     val result = SQL(foodRecordQuery).on('food_code -> foodCode, 'locale_id -> locale).executeQuery()
 
-    parseWithLocaleAndFoodValidation(result, Macro.namedParser[FoodRow].single)()
+    parseWithLocaleAndFoodValidation(foodCode, result, Macro.namedParser[FoodRow].single)()
   }
 
-  private def LookupErrorAdapter[T](e: Either[LookupError, T]): Either[LocalLookupError, T] = e.left.map {
-    case RecordNotFound => RecordNotFound
-  }
-
-  private def localeErrorAdapter[T](e: Either[LocaleError, T]): Either[LocalLookupError, T] = e.left.map {
-    case UndefinedLocale => UndefinedLocale
-  }
+  private def LookupErrorAdapter[T](e: Either[LookupError, T]): Either[LocalLookupError, T] = e.left.map(identity)
+  
+  private def localeErrorAdapter[T](e: Either[LocaleError, T]): Either[LocalLookupError, T] = e.left.map(identity)
 
   def getFoodData(foodCode: String, locale: String): Either[LocalLookupError, (UserFoodData, FoodDataSources)] = tryWithConnection {
     implicit conn =>
@@ -112,7 +113,7 @@ trait FoodDataUserImpl extends FoodDataService
         else
           SourceLocale.Current(locale)
 
-        (UserFoodData(foodRow.code, localDescription, nutr.codes, foodRow.food_group_id.toInt, psm.methods,
+        (UserFoodData(foodRow.food_code, localDescription, nutr.codes, foodRow.food_group_id.toInt, psm.methods,
           attr.readyMealOption, attr.sameAsBeforeOption, attr.reasonableAmount),
           FoodDataSources(localDescriptionSource, nutr.sourceLocale, (psm.sourceLocale, psm.sourceRecord), attr.sources))
       }

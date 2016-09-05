@@ -20,6 +20,6 @@ trait BrandNamesUserImpl extends BrandNamesService with SqlDataService with Firs
     implicit conn =>
       val result = SQL(getBrandNamesQuery).on('food_code -> foodCode, 'locale_id -> locale).executeQuery()
 
-      parseWithLocaleAndFoodValidation(result, SqlParser.str("name").+)(Seq(FirstRowValidationClause("name", Right(List()))))
+      parseWithLocaleAndFoodValidation(foodCode, result, SqlParser.str("name").+)(Seq(FirstRowValidationClause("name", Right(List()))))
   }
 }

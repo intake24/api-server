@@ -11,8 +11,10 @@ import java.sql.Connection
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.SourceRecord
 import uk.ac.ncl.openlab.intake24.foodsql.shared.FoodPortionSizeShared
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
+import org.slf4j.LoggerFactory
 
 trait InheritedPortionSizeMethodsImpl extends FoodPortionSizeShared with SqlResourceLoader with FirstRowValidation {
+  
   private case class RecursivePsmResultRow(id: Long, category_code: String, method: String, description: String, image_url: String, use_for_recipes: Boolean, param_name: Option[String], param_value: Option[String])
 
   private def mkRecursivePortionSizeMethods(rows: Seq[RecursivePsmResultRow]): (Seq[PortionSizeMethod], SourceRecord) =
@@ -28,7 +30,7 @@ trait InheritedPortionSizeMethodsImpl extends FoodPortionSizeShared with SqlReso
   private def inheritedPortionSizeMethodsImpl(code: String, locale: String)(implicit conn: Connection): Either[LocalLookupError, (Seq[PortionSizeMethod], SourceRecord)] = {
     val psmResults = SQL(inheritedPsmQuery).on('food_code -> code, 'locale_id -> locale).executeQuery()
 
-    parseWithLocaleAndFoodValidation(psmResults, Macro.namedParser[RecursivePsmResultRow].+)(Seq(FirstRowValidationClause("id", Right(List())))).right.map {
+    parseWithLocaleAndFoodValidation(code, psmResults, Macro.namedParser[RecursivePsmResultRow].+)(Seq(FirstRowValidationClause("id", Right(List())))).right.map {
       rows => mkRecursivePortionSizeMethods(rows)
     }
   }
@@ -45,7 +47,7 @@ trait InheritedPortionSizeMethodsImpl extends FoodPortionSizeShared with SqlReso
 
   protected case class ResolvedPortionSizeMethods(methods: Seq[PortionSizeMethod], sourceLocale: SourceLocale, sourceRecord: SourceRecord)
 
-  protected def resolvePortionSizeMethods(foodCode: String, locale: String, prototypeLocale: Option[String])(implicit conn: java.sql.Connection): Either[LocalLookupError, ResolvedPortionSizeMethods] = {
+  protected def resolvePortionSizeMethods(foodCode: String, locale: String, prototypeLocale: Option[String])(implicit conn: java.sql.Connection): Either[LocalLookupError, ResolvedPortionSizeMethods] = {    
     resolveLocalPortionSizeMethods(foodCode, locale).right.flatMap {
       case (localPsm, localPsmSrcRec) =>
         (localPsm.isEmpty, prototypeLocale) match {

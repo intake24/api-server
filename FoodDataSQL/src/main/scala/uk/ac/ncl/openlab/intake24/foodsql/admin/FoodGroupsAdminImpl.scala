@@ -19,6 +19,12 @@ import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DuplicateCode
+import com.google.inject.Inject
+import javax.sql.DataSource
+import com.google.inject.name.Named
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
+
+class FoodGroupsAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends FoodGroupsAdminImpl
 
 trait FoodGroupsAdminImpl extends FoodGroupsAdminService with SqlDataService with FirstRowValidation with SqlResourceLoader {
   private case class FoodGroupRow(id: Long, description: String, local_description: Option[String])
@@ -45,7 +51,7 @@ trait FoodGroupsAdminImpl extends FoodGroupsAdminService with SqlDataService wit
     implicit conn =>
       val result = SQL(getFoodGroupQuery).on('id -> id, 'locale_id -> locale).executeQuery()
 
-      val validation: Seq[FirstRowValidationClause[LocalLookupError, FoodGroupRow]] = Seq(FirstRowValidationClause("locale_id", Left(UndefinedLocale)), FirstRowValidationClause[LocalLookupError, FoodGroupRow]("id", Left(RecordNotFound)))
+      val validation: Seq[FirstRowValidationClause[LocalLookupError, FoodGroupRow]] = Seq(FirstRowValidationClause("locale_id", Left(UndefinedLocale)), FirstRowValidationClause[LocalLookupError, FoodGroupRow]("id", Left(RecordNotFound(RecordType.FoodGroup, id.toString))))
 
       parseWithFirstRowValidation(result, validation, parser.single)
         .right

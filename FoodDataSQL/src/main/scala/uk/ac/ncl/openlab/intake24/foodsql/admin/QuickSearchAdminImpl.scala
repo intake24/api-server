@@ -7,6 +7,11 @@ import anorm._
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.QuickSearchService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
+import com.google.inject.Inject
+import javax.sql.DataSource
+import com.google.inject.name.Named
+
+class QuickSearchAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends QuickSearchAdminImpl
 
 trait QuickSearchAdminImpl extends QuickSearchService with SqlDataService with HeaderRows with SqlResourceLoader {
   

@@ -49,7 +49,7 @@ trait FoodBrowsingUserImpl extends FoodBrowsingService with SqlDataService with 
 
     val result = SQL(categoryFoodContentsQuery).on('category_code -> code, 'locale_id -> locale).executeQuery()
 
-    parseWithLocaleAndCategoryValidation(result, Macro.namedParser[UserFoodHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map {
+    parseWithLocaleAndCategoryValidation(code, result, Macro.namedParser[UserFoodHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map {
       _.map {
         _.mkUserHeader
       }
@@ -61,7 +61,7 @@ trait FoodBrowsingUserImpl extends FoodBrowsingService with SqlDataService with 
   private def categorySubcategoryContentsImpl(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[UserCategoryHeader]] = {
     val result = SQL(categorySubcategoryContentsQuery).on('category_code -> code, 'locale_id -> locale).executeQuery()
 
-    parseWithLocaleAndCategoryValidation(result, Macro.namedParser[UserCategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map {
+    parseWithLocaleAndCategoryValidation(code, result, Macro.namedParser[UserCategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map {
       _.map {
         _.mkUserHeader
       }

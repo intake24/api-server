@@ -11,6 +11,7 @@ import scala.Left
 import scala.Right
 import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
 import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
 
 trait AsServedImageUserImpl extends AsServedImageService with SqlDataService with SqlResourceLoader {
 
@@ -29,7 +30,7 @@ trait AsServedImageUserImpl extends AsServedImageService with SqlDataService wit
             val images = result.map(row => AsServedImage(row.url, row.weight))
             Right(AsServedSet(id, description, images))
           }
-          case None => Left(RecordNotFound)
+          case None => Left(RecordNotFound(RecordType.AsServedSet, id))
         }
       }
   }

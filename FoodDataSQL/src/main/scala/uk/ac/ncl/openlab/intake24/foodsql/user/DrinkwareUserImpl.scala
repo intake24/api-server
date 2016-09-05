@@ -15,6 +15,7 @@ import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
 import java.sql.Connection
 import anorm.SqlParser
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
 
 trait DrinkwareUserImpl extends DrinkwareService with SqlDataService with SqlResourceLoader {
   protected case class DrinkwareResultRow(id: String, scale_id: Long, description: String, guide_image_id: String,
@@ -37,7 +38,7 @@ trait DrinkwareUserImpl extends DrinkwareService with SqlDataService with SqlRes
 
       if (validation.isEmpty) {
         conn.commit()
-        Left(RecordNotFound)
+        Left(RecordNotFound(RecordType.DrinkwareSet, id))
       } else {
         val result = SQL(drinkwareScalesQuery).on('drinkware_id -> id).executeQuery().as(Macro.namedParser[DrinkwareResultRow].*)
 

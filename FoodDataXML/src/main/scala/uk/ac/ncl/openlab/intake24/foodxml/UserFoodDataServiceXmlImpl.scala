@@ -39,6 +39,7 @@ import uk.ac.ncl.openlab.intake24.AssociatedFood
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDatabaseService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
 
 @Singleton
 class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDatabaseService {
@@ -116,17 +117,17 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDat
 
   def getAsServedSet(id: String) = data.asServedSets.get(id) match {
     case Some(set) => Right(set)
-    case None => Left(RecordNotFound)
+    case None => Left(RecordNotFound(RecordType.AsServedSet, id))
   }
 
   def getGuideImage(id: String) = data.guideImages.get(id) match {
     case Some(image) => Right(image)
-    case None => Left(RecordNotFound)
+    case None => Left(RecordNotFound(RecordType.GuideImage, id))
   }
 
   def getDrinkwareSet(id: String) = data.drinkwareSets.get(id) match {
     case Some(set) => Right(set)
-    case None => Left(RecordNotFound)
+    case None => Left(RecordNotFound(RecordType.DrinkwareSet, id))
   }
 
   def getAssociatedFoods(foodCode: String, locale: String) = {
@@ -144,7 +145,7 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDat
             }
         })
       }
-      case None => Left(RecordNotFound)
+      case None => Left(RecordNotFound(RecordType.Food, foodCode))
     }
   }
 
@@ -152,7 +153,7 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDat
     checkLocale(locale)
     data.brandNamesMap.get(foodCode) match {
       case Some(map) => Right(map)
-      case None => Left(RecordNotFound)
+      case None => Left(RecordNotFound(RecordType.Food, foodCode))
     }
   }
 

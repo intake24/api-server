@@ -68,8 +68,9 @@ DELETE  /admin/categories/:code                                          control
 
 # Problem checker
 
-GET     /admin/categories/:locale/:code/problems             controllers.ProblemCheckerController.checkCategory(code: String, locale: String)
-GET     /admin/categories/:locale/:code/problems/recursive   controllers.ProblemCheckerController.checkCategoryRecursive(code: String, locale: String)
+GET     /admin/foods/:locale/:code/problems                              controllers.ProblemCheckerController.checkFood(code: String, locale: String)
+GET     /admin/categories/:locale/:code/problems                         controllers.ProblemCheckerController.checkCategory(code: String, locale: String)
+GET     /admin/categories/:locale/:code/recursive-problems               controllers.ProblemCheckerController.checkCategoryRecursive(code: String, locale: String)
 
 
 # Food groups

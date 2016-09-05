@@ -1,6 +1,6 @@
 WITH RECURSIVE v AS(
-  SELECT (SELECT code FROM foods WHERE code='COCO') AS food_code,
-         (SELECT id FROM locales WHERE id='en_GB') AS locale_id
+  SELECT (SELECT code FROM foods WHERE code={food_code}) AS food_code,
+         (SELECT id FROM locales WHERE id={locale_id}) AS locale_id
 )
 SELECT v.food_code, v.locale_id, foods.description as english_description, fl1.local_description as local_description, fl2.local_description AS prototype_description, food_group_id
   FROM v LEFT JOIN foods ON v.food_code=foods.code

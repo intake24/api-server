@@ -51,7 +51,7 @@ trait AssociatedFoodsUserImpl extends AssociatedFoodsService with SqlDataService
         AssociatedFood(foodOrCategory, row.text, row.link_as_main, row.generic_name)
       }
 
-      parseWithLocaleAndFoodValidation(result, parser)(Seq(FirstRowValidationClause("id", Right(List())))).right.map {
+      parseWithLocaleAndFoodValidation(foodCode, result, parser)(Seq(FirstRowValidationClause("id", Right(List())))).right.map {
         rows =>
           val (local, prototype) = rows.partition(_.locale_id == locale)
 

@@ -41,6 +41,12 @@ import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
 import uk.ac.ncl.openlab.intake24.foodsql.shared.FoodPortionSizeShared
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
 import uk.ac.ncl.openlab.intake24.foodsql.SimpleValidation
+import com.google.inject.Inject
+import javax.sql.DataSource
+import com.google.inject.name.Named
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
+
+class CategoriesAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends CategoriesAdminImpl
 
 trait CategoriesAdminImpl extends CategoriesAdminService
     with SqlDataService
@@ -89,7 +95,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService
   def categoryPortionSizeMethods(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[PortionSizeMethod]] = {
     val psmResults = SQL(categoryPsmQuery).on('category_code -> code, 'locale_id -> locale).executeQuery()
 
-    parseWithLocaleAndCategoryValidation(psmResults, psmResultRowParser.+)(Seq(FirstRowValidationClause("id", Right(List())))).right.map(mkPortionSizeMethods)
+    parseWithLocaleAndCategoryValidation(code, psmResults, psmResultRowParser.+)(Seq(FirstRowValidationClause("id", Right(List())))).right.map(mkPortionSizeMethods)
   }
 
   case class CategoryResultRow(version: UUID, local_version: Option[UUID], code: String, description: String, local_description: Option[String], is_hidden: Boolean, same_as_before_option: Option[Boolean],
@@ -103,7 +109,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService
         psm =>
           val categoryQueryResult = SQL(categoryRecordQuery).on('category_code -> code, 'locale_id -> locale).executeQuery()
 
-          parseWithLocaleAndCategoryValidation(categoryQueryResult, Macro.namedParser[CategoryResultRow].single)().right.map {
+          parseWithLocaleAndCategoryValidation(code, categoryQueryResult, Macro.namedParser[CategoryResultRow].single)().right.map {
             result =>
               CategoryRecord(
                 MainCategoryRecord(result.version, result.code, result.description, result.is_hidden,
@@ -142,7 +148,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService
       } catch {
         case e: PSQLException => {
           e.getServerErrorMessage.getConstraint match {
-            case "categories_attributes_category_code_fk" => Left(RecordNotFound)
+            case "categories_attributes_category_code_fk" => Left(RecordNotFound(RecordType.Category, categoryCode))
             case _ => throw e
           }
         }
@@ -156,7 +162,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService
   private val categoriesPsmInsertQuery = "INSERT INTO categories_portion_size_methods VALUES(DEFAULT, {category_code}, {locale_id}, {method}, {description}, {image_url}, {use_for_recipes})"
 
   private def updatePortionSizeMethods(categoryCode: String, locale: String, portionSize: Seq[PortionSizeMethod])(implicit conn: java.sql.Connection): Either[LocalUpdateError, Unit] = {
-    val errors = Map("categories_portion_size_methods_categories_code_fk" -> RecordNotFound,
+    val errors = Map("categories_portion_size_methods_categories_code_fk" -> RecordNotFound(RecordType.Category, categoryCode),
       "categories_portion_size_methods_locale_id_fk" -> UndefinedLocale)
 
     SQL("DELETE FROM categories_portion_size_methods WHERE category_code={category_code} AND locale_id={locale_id}")
@@ -216,13 +222,13 @@ trait CategoriesAdminImpl extends CategoriesAdminService
               }
           }
       }
-      
+
       result match {
-        case x@Left(error) => {
+        case x @ Left(error) => {
           conn.rollback()
           x
         }
-        case x@Right(()) => {
+        case x @ Right(()) => {
           conn.commit()
           x
         }
@@ -241,8 +247,8 @@ trait CategoriesAdminImpl extends CategoriesAdminService
         case e: PSQLException =>
           e.getServerErrorMessage.getConstraint match {
             case "foods_categories_unique" => Right(())
-            case "foods_categories_category_code_fk" => Left(RecordNotFound)
-            case "foods_categories_food_code_fk" => Left(RecordNotFound)
+            case "foods_categories_category_code_fk" => Left(RecordNotFound(RecordType.Category, categoryCode))
+            case "foods_categories_food_code_fk" => Left(RecordNotFound(RecordType.Food, foodCode))
             case _ => throw e
           }
       }
@@ -272,8 +278,8 @@ trait CategoriesAdminImpl extends CategoriesAdminService
         case e: BatchUpdateException => e.getNextException match {
           case e2: PSQLException => e2.getServerErrorMessage.getConstraint match {
             case "foods_categories_unique" => { conn.commit(); Right(()) }
-            case "foods_categories_category_code_fk" => { conn.rollback(); Left(RecordNotFound) }
-            case "foods_categories_food_code_fk" => { conn.rollback(); Left(RecordNotFound) }
+            case "foods_categories_category_code_fk" => { conn.rollback(); Left(RecordNotFound(RecordType.Category, "Not available for batch operations")) }
+            case "foods_categories_food_code_fk" => { conn.rollback(); Left(RecordNotFound(RecordType.Food, "Not available for batch operations")) }
             case _ => throw e
           }
           case _ => throw e
@@ -296,8 +302,8 @@ trait CategoriesAdminImpl extends CategoriesAdminService
           case e: PSQLException =>
             e.getServerErrorMessage.getConstraint match {
               case "categories_categories_unique" => Right(())
-              case "categories_categories_subcategory_code_fk" => Left(RecordNotFound)
-              case "categories_categories_category_code_fk" => Left(RecordNotFound)
+              case "categories_categories_subcategory_code_fk" => Left(RecordNotFound(RecordType.Category, subcategoryCode))
+              case "categories_categories_category_code_fk" => Left(RecordNotFound(RecordType.Category, categoryCode))
               case _ => throw e
             }
         }
@@ -333,8 +339,8 @@ trait CategoriesAdminImpl extends CategoriesAdminService
         case e: PSQLException =>
           e.getServerErrorMessage.getConstraint match {
             case "categories_categories_unique" => Right(())
-            case "categories_categories_subcategory_code_fk" => Left(RecordNotFound)
-            case "categories_categories_category_code_fk" => Left(RecordNotFound)
+            case "categories_categories_subcategory_code_fk" => Left(RecordNotFound(RecordType.Category, "Not available for batch operations"))
+            case "categories_categories_category_code_fk" => Left(RecordNotFound(RecordType.Category, "Not available for batch operations"))
             case _ => throw e
           }
       }
@@ -457,7 +463,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService
       if (rowsAffected == 1)
         Right(())
       else
-        Left(RecordNotFound)
+        Left(RecordNotFound(RecordType.Category, categoryCode))
   }
 
   def deleteAllCategories(): Either[DatabaseError, Unit] = tryWithConnection {
@@ -473,7 +479,8 @@ trait CategoriesAdminImpl extends CategoriesAdminService
       if (rowsAffected == 1)
         Right(())
       else
-        Left(RecordNotFound)
+        // TODO: Could be food or category, needs better validation
+        Left(RecordNotFound(RecordType.Food, foodCode))
   }
 
   def removeSubcategoryFromCategory(categoryCode: String, subcategoryCode: String): Either[UpdateError, Unit] = tryWithConnection {
@@ -485,6 +492,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService
       if (rowsAffected == 1)
         Right(())
       else
-        Left(RecordNotFound)
+        // TODO: Could be food or category, needs better validation
+        Left(RecordNotFound(RecordType.Category, subcategoryCode))
   }
 }

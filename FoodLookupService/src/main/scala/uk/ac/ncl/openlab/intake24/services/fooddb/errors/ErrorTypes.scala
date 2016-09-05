@@ -18,40 +18,56 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.services.fooddb.errors
 
-
 sealed trait LocalLookupError extends LocalUpdateError
 
 sealed trait LocaleError extends LocalLookupError with LocalUpdateError with LocalCreateError with LocalDeleteError with LocalDependentCreateError
 
 sealed trait LookupError extends LocalLookupError
 
-
 sealed trait LocalDeleteError
 
 sealed trait DeleteError extends LocalDeleteError
-
-
 
 sealed trait LocalUpdateError
 
 sealed trait UpdateError extends LocalUpdateError
 
-
 sealed trait LocalCreateError
 
 sealed trait CreateError extends LocalCreateError
-
 
 sealed trait LocalDependentCreateError
 
 sealed trait DependentCreateError extends LocalDependentCreateError
 
-
 sealed trait NutrientMappingError
 
 case object UndefinedLocale extends LocaleError
 
-case object RecordNotFound extends LookupError with NutrientMappingError with DeleteError with UpdateError 
+sealed trait RecordType
+
+object RecordType {
+  
+  case object FoodGroup extends RecordType
+
+  case object AsServedSet extends RecordType
+
+  case object GuideImage extends RecordType
+
+  case object DrinkwareSet extends RecordType
+  
+  case object NutrientTable extends RecordType
+
+  case object NutrientTableRecord extends RecordType
+
+  case object Food extends RecordType
+
+  case object Category extends RecordType
+  
+  case object Locale extends RecordType
+}
+
+case class RecordNotFound(recordType: RecordType, code: String) extends LookupError with NutrientMappingError with DeleteError with UpdateError
 
 case object VersionConflict extends UpdateError
 
@@ -61,7 +77,7 @@ case object ParentRecordNotFound extends DependentCreateError
 
 case object TableNotFound extends NutrientMappingError
 
-case class DatabaseError(message: String, cause: Option[Throwable]) 
+case class DatabaseError(message: String, cause: Option[Throwable])
   extends LocaleError
   with LookupError
   with LocalLookupError
@@ -74,9 +90,9 @@ case class DatabaseError(message: String, cause: Option[Throwable])
   with NutrientMappingError
   with DependentCreateError
   with LocalDependentCreateError
-  
+
 object test {
   val q: LocaleError = UndefinedLocale
   val x: LocalLookupError = q
-  
+
 }

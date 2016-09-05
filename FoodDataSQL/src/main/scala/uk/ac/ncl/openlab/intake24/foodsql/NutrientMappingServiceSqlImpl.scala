@@ -15,6 +15,7 @@ import org.postgresql.util.PSQLException
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.NutrientMappingError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
 
 class NutrientMappingServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends NutrientMappingService with SqlDataService {
 
@@ -39,7 +40,7 @@ class NutrientMappingServiceSqlImpl @Inject() (@Named("intake24_foods") val data
         .as(Macro.namedParser[NutrientsRow].*)
 
       if (rows.isEmpty)
-        Left(RecordNotFound)
+        Left(RecordNotFound(RecordType.NutrientTableRecord, s"$table_id/$record_id"))
       else
         Right(rows.map(row => (Nutrient.for_id(row.nutrient_type_id).get -> (weight * row.units_per_100g / 100.0))).toMap)
   }

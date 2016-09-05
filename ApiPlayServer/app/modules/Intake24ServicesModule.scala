@@ -71,6 +71,20 @@ import cache.ObservableCategoriesAdminService
 import cache.ObservableCategoriesAdminServiceImpl
 import cache.ObservableLocalesAdminService
 import cache.ObservableLocalesAdminServiceImpl
+import uk.ac.ncl.openlab.intake24.foodsql.admin.LocalesAdminStandaloneImpl
+import uk.ac.ncl.openlab.intake24.foodsql.admin.GuideImageAdminStandaloneImpl
+import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodGroupsAdminStandaloneImpl
+import uk.ac.ncl.openlab.intake24.foodsql.admin.CategoriesAdminStandaloneImpl
+import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodBrowsingAdminStandaloneImpl
+import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodsAdminStandaloneImpl
+import uk.ac.ncl.openlab.intake24.foodsql.admin.DrinkwareAdminStandaloneImpl
+import uk.ac.ncl.openlab.intake24.foodsql.admin.AsServedImageAdminStandaloneImpl
+import uk.ac.ncl.openlab.intake24.foodsql.admin.AssociatedFoodsAdminStandaloneImpl
+import uk.ac.ncl.openlab.intake24.foodsql.admin.NutrientTablesAdminStandaloneImpl
+import uk.ac.ncl.openlab.intake24.foodsql.user.FoodDataUserStandaloneImpl
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDataService
+import uk.ac.ncl.openlab.intake24.foodsql.admin.QuickSearchAdminStandaloneImpl
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.QuickSearchService
 
 class Intake24ServicesModule(env: Environment, config: Configuration) extends AbstractModule {
   @Provides
@@ -95,16 +109,17 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     
     // Basic admin services -- uncached for now
     
-    bind(classOf[AsServedImageAdminService]).to(classOf[AsServedImageAdminImpl])
-    bind(classOf[AssociatedFoodsAdminService]).to(classOf[AssociatedFoodsAdminImpl])
-    bind(classOf[CategoriesAdminService]).to(classOf[CategoriesAdminImpl])
-    bind(classOf[DrinkwareAdminService]).to(classOf[DrinkwareAdminImpl])
-    bind(classOf[FoodBrowsingAdminService]).to(classOf[FoodBrowsingAdminImpl])
-    bind(classOf[FoodGroupsAdminService]).to(classOf[FoodGroupsAdminImpl])
-    bind(classOf[FoodsAdminService]).to(classOf[FoodsAdminImpl])
-    bind(classOf[GuideImageAdminService]).to(classOf[GuideImageAdminImpl])
-    bind(classOf[LocalesAdminService]).to(classOf[LocalesAdminImpl])
-    bind(classOf[NutrientTablesAdminService]).to(classOf[NutrientTablesAdminImpl])
+    bind(classOf[AsServedImageAdminService]).to(classOf[AsServedImageAdminStandaloneImpl])
+    bind(classOf[AssociatedFoodsAdminService]).to(classOf[AssociatedFoodsAdminStandaloneImpl])
+    bind(classOf[CategoriesAdminService]).to(classOf[CategoriesAdminStandaloneImpl])
+    bind(classOf[DrinkwareAdminService]).to(classOf[DrinkwareAdminStandaloneImpl])
+    bind(classOf[FoodBrowsingAdminService]).to(classOf[FoodBrowsingAdminStandaloneImpl])
+    bind(classOf[FoodGroupsAdminService]).to(classOf[FoodGroupsAdminStandaloneImpl])
+    bind(classOf[FoodsAdminService]).to(classOf[FoodsAdminStandaloneImpl])
+    bind(classOf[GuideImageAdminService]).to(classOf[GuideImageAdminStandaloneImpl])
+    bind(classOf[LocalesAdminService]).to(classOf[LocalesAdminStandaloneImpl])
+    bind(classOf[NutrientTablesAdminService]).to(classOf[NutrientTablesAdminStandaloneImpl])
+    bind(classOf[QuickSearchService]).to(classOf[QuickSearchAdminStandaloneImpl])
     
     // Observable admin services for higher-level cached services
     
@@ -123,6 +138,7 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     // User food database service
     
     bind(classOf[FoodDatabaseService]).to(classOf[FoodDatabaseUserImpl])
+    bind(classOf[FoodDataService]).to(classOf[FoodDataUserStandaloneImpl])
        
   }
 }

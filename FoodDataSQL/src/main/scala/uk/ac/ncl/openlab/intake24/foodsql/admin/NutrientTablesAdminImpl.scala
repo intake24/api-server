@@ -11,6 +11,12 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.NutrientTableRecord
 import anorm.NamedParameter
+import com.google.inject.Inject
+import javax.sql.DataSource
+import com.google.inject.name.Named
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
+
+class NutrientTablesAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends NutrientTablesAdminImpl
 
 trait NutrientTablesAdminImpl extends NutrientTablesAdminService with SqlDataService {
   private case class NutrientTableDescRow(id: String, description: String) {
@@ -31,7 +37,7 @@ trait NutrientTablesAdminImpl extends NutrientTablesAdminService with SqlDataSer
 
       SQL(query).on('id -> id).executeQuery().as(Macro.namedParser[NutrientTable].singleOpt) match {
         case Some(table) => Right(table)
-        case None => Left(RecordNotFound)
+        case None => Left(RecordNotFound(RecordType.NutrientTable, id))
       }
   }
 
@@ -51,7 +57,7 @@ trait NutrientTablesAdminImpl extends NutrientTablesAdminService with SqlDataSer
       val affectedRows = SQL(query).on('id -> id, 'new_id -> data.id, 'description -> data.description).executeUpdate()
 
       if (affectedRows == 0)
-        Left(RecordNotFound)
+        Left(RecordNotFound(RecordType.NutrientTable, id))
       else
         Right(())
   }
@@ -63,7 +69,7 @@ trait NutrientTablesAdminImpl extends NutrientTablesAdminService with SqlDataSer
       val affectedRows = SQL(query).on('id -> id).executeUpdate()
 
       if (affectedRows == 0)
-        Left(RecordNotFound)
+        Left(RecordNotFound(RecordType.NutrientTable, id))
       else
         Right(())
   }

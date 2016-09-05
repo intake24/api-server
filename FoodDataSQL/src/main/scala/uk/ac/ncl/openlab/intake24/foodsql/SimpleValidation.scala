@@ -9,6 +9,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
 import anorm.SqlParser
 import java.sql.Connection
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
 
 trait SimpleValidation {
 
@@ -45,7 +46,7 @@ trait SimpleValidation {
       val validation = SQL(foodAndLocaleValidationQuery).on("food_code" -> foodCode, "locale_id" -> locale).executeQuery().as(Macro.namedParser[FoodAndLocaleValidationRow].single)
 
       if (validation.food_exists.isEmpty) {
-        Left(RecordNotFound)
+        Left(RecordNotFound(RecordType.Food, foodCode))
       } else if (validation.locale_exists.isEmpty) {
         Left(UndefinedLocale)
       } else {
@@ -59,7 +60,7 @@ trait SimpleValidation {
       val validation = SQL(categoryAndLocaleValidationQuery).on("category_code" -> categoryCode, "locale_id" -> locale).executeQuery().as(Macro.namedParser[CategoryAndLocaleValidationRow].single)
 
       if (validation.category_exists.isEmpty) {
-        Left(RecordNotFound)
+        Left(RecordNotFound(RecordType.Category, categoryCode))
       } else if (validation.locale_exists.isEmpty) {
         Left(UndefinedLocale)
       } else {

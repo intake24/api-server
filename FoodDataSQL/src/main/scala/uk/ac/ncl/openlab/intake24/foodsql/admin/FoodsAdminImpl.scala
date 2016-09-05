@@ -39,6 +39,12 @@ import uk.ac.ncl.openlab.intake24.foodsql.shared.FoodPortionSizeShared
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentCreateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentRecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
+import com.google.inject.Inject
+import javax.sql.DataSource
+import com.google.inject.name.Named
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
+
+class FoodsAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends FoodsAdminImpl
 
 trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with SqlResourceLoader with FirstRowValidation with FoodPortionSizeShared with AdminErrorMessagesShared {
 
@@ -71,7 +77,7 @@ trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with SqlResou
   def foodNutrientTableCodes(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Map[String, String]] = {
     val nutrientTableCodesResult = SQL(foodNutrientTableCodesQuery).on('food_code -> code, 'locale_id -> locale).executeQuery()
 
-    val parsed = parseWithLocaleAndFoodValidation(nutrientTableCodesResult, Macro.namedParser[NutrientTableRow].+)(Seq(FirstRowValidationClause("nutrient_table_id", Right(List()))))
+    val parsed = parseWithLocaleAndFoodValidation(code, nutrientTableCodesResult, Macro.namedParser[NutrientTableRow].+)(Seq(FirstRowValidationClause("nutrient_table_id", Right(List()))))
 
     parsed.right.map {
       _.map {
@@ -91,7 +97,7 @@ trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with SqlResou
             psm =>
               val foodQueryResult = SQL(foodRecordQuery).on('food_code -> code, 'locale_id -> locale).executeQuery()
 
-              parseWithLocaleAndFoodValidation(foodQueryResult, Macro.namedParser[FoodResultRow].single)().right.map {
+              parseWithLocaleAndFoodValidation(code, foodQueryResult, Macro.namedParser[FoodResultRow].single)().right.map {
                 result =>
                   FoodRecord(
                     MainFoodRecord(result.version, result.code, result.description, result.food_group_id.toInt,
@@ -209,7 +215,7 @@ trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with SqlResou
       if (rowsAffected == 1)
         Right(())
       else
-        Left(RecordNotFound)
+        Left(RecordNotFound(RecordType.Food, foodCode))
   }
 
   private val foodLocalInsertQuery = "INSERT INTO foods_local VALUES({food_code}, {locale_id}, {local_description}, {do_not_use}, {version}::uuid)"
@@ -299,7 +305,7 @@ trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with SqlResou
       } catch {
         case e: PSQLException => {
           e.getServerErrorMessage.getConstraint match {
-            case "foods_attributes_food_code_fk" => Left(RecordNotFound)
+            case "foods_attributes_food_code_fk" => Left(RecordNotFound(RecordType.Food, foodCode))
             case _ => throw e
           }
         }
@@ -372,7 +378,7 @@ trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with SqlResou
       } catch {
         case e: PSQLException => {
           e.getServerErrorMessage.getConstraint match {
-            case "foods_nutrient_tables_food_code_fk" | "foods_portion_size_methods_food_id_fk" | "foods_local_food_code_fk" => Left(RecordNotFound)
+            case "foods_nutrient_tables_food_code_fk" | "foods_portion_size_methods_food_id_fk" | "foods_local_food_code_fk" => Left(RecordNotFound(RecordType.Food, foodCode))
             case _ => throw e
           }
         }

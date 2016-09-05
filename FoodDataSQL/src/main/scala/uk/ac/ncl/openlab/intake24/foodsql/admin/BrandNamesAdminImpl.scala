@@ -17,6 +17,11 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentCreateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentRecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
+import javax.sql.DataSource
+import com.google.inject.Inject
+import com.google.inject.name.Named
+
+class BrandNamesAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends BrandNamesAdminImpl
 
 trait BrandNamesAdminImpl extends BrandNamesAdminService with SqlDataService with BrandNamesUserImpl with SimpleValidation {
   private val logger = LoggerFactory.getLogger(classOf[BrandNamesAdminImpl])

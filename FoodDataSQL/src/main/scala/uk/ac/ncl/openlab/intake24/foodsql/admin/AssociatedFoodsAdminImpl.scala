@@ -32,6 +32,11 @@ import anorm.SqlParser
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentRecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
 import uk.ac.ncl.openlab.intake24.foodsql.user.AssociatedFoodsUserImpl
+import javax.sql.DataSource
+import com.google.inject.Inject
+import com.google.inject.name.Named
+
+class AssociatedFoodsAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends AssociatedFoodsAdminImpl
 
 trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with AssociatedFoodsUserImpl with SqlDataService with SqlResourceLoader with SimpleValidation {
 

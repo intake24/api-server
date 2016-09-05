@@ -1,24 +1,30 @@
 package uk.ac.ncl.openlab.intake24.foodsql.admin
 
-import uk.ac.ncl.openlab.intake24.FoodHeader
-import anorm._
-import uk.ac.ncl.openlab.intake24.CategoryHeader
-import uk.ac.ncl.openlab.intake24.CategoryContents
+import scala.Right
 
+import com.google.inject.Inject
+import com.google.inject.name.Named
+
+import anorm.Macro
 import anorm.NamedParameter.symbol
-
-import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodBrowsingAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
-import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
+import anorm.SQL
+import anorm.sqlToSimple
+import javax.sql.DataSource
+import uk.ac.ncl.openlab.intake24.CategoryContents
+import uk.ac.ncl.openlab.intake24.CategoryHeader
+import uk.ac.ncl.openlab.intake24.FoodHeader
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.foodsql.shared.SuperCategoriesImpl
+import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
+import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
 import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
+import uk.ac.ncl.openlab.intake24.foodsql.shared.SuperCategoriesImpl
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodBrowsingAdminService
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
+import org.slf4j.LoggerFactory
+
+class FoodBrowsingAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends FoodBrowsingAdminImpl
 
 trait FoodBrowsingAdminImpl extends FoodBrowsingAdminService
     with SqlDataService
@@ -28,6 +34,7 @@ trait FoodBrowsingAdminImpl extends FoodBrowsingAdminService
     with SuperCategoriesImpl {
 
   lazy private val uncategorisedFoodsQuery = sqlFromResource("admin/uncategorised_foods.sql")
+  private val logger = LoggerFactory.getLogger(classOf[FoodBrowsingAdminImpl])
 
   def getUncategorisedFoods(locale: String): Either[LocaleError, Seq[FoodHeader]] = tryWithConnection {
     implicit conn =>
@@ -43,21 +50,21 @@ trait FoodBrowsingAdminImpl extends FoodBrowsingAdminService
 
       parseWithLocaleValidation(result, Macro.namedParser[CategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map(_.map(_.asCategoryHeader))
   }
-  
+
   lazy private val categoryFoodContentsQuery = sqlFromResource("admin/category_contents_foods.sql")
 
   private def categoryFoodContentsImpl(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[FoodHeader]] = {
     val result = SQL(categoryFoodContentsQuery).on('category_code -> code, 'locale_id -> locale).executeQuery()
 
-    parseWithLocaleAndCategoryValidation(result, Macro.namedParser[FoodHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map(_.map(_.asFoodHeader))
+    parseWithLocaleAndCategoryValidation(code, result, Macro.namedParser[FoodHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map(_.map(_.asFoodHeader))
   }
-  
+
   lazy private val categorySubcategoryContentsQuery = sqlFromResource("admin/category_contents_subcategories.sql")
 
   private def categorySubcategoryContentsImpl(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[CategoryHeader]] = {
     val result = SQL(categorySubcategoryContentsQuery).on('category_code -> code, 'locale_id -> locale).executeQuery()
 
-    parseWithLocaleAndCategoryValidation(result, Macro.namedParser[CategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map(_.map(_.asCategoryHeader))
+    parseWithLocaleAndCategoryValidation(code, result, Macro.namedParser[CategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map(_.map(_.asCategoryHeader))
   }
 
   def getCategoryContents(code: String, locale: String): Either[LocalLookupError, CategoryContents] = tryWithConnection {
@@ -86,7 +93,7 @@ trait FoodBrowsingAdminImpl extends FoodBrowsingAdminService
           .on('food_code -> code, 'locale_id -> locale)
           .executeQuery()
 
-      parseWithLocaleAndFoodValidation(result, Macro.namedParser[CategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map(_.map(_.asCategoryHeader))
+      parseWithLocaleAndFoodValidation(code, result, Macro.namedParser[CategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map(_.map(_.asCategoryHeader))
   }
 
   def getFoodAllCategoriesCodes(code: String): Either[LookupError, Set[String]] = tryWithConnection {
@@ -112,7 +119,7 @@ trait FoodBrowsingAdminImpl extends FoodBrowsingAdminService
 
       val result = SQL(query).on('category_code -> code, 'locale_id -> locale).executeQuery()
 
-      parseWithLocaleAndCategoryValidation(result, Macro.namedParser[CategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map(_.map(_.asCategoryHeader))
+      parseWithLocaleAndCategoryValidation(code, result, Macro.namedParser[CategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map(_.map(_.asCategoryHeader))
   }
 
   def getCategoryAllCategoriesCodes(code: String): Either[LookupError, Set[String]] = tryWithConnection {

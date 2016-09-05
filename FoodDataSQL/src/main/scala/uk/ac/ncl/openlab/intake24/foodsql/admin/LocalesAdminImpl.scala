@@ -18,25 +18,30 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodsql.admin
 
-import javax.sql.DataSource
-import com.google.inject.Inject
-import com.google.inject.name.Named
-import uk.ac.ncl.openlab.intake24.Locale
-import anorm._
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
-import anorm.NamedParameter.symbol
 import scala.Left
 import scala.Right
+
+import com.google.inject.Inject
+import com.google.inject.name.Named
+
+import anorm.Macro
+import anorm.NamedParameter.symbol
+import anorm.SQL
+import anorm.sqlToSimple
+import javax.sql.DataSource
+import uk.ac.ncl.openlab.intake24.Locale
 import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.LocalesAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DuplicateCode
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DuplicateCode
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
+
+class LocalesAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends LocalesAdminImpl
 
 trait LocalesAdminImpl extends LocalesAdminService with SqlDataService {
 
@@ -58,7 +63,7 @@ trait LocalesAdminImpl extends LocalesAdminService with SqlDataService {
 
       SQL(query).on('locale_id -> id).executeQuery().as(Macro.namedParser[LocaleRow].singleOpt).map(_.mkLocale) match {
         case Some(locale) => Right(locale)
-        case None => Left(RecordNotFound)
+        case None => Left(RecordNotFound(RecordType.Locale, id))
       }
   }
 
@@ -81,7 +86,7 @@ trait LocalesAdminImpl extends LocalesAdminService with SqlDataService {
         'admin_language_code -> data.adminLanguage, 'country_flag_code -> data.flagCode, 'prototype_locale_id -> data.prototypeLocale).executeUpdate()
 
       if (updatedRows == 0)
-        Left(RecordNotFound)
+        Left(RecordNotFound(RecordType.Locale, id))
       else
         Right(())
   }
@@ -93,7 +98,7 @@ trait LocalesAdminImpl extends LocalesAdminService with SqlDataService {
       val updatedRows = SQL(query).on('id -> id).executeUpdate()
 
       if (updatedRows == 0)
-        Left(RecordNotFound)
+        Left(RecordNotFound(RecordType.Locale, id))
       else
         Right(())
   }

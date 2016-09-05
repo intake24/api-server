@@ -10,6 +10,7 @@ import anorm.NamedParameter.symbol
 import scala.Left
 import scala.Right
 import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
 
 trait GuideImageUserImpl extends GuideImageService with SqlDataService {
 
@@ -26,7 +27,7 @@ trait GuideImageUserImpl extends GuideImageService with SqlDataService {
       val result = SQL(query).on('id -> id).executeQuery().as(Macro.namedParser[GuideResultRow].*)
 
       if (result.isEmpty)
-        Left(RecordNotFound)
+        Left(RecordNotFound(RecordType.GuideImage, id))
       else {
         val weights = result.map(row => GuideImageWeightRecord(row.object_description, row.object_id, row.weight))
         Right(GuideImage(id, result.head.image_description, weights))

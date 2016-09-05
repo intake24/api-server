@@ -22,7 +22,7 @@ trait InheritedAttributesImpl extends SqlResourceLoader with FirstRowValidation 
 
     val result = SQL(inheritedAttributesQuery).on('food_code -> code).executeQuery()
 
-    parseWithFoodValidation(result, Macro.namedParser[RecursiveAttributesRow].+)()
+    parseWithFoodValidation(code, result, Macro.namedParser[RecursiveAttributesRow].+)()
   }
 
   private case class InheritableAttributeTemp(
