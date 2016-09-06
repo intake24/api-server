@@ -22,9 +22,9 @@ import uk.ac.ncl.openlab.intake24.FoodGroupMain
 import uk.ac.ncl.openlab.intake24.FoodRecord
 
 
-case class FoodGroups (foods: Seq[FoodRecord], groups: Seq[FoodGroupMain]) {
+case class FoodGroups (foods: Seq[XmlFoodRecord], groups: Seq[FoodGroupMain]) {
   val groupMap = groups.map( g => (g.id, g)).toMap
-  val foodMap = foods.map ( f => (f.main.code, groupMap(f.main.groupCode))).toMap
+  val foodMap = foods.map ( f => (f.code, groupMap(f.groupCode))).toMap
   
   def forFood (code: String) = foodMap.getOrElse(code, groups(0))
 }

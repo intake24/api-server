@@ -35,6 +35,8 @@ import uk.ac.ncl.openlab.intake24.foodsql.user.AssociatedFoodsUserImpl
 import javax.sql.DataSource
 import com.google.inject.Inject
 import com.google.inject.name.Named
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentUpdateError
 
 class AssociatedFoodsAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends AssociatedFoodsAdminImpl
 
@@ -71,72 +73,67 @@ trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with Associat
       }
   }
 
-  def updateAssociatedFoods(foodCode: String, locale: String, foods: Seq[AssociatedFood]): Either[LocalLookupError, Unit] = tryWithConnection {
-    implicit conn =>
-      conn.setAutoCommit(false)
-
-      SQL("DELETE FROM associated_food_prompts WHERE food_code={food_code} AND locale_id={locale_id}")
-        .on('food_code -> foodCode, 'locale_id -> locale)
-        .execute()
-
-      if (foods.nonEmpty) {
-
-        val params = foods.map {
-          p =>
-
-            val foodOption = p.foodOrCategoryCode.left.toOption
-            val categoryOption = p.foodOrCategoryCode.right.toOption
-
-            Seq[NamedParameter]('food_code -> foodCode, 'locale_id -> locale, 'associated_food_code -> foodOption,
-              'associated_category_code -> categoryOption, 'text -> p.promptText, 'link_as_main -> p.linkAsMain, 'generic_name -> p.genericName)
-        }
-
-        batchSql("INSERT INTO associated_food_prompts VALUES (DEFAULT, {food_code}, {locale_id}, {associated_category_code}, {associated_food_code}, {text}, {link_as_main}, {generic_name})", params)
-          .execute()
-      }
-
-      conn.commit()
-
-      Right(())
+  def deleteAllAssociatedFoodsComposable(locale: String)(implicit conn: java.sql.Connection): Either[DatabaseError, Unit] = {
+    logger.debug("Deleting existing associated food prompts")
+    SQL("DELETE FROM associated_foods WHERE locale_id={locale_id}").on('locale_id -> locale).execute()
+    Right(())
   }
 
-  def deleteAllAssociatedFoods(locale: String): Either[DatabaseError, Unit] = tryWithConnection {
+  def deleteAllAssociatedFoods(locale: String)(implicit conn: java.sql.Connection): Either[DatabaseError, Unit] = tryWithConnection {
     implicit conn =>
-      logger.debug("Deleting existing associated food prompts")
+      deleteAllAssociatedFoodsComposable(locale)
+  }
 
-      SQL("DELETE FROM associated_foods WHERE locale_id={locale_id}").on('locale_id -> locale).execute()
+  def updateAssociatedFoodsComposable(foodCode: String, assocFoods: Seq[AssociatedFood], locale: String)(implicit conn: java.sql.Connection): Either[LocalDependentCreateError, Unit] =
+    for (
+      _ <- deleteAssociatedFoodsComposable(foodCode, locale).right;
+      _ <- createAssociatedFoodsComposable(Map(foodCode -> assocFoods), locale).right
+    ) yield ()
 
+  def deleteAssociatedFoodsComposable(foodCode: String, locale: String)(implicit conn: java.sql.Connection): Either[DatabaseError, Unit] = {
+    SQL("DELETE FROM associated_foods WHERE food_code={food_code} AND locale_id={locale_id}").on('food_code -> foodCode, 'locale_id -> locale).execute()
+    Right(())
+  }
+
+  def createAssociatedFoodsComposable(assocFoods: Map[String, Seq[AssociatedFood]], locale: String)(implicit conn: java.sql.Connection): Either[LocalDependentCreateError, Unit] = {
+    val promptParams = assocFoods.flatMap {
+      case (foodCode, foods) =>
+        foods.map {
+          assocFood =>
+            Seq[NamedParameter]('food_code -> foodCode, 'locale_id -> locale, 'associated_food_code -> assocFood.foodOrCategoryCode.left.toOption, 'associated_category_code -> assocFood.foodOrCategoryCode.right.toOption,
+              'text -> assocFood.promptText, 'link_as_main -> assocFood.linkAsMain, 'generic_name -> assocFood.genericName)
+        }
+    }.toSeq
+
+    if (promptParams.nonEmpty) {
+
+      logger.debug("Writing " + assocFoods.values.map(_.size).foldLeft(0)(_ + _) + " associated food prompts to database")
+
+      val constraintErrors = Map[String, LocalDependentCreateError](
+        "associated_food_prompts_assoc_category_fk" -> ParentRecordNotFound,
+        "associated_food_prompts_assoc_food_fk" -> ParentRecordNotFound,
+        "associated_food_prompts_food_code_fk" -> ParentRecordNotFound,
+        "associated_food_prompts_locale_id_fk" -> UndefinedLocale)
+
+      tryWithConstraintsCheck(constraintErrors) {
+        batchSql("""INSERT INTO associated_foods VALUES (DEFAULT, {food_code}, {locale_id}, {associated_food_code}, {associated_category_code}, {text}, {link_as_main}, {generic_name})""", promptParams).execute()
+        Right(())
+      }
+    } else
       Right(())
   }
 
   def createAssociatedFoods(assocFoods: Map[String, Seq[AssociatedFood]], locale: String): Either[LocalDependentCreateError, Unit] = tryWithConnection {
     implicit conn =>
-      val promptParams = assocFoods.flatMap {
-        case (foodCode, foods) =>
-          foods.map {
-            assocFood =>
-              Seq[NamedParameter]('food_code -> foodCode, 'locale_id -> locale, 'associated_food_code -> assocFood.foodOrCategoryCode.left.toOption, 'associated_category_code -> assocFood.foodOrCategoryCode.right.toOption,
-                'text -> assocFood.promptText, 'link_as_main -> assocFood.linkAsMain, 'generic_name -> assocFood.genericName)
-          }
-      }.toSeq
+      withTransaction {
+        createAssociatedFoodsComposable(assocFoods, locale)
+      }
+  }
 
-      if (promptParams.nonEmpty) {
-
-        logger.debug("Writing " + assocFoods.values.map(_.size).foldLeft(0)(_ + _) + " associated food prompts to database")
-
-        val constraintErrors = Map(
-          "associated_food_prompts_assoc_category_fk" -> ParentRecordNotFound,
-          "associated_food_prompts_assoc_food_fk" -> ParentRecordNotFound,
-          "associated_food_prompts_food_code_fk" -> ParentRecordNotFound,
-          "associated_food_prompts_locale_id_fk" -> UndefinedLocale)
-
-        tryWithConstraintsCheck(constraintErrors) {
-          conn.setAutoCommit(false)
-          batchSql("""INSERT INTO associated_foods VALUES (DEFAULT, {food_code}, {locale_id}, {associated_food_code}, {associated_category_code}, {text}, {link_as_main}, {generic_name})""", promptParams).execute()
-          conn.commit()
-          Right(())
-        }
-      } else
-        Right(())
+  def updateAssociatedFoods(foodCode: String, assocFoods: Seq[AssociatedFood], locale: String): Either[LocalDependentCreateError, Unit] = tryWithConnection {
+    implicit conn =>
+      withTransaction {
+        updateAssociatedFoodsComposable(foodCode, assocFoods, locale)
+      }
   }
 }

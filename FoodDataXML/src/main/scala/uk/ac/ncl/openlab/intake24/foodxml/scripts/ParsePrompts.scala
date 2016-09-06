@@ -22,11 +22,12 @@ import java.io.FileReader
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.JavaConversions.seqAsJavaList
 import au.com.bytecode.opencsv.CSVReader
-import uk.ac.ncl.openlab.intake24.AssociatedFoodV1
+
 import scala.xml.XML
 import uk.ac.ncl.openlab.intake24.foodxml.CategoryDef
 import uk.ac.ncl.openlab.intake24.foodxml.FoodDef
 import uk.ac.ncl.openlab.intake24.foodxml.Util
+import uk.ac.ncl.openlab.intake24.foodxml.AssociatedFoodV1
 
 object ParseAssociatedFoods {
   def main(args: Array[String]): Unit = {
@@ -44,7 +45,7 @@ object ParseAssociatedFoods {
         val pdefs = rows.map( row => AssociatedFoodV1(row(2), row(3), row(1).toBoolean, row(4)))
 
         pdefs.foreach(p => {
-          if (!(cats.exists(_.code == p.category) || foods.exists(_.main.code == p.category)))
+          if (!(cats.exists(_.code == p.category) || foods.exists(_.code == p.category)))
             println("Undefined category or food " + p.category + " in row \n" + rows)
         })
         

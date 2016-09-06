@@ -32,7 +32,7 @@ GET     /admin/browse/:locale/:code                                 controllers.
 GET     /admin/browse/:locale/food-parent-categories/:code          controllers.FoodBrowsingAdminController.getFoodParentCategories(code: String, locale: String)
 GET     /admin/browse/:locale/food-all-categories/:code             controllers.FoodBrowsingAdminController.getFoodAllCategories(code: String, locale: String)
 
-GET     /admin/browse/:locale/category-parent-categories/:code      controllers.FoodBrowsingAdminController.getFoodParentCategories(code: String, locale: String)
+GET     /admin/browse/:locale/category-parent-categories/:code      controllers.FoodBrowsingAdminController.getCategoryParentCategories(code: String, locale: String)
 GET     /admin/browse/:locale/category-all-categories/:code         controllers.FoodBrowsingAdminController.getCategoryAllCategories(code: String, locale: String)
 
 # Quick search

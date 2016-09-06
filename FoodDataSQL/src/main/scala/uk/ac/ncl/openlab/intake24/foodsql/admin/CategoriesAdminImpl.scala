@@ -254,36 +254,46 @@ trait CategoriesAdminImpl extends CategoriesAdminService
       }
   }
 
-  def addFoodsToCategories(categoryFoods: Map[String, Seq[String]]): Either[UpdateError, Unit] = tryWithConnection {
-    implicit conn =>
+  def removeFoodFromAllCategoriesComposable(foodCode: String)(implicit conn: java.sql.Connection): Either[UpdateError, Unit] = {
+    SQL("DELETE FROM foods_categories WHERE food_code={food_code}").on('food_code -> foodCode).execute()
+    Right(())
+  }
 
-      try {
-        val foodCategoryParams =
-          categoryFoods.flatMap {
-            case (code, foods) =>
-              foods.map(f => Seq[NamedParameter]('food_code -> f, 'category_code -> code))
-          }.toSeq
+  def addFoodsToCategoriesComposable(categoryFoods: Map[String, Seq[String]])(implicit conn: java.sql.Connection): Either[UpdateError, Unit] = {
+    try {
+      val foodCategoryParams =
+        categoryFoods.flatMap {
+          case (code, foods) =>
+            foods.map(f => Seq[NamedParameter]('food_code -> f, 'category_code -> code))
+        }.toSeq
 
-        if (!foodCategoryParams.isEmpty) {
+      if (!foodCategoryParams.isEmpty) {
 
-          logger.debug("Writing " + foodCategoryParams.size + " food parent category records")
-          batchSql(foodsCategoriesInsertQuery, foodCategoryParams).execute()
-          conn.commit()
-          Right(())
-        } else {
-          logger.debug("No foods contained in any of the categories")
-          Right(())
-        }
-      } catch {
-        case e: BatchUpdateException => e.getNextException match {
-          case e2: PSQLException => e2.getServerErrorMessage.getConstraint match {
-            case "foods_categories_unique" => { conn.commit(); Right(()) }
-            case "foods_categories_category_code_fk" => { conn.rollback(); Left(RecordNotFound(RecordType.Category, "Not available for batch operations")) }
-            case "foods_categories_food_code_fk" => { conn.rollback(); Left(RecordNotFound(RecordType.Food, "Not available for batch operations")) }
-            case _ => throw e
-          }
+        logger.debug("Writing " + foodCategoryParams.size + " food parent category records")
+        batchSql(foodsCategoriesInsertQuery, foodCategoryParams).execute()
+
+        Right(())
+      } else {
+        logger.debug("No foods contained in any of the categories")
+        Right(())
+      }
+    } catch {
+      case e: BatchUpdateException => e.getNextException match {
+        case e2: PSQLException => e2.getServerErrorMessage.getConstraint match {
+          case "foods_categories_unique" => Right(())
+          case "foods_categories_category_code_fk" => Left(RecordNotFound(RecordType.Category, "Not available for batch operations"))
+          case "foods_categories_food_code_fk" => Left(RecordNotFound(RecordType.Food, "Not available for batch operations"))
           case _ => throw e
         }
+        case _ => throw e
+      }
+    }
+  }
+
+  def addFoodsToCategories(categoryFoods: Map[String, Seq[String]]): Either[UpdateError, Unit] = tryWithConnection {
+    implicit conn =>
+      withTransaction {
+        addFoodsToCategoriesComposable(categoryFoods)
       }
   }
 

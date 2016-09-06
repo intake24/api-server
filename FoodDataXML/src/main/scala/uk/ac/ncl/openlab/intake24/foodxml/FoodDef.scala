@@ -53,15 +53,15 @@ object FoodDef {
         <nutrient-table id={ key } code={ nutrientTables(key) }/>
     }
 
-  def toXml(food: FoodRecord): Node =
+  def toXml(food: XmlFoodRecord): Node =
     addInheritableAttributes(
-      <food code={ food.main.code } description={ food.main.englishDescription } groupCode={ food.main.groupCode.toString }>
-        { toXml(food.local.nutrientTableCodes) }
-        { food.local.portionSize.map(toXml) }
+      <food code={ food.code } description={ food.description } groupCode={ food.groupCode.toString }>
+        { toXml(food.nutrientTableCodes) }
+        { food.portionSizeMethods.map(toXml) }
       </food>,
-      food.main.attributes)
+      food.attributes)
 
-  def toXml(foods: Seq[FoodRecord]): Node =
+  def toXml(foods: Seq[XmlFoodRecord]): Node =
     <foods>
       { foods.map(toXml) }
     </foods>
@@ -104,7 +104,7 @@ object FoodDef {
         (n.attribute("id").get.text, n.attribute("code").get.text)
     }.toMap
 
-  def parseXml(root: NodeSeq): Seq[FoodRecord] =
+  def parseXml(root: NodeSeq): Seq[XmlFoodRecord] =
     (root \ "food").map(fnode => {
       val code = fnode.attribute("code").get.text
       val desc = fnode.attribute("description").get.text
@@ -120,9 +120,7 @@ object FoodDef {
         case Some(code) if code != -1 => parseNutrientTableCodes(fnode) + ("NDNS" -> code.toString())
         case _ => parseNutrientTableCodes(fnode)
       }
-
-      FoodRecord(
-          MainFoodRecord(UUID.randomUUID(), code, desc, groupCode, attribs), 
-          LocalFoodRecord(Some(UUID.randomUUID()), Some(desc), false, nutrientTables , psm))
+      
+      XmlFoodRecord(code, desc, groupCode, attribs, nutrientTables, psm)
     })
 }

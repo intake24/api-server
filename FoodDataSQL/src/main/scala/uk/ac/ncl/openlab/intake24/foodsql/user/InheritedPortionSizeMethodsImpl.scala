@@ -12,9 +12,11 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.user.SourceRecord
 import uk.ac.ncl.openlab.intake24.foodsql.shared.FoodPortionSizeShared
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
 import org.slf4j.LoggerFactory
+import uk.ac.ncl.openlab.intake24.foodsql.SimpleValidation
+import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
 
-trait InheritedPortionSizeMethodsImpl extends FoodPortionSizeShared with SqlResourceLoader with FirstRowValidation {
-  
+trait InheritedPortionSizeMethodsImpl extends FoodPortionSizeShared with SqlResourceLoader with SimpleValidation with SqlDataService {
+
   private case class RecursivePsmResultRow(id: Long, category_code: String, method: String, description: String, image_url: String, use_for_recipes: Boolean, param_name: Option[String], param_value: Option[String])
 
   private def mkRecursivePortionSizeMethods(rows: Seq[RecursivePsmResultRow]): (Seq[PortionSizeMethod], SourceRecord) =
@@ -27,13 +29,13 @@ trait InheritedPortionSizeMethodsImpl extends FoodPortionSizeShared with SqlReso
 
   private lazy val inheritedPsmQuery = sqlFromResource("user/inherited_psm.sql")
 
-  private def inheritedPortionSizeMethodsImpl(code: String, locale: String)(implicit conn: Connection): Either[LocalLookupError, (Seq[PortionSizeMethod], SourceRecord)] = {
-    val psmResults = SQL(inheritedPsmQuery).on('food_code -> code, 'locale_id -> locale).executeQuery()
-
-    parseWithLocaleAndFoodValidation(code, psmResults, Macro.namedParser[RecursivePsmResultRow].+)(Seq(FirstRowValidationClause("id", Right(List())))).right.map {
-      rows => mkRecursivePortionSizeMethods(rows)
+  private def inheritedPortionSizeMethodsImpl(code: String, locale: String)(implicit conn: Connection): Either[LocalLookupError, (Seq[PortionSizeMethod], SourceRecord)] =
+    withTransaction {
+      validateFoodAndLocale(code, locale).right.flatMap {
+        _ =>
+          Right(mkRecursivePortionSizeMethods(SQL(inheritedPsmQuery).on('food_code -> code, 'locale_id -> locale).executeQuery().as(Macro.namedParser[RecursivePsmResultRow].*)))
+      }
     }
-  }
 
   private def resolveLocalPortionSizeMethods(code: String, locale: String)(implicit conn: Connection): Either[LocalLookupError, (Seq[PortionSizeMethod], SourceRecord)] = {
     foodPortionSizeMethodsImpl(code, locale).right.flatMap {
@@ -47,7 +49,7 @@ trait InheritedPortionSizeMethodsImpl extends FoodPortionSizeShared with SqlReso
 
   protected case class ResolvedPortionSizeMethods(methods: Seq[PortionSizeMethod], sourceLocale: SourceLocale, sourceRecord: SourceRecord)
 
-  protected def resolvePortionSizeMethods(foodCode: String, locale: String, prototypeLocale: Option[String])(implicit conn: java.sql.Connection): Either[LocalLookupError, ResolvedPortionSizeMethods] = {    
+  protected def resolvePortionSizeMethods(foodCode: String, locale: String, prototypeLocale: Option[String])(implicit conn: java.sql.Connection): Either[LocalLookupError, ResolvedPortionSizeMethods] = {
     resolveLocalPortionSizeMethods(foodCode, locale).right.flatMap {
       case (localPsm, localPsmSrcRec) =>
         (localPsm.isEmpty, prototypeLocale) match {

@@ -26,7 +26,7 @@ import java.util.UUID
 
 object CategoryDef {
 
-  def toXml(category: CategoryV2): Node =
+  def toXml(category: XmlCategoryRecord): Node =
     FoodDef.addPortionSizeMethods(
       FoodDef.addInheritableAttributes(
         <category code={ category.code } description={ category.description } hidden={ category.isHidden.toString }>
@@ -38,12 +38,12 @@ object CategoryDef {
         category.attributes),
       category.portionSizeMethods)
 
-  def toXml(categories: Seq[CategoryV2]): Node =
+  def toXml(categories: Seq[XmlCategoryRecord]): Node =
     <categories>
       { categories.map(toXml) }
     </categories>
 
-  def parseXml(root: NodeSeq): Seq[CategoryV2] =
+  def parseXml(root: NodeSeq): Seq[XmlCategoryRecord] =
     (root \ "category").map(node => {
       val code = node.attribute("code").get.text
       val desc = node.attribute("description").get.text
@@ -54,6 +54,6 @@ object CategoryDef {
       val attr = FoodDef.inheritableAttributes(node)
       val psm = FoodDef.portionSizeMethods(node)
 
-      CategoryV2(UUID.randomUUID(), code, desc, foods, subcategories, hidden, attr, psm)
+      XmlCategoryRecord(code, desc, foods, subcategories, hidden, attr, psm)
     })
 }

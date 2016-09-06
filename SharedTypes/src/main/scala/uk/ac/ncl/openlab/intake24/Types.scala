@@ -41,15 +41,29 @@ case class FoodOld(code: String, description: String, isDrink: Boolean, ndnsCode
 
 case class FoodRecord(main: MainFoodRecord, local: LocalFoodRecord)
 
-case class MainFoodRecord(version: UUID, code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes)
+case class MainFoodRecord(version: UUID, code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes, parentCategories: Seq[CategoryHeader])
 
-case class NewFood(code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes) {
+case class MainFoodRecordUpdate(version: UUID, code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes, parentCategories: Seq[String]) 
+
+case class NewFood(code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes, parentCategories: Seq[String]) {
   def toHeader = FoodHeader(code, englishDescription, None, None)
 }
 
 case class NewFoodAutoCode(englishDescription: String, groupCode: Int, attributes: InheritableAttributes)
 
-case class LocalFoodRecord(version: Option[UUID], localDescription: Option[String], doNotUse: Boolean, nutrientTableCodes: Map[String, String], portionSize: Seq[PortionSizeMethod])
+case class LocalFoodRecord(version: Option[UUID], localDescription: Option[String], doNotUse: Boolean, 
+    nutrientTableCodes: Map[String, String], portionSize: Seq[PortionSizeMethod], associatedFoods: Seq[AssociatedFoodWithHeader],
+    brandNames: Seq[String]) {
+  def toUpdate = LocalFoodRecordUpdate(version, localDescription, doNotUse, nutrientTableCodes, portionSize, associatedFoods.map(_.toAssociatedFood), brandNames)
+}
+    
+case class LocalFoodRecordUpdate(version: Option[UUID], localDescription: Option[String], doNotUse: Boolean, 
+    nutrientTableCodes: Map[String, String], portionSize: Seq[PortionSizeMethod], associatedFoods: Seq[AssociatedFood],
+    brandNames: Seq[String])
+ 
+case class NewLocalFoodRecord(localDescription: Option[String], doNotUse: Boolean, 
+    nutrientTableCodes: Map[String, String], portionSize: Seq[PortionSizeMethod], associatedFoods: Seq[AssociatedFood],
+    brandNames: Seq[String])
 
 case class FoodHeader(code: String, englishDescription: String, localDescription: Option[String], doNotUse: Option[Boolean])
 
@@ -148,11 +162,16 @@ case class PortionSizeMethodParameter (name: String, value: String)
 
 case class PortionSizeMethod (method: String, description: String, imageUrl: String, useForRecipes: Boolean, parameters: Seq[PortionSizeMethodParameter])
 
-case class AssociatedFoodV1 (category: String, promptText: String, linkAsMain: Boolean, genericName: String)
-
 case class AssociatedFood (foodOrCategoryCode: Either[String, String], promptText: String, linkAsMain: Boolean, genericName: String)
 
-case class AssociatedFoodWithHeader (foodOrCategoryHeader: Either[FoodHeader, CategoryHeader], promptText: String, linkAsMain: Boolean, genericName: String)
+case class BrandName(id: Int, name: String)
+
+case class AssociatedFoodWithHeader (foodOrCategoryHeader: Either[FoodHeader, CategoryHeader], promptText: String, linkAsMain: Boolean, genericName: String) {
+  def toAssociatedFood = {
+    val foodOrCategoryCode = foodOrCategoryHeader.left.map(_.code).right.map(_.code)
+    AssociatedFood(foodOrCategoryCode, promptText, linkAsMain, genericName)
+  }
+}
 
 case class FoodGroupMain (id: Int, englishDescription: String)
 

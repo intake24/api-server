@@ -24,19 +24,19 @@ import java.io.File
 import uk.ac.ncl.openlab.intake24.foodxml.FoodDef
 
 object CheckPortionSizeSelectionImages extends App {
-  
+
   val imageDir = new File("/home/ivan/Projects/Intake24/intake24-images")
-  
+
   val foods = FoodDef.parseXml(XML.load("/home/ivan/Projects/Intake24/intake24-data/foods.xml"))
-   
+
   foods.foreach {
     food =>
-      if (food.local.portionSize.size > 1) {
-        food.local.portionSize.foreach {
+      if (food.portionSizeMethods.size > 1) {
+        food.portionSizeMethods.foreach {
           ps =>
             val file = new File(imageDir.getAbsolutePath + File.separator + ps.imageUrl)
             if (!file.exists())
-              println(s"Image ${ps.imageUrl} missing for ${food.main.code}") 
+              println(s"Image ${ps.imageUrl} missing for ${food.code}")
         }
       }
   }

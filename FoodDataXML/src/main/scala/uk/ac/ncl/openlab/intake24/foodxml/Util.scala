@@ -25,32 +25,47 @@ import java.io.File
 import uk.ac.ncl.openlab.intake24.CategoryV1
 import uk.ac.ncl.openlab.intake24.FoodOld
 import uk.ac.ncl.openlab.intake24.IndexEntryOld
+import uk.ac.ncl.openlab.intake24.UserCategoryHeader
+import uk.ac.ncl.openlab.intake24.UserFoodHeader
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
 
 object Util {
-  def mapFoods (rootCats: Map[String, CategoryV1], f: FoodOld => FoodOld) : Map[String, CategoryV1] = {
-    def mapRec (root: Map[String, IndexEntryOld]) : Map[String, IndexEntryOld] = {
+
+  def mkHeader(category: XmlCategoryRecord) = UserCategoryHeader(category.code, category.description)
+
+  def mkHeader(food: XmlFoodRecord) = UserFoodHeader(food.code, food.description)
+
+  def checkLocale(locale: String): Either[LocaleError, Unit] =
+    if (locale != "en_GB")
+      Left(UndefinedLocale)
+    else
+      Right(())
+
+  def mapFoods(rootCats: Map[String, CategoryV1], f: FoodOld => FoodOld): Map[String, CategoryV1] = {
+    def mapRec(root: Map[String, IndexEntryOld]): Map[String, IndexEntryOld] = {
       root.mapValues {
         case ef: FoodOld => f(ef)
-        case ec: CategoryV1 => ec.copy (children = mapRec (ec.children))        
+        case ec: CategoryV1 => ec.copy(children = mapRec(ec.children))
       }
     }
-    rootCats.mapValues( ec => ec.copy (children = mapRec(ec.children)))
+    rootCats.mapValues(ec => ec.copy(children = mapRec(ec.children)))
   }
-  
-  def flatten[T] (rootCats: Map[String, CategoryV1], f: FoodOld => T) : Seq[T] = {
-    def mapRec (root: Map[String, IndexEntryOld]) : List[T] = {
-      root.values.foldLeft(List[T]())( (list, next) => next match {
+
+  def flatten[T](rootCats: Map[String, CategoryV1], f: FoodOld => T): Seq[T] = {
+    def mapRec(root: Map[String, IndexEntryOld]): List[T] = {
+      root.values.foldLeft(List[T]())((list, next) => next match {
         case ef: FoodOld => f(ef) :: list
         case ec: CategoryV1 => mapRec(ec.children) ::: list
       })
     }
-    
+
     mapRec(rootCats)
   }
-  
+
   def writeXml(root: Node, path: String) = {
     val pp = new PrettyPrinter(180, 2)
-    
+
     val writer = new PrintWriter(new File(path))
     writer.println("<?xml version='1.0' encoding='utf-8'?>")
     writer.println(pp.format(root))

@@ -37,10 +37,10 @@ object AppendFoodGroups {
     val codes = new CSVReader(new FileReader(sourcePath)).readAll().toList.map(_.toSeq).tail.distinct.map ( row => (row(0), row(1).toInt)).toMap
     
     val foods = FoodDef.parseXml(XML.load("D:\\SCRAN24\\Data\\foods.xml")).map( food => {
-      codes.get(food.main.code) match {
-        case Some(code) => food.copy (main = food.main.copy(groupCode = code))
+      codes.get(food.code) match {
+        case Some(code) => food.copy(groupCode = code)
         case None => {
-          println (food.main.code)
+          println (food.code)
           food
         }
       }      

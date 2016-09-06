@@ -18,10 +18,10 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodxml
 
-import uk.ac.ncl.openlab.intake24.CategoryV2
 import org.slf4j.LoggerFactory
 
-case class Categories(categories: Seq[CategoryV2]) {
+
+case class Categories(categories: Seq[XmlCategoryRecord]) {
   val log = LoggerFactory.getLogger(classOf[Categories])
   
   val categoryMap = categories.map(c => (c.code, c)).toMap
@@ -54,4 +54,6 @@ case class Categories(categories: Seq[CategoryV2]) {
     case Some(cat) => cat
     case None => throw new IllegalArgumentException(s"category with code $code is undefined")
   }
+  
+  def findOption(code: String) = categoryMap.get(code)
 }

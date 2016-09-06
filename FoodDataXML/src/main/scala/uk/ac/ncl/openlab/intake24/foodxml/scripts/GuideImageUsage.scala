@@ -17,7 +17,7 @@ object GuideImageUsage extends App {
 
   val refs = foods.flatMap {
     food =>
-      food.local.portionSize.filter(_.method == "guide-image").map(m => Reference(m.parameters.find(_.name == "guide-image-id").get.value, food.main.englishDescription, food.main.code))
+      food.portionSizeMethods.filter(_.method == "guide-image").map(m => Reference(m.parameters.find(_.name == "guide-image-id").get.value, food.description, food.code))
   }
    
   val usages = refs.groupBy(_.guideId)

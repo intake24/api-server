@@ -29,20 +29,21 @@ import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
 import uk.ac.ncl.openlab.intake24.foodxml.AsServedDef
 import uk.ac.ncl.openlab.intake24.foodxml.FoodDef
 import uk.ac.ncl.openlab.intake24.foodxml.GuideImageDef
+import uk.ac.ncl.openlab.intake24.foodxml.XmlFoodRecord
 
 object FoodsByPortionSizeMethod extends App {
 
   val foods = FoodDef.parseXml(XML.load("/home/ivan/Projects/Intake24/intake24-data/foods.xml"))
 
-  val asServed = scala.collection.mutable.Map[String, Seq[FoodRecord]]().withDefaultValue(Seq())
-  val guide = scala.collection.mutable.Map[String, Seq[FoodRecord]]().withDefaultValue(Seq())
+  val asServed = scala.collection.mutable.Map[String, Seq[XmlFoodRecord]]().withDefaultValue(Seq())
+  val guide = scala.collection.mutable.Map[String, Seq[XmlFoodRecord]]().withDefaultValue(Seq())
 
   val asServedSets = AsServedDef.parseXml(XML.load("/home/ivan/Projects/Intake24/intake24-data/as-served.xml"))
   val guideDef = GuideImageDef.parseXml(XML.load("/home/ivan/Projects/Intake24/intake24-data/guide.xml"))
 
   foods.foreach {
     food =>
-      food.local.portionSize.foreach {
+      food.portionSizeMethods.foreach {
         method =>
           method.method match {
             case "as-served" =>
@@ -53,18 +54,18 @@ object FoodsByPortionSizeMethod extends App {
                 case PortionSizeMethodParameter(_, value) => asServed += (value -> (asServed(value) :+ food))
               }
 
-            case "guide-image" => 
+            case "guide-image" =>
               method.parameters.find(_.name == "guide-image-id").foreach {
                 case PortionSizeMethodParameter(_, value) => guide += (value -> (guide(value) :+ food))
               }
-            
+
             case _ => ()
 
           }
 
       }
   }
-  
+
   val destPath = "/home/ivan/tmp/intake24/as_served.csv"
 
   val writer = new CSVWriter(new FileWriter(new File(destPath)))
@@ -75,12 +76,12 @@ object FoodsByPortionSizeMethod extends App {
     set =>
       asServed(set).foreach {
         food =>
-          writer.writeNext(Array(asServedSets(set).id, asServedSets(set).description, food.main.code, food.main.englishDescription))
+          writer.writeNext(Array(asServedSets(set).id, asServedSets(set).description, food.code, food.description))
       }
   }
 
   writer.close()
-  
+
   val destPath2 = "/home/ivan/tmp/intake24/guide.csv"
 
   val writer2 = new CSVWriter(new FileWriter(new File(destPath2)))
@@ -91,13 +92,10 @@ object FoodsByPortionSizeMethod extends App {
     id =>
       guide(id).foreach {
         food =>
-          writer2.writeNext(Array(guideDef(id).id, guideDef(id).description, food.main.code, food.main.englishDescription))
+          writer2.writeNext(Array(guideDef(id).id, guideDef(id).description, food.code, food.description))
       }
   }
 
   writer2.close()
-  
-    
-  
 
 }

@@ -129,8 +129,8 @@ object GenerateImagesForPortionSizeSelectionScreen extends App {
   
   val fixedFoods = foods.map {
     food => 
-        val fixedPortionSize = food.local.portionSize.map(m => fix(food.main.code, m))
-        food.copy (local = food.local.copy(portionSize = fixedPortionSize))
+        val fixedPortionSize = food.portionSizeMethods.map(m => fix(food.code, m))
+        food.copy(portionSizeMethods = fixedPortionSize)
   }
   
   Util.writeXml(FoodDef.toXml(fixedFoods), foodsOutputPath)

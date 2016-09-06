@@ -99,7 +99,7 @@ object StandardiseUnitsApply extends App {
 
   val newFoods = foods.map {
     food =>
-      val newPsm = food.local.portionSize.flatMap {
+      val newPsm = food.portionSizeMethods.flatMap {
         psm =>
           psm.method match {
             case "standard-portion" => {
@@ -112,7 +112,7 @@ object StandardiseUnitsApply extends App {
             case _ => Some(psm)
           }
       }
-      food.copy(local = food.local.copy(portionSize = newPsm))
+      food.copy(portionSizeMethods = newPsm)
   }
   
    Util.writeXml(FoodDef.toXml(newFoods), dataDir + "/foods-new.xml")

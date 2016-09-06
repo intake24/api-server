@@ -20,11 +20,13 @@ package uk.ac.ncl.openlab.intake24.foodxml
 
 import uk.ac.ncl.openlab.intake24.FoodRecord
 
-case class Foods(foods: Seq[FoodRecord]) {
-  val foodMap = foods.map( c => (c.main.code,c)).toMap
+case class Foods(foods: Seq[XmlFoodRecord]) {
+  val foodMap = foods.map( c => (c.code,c)).toMap
   
   def find(code: String) = foodMap.get(code) match {
     case Some(food) => food
     case None => throw new IllegalArgumentException (s"food with code $code is undefined")
   }
+  
+  def findOption(code: String) = foodMap.get(code)
 }

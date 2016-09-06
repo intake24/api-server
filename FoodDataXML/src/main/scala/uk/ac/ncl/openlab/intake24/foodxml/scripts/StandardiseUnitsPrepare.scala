@@ -25,7 +25,7 @@ object StandardiseUnitsPrepare extends App {
 
   val unitRefs = foods.flatMap {
     food =>
-      food.local.portionSize.filter(_.method == "standard-portion").flatMap(x => parseUnits(x.parameters).map(UnitReference(_, food.main.englishDescription, food.main.code)))
+      food.portionSizeMethods.filter(_.method == "standard-portion").flatMap(x => parseUnits(x.parameters).map(UnitReference(_, food.description, food.code)))
   }
    
   val unitUsages = unitRefs.groupBy(_.unitName)

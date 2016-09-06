@@ -20,7 +20,7 @@ package uk.ac.ncl.openlab.intake24.services.fooddb.errors
 
 sealed trait LocalLookupError extends LocalUpdateError
 
-sealed trait LocaleError extends LocalLookupError with LocalUpdateError with LocalCreateError with LocalDeleteError with LocalDependentCreateError
+sealed trait LocaleError extends LocalLookupError with LocalUpdateError with LocalCreateError with LocalDeleteError with LocalDependentCreateError with LocalDependentUpdateError
 
 sealed trait LookupError extends LocalLookupError
 
@@ -30,15 +30,20 @@ sealed trait DeleteError extends LocalDeleteError
 
 sealed trait LocalUpdateError
 
-sealed trait UpdateError extends LocalUpdateError
+sealed trait UpdateError extends LocalUpdateError with DependentUpdateError
 
 sealed trait LocalCreateError
 
 sealed trait CreateError extends LocalCreateError
 
+sealed trait LocalDependentUpdateError
+
+sealed trait DependentUpdateError extends LocalDependentUpdateError
+
 sealed trait LocalDependentCreateError
 
 sealed trait DependentCreateError extends LocalDependentCreateError
+
 
 sealed trait NutrientMappingError
 
@@ -67,13 +72,13 @@ object RecordType {
   case object Locale extends RecordType
 }
 
-case class RecordNotFound(recordType: RecordType, code: String) extends LookupError with NutrientMappingError with DeleteError with UpdateError
+case class RecordNotFound(recordType: RecordType, code: String) extends LookupError with NutrientMappingError with DeleteError with UpdateError with DependentUpdateError
 
 case object VersionConflict extends UpdateError
 
-case object DuplicateCode extends CreateError with UpdateError with DependentCreateError
+case object DuplicateCode extends CreateError with UpdateError with DependentCreateError with DependentUpdateError
 
-case object ParentRecordNotFound extends DependentCreateError
+case object ParentRecordNotFound extends DependentCreateError with DependentUpdateError
 
 case object TableNotFound extends NutrientMappingError
 

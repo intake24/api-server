@@ -27,18 +27,16 @@ import uk.ac.ncl.openlab.intake24.SplitList
 import uk.ac.ncl.openlab.intake24.UserCategoryHeader
 import uk.ac.ncl.openlab.intake24.UserFoodHeader
 
-import uk.ac.ncl.openlab.intake24.services.foodindex.Util.mkHeader
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
 
 @Singleton
 class FoodIndexDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodIndexDataService {
 
   val defaultLocale = "en_GB"
+  
+  import Util._
 
   val log = LoggerFactory.getLogger(classOf[FoodIndexDataServiceXmlImpl])
-
-  def checkLocale(locale: String) = if (locale != defaultLocale)
-    log.warn("Locales other than en_GB are not supported by this implementation -- returning en_GB results for debug purposes");
 
   def indexableCategories(locale: String) = {
     checkLocale(locale)

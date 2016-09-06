@@ -43,10 +43,29 @@ import com.google.inject.Inject
 import javax.sql.DataSource
 import com.google.inject.name.Named
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
+import uk.ac.ncl.openlab.intake24.foodsql.shared.SuperCategoriesImpl
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.BrandNamesAdminService
+import uk.ac.ncl.openlab.intake24.foodsql.shared.SuperCategoriesImpl
+import uk.ac.ncl.openlab.intake24.NewLocalFoodRecord
+import uk.ac.ncl.openlab.intake24.MainFoodRecordUpdate
+import uk.ac.ncl.openlab.intake24.LocalFoodRecordUpdate
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentCreateError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentUpdateError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
 
 class FoodsAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends FoodsAdminImpl
 
-trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with SqlResourceLoader with FirstRowValidation with FoodPortionSizeShared with AdminErrorMessagesShared {
+trait FoodsAdminImpl extends FoodsAdminService
+    with SqlDataService
+    with SqlResourceLoader
+    with FirstRowValidation
+    with FoodPortionSizeShared
+    with AdminErrorMessagesShared
+    with BrandNamesAdminImpl
+    with FoodBrowsingAdminImpl
+    with AssociatedFoodsAdminImpl
+    with CategoriesAdminImpl {
 
   private val logger = LoggerFactory.getLogger(classOf[FoodsAdminImpl])
 
@@ -90,23 +109,25 @@ trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with SqlResou
 
   def getFoodRecord(code: String, locale: String): Either[LocalLookupError, FoodRecord] = tryWithConnection {
     implicit conn =>
+      for (
+        nutrientTableCodes <- foodNutrientTableCodes(code, locale).right;
+        portionSizeMethods <- foodPortionSizeMethodsImpl(code, locale).right;
+        associatedFoods <- getAssociatedFoodsWithHeaders(code, locale).right;
+        parentCategories <- getFoodParentCategories(code, locale).right;
+        brandNames <- getBrandNames(code, locale).right;
+        record <- {
+          val foodQueryResult = SQL(foodRecordQuery).on('food_code -> code, 'locale_id -> locale).executeQuery()
 
-      foodNutrientTableCodes(code, locale).right.flatMap {
-        ntc =>
-          foodPortionSizeMethodsImpl(code, locale).right.flatMap {
-            psm =>
-              val foodQueryResult = SQL(foodRecordQuery).on('food_code -> code, 'locale_id -> locale).executeQuery()
-
-              parseWithLocaleAndFoodValidation(code, foodQueryResult, Macro.namedParser[FoodResultRow].single)().right.map {
-                result =>
-                  FoodRecord(
-                    MainFoodRecord(result.version, result.code, result.description, result.food_group_id.toInt,
-                      InheritableAttributes(result.ready_meal_option, result.same_as_before_option, result.reasonable_amount)),
-                    LocalFoodRecord(result.local_version, result.local_description, result.do_not_use.getOrElse(false), ntc, psm))
-
-              }
+          parseWithLocaleAndFoodValidation(code, foodQueryResult, Macro.namedParser[FoodResultRow].single)().right.map {
+            result =>
+              FoodRecord(
+                MainFoodRecord(result.version, result.code, result.description, result.food_group_id.toInt,
+                  InheritableAttributes(result.ready_meal_option, result.same_as_before_option, result.reasonable_amount), parentCategories),
+                LocalFoodRecord(result.local_version, result.local_description, result.do_not_use.getOrElse(false), nutrientTableCodes, portionSizeMethods,
+                  associatedFoods, brandNames))
           }
-      }
+        }.right
+      ) yield record
   }
 
   private val foodInsertQuery = "INSERT INTO foods VALUES ({code}, {description}, {food_group_id}, {version}::uuid)"
@@ -130,24 +151,32 @@ trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with SqlResou
 
   def isFoodCodeAvailable(code: String): Either[DatabaseError, Boolean] = isFoodCode(code).right.map(!_)
 
+  def createNewFoodComposable(newFood: NewFood)(implicit conn: java.sql.Connection): Either[DependentCreateError, Unit] = {
+    val errors = Map("food_group_id_fk" -> ParentRecordNotFound, "foods_code_pk" -> DuplicateCode)
+
+    tryWithConstraintsCheck(errors) {
+      SQL(foodInsertQuery)
+        .on('code -> newFood.code, 'description -> newFood.englishDescription, 'food_group_id -> newFood.groupCode, 'version -> UUID.randomUUID())
+        .execute()
+
+      SQL(foodAttributesInsertQuery)
+        .on('food_code -> newFood.code, 'same_as_before_option -> newFood.attributes.sameAsBeforeOption,
+          'ready_meal_option -> newFood.attributes.readyMealOption, 'reasonable_amount -> newFood.attributes.reasonableAmount).execute()
+
+      Right(())
+    }
+  }
+
   def createFood(newFood: NewFood): Either[DependentCreateError, Unit] = tryWithConnection {
     implicit conn =>
-      conn.setAutoCommit(false)
-
-      val errors = Map("food_group_id_fk" -> ParentRecordNotFound, "foods_code_pk" -> DuplicateCode)
-
-      tryWithConstraintsCheck(errors) {
-        SQL(foodInsertQuery)
-          .on('code -> newFood.code, 'description -> newFood.englishDescription, 'food_group_id -> newFood.groupCode, 'version -> UUID.randomUUID())
-          .execute()
-
-        SQL(foodAttributesInsertQuery)
-          .on('food_code -> newFood.code, 'same_as_before_option -> newFood.attributes.sameAsBeforeOption,
-            'ready_meal_option -> newFood.attributes.readyMealOption, 'reasonable_amount -> newFood.attributes.reasonableAmount).execute()
-
-        conn.commit()
-
-        Right(())
+      withTransaction {
+        createNewFoodComposable(newFood).right.flatMap {
+          _ =>
+            addFoodsToCategoriesComposable(Map(newFood.code -> newFood.parentCategories)).left.map {
+              case RecordNotFound(t, message) => ParentRecordNotFound
+              case e: DatabaseError => e
+            }
+        }
       }
   }
 
@@ -168,37 +197,51 @@ trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with SqlResou
     tryNextNumber(0)
   }
 
+  def createFoodsComposable(foods: Seq[NewFood])(implicit conn: java.sql.Connection): Either[DependentCreateError, Unit] = {
+    if (foods.nonEmpty) {
+      logger.info(s"Writing ${foods.size} new food records to database")
+
+      val errors = Map("food_group_id_fk" -> ParentRecordNotFound, "foods_code_pk" -> DuplicateCode)
+
+      tryWithConstraintsCheck(errors) {
+        val foodParams = foods.map {
+          f =>
+            Seq[NamedParameter]('code -> f.code, 'description -> truncateDescription(f.englishDescription, f.code), 'food_group_id -> f.groupCode, 'version -> UUID.randomUUID())
+        }
+
+        batchSql(foodInsertQuery, foodParams).execute()
+
+        val foodAttributeParams =
+          foods.map(f => Seq[NamedParameter]('food_code -> f.code, 'same_as_before_option -> f.attributes.sameAsBeforeOption,
+            'ready_meal_option -> f.attributes.readyMealOption, 'reasonable_amount -> f.attributes.reasonableAmount))
+
+        batchSql(foodAttributesInsertQuery, foodAttributeParams).execute()
+
+        Right(())
+      }
+    } else {
+      logger.warn("Create foods request with empty foods list")
+      Right(())
+    }
+  }
+
+  private def mkBatchCategoriesMap(foods: Seq[NewFood]) = {
+    val z = Map[String, Seq[String]]()
+    foods.foldLeft(z) {
+      (map, food) => map + (food.code -> food.parentCategories)
+    }
+  }
+
   def createFoods(foods: Seq[NewFood]): Either[DependentCreateError, Unit] = tryWithConnection {
     implicit conn =>
-
-      if (foods.nonEmpty) {
-        logger.info(s"Writing ${foods.size} new food records to database")
-
-        conn.setAutoCommit(false)
-
-        val errors = Map("food_group_id_fk" -> ParentRecordNotFound, "foods_code_pk" -> DuplicateCode)
-
-        tryWithConstraintsCheck(errors) {
-          val foodParams = foods.map {
-            f =>
-              Seq[NamedParameter]('code -> f.code, 'description -> truncateDescription(f.englishDescription, f.code), 'food_group_id -> f.groupCode, 'version -> UUID.randomUUID())
-          }
-
-          batchSql(foodInsertQuery, foodParams).execute()
-
-          val foodAttributeParams =
-            foods.map(f => Seq[NamedParameter]('food_code -> f.code, 'same_as_before_option -> f.attributes.sameAsBeforeOption,
-              'ready_meal_option -> f.attributes.readyMealOption, 'reasonable_amount -> f.attributes.reasonableAmount))
-
-          batchSql(foodAttributesInsertQuery, foodAttributeParams).execute()
-
-          conn.commit()
-
-          Right(())
+      withTransaction {
+        createFoodsComposable(foods).right.flatMap {
+          _ =>
+            addFoodsToCategoriesComposable(mkBatchCategoriesMap(foods)).left.map {
+              case RecordNotFound(t, message) => ParentRecordNotFound
+              case e: DatabaseError => e
+            }
         }
-      } else {
-        logger.warn("Create foods request with empty foods list")
-        Right(())
       }
   }
 
@@ -226,162 +269,198 @@ trait FoodsAdminImpl extends FoodsAdminService with SqlDataService with SqlResou
 
   private val foodPsmParamsInsertQuery = "INSERT INTO foods_portion_size_method_params VALUES(DEFAULT, {portion_size_method_id}, {name}, {value})"
 
-  def createLocalFoods(localFoodRecords: Map[String, LocalFoodRecord], locale: String): Either[DatabaseError, Unit] = tryWithConnection {
-    implicit conn =>
-      if (localFoodRecords.nonEmpty) {
+  def createLocalFoodsComposable(localFoodRecords: Map[String, NewLocalFoodRecord], locale: String)(implicit conn: java.sql.Connection): Either[DatabaseError, Unit] = {
+    if (localFoodRecords.nonEmpty) {
 
-        val localFoodRecordsSeq = localFoodRecords.toSeq
+      val localFoodRecordsSeq = localFoodRecords.toSeq
 
-        logger.info(s"Writing ${localFoodRecordsSeq.size} new local food records to database")
+      logger.info(s"Writing ${localFoodRecordsSeq.size} new local food records to database")
 
-        conn.setAutoCommit(false)
+      val foodLocalParams = localFoodRecordsSeq.map {
+        case (code, local) =>
+          Seq[NamedParameter]('food_code -> code, 'locale_id -> locale, 'local_description -> local.localDescription.map(d => truncateDescription(d, code)),
+            'do_not_use -> local.doNotUse, 'version -> UUID.randomUUID())
+      }.toSeq
 
-        val foodLocalParams = localFoodRecordsSeq.map {
+      batchSql(foodLocalInsertQuery, foodLocalParams).execute()
+
+      val foodNutritionTableParams =
+        localFoodRecordsSeq.flatMap {
           case (code, local) =>
-            Seq[NamedParameter]('food_code -> code, 'locale_id -> locale, 'local_description -> local.localDescription.map(d => truncateDescription(d, code)),
-              'do_not_use -> local.doNotUse, 'version -> local.version.getOrElse(UUID.randomUUID()))
+            local.nutrientTableCodes.map {
+              case (table_id, table_code) => Seq[NamedParameter]('food_code -> code, 'locale_id -> locale, 'nutrient_table_id -> table_id, 'nutrient_table_code -> table_code)
+            }
         }.toSeq
 
-        batchSql(foodLocalInsertQuery, foodLocalParams).execute()
+      if (foodNutritionTableParams.nonEmpty)
+        batchSql(foodNutrientMappingInsertQuery, foodNutritionTableParams).execute()
 
-        val foodNutritionTableParams =
-          localFoodRecordsSeq.flatMap {
-            case (code, local) =>
-              local.nutrientTableCodes.map {
-                case (table_id, table_code) => Seq[NamedParameter]('food_code -> code, 'locale_id -> locale, 'nutrient_table_id -> table_id, 'nutrient_table_code -> table_code)
-              }
-          }.toSeq
+      val psmParams =
+        localFoodRecordsSeq.flatMap {
+          case (code, local) =>
+            local.portionSize.map(ps => Seq[NamedParameter]('food_code -> code, 'locale_id -> locale, 'method -> ps.method, 'description -> ps.description, 'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes))
+        }.toSeq
 
-        if (foodNutritionTableParams.nonEmpty)
-          batchSql(foodNutrientMappingInsertQuery, foodNutritionTableParams).execute()
+      if (psmParams.nonEmpty) {
+        val ids = Util.batchKeys(batchSql(foodPsmInsertQuery, psmParams))
 
-        val psmParams =
-          localFoodRecordsSeq.flatMap {
-            case (code, local) =>
-              local.portionSize.map(ps => Seq[NamedParameter]('food_code -> code, 'locale_id -> locale, 'method -> ps.method, 'description -> ps.description, 'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes))
-          }.toSeq
-
-        if (psmParams.nonEmpty) {
-          val ids = Util.batchKeys(batchSql(foodPsmInsertQuery, psmParams))
-
-          val psmParamParams = localFoodRecordsSeq.flatMap(_._2.portionSize).zip(ids).flatMap {
-            case (psm, id) => psm.parameters.map(param => Seq[NamedParameter]('portion_size_method_id -> id, 'name -> param.name, 'value -> param.value))
-          }
-
-          if (psmParamParams.nonEmpty)
-            batchSql(foodPsmParamsInsertQuery, psmParamParams).execute()
+        val psmParamParams = localFoodRecordsSeq.flatMap(_._2.portionSize).zip(ids).flatMap {
+          case (psm, id) => psm.parameters.map(param => Seq[NamedParameter]('portion_size_method_id -> id, 'name -> param.name, 'value -> param.value))
         }
 
-        conn.commit()
-        Right(())
+        if (psmParamParams.nonEmpty)
+          batchSql(foodPsmParamsInsertQuery, psmParamParams).execute()
+      }
 
-      } else {
-        logger.warn("Create local foods request with empty foods list")
-        Right(())
+      Right(())
+
+    } else {
+      logger.warn("Create local foods request with empty foods list")
+      Right(())
+    }
+
+  }
+
+  def createLocalFoods(localFoodRecords: Map[String, NewLocalFoodRecord], locale: String): Either[LocalDependentCreateError, Unit] = tryWithConnection {
+    implicit conn =>
+      withTransaction {
+        for (
+          _ <- createLocalFoodsComposable(localFoodRecords, locale).right;
+          _ <- createAssociatedFoodsComposable(localFoodRecords.mapValues(_.associatedFoods), locale).right;
+          _ <- createBrandNamesComposable(localFoodRecords.mapValues(_.brandNames), locale).right
+        ) yield ()
       }
   }
 
-  def updateMainFoodRecord(foodCode: String, foodBase: MainFoodRecord): Either[UpdateError, Unit] = tryWithConnection {
+  def updateFoodAttributesComposable(foodCode: String, attributes: InheritableAttributes)(implicit conn: java.sql.Connection): Either[UpdateError, Unit] = {
+    try {
+      SQL("DELETE FROM foods_attributes WHERE food_code={food_code}").on('food_code -> foodCode).execute()
+
+      SQL(foodAttributesInsertQuery)
+        .on('food_code -> foodCode, 'same_as_before_option -> attributes.sameAsBeforeOption,
+          'ready_meal_option -> attributes.readyMealOption, 'reasonable_amount -> attributes.reasonableAmount).execute()
+
+      Right(())
+    } catch {
+      case e: PSQLException => {
+        e.getServerErrorMessage.getConstraint match {
+          case "foods_attributes_food_code_fk" => Left(RecordNotFound(RecordType.Food, foodCode))
+          case _ => throw e
+        }
+      }
+    }
+  }
+
+  def updateFoodParentCategoriesComposable(foodCode: String, parentCategories: Seq[String])(implicit conn: java.sql.Connection): Either[UpdateError, Unit] =
+    for (
+      _ <- removeFoodFromAllCategoriesComposable(foodCode).right;
+      _ <- addFoodsToCategoriesComposable(Map(foodCode -> parentCategories)).right
+    ) yield ()
+
+  def updateMainFoodRecordFieldsComposable(foodCode: String, foodRecord: MainFoodRecordUpdate)(implicit conn: java.sql.Connection): Either[UpdateError, Unit] = {
+    val rowsAffected = SQL("UPDATE foods SET code = {new_code}, description={description}, food_group_id={food_group_id}, version={new_version}::uuid WHERE code={food_code} AND version={base_version}::uuid)")
+      .on('food_code -> foodCode, 'base_version -> foodRecord.version,
+        'new_version -> UUID.randomUUID(), 'new_code -> foodRecord.code, 'description -> foodRecord.englishDescription, 'food_group_id -> foodRecord.groupCode)
+      .executeUpdate()
+
+    if (rowsAffected == 1) {
+      Right(())
+    } else
+      Left(VersionConflict)
+  }
+
+  def updateMainFoodRecord(foodCode: String, foodRecord: MainFoodRecordUpdate): Either[UpdateError, Unit] = tryWithConnection {
     implicit conn =>
-      conn.setAutoCommit(false)
+      withTransaction {
+        for (
+          _ <- updateFoodAttributesComposable(foodCode, foodRecord.attributes).right;
+          _ <- updateFoodParentCategoriesComposable(foodCode, foodRecord.parentCategories).right;
+          _ <- updateMainFoodRecordFieldsComposable(foodCode, foodRecord).right
+        ) yield ()
+      }
+  }
+  
+  def updateLocalFoodRecordFieldsComposable(foodCode: String, foodLocal: LocalFoodRecordUpdate, locale: String)(implicit conn: java.sql.Connection): Either[LocalDependentUpdateError, Unit] = {
+    try {
+      SQL("DELETE FROM foods_nutrient_mapping WHERE food_code={food_code} AND locale_id={locale_id}")
+        .on('food_code -> foodCode, 'locale_id -> locale).execute()
 
-      try {
-        SQL("DELETE FROM foods_attributes WHERE food_code={food_code}").on('food_code -> foodCode).execute()
+      SQL("DELETE FROM foods_portion_size_methods WHERE food_code={food_code} AND locale_id={locale_id}")
+        .on('food_code -> foodCode, 'locale_id -> locale).execute()
 
-        SQL(foodAttributesInsertQuery)
-          .on('food_code -> foodCode, 'same_as_before_option -> foodBase.attributes.sameAsBeforeOption,
-            'ready_meal_option -> foodBase.attributes.readyMealOption, 'reasonable_amount -> foodBase.attributes.reasonableAmount).execute()
+      if (foodLocal.nutrientTableCodes.nonEmpty) {
+        val nutrientTableCodesParams = foodLocal.nutrientTableCodes.map {
+          case (table_id, table_code) => Seq[NamedParameter]('food_code -> foodCode, 'locale_id -> locale, 'nutrient_table_id -> table_id, 'nutrient_table_code -> table_code)
+        }.toSeq
 
-        val rowsAffected = SQL("UPDATE foods SET code = {new_code}, description={description}, food_group_id={food_group_id}, version={new_version}::uuid WHERE code={food_code} AND version={base_version}::uuid)")
-          .on('food_code -> foodCode, 'base_version -> foodBase.version,
-            'new_version -> UUID.randomUUID(), 'new_code -> foodBase.code, 'description -> foodBase.englishDescription, 'food_group_id -> foodBase.groupCode)
-          .executeUpdate()
+        batchSql(foodNutrientMappingInsertQuery, nutrientTableCodesParams).execute()
+      }
 
-        if (rowsAffected == 1) {
-          conn.commit()
-          Right(())
-        } else
-          Left(VersionConflict)
-      } catch {
-        case e: PSQLException => {
-          e.getServerErrorMessage.getConstraint match {
-            case "foods_attributes_food_code_fk" => Left(RecordNotFound(RecordType.Food, foodCode))
-            case _ => throw e
+      if (foodLocal.portionSize.nonEmpty) {
+        val psmParams = foodLocal.portionSize.map(ps => Seq[NamedParameter]('food_code -> foodCode, 'locale_id -> locale, 'method -> ps.method, 'description -> ps.description, 'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes))
+
+        val psmKeys = Util.batchKeys(batchSql(foodPsmInsertQuery, psmParams))
+
+        val psmParamParams = foodLocal.portionSize.zip(psmKeys).flatMap {
+          case (psm, id) => psm.parameters.map(param => Seq[NamedParameter]('portion_size_method_id -> id, 'name -> param.name, 'value -> param.value))
+        }
+
+        if (psmParamParams.nonEmpty)
+          batchSql(foodPsmParamsInsertQuery, psmParamParams).execute()
+      }
+
+      foodLocal.version match {
+        case Some(version) => {
+
+          val rowsAffected = SQL("UPDATE foods_local SET version = {new_version}::uuid, local_description = {local_description}, do_not_use = {do_not_use} WHERE food_code = {food_code} AND locale_id = {locale_id} AND version = {base_version}::uuid")
+            .on('food_code -> foodCode, 'locale_id -> locale, 'base_version -> foodLocal.version, 'new_version -> UUID.randomUUID(), 'local_description -> foodLocal.localDescription, 'do_not_use -> foodLocal.doNotUse)
+            .executeUpdate()
+
+          if (rowsAffected == 1) {
+            Right(())
+          } else
+            Left(VersionConflict)
+        }
+        case None => {
+          try {
+            SQL(foodLocalInsertQuery)
+              .on('food_code -> foodCode, 'locale_id -> locale, 'local_description -> foodLocal.localDescription, 'do_not_use -> foodLocal.doNotUse, 'version -> UUID.randomUUID())
+              .execute()
+
+            Right(())
+          } catch {
+            case e: PSQLException =>
+              if (e.getServerErrorMessage.getConstraint == "foods_local_pk") {
+                Left(VersionConflict)
+              } else
+                throw e
           }
         }
       }
+
+    } catch {
+      case e: PSQLException => {
+        e.getServerErrorMessage.getConstraint match {
+          case "foods_nutrient_tables_food_code_fk" | "foods_portion_size_methods_food_id_fk" | "foods_local_food_code_fk" => Left(RecordNotFound(RecordType.Food, foodCode))
+          case _ => throw e
+        }
+      }
+    }
+  }
+  
+  def dependentToParentError(error: LocalDependentCreateError, parentType: RecordType, parentCode: String): LocalDependentUpdateError = error match {
+    case ParentRecordNotFound => RecordNotFound(parentType, parentCode)
+    case UndefinedLocale => UndefinedLocale
+    case e: DatabaseError => e
   }
 
-  def updateLocalFoodRecord(foodCode: String, locale: String, foodLocal: LocalFoodRecord): Either[UpdateError, Unit] = tryWithConnection {
+  def updateLocalFoodRecord(foodCode: String, locale: String, foodLocal: LocalFoodRecordUpdate): Either[LocalDependentUpdateError, Unit] = tryWithConnection {
     implicit conn =>
-      conn.setAutoCommit(false)
-
-      try {
-        SQL("DELETE FROM foods_nutrient_mapping WHERE food_code={food_code} AND locale_id={locale_id}")
-          .on('food_code -> foodCode, 'locale_id -> locale).execute()
-
-        SQL("DELETE FROM foods_portion_size_methods WHERE food_code={food_code} AND locale_id={locale_id}")
-          .on('food_code -> foodCode, 'locale_id -> locale).execute()
-
-        if (foodLocal.nutrientTableCodes.nonEmpty) {
-          val nutrientTableCodesParams = foodLocal.nutrientTableCodes.map {
-            case (table_id, table_code) => Seq[NamedParameter]('food_code -> foodCode, 'locale_id -> locale, 'nutrient_table_id -> table_id, 'nutrient_table_code -> table_code)
-          }.toSeq
-
-          batchSql(foodNutrientMappingInsertQuery, nutrientTableCodesParams).execute()
-        }
-
-        if (foodLocal.portionSize.nonEmpty) {
-          val psmParams = foodLocal.portionSize.map(ps => Seq[NamedParameter]('food_code -> foodCode, 'locale_id -> locale, 'method -> ps.method, 'description -> ps.description, 'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes))
-
-          val psmKeys = Util.batchKeys(batchSql(foodPsmInsertQuery, psmParams))
-
-          val psmParamParams = foodLocal.portionSize.zip(psmKeys).flatMap {
-            case (psm, id) => psm.parameters.map(param => Seq[NamedParameter]('portion_size_method_id -> id, 'name -> param.name, 'value -> param.value))
-          }
-
-          if (psmParamParams.nonEmpty)
-            batchSql(foodPsmParamsInsertQuery, psmParamParams).execute()
-        }
-
-        foodLocal.version match {
-          case Some(version) => {
-
-            val rowsAffected = SQL("UPDATE foods_local SET version = {new_version}::uuid, local_description = {local_description}, do_not_use = {do_not_use} WHERE food_code = {food_code} AND locale_id = {locale_id} AND version = {base_version}::uuid")
-              .on('food_code -> foodCode, 'locale_id -> locale, 'base_version -> foodLocal.version, 'new_version -> UUID.randomUUID(), 'local_description -> foodLocal.localDescription, 'do_not_use -> foodLocal.doNotUse)
-              .executeUpdate()
-
-            if (rowsAffected == 1) {
-              conn.commit()
-              Right(())
-            } else
-              Left(VersionConflict)
-          }
-          case None => {
-            try {
-              SQL(foodLocalInsertQuery)
-                .on('food_code -> foodCode, 'locale_id -> locale, 'local_description -> foodLocal.localDescription, 'do_not_use -> foodLocal.doNotUse, 'version -> UUID.randomUUID())
-                .execute()
-              conn.commit()
-
-              Right(())
-            } catch {
-              case e: PSQLException =>
-                if (e.getServerErrorMessage.getConstraint == "foods_local_pk") {
-                  Left(VersionConflict)
-                } else
-                  throw e
-            }
-          }
-        }
-
-      } catch {
-        case e: PSQLException => {
-          e.getServerErrorMessage.getConstraint match {
-            case "foods_nutrient_tables_food_code_fk" | "foods_portion_size_methods_food_id_fk" | "foods_local_food_code_fk" => Left(RecordNotFound(RecordType.Food, foodCode))
-            case _ => throw e
-          }
-        }
+      withTransaction {
+        for (
+            _ <- updateAssociatedFoodsComposable(foodCode, foodLocal.associatedFoods, locale).left.map(e => dependentToParentError(e, RecordType.Food, foodCode)).right;
+            _ <- updateBrandNamesComposable(foodCode, foodLocal.brandNames, locale).left.map(e => dependentToParentError(e, RecordType.Food, foodCode)).right;
+            _ <- updateLocalFoodRecordFieldsComposable(foodCode, foodLocal, locale).right) yield ()
       }
   }
 

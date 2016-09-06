@@ -48,7 +48,7 @@ object FoodRecodingForNZ {
   }
   
   def main(args: Array[String]): Unit = {
-    val foods = FoodDef.parseXml(XML.loadFile("/home/ivan/Projects/Intake24/intake24-data/foods.xml")).sortBy(_.main.code)
+    val foods = FoodDef.parseXml(XML.loadFile("/home/ivan/Projects/Intake24/intake24-data/foods.xml")).sortBy(_.code)
     val groups = FoodGroupDef.parseXml(XML.loadFile("/home/ivan/Projects/Intake24/intake24-data/food-groups.xml")).map {
       g => 
         (g.id, g.englishDescription)
@@ -60,16 +60,16 @@ object FoodRecodingForNZ {
 
     writer.writeAll(foods.map(food => {
       
-      if (!food.local.nutrientTableCodes.contains("NDNS") ) {
-        println ("No ndns code for " + food.main.code)
-        Array(food.main.code, food.main.englishDescription, groups(food.main.groupCode), food.local.nutrientTableCodes("NDNS"), "N/A", "N/A")
-      } else if (!ndnsData.contains(food.local.nutrientTableCodes("NDNS"))) {
-        println (food.main.code + " " + food.main.englishDescription + " " + food.local.nutrientTableCodes("NDNS"))
-        Array(food.main.code, food.main.englishDescription, groups(food.main.groupCode), food.local.nutrientTableCodes("NDNS"), "N/A", "N/A")
+      if (!food.nutrientTableCodes.contains("NDNS") ) {
+        println ("No ndns code for " + food.code)
+        Array(food.code, food.description, groups(food.groupCode), food.nutrientTableCodes("NDNS"), "N/A", "N/A")
+      } else if (!ndnsData.contains(food.nutrientTableCodes("NDNS"))) {
+        println (food.code + " " + food.description + " " + food.nutrientTableCodes("NDNS"))
+        Array(food.code, food.description, groups(food.groupCode), food.nutrientTableCodes("NDNS"), "N/A", "N/A")
       }
       else {
-        val ndnsRecord = ndnsData(food.local.nutrientTableCodes("NDNS"))
-        Array(food.main.code, food.main.englishDescription, groups(food.main.groupCode), food.local.nutrientTableCodes("NDNS"), ndnsRecord.name, ndnsRecord.category)
+        val ndnsRecord = ndnsData(food.nutrientTableCodes("NDNS"))
+        Array(food.code, food.description, groups(food.groupCode), food.nutrientTableCodes("NDNS"), ndnsRecord.name, ndnsRecord.category)
       }
     }))
     

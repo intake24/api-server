@@ -57,8 +57,6 @@ trait SqlDataService {
       val constraint = e.getServerErrorMessage.getConstraint
 
       if (cf.isDefinedAt(constraint)) {
-        if (!conn.getAutoCommit())
-          conn.rollback()
         Left(cf(constraint))
       } else
         throw e

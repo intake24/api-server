@@ -4,6 +4,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.user.BrandNamesService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentCreateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentUpdateError
 
 trait BrandNamesAdminService extends BrandNamesService {
   

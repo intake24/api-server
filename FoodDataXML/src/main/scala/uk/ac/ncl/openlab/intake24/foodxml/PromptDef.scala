@@ -19,9 +19,7 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.foodxml
 
 import scala.xml._
-import uk.ac.ncl.openlab.intake24.AssociatedFoodV1
 import scala.xml.NodeSeq.seqToNodeSeq
-import uk.ac.ncl.openlab.intake24.AssociatedFoodV1
 
 object PromptDef {
   def toXml(prompts: Map[String, Seq[AssociatedFoodV1]]) =
