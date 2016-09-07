@@ -38,7 +38,7 @@ trait InheritedPortionSizeMethodsImpl extends FoodPortionSizeShared with SqlReso
     }
 
   private def resolveLocalPortionSizeMethods(code: String, locale: String)(implicit conn: Connection): Either[LocalLookupError, (Seq[PortionSizeMethod], SourceRecord)] = {
-    foodPortionSizeMethodsImpl(code, locale).right.flatMap {
+    getFoodPortionSizeMethodsComposable(code, locale).right.flatMap {
       foodPsm =>
         if (foodPsm.nonEmpty)
           Right((foodPsm, SourceRecord.FoodRecord(code)))

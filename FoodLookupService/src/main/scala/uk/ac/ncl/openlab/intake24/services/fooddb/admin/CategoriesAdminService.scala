@@ -13,6 +13,11 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentError
+import uk.ac.ncl.openlab.intake24.MainCategoryRecordUpdate
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentUpdateError
+import uk.ac.ncl.openlab.intake24.LocalCategoryRecordUpdate
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentUpdateError
+import uk.ac.ncl.openlab.intake24.NewLocalCategoryRecord
 
 trait CategoriesAdminService {
   def getCategoryRecord(code: String, locale: String): Either[LocalLookupError, CategoryRecord]
@@ -22,13 +27,13 @@ trait CategoriesAdminService {
   
   def createCategory(newCategory: NewCategory): Either[CreateError, Unit]
   def createCategories(newCategories: Seq[NewCategory]): Either[CreateError, Unit]
-  def createLocalCategories(localCategoryRecords: Map[String, LocalCategoryRecord], locale: String): Either[CreateError, Unit]
+  def createLocalCategories(localCategoryRecords: Map[String, NewLocalCategoryRecord], locale: String): Either[CreateError, Unit]
   
   def deleteAllCategories(): Either[DatabaseError, Unit]
   def deleteCategory(categoryCode: String): Either[DeleteError, Unit]
 
-  def updateMainCategoryRecord(categoryCode: String, categoryMain: MainCategoryRecord): Either[UpdateError, Unit]
-  def updateLocalCategoryRecord(categoryCode: String, locale: String, categoryLocal: LocalCategoryRecord): Either[LocalUpdateError, Unit]
+  def updateMainCategoryRecord(categoryCode: String, mainCategoryUpdate: MainCategoryRecordUpdate): Either[DependentUpdateError, Unit]
+  def updateLocalCategoryRecord(categoryCode: String, localCategoryUpdate: LocalCategoryRecordUpdate, locale: String): Either[LocalUpdateError, Unit]
     
   def addFoodToCategory(categoryCode: String, foodCode: String): Either[ParentError, Unit]
   def addSubcategoryToCategory(categoryCode: String, subcategoryCode: String): Either[ParentError, Unit]

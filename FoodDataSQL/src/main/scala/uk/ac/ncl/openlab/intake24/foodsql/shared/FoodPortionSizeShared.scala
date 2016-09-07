@@ -27,7 +27,7 @@ trait FoodPortionSizeShared extends SqlResourceLoader with FirstRowValidation {
   
   private lazy val foodPsmQuery = sqlFromResource("shared/food_portion_size_methods.sql")
 
-  protected def foodPortionSizeMethodsImpl(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[PortionSizeMethod]] = {
+  protected def getFoodPortionSizeMethodsComposable(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[PortionSizeMethod]] = {
     val psmResults = SQL(foodPsmQuery).on('food_code -> code, 'locale_id -> locale).executeQuery()
 
     parseWithLocaleAndFoodValidation(code, psmResults, psmResultRowParser.+)(Seq(FirstRowValidationClause("id", Right(List())))).right.map(mkPortionSizeMethods)

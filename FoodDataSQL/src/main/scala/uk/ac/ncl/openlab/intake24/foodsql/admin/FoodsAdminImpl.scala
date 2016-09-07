@@ -95,7 +95,7 @@ trait FoodsAdminImpl extends FoodsAdminService
 
   private lazy val foodNutrientTableCodesQuery = sqlFromResource("admin/food_nutrient_table_codes.sql")
 
-  def foodNutrientTableCodes(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Map[String, String]] = {
+  def getFoodNutrientTableCodesComposable(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Map[String, String]] = {
     val nutrientTableCodesResult = SQL(foodNutrientTableCodesQuery).on('food_code -> code, 'locale_id -> locale).executeQuery()
 
     val parsed = parseWithLocaleAndFoodValidation(code, nutrientTableCodesResult, Macro.namedParser[NutrientTableRow].+)(Seq(FirstRowValidationClause("nutrient_table_id", Right(List()))))
@@ -112,11 +112,11 @@ trait FoodsAdminImpl extends FoodsAdminService
   def getFoodRecord(code: String, locale: String): Either[LocalLookupError, FoodRecord] = tryWithConnection {
     implicit conn =>
       for (
-        nutrientTableCodes <- foodNutrientTableCodes(code, locale).right;
-        portionSizeMethods <- foodPortionSizeMethodsImpl(code, locale).right;
-        associatedFoods <- getAssociatedFoodsWithHeaders(code, locale).right;
-        parentCategories <- getFoodParentCategories(code, locale).right;
-        brandNames <- getBrandNames(code, locale).right;
+        nutrientTableCodes <- getFoodNutrientTableCodesComposable(code, locale).right;
+        portionSizeMethods <- getFoodPortionSizeMethodsComposable(code, locale).right;
+        associatedFoods <- getAssociatedFoodsWithHeadersComposable(code, locale).right;
+        parentCategories <- getFoodParentCategoriesComposable(code, locale).right;
+        brandNames <- getBrandNamesComposable(code, locale).right;
         record <- {
           val foodQueryResult = SQL(foodRecordQuery).on('food_code -> code, 'locale_id -> locale).executeQuery()
 

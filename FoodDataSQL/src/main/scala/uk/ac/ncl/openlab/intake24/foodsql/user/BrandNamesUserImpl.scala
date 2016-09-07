@@ -16,10 +16,14 @@ trait BrandNamesUserImpl extends BrandNamesService with SqlDataService with Firs
 
   private lazy val getBrandNamesQuery = sqlFromResource("user/get_brand_names_frv.sql")
 
+  protected def getBrandNamesComposable(foodCode: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[String]] = {
+    val result = SQL(getBrandNamesQuery).on('food_code -> foodCode, 'locale_id -> locale).executeQuery()
+
+    parseWithLocaleAndFoodValidation(foodCode, result, SqlParser.str("name").+)(Seq(FirstRowValidationClause("name", Right(List()))))
+  }
+
   def getBrandNames(foodCode: String, locale: String): Either[LocalLookupError, Seq[String]] = tryWithConnection {
     implicit conn =>
-      val result = SQL(getBrandNamesQuery).on('food_code -> foodCode, 'locale_id -> locale).executeQuery()
-
-      parseWithLocaleAndFoodValidation(foodCode, result, SqlParser.str("name").+)(Seq(FirstRowValidationClause("name", Right(List()))))
+      getBrandNamesComposable(foodCode, locale)
   }
 }

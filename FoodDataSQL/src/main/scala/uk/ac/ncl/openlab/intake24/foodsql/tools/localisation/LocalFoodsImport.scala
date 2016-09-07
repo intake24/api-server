@@ -159,7 +159,7 @@ case class LocalFoodsImport(localeCode: String, englishLocaleName: String, local
         case Some(translation) => dataService.getCategoryRecord(header.code, localeCode) match {
           case Right(record) => {
             val localData = record.local
-            dataService.updateLocalCategoryRecord(header.code, localeCode, localData.copy(localDescription = Some(translation)))
+            dataService.updateLocalCategoryRecord(header.code, localData.toUpdate.copy(localDescription = Some(translation)), localeCode)
           }
           case _ => throw new RuntimeException(s"Could not retrieve ${englishLocaleName} category record for ${header.localDescription} (${header.code})")
         }

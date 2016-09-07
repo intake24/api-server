@@ -43,7 +43,8 @@ case class FoodRecord(main: MainFoodRecord, local: LocalFoodRecord)
 
 case class MainFoodRecord(version: UUID, code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes, parentCategories: Seq[CategoryHeader])
 
-case class MainFoodRecordUpdate(baseVersion: UUID, code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes, parentCategories: Seq[String]) 
+case class MainFoodRecordUpdate(baseVersion: UUID, code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes, 
+    parentCategories: Seq[String]) 
 
 case class NewFood(code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes, parentCategories: Seq[String]) {
   def toHeader = FoodHeader(code, englishDescription, None, None)
@@ -83,9 +84,22 @@ case class NewCategory(code: String, englishDescription: String, isHidden: Boole
 
 case class CategoryRecord(main: MainCategoryRecord, local: LocalCategoryRecord)
 
-case class MainCategoryRecord(version: UUID, code: String, englishDescription: String, isHidden: Boolean, attributes: InheritableAttributes)
+case class MainCategoryRecord(version: UUID, code: String, englishDescription: String, isHidden: Boolean, attributes: InheritableAttributes,
+    parentCategories: Seq[CategoryHeader]) {
+  def toUpdate = MainCategoryRecordUpdate(version, code, englishDescription, isHidden, attributes, parentCategories.map(_.code))
+}
 
-case class LocalCategoryRecord(version: Option[UUID], localDescription: Option[String], portionSize: Seq[PortionSizeMethod])
+case class MainCategoryRecordUpdate(baseVersion: UUID, code: String, englishDescription: String, isHidden: Boolean, attributes: InheritableAttributes,
+    parentCategories: Seq[String])
+
+    
+case class LocalCategoryRecord(version: Option[UUID], localDescription: Option[String], portionSize: Seq[PortionSizeMethod]) {
+  def toUpdate = LocalCategoryRecordUpdate(version, localDescription, portionSize)
+}
+
+case class NewLocalCategoryRecord(localDescription: Option[String], portionSize: Seq[PortionSizeMethod])
+
+case class LocalCategoryRecordUpdate(baseVersion: Option[UUID], localDescription: Option[String], portionSize: Seq[PortionSizeMethod]) 
 
 case class CategoryContents(foods: Seq[FoodHeader], subcategories: Seq[CategoryHeader])
 

@@ -52,25 +52,29 @@ trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with Associat
 
   private lazy val getAssociatedFoodsQuery = sqlFromResource("admin/get_associated_foods.sql")
 
+  def getAssociatedFoodsWithHeadersComposable(foodCode: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[AssociatedFoodWithHeader]] = {
+    validateFoodAndLocale(foodCode, locale).right.flatMap {
+      _ =>
+        val rows = SQL(getAssociatedFoodsQuery).on('food_code -> foodCode, 'locale_id -> locale).executeQuery().as(Macro.namedParser[AssociatedFoodPromptsRow].*)
+
+        Right(rows.map {
+          row =>
+            val foodOrCategory: Either[FoodHeader, CategoryHeader] =
+              if (row.food_english_description.nonEmpty)
+                Left(FoodHeader(row.associated_food_code.get, row.food_english_description.get, row.food_local_description, row.food_do_not_use))
+              else
+                Right(CategoryHeader(row.associated_category_code.get, row.category_english_description.get, row.category_local_description, row.category_is_hidden.get))
+
+            AssociatedFoodWithHeader(foodOrCategory, row.text.get, row.link_as_main.get, row.generic_name.get)
+
+        })
+    }
+  }
+
   def getAssociatedFoodsWithHeaders(foodCode: String, locale: String): Either[LocalLookupError, Seq[AssociatedFoodWithHeader]] = tryWithConnection {
     implicit conn =>
       withTransaction {
-        validateFoodAndLocale(foodCode, locale).right.flatMap {
-          _ =>
-            val rows = SQL(getAssociatedFoodsQuery).on('food_code -> foodCode, 'locale_id -> locale).executeQuery().as(Macro.namedParser[AssociatedFoodPromptsRow].*)
-
-            Right(rows.map {
-              row =>
-                val foodOrCategory: Either[FoodHeader, CategoryHeader] =
-                  if (row.food_english_description.nonEmpty)
-                    Left(FoodHeader(row.associated_food_code.get, row.food_english_description.get, row.food_local_description, row.food_do_not_use))
-                  else
-                    Right(CategoryHeader(row.associated_category_code.get, row.category_english_description.get, row.category_local_description, row.category_is_hidden.get))
-
-                AssociatedFoodWithHeader(foodOrCategory, row.text.get, row.link_as_main.get, row.generic_name.get)
-
-            })
-        }
+        getAssociatedFoodsWithHeadersComposable(foodCode, locale)
       }
   }
 

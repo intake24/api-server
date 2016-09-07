@@ -66,6 +66,7 @@ import uk.ac.ncl.openlab.intake24.AsServedImage
 import uk.ac.ncl.openlab.intake24.AsServedSet
 import uk.ac.ncl.openlab.intake24.GuideImage
 import uk.ac.ncl.openlab.intake24.DrinkwareSet
+import uk.ac.ncl.openlab.intake24.NewLocalCategoryRecord
 
 class XmlImporter(adminService: FoodDatabaseAdminService) {
 
@@ -125,7 +126,7 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
     }
 
     val newLocalRecords = categories.map {
-      c => (c.code -> LocalCategoryRecord(None, Some(c.description), c.portionSizeMethods))
+      c => (c.code -> NewLocalCategoryRecord(Some(c.description), c.portionSizeMethods))
     }.toMap
 
     checkError("Categories import", for (
