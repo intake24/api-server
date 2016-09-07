@@ -49,6 +49,8 @@ import upickle.default.read
 import upickle.default.write
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoriesAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
+import uk.ac.ncl.openlab.intake24.MainFoodRecordUpdate
+import uk.ac.ncl.openlab.intake24.LocalFoodRecordUpdate
 
 class FoodsAdminController @Inject() (service: FoodsAdminService, deadbolt: DeadboltActions) extends Controller
     with PickleErrorHandler
@@ -111,7 +113,7 @@ class FoodsAdminController @Inject() (service: FoodsAdminService, deadbolt: Dead
   def updateMainFoodRecord(foodCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
-        translateUpdateError(service.updateMainFoodRecord(foodCode, read[MainFoodRecord](request.body)))
+        translateDependentUpdateError(service.updateMainFoodRecord(foodCode, read[MainFoodRecordUpdate](request.body)))
       }
     }
   }
@@ -119,7 +121,7 @@ class FoodsAdminController @Inject() (service: FoodsAdminService, deadbolt: Dead
   def updateLocalFoodRecord(foodCode: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
-        translateLocalUpdateError(service.updateLocalFoodRecord(foodCode, locale, read[LocalFoodRecord](request.body)))
+        translateLocalDependentUpdateError(service.updateLocalFoodRecord(foodCode, read[LocalFoodRecordUpdate](request.body), locale))
       }
     }
   }

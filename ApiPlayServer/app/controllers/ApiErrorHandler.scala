@@ -9,15 +9,15 @@ import upickle.default._
 import org.slf4j.LoggerFactory
 
 trait ApiErrorHandler extends Results {
-  
-  private val logger = LoggerFactory.getLogger(classOf[ApiErrorHandler]) 
+
+  private val logger = LoggerFactory.getLogger(classOf[ApiErrorHandler])
 
   def databaseErrorBody(message: String) = s"""{"cause":"DatabaseError","errorMessage":"$message"}"""
-  def recordNotFoundErrorBody(t: RecordType, id: String) = s"""{"cause":"RecordNotFound","recordType":"${t.getClass.getSimpleName}","recordKey":"$id"}"""
+  val recordNotFoundErrorBody = s"""{"cause":"RecordNotFound}"""
   val undefinedLocaleErrorBody = s"""{"cause":"UndefinedLocale"}"""
   val duplicateCodeErrorBody = s"""{"cause":"DuplicateCode"}"""
   val parentRecordNotFoundErrorBody = s"""{"cause":"ParentRecordNotFound"}"""
-  
+
   def handleDatabaseError(message: String, e: Option[Throwable]) = {
     e.foreach(e => logger.error(message, e))
     InternalServerError(databaseErrorBody(message)).as(ContentTypes.JSON)
@@ -30,7 +30,7 @@ trait ApiErrorHandler extends Results {
 
   def translateLookupError[T](result: Either[LookupError, T])(implicit writer: Writer[T]) = result match {
     case Right(result) => Ok(write(result)).as(ContentTypes.JSON)
-    case Left(RecordNotFound) => NotFound(recordNotFoundErrorBody(t, code)).as(ContentTypes.JSON)
+    case Left(RecordNotFound) => NotFound(recordNotFoundErrorBody).as(ContentTypes.JSON)
     case Left(DatabaseError(message, exception)) => handleDatabaseError(message, exception)
   }
 
@@ -43,7 +43,7 @@ trait ApiErrorHandler extends Results {
   def translateLocalLookupError[T](result: Either[LocalLookupError, T])(implicit writer: Writer[T]) = result match {
     case Right(result) => Ok(write(result)).as(ContentTypes.JSON)
     case Left(UndefinedLocale) => NotFound(undefinedLocaleErrorBody).as(ContentTypes.JSON)
-    case Left(RecordNotFound) => NotFound(recordNotFoundErrorBody(t, code)).as(ContentTypes.JSON)
+    case Left(RecordNotFound) => NotFound(recordNotFoundErrorBody).as(ContentTypes.JSON)
     case Left(DatabaseError(message, exception)) => handleDatabaseError(message, exception)
   }
 
@@ -51,7 +51,13 @@ trait ApiErrorHandler extends Results {
     case Right(result) => Ok(write(result)).as(ContentTypes.JSON)
     case Left(DuplicateCode) => BadRequest(duplicateCodeErrorBody).as(ContentTypes.JSON)
     case Left(VersionConflict) => Conflict.as(ContentTypes.JSON)
-    case Left(RecordNotFound) => NotFound(recordNotFoundErrorBody(t, code)).as(ContentTypes.JSON)
+    case Left(RecordNotFound) => NotFound(recordNotFoundErrorBody).as(ContentTypes.JSON)
+    case Left(DatabaseError(message, exception)) => handleDatabaseError(message, exception)
+  }
+
+  def translateParentError[T](result: Either[ParentError, T])(implicit writer: Writer[T]) = result match {
+    case Right(result) => Ok(write(result)).as(ContentTypes.JSON)
+    case Left(ParentRecordNotFound) => BadRequest(parentRecordNotFoundErrorBody).as(ContentTypes.JSON)
     case Left(DatabaseError(message, exception)) => handleDatabaseError(message, exception)
   }
 
@@ -60,7 +66,7 @@ trait ApiErrorHandler extends Results {
     case Left(UndefinedLocale) => NotFound(undefinedLocaleErrorBody).as(ContentTypes.JSON)
     case Left(DuplicateCode) => BadRequest(duplicateCodeErrorBody).as(ContentTypes.JSON)
     case Left(VersionConflict) => Conflict.as(ContentTypes.JSON)
-    case Left(RecordNotFound) => NotFound(recordNotFoundErrorBody(t, code)).as(ContentTypes.JSON)
+    case Left(RecordNotFound) => NotFound(recordNotFoundErrorBody).as(ContentTypes.JSON)
     case Left(DatabaseError(message, exception)) => handleDatabaseError(message, exception)
   }
 
@@ -71,15 +77,41 @@ trait ApiErrorHandler extends Results {
     case Left(DatabaseError(message, exception)) => handleDatabaseError(message, exception)
   }
 
+  def translateDependentUpdateError[T](result: Either[DependentUpdateError, T])(implicit writer: Writer[T]) = result match {
+    case Right(result) => Ok(write(result)).as(ContentTypes.JSON)
+    case Left(RecordNotFound) => NotFound(recordNotFoundErrorBody).as(ContentTypes.JSON)
+    case Left(DuplicateCode) => BadRequest(duplicateCodeErrorBody).as(ContentTypes.JSON)
+    case Left(VersionConflict) => Conflict.as(ContentTypes.JSON)
+    case Left(ParentRecordNotFound) => BadRequest(parentRecordNotFoundErrorBody).as(ContentTypes.JSON)
+    case Left(DatabaseError(message, exception)) => handleDatabaseError(message, exception)
+  }
+
+  def translateLocalDependentUpdateError[T](result: Either[LocalDependentUpdateError, T])(implicit writer: Writer[T]) = result match {
+    case Right(result) => Ok(write(result)).as(ContentTypes.JSON)
+    case Left(DuplicateCode) => BadRequest(duplicateCodeErrorBody).as(ContentTypes.JSON)
+    case Left(VersionConflict) => Conflict.as(ContentTypes.JSON)
+    case Left(RecordNotFound) => NotFound(recordNotFoundErrorBody).as(ContentTypes.JSON)
+    case Left(UndefinedLocale) => NotFound(undefinedLocaleErrorBody).as(ContentTypes.JSON)
+    case Left(ParentRecordNotFound) => BadRequest(parentRecordNotFoundErrorBody).as(ContentTypes.JSON)
+    case Left(DatabaseError(message, exception)) => handleDatabaseError(message, exception)
+  }
+
   def translateDeleteError[T](result: Either[DeleteError, T])(implicit writer: Writer[T]) = result match {
     case Right(result) => Ok(write(result)).as(ContentTypes.JSON)
-    case Left(RecordNotFound) => NotFound(recordNotFoundErrorBody(t, code)).as(ContentTypes.JSON)
+    case Left(RecordNotFound) => NotFound(recordNotFoundErrorBody).as(ContentTypes.JSON)
     case Left(DatabaseError(message, exception)) => handleDatabaseError(message, exception)
   }
 
   def translateCreateError[T](result: Either[CreateError, T])(implicit writer: Writer[T]) = result match {
     case Right(result) => Ok(write(result)).as(ContentTypes.JSON)
     case Left(DuplicateCode) => BadRequest(duplicateCodeErrorBody).as(ContentTypes.JSON)
+    case Left(DatabaseError(message, exception)) => handleDatabaseError(message, exception)
+  }
+
+  def translateLocaleOrParentError[T](result: Either[LocaleOrParentError, T])(implicit writer: Writer[T]) = result match {
+    case Right(result) => Ok(write(result)).as(ContentTypes.JSON)
+    case Left(UndefinedLocale) => NotFound(undefinedLocaleErrorBody).as(ContentTypes.JSON)
+    case Left(ParentRecordNotFound) => BadRequest(parentRecordNotFoundErrorBody).as(ContentTypes.JSON)
     case Left(DatabaseError(message, exception)) => handleDatabaseError(message, exception)
   }
 }

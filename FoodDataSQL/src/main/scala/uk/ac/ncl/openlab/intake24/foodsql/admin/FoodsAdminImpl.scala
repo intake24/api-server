@@ -53,6 +53,8 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentCreateErr
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentUpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentUpdateError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentError
 
 class FoodsAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends FoodsAdminImpl
 
@@ -170,13 +172,10 @@ trait FoodsAdminImpl extends FoodsAdminService
   def createFood(newFood: NewFood): Either[DependentCreateError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
-        createNewFoodComposable(newFood).right.flatMap {
-          _ =>
-            addFoodsToCategoriesComposable(Map(newFood.code -> newFood.parentCategories)).left.map {
-              case RecordNotFound => ParentRecordNotFound
-              case e: DatabaseError => e
-            }
-        }
+        for (
+          _ <- createNewFoodComposable(newFood).right;
+          _ <- addFoodsToCategoriesComposable(Map(newFood.code -> newFood.parentCategories)).right
+        ) yield ()
       }
   }
 
@@ -235,13 +234,10 @@ trait FoodsAdminImpl extends FoodsAdminService
   def createFoods(foods: Seq[NewFood]): Either[DependentCreateError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
-        createFoodsComposable(foods).right.flatMap {
-          _ =>
-            addFoodsToCategoriesComposable(mkBatchCategoriesMap(foods)).left.map {
-              case RecordNotFound => ParentRecordNotFound
-              case e: DatabaseError => e
-            }
-        }
+        for (
+          _ <- createFoodsComposable(foods).right;
+          _ <- addFoodsToCategoriesComposable(mkBatchCategoriesMap(foods)).right
+        ) yield ()
       }
   }
 
@@ -351,7 +347,7 @@ trait FoodsAdminImpl extends FoodsAdminService
     }
   }
 
-  def updateFoodParentCategoriesComposable(foodCode: String, parentCategories: Seq[String])(implicit conn: java.sql.Connection): Either[LookupError, Unit] =
+  def updateFoodParentCategoriesComposable(foodCode: String, parentCategories: Seq[String])(implicit conn: java.sql.Connection): Either[ParentError, Unit] =
     for (
       _ <- removeFoodFromAllCategoriesComposable(foodCode).right;
       _ <- addFoodsToCategoriesComposable(Map(foodCode -> parentCategories)).right
@@ -359,7 +355,7 @@ trait FoodsAdminImpl extends FoodsAdminService
 
   def updateMainFoodRecordFieldsComposable(foodCode: String, foodRecord: MainFoodRecordUpdate)(implicit conn: java.sql.Connection): Either[UpdateError, Unit] = {
     val rowsAffected = SQL("UPDATE foods SET code = {new_code}, description={description}, food_group_id={food_group_id}, version={new_version}::uuid WHERE code={food_code} AND version={base_version}::uuid)")
-      .on('food_code -> foodCode, 'base_version -> foodRecord.version,
+      .on('food_code -> foodCode, 'base_version -> foodRecord.baseVersion,
         'new_version -> UUID.randomUUID(), 'new_code -> foodRecord.code, 'description -> foodRecord.englishDescription, 'food_group_id -> foodRecord.groupCode)
       .executeUpdate()
 
@@ -369,7 +365,7 @@ trait FoodsAdminImpl extends FoodsAdminService
       Left(VersionConflict)
   }
 
-  def updateMainFoodRecord(foodCode: String, foodRecord: MainFoodRecordUpdate): Either[UpdateError, Unit] = tryWithConnection {
+  def updateMainFoodRecord(foodCode: String, foodRecord: MainFoodRecordUpdate): Either[DependentUpdateError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
         for (
@@ -409,11 +405,11 @@ trait FoodsAdminImpl extends FoodsAdminService
           batchSql(foodPsmParamsInsertQuery, psmParamParams).execute()
       }
 
-      foodLocal.version match {
+      foodLocal.baseVersion match {
         case Some(version) => {
 
           val rowsAffected = SQL("UPDATE foods_local SET version = {new_version}::uuid, local_description = {local_description}, do_not_use = {do_not_use} WHERE food_code = {food_code} AND locale_id = {locale_id} AND version = {base_version}::uuid")
-            .on('food_code -> foodCode, 'locale_id -> locale, 'base_version -> foodLocal.version, 'new_version -> UUID.randomUUID(), 'local_description -> foodLocal.localDescription, 'do_not_use -> foodLocal.doNotUse)
+            .on('food_code -> foodCode, 'locale_id -> locale, 'base_version -> foodLocal.baseVersion, 'new_version -> UUID.randomUUID(), 'local_description -> foodLocal.localDescription, 'do_not_use -> foodLocal.doNotUse)
             .executeUpdate()
 
           if (rowsAffected == 1) {

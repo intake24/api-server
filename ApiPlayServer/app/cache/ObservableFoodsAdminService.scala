@@ -18,6 +18,11 @@ import uk.ac.ncl.openlab.intake24.NewFood
 import uk.ac.ncl.openlab.intake24.LocalFoodRecord
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentCreateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentCreateError
+import uk.ac.ncl.openlab.intake24.NewLocalFoodRecord
+import uk.ac.ncl.openlab.intake24.MainFoodRecordUpdate
+import uk.ac.ncl.openlab.intake24.LocalFoodRecordUpdate
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentUpdateError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentUpdateError
 
 trait FoodsAdminObserver {
   def onMainFoodRecordUpdated(code: String): Unit
@@ -61,7 +66,7 @@ class ObservableFoodsAdminServiceImpl @Inject() (service: FoodsAdminService) ext
       }
   }
 
-  def createLocalFoods(localFoodRecords: Map[String, LocalFoodRecord], locale: String): Either[LocalDependentCreateError, Unit] = service.createLocalFoods(localFoodRecords, locale).right.map {
+  def createLocalFoods(localFoodRecords: Map[String, NewLocalFoodRecord], locale: String): Either[LocalDependentCreateError, Unit] = service.createLocalFoods(localFoodRecords, locale).right.map {
     _ =>
       localFoodRecords.keySet.foreach {
         code =>
@@ -69,12 +74,12 @@ class ObservableFoodsAdminServiceImpl @Inject() (service: FoodsAdminService) ext
       }
   }
 
-  def updateMainFoodRecord(foodCode: String, foodBase: MainFoodRecord): Either[UpdateError, Unit] = service.updateMainFoodRecord(foodCode, foodBase).right.map {
+  def updateMainFoodRecord(foodCode: String, foodBase: MainFoodRecordUpdate): Either[DependentUpdateError, Unit] = service.updateMainFoodRecord(foodCode, foodBase).right.map {
     _ =>
       observers.foreach(_.onMainFoodRecordUpdated(foodCode))
   }
 
-  def updateLocalFoodRecord(foodCode: String, locale: String, foodLocal: LocalFoodRecord): Either[LocalUpdateError, Unit] = service.updateLocalFoodRecord(foodCode, locale, foodLocal).right.map {
+  def updateLocalFoodRecord(foodCode: String, foodLocal: LocalFoodRecordUpdate, locale: String): Either[LocalDependentUpdateError, Unit] = service.updateLocalFoodRecord(foodCode, foodLocal, locale).right.map {
     _ =>
       observers.foreach(_.onLocalFoodRecordUpdated(foodCode, locale))
   }

@@ -15,6 +15,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.AssociatedFoodWithHeader
 import uk.ac.ncl.openlab.intake24.AssociatedFood
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleOrParentError
 
 case class CachedAssociatedFoodsAdminService @Inject() (@UncachedImpl service: AssociatedFoodsAdminService, cache: CacheApi)
     extends AssociatedFoodsAdminService
@@ -31,8 +32,8 @@ case class CachedAssociatedFoodsAdminService @Inject() (@UncachedImpl service: A
       service.getAssociatedFoodsWithHeaders(foodCode, locale)
     }
 
-  def updateAssociatedFoods(foodCode: String, locale: String, associatedFoods: Seq[AssociatedFood]): Either[LocalUpdateError, Unit] =
-    service.updateAssociatedFoods(foodCode, locale, associatedFoods).right.map {
+  def updateAssociatedFoods(foodCode: String, associatedFoods: Seq[AssociatedFood], locale: String): Either[LocaleOrParentError, Unit] =
+    service.updateAssociatedFoods(foodCode, associatedFoods, locale).right.map {
       _ => cache.remove(associatedFoodsWithHeadersCacheKey(foodCode, locale))
     }
 

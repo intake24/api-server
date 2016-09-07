@@ -45,6 +45,9 @@ import com.google.inject.Inject
 import javax.sql.DataSource
 import com.google.inject.name.Named
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentRecordNotFound
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentUpdateError
 
 class CategoriesAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends CategoriesAdminImpl
 
@@ -207,13 +210,13 @@ trait CategoriesAdminImpl extends CategoriesAdminService
     }
   }
 
-  def updateLocalCategoryRecord(categoryCode: String, locale: String, categoryLocal: LocalCategoryRecord): Either[LocalUpdateError, Unit] = tryWithConnection {
+  def updateLocalCategoryRecord(categoryCode: String, locale: String, categoryLocal: LocalCategoryRecord): Either[LocalUpdateError, Unit] = ??? 
+    
+    /*tryWithConnection {
     implicit conn =>
       conn.setAutoCommit(false)
       conn.setTransactionIsolation(java.sql.Connection.TRANSACTION_REPEATABLE_READ)
 
-      val result = validateCategoryAndLocale(categoryCode, locale).right.flatMap {
-        _ =>
           updatePortionSizeMethods(categoryCode, locale, categoryLocal.portionSize).right.flatMap {
             _ =>
               categoryLocal.version match {
@@ -221,23 +224,12 @@ trait CategoriesAdminImpl extends CategoriesAdminService
                 case None => insertCategoryLocalRecordImpl(categoryCode, locale, categoryLocal)
               }
           }
-      }
-
-      result match {
-        case x @ Left(error) => {
-          conn.rollback()
-          x
-        }
-        case x @ Right(()) => {
-          conn.commit()
-          x
-        }
-      }
-  }
+     
+  }*/
 
   private val foodsCategoriesInsertQuery = "INSERT INTO foods_categories VALUES(DEFAULT, {food_code},{category_code})"
 
-  def addFoodToCategory(categoryCode: String, foodCode: String): Either[LookupError, Unit] = tryWithConnection {
+  def addFoodToCategory(categoryCode: String, foodCode: String): Either[ParentError, Unit] = tryWithConnection {
     implicit conn =>
       try {
         SQL(foodsCategoriesInsertQuery)
@@ -247,8 +239,8 @@ trait CategoriesAdminImpl extends CategoriesAdminService
         case e: PSQLException =>
           e.getServerErrorMessage.getConstraint match {
             case "foods_categories_unique" => Right(())
-            case "foods_categories_category_code_fk" => Left(RecordNotFound)
-            case "foods_categories_food_code_fk" => Left(RecordNotFound)
+            case "foods_categories_category_code_fk" => Left(ParentRecordNotFound)
+            case "foods_categories_food_code_fk" => Left(ParentRecordNotFound)
             case _ => throw e
           }
       }
@@ -259,7 +251,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService
     Right(())
   }
 
-  def addFoodsToCategoriesComposable(categoryFoods: Map[String, Seq[String]])(implicit conn: java.sql.Connection): Either[LookupError, Unit] = {
+  def addFoodsToCategoriesComposable(categoryFoods: Map[String, Seq[String]])(implicit conn: java.sql.Connection): Either[ParentError, Unit] = {
     try {
       val foodCategoryParams =
         categoryFoods.flatMap {
@@ -281,8 +273,8 @@ trait CategoriesAdminImpl extends CategoriesAdminService
       case e: BatchUpdateException => e.getNextException match {
         case e2: PSQLException => e2.getServerErrorMessage.getConstraint match {
           case "foods_categories_unique" => Right(())
-          case "foods_categories_category_code_fk" => Left(RecordNotFound)
-          case "foods_categories_food_code_fk" => Left(RecordNotFound)
+          case "foods_categories_category_code_fk" => Left(ParentRecordNotFound)
+          case "foods_categories_food_code_fk" => Left(ParentRecordNotFound)
           case _ => throw e
         }
         case _ => throw e
@@ -290,7 +282,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService
     }
   }
 
-  def addFoodsToCategories(categoryFoods: Map[String, Seq[String]]): Either[LookupError, Unit] = tryWithConnection {
+  def addFoodsToCategories(categoryFoods: Map[String, Seq[String]]): Either[ParentError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
         addFoodsToCategoriesComposable(categoryFoods)
@@ -299,7 +291,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService
 
   private val categoriesCategoriesInsertQuery = "INSERT INTO categories_categories VALUES(DEFAULT, {subcategory_code},{category_code})"
 
-  def addSubcategoryToCategory(categoryCode: String, subcategoryCode: String): Either[LookupError, Unit] = tryWithConnection {
+  def addSubcategoryToCategory(categoryCode: String, subcategoryCode: String): Either[ParentError, Unit] = tryWithConnection {
     implicit conn =>
       if (categoryCode == subcategoryCode) {
         Left(DatabaseError(cannotAddCategoryToItselfMessage(categoryCode), None))
@@ -312,14 +304,14 @@ trait CategoriesAdminImpl extends CategoriesAdminService
           case e: PSQLException =>
             e.getServerErrorMessage.getConstraint match {
               case "categories_categories_unique" => Right(())
-              case "categories_categories_subcategory_code_fk" => Left(RecordNotFound)
-              case "categories_categories_category_code_fk" => Left(RecordNotFound)
+              case "categories_categories_subcategory_code_fk" => Left(ParentRecordNotFound)
+              case "categories_categories_category_code_fk" => Left(ParentRecordNotFound)
               case _ => throw e
             }
         }
   }
 
-  def addSubcategoriesToCategories(categorySubcategories: Map[String, Seq[String]]): Either[LookupError, Unit] = tryWithConnection {
+  def addSubcategoriesToCategories(categorySubcategories: Map[String, Seq[String]]): Either[ParentError, Unit] = tryWithConnection {
     implicit conn =>
       try {
         categorySubcategories.find {
@@ -349,8 +341,8 @@ trait CategoriesAdminImpl extends CategoriesAdminService
         case e: PSQLException =>
           e.getServerErrorMessage.getConstraint match {
             case "categories_categories_unique" => Right(())
-            case "categories_categories_subcategory_code_fk" => Left(RecordNotFound)
-            case "categories_categories_category_code_fk" => Left(RecordNotFound)
+            case "categories_categories_subcategory_code_fk" => Left(ParentRecordNotFound)
+            case "categories_categories_category_code_fk" => Left(ParentRecordNotFound)
             case _ => throw e
           }
       }

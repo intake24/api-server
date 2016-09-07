@@ -12,6 +12,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentError
 
 trait CategoriesAdminService {
   def getCategoryRecord(code: String, locale: String): Either[LocalLookupError, CategoryRecord]
@@ -29,8 +30,8 @@ trait CategoriesAdminService {
   def updateMainCategoryRecord(categoryCode: String, categoryMain: MainCategoryRecord): Either[UpdateError, Unit]
   def updateLocalCategoryRecord(categoryCode: String, locale: String, categoryLocal: LocalCategoryRecord): Either[LocalUpdateError, Unit]
     
-  def addFoodToCategory(categoryCode: String, foodCode: String): Either[LookupError, Unit]
-  def addSubcategoryToCategory(categoryCode: String, subcategoryCode: String): Either[LookupError, Unit]
+  def addFoodToCategory(categoryCode: String, foodCode: String): Either[ParentError, Unit]
+  def addSubcategoryToCategory(categoryCode: String, subcategoryCode: String): Either[ParentError, Unit]
   def removeFoodFromCategory(categoryCode: String, foodCode: String): Either[LookupError, Unit]
   def removeSubcategoryFromCategory(categoryCode: String, foodCode: String): Either[LookupError, Unit]  
 }

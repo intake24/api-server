@@ -110,25 +110,25 @@ class CategoriesAdminController @Inject() (service: CategoriesAdminService, dead
 
   def addFoodToCategory(categoryCode: String, foodCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateUpdateError(service.addFoodToCategory(categoryCode, foodCode))
+      translateParentError(service.addFoodToCategory(categoryCode, foodCode))
 
     }
   }
   def removeFoodFromCategory(categoryCode: String, foodCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateUpdateError(service.removeFoodFromCategory(categoryCode, foodCode))
+      translateLookupError(service.removeFoodFromCategory(categoryCode, foodCode))
     }
   }
 
   def addSubcategoryToCategory(categoryCode: String, subcategoryCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateUpdateError(service.addSubcategoryToCategory(categoryCode, subcategoryCode))
+      translateParentError(service.addSubcategoryToCategory(categoryCode, subcategoryCode))
     }
   }
 
   def removeSubcategoryFromCategory(categoryCode: String, subcategoryCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateUpdateError(service.removeSubcategoryFromCategory(categoryCode, subcategoryCode))
+      translateLookupError(service.removeSubcategoryFromCategory(categoryCode, subcategoryCode))
     }
   }
 }

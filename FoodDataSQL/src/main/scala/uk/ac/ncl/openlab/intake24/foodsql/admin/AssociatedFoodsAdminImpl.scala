@@ -119,7 +119,7 @@ trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with Associat
       Right(())
   }
 
-  def createAssociatedFoods(assocFoods: Map[String, Seq[AssociatedFood]], locale: String): Either[LocalDependentCreateError, Unit] = tryWithConnection {
+  def createAssociatedFoods(assocFoods: Map[String, Seq[AssociatedFood]], locale: String): Either[LocaleOrParentError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
         createAssociatedFoodsComposable(assocFoods, locale)

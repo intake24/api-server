@@ -12,6 +12,8 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.MainCategoryRecord
 import com.google.inject.Inject
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 
 trait CategoriesAdminObserver {
   def onMainCategoryRecordUpdated(code: String): Unit
@@ -78,20 +80,20 @@ class ObservableCategoriesAdminServiceImpl @Inject() (service: CategoriesAdminSe
       _ => observers.foreach(_.onLocalCategoryRecordUpdated(categoryCode, locale))
     }
 
-  def addFoodToCategory(categoryCode: String, foodCode: String): Either[UpdateError, Unit] =
+  def addFoodToCategory(categoryCode: String, foodCode: String): Either[ParentError, Unit] =
     service.addFoodToCategory(categoryCode, foodCode).right.map {
       _ => observers.foreach(_.onFoodAddedToCategory(categoryCode, foodCode))
     }
 
-  def addSubcategoryToCategory(categoryCode: String, subcategoryCode: String): Either[UpdateError, Unit] = service.addSubcategoryToCategory(categoryCode, subcategoryCode).right.map {
+  def addSubcategoryToCategory(categoryCode: String, subcategoryCode: String): Either[ParentError, Unit] = service.addSubcategoryToCategory(categoryCode, subcategoryCode).right.map {
     _ => observers.foreach(_.onSubcategoryAddedToCategory(categoryCode, subcategoryCode))
   }
 
-  def removeFoodFromCategory(categoryCode: String, foodCode: String): Either[UpdateError, Unit] = service.removeFoodFromCategory(categoryCode, foodCode).right.map {
+  def removeFoodFromCategory(categoryCode: String, foodCode: String): Either[LookupError, Unit] = service.removeFoodFromCategory(categoryCode, foodCode).right.map {
     _ => observers.foreach(_.onFoodRemovedFromCategory(categoryCode, foodCode))
   }
 
-  def removeSubcategoryFromCategory(categoryCode: String, foodCode: String): Either[UpdateError, Unit] = service.removeSubcategoryFromCategory(categoryCode, foodCode).right.map {
+  def removeSubcategoryFromCategory(categoryCode: String, foodCode: String): Either[LookupError, Unit] = service.removeSubcategoryFromCategory(categoryCode, foodCode).right.map {
     _ => observers.foreach(_.onSubcategoryRemovedFromCategory(categoryCode, foodCode))
   }
 

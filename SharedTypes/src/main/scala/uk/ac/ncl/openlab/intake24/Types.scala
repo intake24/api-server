@@ -43,7 +43,7 @@ case class FoodRecord(main: MainFoodRecord, local: LocalFoodRecord)
 
 case class MainFoodRecord(version: UUID, code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes, parentCategories: Seq[CategoryHeader])
 
-case class MainFoodRecordUpdate(version: UUID, code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes, parentCategories: Seq[String]) 
+case class MainFoodRecordUpdate(baseVersion: UUID, code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes, parentCategories: Seq[String]) 
 
 case class NewFood(code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes, parentCategories: Seq[String]) {
   def toHeader = FoodHeader(code, englishDescription, None, None)
@@ -57,7 +57,7 @@ case class LocalFoodRecord(version: Option[UUID], localDescription: Option[Strin
   def toUpdate = LocalFoodRecordUpdate(version, localDescription, doNotUse, nutrientTableCodes, portionSize, associatedFoods.map(_.toAssociatedFood), brandNames)
 }
     
-case class LocalFoodRecordUpdate(version: Option[UUID], localDescription: Option[String], doNotUse: Boolean, 
+case class LocalFoodRecordUpdate(baseVersion: Option[UUID], localDescription: Option[String], doNotUse: Boolean, 
     nutrientTableCodes: Map[String, String], portionSize: Seq[PortionSizeMethod], associatedFoods: Seq[AssociatedFood],
     brandNames: Seq[String])
  

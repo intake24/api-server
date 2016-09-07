@@ -23,6 +23,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoriesAdminService
 import uk.ac.ncl.openlab.intake24.MainCategoryRecord
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentError
 
 case class CachedCategoriesAdminService @Inject() (@UncachedImpl service: CategoriesAdminService, localeService: LocalesAdminService, cache: CacheApi)
     extends CategoriesAdminService
@@ -58,11 +59,11 @@ case class CachedCategoriesAdminService @Inject() (@UncachedImpl service: Catego
     
   def updateLocalCategoryRecord(categoryCode: String, locale: String, categoryLocal: LocalCategoryRecord): Either[LocalUpdateError, Unit] = service.updateLocalCategoryRecord(categoryCode, locale, categoryLocal)
 
-  def addFoodToCategory(categoryCode: String, foodCode: String): Either[UpdateError, Unit] = service.addFoodToCategory(categoryCode, foodCode)
+  def addFoodToCategory(categoryCode: String, foodCode: String): Either[ParentError, Unit] = service.addFoodToCategory(categoryCode, foodCode)
   
-  def addSubcategoryToCategory(categoryCode: String, subcategoryCode: String): Either[UpdateError, Unit] = service.addSubcategoryToCategory(categoryCode, subcategoryCode)
+  def addSubcategoryToCategory(categoryCode: String, subcategoryCode: String): Either[ParentError, Unit] = service.addSubcategoryToCategory(categoryCode, subcategoryCode)
   
-  def removeFoodFromCategory(categoryCode: String, foodCode: String): Either[UpdateError, Unit] = service.removeFoodFromCategory(categoryCode, foodCode)
+  def removeFoodFromCategory(categoryCode: String, foodCode: String): Either[LookupError, Unit] = service.removeFoodFromCategory(categoryCode, foodCode)
   
-  def removeSubcategoryFromCategory(categoryCode: String, foodCode: String): Either[UpdateError, Unit] = service.removeSubcategoryFromCategory(categoryCode, foodCode)
+  def removeSubcategoryFromCategory(categoryCode: String, foodCode: String): Either[LookupError, Unit] = service.removeSubcategoryFromCategory(categoryCode, foodCode)
 }

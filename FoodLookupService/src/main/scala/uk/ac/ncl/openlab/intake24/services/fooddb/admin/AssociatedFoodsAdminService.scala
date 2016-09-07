@@ -18,5 +18,5 @@ trait AssociatedFoodsAdminService extends AssociatedFoodsService {
   def updateAssociatedFoods(foodCode: String, associatedFoods: Seq[AssociatedFood], locale: String): Either[LocaleOrParentError, Unit]
   
   def deleteAllAssociatedFoods(locale: String): Either[DatabaseError, Unit]
-  def createAssociatedFoods(assocFoods: Map[String, Seq[AssociatedFood]], locale: String): Either[LocalDependentCreateError, Unit]
+  def createAssociatedFoods(assocFoods: Map[String, Seq[AssociatedFood]], locale: String): Either[LocaleOrParentError, Unit]
 }
