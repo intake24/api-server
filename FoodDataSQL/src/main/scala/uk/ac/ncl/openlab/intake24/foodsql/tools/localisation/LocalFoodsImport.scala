@@ -109,7 +109,7 @@ case class LocalFoodsImport(localeCode: String, englishLocaleName: String, local
                     AssociatedFood(foodOrCategory, v1.promptText, v1.linkAsMain, v1.genericName)
                 }
 
-                dataService.updateAssociatedFoods(header.code, localeCode, prompts)
+                dataService.updateAssociatedFoods(header.code, prompts, localeCode)
               }
               case None => ()
               //logger.warn(s"No associated foods translations for ${header.localDescription} (${header.code})")
@@ -120,16 +120,16 @@ case class LocalFoodsImport(localeCode: String, englishLocaleName: String, local
             recodingTable.existingFoodsCoding.get(header.code) match {
               case Some(DoNotUse) => {
                 logWriter.writeNext(headerCols ++ Array(s"Not using in $englishLocaleName locale"))
-                dataService.updateLocalFoodRecord(header.code, localeCode, localData.toUpdate.copy(doNotUse = true))
+                dataService.updateLocalFoodRecord(header.code, localData.toUpdate.copy(doNotUse = true), localeCode)
               }
               case Some(UseUKFoodTable(localDescription)) => {
                 logWriter.writeNext(headerCols ++ Array("Inheriting UK food composition table code", localDescription))
-                dataService.updateLocalFoodRecord(header.code, localeCode, localData.toUpdate.copy(localDescription = Some(localDescription), doNotUse = false))
+                dataService.updateLocalFoodRecord(header.code, localData.toUpdate.copy(localDescription = Some(localDescription), doNotUse = false), localeCode)
                 updateAssociatedFoods()
               }
               case Some(UseLocalFoodTable(localDescription, localTableRecordId)) => {
                 logWriter.writeNext(headerCols ++ Array(s"Using $localNutrientTableId food composition table code", localDescription, localTableRecordId))
-                dataService.updateLocalFoodRecord(header.code, localeCode, localData.toUpdate.copy(localDescription = Some(localDescription), nutrientTableCodes = Map(localNutrientTableId -> localTableRecordId), doNotUse = false))
+                dataService.updateLocalFoodRecord(header.code, localData.toUpdate.copy(localDescription = Some(localDescription), nutrientTableCodes = Map(localNutrientTableId -> localTableRecordId), doNotUse = false), localeCode)
                 updateAssociatedFoods()
               }
               case None =>

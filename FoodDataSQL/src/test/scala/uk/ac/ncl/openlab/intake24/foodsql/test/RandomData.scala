@@ -18,13 +18,14 @@ import uk.ac.ncl.openlab.intake24.LocalFoodRecord
 import uk.ac.ncl.openlab.intake24.NutrientTable
 import uk.ac.ncl.openlab.intake24.NutrientTableRecord
 import uk.ac.ncl.openlab.intake24.nutrients.Nutrient
+import uk.ac.ncl.openlab.intake24.NewLocalFoodRecord
 
 trait RandomData {
 
   def randomString(length: Int) = Random.alphanumeric.take(length).mkString
 
   val undefinedCode = "bad_code"
-    
+
   def randomCount(min: Int, max: Int) = {
     def bound = max - min
     if (bound <= 0)
@@ -32,7 +33,7 @@ trait RandomData {
     else
       Random.nextInt(bound) + min
   }
-  
+
   def randomCode(): String = {
     val t = randomString(Random.nextInt(3) + 4)
     if (t == undefinedCode)
@@ -75,7 +76,7 @@ trait RandomData {
     InheritableAttributes(readyMeal, sameAsBefore, reasonableAmount)
   }
 
-  def randomNewFood(code: String, groupCodes: IndexedSeq[Int]) = NewFood(code, randomDescription, randomElement(groupCodes), randomAttributes)
+  def randomNewFood(code: String, groupCodes: IndexedSeq[Int]) = NewFood(code, randomDescription, randomElement(groupCodes), randomAttributes, Seq())
 
   def randomNewFoods(min: Int, max: Int, groupCodes: IndexedSeq[Int]) = {
     val count = randomCount(min, max)
@@ -95,9 +96,9 @@ trait RandomData {
     codes.map(randomNewCategory(_))
   }
 
-  def randomLocalFoods(forFoods: Seq[String], nutrientTableRecords: IndexedSeq[NutrientTableRecord]) = {
-    forFoods.foldLeft(Map[String, LocalFoodRecord]()) {
-      (map, code) => map + (code -> randomLocalFoodRecord(nutrientTableRecords))
+  def randomLocalFoods(forFoods: Seq[String], assocFoods: IndexedSeq[String], assocCategories: IndexedSeq[String], nutrientTableRecords: IndexedSeq[NutrientTableRecord]) = {
+    forFoods.foldLeft(Map[String, NewLocalFoodRecord]()) {
+      (map, code) => map + (code -> randomLocalFoodRecord(nutrientTableRecords, assocFoods, assocCategories))
     }
   }
 
@@ -128,8 +129,9 @@ trait RandomData {
           result
     }
 
-  def randomLocalFoodRecord(nutrientTableRecords: IndexedSeq[NutrientTableRecord]) =
-    LocalFoodRecord(None, Some(randomDescription), Random.nextBoolean(), randomNutrientCodes(nutrientTableRecords), randomPortionSizeMethods)
+  def randomLocalFoodRecord(nutrientTableRecords: IndexedSeq[NutrientTableRecord], assocFoodCodes: IndexedSeq[String], assocCategoryCodes: IndexedSeq[String]) =
+    NewLocalFoodRecord(Some(randomDescription), Random.nextBoolean(), randomNutrientCodes(nutrientTableRecords), randomPortionSizeMethods,
+      randomAssociatedFoods(assocFoodCodes, assocCategoryCodes), randomBrands)
 
   def randomPortionSizeMethod = {
 
@@ -188,31 +190,41 @@ trait RandomData {
   }
 
   def randomAssociatedFood(assocFoodCodes: IndexedSeq[String], assocCategoryCodes: IndexedSeq[String]) = {
+    val foodOrCategory = (assocFoodCodes.nonEmpty, assocCategoryCodes.nonEmpty) match {
+      case (true, true) =>
+        {
+          if (Random.nextBoolean())
+            Left(randomElement(assocFoodCodes))
+          else
+            Right(randomElement(assocCategoryCodes))
 
-    val foodOrCategory = if (Random.nextBoolean())
-      Left(randomElement(assocFoodCodes))
-    else
-      Right(randomElement(assocCategoryCodes))
+        }
+      case (true, false) => Left(randomElement(assocFoodCodes))
+      case (false, true) => Right(randomElement(assocCategoryCodes))
+      case (false, false) => throw new RuntimeException("both assocFoodCodes and assocCategoryCodes cannot be empty")
+    }
 
     AssociatedFood(foodOrCategory, randomDescription, Random.nextBoolean(), randomDescription)
   }
 
-  def randomAssociatedFoods(forCodes: Seq[String], assocFoodCodes: IndexedSeq[String], assocCategoryCodes: IndexedSeq[String]) = {
-    forCodes.foldLeft(Map[String, Seq[AssociatedFood]]()) {
-      (map, code) =>
-        {
-
-          val count = Random.nextInt(5)
-          map + (code -> Seq.fill(count)(randomAssociatedFood(assocFoodCodes, assocCategoryCodes)))
-        }
-    }
-  }
-
-  def randomBrands(forCodes: Seq[String]) = forCodes.foldLeft(Map[String, Seq[String]]()) {
-    (map, code) =>
-      {
+  def randomAssociatedFoods(assocFoodCodes: IndexedSeq[String], assocCategoryCodes: IndexedSeq[String]) =
+    {
+      if (assocFoodCodes.nonEmpty || assocCategoryCodes.nonEmpty) {
         val count = Random.nextInt(5)
-        map + (code -> Seq.fill(count)(randomDescription))
-      }
-  }
+        IndexedSeq.fill(count)(randomAssociatedFood(assocFoodCodes, assocCategoryCodes))
+      } else IndexedSeq()
+    }
+
+  def randomAssociatedFoodsFor(codes: Seq[String], assocFoodCodes: IndexedSeq[String], assocCategoryCodes: IndexedSeq[String]) =
+    {
+      codes.map(_ -> randomAssociatedFoods(assocFoodCodes, assocCategoryCodes)).toMap
+    }
+
+  def randomBrands =
+    {
+      val count = Random.nextInt(5)
+      Seq.fill(count)(randomDescription)
+    }
+
+  def randomBrandsFor(codes: Seq[String]) = codes.map(_ -> randomBrands).toMap
 }

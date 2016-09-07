@@ -20,9 +20,14 @@ package uk.ac.ncl.openlab.intake24.services.fooddb.errors
 
 sealed trait LocalLookupError extends LocalUpdateError
 
-sealed trait LocaleError extends LocalLookupError with LocalUpdateError with LocalCreateError with LocalDeleteError with LocalDependentCreateError with LocalDependentUpdateError
+sealed trait LocaleError
+  extends LocalLookupError
+  with LocalUpdateError
+  with LocalCreateError
+  with LocalDeleteError
+  with LocaleOrParentError
 
-sealed trait LookupError extends LocalLookupError
+sealed trait LookupError extends LocalLookupError with UpdateError
 
 sealed trait LocalDeleteError
 
@@ -30,20 +35,33 @@ sealed trait DeleteError extends LocalDeleteError
 
 sealed trait LocalUpdateError
 
-sealed trait UpdateError extends LocalUpdateError with DependentUpdateError
+sealed trait UpdateError
+  extends LocalUpdateError
+  with DependentUpdateError
 
 sealed trait LocalCreateError
 
-sealed trait CreateError extends LocalCreateError
+sealed trait CreateError 
+  extends LocalCreateError
+  with DependentCreateError
+
+sealed trait ParentError
+  extends DependentUpdateError
+  with DependentCreateError
+  with LocaleOrParentError
+
+sealed trait LocaleOrParentError
+  extends LocalDependentUpdateError
+  with LocalDependentCreateError
 
 sealed trait LocalDependentUpdateError
 
-sealed trait DependentUpdateError extends LocalDependentUpdateError
+sealed trait DependentUpdateError 
+  extends LocalDependentUpdateError
 
 sealed trait LocalDependentCreateError
 
 sealed trait DependentCreateError extends LocalDependentCreateError
-
 
 sealed trait NutrientMappingError
 
@@ -51,53 +69,25 @@ case object UndefinedLocale extends LocaleError
 
 sealed trait RecordType
 
-object RecordType {
-  
-  case object FoodGroup extends RecordType
-
-  case object AsServedSet extends RecordType
-
-  case object GuideImage extends RecordType
-
-  case object DrinkwareSet extends RecordType
-  
-  case object NutrientTable extends RecordType
-
-  case object NutrientTableRecord extends RecordType
-
-  case object Food extends RecordType
-
-  case object Category extends RecordType
-  
-  case object Locale extends RecordType
-}
-
-case class RecordNotFound(recordType: RecordType, code: String) extends LookupError with NutrientMappingError with DeleteError with UpdateError with DependentUpdateError
+case object RecordNotFound
+  extends LookupError
+  with NutrientMappingError
+  with DeleteError
+  with UpdateError  
 
 case object VersionConflict extends UpdateError
 
-case object DuplicateCode extends CreateError with UpdateError with DependentCreateError with DependentUpdateError
+case object DuplicateCode extends CreateError with UpdateError
 
-case object ParentRecordNotFound extends DependentCreateError with DependentUpdateError
+case object ParentRecordNotFound extends ParentError
 
 case object TableNotFound extends NutrientMappingError
 
 case class DatabaseError(message: String, cause: Option[Throwable])
   extends LocaleError
   with LookupError
-  with LocalLookupError
   with DeleteError
-  with LocalDeleteError
   with UpdateError
-  with LocalUpdateError
   with CreateError
-  with LocalCreateError
   with NutrientMappingError
-  with DependentCreateError
-  with LocalDependentCreateError
-
-object test {
-  val q: LocaleError = UndefinedLocale
-  val x: LocalLookupError = q
-
-}
+  with ParentError

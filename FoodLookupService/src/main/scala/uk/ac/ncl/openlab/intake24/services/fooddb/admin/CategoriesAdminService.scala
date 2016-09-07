@@ -29,8 +29,8 @@ trait CategoriesAdminService {
   def updateMainCategoryRecord(categoryCode: String, categoryMain: MainCategoryRecord): Either[UpdateError, Unit]
   def updateLocalCategoryRecord(categoryCode: String, locale: String, categoryLocal: LocalCategoryRecord): Either[LocalUpdateError, Unit]
     
-  def addFoodToCategory(categoryCode: String, foodCode: String): Either[UpdateError, Unit]
-  def addSubcategoryToCategory(categoryCode: String, subcategoryCode: String): Either[UpdateError, Unit]
-  def removeFoodFromCategory(categoryCode: String, foodCode: String): Either[UpdateError, Unit]
-  def removeSubcategoryFromCategory(categoryCode: String, foodCode: String): Either[UpdateError, Unit]  
+  def addFoodToCategory(categoryCode: String, foodCode: String): Either[LookupError, Unit]
+  def addSubcategoryToCategory(categoryCode: String, subcategoryCode: String): Either[LookupError, Unit]
+  def removeFoodFromCategory(categoryCode: String, foodCode: String): Either[LookupError, Unit]
+  def removeSubcategoryFromCategory(categoryCode: String, foodCode: String): Either[LookupError, Unit]  
 }

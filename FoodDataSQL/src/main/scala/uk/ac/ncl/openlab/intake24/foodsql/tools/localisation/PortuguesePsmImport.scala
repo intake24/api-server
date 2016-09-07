@@ -126,7 +126,7 @@ object PortuguesePsmImport extends App with WarningMessage with DatabaseConnecti
       dataService.getFoodRecord(key, "pt_PT") match {
         case Right(record) => {
           val updatedLocal = record.local.toUpdate.copy(portionSize = methods(key))
-          dataService.updateLocalFoodRecord(key, "pt_PT", updatedLocal)
+          dataService.updateLocalFoodRecord(key, updatedLocal, "pt_PT")
         }
         case _ => throw new RuntimeException(s"Couldn't retrieve record for $key")
       }

@@ -16,6 +16,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
 import uk.ac.ncl.openlab.intake24.LocalFoodRecordUpdate
 import uk.ac.ncl.openlab.intake24.NewLocalFoodRecord
 import uk.ac.ncl.openlab.intake24.MainFoodRecordUpdate
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentUpdateError
 
 trait FoodsAdminService {
   def getFoodRecord(code: String, locale: String): Either[LocalLookupError, FoodRecord]
@@ -29,7 +30,7 @@ trait FoodsAdminService {
   def createLocalFoods(localFoodRecords: Map[String, NewLocalFoodRecord], locale: String): Either[LocalDependentCreateError, Unit]
 
   def updateMainFoodRecord(foodCode: String, foodBase: MainFoodRecordUpdate): Either[UpdateError, Unit]
-  def updateLocalFoodRecord(foodCode: String, locale: String, foodLocal: LocalFoodRecordUpdate): Either[LocalUpdateError, Unit]
+  def updateLocalFoodRecord(foodCode: String, foodLocal: LocalFoodRecordUpdate, locale: String): Either[LocalDependentUpdateError, Unit]
 
   def deleteAllFoods(): Either[DatabaseError, Unit]
   def deleteFood(foodCode: String): Either[DeleteError, Unit]  

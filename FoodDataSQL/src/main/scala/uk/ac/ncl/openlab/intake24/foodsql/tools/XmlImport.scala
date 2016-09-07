@@ -62,6 +62,10 @@ import uk.ac.ncl.openlab.intake24.NewLocalFoodRecord
 import uk.ac.ncl.openlab.intake24.foodxml.XmlFoodRecord
 import uk.ac.ncl.openlab.intake24.FoodGroupMain
 import uk.ac.ncl.openlab.intake24.foodxml.XmlCategoryRecord
+import uk.ac.ncl.openlab.intake24.AsServedImage
+import uk.ac.ncl.openlab.intake24.AsServedSet
+import uk.ac.ncl.openlab.intake24.GuideImage
+import uk.ac.ncl.openlab.intake24.DrinkwareSet
 
 class XmlImporter(adminService: FoodDatabaseAdminService) {
 
@@ -69,64 +73,52 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
 
   val defaultLocale = "en_GB"
 
-  def importFoodGroups(foodGroups: Seq[FoodGroupMain]) = {
-    logger.info("Deleting existing food groups")
-
-    adminService.deleteAllFoodGroups()
-
-    if (!foodGroups.isEmpty) {
-      logger.info("Writing " + foodGroups.size + " food groups to database")
-
-      adminService.createFoodGroups(foodGroups)
-
-      val baseLocaleData = foodGroups.map {
-        g => (g.id -> FoodGroupLocal(Some(g.englishDescription)))
-      }.toMap
-
-      adminService.createLocalFoodGroups(baseLocaleData, defaultLocale)
-
-    } else
-      logger.warn("Food groups file contains no records")
+  private def checkError[E, T](op: String, result: Either[E, T]) = result match {
+    case Left(e) => throw new RuntimeException(s"$op failed: ${e.toString()}")
+    case _ => logger.info(s"$op successful")
   }
-  
-  def buildFoodParentCategories(categories: Seq[XmlCategoryRecord]) = {
-    
-    val z = Map[String, Set[String]]()
-    
-    categories.foldLeft(z) {
-      (map, record) => record.foods.foldLeft(z) {
-        (map, foodCode) => map + (foodCode -> (map.getOrElse(foodCode, Set()) + record.code))
-      }      
-    }
-    
+
+  def importFoodGroups(foodGroups: Seq[FoodGroupMain]) = {
+    val baseLocaleData = foodGroups.map {
+      g => (g.id -> FoodGroupLocal(Some(g.englishDescription)))
+    }.toMap
+
+    checkError("Food groups import ", for (
+      _ <- adminService.deleteAllFoodGroups().right;
+      _ <- adminService.createFoodGroups(foodGroups).right;
+      _ <- adminService.createLocalFoodGroups(baseLocaleData, defaultLocale).right
+    ) yield ())
   }
 
   def importFoods(foods: Seq[XmlFoodRecord], categories: Seq[XmlCategoryRecord], associatedFoods: Map[String, Seq[AssociatedFood]], brandNames: Map[String, Seq[String]]) = {
-    
-    
+
+    val parentCategories = {
+      val z = Map[String, Set[String]]()
+
+      categories.foldLeft(z) {
+        (map, record) =>
+          record.foods.foldLeft(z) {
+            (map, foodCode) => map + (foodCode -> (map.getOrElse(foodCode, Set()) + record.code))
+          }
+      }
+    }
 
     val newFoodRecords = foods.map {
-      f => NewFood(f.code, f.description, f.groupCode, f.attributes)
+      f => NewFood(f.code, f.description, f.groupCode, f.attributes, parentCategories(f.code).toSeq)
     }
 
     val newLocalRecords = foods.map {
       f => (f.code -> NewLocalFoodRecord(Some(f.description), false, f.nutrientTableCodes, f.portionSizeMethods, associatedFoods.getOrElse(f.code, Seq()), brandNames.getOrElse(f.code, Seq())))
     }.toMap
 
-    (for (
+    checkError("Foods import", for (
       _ <- adminService.deleteAllFoods().right;
       _ <- adminService.createFoods(newFoodRecords).right;
       _ <- adminService.createLocalFoods(newLocalRecords, defaultLocale).right
-    ) yield ()) match {
-      case Left(DatabaseError(message, _)) => throw new RuntimeException(s"Failed to import foods due to database error: $message")
-      case _ => logger.info("Foods import successful")
-    }
+    ) yield ())
   }
 
-  def importCategories(categoriesPath: String) = {
-    logger.info("Loading categories from " + categoriesPath)
-
-    val categories = CategoryDef.parseXml(XML.load(categoriesPath))
+  def importCategories(categories: Seq[XmlCategoryRecord]) = {
 
     val newCategoryRecords = categories.map {
       c => NewCategory(c.code, c.description, c.isHidden, c.attributes)
@@ -136,52 +128,28 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
       c => (c.code -> LocalCategoryRecord(None, Some(c.description), c.portionSizeMethods))
     }.toMap
 
-    (for (
+    checkError("Categories import", for (
       _ <- adminService.deleteAllCategories().right;
       _ <- adminService.createCategories(newCategoryRecords).right;
       _ <- adminService.createLocalCategories(newLocalRecords, defaultLocale).right
-    ) yield ()) match {
-      case Left(DatabaseError(message, _)) => throw new RuntimeException(s"Failed to import categories due to database error: $message")
-      case _ => logger.info("Categories import successful")
-    }
+    ) yield ())
   }
 
-  def importAsServed(asServedPath: String) = {
-    logger.info("Loading as served image definitions from " + asServedPath)
-
-    val asServed = AsServedDef.parseXml(XML.load(asServedPath)).values.toSeq.sortBy(_.id)
-
-    (for (
+  def importAsServedSets(asServed: Seq[AsServedSet]) =
+    checkError("As served sets import", for (
       _ <- adminService.deleteAllAsServedSets().right;
       _ <- adminService.createAsServedSets(asServed).right
-    ) yield ()) match {
-      case Left(DatabaseError(message, _)) => throw new RuntimeException(s"Failed to import as served image sets due to database error: $message")
-      case _ => logger.info("As served image sets import successful")
-    }
-  }
+    ) yield ())
 
   private case class ImageMapArea(id: Int, coords: Seq[Double])
   private case class ImageMapRecord(navigation: Seq[Seq[Int]], areas: Seq[ImageMapArea])
 
-  private def importImageMap(file: File) = {
-    logger.debug("Importing image map from " + file.getName)
-    val json = scala.io.Source.fromFile(file).mkString
-    logger.debug(read[ImageMapRecord](json).toString())
-  }
-
-  def importGuide(guidePath: String, imageMapsPath: String) = {
-    logger.info("Loading guide image definitions from " + guidePath)
-    val guideImages = GuideImageDef.parseXml(XML.load(guidePath)).values.toSeq
-
-    (for (
-      _ <- adminService.deleteAllGuideImages().right;
-      _ <- adminService.createGuideImages(guideImages).right
-    ) yield ()) match {
-      case Left(DatabaseError(message, _)) => throw new RuntimeException(s"Failed to import guide images due to database error: $message")
-      case _ => logger.info("As served image sets import successful")
+  private def parseImageMaps(imageMapsPath: String) = {
+    def parseImageMap(file: File) = {
+      logger.debug("Importing image map from " + file.getName)
+      val json = scala.io.Source.fromFile(file).mkString
+      read[ImageMapRecord](json)
     }
-
-    logger.info("Importing guide image maps from " + imageMapsPath)
 
     ((new File(imageMapsPath)).listFiles() match {
       case null => {
@@ -189,33 +157,35 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
         Array[File]()
       }
       case files => files
-    }).filter(_.getName.endsWith(".imagemap")).foreach(importImageMap)
+    }).filter(_.getName.endsWith(".imagemap")).map(parseImageMap)
   }
 
-  def importDrinkware(drinkwarePath: String) = {
+  def importImageMaps(imageMaps: Seq[ImageMapRecord]) = ???
 
-    logger.info("Loading drinkware definitions from " + drinkwarePath)
-    val drinkware = DrinkwareDef.parseXml(XML.load(drinkwarePath)).values.toSeq
-    (for (
+  def importGuideImages(guideImages: Seq[GuideImage]) = {
+    checkError("Guide image import", for (
+      _ <- adminService.deleteAllGuideImages().right;
+      _ <- adminService.createGuideImages(guideImages).right
+    ) yield ())
+  }
+
+  def importDrinkwareSets(drinkwareSets: Seq[DrinkwareSet]) = {
+    checkError("Drinkware sets import", for (
       _ <- adminService.deleteAllDrinkwareSets().right;
-      _ <- adminService.createDrinkwareSets(drinkware).right
-    ) yield ()) match {
-      case Left(DatabaseError(message, _)) => throw new RuntimeException(s"Failed to import guide images due to database error: $message")
-      case _ => logger.info("As served image sets import successful")
-    }
+      _ <- adminService.createDrinkwareSets(drinkwareSets).right
+    ) yield ())
   }
 
   def parseAssociatedFoods(categories: Seq[XmlCategoryRecord], promptsPath: String): Map[String, Seq[AssociatedFood]] = {
-
-    logger.info("Loading associated food prompts from " + promptsPath)
+    logger.debug("Loading associated food prompts from " + promptsPath)
 
     val prompts = PromptDef.parseXml(XML.load(promptsPath))
 
-    logger.info("Indexing foods and categories for associated type resolution" + promptsPath)
+    logger.debug("Indexing foods and categories for associated type resolution" + promptsPath)
 
     val categoryCodes = categories.map(_.code).toSet
 
-    logger.info("Resolving associated food/category types")
+    logger.debug("Resolving associated food/category types")
 
     prompts.mapValues {
       _.map {
@@ -246,45 +216,43 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
 
     }.toMap
 
-    (for (
+    checkError("Split list import", for (
       _ <- adminService.deleteSplitList(defaultLocale).right;
       _ <- adminService.createSplitList(SplitList(splitWords, keepPairs), defaultLocale).right
-    ) yield ()) match {
-      case Left(DatabaseError(message, _)) => throw new RuntimeException(s"Failed to import split list due to database error: $message")
-      case _ => logger.info("Split list import successful")
-    }
+    ) yield ())
   }
 
   def importSynonymSets(path: String) = {
     logger.info("Loading synonym sets from " + path)
     val synsets = scala.io.Source.fromFile(path).getLines().toSeq.map(_.split("\\s+").toSet)
 
-    (for (
+    checkError("Synonym sets import", for (
       _ <- adminService.deleteSynsets(defaultLocale).right;
       _ <- adminService.createSynsets(synsets, defaultLocale).right
-    ) yield ()) match {
-      case Left(DatabaseError(message, _)) => throw new RuntimeException(s"Failed to import synonym sets due to database error: $message")
-      case _ => logger.info("Synonym sets import successful")
-    }
+    ) yield ())
   }
 
   def importXmlData(dataDirectory: String) = {
-    
+
     val foodGroups = FoodGroupDef.parseXml(XML.load(dataDirectory + File.separator + "food-groups.xml"))
     val foods = FoodDef.parseXml(XML.load(dataDirectory + File.separator + "foods.xml"))
     val categories = CategoryDef.parseXml(XML.load(dataDirectory + File.separator + "categories.xml"))
     val associatedFoods = parseAssociatedFoods(categories, dataDirectory + File.separator + "prompts.xml")
     val brands = BrandDef.parseXml(XML.load(dataDirectory + File.separator + "brands.xml"))
-    
-    importFoodGroups(foodGroups)
-    importFoods(foods, categories, associatedFoods, brands)
-    
-    
-    importCategories()
-    importAsServed(dataDirectory + File.separator + "as-served.xml")
-    importGuide(dataDirectory + File.separator + "guide.xml", dataDirectory + File.separator + "CompiledImageMaps")
+    val asServedSets = AsServedDef.parseXml(XML.load(dataDirectory + File.separator + "as-served.xml")).values.toSeq
+    val guideImages = GuideImageDef.parseXml(XML.load(dataDirectory + File.separator + "guide.xml")).values.toSeq
+    val imageMaps = parseImageMaps(dataDirectory + File.separator + "CompiledImageMaps")
+    val drinkwareSets = DrinkwareDef.parseXml(XML.load(dataDirectory + File.separator + "drinkware.xml")).values.toSeq
 
-    importDrinkware(dataDirectory + File.separator + "drinkware.xml")
+    importCategories(categories)
+
+    importFoodGroups(foodGroups)
+    importAsServedSets(asServedSets)
+    importGuideImages(guideImages)
+    /// importImageMaps(imageMaps)
+    importDrinkwareSets(drinkwareSets)
+    
+    importFoods(foods, categories, associatedFoods, brands)
 
     importSplitList(dataDirectory + File.separator + "split_list")
     importSynonymSets(dataDirectory + File.separator + "synsets")

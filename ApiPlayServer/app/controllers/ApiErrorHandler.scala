@@ -30,7 +30,7 @@ trait ApiErrorHandler extends Results {
 
   def translateLookupError[T](result: Either[LookupError, T])(implicit writer: Writer[T]) = result match {
     case Right(result) => Ok(write(result)).as(ContentTypes.JSON)
-    case Left(RecordNotFound(t, code)) => NotFound(recordNotFoundErrorBody(t, code)).as(ContentTypes.JSON)
+    case Left(RecordNotFound) => NotFound(recordNotFoundErrorBody(t, code)).as(ContentTypes.JSON)
     case Left(DatabaseError(message, exception)) => handleDatabaseError(message, exception)
   }
 
@@ -43,7 +43,7 @@ trait ApiErrorHandler extends Results {
   def translateLocalLookupError[T](result: Either[LocalLookupError, T])(implicit writer: Writer[T]) = result match {
     case Right(result) => Ok(write(result)).as(ContentTypes.JSON)
     case Left(UndefinedLocale) => NotFound(undefinedLocaleErrorBody).as(ContentTypes.JSON)
-    case Left(RecordNotFound(t, code)) => NotFound(recordNotFoundErrorBody(t, code)).as(ContentTypes.JSON)
+    case Left(RecordNotFound) => NotFound(recordNotFoundErrorBody(t, code)).as(ContentTypes.JSON)
     case Left(DatabaseError(message, exception)) => handleDatabaseError(message, exception)
   }
 
@@ -51,7 +51,7 @@ trait ApiErrorHandler extends Results {
     case Right(result) => Ok(write(result)).as(ContentTypes.JSON)
     case Left(DuplicateCode) => BadRequest(duplicateCodeErrorBody).as(ContentTypes.JSON)
     case Left(VersionConflict) => Conflict.as(ContentTypes.JSON)
-    case Left(RecordNotFound(t, code)) => NotFound(recordNotFoundErrorBody(t, code)).as(ContentTypes.JSON)
+    case Left(RecordNotFound) => NotFound(recordNotFoundErrorBody(t, code)).as(ContentTypes.JSON)
     case Left(DatabaseError(message, exception)) => handleDatabaseError(message, exception)
   }
 
@@ -60,7 +60,7 @@ trait ApiErrorHandler extends Results {
     case Left(UndefinedLocale) => NotFound(undefinedLocaleErrorBody).as(ContentTypes.JSON)
     case Left(DuplicateCode) => BadRequest(duplicateCodeErrorBody).as(ContentTypes.JSON)
     case Left(VersionConflict) => Conflict.as(ContentTypes.JSON)
-    case Left(RecordNotFound(t, code)) => NotFound(recordNotFoundErrorBody(t, code)).as(ContentTypes.JSON)
+    case Left(RecordNotFound) => NotFound(recordNotFoundErrorBody(t, code)).as(ContentTypes.JSON)
     case Left(DatabaseError(message, exception)) => handleDatabaseError(message, exception)
   }
 
@@ -73,7 +73,7 @@ trait ApiErrorHandler extends Results {
 
   def translateDeleteError[T](result: Either[DeleteError, T])(implicit writer: Writer[T]) = result match {
     case Right(result) => Ok(write(result)).as(ContentTypes.JSON)
-    case Left(RecordNotFound(t, code)) => NotFound(recordNotFoundErrorBody(t, code)).as(ContentTypes.JSON)
+    case Left(RecordNotFound) => NotFound(recordNotFoundErrorBody(t, code)).as(ContentTypes.JSON)
     case Left(DatabaseError(message, exception)) => handleDatabaseError(message, exception)
   }
 

@@ -63,7 +63,7 @@ trait LocalesAdminImpl extends LocalesAdminService with SqlDataService {
 
       SQL(query).on('locale_id -> id).executeQuery().as(Macro.namedParser[LocaleRow].singleOpt).map(_.mkLocale) match {
         case Some(locale) => Right(locale)
-        case None => Left(RecordNotFound(RecordType.Locale, id))
+        case None => Left(RecordNotFound)
       }
   }
 
@@ -86,7 +86,7 @@ trait LocalesAdminImpl extends LocalesAdminService with SqlDataService {
         'admin_language_code -> data.adminLanguage, 'country_flag_code -> data.flagCode, 'prototype_locale_id -> data.prototypeLocale).executeUpdate()
 
       if (updatedRows == 0)
-        Left(RecordNotFound(RecordType.Locale, id))
+        Left(RecordNotFound)
       else
         Right(())
   }
@@ -98,7 +98,7 @@ trait LocalesAdminImpl extends LocalesAdminService with SqlDataService {
       val updatedRows = SQL(query).on('id -> id).executeUpdate()
 
       if (updatedRows == 0)
-        Left(RecordNotFound(RecordType.Locale, id))
+        Left(RecordNotFound)
       else
         Right(())
   }

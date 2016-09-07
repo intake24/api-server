@@ -37,6 +37,7 @@ import com.google.inject.Inject
 import com.google.inject.name.Named
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentUpdateError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleOrParentError
 
 class AssociatedFoodsAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends AssociatedFoodsAdminImpl
 
@@ -79,12 +80,7 @@ trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with Associat
     Right(())
   }
 
-  def deleteAllAssociatedFoods(locale: String)(implicit conn: java.sql.Connection): Either[DatabaseError, Unit] = tryWithConnection {
-    implicit conn =>
-      deleteAllAssociatedFoodsComposable(locale)
-  }
-
-  def updateAssociatedFoodsComposable(foodCode: String, assocFoods: Seq[AssociatedFood], locale: String)(implicit conn: java.sql.Connection): Either[LocalDependentCreateError, Unit] =
+  def updateAssociatedFoodsComposable(foodCode: String, assocFoods: Seq[AssociatedFood], locale: String)(implicit conn: java.sql.Connection): Either[LocaleOrParentError, Unit] =
     for (
       _ <- deleteAssociatedFoodsComposable(foodCode, locale).right;
       _ <- createAssociatedFoodsComposable(Map(foodCode -> assocFoods), locale).right
@@ -95,7 +91,7 @@ trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with Associat
     Right(())
   }
 
-  def createAssociatedFoodsComposable(assocFoods: Map[String, Seq[AssociatedFood]], locale: String)(implicit conn: java.sql.Connection): Either[LocalDependentCreateError, Unit] = {
+  def createAssociatedFoodsComposable(assocFoods: Map[String, Seq[AssociatedFood]], locale: String)(implicit conn: java.sql.Connection): Either[LocaleOrParentError, Unit] = {
     val promptParams = assocFoods.flatMap {
       case (foodCode, foods) =>
         foods.map {
@@ -109,7 +105,7 @@ trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with Associat
 
       logger.debug("Writing " + assocFoods.values.map(_.size).foldLeft(0)(_ + _) + " associated food prompts to database")
 
-      val constraintErrors = Map[String, LocalDependentCreateError](
+      val constraintErrors = Map[String, LocaleOrParentError](
         "associated_food_prompts_assoc_category_fk" -> ParentRecordNotFound,
         "associated_food_prompts_assoc_food_fk" -> ParentRecordNotFound,
         "associated_food_prompts_food_code_fk" -> ParentRecordNotFound,
@@ -130,7 +126,12 @@ trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with Associat
       }
   }
 
-  def updateAssociatedFoods(foodCode: String, assocFoods: Seq[AssociatedFood], locale: String): Either[LocalDependentCreateError, Unit] = tryWithConnection {
+  def deleteAllAssociatedFoods(locale: String): Either[DatabaseError, Unit] = tryWithConnection {
+    implicit conn =>
+      deleteAllAssociatedFoodsComposable(locale)
+  }
+
+  def updateAssociatedFoods(foodCode: String, assocFoods: Seq[AssociatedFood], locale: String): Either[LocaleOrParentError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
         updateAssociatedFoodsComposable(foodCode, assocFoods, locale)

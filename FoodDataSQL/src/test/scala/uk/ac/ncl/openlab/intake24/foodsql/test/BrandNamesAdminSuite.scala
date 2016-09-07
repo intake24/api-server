@@ -35,7 +35,7 @@ class BrandNamesAdminSuite(service: FoodDatabaseAdminService) extends FunSuite w
 
   val foodGroups = randomFoodGroups(2, 10)
   val foods = randomNewFoods(2, 10, foodGroups.map(_.id))
-  val brandNames = randomBrands(foods.map(_.code))
+  val brandNames = randomBrandsFor(foods.map(_.code))
 
   override def beforeAll() = {
     assert(service.createLocale(testLocale) === Right(()))

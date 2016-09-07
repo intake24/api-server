@@ -154,7 +154,7 @@ trait FoodsAdminImpl extends FoodsAdminService
   def createNewFoodComposable(newFood: NewFood)(implicit conn: java.sql.Connection): Either[DependentCreateError, Unit] = {
     val errors = Map("food_group_id_fk" -> ParentRecordNotFound, "foods_code_pk" -> DuplicateCode)
 
-    tryWithConstraintsCheck(errors) {
+    tryWithConstraintsCheck[DependentCreateError, Unit](errors) {
       SQL(foodInsertQuery)
         .on('code -> newFood.code, 'description -> newFood.englishDescription, 'food_group_id -> newFood.groupCode, 'version -> UUID.randomUUID())
         .execute()
@@ -173,7 +173,7 @@ trait FoodsAdminImpl extends FoodsAdminService
         createNewFoodComposable(newFood).right.flatMap {
           _ =>
             addFoodsToCategoriesComposable(Map(newFood.code -> newFood.parentCategories)).left.map {
-              case RecordNotFound(t, message) => ParentRecordNotFound
+              case RecordNotFound => ParentRecordNotFound
               case e: DatabaseError => e
             }
         }
@@ -238,7 +238,7 @@ trait FoodsAdminImpl extends FoodsAdminService
         createFoodsComposable(foods).right.flatMap {
           _ =>
             addFoodsToCategoriesComposable(mkBatchCategoriesMap(foods)).left.map {
-              case RecordNotFound(t, message) => ParentRecordNotFound
+              case RecordNotFound => ParentRecordNotFound
               case e: DatabaseError => e
             }
         }
@@ -258,7 +258,7 @@ trait FoodsAdminImpl extends FoodsAdminService
       if (rowsAffected == 1)
         Right(())
       else
-        Left(RecordNotFound(RecordType.Food, foodCode))
+        Left(RecordNotFound)
   }
 
   private val foodLocalInsertQuery = "INSERT INTO foods_local VALUES({food_code}, {locale_id}, {local_description}, {do_not_use}, {version}::uuid)"
@@ -332,7 +332,7 @@ trait FoodsAdminImpl extends FoodsAdminService
       }
   }
 
-  def updateFoodAttributesComposable(foodCode: String, attributes: InheritableAttributes)(implicit conn: java.sql.Connection): Either[UpdateError, Unit] = {
+  def updateFoodAttributesComposable(foodCode: String, attributes: InheritableAttributes)(implicit conn: java.sql.Connection): Either[LookupError, Unit] = {
     try {
       SQL("DELETE FROM foods_attributes WHERE food_code={food_code}").on('food_code -> foodCode).execute()
 
@@ -344,14 +344,14 @@ trait FoodsAdminImpl extends FoodsAdminService
     } catch {
       case e: PSQLException => {
         e.getServerErrorMessage.getConstraint match {
-          case "foods_attributes_food_code_fk" => Left(RecordNotFound(RecordType.Food, foodCode))
+          case "foods_attributes_food_code_fk" => Left(RecordNotFound)
           case _ => throw e
         }
       }
     }
   }
 
-  def updateFoodParentCategoriesComposable(foodCode: String, parentCategories: Seq[String])(implicit conn: java.sql.Connection): Either[UpdateError, Unit] =
+  def updateFoodParentCategoriesComposable(foodCode: String, parentCategories: Seq[String])(implicit conn: java.sql.Connection): Either[LookupError, Unit] =
     for (
       _ <- removeFoodFromAllCategoriesComposable(foodCode).right;
       _ <- addFoodsToCategoriesComposable(Map(foodCode -> parentCategories)).right
@@ -379,7 +379,7 @@ trait FoodsAdminImpl extends FoodsAdminService
         ) yield ()
       }
   }
-  
+
   def updateLocalFoodRecordFieldsComposable(foodCode: String, foodLocal: LocalFoodRecordUpdate, locale: String)(implicit conn: java.sql.Connection): Either[LocalDependentUpdateError, Unit] = {
     try {
       SQL("DELETE FROM foods_nutrient_mapping WHERE food_code={food_code} AND locale_id={locale_id}")
@@ -441,26 +441,34 @@ trait FoodsAdminImpl extends FoodsAdminService
     } catch {
       case e: PSQLException => {
         e.getServerErrorMessage.getConstraint match {
-          case "foods_nutrient_tables_food_code_fk" | "foods_portion_size_methods_food_id_fk" | "foods_local_food_code_fk" => Left(RecordNotFound(RecordType.Food, foodCode))
+          case "foods_nutrient_tables_food_code_fk" | "foods_portion_size_methods_food_id_fk" | "foods_local_food_code_fk" => Left(RecordNotFound)
           case _ => throw e
         }
       }
     }
   }
-  
-  def dependentToParentError(error: LocalDependentCreateError, parentType: RecordType, parentCode: String): LocalDependentUpdateError = error match {
-    case ParentRecordNotFound => RecordNotFound(parentType, parentCode)
+
+  def dependentToParentError(error: DependentCreateError): LocalDependentUpdateError = error match {
+    case ParentRecordNotFound => RecordNotFound
+    case DuplicateCode => DuplicateCode
+    case e: DatabaseError => e
+  }
+
+  def localDependentToParentError(error: LocalDependentCreateError): LocalDependentUpdateError = error match {
+    case ParentRecordNotFound => RecordNotFound
+    case DuplicateCode => DuplicateCode
     case UndefinedLocale => UndefinedLocale
     case e: DatabaseError => e
   }
 
-  def updateLocalFoodRecord(foodCode: String, locale: String, foodLocal: LocalFoodRecordUpdate): Either[LocalDependentUpdateError, Unit] = tryWithConnection {
+  def updateLocalFoodRecord(foodCode: String, foodLocal: LocalFoodRecordUpdate, locale: String): Either[LocalDependentUpdateError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
         for (
-            _ <- updateAssociatedFoodsComposable(foodCode, foodLocal.associatedFoods, locale).left.map(e => dependentToParentError(e, RecordType.Food, foodCode)).right;
-            _ <- updateBrandNamesComposable(foodCode, foodLocal.brandNames, locale).left.map(e => dependentToParentError(e, RecordType.Food, foodCode)).right;
-            _ <- updateLocalFoodRecordFieldsComposable(foodCode, foodLocal, locale).right) yield ()
+          _ <- updateAssociatedFoodsComposable(foodCode, foodLocal.associatedFoods, locale).right;
+          _ <- updateBrandNamesComposable(foodCode, foodLocal.brandNames, locale).left.map(e => localDependentToParentError(e)).right;
+          _ <- updateLocalFoodRecordFieldsComposable(foodCode, foodLocal, locale).right
+        ) yield ()
       }
   }
 

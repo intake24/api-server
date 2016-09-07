@@ -63,7 +63,7 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDat
             Right(UserCategoryContents(foodHeaders, categoryHeaders))
 
           }
-          case None => Left(RecordNotFound(RecordType.Category, code))
+          case None => Left(RecordNotFound)
         }
     }
 
@@ -116,17 +116,17 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDat
 
   def getAsServedSet(id: String) = data.asServedSets.get(id) match {
     case Some(set) => Right(set)
-    case None => Left(RecordNotFound(RecordType.AsServedSet, id))
+    case None => Left(RecordNotFound)
   }
 
   def getGuideImage(id: String) = data.guideImages.get(id) match {
     case Some(image) => Right(image)
-    case None => Left(RecordNotFound(RecordType.GuideImage, id))
+    case None => Left(RecordNotFound)
   }
 
   def getDrinkwareSet(id: String) = data.drinkwareSets.get(id) match {
     case Some(set) => Right(set)
-    case None => Left(RecordNotFound(RecordType.DrinkwareSet, id))
+    case None => Left(RecordNotFound)
   }
 
   def getAssociatedFoods(foodCode: String, locale: String) =

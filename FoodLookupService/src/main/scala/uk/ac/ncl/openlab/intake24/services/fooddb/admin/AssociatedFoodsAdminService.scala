@@ -10,11 +10,12 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentCreateErr
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.AssociatedFoodsService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentUpdateError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleOrParentError
 
 trait AssociatedFoodsAdminService extends AssociatedFoodsService {
   
   def getAssociatedFoodsWithHeaders(foodCode: String, locale: String): Either[LocalLookupError, Seq[AssociatedFoodWithHeader]]
-  def updateAssociatedFoods(foodCode: String, locale: String, associatedFoods: Seq[AssociatedFood]): Either[LocalDependentCreateError, Unit]
+  def updateAssociatedFoods(foodCode: String, associatedFoods: Seq[AssociatedFood], locale: String): Either[LocaleOrParentError, Unit]
   
   def deleteAllAssociatedFoods(locale: String): Either[DatabaseError, Unit]
   def createAssociatedFoods(assocFoods: Map[String, Seq[AssociatedFood]], locale: String): Either[LocalDependentCreateError, Unit]

@@ -62,7 +62,7 @@ class FoodBrowsingAdminSuite(service: FoodDatabaseAdminService) extends FunSuite
   val dummyVersion = UUID.randomUUID()
 
   val foods = randomNewFoods(2, 10, foodGroups.map(_.id))
-  val localFoods = randomLocalFoods(foods.map(_.code), nutrientTableRecords)
+  val localFoods = randomLocalFoods(foods.map(_.code), IndexedSeq(), IndexedSeq(), nutrientTableRecords)
 
   val foodHeaders = foods.map {
     food => FoodHeader(food.code, food.englishDescription, localFoods(food.code).localDescription, Some(localFoods(food.code).doNotUse))

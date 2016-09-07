@@ -42,7 +42,7 @@ class AssociatedFoodsAdminSuite(service: FoodDatabaseAdminService) extends FunSu
 
   val testFoods = randomNewFoods(1, 5, foodGroups.map(_.id))
 
-  val testAssocFoods = randomAssociatedFoods(testFoods.map(_.code), referenceFoods.map(_.code), referenceCategories.map(_.code))
+  val testAssocFoods = randomAssociatedFoodsFor(testFoods.map(_.code), referenceFoods.map(_.code), referenceCategories.map(_.code))
 
   override def beforeAll() = {
     assert(service.createLocale(testLocale) === Right(()))
@@ -64,7 +64,7 @@ class AssociatedFoodsAdminSuite(service: FoodDatabaseAdminService) extends FunSu
   }
 
   test("Attempt to create associated foods for undefined parent food") {
-    val foods = randomAssociatedFoods(IndexedSeq(undefinedCode), referenceFoods.map(_.code), referenceCategories.map(_.code))
+    val foods = randomAssociatedFoodsFor(IndexedSeq(undefinedCode), referenceFoods.map(_.code), referenceCategories.map(_.code))
 
     if (foods(undefinedCode).length > 0) // due to implementetion specifics this error will not be generated if there are no assoc foods 
       assert(service.createAssociatedFoods(foods, testLocale.id) === Left(ParentRecordNotFound))

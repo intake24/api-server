@@ -148,7 +148,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService
       } catch {
         case e: PSQLException => {
           e.getServerErrorMessage.getConstraint match {
-            case "categories_attributes_category_code_fk" => Left(RecordNotFound(RecordType.Category, categoryCode))
+            case "categories_attributes_category_code_fk" => Left(RecordNotFound)
             case _ => throw e
           }
         }
@@ -162,7 +162,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService
   private val categoriesPsmInsertQuery = "INSERT INTO categories_portion_size_methods VALUES(DEFAULT, {category_code}, {locale_id}, {method}, {description}, {image_url}, {use_for_recipes})"
 
   private def updatePortionSizeMethods(categoryCode: String, locale: String, portionSize: Seq[PortionSizeMethod])(implicit conn: java.sql.Connection): Either[LocalUpdateError, Unit] = {
-    val errors = Map("categories_portion_size_methods_categories_code_fk" -> RecordNotFound(RecordType.Category, categoryCode),
+    val errors = Map("categories_portion_size_methods_categories_code_fk" -> RecordNotFound,
       "categories_portion_size_methods_locale_id_fk" -> UndefinedLocale)
 
     SQL("DELETE FROM categories_portion_size_methods WHERE category_code={category_code} AND locale_id={locale_id}")
@@ -237,7 +237,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService
 
   private val foodsCategoriesInsertQuery = "INSERT INTO foods_categories VALUES(DEFAULT, {food_code},{category_code})"
 
-  def addFoodToCategory(categoryCode: String, foodCode: String): Either[UpdateError, Unit] = tryWithConnection {
+  def addFoodToCategory(categoryCode: String, foodCode: String): Either[LookupError, Unit] = tryWithConnection {
     implicit conn =>
       try {
         SQL(foodsCategoriesInsertQuery)
@@ -247,19 +247,19 @@ trait CategoriesAdminImpl extends CategoriesAdminService
         case e: PSQLException =>
           e.getServerErrorMessage.getConstraint match {
             case "foods_categories_unique" => Right(())
-            case "foods_categories_category_code_fk" => Left(RecordNotFound(RecordType.Category, categoryCode))
-            case "foods_categories_food_code_fk" => Left(RecordNotFound(RecordType.Food, foodCode))
+            case "foods_categories_category_code_fk" => Left(RecordNotFound)
+            case "foods_categories_food_code_fk" => Left(RecordNotFound)
             case _ => throw e
           }
       }
   }
 
-  def removeFoodFromAllCategoriesComposable(foodCode: String)(implicit conn: java.sql.Connection): Either[UpdateError, Unit] = {
+  def removeFoodFromAllCategoriesComposable(foodCode: String)(implicit conn: java.sql.Connection): Either[DatabaseError, Unit] = {
     SQL("DELETE FROM foods_categories WHERE food_code={food_code}").on('food_code -> foodCode).execute()
     Right(())
   }
 
-  def addFoodsToCategoriesComposable(categoryFoods: Map[String, Seq[String]])(implicit conn: java.sql.Connection): Either[UpdateError, Unit] = {
+  def addFoodsToCategoriesComposable(categoryFoods: Map[String, Seq[String]])(implicit conn: java.sql.Connection): Either[LookupError, Unit] = {
     try {
       val foodCategoryParams =
         categoryFoods.flatMap {
@@ -281,8 +281,8 @@ trait CategoriesAdminImpl extends CategoriesAdminService
       case e: BatchUpdateException => e.getNextException match {
         case e2: PSQLException => e2.getServerErrorMessage.getConstraint match {
           case "foods_categories_unique" => Right(())
-          case "foods_categories_category_code_fk" => Left(RecordNotFound(RecordType.Category, "Not available for batch operations"))
-          case "foods_categories_food_code_fk" => Left(RecordNotFound(RecordType.Food, "Not available for batch operations"))
+          case "foods_categories_category_code_fk" => Left(RecordNotFound)
+          case "foods_categories_food_code_fk" => Left(RecordNotFound)
           case _ => throw e
         }
         case _ => throw e
@@ -290,7 +290,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService
     }
   }
 
-  def addFoodsToCategories(categoryFoods: Map[String, Seq[String]]): Either[UpdateError, Unit] = tryWithConnection {
+  def addFoodsToCategories(categoryFoods: Map[String, Seq[String]]): Either[LookupError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
         addFoodsToCategoriesComposable(categoryFoods)
@@ -299,7 +299,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService
 
   private val categoriesCategoriesInsertQuery = "INSERT INTO categories_categories VALUES(DEFAULT, {subcategory_code},{category_code})"
 
-  def addSubcategoryToCategory(categoryCode: String, subcategoryCode: String): Either[UpdateError, Unit] = tryWithConnection {
+  def addSubcategoryToCategory(categoryCode: String, subcategoryCode: String): Either[LookupError, Unit] = tryWithConnection {
     implicit conn =>
       if (categoryCode == subcategoryCode) {
         Left(DatabaseError(cannotAddCategoryToItselfMessage(categoryCode), None))
@@ -312,14 +312,14 @@ trait CategoriesAdminImpl extends CategoriesAdminService
           case e: PSQLException =>
             e.getServerErrorMessage.getConstraint match {
               case "categories_categories_unique" => Right(())
-              case "categories_categories_subcategory_code_fk" => Left(RecordNotFound(RecordType.Category, subcategoryCode))
-              case "categories_categories_category_code_fk" => Left(RecordNotFound(RecordType.Category, categoryCode))
+              case "categories_categories_subcategory_code_fk" => Left(RecordNotFound)
+              case "categories_categories_category_code_fk" => Left(RecordNotFound)
               case _ => throw e
             }
         }
   }
 
-  def addSubcategoriesToCategories(categorySubcategories: Map[String, Seq[String]]): Either[UpdateError, Unit] = tryWithConnection {
+  def addSubcategoriesToCategories(categorySubcategories: Map[String, Seq[String]]): Either[LookupError, Unit] = tryWithConnection {
     implicit conn =>
       try {
         categorySubcategories.find {
@@ -349,8 +349,8 @@ trait CategoriesAdminImpl extends CategoriesAdminService
         case e: PSQLException =>
           e.getServerErrorMessage.getConstraint match {
             case "categories_categories_unique" => Right(())
-            case "categories_categories_subcategory_code_fk" => Left(RecordNotFound(RecordType.Category, "Not available for batch operations"))
-            case "categories_categories_category_code_fk" => Left(RecordNotFound(RecordType.Category, "Not available for batch operations"))
+            case "categories_categories_subcategory_code_fk" => Left(RecordNotFound)
+            case "categories_categories_category_code_fk" => Left(RecordNotFound)
             case _ => throw e
           }
       }
@@ -473,7 +473,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService
       if (rowsAffected == 1)
         Right(())
       else
-        Left(RecordNotFound(RecordType.Category, categoryCode))
+        Left(RecordNotFound)
   }
 
   def deleteAllCategories(): Either[DatabaseError, Unit] = tryWithConnection {
@@ -482,7 +482,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService
       Right(())
   }
 
-  def removeFoodFromCategory(categoryCode: String, foodCode: String): Either[UpdateError, Unit] = tryWithConnection {
+  def removeFoodFromCategory(categoryCode: String, foodCode: String): Either[LookupError, Unit] = tryWithConnection {
     implicit conn =>
       val rowsAffected = SQL("DELETE FROM foods_categories WHERE food_code={food_code} AND category_code={category_code}").on('category_code -> categoryCode, 'food_code -> foodCode).executeUpdate()
 
@@ -490,10 +490,10 @@ trait CategoriesAdminImpl extends CategoriesAdminService
         Right(())
       else
         // TODO: Could be food or category, needs better validation
-        Left(RecordNotFound(RecordType.Food, foodCode))
+        Left(RecordNotFound)
   }
 
-  def removeSubcategoryFromCategory(categoryCode: String, subcategoryCode: String): Either[UpdateError, Unit] = tryWithConnection {
+  def removeSubcategoryFromCategory(categoryCode: String, subcategoryCode: String): Either[LookupError, Unit] = tryWithConnection {
     implicit conn =>
 
       val rowsAffected = SQL("DELETE FROM categories_categories WHERE subcategory_code={subcategory_code} AND category_code={category_code}")
@@ -503,6 +503,6 @@ trait CategoriesAdminImpl extends CategoriesAdminService
         Right(())
       else
         // TODO: Could be food or category, needs better validation
-        Left(RecordNotFound(RecordType.Category, subcategoryCode))
+        Left(RecordNotFound)
   }
 }

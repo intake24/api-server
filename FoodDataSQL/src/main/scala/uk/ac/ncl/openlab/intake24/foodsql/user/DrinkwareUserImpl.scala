@@ -38,7 +38,7 @@ trait DrinkwareUserImpl extends DrinkwareService with SqlDataService with SqlRes
 
       if (validation.isEmpty) {
         conn.commit()
-        Left(RecordNotFound(RecordType.DrinkwareSet, id))
+        Left(RecordNotFound)
       } else {
         val result = SQL(drinkwareScalesQuery).on('drinkware_id -> id).executeQuery().as(Macro.namedParser[DrinkwareResultRow].*)
 

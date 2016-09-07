@@ -1,16 +1,18 @@
 package uk.ac.ncl.openlab.intake24.foodsql.user
 
-import uk.ac.ncl.openlab.intake24.GuideImage
-import anorm._
-import uk.ac.ncl.openlab.intake24.GuideImageWeightRecord
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.GuideImageService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
-import anorm.NamedParameter.symbol
 import scala.Left
 import scala.Right
+
+import anorm.Macro
+import anorm.NamedParameter.symbol
+import anorm.SQL
+import anorm.sqlToSimple
+import uk.ac.ncl.openlab.intake24.GuideImage
+import uk.ac.ncl.openlab.intake24.GuideImageWeightRecord
 import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.GuideImageService
 
 trait GuideImageUserImpl extends GuideImageService with SqlDataService {
 
@@ -27,7 +29,7 @@ trait GuideImageUserImpl extends GuideImageService with SqlDataService {
       val result = SQL(query).on('id -> id).executeQuery().as(Macro.namedParser[GuideResultRow].*)
 
       if (result.isEmpty)
-        Left(RecordNotFound(RecordType.GuideImage, id))
+        Left(RecordNotFound)
       else {
         val weights = result.map(row => GuideImageWeightRecord(row.object_description, row.object_id, row.weight))
         Right(GuideImage(id, result.head.image_description, weights))

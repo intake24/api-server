@@ -1,17 +1,20 @@
 package uk.ac.ncl.openlab.intake24.foodsql.user
 
-import uk.ac.ncl.openlab.intake24.AsServedSet
-import anorm._
-import uk.ac.ncl.openlab.intake24.AsServedImage
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.AsServedImageService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
-import anorm.NamedParameter.symbol
 import scala.Left
 import scala.Right
+
+import anorm.Macro
+import anorm.NamedParameter.symbol
+import anorm.SQL
+import anorm.SqlParser
+import anorm.sqlToSimple
+import uk.ac.ncl.openlab.intake24.AsServedImage
+import uk.ac.ncl.openlab.intake24.AsServedSet
 import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
 import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.AsServedImageService
 
 trait AsServedImageUserImpl extends AsServedImageService with SqlDataService with SqlResourceLoader {
 
@@ -30,7 +33,7 @@ trait AsServedImageUserImpl extends AsServedImageService with SqlDataService wit
             val images = result.map(row => AsServedImage(row.url, row.weight))
             Right(AsServedSet(id, description, images))
           }
-          case None => Left(RecordNotFound(RecordType.AsServedSet, id))
+          case None => Left(RecordNotFound)
         }
       }
   }
