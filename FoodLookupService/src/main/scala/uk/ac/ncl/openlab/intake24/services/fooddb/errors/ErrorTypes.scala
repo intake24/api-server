@@ -33,7 +33,7 @@ sealed trait LocalDeleteError
 
 sealed trait DeleteError extends LocalDeleteError
 
-sealed trait LocalUpdateError
+sealed trait LocalUpdateError extends LocalDependentUpdateError
 
 sealed trait UpdateError
   extends LocalUpdateError
@@ -80,6 +80,8 @@ case object VersionConflict extends UpdateError
 case object DuplicateCode extends CreateError with UpdateError
 
 case object ParentRecordNotFound extends ParentError
+
+case object IllegalParent extends ParentError
 
 case object TableNotFound extends NutrientMappingError
 

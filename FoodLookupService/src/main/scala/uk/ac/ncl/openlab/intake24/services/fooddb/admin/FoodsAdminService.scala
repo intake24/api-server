@@ -28,7 +28,7 @@ trait FoodsAdminService {
   def createFood(newFood: NewFood): Either[DependentCreateError, Unit]
   def createFoodWithTempCode(newFood: NewFood): Either[DependentCreateError, String]
   def createFoods(newFoods: Seq[NewFood]): Either[DependentCreateError, Unit]
-  def createLocalFoods(localFoodRecords: Map[String, NewLocalFoodRecord], locale: String): Either[LocalDependentCreateError, Unit]
+  def createLocalFoodRecords(localFoodRecords: Map[String, NewLocalFoodRecord], locale: String): Either[LocalDependentCreateError, Unit]
 
   def updateMainFoodRecord(foodCode: String, update: MainFoodRecordUpdate): Either[DependentUpdateError, Unit]
   def updateLocalFoodRecord(foodCode: String, update: LocalFoodRecordUpdate, locale: String): Either[LocalDependentUpdateError, Unit]

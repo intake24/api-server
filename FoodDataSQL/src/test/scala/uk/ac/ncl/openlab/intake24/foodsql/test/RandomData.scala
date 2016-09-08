@@ -19,6 +19,7 @@ import uk.ac.ncl.openlab.intake24.NutrientTable
 import uk.ac.ncl.openlab.intake24.NutrientTableRecord
 import uk.ac.ncl.openlab.intake24.nutrients.Nutrient
 import uk.ac.ncl.openlab.intake24.NewLocalFoodRecord
+import uk.ac.ncl.openlab.intake24.NewLocalCategoryRecord
 
 trait RandomData {
 
@@ -151,10 +152,10 @@ trait RandomData {
   }
 
   def randomLocalCategoryRecord =
-    LocalCategoryRecord(None, Some(randomDescription), randomPortionSizeMethods)
+    NewLocalCategoryRecord(Some(randomDescription), randomPortionSizeMethods)
 
   def randomLocalCategoryRecords(forCategories: Seq[String]) = {
-    forCategories.foldLeft(Map[String, LocalCategoryRecord]()) {
+    forCategories.foldLeft(Map[String, NewLocalCategoryRecord]()) {
       (map, code) =>
         map + (code -> randomLocalCategoryRecord)
     }

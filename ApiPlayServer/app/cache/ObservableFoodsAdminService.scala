@@ -66,7 +66,7 @@ class ObservableFoodsAdminServiceImpl @Inject() (service: FoodsAdminService) ext
       }
   }
 
-  def createLocalFoods(localFoodRecords: Map[String, NewLocalFoodRecord], locale: String): Either[LocalDependentCreateError, Unit] = service.createLocalFoods(localFoodRecords, locale).right.map {
+  def createLocalFoodRecords(localFoodRecords: Map[String, NewLocalFoodRecord], locale: String): Either[LocalDependentCreateError, Unit] = service.createLocalFoodRecords(localFoodRecords, locale).right.map {
     _ =>
       localFoodRecords.keySet.foreach {
         code =>

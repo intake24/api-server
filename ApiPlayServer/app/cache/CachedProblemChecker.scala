@@ -29,6 +29,10 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDataService
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodBrowsingAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
+import uk.ac.ncl.openlab.intake24.MainCategoryRecordUpdate
+import uk.ac.ncl.openlab.intake24.LocalCategoryRecordUpdate
+import uk.ac.ncl.openlab.intake24.NewLocalCategoryRecord
+import uk.ac.ncl.openlab.intake24.NewMainCategoryRecord
 
 case class CachedProblemChecker @Inject() (
   categories: ObservableCategoriesAdminService,
@@ -43,15 +47,14 @@ case class CachedProblemChecker @Inject() (
     with CategoriesAdminObserver
     with FoodsAdminObserver
     with LocalesAdminObserver {
-  
+
   val logger = LoggerFactory.getLogger(classOf[CachedProblemChecker])
-  
+
   var knownCacheKeys = Set[String]()
-  
+
   categories.addObserver(this)
   foods.addObserver(this)
   locales.addObserver(this)
-  
 
   val NutrientCodeMissing = "nutrient_code_missing"
   val NotAssignedToGroup = "not_assigned_to_group"
@@ -81,7 +84,7 @@ case class CachedProblemChecker @Inject() (
 
   def getFoodProblems(code: String, locale: String): Either[LocalLookupError, Seq[FoodProblem]] = cachePositiveResult(foodProblemsCacheKey(code, locale)) {
     for (
-      adminFoodRecord <- foods.getFoodRecord(code, locale).right; 
+      adminFoodRecord <- foods.getFoodRecord(code, locale).right;
       userFoodRecord <- userFoods.getFoodData(code, locale).right.map(_._1).right;
       uncategorisedFoods <- adminBrowsing.getUncategorisedFoods(locale).right;
       translationRequired <- locales.isTranslationRequired(locale).right
@@ -211,31 +214,18 @@ case class CachedProblemChecker @Inject() (
 
   def invalidateChildProblems(code: String, locale: String) = removeCached(recursiveCategoryProblemsCacheKey(code, locale))
 
-  def onMainCategoryRecordUpdated(code: String) = invalidateCategoryProblems(code)
+  def onMainCategoryRecordUpdated(code: String, update: MainCategoryRecordUpdate) = {
+    invalidateCategoryProblems(code)
+    update.parentCategories.foreach {
+      parent =>
+        invalidateCategoryProblems(parent)
+    }
+  }
 
-  def onLocalCategoryRecordUpdated(code: String, locale: String) = invalidateLocalCategoryProblems(code, locale)
+  def onLocalCategoryRecordUpdated(code: String, update: LocalCategoryRecordUpdate, locale: String) = invalidateLocalCategoryProblems(code, locale)
 
+  // FIXME: Actually need to handle "about to be deleted" to invalidate parents properly
   def onCategoryDeleted(code: String) = invalidateCategoryProblems(code)
-
-  def onFoodAddedToCategory(categoryCode: String, foodCode: String) = {
-    invalidateCategoryProblems(categoryCode)
-    invalidateFoodProblems(foodCode)
-  }
-
-  def onFoodRemovedFromCategory(categoryCode: String, foodCode: String) = {
-    invalidateCategoryProblems(categoryCode)
-    invalidateFoodProblems(foodCode)
-  }
-
-  def onSubcategoryAddedToCategory(categoryCode: String, subcategoryCode: String) = {
-    invalidateCategoryProblems(categoryCode)
-    invalidateCategoryProblems(subcategoryCode)
-  }
-
-  def onSubcategoryRemovedFromCategory(categoryCode: String, subcategoryCode: String) = {
-    invalidateCategoryProblems(categoryCode)
-    invalidateCategoryProblems(subcategoryCode)
-  }
 
   def onLocaleDeleted(id: String) = {
     removeCachedByPredicate {
@@ -250,9 +240,14 @@ case class CachedProblemChecker @Inject() (
     removeAllCachedResults()
   }
 
-  def onCategoryCreated(code: String) = {}
+  def onMainCategoryRecordCreated(record: NewMainCategoryRecord) = {
+    record.parentCategories.foreach {
+      code =>
+        invalidateCategoryProblems(code)
+    }
+  }
 
-  def onLocalCategoryRecordCreated(code: String, locale: String) = {
+  def onLocalCategoryRecordCreated(code: String, record: NewLocalCategoryRecord, locale: String) = {
     invalidateLocalCategoryProblems(code, locale)
   }
 
@@ -281,6 +276,6 @@ case class CachedProblemChecker @Inject() (
   }
 
   def onLocaleCreated(id: String) = {}
-  
+
   def onLocaleUpdated(id: String) = {}
 }

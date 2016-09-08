@@ -56,11 +56,7 @@ DELETE  /admin/foods/:code                            controllers.FoodsAdminCont
 GET     /admin/categories/code-available/:code                           controllers.CategoriesAdminController.isCategoryCodeAvailable(code)
 GET     /admin/categories/:locale/:code                                  controllers.CategoriesAdminController.getCategoryRecord(code: String, locale: String)
 
-PUT     /admin/categories/:categoryCode/foods/:foodCode                  controllers.CategoriesAdminController.addFoodToCategory(categoryCode: String, foodCode: String)
-DELETE  /admin/categories/:categoryCode/foods/:foodCode                  controllers.CategoriesAdminController.removeFoodFromCategory(categoryCode: String, foodCode: String)
-PUT     /admin/categories/:categoryCode/subcategories/:subcategoryCode   controllers.CategoriesAdminController.addSubcategoryToCategory(categoryCode: String, subcategoryCode: String)
-DELETE  /admin/categories/:categoryCode/subcategories/:subcategoryCode   controllers.CategoriesAdminController.removeSubcategoryFromCategory(categoryCode: String, subcategoryCode: String)
-POST    /admin/categories/new                                            controllers.CategoriesAdminController.createCategory()
+POST    /admin/categories/new                                            controllers.CategoriesAdminController.createMainCategoryRecord()
 POST    /admin/categories/:code                                          controllers.CategoriesAdminController.updateMainCategoryRecord(code: String)
 POST    /admin/categories/:locale/:code                                  controllers.CategoriesAdminController.updateLocalCategoryRecord(code: String, locale: String)
 DELETE  /admin/categories/:code                                          controllers.CategoriesAdminController.deleteCategory(code: String)

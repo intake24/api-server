@@ -2,6 +2,8 @@ package uk.ac.ncl.openlab.intake24.foodsql.admin
 
 import scala.Right
 
+import org.slf4j.LoggerFactory
+
 import com.google.inject.Inject
 import com.google.inject.name.Named
 
@@ -13,28 +15,23 @@ import javax.sql.DataSource
 import uk.ac.ncl.openlab.intake24.CategoryContents
 import uk.ac.ncl.openlab.intake24.CategoryHeader
 import uk.ac.ncl.openlab.intake24.FoodHeader
-import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
-import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
-import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
-import uk.ac.ncl.openlab.intake24.foodsql.shared.SuperCategoriesImpl
+import uk.ac.ncl.openlab.intake24.foodsql.modular.FoodBrowsingAdminQueries
+import uk.ac.ncl.openlab.intake24.foodsql.shared.SuperCategoriesQueries
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodBrowsingAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import org.slf4j.LoggerFactory
 
 class FoodBrowsingAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends FoodBrowsingAdminImpl
 
 trait FoodBrowsingAdminImpl extends FoodBrowsingAdminService
-    with SqlDataService
-    with SqlResourceLoader
-    with FirstRowValidation
-    with HeaderRows
-    with SuperCategoriesImpl {
+    with FoodBrowsingAdminQueries
+    with SuperCategoriesQueries {
+
+  private val logger = LoggerFactory.getLogger(classOf[FoodBrowsingAdminImpl])
 
   lazy private val uncategorisedFoodsQuery = sqlFromResource("admin/uncategorised_foods.sql")
-  private val logger = LoggerFactory.getLogger(classOf[FoodBrowsingAdminImpl])
 
   def getUncategorisedFoods(locale: String): Either[LocaleError, Seq[FoodHeader]] = tryWithConnection {
     implicit conn =>
@@ -51,90 +48,36 @@ trait FoodBrowsingAdminImpl extends FoodBrowsingAdminService
       parseWithLocaleValidation(result, Macro.namedParser[CategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map(_.map(_.asCategoryHeader))
   }
 
-  lazy private val categoryFoodContentsQuery = sqlFromResource("admin/category_contents_foods.sql")
-
-  private def categoryFoodContentsImpl(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[FoodHeader]] = {
-    val result = SQL(categoryFoodContentsQuery).on('category_code -> code, 'locale_id -> locale).executeQuery()
-
-    parseWithLocaleAndCategoryValidation(code, result, Macro.namedParser[FoodHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map(_.map(_.asFoodHeader))
-  }
-
-  lazy private val categorySubcategoryContentsQuery = sqlFromResource("admin/category_contents_subcategories.sql")
-
-  private def categorySubcategoryContentsImpl(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[CategoryHeader]] = {
-    val result = SQL(categorySubcategoryContentsQuery).on('category_code -> code, 'locale_id -> locale).executeQuery()
-
-    parseWithLocaleAndCategoryValidation(code, result, Macro.namedParser[CategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map(_.map(_.asCategoryHeader))
-  }
-
   def getCategoryContents(code: String, locale: String): Either[LocalLookupError, CategoryContents] = tryWithConnection {
     implicit conn =>
-      categoryFoodContentsImpl(code, locale).right.flatMap {
-        foods =>
-          categorySubcategoryContentsImpl(code, locale).right.flatMap {
-            subcategories =>
-              Right(CategoryContents(foods, subcategories))
-          }
+      withTransaction {
+        getCategoryContentsQuery(code, locale)
       }
   }
 
   def getFoodParentCategories(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]] = tryWithConnection {
     implicit conn =>
-      getFoodParentCategoriesComposable(code, locale)
-  }
-
-  def getFoodParentCategoriesComposable(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[CategoryHeader]] = {
-    val result =
-      SQL("""|WITH v AS(
-               |  SELECT (SELECT code FROM foods WHERE code={food_code}) AS food_code,
-               |         (SELECT id FROM locales WHERE id={locale_id}) AS locale_id
-               |)
-               |SELECT v.food_code, v.locale_id, foods_categories.category_code as code, description, is_hidden, local_description
-               |FROM v LEFT JOIN foods_categories ON foods_categories.food_code = v.food_code
-	             |  LEFT JOIN categories ON categories.code = foods_categories.category_code
-               |  LEFT JOIN categories_local ON categories_local.category_code = foods_categories.category_code AND categories_local.locale_id = v.locale_id
-               |ORDER BY local_description""".stripMargin)
-        .on('food_code -> code, 'locale_id -> locale)
-        .executeQuery()
-
-    parseWithLocaleAndFoodValidation(code, result, Macro.namedParser[CategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map(_.map(_.asCategoryHeader))
-  }
-
-  def getFoodAllCategoriesCodes(code: String): Either[LookupError, Set[String]] = tryWithConnection {
-    implicit conn => foodAllCategoriesCodesImpl(code)
-  }
-
-  def getFoodAllCategoriesHeaders(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]] = tryWithConnection {
-    implicit conn => foodAllCategoriesHeadersImpl(code, locale)
-  }
-
-  def getCategoryParentCategoriesComposable(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[CategoryHeader]] = {
-    val query =
-      """|WITH v AS(
-           |  SELECT (SELECT code FROM categories WHERE code={category_code}) AS category_code,
-           |         (SELECT id FROM locales WHERE id={locale_id}) AS locale_id
-           |)
-           |SELECT v.category_code, v.locale_id, categories_categories.category_code as code, description, is_hidden, local_description
-           |  FROM v LEFT JOIN categories_categories ON categories_categories.subcategory_code = v.category_code
-	         |         LEFT JOIN categories ON categories.code = categories_categories.category_code
-           |         LEFT JOIN categories_local ON categories_local.category_code = categories_categories.category_code AND categories_local.locale_id = v.locale_id
-           |ORDER BY local_description""".stripMargin
-
-    val result = SQL(query).on('category_code -> code, 'locale_id -> locale).executeQuery()
-
-    parseWithLocaleAndCategoryValidation(code, result, Macro.namedParser[CategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map(_.map(_.asCategoryHeader))
+      getFoodParentCategoriesHeadersQuery(code, locale)
   }
 
   def getCategoryParentCategories(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]] = tryWithConnection {
     implicit conn =>
-    getCategoryParentCategoriesComposable(code, locale)
+      getCategoryParentCategoriesHeadersQuery(code, locale)
+  }
+
+  def getFoodAllCategoriesCodes(code: String): Either[LookupError, Set[String]] = tryWithConnection {
+    implicit conn => getFoodAllCategoriesCodesQuery(code)
+  }
+
+  def getFoodAllCategoriesHeaders(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]] = tryWithConnection {
+    implicit conn => getFoodAllCategoriesHeadersQuery(code, locale)
   }
 
   def getCategoryAllCategoriesCodes(code: String): Either[LookupError, Set[String]] = tryWithConnection {
-    implicit conn => categoryAllCategoriesCodesImpl(code)
+    implicit conn => getCategoryAllCategoriesCodesQuery(code)
   }
 
   def getCategoryAllCategoriesHeaders(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]] = tryWithConnection {
-    implicit conn => categoryAllCategoriesHeadersImpl(code, locale)
+    implicit conn => getCategoryAllCategoriesHeadersQuery(code, locale)
   }
 }

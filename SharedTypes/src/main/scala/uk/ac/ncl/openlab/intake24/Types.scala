@@ -84,6 +84,10 @@ case class NewCategory(code: String, englishDescription: String, isHidden: Boole
 
 case class CategoryRecord(main: MainCategoryRecord, local: LocalCategoryRecord)
 
+case class NewMainCategoryRecord(code: String, englishDescription: String, isHidden: Boolean, attributes: InheritableAttributes, parentCategories: Seq[String]) {
+  def toNewCategory = NewCategory(code, englishDescription, isHidden, attributes)
+}
+
 case class MainCategoryRecord(version: UUID, code: String, englishDescription: String, isHidden: Boolean, attributes: InheritableAttributes,
     parentCategories: Seq[CategoryHeader]) {
   def toUpdate = MainCategoryRecordUpdate(version, code, englishDescription, isHidden, attributes, parentCategories.map(_.code))
@@ -92,10 +96,12 @@ case class MainCategoryRecord(version: UUID, code: String, englishDescription: S
 case class MainCategoryRecordUpdate(baseVersion: UUID, code: String, englishDescription: String, isHidden: Boolean, attributes: InheritableAttributes,
     parentCategories: Seq[String])
 
-    
+      
 case class LocalCategoryRecord(version: Option[UUID], localDescription: Option[String], portionSize: Seq[PortionSizeMethod]) {
   def toUpdate = LocalCategoryRecordUpdate(version, localDescription, portionSize)
 }
+
+case class NewLocalCategory(localDescription: Option[String])
 
 case class NewLocalCategoryRecord(localDescription: Option[String], portionSize: Seq[PortionSizeMethod])
 

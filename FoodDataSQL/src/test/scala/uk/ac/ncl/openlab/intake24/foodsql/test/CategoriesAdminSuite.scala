@@ -129,7 +129,7 @@ class CategoriesAdminSuite(service: FoodDatabaseAdminService) extends FunSuite w
     categories.foreach {
       category =>
 
-        val expected = CategoryRecord(MainCategoryRecord(dummyVersion, category.code, category.englishDescription, category.isHidden, category.attributes, category.p),
+        val expected = CategoryRecord(MainCategoryRecord(dummyVersion, category.code, category.englishDescription, category.isHidden, category.attributes, category.parentCategories),
           LocalCategoryRecord(Some(dummyVersion), categoriesLocal(category.code).localDescription, categoriesLocal(category.code).portionSize))
 
         assert(overrideVersion(service.getCategoryRecord(category.code, testLocale.id)) === Right(expected))

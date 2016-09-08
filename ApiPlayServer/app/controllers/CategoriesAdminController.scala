@@ -20,34 +20,15 @@ package controllers
 
 import be.objectify.deadbolt.scala.DeadboltActions
 import javax.inject.Inject
-import models.AdminFoodRecord
-import play.api.http.ContentTypes
 import play.api.mvc.Action
 import play.api.mvc.Controller
 import security.Roles
-import uk.ac.ncl.openlab.intake24.AssociatedFood
-import uk.ac.ncl.openlab.intake24.LocalCategoryRecord
-import uk.ac.ncl.openlab.intake24.LocalFoodRecord
-import uk.ac.ncl.openlab.intake24.MainCategoryRecord
-import uk.ac.ncl.openlab.intake24.MainFoodRecord
+import uk.ac.ncl.openlab.intake24.LocalCategoryRecordUpdate
+import uk.ac.ncl.openlab.intake24.MainCategoryRecordUpdate
 import uk.ac.ncl.openlab.intake24.NewCategory
-import uk.ac.ncl.openlab.intake24.NewFood
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentCreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
-import upickle.default.Writer
-import upickle.default.read
-import upickle.default.write
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoriesAdminService
+import upickle.default.read
+import uk.ac.ncl.openlab.intake24.NewMainCategoryRecord
 
 class CategoriesAdminController @Inject() (service: CategoriesAdminService, deadbolt: DeadboltActions) extends Controller
     with PickleErrorHandler
@@ -70,22 +51,14 @@ class CategoriesAdminController @Inject() (service: CategoriesAdminService, dead
     }
   }
 
-  def createCategory() = deadbolt.Restrict(List(Array(Roles.superuser))) {
+  def createMainCategoryRecord() = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
-        translateCreateError(service.createCategory(read[NewCategory](request.body)))
+        translateDependentCreateError(service.createMainCategoryRecords(Seq(read[NewMainCategoryRecord](request.body))))
       }
     }
   }
-
-  def createCategories() = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action(parse.tolerantText) { implicit request =>
-      tryWithPickle {
-        translateCreateError(service.createCategories(read[Seq[NewCategory]](request.body)))
-      }
-    }
-  }
-
+  
   def deleteCategory(categoryCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       translateDeleteError(service.deleteCategory(categoryCode))
@@ -95,7 +68,7 @@ class CategoriesAdminController @Inject() (service: CategoriesAdminService, dead
   def updateMainCategoryRecord(categoryCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
-        translateUpdateError(service.updateMainCategoryRecord(categoryCode, read[MainCategoryRecord](request.body)))
+        translateDependentUpdateError(service.updateMainCategoryRecord(categoryCode, read[MainCategoryRecordUpdate](request.body)))
       }
     }
   }
@@ -103,32 +76,9 @@ class CategoriesAdminController @Inject() (service: CategoriesAdminService, dead
   def updateLocalCategoryRecord(categoryCode: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
-        translateLocalUpdateError(service.updateLocalCategoryRecord(categoryCode, locale, read[LocalCategoryRecord](request.body)))
+        translateLocalDependentUpdateError(service.updateLocalCategoryRecord(categoryCode, read[LocalCategoryRecordUpdate](request.body), locale))
       }
     }
   }
 
-  def addFoodToCategory(categoryCode: String, foodCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
-      translateParentError(service.addFoodToCategory(categoryCode, foodCode))
-
-    }
-  }
-  def removeFoodFromCategory(categoryCode: String, foodCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
-      translateLookupError(service.removeFoodFromCategory(categoryCode, foodCode))
-    }
-  }
-
-  def addSubcategoryToCategory(categoryCode: String, subcategoryCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
-      translateParentError(service.addSubcategoryToCategory(categoryCode, subcategoryCode))
-    }
-  }
-
-  def removeSubcategoryFromCategory(categoryCode: String, subcategoryCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
-      translateLookupError(service.removeSubcategoryFromCategory(categoryCode, subcategoryCode))
-    }
-  }
 }

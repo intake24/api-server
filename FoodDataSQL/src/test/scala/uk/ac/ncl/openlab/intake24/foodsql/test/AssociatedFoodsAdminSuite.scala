@@ -49,7 +49,7 @@ class AssociatedFoodsAdminSuite(service: FoodDatabaseAdminService) extends FunSu
     assert(service.createFoodGroups(foodGroups) === Right(()))
     assert(service.createFoods(referenceFoods) === Right(()))
     assert(service.createFoods(testFoods) === Right(()))
-    assert(service.createCategories(referenceCategories) === Right(()))
+   // assert(service.createCategories(referenceCategories) === Right(()))
   }
 
   override def afterAll() = {

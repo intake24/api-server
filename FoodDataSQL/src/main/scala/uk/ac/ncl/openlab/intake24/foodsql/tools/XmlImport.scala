@@ -67,6 +67,7 @@ import uk.ac.ncl.openlab.intake24.AsServedSet
 import uk.ac.ncl.openlab.intake24.GuideImage
 import uk.ac.ncl.openlab.intake24.DrinkwareSet
 import uk.ac.ncl.openlab.intake24.NewLocalCategoryRecord
+import uk.ac.ncl.openlab.intake24.NewMainCategoryRecord
 
 class XmlImporter(adminService: FoodDatabaseAdminService) {
 
@@ -115,14 +116,25 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
     checkError("Foods import", for (
       _ <- adminService.deleteAllFoods().right;
       _ <- adminService.createFoods(newFoodRecords).right;
-      _ <- adminService.createLocalFoods(newLocalRecords, defaultLocale).right
+      _ <- adminService.createLocalFoodRecords(newLocalRecords, defaultLocale).right
     ) yield ())
   }
 
   def importCategories(categories: Seq[XmlCategoryRecord]) = {
+    
+    val parentCategories = {
+      val z = Map[String, Set[String]]()
+
+      categories.foldLeft(z) {
+        (map, record) =>
+          record.subcategories.foldLeft(z) {
+            (map, subcategoryCode) => map + (subcategoryCode -> (map.getOrElse(subcategoryCode, Set()) + record.code))
+          }
+      }
+    }
 
     val newCategoryRecords = categories.map {
-      c => NewCategory(c.code, c.description, c.isHidden, c.attributes)
+      c => NewMainCategoryRecord(c.code, c.description, c.isHidden, c.attributes, parentCategories(c.code).toSeq)
     }
 
     val newLocalRecords = categories.map {
@@ -131,8 +143,8 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
 
     checkError("Categories import", for (
       _ <- adminService.deleteAllCategories().right;
-      _ <- adminService.createCategories(newCategoryRecords).right;
-      _ <- adminService.createLocalCategories(newLocalRecords, defaultLocale).right
+      _ <- adminService.createMainCategoryRecords(newCategoryRecords).right;
+      _ <- adminService.createLocalCategoryRecords(newLocalRecords, defaultLocale).right
     ) yield ())
   }
 
@@ -252,7 +264,7 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
     importGuideImages(guideImages)
     /// importImageMaps(imageMaps)
     importDrinkwareSets(drinkwareSets)
-    
+
     importFoods(foods, categories, associatedFoods, brands)
 
     importSplitList(dataDirectory + File.separator + "split_list")

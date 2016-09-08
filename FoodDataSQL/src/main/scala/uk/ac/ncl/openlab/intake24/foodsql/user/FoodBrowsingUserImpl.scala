@@ -16,11 +16,12 @@ import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodBrowsingService
-import uk.ac.ncl.openlab.intake24.foodsql.shared.SuperCategoriesImpl
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 
-trait FoodBrowsingUserImpl extends FoodBrowsingService with SqlDataService with SqlResourceLoader with FirstRowValidation with SuperCategoriesImpl {
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
+import uk.ac.ncl.openlab.intake24.foodsql.shared.SuperCategoriesQueries
+
+trait FoodBrowsingUserImpl extends FoodBrowsingService with SqlDataService with SqlResourceLoader with FirstRowValidation with SuperCategoriesQueries {
 
   private lazy val rootCategoriesQuery = sqlFromResource("user/root_categories.sql")
 
@@ -79,10 +80,10 @@ trait FoodBrowsingUserImpl extends FoodBrowsingService with SqlDataService with 
   }
 
   def getFoodAllCategories(code: String): Either[LookupError, Set[String]] = tryWithConnection {
-    implicit conn => foodAllCategoriesCodesImpl(code)
+    implicit conn => getFoodAllCategoriesCodesQuery(code)
   }
 
   def getCategoryAllCategories(code: String): Either[LookupError, Set[String]] = tryWithConnection {
-    implicit conn => categoryAllCategoriesCodesImpl(code)
+    implicit conn => getCategoryAllCategoriesCodesQuery(code)
   }
 }
