@@ -37,7 +37,7 @@ trait FoodGroupsAdminImpl extends FoodGroupsAdminService with SqlDataService wit
     implicit conn =>
       val result = SQL(listFoodGroupsQuery).on('locale_id -> locale).executeQuery()
 
-      parseWithLocaleValidation(result, parser.+)(Seq(FirstRowValidationClause("id", Right(List())))).right
+      parseWithLocaleValidation(result, parser.+)(Seq(FirstRowValidationClause("id", () => Right(List())))).right
         .map {
           _.map {
             r => (r.id.toInt, FoodGroupRecord(FoodGroupMain(r.id.toInt, r.description), FoodGroupLocal(r.local_description)))
@@ -51,7 +51,8 @@ trait FoodGroupsAdminImpl extends FoodGroupsAdminService with SqlDataService wit
     implicit conn =>
       val result = SQL(getFoodGroupQuery).on('id -> id, 'locale_id -> locale).executeQuery()
 
-      val validation: Seq[FirstRowValidationClause[LocalLookupError, FoodGroupRow]] = Seq(FirstRowValidationClause("locale_id", Left(UndefinedLocale)), FirstRowValidationClause[LocalLookupError, FoodGroupRow]("id", Left(RecordNotFound)))
+      val validation: Seq[FirstRowValidationClause[LocalLookupError, FoodGroupRow]] = 
+        Seq(FirstRowValidationClause("locale_id", () => Left(UndefinedLocale(new RuntimeException()))), FirstRowValidationClause[LocalLookupError, FoodGroupRow]("id", () => Left(RecordNotFound)))
 
       parseWithFirstRowValidation(result, validation, parser.single)
         .right

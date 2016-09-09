@@ -32,6 +32,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentUpdateError
 import uk.ac.ncl.openlab.intake24.LocalCategoryRecordUpdate
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentUpdateError
 import uk.ac.ncl.openlab.intake24.NewMainCategoryRecord
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalCreateError
 
 case class CachedCategoriesAdminService @Inject() (@UncachedImpl service: CategoriesAdminService, localeService: LocalesAdminService, cache: CacheApi)
     extends CategoriesAdminService
@@ -54,7 +55,7 @@ case class CachedCategoriesAdminService @Inject() (@UncachedImpl service: Catego
 
   def createMainCategoryRecords(records: Seq[NewMainCategoryRecord]): Either[DependentCreateError, Unit] = service.createMainCategoryRecords(records)
 
-  def createLocalCategoryRecords(localCategoryRecords: Map[String, NewLocalCategoryRecord], locale: String): Either[CreateError, Unit] = service.createLocalCategoryRecords(localCategoryRecords, locale)
+  def createLocalCategoryRecords(localCategoryRecords: Map[String, NewLocalCategoryRecord], locale: String): Either[LocalCreateError, Unit] = service.createLocalCategoryRecords(localCategoryRecords, locale)
 
   def deleteAllCategories(): Either[DatabaseError, Unit] = service.deleteAllCategories()
 

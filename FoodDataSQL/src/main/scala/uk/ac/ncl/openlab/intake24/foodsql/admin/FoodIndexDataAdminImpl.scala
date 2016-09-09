@@ -25,7 +25,7 @@ trait FoodIndexDataAdminImpl extends FoodIndexDataAdminService with SqlDataServi
 
   def deleteSynsets(locale: String): Either[DatabaseError, Unit] = tryWithConnection {
     implicit conn =>
-      logger.info("Deleting existing synonym sets")
+      logger.debug("Deleting existing synonym sets")
       SQL("DELETE FROM synonym_sets WHERE locale_id={locale_id}").on('locale_id -> locale).execute()
       Right(())
   }
@@ -33,7 +33,7 @@ trait FoodIndexDataAdminImpl extends FoodIndexDataAdminService with SqlDataServi
   def deleteSplitList(locale: String): Either[DatabaseError, Unit] = tryWithConnection {
     implicit conn =>
 
-      logger.info("Deleting existing split list")
+      logger.debug("Deleting existing split list")
       conn.setAutoCommit(false)
 
       SQL("DELETE FROM split_words WHERE locale_id={locale_id}").on('locale_id -> locale).execute()
@@ -48,7 +48,7 @@ trait FoodIndexDataAdminImpl extends FoodIndexDataAdminService with SqlDataServi
       conn.setAutoCommit(false)
 
       if (!synsets.isEmpty) {
-        logger.info("Writing synonym sets to database")
+        logger.debug("Writing synonym sets to database")
 
         val synonymSetsParams = synsets.map {
           set =>
@@ -57,7 +57,7 @@ trait FoodIndexDataAdminImpl extends FoodIndexDataAdminService with SqlDataServi
 
         batchSql("""INSERT INTO synonym_sets VALUES (DEFAULT, {locale}, {synonyms})""", synonymSetsParams).execute()
       } else
-        logger.warn("Synonym sets file is empty")
+        logger.debug("Synonym sets file is empty")
 
       conn.commit()
 
@@ -69,7 +69,7 @@ trait FoodIndexDataAdminImpl extends FoodIndexDataAdminService with SqlDataServi
       conn.setAutoCommit(false)
 
       if (!splitList.splitWords.isEmpty) {
-        logger.info("Writing split list to database")
+        logger.debug("Writing split list to database")
 
         SQL("""INSERT INTO split_words VALUES (DEFAULT, {locale}, {words})""")
           .on('locale -> "en_GB", 'words -> splitList.splitWords.mkString(" "))
@@ -83,9 +83,9 @@ trait FoodIndexDataAdminImpl extends FoodIndexDataAdminService with SqlDataServi
         if (!splitListParams.isEmpty)
           batchSql("""INSERT INTO split_list VALUES (DEFAULT, {locale}, {first_word}, {words})""", splitListParams).execute()
         else
-          logger.warn("Split list parameter list is empty")
+          logger.debug("Split list parameter list is empty")
       } else
-        logger.warn("Split list file is empty")
+        logger.debug("Split list file is empty")
 
       conn.commit()
       Right(())

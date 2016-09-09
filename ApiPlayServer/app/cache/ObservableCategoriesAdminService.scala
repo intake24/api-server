@@ -21,6 +21,8 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentUpdateErr
 import uk.ac.ncl.openlab.intake24.LocalCategoryRecordUpdate
 import uk.ac.ncl.openlab.intake24.NewMainCategoryRecord
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentCreateError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalCreateError
+
 /*
  *   def getCategoryRecord(code: String, locale: String): Either[LocalLookupError, CategoryRecord]
 
@@ -71,7 +73,7 @@ class ObservableCategoriesAdminServiceImpl @Inject() (service: CategoriesAdminSe
     _ => observers.foreach(_.onLocalCategoryRecordUpdated(categoryCode, localCategoryUpdate, locale))
   }
 
-  def createLocalCategoryRecords(localCategoryRecords: Map[String, NewLocalCategoryRecord], locale: String): Either[CreateError, Unit] =
+  def createLocalCategoryRecords(localCategoryRecords: Map[String, NewLocalCategoryRecord], locale: String): Either[LocalCreateError, Unit] =
     service.createLocalCategoryRecords(localCategoryRecords, locale).right.map {
       _ =>
         localCategoryRecords.map {

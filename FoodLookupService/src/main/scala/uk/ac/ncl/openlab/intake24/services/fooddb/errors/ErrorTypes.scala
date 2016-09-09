@@ -65,7 +65,7 @@ sealed trait DependentCreateError extends LocalDependentCreateError
 
 sealed trait NutrientMappingError
 
-case object UndefinedLocale extends LocaleError
+case class UndefinedLocale(exception: Throwable) extends LocaleError
 
 sealed trait RecordType
 
@@ -77,15 +77,15 @@ case object RecordNotFound
 
 case object VersionConflict extends UpdateError
 
-case object DuplicateCode extends CreateError with UpdateError
+case class DuplicateCode(exception: Throwable) extends CreateError with UpdateError
 
-case object ParentRecordNotFound extends ParentError
+case class ParentRecordNotFound(exception: Throwable) extends ParentError
 
-case object IllegalParent extends ParentError
+case class IllegalParent(exception: Throwable) extends ParentError
 
 case object TableNotFound extends NutrientMappingError
 
-case class DatabaseError(message: String, cause: Option[Throwable])
+case class DatabaseError(exception: Throwable)
   extends LocaleError
   with LookupError
   with DeleteError

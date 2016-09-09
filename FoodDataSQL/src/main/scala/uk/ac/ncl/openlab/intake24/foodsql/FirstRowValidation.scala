@@ -14,7 +14,7 @@ import anorm.AnormUtil.isNull
 import anorm.AnormException
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
 
-case class FirstRowValidationClause[E, T](columnName: String, resultIfNull: Either[E, T])
+case class FirstRowValidationClause[E, T](columnName: String, resultIfNull: () => Either[E, T])
 
 trait FirstRowValidation {
   
@@ -28,35 +28,35 @@ trait FirstRowValidation {
         validation.find {
           case FirstRowValidationClause(name, _) => isNull(firstRow, name)
         } match {
-          case Some(FirstRowValidationClause(_, result)) => result
+          case Some(FirstRowValidationClause(_, result)) => result()
           case None => parser(cursorOpt) match {
             case anorm.Success(parsed) => Right(parsed)
             case anorm.Error(e) => {
               // val exception = new AnormException(e.message)              
-              Left(DatabaseError(e.message, Some(new RuntimeException(e.message))))
+              Left(DatabaseError(new RuntimeException(e.message)))
             }
           }
         }
     } match {
-      case Left(errors) => Left(DatabaseError(errors.head.getMessage, Some(errors.head)))
+      case Left(errors) => Left(DatabaseError(errors.head))
       case Right(data) => data
     }
   }
 
   def localeValidation[T]: Seq[FirstRowValidationClause[LocaleError, T]] =
-    Seq(FirstRowValidationClause("locale_id", Left(UndefinedLocale)))
+    Seq(FirstRowValidationClause("locale_id", () => Left(UndefinedLocale(new RuntimeException()))))
     
   def foodValidation[T](code: String): Seq[FirstRowValidationClause[LookupError, T]] =
-    Seq(FirstRowValidationClause("food_code", Left(RecordNotFound)))
+    Seq(FirstRowValidationClause("food_code", () => Left(RecordNotFound)))
     
   def categoryValidation[T](code: String): Seq[FirstRowValidationClause[LookupError, T]] =
-    Seq(FirstRowValidationClause("category_code", Left(RecordNotFound)))    
+    Seq(FirstRowValidationClause("category_code", () => Left(RecordNotFound)))    
 
   def localeAndFoodCodeValidation[T](code: String): Seq[FirstRowValidationClause[LocalLookupError, T]] =
-    Seq(FirstRowValidationClause("food_code", Left(RecordNotFound)), FirstRowValidationClause("locale_id", Left(UndefinedLocale)))
+    Seq(FirstRowValidationClause("food_code", () => Left(RecordNotFound)), FirstRowValidationClause("locale_id", () => Left(UndefinedLocale(new RuntimeException()))))
 
   def localeAndCategoryCodeValidation[T](code: String): Seq[FirstRowValidationClause[LocalLookupError, T]] =
-    Seq(FirstRowValidationClause("category_code", Left(RecordNotFound)), FirstRowValidationClause("locale_id", Left(UndefinedLocale)))
+    Seq(FirstRowValidationClause("category_code", () => Left(RecordNotFound)), FirstRowValidationClause("locale_id", () => Left(UndefinedLocale(new RuntimeException()))))
 
   def parseWithLocaleValidation[T](result: SqlQueryResult, parser: ResultSetParser[T])(additionalValidation: Seq[FirstRowValidationClause[LocaleError, T]] = Seq())(implicit conn: java.sql.Connection): Either[LocaleError, T] =
     parseWithFirstRowValidation(result, localeValidation[T] ++ additionalValidation, parser)

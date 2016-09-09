@@ -29,13 +29,8 @@ trait InheritedPortionSizeMethodsImpl extends FoodPortionSizeShared with SqlReso
 
   private lazy val inheritedPsmQuery = sqlFromResource("user/inherited_psm.sql")
 
-  private def inheritedPortionSizeMethodsImpl(code: String, locale: String)(implicit conn: Connection): Either[LocalLookupError, (Seq[PortionSizeMethod], SourceRecord)] =
-    withTransaction {
-      validateFoodAndLocale(code, locale).right.flatMap {
-        _ =>
-          Right(mkRecursivePortionSizeMethods(SQL(inheritedPsmQuery).on('food_code -> code, 'locale_id -> locale).executeQuery().as(Macro.namedParser[RecursivePsmResultRow].*)))
-      }
-    }
+  private def inheritedPortionSizeMethodsQuery(code: String, locale: String)(implicit conn: Connection): Either[LocalLookupError, (Seq[PortionSizeMethod], SourceRecord)] =
+    Right(mkRecursivePortionSizeMethods(SQL(inheritedPsmQuery).on('food_code -> code, 'locale_id -> locale).executeQuery().as(Macro.namedParser[RecursivePsmResultRow].*)))
 
   private def resolveLocalPortionSizeMethods(code: String, locale: String)(implicit conn: Connection): Either[LocalLookupError, (Seq[PortionSizeMethod], SourceRecord)] = {
     getFoodPortionSizeMethodsQuery(code, locale).right.flatMap {
@@ -43,7 +38,7 @@ trait InheritedPortionSizeMethodsImpl extends FoodPortionSizeShared with SqlReso
         if (foodPsm.nonEmpty)
           Right((foodPsm, SourceRecord.FoodRecord(code)))
         else
-          inheritedPortionSizeMethodsImpl(code, locale)
+          inheritedPortionSizeMethodsQuery(code, locale)
     }
   }
 

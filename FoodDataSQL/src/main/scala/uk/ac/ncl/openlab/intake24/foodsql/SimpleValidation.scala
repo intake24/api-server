@@ -25,7 +25,7 @@ trait SimpleValidation {
 
   private def checkTransactionIsolation[E >: DatabaseError](conn: Connection)(block: => Either[E, Unit]) = {
     if (conn.getAutoCommit() || (conn.getTransactionIsolation != Connection.TRANSACTION_REPEATABLE_READ))
-      Left(DatabaseError("Connection must be in manual commit, repeatable read mode for simple validation", None))
+      Left(DatabaseError(new RuntimeException("Connection must be in manual commit, repeatable read mode for simple validation")))
     else
       block
   }
@@ -35,7 +35,7 @@ trait SimpleValidation {
       val validation = SQL(localeValidationQuery).on("locale_id" -> locale).executeQuery().as(SqlParser.bool("locale_exists").?.single)
 
       if (validation.isEmpty)
-        Left(UndefinedLocale)
+        Left(UndefinedLocale(new RuntimeException()))
       else
         Right(())
     }
@@ -48,7 +48,7 @@ trait SimpleValidation {
       if (validation.food_exists.isEmpty) {
         Left(RecordNotFound)
       } else if (validation.locale_exists.isEmpty) {
-        Left(UndefinedLocale)
+        Left(UndefinedLocale(new RuntimeException()))
       } else {
         Right(())
       }
@@ -62,7 +62,7 @@ trait SimpleValidation {
       if (validation.category_exists.isEmpty) {
         Left(RecordNotFound)
       } else if (validation.locale_exists.isEmpty) {
-        Left(UndefinedLocale)
+        Left(UndefinedLocale(new RuntimeException()))
       } else {
         Right(())
       }

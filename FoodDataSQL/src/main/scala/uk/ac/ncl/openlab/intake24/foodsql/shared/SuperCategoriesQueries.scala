@@ -20,7 +20,7 @@ trait SuperCategoriesQueries extends FirstRowValidation with HeaderRows with Sql
   protected def getFoodAllCategoriesCodesQuery(code: String)(implicit conn: java.sql.Connection): Either[LookupError, Set[String]] = {
     val result = SQL(foodAllCategoriesCodesQuery).on('food_code -> code).executeQuery()
 
-    parseWithFoodValidation(code, result, SqlParser.str("code").+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map(_.toSet)
+    parseWithFoodValidation(code, result, SqlParser.str("code").+)(Seq(FirstRowValidationClause("code", () => Right(List())))).right.map(_.toSet)
   }
 
   private lazy val foodAllCategoriesHeadersQuery = sqlFromResource("shared/food_all_categories_headers_frv.sql")
@@ -28,7 +28,7 @@ trait SuperCategoriesQueries extends FirstRowValidation with HeaderRows with Sql
   protected def getFoodAllCategoriesHeadersQuery(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[CategoryHeader]] = {
     val result = SQL(foodAllCategoriesHeadersQuery).on('food_code -> code, 'locale_id -> locale).executeQuery()
 
-    parseWithLocaleAndFoodValidation(code, result, Macro.namedParser[CategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map(_.map(_.asCategoryHeader))
+    parseWithLocaleAndFoodValidation(code, result, Macro.namedParser[CategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", () => Right(List())))).right.map(_.map(_.asCategoryHeader))
   }
 
   private lazy val categoryAllCategoriesCodesQuery = sqlFromResource("shared/categories_all_categories_codes_frv.sql")
@@ -36,7 +36,7 @@ trait SuperCategoriesQueries extends FirstRowValidation with HeaderRows with Sql
   def getCategoryAllCategoriesCodesQuery(code: String)(implicit conn: java.sql.Connection): Either[LookupError, Set[String]] = {
     val result = SQL(categoryAllCategoriesCodesQuery).on('category_code -> code).executeQuery()
 
-    parseWithCategoryValidation(code, result, SqlParser.str("code").+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map(_.toSet)
+    parseWithCategoryValidation(code, result, SqlParser.str("code").+)(Seq(FirstRowValidationClause("code", () => Right(List())))).right.map(_.toSet)
   }
 
   private lazy val categoryAllCategoriesHeadersQuery = sqlFromResource("shared/categories_all_categories_headers_frv.sql")
@@ -44,6 +44,6 @@ trait SuperCategoriesQueries extends FirstRowValidation with HeaderRows with Sql
   def getCategoryAllCategoriesHeadersQuery(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[CategoryHeader]] = {
     val result = SQL(categoryAllCategoriesHeadersQuery).on('category_code -> code, 'locale_id -> locale).executeQuery()
 
-    parseWithLocaleAndCategoryValidation(code, result, Macro.namedParser[CategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map(_.map(_.asCategoryHeader))
+    parseWithLocaleAndCategoryValidation(code, result, Macro.namedParser[CategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", () => Right(List())))).right.map(_.map(_.asCategoryHeader))
   }
 }

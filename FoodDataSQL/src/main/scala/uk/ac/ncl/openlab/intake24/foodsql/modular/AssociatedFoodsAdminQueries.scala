@@ -17,6 +17,7 @@ import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentRecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleOrParentError
+import org.postgresql.util.PSQLException
 
 trait AssociatedFoodsAdminQueries extends SqlDataService with SqlResourceLoader {
 
@@ -70,11 +71,11 @@ trait AssociatedFoodsAdminQueries extends SqlDataService with SqlResourceLoader 
 
       logger.debug("Writing " + assocFoods.values.map(_.size).foldLeft(0)(_ + _) + " associated food prompts to database")
 
-      val constraintErrors = Map[String, LocaleOrParentError](
-        "associated_food_prompts_assoc_category_fk" -> ParentRecordNotFound,
-        "associated_food_prompts_assoc_food_fk" -> ParentRecordNotFound,
-        "associated_food_prompts_food_code_fk" -> ParentRecordNotFound,
-        "associated_food_prompts_locale_id_fk" -> UndefinedLocale)
+      val constraintErrors = Map[String, PSQLException => LocaleOrParentError](
+        "associated_food_prompts_assoc_category_fk" -> (e => ParentRecordNotFound(e)),
+        "associated_food_prompts_assoc_food_fk" -> (e => ParentRecordNotFound(e)),
+        "associated_food_prompts_food_code_fk" -> (e => ParentRecordNotFound(e)),
+        "associated_food_prompts_locale_id_fk" -> (e => UndefinedLocale(e)))
 
       tryWithConstraintsCheck(constraintErrors) {
         batchSql("""INSERT INTO associated_foods VALUES (DEFAULT, {food_code}, {locale_id}, {associated_food_code}, {associated_category_code}, {text}, {link_as_main}, {generic_name})""", promptParams).execute()

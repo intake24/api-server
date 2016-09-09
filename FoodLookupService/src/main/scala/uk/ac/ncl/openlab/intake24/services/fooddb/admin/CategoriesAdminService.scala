@@ -20,6 +20,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentUpdateErr
 import uk.ac.ncl.openlab.intake24.NewLocalCategoryRecord
 import uk.ac.ncl.openlab.intake24.NewMainCategoryRecord
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentCreateError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalCreateError
 
 trait CategoriesAdminService {
   def getCategoryRecord(code: String, locale: String): Either[LocalLookupError, CategoryRecord]
@@ -32,7 +33,7 @@ trait CategoriesAdminService {
   def deleteAllCategories(): Either[DatabaseError, Unit]
 
   def createMainCategoryRecords(records: Seq[NewMainCategoryRecord]): Either[DependentCreateError, Unit]
-  def createLocalCategoryRecords(localCategoryRecords: Map[String, NewLocalCategoryRecord], locale: String): Either[CreateError, Unit]
+  def createLocalCategoryRecords(localCategoryRecords: Map[String, NewLocalCategoryRecord], locale: String): Either[LocalCreateError, Unit]
 
   def updateMainCategoryRecord(categoryCode: String, mainCategoryUpdate: MainCategoryRecordUpdate): Either[DependentUpdateError, Unit]
   def updateLocalCategoryRecord(categoryCode: String, localCategoryUpdate: LocalCategoryRecordUpdate, locale: String): Either[LocalDependentUpdateError, Unit]

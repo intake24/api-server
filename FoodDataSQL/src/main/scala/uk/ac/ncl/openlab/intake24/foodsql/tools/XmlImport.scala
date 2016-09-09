@@ -68,6 +68,9 @@ import uk.ac.ncl.openlab.intake24.GuideImage
 import uk.ac.ncl.openlab.intake24.DrinkwareSet
 import uk.ac.ncl.openlab.intake24.NewLocalCategoryRecord
 import uk.ac.ncl.openlab.intake24.NewMainCategoryRecord
+import uk.ac.ncl.openlab.intake24.Locale
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentRecordNotFound
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.IllegalParent
 
 class XmlImporter(adminService: FoodDatabaseAdminService) {
 
@@ -76,7 +79,10 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
   val defaultLocale = "en_GB"
 
   private def checkError[E, T](op: String, result: Either[E, T]) = result match {
-    case Left(e) => throw new RuntimeException(s"$op failed: ${e.toString()}")
+    case Left(ParentRecordNotFound(e)) => logger.error(s"$op failed", e)
+    case Left(IllegalParent(e)) => logger.error(s"$op failed", e)
+    case Left(DatabaseError(e)) => logger.error(s"$op failed", e)
+    case Left(e) => logger.error(s"$op failed ${e.toString()}")
     case _ => logger.info(s"$op successful")
   }
 
@@ -95,12 +101,14 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
   def importFoods(foods: Seq[XmlFoodRecord], categories: Seq[XmlCategoryRecord], associatedFoods: Map[String, Seq[AssociatedFood]], brandNames: Map[String, Seq[String]]) = {
 
     val parentCategories = {
-      val z = Map[String, Set[String]]()
+      val z = foods.foldLeft(Map[String, Set[String]]()) {
+        (map, food) => map + (food.code -> Set())
+      }
 
       categories.foldLeft(z) {
-        (map, record) =>
-          record.foods.foldLeft(z) {
-            (map, foodCode) => map + (foodCode -> (map.getOrElse(foodCode, Set()) + record.code))
+        (map, category) =>
+          category.foods.foldLeft(map) {
+            (map, foodCode) => map + (foodCode -> ((map(foodCode) + category.code)))
           }
       }
     }
@@ -121,14 +129,16 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
   }
 
   def importCategories(categories: Seq[XmlCategoryRecord]) = {
-    
+
     val parentCategories = {
-      val z = Map[String, Set[String]]()
+      val z = categories.foldLeft(Map[String, Set[String]]()) {
+        (map, category) => map + (category.code -> Set())
+      }
 
       categories.foldLeft(z) {
-        (map, record) =>
-          record.subcategories.foldLeft(z) {
-            (map, subcategoryCode) => map + (subcategoryCode -> (map.getOrElse(subcategoryCode, Set()) + record.code))
+        (map, category) =>
+          category.subcategories.foldLeft(map) {
+            (map, subcategoryCode) => map + (subcategoryCode -> (map(subcategoryCode) + category.code))
           }
       }
     }
@@ -204,10 +214,10 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
       _.map {
         prompt =>
           if (categoryCodes.contains(prompt.category)) {
-            logger.info(s"Resolved ${prompt.category} as category")
+            logger.debug(s"Resolved ${prompt.category} as category")
             AssociatedFood(Right(prompt.category), prompt.promptText, prompt.linkAsMain, prompt.genericName)
           } else {
-            logger.info(s"Resolved ${prompt.category} as food")
+            logger.debug(s"Resolved ${prompt.category} as food")
             AssociatedFood(Left(prompt.category), prompt.promptText, prompt.linkAsMain, prompt.genericName)
           }
       }
@@ -216,7 +226,7 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
 
   def importSplitList(path: String) {
 
-    logger.info("Loading split list from " + path)
+    logger.debug("Loading split list from " + path)
     val lines = scala.io.Source.fromFile(path).getLines().toSeq
 
     val splitWords = lines.head.split("\\s+")
@@ -236,7 +246,7 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
   }
 
   def importSynonymSets(path: String) = {
-    logger.info("Loading synonym sets from " + path)
+    logger.debug("Loading synonym sets from " + path)
     val synsets = scala.io.Source.fromFile(path).getLines().toSeq.map(_.split("\\s+").toSet)
 
     checkError("Synonym sets import", for (
@@ -256,6 +266,9 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
     val guideImages = GuideImageDef.parseXml(XML.load(dataDirectory + File.separator + "guide.xml")).values.toSeq
     val imageMaps = parseImageMaps(dataDirectory + File.separator + "CompiledImageMaps")
     val drinkwareSets = DrinkwareDef.parseXml(XML.load(dataDirectory + File.separator + "drinkware.xml")).values.toSeq
+
+    adminService.deleteLocale(defaultLocale)
+    adminService.createLocale(Locale(defaultLocale, "United Kingdom", "United Kingdom", "en_GB", "en", "gb", None))
 
     importCategories(categories)
 

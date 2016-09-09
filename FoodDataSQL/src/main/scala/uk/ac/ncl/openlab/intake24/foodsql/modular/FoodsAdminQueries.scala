@@ -57,7 +57,7 @@ trait FoodsAdminQueries extends FoodsAdminService
   def getFoodNutrientTableCodesQuery(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Map[String, String]] = {
     val nutrientTableCodesResult = SQL(foodNutrientTableCodesQuery).on('food_code -> code, 'locale_id -> locale).executeQuery()
 
-    val parsed = parseWithLocaleAndFoodValidation(code, nutrientTableCodesResult, Macro.namedParser[NutrientTableRow].+)(Seq(FirstRowValidationClause("nutrient_table_id", Right(List()))))
+    val parsed = parseWithLocaleAndFoodValidation(code, nutrientTableCodesResult, Macro.namedParser[NutrientTableRow].+)(Seq(FirstRowValidationClause("nutrient_table_id", () => Right(List()))))
 
     parsed.right.map {
       _.map {
@@ -84,9 +84,9 @@ trait FoodsAdminQueries extends FoodsAdminService
 
   protected def createFoodsQuery(foods: Seq[NewFood])(implicit conn: java.sql.Connection): Either[DependentCreateError, Unit] = {
     if (foods.nonEmpty) {
-      logger.info(s"Writing ${foods.size} new food records to database")
+      logger.debug(s"Writing ${foods.size} new food records to database")
 
-      val errors = Map("food_group_id_fk" -> ParentRecordNotFound, "foods_code_pk" -> DuplicateCode)
+      val errors = Map("food_group_id_fk" -> (e => ParentRecordNotFound(e)), "foods_code_pk" -> (e => DuplicateCode(e)))
 
       tryWithConstraintsCheck(errors) {
         val foodParams = foods.map {
@@ -105,7 +105,7 @@ trait FoodsAdminQueries extends FoodsAdminService
         Right(())
       }
     } else {
-      logger.warn("Create foods request with empty foods list")
+      logger.debug("Create foods request with empty foods list")
       Right(())
     }
   }
@@ -129,7 +129,7 @@ trait FoodsAdminQueries extends FoodsAdminService
 
       val localFoodRecordsSeq = localFoodRecords.toSeq
 
-      logger.info(s"Writing ${localFoodRecordsSeq.size} new local food records to database")
+      logger.debug(s"Writing ${localFoodRecordsSeq.size} new local food records to database")
 
       val foodLocalParams = localFoodRecordsSeq.map {
         case (code, local) =>
@@ -170,7 +170,7 @@ trait FoodsAdminQueries extends FoodsAdminService
       Right(())
 
     } else {
-      logger.warn("Create local foods request with empty foods list")
+      logger.debug("Create local foods request with empty foods list")
       Right(())
     }
 

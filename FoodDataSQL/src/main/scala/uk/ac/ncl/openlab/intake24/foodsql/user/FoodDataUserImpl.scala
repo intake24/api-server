@@ -52,6 +52,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDataSources
 import com.google.inject.name.Named
 import javax.inject.Inject
 import javax.sql.DataSource
+import org.slf4j.LoggerFactory
 
 class FoodDataUserStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends FoodDataUserImpl
 
@@ -63,6 +64,8 @@ trait FoodDataUserImpl extends FoodDataService
     with InheritedPortionSizeMethodsImpl
     with InheritedNutrientTableCodesImpl {
 
+  val logger = LoggerFactory.getLogger(classOf[FoodDataUserImpl])
+
   private case class FoodRow(food_code: String, english_description: String, local_description: Option[String], prototype_description: Option[String], food_group_id: Long)
 
   private def prototypeLocale(locale: String)(implicit conn: java.sql.Connection): Either[LocaleError, Option[String]] = {
@@ -70,7 +73,7 @@ trait FoodDataUserImpl extends FoodDataService
       .on('locale_id -> locale).executeQuery()
       .as(SqlParser.str("prototype_locale_id").?.singleOpt) match {
         case Some(record) => Right(record)
-        case None => Left(UndefinedLocale)
+        case None => Left(UndefinedLocale(new RuntimeException(s"Locale $locale undefined")))
       }
   }
 
@@ -95,27 +98,29 @@ trait FoodDataUserImpl extends FoodDataService
   }
 
   private def LookupErrorAdapter[T](e: Either[LookupError, T]): Either[LocalLookupError, T] = e.left.map(identity)
-  
+
   private def localeErrorAdapter[T](e: Either[LocaleError, T]): Either[LocalLookupError, T] = e.left.map(identity)
 
   def getFoodData(foodCode: String, locale: String): Either[LocalLookupError, (UserFoodData, FoodDataSources)] = tryWithConnection {
     implicit conn =>
-      for (
-        pl <- localeErrorAdapter(prototypeLocale(locale)).right;
-        psm <- resolvePortionSizeMethods(foodCode, locale, pl).right;
-        attr <- LookupErrorAdapter(resolveInheritableAttributes(foodCode)).right;
-        nutr <- resolveNutrientTableCodes(foodCode, locale, pl).right;
-        foodRow <- foodRecordImpl(foodCode, locale, pl).right
-      ) yield {
-        val localDescription = foodRow.local_description.orElse(foodRow.prototype_description).getOrElse(foodRow.english_description)
-        val localDescriptionSource = if (foodRow.local_description.isEmpty && foodRow.prototype_description.nonEmpty)
-          SourceLocale.Prototype(pl.get)
-        else
-          SourceLocale.Current(locale)
+      withTransaction {
+        for (
+          pl <- prototypeLocale(locale).right;
+          psm <- resolvePortionSizeMethods(foodCode, locale, pl).right;
+          attr <- resolveInheritableAttributes(foodCode).right;
+          nutr <- resolveNutrientTableCodes(foodCode, locale, pl).right;
+          foodRow <- foodRecordImpl(foodCode, locale, pl).right
+        ) yield {
+          val localDescription = foodRow.local_description.orElse(foodRow.prototype_description).getOrElse(foodRow.english_description)
+          val localDescriptionSource = if (foodRow.local_description.isEmpty && foodRow.prototype_description.nonEmpty)
+            SourceLocale.Prototype(pl.get)
+          else
+            SourceLocale.Current(locale)
 
-        (UserFoodData(foodRow.food_code, localDescription, nutr.codes, foodRow.food_group_id.toInt, psm.methods,
-          attr.readyMealOption, attr.sameAsBeforeOption, attr.reasonableAmount),
-          FoodDataSources(localDescriptionSource, nutr.sourceLocale, (psm.sourceLocale, psm.sourceRecord), attr.sources))
+          (UserFoodData(foodRow.food_code, localDescription, nutr.codes, foodRow.food_group_id.toInt, psm.methods,
+            attr.readyMealOption, attr.sameAsBeforeOption, attr.reasonableAmount),
+            FoodDataSources(localDescriptionSource, nutr.sourceLocale, (psm.sourceLocale, psm.sourceRecord), attr.sources))
+        }
       }
   }
 }

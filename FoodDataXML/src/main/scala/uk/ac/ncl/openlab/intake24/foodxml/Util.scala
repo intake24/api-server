@@ -38,7 +38,7 @@ object Util {
 
   def checkLocale(locale: String): Either[LocaleError, Unit] =
     if (locale != "en_GB")
-      Left(UndefinedLocale)
+      Left(UndefinedLocale(new RuntimeException()))
     else
       Right(())
 

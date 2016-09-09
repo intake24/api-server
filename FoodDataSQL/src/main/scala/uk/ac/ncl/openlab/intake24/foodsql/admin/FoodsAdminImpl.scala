@@ -120,12 +120,12 @@ trait FoodsAdminImpl extends FoodsAdminService
   def createFoodWithTempCode(newFood: NewFood): Either[DependentCreateError, String] = {
     def tryNextNumber(n: Int): Either[DependentCreateError, String] = {
       if (n > 999)
-        Left(DuplicateCode)
+        Left(DuplicateCode(new RuntimeException("Tried 999 temporary codes, none were available")))
       else {
         val tempCode = "F%03d".format(n)
         createFood(newFood.copy(code = tempCode)) match {
           case Right(()) => Right(tempCode)
-          case Left(DuplicateCode) => tryNextNumber(n + 1)
+          case Left(DuplicateCode(_)) => tryNextNumber(n + 1)
           case Left(x) => Left(x)
         }
       }

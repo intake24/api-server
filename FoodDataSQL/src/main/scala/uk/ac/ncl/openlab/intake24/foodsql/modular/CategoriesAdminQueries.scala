@@ -56,6 +56,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.IllegalParent
 import uk.ac.ncl.openlab.intake24.LocalCategoryRecordUpdate
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentCreateError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalCreateError
 
 trait CategoriesAdminQueries
     extends SqlDataService
@@ -70,7 +71,7 @@ trait CategoriesAdminQueries
   protected def categoryPortionSizeMethodsQuery(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[PortionSizeMethod]] = {
     val psmResults = SQL(categoryPsmQuery).on('category_code -> code, 'locale_id -> locale).executeQuery()
 
-    parseWithLocaleAndCategoryValidation(code, psmResults, psmResultRowParser.+)(Seq(FirstRowValidationClause("id", Right(List())))).right.map(mkPortionSizeMethods)
+    parseWithLocaleAndCategoryValidation(code, psmResults, psmResultRowParser.+)(Seq(FirstRowValidationClause("id", () => Right(List())))).right.map(mkPortionSizeMethods)
   }
 
   private case class CategoryResultRow(version: UUID, local_version: Option[UUID], code: String, description: String, local_description: Option[String], is_hidden: Boolean, same_as_before_option: Option[Boolean],
@@ -116,8 +117,8 @@ trait CategoriesAdminQueries
   private val categoriesPsmInsertQuery = "INSERT INTO categories_portion_size_methods VALUES(DEFAULT, {category_code}, {locale_id}, {method}, {description}, {image_url}, {use_for_recipes})"
 
   protected def updateCategoryPortionSizeMethodsQuery(categoryCode: String, portionSize: Seq[PortionSizeMethod], locale: String)(implicit conn: java.sql.Connection): Either[LocalUpdateError, Unit] = {
-    val errors = Map("categories_portion_size_methods_categories_code_fk" -> RecordNotFound,
-      "categories_portion_size_methods_locale_id_fk" -> UndefinedLocale)
+    val errors = Map[String, PSQLException => LocalUpdateError]("categories_portion_size_methods_categories_code_fk" -> (e => RecordNotFound),
+      "categories_portion_size_methods_locale_id_fk" -> (e => UndefinedLocale(e)))
 
     SQL("DELETE FROM categories_portion_size_methods WHERE category_code={category_code} AND locale_id={locale_id}")
       .on('category_code -> categoryCode, 'locale_id -> locale).execute()
@@ -141,7 +142,10 @@ trait CategoriesAdminQueries
   }
 
   protected def updateCategoryLocalQuery(categoryCode: String, categoryLocal: LocalCategoryRecordUpdate, locale: String)(implicit conn: java.sql.Connection): Either[LocalDependentUpdateError, Unit] = {
-    val errors = Map[String, LocalDependentUpdateError]("categories_local_pk" -> DuplicateCode, "categories_local_category_code_fk" -> ParentRecordNotFound, "categories_local_locale_id_fk" -> UndefinedLocale)
+    val errors = Map[String, PSQLException => LocalDependentUpdateError](
+        "categories_local_pk" -> (e => DuplicateCode(e)), 
+        "categories_local_category_code_fk" -> (e => ParentRecordNotFound(e)), 
+        "categories_local_locale_id_fk" -> (e => UndefinedLocale(e)))
 
     tryWithConstraintsCheck(errors) {
       val rowsAffected = SQL("UPDATE categories_local SET version = {new_version}::uuid, local_description = {local_description} WHERE category_code = {category_code} AND locale_id = {locale_id} AND version = {base_version}::uuid")
@@ -179,12 +183,11 @@ trait CategoriesAdminQueries
     try {
       val foodCategoryParams =
         categoryFoods.flatMap {
-          case (code, foods) =>
-            foods.map(f => Seq[NamedParameter]('food_code -> f, 'category_code -> code))
+          case (foodCode, categories) =>
+            categories.map(categoryCode => Seq[NamedParameter]('food_code -> foodCode, 'category_code -> categoryCode))
         }.toSeq
 
       if (!foodCategoryParams.isEmpty) {
-
         logger.debug("Writing " + foodCategoryParams.size + " food parent category records")
         batchSql(foodsCategoriesInsertQuery, foodCategoryParams).execute()
 
@@ -197,8 +200,8 @@ trait CategoriesAdminQueries
       case e: BatchUpdateException => e.getNextException match {
         case e2: PSQLException => e2.getServerErrorMessage.getConstraint match {
           case "foods_categories_unique" => Right(())
-          case "foods_categories_category_code_fk" => Left(ParentRecordNotFound)
-          case "foods_categories_food_code_fk" => Left(ParentRecordNotFound)
+          case "foods_categories_category_code_fk" => Left(ParentRecordNotFound(e2))
+          case "foods_categories_food_code_fk" => Left(ParentRecordNotFound(e2))
           case _ => throw e
         }
         case _ => throw e
@@ -218,13 +221,13 @@ trait CategoriesAdminQueries
       categorySubcategories.find {
         case (code, subcats) => subcats.contains(code)
       } match {
-        case Some((code, _)) => Left(IllegalParent)
+        case Some((code, _)) => Left(IllegalParent(new RuntimeException(s"Cannot add category $code to itself")))
         case None => {
 
           val categoryCategoryParams =
             categorySubcategories.flatMap {
-              case (code, subcats) =>
-                subcats.map(c => Seq[NamedParameter]('subcategory_code -> c, 'category_code -> code))
+              case (subcategoryCode, categories) =>
+                categories.map(categoryCode => Seq[NamedParameter]('subcategory_code -> subcategoryCode, 'category_code -> categoryCode))
             }.toSeq
 
           if (!categoryCategoryParams.isEmpty) {
@@ -240,8 +243,8 @@ trait CategoriesAdminQueries
       case e: PSQLException =>
         e.getServerErrorMessage.getConstraint match {
           case "categories_categories_unique" => Right(())
-          case "categories_categories_subcategory_code_fk" => Left(ParentRecordNotFound)
-          case "categories_categories_category_code_fk" => Left(ParentRecordNotFound)
+          case "categories_categories_subcategory_code_fk" => Left(ParentRecordNotFound(e))
+          case "categories_categories_category_code_fk" => Left(ParentRecordNotFound(e))
           case _ => throw e
         }
     }
@@ -251,8 +254,7 @@ trait CategoriesAdminQueries
 
   private val categoriesAttributesInsertQuery = "INSERT INTO categories_attributes VALUES (DEFAULT, {category_code}, {same_as_before_option}, {ready_meal_option}, {reasonable_amount})"
 
-  protected def createCategoriesQuery(categories: Seq[NewCategory])(implicit conn: java.sql.Connection): Either[CreateError, Unit] = tryWithConnection {
-    implicit conn =>
+  protected def createCategoriesQuery(categories: Seq[NewCategory])(implicit conn: java.sql.Connection): Either[CreateError, Unit] = {
       if (!categories.isEmpty) {
         logger.debug("Writing " + categories.size + " categories to database")
 
@@ -268,7 +270,6 @@ trait CategoriesAdminQueries
 
           batchSql(categoriesAttributesInsertQuery, categoryAttributeParams).execute()
 
-          conn.commit()
           Right(())
         }
       } else {
@@ -277,14 +278,16 @@ trait CategoriesAdminQueries
       }
   }
 
-  protected def createLocalCategoriesQuery(localCategoryRecords: Map[String, NewLocalCategoryRecord], locale: String)(implicit conn: java.sql.Connection): Either[CreateError, Unit] = {
+  protected def createLocalCategoriesQuery(localCategoryRecords: Map[String, NewLocalCategoryRecord], locale: String)(implicit conn: java.sql.Connection): Either[LocalCreateError, Unit] = {
     if (localCategoryRecords.nonEmpty) {
 
       val localCategoryRecordsSeq = localCategoryRecords.toSeq
+      
+      val errors = Map[String, PSQLException => LocalCreateError]("categories_local_locale_id_fk" -> (e => UndefinedLocale(e)), "categories_local_pk" -> (e => DuplicateCode(e))) 
 
       logger.debug(s"Writing ${localCategoryRecordsSeq.size} new local category records to database")
 
-      tryWithConstraintCheck("categories_local_pk", DuplicateCode) {
+      tryWithConstraintsCheck(errors) {
 
         val localCategoryParams =
           localCategoryRecordsSeq.map {

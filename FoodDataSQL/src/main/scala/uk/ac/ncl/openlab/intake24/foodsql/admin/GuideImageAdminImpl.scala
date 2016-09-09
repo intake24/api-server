@@ -24,7 +24,7 @@ trait GuideImageAdminImpl extends GuideImageAdminService with GuideImageUserImpl
 
   def deleteAllGuideImages(): Either[DatabaseError, Unit] = tryWithConnection {
     implicit conn =>
-      logger.info("Deleting existing guide image definitions")
+      logger.debug("Deleting existing guide image definitions")
       SQL("DELETE FROM guide_images").execute()
       Right(())
   }
@@ -34,7 +34,7 @@ trait GuideImageAdminImpl extends GuideImageAdminService with GuideImageUserImpl
 
       if (!guideImages.isEmpty) {
         conn.setAutoCommit(false)
-        logger.info("Writing " + guideImages.size + " guide images to database")
+        logger.debug("Writing " + guideImages.size + " guide images to database")
 
         val guideImageParams = guideImages.map {
           image => Seq[NamedParameter]('id -> image.id, 'description -> image.description, 'base_image_url -> (image.id + ".jpg"))
@@ -51,15 +51,15 @@ trait GuideImageAdminImpl extends GuideImageAdminService with GuideImageUserImpl
         }.toSeq
 
         if (!weightParams.isEmpty) {
-          logger.info("Writing " + weightParams.size + " guide image weight records to database")
+          logger.debug("Writing " + weightParams.size + " guide image weight records to database")
           batchSql("""INSERT INTO guide_image_weights VALUES (DEFAULT,{guide_image_id},{object_id},{description},{weight})""", weightParams).execute()
         } else
-          logger.warn("Guide image file contains no object weight records")
+          logger.debug("Guide image file contains no object weight records")
 
         conn.commit()
         Right(())
       } else {
-        logger.warn("createGuideImages request with empty guide image list")
+        logger.debug("createGuideImages request with empty guide image list")
         Right(())
       }
   }

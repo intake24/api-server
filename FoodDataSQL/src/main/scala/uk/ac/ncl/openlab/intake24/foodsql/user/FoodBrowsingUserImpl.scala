@@ -33,7 +33,7 @@ trait FoodBrowsingUserImpl extends FoodBrowsingService with SqlDataService with 
     implicit conn =>
       val result = SQL(rootCategoriesQuery).on('locale_id -> locale).executeQuery()
 
-      parseWithLocaleValidation(result, Macro.namedParser[UserCategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map {
+      parseWithLocaleValidation(result, Macro.namedParser[UserCategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", () => Right(List())))).right.map {
         _.map {
           _.mkUserHeader
         }
@@ -50,7 +50,7 @@ trait FoodBrowsingUserImpl extends FoodBrowsingService with SqlDataService with 
 
     val result = SQL(categoryFoodContentsQuery).on('category_code -> code, 'locale_id -> locale).executeQuery()
 
-    parseWithLocaleAndCategoryValidation(code, result, Macro.namedParser[UserFoodHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map {
+    parseWithLocaleAndCategoryValidation(code, result, Macro.namedParser[UserFoodHeaderRow].+)(Seq(FirstRowValidationClause("code", () => Right(List())))).right.map {
       _.map {
         _.mkUserHeader
       }
@@ -62,7 +62,7 @@ trait FoodBrowsingUserImpl extends FoodBrowsingService with SqlDataService with 
   private def categorySubcategoryContentsImpl(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[UserCategoryHeader]] = {
     val result = SQL(categorySubcategoryContentsQuery).on('category_code -> code, 'locale_id -> locale).executeQuery()
 
-    parseWithLocaleAndCategoryValidation(code, result, Macro.namedParser[UserCategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", Right(List())))).right.map {
+    parseWithLocaleAndCategoryValidation(code, result, Macro.namedParser[UserCategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", () => Right(List())))).right.map {
       _.map {
         _.mkUserHeader
       }
@@ -70,7 +70,7 @@ trait FoodBrowsingUserImpl extends FoodBrowsingService with SqlDataService with 
   }
 
   def getCategoryContents(code: String, locale: String): Either[LocalLookupError, UserCategoryContents] = tryWithConnection {
-    implicit conn =>
+    implicit conn =>      
       for (
         foods <- categoryFoodContentsImpl(code, locale).right;
         subcategories <- categorySubcategoryContentsImpl(code, locale).right

@@ -17,7 +17,7 @@ trait InheritedNutrientTableCodesImpl extends SqlResourceLoader with FirstRowVal
   private def localNutrientTableCodes(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Map[String, String]] = {
     val result = SQL(inheritedTableCodesQuery).on('food_code -> code, 'locale_id -> locale).executeQuery()
 
-    parseWithLocaleAndFoodValidation(code, result, Macro.namedParser[NutrientTableRow].+)(Seq(FirstRowValidationClause("nutrient_table_id", Right(List())))).right.map {
+    parseWithLocaleAndFoodValidation(code, result, Macro.namedParser[NutrientTableRow].+)(Seq(FirstRowValidationClause("nutrient_table_id", () => Right(List())))).right.map {
       _.map {
         case NutrientTableRow(id, code) => (id -> code)
       }.toMap

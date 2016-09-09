@@ -40,6 +40,7 @@ import uk.ac.ncl.openlab.intake24.foodsql.modular.FoodBrowsingAdminQueries
 import uk.ac.ncl.openlab.intake24.NewMainCategoryRecord
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentCreateError
 import uk.ac.ncl.openlab.intake24.foodsql.shared.SuperCategoriesQueries
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalCreateError
 
 class CategoriesAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends CategoriesAdminImpl
 
@@ -141,7 +142,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService
       withTransaction {
         for (
           _ <- createCategoriesQuery(records.map(_.toNewCategory)).right;
-          _ <- addSubcategoriesToCategories(records.map(r => (r.code, r.parentCategories)).toMap).right
+          _ <- addSubcategoriesToCategoriesQuery(records.map(r => (r.code, r.parentCategories)).toMap).right
         ) yield ()
       }
   }
@@ -151,14 +152,14 @@ trait CategoriesAdminImpl extends CategoriesAdminService
       createCategoriesQuery(categories)
   }
 
-  def createLocalCategoryRecord(foodCode: String, record: NewLocalCategoryRecord, locale: String): Either[CreateError, Unit] = tryWithConnection {
+  def createLocalCategoryRecord(foodCode: String, record: NewLocalCategoryRecord, locale: String): Either[LocalCreateError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
         createLocalCategoriesQuery(Map(foodCode -> record), locale)
       }
   }
 
-  def createLocalCategoryRecords(localCategoryRecords: Map[String, NewLocalCategoryRecord], locale: String): Either[CreateError, Unit] = tryWithConnection {
+  def createLocalCategoryRecords(localCategoryRecords: Map[String, NewLocalCategoryRecord], locale: String): Either[LocalCreateError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
         createLocalCategoriesQuery(localCategoryRecords, locale)
