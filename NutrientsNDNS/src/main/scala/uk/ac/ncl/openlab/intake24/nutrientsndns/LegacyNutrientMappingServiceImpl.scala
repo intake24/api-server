@@ -23,13 +23,12 @@ import org.slf4j.LoggerFactory
 import com.google.inject.Singleton
 import com.google.inject.name.Named
 import com.google.inject.Inject
-import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientDescription
-import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService
 import uk.ac.ncl.openlab.intake24.nutrients._
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.NutrientMappingError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.TableNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.NutrientMappingError
+import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService
+import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientDescription
 
 @Singleton
 case class LegacyNutrientMappingServiceImpl @Inject() (tables: Map[String, NutrientTable]) extends NutrientMappingService {

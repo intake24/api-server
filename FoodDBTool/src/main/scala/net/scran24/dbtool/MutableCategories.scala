@@ -28,39 +28,41 @@ package net.scran24.dbtool
 
 import uk.ac.ncl.openlab.intake24.CategoryV2
 import uk.ac.ncl.openlab.intake24.FoodRecord
+import uk.ac.ncl.openlab.intake24.foodxml.XmlCategoryRecord
+import uk.ac.ncl.openlab.intake24.foodxml.XmlFoodRecord
 
 class DataException(message: String) extends Throwable
 
-class MutableCategories(categories: Seq[CategoryV2]) {
+class MutableCategories(categories: Seq[XmlCategoryRecord]) {
   var map = categories.map(cat => (cat.code, cat)).toMap
 
-  def find(code: String): Option[CategoryV2] = map.get(code)
+  def find(code: String): Option[XmlCategoryRecord] = map.get(code)
 
-  def create(category: CategoryV2) =
+  def create(category: XmlCategoryRecord) =
     if (map.contains(category.code)) throw new DataException(s"Code ${category.code} is already used")
     else map = map + (category.code -> category)
 
   def delete(code: String) =
     map = map - code
 
-  def update(code: String, category: CategoryV2) =
+  def update(code: String, category: XmlCategoryRecord) =
     map = map + (code -> category)
 
-  def foodSuperCategories(code: String): Seq[CategoryV2] =
+  def foodSuperCategories(code: String): Seq[XmlCategoryRecord] =
     map.values.filter(cat => (cat.foods.exists(_ == code))).toSeq.sortBy(_.description)
     
-  def categorySuperCategories(code: String): Seq[CategoryV2] =
+  def categorySuperCategories(code: String): Seq[XmlCategoryRecord] =
     map.values.filter(cat => (cat.subcategories.exists(_ == code))).toSeq.sortBy(_.description)
 
-  def isRoot(cat: CategoryV2) = !categorySuperCategories(cat.code).exists(!_.isHidden)
+  def isRoot(cat: XmlCategoryRecord) = !categorySuperCategories(cat.code).exists(!_.isHidden)
     
-  def rootCategories: Seq[CategoryV2] =
+  def rootCategories: Seq[XmlCategoryRecord] =
     map.values.filter(isRoot).toSeq.sortBy(_.description)
 
-  def uncategorisedFoods(foods: Seq[FoodRecord]) =
-    foods.filter(f => foodSuperCategories(f.main.code).isEmpty)
+  def uncategorisedFoods(foods: Seq[XmlFoodRecord]) =
+    foods.filter(f => foodSuperCategories(f.code).isEmpty)
 
-  def snapshot(): Seq[CategoryV2] =
+  def snapshot(): Seq[XmlCategoryRecord] =
     map.values.toSeq.sortBy(_.description)
 
   def tempcode() = {

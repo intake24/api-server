@@ -29,12 +29,12 @@ package net.scran24.dbtool
 import uk.ac.ncl.openlab.intake24.PortionSizeMethod
 import scala.collection.immutable.ListSet
 import uk.ac.ncl.openlab.intake24.InheritableAttributes
-import uk.ac.ncl.openlab.intake24.CategoryV2
+import uk.ac.ncl.openlab.intake24.foodxml.XmlCategoryRecord
 
 case class PortionSizeResolver(foods: MutableFoods, categories: MutableCategories) {
 
-  def resolveInheritance(code: String): Seq[CategoryV2] = {
-    def rec(q: Seq[String], result: Seq[CategoryV2], visited: Set[String]): Seq[CategoryV2] =
+  def resolveInheritance(code: String): Seq[XmlCategoryRecord] = {
+    def rec(q: Seq[String], result: Seq[XmlCategoryRecord], visited: Set[String]): Seq[XmlCategoryRecord] =
       q match {
         case Nil => result.toSeq
         case x :: xs => {

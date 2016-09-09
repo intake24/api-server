@@ -44,9 +44,10 @@ import javax.swing.event.ListSelectionListener
 import javax.swing.event.ListSelectionEvent
 import javax.swing.ListSelectionModel
 import javax.swing.JScrollPane
+import uk.ac.ncl.openlab.intake24.foodxml.XmlCategoryRecord
 
 
-class CategoriesPanel(initial: Seq[CategoryV2], allCategories: MutableCategories, onChangesMade: () => Unit) extends JPanel {
+class CategoriesPanel(initial: Seq[XmlCategoryRecord], allCategories: MutableCategories, onChangesMade: () => Unit) extends JPanel {
   setLayout(new BorderLayout())
   
   def discard() = {

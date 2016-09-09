@@ -29,10 +29,10 @@ package net.scran24.dbtool
 import javax.swing.JPanel
 import javax.swing.JSplitPane
 import javax.swing.JLabel
-import uk.ac.ncl.openlab.intake24.CategoryV2
+
 
 import uk.ac.ncl.openlab.intake24.InheritableAttributes
-import uk.ac.ncl.openlab.intake24.FoodGroup
+
 import uk.ac.ncl.openlab.intake24.AsServedSet
 import uk.ac.ncl.openlab.intake24.GuideImage
 import uk.ac.ncl.openlab.intake24.DrinkwareSet
@@ -53,16 +53,19 @@ import uk.ac.ncl.openlab.intake24.foodxml.CategoryDef
 import uk.ac.ncl.openlab.intake24.FoodRecord
 import uk.ac.ncl.openlab.intake24.MainFoodRecord
 import uk.ac.ncl.openlab.intake24.LocalFoodRecord
+import uk.ac.ncl.openlab.intake24.foodxml.XmlCategoryRecord
+import uk.ac.ncl.openlab.intake24.foodxml.XmlFoodGroup
+import uk.ac.ncl.openlab.intake24.foodxml.XmlFoodRecord
 
-case class SearchFoodWrapper(food: FoodRecord) {
-  override def toString() = food.main.englishDescription + " (" + food.main.code + ")"
+case class SearchFoodWrapper(food: XmlFoodRecord) {
+  override def toString() = food.description + " (" + food.code + ")"
 }
 
-case class SearchCategoryWrapper(category: CategoryV2) {
+case class SearchCategoryWrapper(category: XmlCategoryRecord) {
   override def toString() = category.description + " (" + category.code + ")"
 }
 
-class FoodEditor(foods: Seq[FoodRecord], foodGroups: Seq[FoodGroup], categories: Seq[CategoryV2], portionResources: PortionResources, imageDirectory: ImageDirectory) extends JPanel {
+class FoodEditor(foods: Seq[XmlFoodRecord], foodGroups: Seq[XmlFoodGroup], categories: Seq[XmlCategoryRecord], portionResources: PortionResources, imageDirectory: ImageDirectory) extends JPanel {
   val blayout = new BorderLayout()
   setLayout(blayout)
 
@@ -76,11 +79,11 @@ class FoodEditor(foods: Seq[FoodRecord], foodGroups: Seq[FoodGroup], categories:
 
   var changed = false
 
-  def addNewFood(food: FoodRecord) = {
+  def addNewFood(food: XmlFoodRecord) = {
      foodTree.selectedCategory match {
       case Some(code) => {
         val cat = mutableCategories.find(code).get
-        mutableCategories.update(code, cat.copy(foods = cat.foods :+ food.main.code))
+        mutableCategories.update(code, cat.copy(foods = cat.foods :+ food.code))
         foodTree.categoryUpdated(code)
       }
       case None => {}
@@ -92,15 +95,11 @@ class FoodEditor(foods: Seq[FoodRecord], foodGroups: Seq[FoodGroup], categories:
     changed = true
   }
   
-  def newFood = addNewFood(FoodRecord(
-      MainFoodRecord(UUID.randomUUID(), mutableFoods.tempcode, "New food", 0, InheritableAttributes(None, None, None)), 
-      LocalFoodRecord(Some(UUID.randomUUID()), Some("New food"), false, Map("NDNS" -> "-1"), Seq())))
-  def cloneFood(source: FoodRecord) = addNewFood(FoodRecord(
-      MainFoodRecord(UUID.randomUUID(), mutableFoods.tempcode, "Copy of " + source.main.englishDescription, source.main.groupCode, source.main.attributes),
-      LocalFoodRecord(Some(UUID.randomUUID()), Some("Copy of " + source.local.localDescription), false, source.local.nutrientTableCodes, source.local.portionSize)))
+  def newFood = addNewFood(XmlFoodRecord(mutableFoods.tempcode, "New food", 0, InheritableAttributes(None, None, None), Map("NDNS" -> "-1"), Seq()))
+  def cloneFood(source: XmlFoodRecord) = addNewFood(source.copy(code = mutableFoods.tempcode(), description = "Copy of " + source.description))
 
   def newCategory = {
-    val tempCategory = CategoryV2(UUID.randomUUID(), mutableCategories.tempcode, "New category", Seq(), Seq(), false, InheritableAttributes(None, None, None), Seq())
+    val tempCategory = XmlCategoryRecord(mutableCategories.tempcode, "New category", Seq(), Seq(), false, InheritableAttributes(None, None, None), Seq())
 
     foodTree.selectedCategory match {
       case Some(code) => {
@@ -116,11 +115,11 @@ class FoodEditor(foods: Seq[FoodRecord], foodGroups: Seq[FoodGroup], categories:
     changed = true
   }
 
-  def updateFood(code: String, food: FoodRecord, categories: Seq[CategoryV2]): Boolean = {
-    val existing = mutableFoods.find(food.main.code)
-    val portionSizeProblems = food.local.portionSize.flatMap(checkPortionSize)
-    if (existing.isDefined && code != food.main.code) {
-      JOptionPane.showMessageDialog(this, "<html>Food code <strong>" + code + "</strong> is already used by <strong>" + existing.get.main.englishDescription + "</strong></html>", "Cannot accept changes", JOptionPane.ERROR_MESSAGE)
+  def updateFood(code: String, food: XmlFoodRecord, categories: Seq[XmlCategoryRecord]): Boolean = {
+    val existing = mutableFoods.find(food.code)
+    val portionSizeProblems = food.portionSizeMethods.flatMap(checkPortionSize)
+    if (existing.isDefined && code != food.code) {
+      JOptionPane.showMessageDialog(this, "<html>Food code <strong>" + code + "</strong> is already used by <strong>" + existing.get.description + "</strong></html>", "Cannot accept changes", JOptionPane.ERROR_MESSAGE)
       false
     } else if (!portionSizeProblems.isEmpty) {
       JOptionPane.showMessageDialog(this, "<html><p>" + portionSizeProblems.mkString("</p><p>") + "</p</html>", "Cannot accept changes", JOptionPane.ERROR_MESSAGE)
@@ -131,7 +130,7 @@ class FoodEditor(foods: Seq[FoodRecord], foodGroups: Seq[FoodGroup], categories:
       categories.foreach(cat => {
         val code = cat.code
         val oldCat = mutableCategories.find(code).get
-        mutableCategories.update(code, oldCat.copy(foods = (oldCat.foods :+ food.main.code)))
+        mutableCategories.update(code, oldCat.copy(foods = (oldCat.foods :+ food.code)))
         foodTree.categoryUpdated(code)
       })
 
@@ -184,13 +183,13 @@ class FoodEditor(foods: Seq[FoodRecord], foodGroups: Seq[FoodGroup], categories:
     changed = true
   }
 
-  def deleteFoodRequest(food: FoodRecord) = {
-    if (JOptionPane.showConfirmDialog(this, "Are you sure you want to delete the food  \"" + food.main.englishDescription + "\" (" + food.main.code + ")?", "Delete food", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-      deleteFood(food.main.code)
+  def deleteFoodRequest(food: XmlFoodRecord) = {
+    if (JOptionPane.showConfirmDialog(this, "Are you sure you want to delete the food  \"" + food.description + "\" (" + food.code + ")?", "Delete food", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+      deleteFood(food.code)
     }
   }
 
-  def updateCategory(code: String, category: CategoryV2, categories: Seq[CategoryV2]): Boolean = {
+  def updateCategory(code: String, category: XmlCategoryRecord, categories: Seq[XmlCategoryRecord]): Boolean = {
     val existing = mutableCategories.find(category.code)
     val portionSizeProblems = category.portionSizeMethods.flatMap(checkPortionSize)
     if (existing.isDefined && code != category.code) {
@@ -216,7 +215,7 @@ class FoodEditor(foods: Seq[FoodRecord], foodGroups: Seq[FoodGroup], categories:
     }
   }
 
-  def deleteCategoryRequest(category: CategoryV2) = {
+  def deleteCategoryRequest(category: XmlCategoryRecord) = {
     if (JOptionPane.showConfirmDialog(this, "Are you sure you want to delete the category  \"" + category.description + "\" (" + category.code + ")?", "Delete category", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
       deleteCategory(category.code, true)
     }
@@ -292,7 +291,7 @@ class FoodEditor(foods: Seq[FoodRecord], foodGroups: Seq[FoodGroup], categories:
 
     val dialog = new SelectionDialog[SearchFoodWrapper](ownerFrame(this), "Select food", mutableFoods.snapshot().map(SearchFoodWrapper(_)))
     dialog.setVisible(true)
-    dialog.choice.foreach(food => foodTree.selectEntry(food.food.main.code))
+    dialog.choice.foreach(food => foodTree.selectEntry(food.food.code))
   })
 
   val findCatButton = new JButton("Find category")

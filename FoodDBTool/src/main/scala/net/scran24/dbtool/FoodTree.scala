@@ -43,6 +43,8 @@ import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreePath
 import javax.swing.tree.DefaultTreeSelectionModel
 import java.awt.Font
+import uk.ac.ncl.openlab.intake24.foodxml.XmlCategoryRecord
+import uk.ac.ncl.openlab.intake24.foodxml.XmlFoodRecord
 
 sealed trait FoodTreeNode
 
@@ -50,12 +52,12 @@ case object Uncategorised extends FoodTreeNode {
   override def toString = "Uncategorised foods"
 }
 
-case class CategoryWrapper(category: CategoryV2) extends FoodTreeNode {
+case class CategoryWrapper(category: XmlCategoryRecord) extends FoodTreeNode {
   override def toString = category.description
 }
 
-case class FoodWrapper(food: FoodRecord) extends FoodTreeNode {
-  override def toString = food.main.englishDescription
+case class FoodWrapper(food: XmlFoodRecord) extends FoodTreeNode {
+  override def toString = food.description
 }
 case object RootNode extends FoodTreeNode {
   override def toString = "All foods"
@@ -122,9 +124,9 @@ class FoodTree(foods: MutableFoods, categories: MutableCategories, portionSize: 
     })
   }
 
-  def createFoodNode(food: FoodRecord) = {
+  def createFoodNode(food: XmlFoodRecord) = {
     val node = new DefaultMutableTreeNode(FoodWrapper(food))
-    nodes += (food.main.code -> (node :: nodes(food.main.code)))
+    nodes += (food.code -> (node :: nodes(food.code)))
     node
   }
   
@@ -155,7 +157,7 @@ class FoodTree(foods: MutableFoods, categories: MutableCategories, portionSize: 
     tree.getSelectionModel().setSelectionPath(path)
   }
 
-  def entryAdded(code: String, superCats: Seq[CategoryV2], node: => DefaultMutableTreeNode) = {
+  def entryAdded(code: String, superCats: Seq[XmlCategoryRecord], node: => DefaultMutableTreeNode) = {
     superCats.foreach(cat => {
       nodes(cat.code).foreach(supCatNode => {
         insertNode(supCatNode, node)
@@ -166,20 +168,20 @@ class FoodTree(foods: MutableFoods, categories: MutableCategories, portionSize: 
     selectEntry(code)
   }
 
-  def foodAdded(food: FoodRecord): Unit = {
+  def foodAdded(food: XmlFoodRecord): Unit = {
     def node = createFoodNode(food)
     
-    val superCats = categories.foodSuperCategories(food.main.code)
+    val superCats = categories.foodSuperCategories(food.code)
     
     if (superCats.isEmpty) {
       insertNode(uncatNode, node)
       model.nodeChanged(uncatNode)
     }
     
-    entryAdded(food.main.code, superCats, node)
+    entryAdded(food.code, superCats, node)
   }
 
-  def categoryAdded(category: CategoryV2): Unit = {
+  def categoryAdded(category: XmlCategoryRecord): Unit = {
     def node = createCategoryNode(category)
     
     if (categories.isRoot(category)) {
@@ -200,12 +202,12 @@ class FoodTree(foods: MutableFoods, categories: MutableCategories, portionSize: 
     nodes -= code
   }
 
-  def createCategoryNode(category: CategoryV2): DefaultMutableTreeNode = {
+  def createCategoryNode(category: XmlCategoryRecord): DefaultMutableTreeNode = {
     val catNode = new DefaultMutableTreeNode(CategoryWrapper(category))
     nodes += (category.code -> (catNode :: nodes(category.code)))
 
     category.subcategories.flatMap (categories.find(_)).sortBy(_.description).foreach (c => catNode.add(createCategoryNode(c)))
-    category.foods.flatMap(foods.find(_)).sortBy(_.main.englishDescription).foreach (f => catNode.add(createFoodNode(f)))
+    category.foods.flatMap(foods.find(_)).sortBy(_.description).foreach (f => catNode.add(createFoodNode(f)))
 
     catNode
   }
@@ -222,7 +224,7 @@ class FoodTree(foods: MutableFoods, categories: MutableCategories, portionSize: 
 
   root.add(uncatNode)
 
-  categories.uncategorisedFoods(foods.snapshot).sortBy(_.main.englishDescription).foreach(f => uncatNode.add(createFoodNode(f)))
+  categories.uncategorisedFoods(foods.snapshot).sortBy(_.description).foreach(f => uncatNode.add(createFoodNode(f)))
   
   categories.rootCategories.foreach(cat => root.add(createCategoryNode(cat)))
 

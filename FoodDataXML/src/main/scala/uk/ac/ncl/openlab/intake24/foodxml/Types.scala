@@ -9,3 +9,5 @@ case class XmlFoodRecord(code: String, description: String, groupCode: Int, attr
 case class XmlCategoryRecord(code: String, description: String, foods: Seq[String], subcategories: Seq[String], isHidden: Boolean, attributes: InheritableAttributes, portionSizeMethods: Seq[PortionSizeMethod])
 
 case class AssociatedFoodV1 (category: String, promptText: String, linkAsMain: Boolean, genericName: String)
+
+case class XmlFoodGroup (id: Int, description: String)

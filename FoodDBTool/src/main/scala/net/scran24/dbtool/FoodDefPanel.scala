@@ -51,7 +51,7 @@ import uk.ac.ncl.openlab.intake24.GuideImage
 import uk.ac.ncl.openlab.intake24.DrinkwareSet
 import uk.ac.ncl.openlab.intake24.PortionSizeMethod
 import javax.swing.JComboBox
-import uk.ac.ncl.openlab.intake24.FoodGroup
+
 import java.awt.event.ItemListener
 import java.awt.event.ItemEvent
 import javax.swing.JCheckBox
@@ -62,17 +62,21 @@ import java.util.UUID
 import uk.ac.ncl.openlab.intake24.FoodRecord
 import uk.ac.ncl.openlab.intake24.LocalFoodRecord
 import uk.ac.ncl.openlab.intake24.MainFoodRecord
+import uk.ac.ncl.openlab.intake24.FoodGroupMain
+import uk.ac.ncl.openlab.intake24.foodxml.XmlFoodRecord
+import uk.ac.ncl.openlab.intake24.foodxml.XmlCategoryRecord
+import uk.ac.ncl.openlab.intake24.foodxml.XmlFoodGroup
 
-class FoodDefPanel(portion: PortionSizeResolver, foods: MutableFoods, foodGroups: Seq[FoodGroup], categories: MutableCategories, portionRes: PortionResources,
-  imageDirectory: ImageDirectory, food: FoodRecord, updateFood: (String, FoodRecord, Seq[CategoryV2]) => Boolean, deleteFood: FoodRecord => Unit) extends DefEditor {
+class FoodDefPanel(portion: PortionSizeResolver, foods: MutableFoods, foodGroups: Seq[XmlFoodGroup], categories: MutableCategories, portionRes: PortionResources,
+  imageDirectory: ImageDirectory, food: XmlFoodRecord, updateFood: (String, XmlFoodRecord, Seq[XmlCategoryRecord]) => Boolean, deleteFood: XmlFoodRecord => Unit) extends DefEditor {
 
-  val codeText = new JTextField(food.main.code)
+  val codeText = new JTextField(food.code)
   addChangeListener(codeText, () => {
     val newCode = codeText.getText
     val existing = foods.find(newCode)
-    if (existing.isDefined && food.main.code != newCode) {
+    if (existing.isDefined && food.code != newCode) {
       codeErrorIcon.setVisible(true)
-      codeErrorIcon.setToolTipText("Code is already used by " + existing.get.main.englishDescription)
+      codeErrorIcon.setToolTipText("Code is already used by " + existing.get.description)
     } else
       codeErrorIcon.setVisible(false)
 
@@ -85,14 +89,14 @@ class FoodDefPanel(portion: PortionSizeResolver, foods: MutableFoods, foodGroups
 
   codeLabel.setPreferredSize(new Dimension(100, 20))
 
-  val ndnsText = new JTextField(food.local.nutrientTableCodes.getOrElse("NDNS", "").toString())
+  val ndnsText = new JTextField(food.nutrientTableCodes.getOrElse("NDNS", "").toString())
   addChangeListener(ndnsText, () => changesMade())
   val ndnsLabel = new JLabel("NDNS code")
   ndnsLabel.setPreferredSize(new Dimension(100, 20))
   val dd = ndnsText.getPreferredSize()
   ndnsText.setPreferredSize(new Dimension(70, dd.height))
   
-  val nzText = new JTextField(food.local.nutrientTableCodes.getOrElse("NZ", "").toString())
+  val nzText = new JTextField(food.nutrientTableCodes.getOrElse("NZ", "").toString())
   addChangeListener(nzText, () => changesMade())
   val nzLabel = new JLabel("NZ code")
   nzLabel.setPreferredSize(new Dimension(100, 20))
@@ -102,19 +106,19 @@ class FoodDefPanel(portion: PortionSizeResolver, foods: MutableFoods, foodGroups
   val groupCodeLabel = new JLabel ("Food group")
   groupCodeLabel.setPreferredSize(new Dimension(100, 20))
   val groupCode = new JComboBox(foodGroups.toArray)
-  groupCode.setSelectedIndex(foodGroups.indexWhere(_.id == food.main.groupCode))
+  groupCode.setSelectedIndex(foodGroups.indexWhere(_.id == food.groupCode))
   groupCode.addItemListener(new ItemListener { def itemStateChanged(e: ItemEvent) = changesMade() })
   val d1 = groupCode.getPreferredSize()
   groupCode.setPreferredSize(new Dimension(270, d1.height))
 
-  val descText = new JTextField(food.main.englishDescription)
+  val descText = new JTextField(food.description)
   addChangeListener(descText, () => changesMade())
   val descLabel = new JLabel("Description")
   descLabel.setPreferredSize(new Dimension(100, 20))
   val d = descText.getPreferredSize()
   descText.setPreferredSize(new Dimension(300, d.height))
   
-  val attrPanel = new EditableAttributesPanel(food.main.code, true, food.main.attributes, portion, changesMade)
+  val attrPanel = new EditableAttributesPanel(food.code, true, food.attributes, portion, changesMade)
 
   val headerPanel = new JPanel(new BorderLayout())
 
@@ -156,15 +160,15 @@ class FoodDefPanel(portion: PortionSizeResolver, foods: MutableFoods, foodGroups
   val catPanelContainer = new JPanel()
   val portionSizePanelContainer = new JPanel()
   
-  val catPanel = new CategoriesPanel(categories.foodSuperCategories(food.main.code).sortBy(_.description), categories, changesMade)
-  var portionSizePanel = new PortionSizePanel(food.main.code, true, food.local.portionSize, portionRes, imageDirectory, portion, changesMade)
+  val catPanel = new CategoriesPanel(categories.foodSuperCategories(food.code).sortBy(_.description), categories, changesMade)
+  var portionSizePanel = new PortionSizePanel(food.code, true, food.portionSizeMethods, portionRes, imageDirectory, portion, changesMade)
 
   portionSizePanelContainer.add(portionSizePanel)
   
   add(headerPanel)
   add(new LineBreak)
   
-  val superCats = categories.foodSuperCategories(food.main.code)
+  val superCats = categories.foodSuperCategories(food.code)
   
   val allCats = superCats.flatMap(c => categories.categorySuperCategories(c.code))
   
@@ -218,11 +222,10 @@ class FoodDefPanel(portion: PortionSizeResolver, foods: MutableFoods, foodGroups
     
     res
   }
-
-  def snapshot = new FoodRecord(
-      MainFoodRecord(UUID.randomUUID(), codeText.getText(), descText.getText(), groupCode.getSelectedItem().asInstanceOf[FoodGroup].id, 
-      InheritableAttributes(attrPanel.readyMealAttr, attrPanel.sameAsBeforeAttr, attrPanel.reasonableAmountAttr )),
-      LocalFoodRecord(Some(UUID.randomUUID()), Some(descText.getText()), false, nutrientCodeSnapshot, portionSizePanel.portionSizes.map(_.portionSizeMethod)))
+  
+  def snapshot = XmlFoodRecord(codeText.getText(), descText.getText(), groupCode.getSelectedItem().asInstanceOf[FoodGroupMain].id, 
+      InheritableAttributes(attrPanel.readyMealAttr, attrPanel.sameAsBeforeAttr, attrPanel.reasonableAmountAttr ),
+      nutrientCodeSnapshot, portionSizePanel.portionSizes.map(_.portionSizeMethod))
 
   def changesMade() = {
     changed = true
@@ -232,7 +235,7 @@ class FoodDefPanel(portion: PortionSizeResolver, foods: MutableFoods, foodGroups
   }
 
   def acceptChanges() = {
-    val ok = updateFood(food.main.code, snapshot, catPanel.categories)
+    val ok = updateFood(food.code, snapshot, catPanel.categories)
     if (ok) changed = false
     ok
   }
@@ -241,9 +244,9 @@ class FoodDefPanel(portion: PortionSizeResolver, foods: MutableFoods, foodGroups
     val dialog = new SelectionDialog[SearchFoodWrapper](ownerFrame(this), "Select food", foods.snapshot().map(SearchFoodWrapper(_)))
     dialog.setVisible(true)
     dialog.choice.foreach(food => {
-      ndnsText.setText(food.food.local.nutrientTableCodes("NDNS"))
+      ndnsText.setText(food.food.nutrientTableCodes("NDNS"))
       portionSizePanelContainer.removeAll()
-      portionSizePanel = new PortionSizePanel(codeText.getText(), true, food.food.local.portionSize, portionRes, imageDirectory, portion, changesMade)
+      portionSizePanel = new PortionSizePanel(codeText.getText(), true, food.food.portionSizeMethods, portionRes, imageDirectory, portion, changesMade)
       portionSizePanelContainer.add(portionSizePanel)
       changesMade()
     })
@@ -265,9 +268,9 @@ class FoodDefPanel(portion: PortionSizeResolver, foods: MutableFoods, foodGroups
     override def actionPerformed(e: ActionEvent) =
       {
         if (JOptionPane.showConfirmDialog(outer, "Are you sure you want do discard all changes to this food?", "Confirm", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-          codeText.setText(food.main.code)
-          ndnsText.setText(food.local.nutrientTableCodes("NDNS"))
-          descText.setText(food.main.englishDescription)
+          codeText.setText(food.code)
+          ndnsText.setText(food.nutrientTableCodes("NDNS"))
+          descText.setText(food.description)
           catPanel.discard()
           portionSizePanel.discard()
           revalidate()

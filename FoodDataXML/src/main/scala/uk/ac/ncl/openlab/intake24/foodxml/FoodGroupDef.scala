@@ -24,11 +24,11 @@ import scala.xml.NodeSeq.seqToNodeSeq
 import uk.ac.ncl.openlab.intake24.FoodGroupMain
 
 object FoodGroupDef {
-  def toXml(groups: Seq[FoodGroupMain]) =
+  def toXml(groups: Seq[XmlFoodGroup]) =
     <food-groups>
       {
         groups.sortBy(_.id).map(group =>
-          <group id={ group.id.toString } description={ group.englishDescription }/>)
+          <group id={ group.id.toString } description={ group.description }/>)
       }
     </food-groups>
 
@@ -37,7 +37,7 @@ object FoodGroupDef {
       val id = group.attribute("id").get.text.toInt
       val description = group.attribute("description").get.text
       
-      FoodGroupMain(id, description)
+      XmlFoodGroup(id, description)
     })
   }
 }

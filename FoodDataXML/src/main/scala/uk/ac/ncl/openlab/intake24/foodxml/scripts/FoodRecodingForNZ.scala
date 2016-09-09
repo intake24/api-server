@@ -51,7 +51,7 @@ object FoodRecodingForNZ {
     val foods = FoodDef.parseXml(XML.loadFile("/home/ivan/Projects/Intake24/intake24-data/foods.xml")).sortBy(_.code)
     val groups = FoodGroupDef.parseXml(XML.loadFile("/home/ivan/Projects/Intake24/intake24-data/food-groups.xml")).map {
       g => 
-        (g.id, g.englishDescription)
+        (g.id, g.description)
     }.toMap
     val ndnsData = buildNutritionTableIndex
     val writer = new CSVWriter(new FileWriter("/home/ivan/Projects/Intake24/recoding/recoding.csv"))

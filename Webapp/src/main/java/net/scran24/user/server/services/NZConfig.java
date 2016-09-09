@@ -29,17 +29,16 @@ import net.scran24.datastore.mongodb.MongoDbDataStore;
 
 import org.workcraft.gwt.shared.client.Pair;
 
-import uk.ac.ncl.openlab.intake24.foodxml.IndexFoodDataServiceXmlImpl;
+import uk.ac.ncl.openlab.intake24.foodxml.FoodIndexDataServiceXmlImpl;
 import uk.ac.ncl.openlab.intake24.foodxml.UserFoodDataServiceXmlImpl;
 import uk.ac.ncl.openlab.intake24.nutrientsndns.CsvNutrientTableParser;
 import uk.ac.ncl.openlab.intake24.nutrientsndns.LegacyNutrientMappingServiceImpl;
 import uk.ac.ncl.openlab.intake24.nutrientsndns.LegacyNutrientTables;
 
 import uk.ac.ncl.openlab.intake24.nutrientsndns.NutrientTable;
-
-import uk.ac.ncl.openlab.intake24.services.IndexFoodDataService;
-import uk.ac.ncl.openlab.intake24.services.UserFoodDataService;
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDatabaseService;
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex;
+import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService;
 import uk.ac.ncl.openlab.intake24.services.foodindex.Splitter;
 import uk.ac.ncl.openlab.intake24.services.foodindex.english.FoodIndexImpl_en_GB;
 import uk.ac.ncl.openlab.intake24.services.foodindex.english.SplitterImpl_en_GB;
@@ -61,7 +60,7 @@ public class NZConfig extends AbstractModule {
 	@Provides
 	@Singleton
 	protected Map<String, FoodIndex> localFoodIndex(Injector injector) {
-		IndexFoodDataService indexFoodDataService = injector.getInstance(IndexFoodDataService.class);
+		FoodIndexDataService indexFoodDataService = injector.getInstance(FoodIndexDataService.class);
 
 		Map<String, FoodIndex> result = new HashMap<String, FoodIndex>();
 		result.put("en_GB", new FoodIndexImpl_en_GB(indexFoodDataService));
@@ -71,7 +70,7 @@ public class NZConfig extends AbstractModule {
 	@Provides
 	@Singleton
 	protected Map<String, Splitter> localSplitter(Injector injector) {
-		IndexFoodDataService foodDataService = injector.getInstance(IndexFoodDataService.class);
+		FoodIndexDataService foodDataService = injector.getInstance(FoodIndexDataService.class);
 
 		Map<String, Splitter> result = new HashMap<String, Splitter>();
 		result.put("en_GB", new SplitterImpl_en_GB(foodDataService));
@@ -105,8 +104,8 @@ public class NZConfig extends AbstractModule {
 	@Override
 	protected void configure() {
 		bindConstant().annotatedWith(Names.named("xml-data-path")).to(webXmlConfig.get("xml-data-path"));
-		bind(IndexFoodDataService.class).to(IndexFoodDataServiceXmlImpl.class);
-		bind(UserFoodDataService.class).to(UserFoodDataServiceXmlImpl.class);
+		bind(FoodIndexDataService.class).to(FoodIndexDataServiceXmlImpl.class);
+		bind(FoodDatabaseService.class).to(UserFoodDataServiceXmlImpl.class);
 		bind(NutrientMappingService.class).to(LegacyNutrientMappingServiceImpl.class);
 	}
 }

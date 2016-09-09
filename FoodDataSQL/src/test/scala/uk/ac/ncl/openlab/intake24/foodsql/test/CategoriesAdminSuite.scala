@@ -51,7 +51,7 @@ class CategoriesAdminSuite(service: FoodDatabaseAdminService) extends FunSuite w
   def addSubcategoryToCategory(categoryCode: String, subcategoryCode: String): Either[UpdateError, Unit]
   def removeFoodFromCategory(categoryCode: String, foodCode: String): Either[UpdateError, Unit]
   def removeSubcategoryFromCategory(categoryCode: String, foodCode: String): Either[UpdateError, Unit]  
-   */
+   
 
   val foodGroups = randomFoodGroups(2, 10)
   val foods = randomNewFoods(2, 10, foodGroups.map(_.id))
@@ -218,5 +218,5 @@ class CategoriesAdminSuite(service: FoodDatabaseAdminService) extends FunSuite w
   test("Clean up categories") {
     assert(service.deleteAllCategories() === Right(()))
   }
-
+*/
 }

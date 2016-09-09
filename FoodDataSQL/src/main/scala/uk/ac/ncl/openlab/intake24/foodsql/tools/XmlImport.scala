@@ -272,7 +272,7 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
 
     importCategories(categories)
 
-    importFoodGroups(foodGroups)
+    importFoodGroups(foodGroups.map(g => FoodGroupMain(g.id, g.description)))
     importAsServedSets(asServedSets)
     importGuideImages(guideImages)
     /// importImageMaps(imageMaps)

@@ -43,7 +43,7 @@ import java.awt.event.ActionListener
 import javax.swing.BorderFactory
 import java.awt.event.ActionEvent
 import javax.swing.JOptionPane
-import uk.ac.ncl.openlab.intake24.CategoryV2
+
 import javax.swing.ImageIcon
 import SwingUtil._
 import uk.ac.ncl.openlab.intake24.AsServedSet
@@ -54,11 +54,12 @@ import javax.swing.JCheckBox
 import java.awt.event.ItemListener
 import java.awt.event.ItemEvent
 import uk.ac.ncl.openlab.intake24.InheritableAttributes
-import uk.ac.ncl.openlab.intake24.foodxml.CategoryDef
+
 import java.util.UUID
+import uk.ac.ncl.openlab.intake24.foodxml.XmlCategoryRecord
 
 class CategoryDefPanel(portion: PortionSizeResolver, foods: MutableFoods, categories: MutableCategories, portionResources: PortionResources, imageDirectory: ImageDirectory,
-  category: CategoryV2, updateCategory: (String, CategoryV2, Seq[CategoryV2]) => Boolean, delete: CategoryV2 => Unit) extends DefEditor {
+  category: XmlCategoryRecord, updateCategory: (String, XmlCategoryRecord, Seq[XmlCategoryRecord]) => Boolean, delete: XmlCategoryRecord => Unit) extends DefEditor {
 
   val codeText = new JTextField(category.code)
   addChangeListener(codeText, () => {
@@ -180,7 +181,7 @@ val attrPanel = new EditableAttributesPanel(category.code, false, category.attri
   add(changeLabel)
   add(new LineBreak)
 
-  def snapshot = new CategoryV2(UUID.randomUUID(), codeText.getText(), descText.getText(), category.foods, category.subcategories, hiddenCheckbox.isSelected(),  
+  def snapshot = new XmlCategoryRecord(codeText.getText(), descText.getText(), category.foods, category.subcategories, hiddenCheckbox.isSelected(),  
       InheritableAttributes(attrPanel.readyMealAttr, attrPanel.sameAsBeforeAttr, attrPanel.reasonableAmountAttr ), portionSizePanel.portionSizes.map(_.portionSizeMethod))
 
   def changesMade() = {

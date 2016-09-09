@@ -28,16 +28,16 @@ import scala.runtime.AbstractFunction0;
 import uk.ac.ncl.openlab.intake24.datastoresql.DataStoreJavaAdapter;
 import uk.ac.ncl.openlab.intake24.datastoresql.DataStoreScala;
 import uk.ac.ncl.openlab.intake24.datastoresql.DataStoreSqlImpl;
-import uk.ac.ncl.openlab.intake24.foodsql.AdminFoodDataServiceSqlImpl;
-import uk.ac.ncl.openlab.intake24.foodsql.IndexFoodDataServiceSqlImpl;
 import uk.ac.ncl.openlab.intake24.foodsql.NutrientMappingServiceSqlImpl;
-import uk.ac.ncl.openlab.intake24.foodsql.UserFoodDataServiceSqlImpl;
-import uk.ac.ncl.openlab.intake24.services.AdminFoodDataService;
-import uk.ac.ncl.openlab.intake24.services.AutoReloadIndex;
-import uk.ac.ncl.openlab.intake24.services.IndexFoodDataService;
-import uk.ac.ncl.openlab.intake24.services.UserFoodDataService;
+import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl;
+import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl;
+import uk.ac.ncl.openlab.intake24.foodsql.user.FoodDatabaseUserImpl;
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService;
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDatabaseService;
 import uk.ac.ncl.openlab.intake24.services.foodindex.AbstractFoodIndex;
+import uk.ac.ncl.openlab.intake24.services.foodindex.AutoReloadIndex;
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex;
+import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService;
 import uk.ac.ncl.openlab.intake24.services.foodindex.Splitter;
 import uk.ac.ncl.openlab.intake24.services.foodindex.danish.FoodIndexImpl_da_DK;
 import uk.ac.ncl.openlab.intake24.services.foodindex.danish.SplitterImpl_da_DK;
@@ -64,7 +64,7 @@ public class SqlConfig extends AbstractModule {
 	@Provides
 	@Singleton
 	protected Map<String, FoodIndex> localFoodIndex(Injector injector) {
-		final IndexFoodDataService foodDataService = injector.getInstance(IndexFoodDataService.class);
+		final FoodIndexDataService foodDataService = injector.getInstance(FoodIndexDataService.class);
 		Map<String, FoodIndex> result = new HashMap<String, FoodIndex>();
 
 		result.put("en_GB", new AutoReloadIndex(new AbstractFunction0<AbstractFoodIndex>() {
@@ -95,7 +95,7 @@ public class SqlConfig extends AbstractModule {
 	@Provides
 	@Singleton
 	protected Map<String, Splitter> localSplitter(Injector injector) {
-		IndexFoodDataService foodDataService = injector.getInstance(IndexFoodDataService.class);
+		FoodIndexDataService foodDataService = injector.getInstance(FoodIndexDataService.class);
 
 		Map<String, Splitter> result = new HashMap<String, Splitter>();
 		result.put("en_GB", new SplitterImpl_en_GB(foodDataService));
@@ -118,35 +118,35 @@ public class SqlConfig extends AbstractModule {
 
 	@Provides
 	@Singleton
-	protected UserFoodDataService foodDataServiceSqlImpl(Injector injector) {
+	protected FoodDatabaseService foodDataServiceSqlImpl(Injector injector) {
 		HikariConfig cpConfig = new HikariConfig();
 		cpConfig.setJdbcUrl(webXmlConfig.get("sql-foods-db-url"));
 		cpConfig.setUsername(webXmlConfig.get("sql-foods-db-user"));
 		cpConfig.setPassword(webXmlConfig.get("sql-foods-db-password"));
 
-		return new UserFoodDataServiceSqlImpl(new HikariDataSource(cpConfig));
+		return new FoodDatabaseUserImpl(new HikariDataSource(cpConfig));
 	}
 	
 	@Provides
 	@Singleton
-	protected AdminFoodDataService adminDataServiceSqlImpl(Injector injector) {
+	protected FoodDatabaseAdminService adminDataServiceSqlImpl(Injector injector) {
 		HikariConfig cpConfig = new HikariConfig();
 		cpConfig.setJdbcUrl(webXmlConfig.get("sql-foods-db-url"));
 		cpConfig.setUsername(webXmlConfig.get("sql-foods-db-user"));
 		cpConfig.setPassword(webXmlConfig.get("sql-foods-db-password"));
 
-		return new AdminFoodDataServiceSqlImpl(new HikariDataSource(cpConfig));
+		return new FoodDatabaseAdminImpl(new HikariDataSource(cpConfig));
 	}
 	
 	@Provides
 	@Singleton
-	protected IndexFoodDataService indexDataServiceSqlImpl(Injector injector) {
+	protected FoodIndexDataService indexDataServiceSqlImpl(Injector injector) {
 		HikariConfig cpConfig = new HikariConfig();
 		cpConfig.setJdbcUrl(webXmlConfig.get("sql-foods-db-url"));
 		cpConfig.setUsername(webXmlConfig.get("sql-foods-db-user"));
 		cpConfig.setPassword(webXmlConfig.get("sql-foods-db-password"));
 
-		return new IndexFoodDataServiceSqlImpl(new HikariDataSource(cpConfig));		
+		return new FoodIndexDataImpl(new HikariDataSource(cpConfig));		
 	}
 	
 	@Provides

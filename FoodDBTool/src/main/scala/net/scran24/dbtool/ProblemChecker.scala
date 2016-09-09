@@ -29,30 +29,32 @@ package net.scran24.dbtool
 import uk.ac.ncl.openlab.intake24.FoodRecord
 import uk.ac.ncl.openlab.intake24.CategoryV2
 import Util._
+import uk.ac.ncl.openlab.intake24.foodxml.XmlFoodRecord
+import uk.ac.ncl.openlab.intake24.foodxml.XmlCategoryRecord
 
 class ProblemChecker(foods: MutableFoods, categories: MutableCategories, portionSize: PortionSizeResolver) {
 
-  def checkMultipleChoice(food: FoodRecord) = {
-    if (food.local.portionSize.size > 1)
-      food.local.portionSize.map(p => p.description.toLowerCase() == "no description" || p.imageUrl.toLowerCase() == "portion/placeholder.jpg").exists(x => x)
+  def checkMultipleChoice(food: XmlFoodRecord) = {
+    if (food.portionSizeMethods.size > 1)
+      food.portionSizeMethods.map(p => p.description.toLowerCase() == "no description" || p.imageUrl.toLowerCase() == "portion/placeholder.jpg").exists(x => x)
     else false
   }
   
-  def checkDescriptionInRecipe(food: FoodRecord) = {
-    if (food.local.portionSize.exists(_.useForRecipes))
-      food.local.portionSize.map(p => p.description.toLowerCase() == "no description" || p.imageUrl.toLowerCase() == "portion/placeholder.jpg").exists(x => x)
+  def checkDescriptionInRecipe(food: XmlFoodRecord) = {
+    if (food.portionSizeMethods.exists(_.useForRecipes))
+      food.portionSizeMethods.map(p => p.description.toLowerCase() == "no description" || p.imageUrl.toLowerCase() == "portion/placeholder.jpg").exists(x => x)
     else false
   }
 
-  def problems(food: FoodRecord): Seq[String] = Seq(
-    conditional(food.local.nutrientTableCodes.isEmpty, "\"" + food.main.englishDescription + "\" does not have a nutrient table code assigned"),
-    conditional(food.main.groupCode == 0 || food.main.groupCode == -1, "\"" + food.main.englishDescription + "\" is not assigned to a food group"),
-    conditional(categories.foodSuperCategories(food.main.code).isEmpty, "\"" + food.main.englishDescription + "\" is not assigned to any category"),
-    conditional( food.local.portionSize.isEmpty && portionSize.foodInheritedPortionSize(food.main.code).isEmpty, "Portion size method cannot be resolved for \"" + food.main.englishDescription + "\""),
-    conditional(checkMultipleChoice(food), "No description or image for multiple-choice portion estimation for \"" + food.main.englishDescription + "\""),
-    conditional(checkDescriptionInRecipe(food), "No description or image for portion estimation for \"" + food.main.englishDescription + "\" (description and image required because it can be used as a recipe ingredient)")).flatten
+  def problems(food: XmlFoodRecord): Seq[String] = Seq(
+    conditional(food.nutrientTableCodes.isEmpty, "\"" + food.description + "\" does not have a nutrient table code assigned"),
+    conditional(food.groupCode == 0 || food.groupCode == -1, "\"" + food.description + "\" is not assigned to a food group"),
+    conditional(categories.foodSuperCategories(food.code).isEmpty, "\"" + food.description + "\" is not assigned to any category"),
+    conditional(food.portionSizeMethods.isEmpty && portionSize.foodInheritedPortionSize(food.code).isEmpty, "Portion size method cannot be resolved for \"" + food.description + "\""),
+    conditional(checkMultipleChoice(food), "No description or image for multiple-choice portion estimation for \"" + food.description + "\""),
+    conditional(checkDescriptionInRecipe(food), "No description or image for portion estimation for \"" + food.description + "\" (description and image required because it can be used as a recipe ingredient)")).flatten
 
-  def subProblems(category: CategoryV2): Seq[String] = {
+  def subProblems(category: XmlCategoryRecord): Seq[String] = {
     val (missingFoods, okFoods) = category.foods.partition(foods.find(_).isEmpty)
     val (missingCategories, subcategories) = category.subcategories.partition(categories.find(_).isEmpty)
 
@@ -62,7 +64,7 @@ class ProblemChecker(foods: MutableFoods, categories: MutableCategories, portion
       subcategories.map(categories.find(_).get).flatMap(problems(_))
   }
 
-  def problems(category: CategoryV2) = Seq(
+  def problems(category: XmlCategoryRecord) = Seq(
     conditional((category.subcategories.size + category.foods.size) == 0, "\"" + category.description + "\" is an empty category, consider deleting"),
     conditional((category.subcategories.size + category.foods.size) == 1, "\"" + category.description + "\" contains only a single item, consider merging with parent category")).flatten ++ subProblems(category)
 }
