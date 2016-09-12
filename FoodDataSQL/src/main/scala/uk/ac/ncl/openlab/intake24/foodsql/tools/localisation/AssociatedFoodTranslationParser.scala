@@ -7,7 +7,7 @@ import scala.collection.JavaConverters.asScalaBufferConverter
 import au.com.bytecode.opencsv.CSVReader
 import uk.ac.ncl.openlab.intake24.foodxml.AssociatedFoodV1
 
-class AssociatedFoodTranslationParser {
+trait AssociatedFoodTranslationParser {
 
   def parseAssociatedFoodTranslation(csvPath: String) = {
     val reader = new CSVReader(new FileReader(csvPath))

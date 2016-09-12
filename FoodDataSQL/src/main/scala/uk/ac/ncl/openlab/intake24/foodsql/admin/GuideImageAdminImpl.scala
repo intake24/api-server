@@ -17,9 +17,11 @@ trait GuideImageAdminImpl extends GuideImageAdminService with GuideImageUserImpl
 
   private val logger = LoggerFactory.getLogger(classOf[GuideImageAdminImpl])
 
-  def listGuideImages(): Either[DatabaseError, Seq[GuideHeader]] = tryWithConnection {
+  def listGuideImages(): Either[DatabaseError, Map[String, GuideHeader]] = tryWithConnection {
     implicit conn =>
-      Right(SQL("""SELECT id, description from guide_images ORDER BY description ASC""").executeQuery().as(Macro.namedParser[GuideHeader].*))
+      val headers = SQL("""SELECT id, description from guide_images ORDER BY description ASC""").executeQuery().as(Macro.namedParser[GuideHeader].*)
+      
+      Right(headers.map(h => h.id -> h).toMap) 
   }
 
   def deleteAllGuideImages(): Either[DatabaseError, Unit] = tryWithConnection {

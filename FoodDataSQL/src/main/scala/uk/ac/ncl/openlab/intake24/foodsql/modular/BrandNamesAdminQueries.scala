@@ -28,7 +28,7 @@ trait BrandNamesAdminQueries extends SqlDataService {
   private val logger = LoggerFactory.getLogger(classOf[BrandNamesAdminQueries])
 
   protected def deleteBrandNamesQuery(foodCode: String, locale: String)(implicit conn: java.sql.Connection): Either[Nothing, Unit] = {
-    SQL("DELETE FROM brands WHERE food_code={food_code} AND locale_id={locale_id}").on('locale_id -> locale).execute()
+    SQL("DELETE FROM brands WHERE food_code={food_code} AND locale_id={locale_id}").on('food_code -> foodCode, 'locale_id -> locale).execute()
     Right(())
   }
 
