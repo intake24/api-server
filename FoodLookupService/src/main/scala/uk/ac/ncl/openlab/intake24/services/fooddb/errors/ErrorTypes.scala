@@ -19,7 +19,6 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.services.fooddb.errors
 
 sealed trait AnyError
-  extends LocaleError with UpdateError with CreateError with DeleteError with ParentError with LocaleOrParentError
 
 sealed trait LocalLookupError extends LocalUpdateError
 
@@ -57,12 +56,12 @@ sealed trait LocaleOrParentError
   extends LocalDependentUpdateError
   with LocalDependentCreateError
 
-sealed trait LocalDependentUpdateError
+sealed trait LocalDependentUpdateError extends AnyError
 
 sealed trait DependentUpdateError 
   extends LocalDependentUpdateError
 
-sealed trait LocalDependentCreateError
+sealed trait LocalDependentCreateError extends AnyError
 
 sealed trait DependentCreateError extends LocalDependentCreateError
 
@@ -79,13 +78,13 @@ case object RecordNotFound
   with UpdateError
   with AnyError
 
-case object VersionConflict extends UpdateError with AnyError
+case object VersionConflict extends UpdateError
 
-case class DuplicateCode(exception: Throwable) extends CreateError with UpdateError with AnyError
+case class DuplicateCode(exception: Throwable) extends CreateError with UpdateError
 
-case class ParentRecordNotFound(exception: Throwable) extends ParentError with AnyError
+case class ParentRecordNotFound(exception: Throwable) extends ParentError
 
-case class IllegalParent(exception: Throwable) extends ParentError with AnyError
+case class IllegalParent(exception: Throwable) extends ParentError
 
 case object TableNotFound extends NutrientMappingError
 

@@ -34,5 +34,5 @@ trait FoodsAdminService {
   def updateLocalFoodRecord(foodCode: String, update: LocalFoodRecordUpdate, locale: String): Either[LocalDependentUpdateError, Unit]
 
   def deleteAllFoods(): Either[DatabaseError, Unit]
-  def deleteFood(foodCode: String): Either[DeleteError, Unit]  
+  def deleteFoods(foodCodes: Seq[String]): Either[DeleteError, Unit]  
 }

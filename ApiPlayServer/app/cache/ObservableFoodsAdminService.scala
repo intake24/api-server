@@ -89,9 +89,12 @@ class ObservableFoodsAdminServiceImpl @Inject() (service: FoodsAdminService) ext
       observers.foreach(_.onAllFoodsDeleted())
   }
 
-  def deleteFood(foodCode: String): Either[DeleteError, Unit] = service.deleteFood(foodCode).right.map {
+  def deleteFoods(foodCodes: Seq[String]): Either[DeleteError, Unit] = service.deleteFoods(foodCodes).right.map {
     _ =>
-      observers.foreach(_.onFoodDeleted(foodCode))
+      foodCodes.foreach {
+        foodCode =>
+          observers.foreach(_.onFoodDeleted(foodCode))
+      }
   }
 
 }

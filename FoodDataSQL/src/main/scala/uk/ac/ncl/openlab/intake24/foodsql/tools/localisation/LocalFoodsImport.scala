@@ -32,6 +32,9 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.VersionConflict
 import uk.ac.ncl.openlab.intake24.NewCategory
 import uk.ac.ncl.openlab.intake24.InheritableAttributes
+import uk.ac.ncl.openlab.intake24.foodsql.tools.ErrorHandler
+import uk.ac.ncl.openlab.intake24.NewLocalFoodRecord
+import uk.ac.ncl.openlab.intake24.NewLocalCategoryRecord
 
 sealed trait FoodCodingDecision
 
@@ -45,18 +48,16 @@ case class NewFoodRecord(englishDescription: String, localDescription: String, l
 
 case class RecodingTable(existingFoodsCoding: Map[String, FoodCodingDecision], newFoods: Seq[NewFoodRecord])
 
-trait RecodingTableParser {
-  def parseTable(path: String): RecodingTable
-}
-
 case class LocalFoodsImport(localeCode: String, englishLocaleName: String, localLocaleName: String,
   respondentLanguageCode: String, adminLanguageCode: String, flagCode: String, localNutrientTableId: String,
-  recodingTableParser: RecodingTableParser)
+  recodingTableParser: RecodingTableParser, psmTableParser: PortionSizeTableParser)
     extends App
     with NewLocalFoodsParser
     with AssociatedFoodTranslationParser
     with CategoryTranslationParser
+    with RecodingTableUtil
     with WarningMessage
+    with ErrorHandler
     with DatabaseConnection {
 
   val logger = LoggerFactory.getLogger(getClass)
@@ -70,6 +71,8 @@ case class LocalFoodsImport(localeCode: String, englishLocaleName: String, local
     val categoryTranslationPath = opt[String](required = true, noshort = true)
     val associatedFoodsTranslationPath = opt[String](required = true, noshort = true)
     val newLocalFoodsPath = opt[String](required = true, noshort = true)
+    val psmTablePath = opt[String](required = true, noshort = true)
+    val localFoodTablePath = opt[String](required = true, noshort = true)
 
     val logPath = opt[String](required = false, noshort = true)
   }
@@ -86,164 +89,98 @@ case class LocalFoodsImport(localeCode: String, englishLocaleName: String, local
 
   val indexDataService = new FoodIndexDataImpl(dataSource)
 
-  // Should be an insert-update loop, but this is just a one-time script so using unsafe way
+  logger.info(s"Loading $baseLocaleCode indexable foods")
+  val indexableFoods = throwOnError(indexDataService.indexableFoods(baseLocaleCode))
 
+  logger.info(s"Loading $baseLocaleCode indexable categories")
+  val indexableCategories = throwOnError(indexDataService.indexableCategories(baseLocaleCode))
+
+  // Parse spreadsheets
+
+  logger.info(s"Loading $localeCode recoding table")
+  val recodingTable = recodingTableParser.parseRecodingTable(options.recodingTablePath())
+
+  logger.info(s"Loading $localeCode associated food prompts translations")
+  val associatedFoodTranslations = parseAssociatedFoodTranslation(options.associatedFoodsTranslationPath()).map {
+    case (foodCode, assocFoods) => foodCode -> assocFoods.map {
+      v1 =>
+
+        val isCategory = throwOnError(dataService.isCategoryCode(v1.category))
+
+        val foodOrCategory = if (isCategory) {
+          logger.debug(s"Resolved ${v1.category} as category code")
+          Right(v1.category)
+        } else {
+          logger.debug(s"Resolved ${v1.category} as food code")
+          Left(v1.category)
+        }
+        AssociatedFood(foodOrCategory, v1.promptText, v1.linkAsMain, v1.genericName)
+    }
+  }
+
+  logger.info(s"Loading $localeCode new foods table")
+  val (newFoods, newLocalFoodRecords) = buildNewLocalFoods(options.newLocalFoodsPath(), localNutrientTableId, associatedFoodTranslations)
+
+  logger.info(s"Loading $localeCode category translations")
+  val categoryTranslations = parseCategoryTranslations(options.categoryTranslationPath())
+
+  // Re-create locale
+  
+  logger.info(s"Re-creating locale $localeCode")
   dataService.deleteLocale(localeCode)
   dataService.createLocale(Locale(localeCode, englishLocaleName, localLocaleName, respondentLanguageCode, adminLanguageCode, flagCode, Some(baseLocaleCode)))
 
-  val indexableFoods = indexDataService.indexableFoods(baseLocaleCode).right.get
+  // New local foods
 
-  val logWriter = new CSVWriter(options.logPath.get.map(logPath => new FileWriter(new File(logPath))).getOrElse(new OutputStreamWriter(System.out)))
+  logger.info(s"Creating new main food records for $localeCode local foods (this will overwrite existing records!)")
+  dataService.deleteFoods(newFoods.map(_.code)) // ignore recordnotfound errors
+  throwOnError(dataService.createFoods(newFoods))
 
-  logWriter.writeNext(Array("Intake24 code", "English food description", "Coding decision", s"$englishLocaleName description"))
+  // Recoded local foods
 
-  val recodingTable = recodingTableParser.parseTable(options.recodingTablePath())
+  val recodedLocalFoodRecords = buildRecodedLocalFoodRecords(options.logPath.get, englishLocaleName,
+    localNutrientTableId, indexableFoods, recodingTable, associatedFoodTranslations)
 
-  val associatedFoodTranslations = parseAssociatedFoodTranslation(options.associatedFoodsTranslationPath())
+  // Apply PSM from PSM tables and create local foods
 
-  indexableFoods.foreach {
+  val localFoodRecordsWithoutPsm = newLocalFoodRecords ++ recodedLocalFoodRecords
 
-    header =>
+  logger.info("Building PT to Intake food codes map")
 
-      logger.info(s"Processing food: ${header.localDescription} (${header.code})")
-
-      val headerCols = Array(header.code, header.localDescription)
-
-      dataService.getFoodRecord(header.code, localeCode) match {
-        case Right(fooddef) => {
-          val localData = fooddef.local
-
-          def updateAssociatedFoods() = {
-            associatedFoodTranslations.get(header.code) match {
-              case Some(oldPrompts) => {
-                logger.info(s"Updating associated foods for ${header.localDescription} (${header.code})")
-
-                val prompts = oldPrompts.map {
-                  v1 =>
-                    val foodOrCategory = if (dataService.isCategoryCode(v1.category).right.get) Right(v1.category) else Left(v1.category)
-                    AssociatedFood(foodOrCategory, v1.promptText, v1.linkAsMain, v1.genericName)
-                }
-
-                dataService.updateAssociatedFoods(header.code, prompts, localeCode) match {
-                  case Left(ParentRecordNotFound(e)) => throw new RuntimeException(e)
-                  case Left(IllegalParent(e)) => throw new RuntimeException(e)
-                  case Left(UndefinedLocale(e)) => throw new RuntimeException(e)
-                  case Left(DatabaseError(e)) => throw new RuntimeException(e)
-                  case Right(_) => {}
-                }
-              }
-
-              case None => ()
-              //logger.warn(s"No associated foods translations for ${header.localDescription} (${header.code})")
-            }
-          }
-
-          try {
-
-            def checkUpdateError(result: Either[LocalDependentUpdateError, Unit]) = result match {
-              case Left(DatabaseError(e)) => throw new RuntimeException(e)
-              case Left(DuplicateCode(e)) => throw new RuntimeException(e)
-              case Left(IllegalParent(e)) => throw new RuntimeException(e)
-              case Left(ParentRecordNotFound(e)) => throw new RuntimeException(e)
-              case Left(UndefinedLocale(e)) => throw new RuntimeException(e)
-              case Left(VersionConflict) => throw new RuntimeException("Version conflict")
-              case Left(RecordNotFound) => throw new RuntimeException("Record not found")
-              case Right(_) => {}
-            }
-
-            recodingTable.existingFoodsCoding.get(header.code) match {
-              case Some(DoNotUse) => {
-                logWriter.writeNext(headerCols ++ Array(s"Not using in $englishLocaleName locale"))
-                checkUpdateError(dataService.updateLocalFoodRecord(header.code, localData.toUpdate.copy(doNotUse = true), localeCode))
-              }
-              case Some(UseUKFoodTable(localDescription)) => {
-                logWriter.writeNext(headerCols ++ Array("Inheriting UK food composition table code", localDescription))
-                checkUpdateError(dataService.updateLocalFoodRecord(header.code, localData.toUpdate.copy(localDescription = Some(localDescription), doNotUse = false), localeCode))
-                updateAssociatedFoods()
-              }
-              case Some(UseLocalFoodTable(localDescription, localTableRecordId)) => {
-                logWriter.writeNext(headerCols ++ Array(s"Using $localNutrientTableId food composition table code", localDescription, localTableRecordId))
-                checkUpdateError(dataService.updateLocalFoodRecord(header.code, localData.toUpdate.copy(localDescription = Some(localDescription), nutrientTableCodes = Map(localNutrientTableId -> localTableRecordId), doNotUse = false), localeCode))
-                updateAssociatedFoods()
-              }
-              case None =>
-                logWriter.writeNext(headerCols ++ Array(s"Not in $englishLocaleName recoding table!"))
-            }
-
-          } catch {
-            case e: Throwable => throw new RuntimeException(s"Failed on ${header.code} (${header.localDescription})", e)
-          }
-        }
-        case _ => throw new RuntimeException(s"Could not retrieve en_GB food definition for ${header.localDescription} (${header.code})")
+  val localToIntakeCodeMap = localFoodRecordsWithoutPsm.foldLeft(Map[String, String]()) {
+    case (result, (intakeCode, record)) =>
+      record.nutrientTableCodes.get(localNutrientTableId) match {
+        case Some(ptCode) => result + (ptCode -> intakeCode)
+        case None => result
       }
   }
 
-  logWriter.close()
+  logger.info(s"Loading $localeCode portion size method remapping table")
+  val psmTable = psmTableParser.parsePortionSizeMethodsTable(options.psmTablePath(), options.localFoodTablePath(), localToIntakeCodeMap, indexableFoods, dataService)
 
-  val categoryTranslations = parseCategoryTranslations(options.categoryTranslationPath())
+  val localFoodRecords = localFoodRecordsWithoutPsm.foldLeft(Map[String, NewLocalFoodRecord]()) {
+    case (result, (code, record)) => result + (code -> record.copy(portionSize = psmTable.getOrElse(code, Seq())))
+  }
 
-  val indexableCategories = indexDataService.indexableCategories(baseLocaleCode).right.get
+  logger.info(s"Creating local food records")
+  throwOnError(dataService.createLocalFoodRecords(localFoodRecords, localeCode))
 
-  indexableCategories.foreach {
-    header =>
+  // Category translations
 
-      logger.info(s"Processing category: ${header.localDescription} (${header.code})")
-
+  val newLocalCategoryRecords = indexableCategories.foldLeft(Map[String, NewLocalCategoryRecord]()) {
+    (records, header) =>
       categoryTranslations.get(header.code) match {
-        case Some(translation) => dataService.getCategoryRecord(header.code, localeCode) match {
-          case Right(record) => {
-            val localData = record.local
-            dataService.updateLocalCategoryRecord(header.code, localData.toUpdate.copy(localDescription = Some(translation)), localeCode)
-          }
-          case _ => throw new RuntimeException(s"Could not retrieve ${englishLocaleName} category record for ${header.localDescription} (${header.code})")
+        case Some(translation) =>
+          records + (header.code -> NewLocalCategoryRecord(Some(translation), Seq()))
+        case None => {
+          logger.warn(s"Missing translation for category ${header.localDescription} (${header.code})")
+          records
         }
-        case None => logger.warn(s"Missing translation for category ${header.localDescription} (${header.code})")
       }
   }
 
-  val newCategories = Seq(
-    NewCategory("GAME", "Game", false, InheritableAttributes(None, None, None)),
-    NewCategory("GOAT", "Goat and goat dishes", false, InheritableAttributes(None, None, None)),
-    NewCategory("HRSE", "Horse and horse dishes", false, InheritableAttributes(None, None, None)),
-    NewCategory("OFFL", "Offal and offal dishes", false, InheritableAttributes(None, None, None)),
-    NewCategory("TURK", "Turkey and turkey dishes", false, InheritableAttributes(None, None, None)),
-    NewCategory("SWBR", "Sweet breads", false, InheritableAttributes(None, None, None)),
-    NewCategory("BNDS", "Bean dishes", false, InheritableAttributes(None, None, None)),
-    NewCategory("BRDS", "Bread dishes", false, InheritableAttributes(None, None, None)))
+  logger.info(s"Creating local category records")
+  dataService.createLocalCategoryRecords(newLocalCategoryRecords, localeCode)
 
-  dataService.createCategories(newCategories) match {
-    case Left(DatabaseError(e)) => throw new RuntimeException(e)
-    case Left(DuplicateCode(e)) => throw new RuntimeException(e)
-    case Left(IllegalParent(e)) => throw new RuntimeException(e)
-    case Left(ParentRecordNotFound(e)) => throw new RuntimeException(e)
-    case Left(VersionConflict) => throw new RuntimeException("Version conflict")
-    case Left(RecordNotFound) => throw new RuntimeException("Record not found")
-    case Right(_) => {}
-  }
-
-  val (newFoods, newLocalFoods) = parseNewLocalFoods(options.newLocalFoodsPath())
-  
-  newLocalFoods.foreach(println)
-  
-  dataService.createFoods(newFoods) match {
-    case Left(DatabaseError(e)) => throw new RuntimeException(e)
-    case Left(DuplicateCode(e)) => throw new RuntimeException(e)
-    case Left(IllegalParent(e)) => throw new RuntimeException(e)
-    case Left(ParentRecordNotFound(e)) => throw new RuntimeException(e)
-    case Left(VersionConflict) => throw new RuntimeException("Version conflict")
-    case Left(RecordNotFound) => throw new RuntimeException("Record not found")
-    case Right(_) => {}
-  }
-
-  dataService.createLocalFoodRecords(newLocalFoods, localeCode) match {
-    case Left(DatabaseError(e)) => throw new RuntimeException(e)
-    case Left(DuplicateCode(e)) => throw new RuntimeException(e)
-    case Left(IllegalParent(e)) => throw new RuntimeException(e)
-    case Left(ParentRecordNotFound(e)) => throw new RuntimeException(e)
-    case Left(UndefinedLocale(e)) => throw new RuntimeException(e)
-    case Left(VersionConflict) => throw new RuntimeException("Version conflict")
-    case Left(RecordNotFound) => throw new RuntimeException("Record not found")
-    case Right(_) => {}
-  }
-
+  logger.info(s"Done!")
 }

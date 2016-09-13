@@ -14,194 +14,142 @@ import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
 import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl
 import uk.ac.ncl.openlab.intake24.foodsql.tools.WarningMessage
 import uk.ac.ncl.openlab.intake24.foodsql.tools.DatabaseConnection
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
+import uk.ac.ncl.openlab.intake24.foodsql.tools.ErrorHandler
+import uk.ac.ncl.openlab.intake24.UserFoodHeader
+import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
 
-object PortuguesePsmImport extends App with WarningMessage with DatabaseConnection {
+class PortuguesePsmTableParser extends PortionSizeTableParser with ErrorHandler {
 
-  val logger = LoggerFactory.getLogger(PortuguesePsmImport.getClass)
+  private val baseLocaleCode = "en_GB"
+  private val localeCode = "pt_PT"
+  
+  private val logger = LoggerFactory.getLogger(classOf[PortuguesePsmTableParser])
 
-  val referenceLocaleId = "en_GB"
+  def parsePortionSizeMethodsTable(csvPath: String, nutrientTableCsvPath: String, localToIntakeCodes: Map[String, String],  indexableFoods: Seq[UserFoodHeader], 
+      dataService: FoodDatabaseAdminService): Map[String, Seq[PortionSizeMethod]] = {
 
-  val portugueseLocaleId = "pt_PT"
+    logger.info("Building PT food code to ID map")
 
-  trait Options extends ScallopConf {
-    version("Intake24 Portuguese PSM data import tool 16.8")
+    val nutrientTableReader = new CSVReader(new FileReader(nutrientTableCsvPath))
 
-    val csvPath = opt[String](required = true, noshort = true)
-    val nutrientCsvPath = opt[String](required = true, noshort = true)
-  }
+    val ptFoodCodeToIdMap = nutrientTableReader.readAll().asScala.foldLeft(Map[String, String]()) {
+      (map, row) => if (row(1).nonEmpty) map + (row(1) -> row(0)) else map
+    }
 
-  val options = new ScallopConf(args) with Options with DatabaseOptions
+    nutrientTableReader.close()
 
-  options.afterInit()
+    logger.info("Loading Portuguese portion size method table")
 
-  // displayWarningMessage("WARNING: This will override existing portion size methods for Portuguese locale")
+    val psmTableReader = new CSVReader(new FileReader(csvPath))
 
-  val dataSource = getDataSource(options)
+    val psmTable = psmTableReader.readAll().asScala.foldLeft(Map[String, Seq[String]]()) {
+      (map, row) =>
 
-  val dataService = new FoodDatabaseAdminImpl(dataSource)
+        val guideOrAsServedRef = row.head
+        val foodRefs = row.tail.filterNot(_.isEmpty()).map(code => ptFoodCodeToIdMap.get(code).flatMap {
+          code =>
+            if (localToIntakeCodes.contains(code))
+              Some(localToIntakeCodes(code))
+            else {
+              logger.warn(s"Pt food ID $code present in PSM table could not be mapped to Intake24 code")
+              None
+            }
+        }.getOrElse(code))
 
-  val indexDataService = new FoodIndexDataImpl(dataSource)
-
-  logger.info("Retrieving as served set headers")
-  val asServedSetKeys = dataService.listAsServedSets().right.get.keySet
-
-  logger.info("Building as served image index")
-
-  val asServedSets = asServedSetKeys.map {
-    as => dataService.getAsServedSet(as).right.get
-  }
-
-  logger.info(s"Retrieving indexable food records for $referenceLocaleId")
-
-  val indexableFoods = indexDataService.indexableFoods(referenceLocaleId).right.get
-
-  logger.info("Building PSM index")
-
-  case class PsmIndex(guide: Map[String, PortionSizeMethod], asServed: Map[String, PortionSizeMethod])
-
-  val psmIndex = indexableFoods.foldLeft(PsmIndex(Map(), Map())) {
-    (index, header) =>
-
-      dataService.getFoodRecord(header.code, referenceLocaleId) match {
-        case Right(record) =>
-          record.local.portionSize.foldLeft(index) {
-            (index, psm) =>
-              psm.method match {
-                case "guide-image" => {
-                  val id = psm.parameters.find(_.name == "guide-image-id").get.value
-                  if (index.guide.contains(id))
-                    index
-                  else
-                    index.copy(guide = index.guide + (id -> psm))
-                }
-                case "as-served" => {
-                  val id1 = psm.parameters.find(_.name == "serving-image-set").get.value
-                  val id2 = psm.parameters.find(_.name == "leftovers-image-set").map(_.value)
-
-                  val i1 = if (index.asServed.contains(id1)) index else index.copy(asServed = index.asServed + (id1 -> psm))
-
-                  id2 match {
-                    case Some(id) => {
-                      if (index.asServed.contains(id)) i1 else i1.copy(asServed = i1.asServed + (id -> psm))
-                    }
-                    case None => i1
-                  }
-                }
-                case _ => index
-              }
-          }
-
-        case _ => throw new RuntimeException(s"Couldn't retrieve record for ${header.toString}")
-      }
-  }
-
-  logger.info(s"Retrieving indexable food records for $portugueseLocaleId")
-
-  val ptIndexableFoods = indexDataService.indexableFoods(portugueseLocaleId).right.get
-
-  logger.info("Building PT_INSA to Intake24 codes map")
-
-  val reader2 = new CSVReader(new FileReader(options.nutrientCsvPath()))
-
-  val ptFoodCodeToIdMap = reader2.readAll().asScala.foldLeft(Map[String, String]()) {
-    (map, row) => if (row(1).nonEmpty) map + (row(1) -> row(0)) else map
-  }
-
-  logger.debug(ptFoodCodeToIdMap.toString())
-
-  reader2.close()
-
-  val ptToIntakeCodesMap = ptIndexableFoods.foldLeft(Map[String, String]()) {
-    (map, foodHeader) =>
-      val record = dataService.getFoodRecord(foodHeader.code, portugueseLocaleId).right.get
-
-      record.local.nutrientTableCodes.get("PT_INSA") match {
-        case Some(code) => {
-          map + (code -> record.main.code)
+        foodRefs.foldLeft(map) {
+          (map, foodRef) => map + (foodRef -> (guideOrAsServedRef +: map.getOrElse(foodRef, Seq[String]())))
         }
-        case None => map
-      }
-  }
+    }
 
-  logger.debug(ptToIntakeCodesMap.toString())
+    psmTableReader.close()
 
-  val reader = new CSVReader(new FileReader(options.csvPath()))
+    logger.info("Loading as served set headers")
+    val asServedSetKeys = throwOnError(dataService.listAsServedSets()).keySet
 
-  // Intake food code -> Guide or AS reference
-  val z = Map[String, Seq[String]]()
+    logger.info("Building as served image index")
 
-  val references = reader.readAll().asScala.foldLeft(z) {
-    (map, row) =>
+    val asServedSets = asServedSetKeys.map {
+      as => throwOnError(dataService.getAsServedSet(as))
+    }
 
-      val guideOrAsServedRef = row.head
-      val foodRefs = row.tail.filterNot(_.isEmpty()).map(code => ptFoodCodeToIdMap.get(code).flatMap {
-        code =>
-          if (ptToIntakeCodesMap.contains(code))
-            Some(ptToIntakeCodesMap(code))
-          else {
-            logger.warn(s"Pt food ID $code present in PSM table could not be mapped to Intake24 code")
-            None
-          }
-      }.getOrElse(code))
+    logger.info("Building PSM index")
 
-      foodRefs.foldLeft(map) {
-        (map, foodRef) => map + (foodRef -> (guideOrAsServedRef +: map.getOrElse(foodRef, Seq[String]())))
-      }
-  }
+    case class PsmIndex(guide: Map[String, PortionSizeMethod], asServed: Map[String, PortionSizeMethod])
 
-  reader.close()
+    val psmIndex = indexableFoods.foldLeft(PsmIndex(Map(), Map())) {
+      (index, header) =>
 
-  def guessAsServed(name: String) = {
-    logger.info(s"Trying to guess as served set from $name")
-    asServedSets.find(set => !set.description.contains("leftover") && set.images.exists(_.url.contains(name))).map(_.id) match {
-      case Some(set) => {
-        logger.info(s"Guessed as $set")
-        Some(set)
-      }
-      case None => {
-        logger.info(s"No appropriate set found")
-        None
+        dataService.getFoodRecord(header.code, baseLocaleCode) match {
+          case Right(record) =>
+            record.local.portionSize.foldLeft(index) {
+              (index, psm) =>
+                psm.method match {
+                  case "guide-image" => {
+                    val id = psm.parameters.find(_.name == "guide-image-id").get.value
+                    if (index.guide.contains(id))
+                      index
+                    else
+                      index.copy(guide = index.guide + (id -> psm))
+                  }
+                  case "as-served" => {
+                    val id1 = psm.parameters.find(_.name == "serving-image-set").get.value
+                    val id2 = psm.parameters.find(_.name == "leftovers-image-set").map(_.value)
+
+                    val i1 = if (index.asServed.contains(id1)) index else index.copy(asServed = index.asServed + (id1 -> psm))
+
+                    id2 match {
+                      case Some(id) => {
+                        if (index.asServed.contains(id)) i1 else i1.copy(asServed = i1.asServed + (id -> psm))
+                      }
+                      case None => i1
+                    }
+                  }
+                  case _ => index
+                }
+            }
+
+          case _ => throw new RuntimeException(s"Couldn't retrieve record for ${header.toString}")
+        }
+    }
+
+    def guessAsServed(name: String) = {
+      // logger.info(s"Trying to guess as served set from $name")
+      asServedSets.find(set => !set.description.contains("leftover") && set.images.exists(_.url.contains(name))).map(_.id) match {
+        case Some(set) => {
+          // logger.info(s"Guessed as $set")
+          Some(set)
+        }
+        case None => {
+          // logger.info(s"No appropriate set found")
+          None
+        }
       }
     }
-  }
 
-  val methods = references.foldLeft((Map[String, Seq[PortionSizeMethod]](), Seq[String]())) {
-    case ((map, badRefs), (foodCode, psmRefs)) =>
-      
-      var r = Seq[String]()
-      
-      val psm = psmRefs.map {
-        ref =>
+    val (methods, badRefs) = psmTable.foldLeft((Map[String, Seq[PortionSizeMethod]](), Seq[String]())) {
+      case ((map, badRefs), (foodCode, psmRefs)) =>
 
-          val result = psmIndex.guide.get(ref).orElse {
-            guessAsServed(ref).flatMap(set => psmIndex.asServed.get(set))
-          }
+        var r = Seq[String]()
 
-          if (result.isEmpty) {
-            logger.warn(s"$ref is not a known guide or as served image id, ignoring")
-            r +:= ref
-          }
+        val psm = psmRefs.map {
+          ref =>
 
-          result
-      }.flatten
-      
-      (map + (foodCode -> psm), badRefs ++ r)
-  }
-  
-  println ("BAD REFS")
-  methods._2.toSet.foreach(println)
+            val result = psmIndex.guide.get(ref).orElse {
+              guessAsServed(ref).flatMap(set => psmIndex.asServed.get(set))
+            }
 
-  methods._1.keySet.foreach {
-    key =>
+            if (result.isEmpty) {
+              // logger.warn(s"$ref is not a known guide or as served image id, ignoring")
+              r +:= ref
+            }
 
-      // logger.info(s"Updating $key")
+            result
+        }.flatten
 
-      dataService.getFoodRecord(key, portugueseLocaleId) match {
-        case Right(record) => {
-          val updatedLocal = record.local.toUpdate.copy(portionSize = methods._1(key))
-          dataService.updateLocalFoodRecord(key, updatedLocal, portugueseLocaleId)
-        }
-        case _ => logger.warn(s"Couldn't retrieve food record for Intake24 code $key")
-      }
+        (map + (foodCode -> psm), badRefs ++ r)
+    }
+    
+    methods
   }
 }

@@ -44,7 +44,7 @@ class DanishRecodingTableParser extends RecodingTableParser with XSSFCellColorHa
       dataFormatter.formatCellValue(row.getCell(localDescriptionCellIndex)),
       dataFormatter.formatCellValue(row.getCell(foodTableRecordCellIndex)))
 
-  def parseTable(path: String): RecodingTable = {
+  def parseRecodingTable(path: String): RecodingTable = {
     val pkg = OPCPackage.open(new File(path))
     val wb = new XSSFWorkbook(pkg)
 

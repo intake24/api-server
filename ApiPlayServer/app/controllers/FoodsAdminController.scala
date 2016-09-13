@@ -128,7 +128,7 @@ class FoodsAdminController @Inject() (service: FoodsAdminService, deadbolt: Dead
 
   def deleteFood(code: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateDeleteError(service.deleteFood(code))
+      translateDeleteError(service.deleteFoods(Seq(code)))
     }
   }
 

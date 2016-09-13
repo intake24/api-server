@@ -15,7 +15,7 @@ object ExtractNewFoodsFromDanishRecodingTable extends App  {
   
   val parser = new DanishRecodingTableParser()
 
-  val table = parser.parseTable("/home/ivan/Projects/Intake24/NoHoW/Denmark/Denmark Recoding of foods.xlsx")
+  val table = parser.parseRecodingTable("/home/ivan/Projects/Intake24/NoHoW/Denmark/Denmark Recoding of foods.xlsx")
   
   val writer = new CSVWriter(new FileWriter("/home/ivan/tmp/new_dk_foods.csv"))
   

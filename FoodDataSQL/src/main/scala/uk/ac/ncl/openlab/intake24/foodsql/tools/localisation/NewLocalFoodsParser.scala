@@ -6,10 +6,15 @@ import scala.collection.JavaConverters._
 import uk.ac.ncl.openlab.intake24.NewFood
 import uk.ac.ncl.openlab.intake24.InheritableAttributes
 import uk.ac.ncl.openlab.intake24.NewLocalFoodRecord
+import uk.ac.ncl.openlab.intake24.PortionSizeMethod
+import uk.ac.ncl.openlab.intake24.AssociatedFood
+import org.slf4j.LoggerFactory
 
 trait NewLocalFoodsParser {
-
-  def parseNewLocalFoods(csvPath: String) = {
+  
+  private val logger = LoggerFactory.getLogger(classOf[NewLocalFoodsParser])
+  
+  def buildNewLocalFoods(csvPath: String, localNutrientTableId: String, assocFoods: Map[String, Seq[AssociatedFood]]) = {
     val reader = new CSVReader(new FileReader(csvPath))
     
     var rows = reader.readAll().asScala.toSeq
@@ -23,7 +28,13 @@ trait NewLocalFoodsParser {
 
     val newLocalRecords = rows.map {
       row =>
-        row(0) -> NewLocalFoodRecord(Some(row(3)), false, Map("PT_INSA" -> row(4)), Seq(), Seq(), Seq())
+        
+        val code = row(0)
+        
+        val associatedFoods = assocFoods.getOrElse(code, Seq())
+        val portionSizeMethods = Seq() // Cannot be set right now due to circular dependencies
+        
+        code -> NewLocalFoodRecord(Some(row(3)), false, Map(localNutrientTableId -> row(4)), portionSizeMethods, associatedFoods, Seq())
     }.toMap
 
     reader.close()

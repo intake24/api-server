@@ -157,14 +157,24 @@ trait FoodsAdminImpl extends FoodsAdminService
       Right(())
   }
 
-  def deleteFood(foodCode: String): Either[DeleteError, Unit] = tryWithConnection {
+  def deleteFoods(foodCodes: Seq[String]): Either[DeleteError, Unit] = tryWithConnection {
     implicit conn =>
-      val rowsAffected = SQL("""DELETE FROM foods WHERE code={food_code}""").on('food_code -> foodCode).executeUpdate()
+      if (foodCodes.nonEmpty) {
+        withTransaction {
 
-      if (rowsAffected == 1)
+          val params = foodCodes.map {
+            code => Seq[NamedParameter]('food_code -> code)
+          }
+
+          val rowsAffected = batchSql("DELETE FROM foods WHERE code={food_code}", params).execute()
+
+          if (rowsAffected.forall(_ == 1))
+            Right(())
+          else
+            Left(RecordNotFound)
+        }
+      } else
         Right(())
-      else
-        Left(RecordNotFound)
   }
 
   def createLocalFoodRecords(localFoodRecords: Map[String, NewLocalFoodRecord], locale: String): Either[LocalDependentCreateError, Unit] = tryWithConnection {
