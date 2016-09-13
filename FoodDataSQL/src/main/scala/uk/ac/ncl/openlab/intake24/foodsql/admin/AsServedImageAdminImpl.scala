@@ -12,8 +12,10 @@ import org.postgresql.util.PSQLException
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DuplicateCode
 import javax.sql.DataSource
 import com.google.inject.Inject
+import com.google.inject.Singleton
 import com.google.inject.name.Named
 
+@Singleton
 class AsServedImageAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends AsServedImageAdminImpl
 
 trait AsServedImageAdminImpl extends AsServedImageAdminService with AsServedImageUserImpl {

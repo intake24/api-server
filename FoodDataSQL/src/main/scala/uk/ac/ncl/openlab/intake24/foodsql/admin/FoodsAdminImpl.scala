@@ -40,6 +40,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentCreateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentRecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
 import com.google.inject.Inject
+import com.google.inject.Singleton
 import javax.sql.DataSource
 import com.google.inject.name.Named
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
@@ -60,6 +61,7 @@ import uk.ac.ncl.openlab.intake24.foodsql.modular.AssociatedFoodsAdminQueries
 import uk.ac.ncl.openlab.intake24.foodsql.modular.CategoriesAdminQueries
 import uk.ac.ncl.openlab.intake24.foodsql.modular.BrandNamesUserQueries
 
+@Singleton
 class FoodsAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends FoodsAdminImpl
 
 trait FoodsAdminImpl extends FoodsAdminService

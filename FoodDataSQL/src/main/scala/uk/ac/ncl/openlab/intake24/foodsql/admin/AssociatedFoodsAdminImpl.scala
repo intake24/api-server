@@ -34,12 +34,14 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
 import uk.ac.ncl.openlab.intake24.foodsql.user.AssociatedFoodsUserImpl
 import javax.sql.DataSource
 import com.google.inject.Inject
+import com.google.inject.Singleton
 import com.google.inject.name.Named
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentUpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleOrParentError
 import uk.ac.ncl.openlab.intake24.foodsql.modular.AssociatedFoodsAdminQueries
 
+@Singleton
 class AssociatedFoodsAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends AssociatedFoodsAdminImpl
 
 trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with AssociatedFoodsUserImpl with AssociatedFoodsAdminQueries with SimpleValidation {

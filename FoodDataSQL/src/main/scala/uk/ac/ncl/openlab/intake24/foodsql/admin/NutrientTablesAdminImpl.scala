@@ -12,10 +12,12 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.NutrientTableRecord
 import anorm.NamedParameter
 import com.google.inject.Inject
+import com.google.inject.Singleton
 import javax.sql.DataSource
 import com.google.inject.name.Named
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
 
+@Singleton
 class NutrientTablesAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends NutrientTablesAdminImpl
 
 trait NutrientTablesAdminImpl extends NutrientTablesAdminService with SqlDataService {

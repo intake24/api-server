@@ -1,6 +1,7 @@
 package cache
 
 import com.google.inject.Inject
+import com.google.inject.Singleton
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.LocalesAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
@@ -8,6 +9,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.Locale
+import modules.BasicImpl
 
 trait LocalesAdminObserver {
   def onLocaleUpdated(id: String): Unit
@@ -21,7 +23,8 @@ trait ObservableLocalesAdminService extends LocalesAdminService {
   
 }
 
-class ObservableLocalesAdminServiceImpl @Inject() (service: LocalesAdminService) extends ObservableLocalesAdminService {
+@Singleton
+class ObservableLocalesAdminServiceImpl @Inject() (@BasicImpl service: LocalesAdminService) extends ObservableLocalesAdminService {
   
   private var observers = List[LocalesAdminObserver]()
   

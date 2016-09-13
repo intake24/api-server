@@ -13,9 +13,11 @@ import anorm.NamedParameter
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DuplicateCode
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
 import com.google.inject.Inject
+import com.google.inject.Singleton
 import com.google.inject.name.Named
 import javax.sql.DataSource
 
+@Singleton
 class DrinkwareAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends DrinkwareAdminImpl
 
 trait DrinkwareAdminImpl extends DrinkwareAdminService with DrinkwareUserImpl {

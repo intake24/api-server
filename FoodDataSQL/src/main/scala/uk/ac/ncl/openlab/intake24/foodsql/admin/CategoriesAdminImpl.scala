@@ -8,6 +8,7 @@ import scala.Right
 import org.slf4j.LoggerFactory
 
 import com.google.inject.Inject
+import com.google.inject.Singleton
 import com.google.inject.name.Named
 
 import anorm.Macro
@@ -42,6 +43,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentCreateError
 import uk.ac.ncl.openlab.intake24.foodsql.shared.SuperCategoriesQueries
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalCreateError
 
+@Singleton
 class CategoriesAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends CategoriesAdminImpl
 
 trait CategoriesAdminImpl extends CategoriesAdminService

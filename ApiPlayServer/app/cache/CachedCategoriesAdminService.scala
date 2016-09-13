@@ -2,7 +2,7 @@ package cache
 
 import com.google.inject.Inject
 
-import modules.UncachedImpl
+import modules.BasicImpl
 import play.api.cache.CacheApi
 import uk.ac.ncl.openlab.intake24.AsServedHeader
 import uk.ac.ncl.openlab.intake24.AsServedSet
@@ -34,7 +34,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentUpdateErr
 import uk.ac.ncl.openlab.intake24.NewMainCategoryRecord
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalCreateError
 
-case class CachedCategoriesAdminService @Inject() (@UncachedImpl service: CategoriesAdminService, localeService: LocalesAdminService, cache: CacheApi)
+case class CachedCategoriesAdminService @Inject() (@BasicImpl service: CategoriesAdminService, localeService: LocalesAdminService, cache: CacheApi)
     extends CategoriesAdminService
     with CacheResult {
 

@@ -2,7 +2,7 @@ package cache
 
 import com.google.inject.Inject
 
-import modules.UncachedImpl
+
 import play.api.cache.CacheApi
 import uk.ac.ncl.openlab.intake24.AsServedHeader
 import uk.ac.ncl.openlab.intake24.AsServedSet
@@ -10,8 +10,9 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AsServedImageAdminServic
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
+import modules.BasicImpl
 
-case class CachedAsServedImageAdminService @Inject() (@UncachedImpl service: AsServedImageAdminService, cache: CacheApi)
+case class CachedAsServedImageAdminService @Inject() (@BasicImpl service: AsServedImageAdminService, cache: CacheApi)
     extends AsServedImageAdminService
     with CacheResult {
   

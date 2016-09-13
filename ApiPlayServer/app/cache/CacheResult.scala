@@ -3,13 +3,14 @@ package cache
 import play.api.cache.CacheApi
 
 trait CacheResult {
-
+  
   val cache: CacheApi
   
   var knownCacheKeys: Set[String]
 
   def cachePositiveResult[E, T](key: String)(block: => Either[E, T])(implicit ev: scala.reflect.ClassTag[T]) = cache.get[T](key) match {
-    case Some(cached) => Right(cached)
+    case Some(cached) =>  Right(cached)
+    
     case None => block match {
       case Right(result) => {
         cache.set(key, result)

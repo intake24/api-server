@@ -95,50 +95,57 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
   @Provides
   @Named("intake24_system")
   def systemDataSource(@NamedDatabase("intake24_system") db: Database) = db.dataSource
-  
+
   @Provides
   @Named("intake24_foods")
   def foodsDataSource(@NamedDatabase("intake24_foods") db: Database) = db.dataSource
 
   def configure() = {
     bind(classOf[DataStoreScala]).to(classOf[DataStoreSqlImpl])
-    
+
     // Utility services
-    
+
     bind(classOf[EnglishWordStemmer]).to(classOf[EnglishStemmerPlingImpl])
-    
-    // Basic admin services -- uncached for now
-    
+
+    // Basic admin services -- uncached
+
+    bind(classOf[CategoriesAdminService]).annotatedWith(classOf[BasicImpl]).to(classOf[CategoriesAdminStandaloneImpl])
+    bind(classOf[FoodsAdminService]).annotatedWith(classOf[BasicImpl]).to(classOf[FoodsAdminStandaloneImpl])
+    bind(classOf[LocalesAdminService]).annotatedWith(classOf[BasicImpl]).to(classOf[LocalesAdminStandaloneImpl])
+
+    bind(classOf[CategoriesAdminService]).to(classOf[ObservableCategoriesAdminServiceImpl])
+    bind(classOf[FoodsAdminService]).to(classOf[ObservableFoodsAdminServiceImpl])
+    bind(classOf[LocalesAdminService]).to(classOf[ObservableLocalesAdminServiceImpl])
+
+    // User facing services
+
     bind(classOf[AsServedImageAdminService]).to(classOf[AsServedImageAdminStandaloneImpl])
     bind(classOf[AssociatedFoodsAdminService]).to(classOf[AssociatedFoodsAdminStandaloneImpl])
-    bind(classOf[CategoriesAdminService]).to(classOf[CategoriesAdminStandaloneImpl])
     bind(classOf[DrinkwareAdminService]).to(classOf[DrinkwareAdminStandaloneImpl])
     bind(classOf[FoodBrowsingAdminService]).to(classOf[FoodBrowsingAdminStandaloneImpl])
     bind(classOf[FoodGroupsAdminService]).to(classOf[FoodGroupsAdminStandaloneImpl])
-    bind(classOf[FoodsAdminService]).to(classOf[FoodsAdminStandaloneImpl])
     bind(classOf[GuideImageAdminService]).to(classOf[GuideImageAdminStandaloneImpl])
-    bind(classOf[LocalesAdminService]).to(classOf[LocalesAdminStandaloneImpl])
     bind(classOf[NutrientTablesAdminService]).to(classOf[NutrientTablesAdminStandaloneImpl])
     bind(classOf[QuickSearchService]).to(classOf[QuickSearchAdminStandaloneImpl])
-    
+
     // Observable admin services for higher-level cached services
-    
+
     bind(classOf[ObservableFoodsAdminService]).to(classOf[ObservableFoodsAdminServiceImpl])
     bind(classOf[ObservableCategoriesAdminService]).to(classOf[ObservableCategoriesAdminServiceImpl])
     bind(classOf[ObservableLocalesAdminService]).to(classOf[ObservableLocalesAdminServiceImpl])
-    
+
     // Admin services -- cached
-    
+
     bind(classOf[ProblemCheckerService]).to(classOf[CachedProblemChecker])
-    
+
     // Food index service
-    
+
     bind(classOf[FoodIndexDataService]).to(classOf[FoodIndexDataImpl])
-    
+
     // User food database service
-    
+
     bind(classOf[FoodDatabaseService]).to(classOf[FoodDatabaseUserImpl])
     bind(classOf[FoodDataService]).to(classOf[FoodDataUserStandaloneImpl])
-       
+
   }
 }

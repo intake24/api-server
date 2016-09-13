@@ -22,6 +22,7 @@ import scala.Left
 import scala.Right
 
 import com.google.inject.Inject
+import com.google.inject.Singleton
 import com.google.inject.name.Named
 
 import anorm.Macro
@@ -41,6 +42,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
 
+@Singleton
 class LocalesAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends LocalesAdminImpl
 
 trait LocalesAdminImpl extends LocalesAdminService with SqlDataService {

@@ -12,6 +12,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.MainCategoryRecord
 import com.google.inject.Inject
+import com.google.inject.Singleton
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.NewLocalCategoryRecord
@@ -22,6 +23,7 @@ import uk.ac.ncl.openlab.intake24.LocalCategoryRecordUpdate
 import uk.ac.ncl.openlab.intake24.NewMainCategoryRecord
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentCreateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalCreateError
+import modules.BasicImpl
 
 /*
  *   def getCategoryRecord(code: String, locale: String): Either[LocalLookupError, CategoryRecord]
@@ -54,7 +56,8 @@ trait ObservableCategoriesAdminService extends CategoriesAdminService {
   def addObserver(observer: CategoriesAdminObserver): Unit
 }
 
-class ObservableCategoriesAdminServiceImpl @Inject() (service: CategoriesAdminService) extends ObservableCategoriesAdminService {
+@Singleton
+class ObservableCategoriesAdminServiceImpl @Inject() (@BasicImpl service: CategoriesAdminService) extends ObservableCategoriesAdminService {
 
   private var observers = List[CategoriesAdminObserver]()
 

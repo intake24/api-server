@@ -8,9 +8,11 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.admin.GuideImageAdminService
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.GuideImage
 import com.google.inject.Inject
+import com.google.inject.Singleton
 import javax.sql.DataSource
 import com.google.inject.name.Named
 
+@Singleton
 class GuideImageAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends GuideImageAdminImpl
 
 trait GuideImageAdminImpl extends GuideImageAdminService with GuideImageUserImpl {

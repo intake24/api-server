@@ -11,6 +11,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.MainCategoryRecord
 import com.google.inject.Inject
+import com.google.inject.Singleton
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
 import uk.ac.ncl.openlab.intake24.MainFoodRecord
 import uk.ac.ncl.openlab.intake24.FoodRecord
@@ -23,6 +24,9 @@ import uk.ac.ncl.openlab.intake24.MainFoodRecordUpdate
 import uk.ac.ncl.openlab.intake24.LocalFoodRecordUpdate
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentUpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentUpdateError
+import com.google.inject.matcher.Matchers.AnnotatedWith
+
+import modules.BasicImpl
 
 trait FoodsAdminObserver {
   def onMainFoodRecordUpdated(code: String): Unit
@@ -37,11 +41,14 @@ trait ObservableFoodsAdminService extends FoodsAdminService {
   def addObserver(observer: FoodsAdminObserver): Unit
 }
 
-class ObservableFoodsAdminServiceImpl @Inject() (service: FoodsAdminService) extends ObservableFoodsAdminService {
+@Singleton
+class ObservableFoodsAdminServiceImpl @Inject() (@BasicImpl service: FoodsAdminService) extends ObservableFoodsAdminService {
 
   private var observers = List[FoodsAdminObserver]()
 
-  def addObserver(observer: FoodsAdminObserver) = observers ::= observer
+  def addObserver(observer: FoodsAdminObserver) = {
+    observers ::= observer
+  }
 
   def getFoodRecord(code: String, locale: String): Either[LocalLookupError, FoodRecord] = service.getFoodRecord(code, locale)
 

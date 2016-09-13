@@ -20,10 +20,12 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DuplicateCode
 import com.google.inject.Inject
+import com.google.inject.Singleton
 import javax.sql.DataSource
 import com.google.inject.name.Named
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
 
+@Singleton
 class FoodGroupsAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends FoodGroupsAdminImpl
 
 trait FoodGroupsAdminImpl extends FoodGroupsAdminService with SqlDataService with FirstRowValidation with SqlResourceLoader {

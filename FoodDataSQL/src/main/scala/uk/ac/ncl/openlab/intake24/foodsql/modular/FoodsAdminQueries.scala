@@ -196,7 +196,7 @@ trait FoodsAdminQueries extends FoodsAdminService
   }
 
   protected def updateFoodQuery(foodCode: String, foodRecord: MainFoodRecordUpdate)(implicit conn: java.sql.Connection): Either[UpdateError, Unit] = {
-    val rowsAffected = SQL("UPDATE foods SET code = {new_code}, description={description}, food_group_id={food_group_id}, version={new_version}::uuid WHERE code={food_code} AND version={base_version}::uuid)")
+    val rowsAffected = SQL("UPDATE foods SET code = {new_code}, description={description}, food_group_id={food_group_id}, version={new_version}::uuid WHERE code={food_code} AND version={base_version}::uuid")
       .on('food_code -> foodCode, 'base_version -> foodRecord.baseVersion,
         'new_version -> UUID.randomUUID(), 'new_code -> foodRecord.code, 'description -> foodRecord.englishDescription, 'food_group_id -> foodRecord.groupCode)
       .executeUpdate()

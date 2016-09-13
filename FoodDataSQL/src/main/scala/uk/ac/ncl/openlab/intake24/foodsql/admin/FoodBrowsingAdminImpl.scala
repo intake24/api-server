@@ -5,6 +5,7 @@ import scala.Right
 import org.slf4j.LoggerFactory
 
 import com.google.inject.Inject
+import com.google.inject.Singleton
 import com.google.inject.name.Named
 
 import anorm.Macro
@@ -23,6 +24,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 
+@Singleton
 class FoodBrowsingAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends FoodBrowsingAdminImpl
 
 trait FoodBrowsingAdminImpl extends FoodBrowsingAdminService
