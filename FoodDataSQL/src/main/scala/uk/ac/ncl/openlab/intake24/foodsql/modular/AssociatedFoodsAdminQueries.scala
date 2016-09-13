@@ -37,7 +37,7 @@ trait AssociatedFoodsAdminQueries extends SqlDataService with SqlResourceLoader 
       row =>
         val foodOrCategory: Either[FoodHeader, CategoryHeader] =
           if (row.food_english_description.nonEmpty)
-            Left(FoodHeader(row.associated_food_code.get, row.food_english_description.get, row.food_local_description, row.food_do_not_use))
+            Left(FoodHeader(row.associated_food_code.get, row.food_english_description.get, row.food_local_description, row.food_do_not_use.getOrElse(false)))
           else
             Right(CategoryHeader(row.associated_category_code.get, row.category_english_description.get, row.category_local_description, row.category_is_hidden.get))
 

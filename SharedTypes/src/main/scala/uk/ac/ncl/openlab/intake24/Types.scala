@@ -47,7 +47,7 @@ case class MainFoodRecordUpdate(baseVersion: UUID, code: String, englishDescript
     parentCategories: Seq[String]) 
 
 case class NewFood(code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes, parentCategories: Seq[String]) {
-  def toHeader = FoodHeader(code, englishDescription, None, None)
+  def toHeader = FoodHeader(code, englishDescription, None, false)
 }
 
 case class NewFoodAutoCode(englishDescription: String, groupCode: Int, attributes: InheritableAttributes)
@@ -66,7 +66,7 @@ case class NewLocalFoodRecord(localDescription: Option[String], doNotUse: Boolea
     nutrientTableCodes: Map[String, String], portionSize: Seq[PortionSizeMethod], associatedFoods: Seq[AssociatedFood],
     brandNames: Seq[String])
 
-case class FoodHeader(code: String, englishDescription: String, localDescription: Option[String], doNotUse: Option[Boolean])
+case class FoodHeader(code: String, englishDescription: String, localDescription: Option[String], doNotUse: Boolean)
 
 case class UserFoodHeader(code: String, localDescription: String)
 
