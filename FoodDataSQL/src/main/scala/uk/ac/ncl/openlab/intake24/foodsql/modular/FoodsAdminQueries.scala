@@ -34,6 +34,10 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentRecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.VersionConflict
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import anorm.SqlParser
 
 trait FoodsAdminQueries extends FoodsAdminService
     with SqlDataService
@@ -176,8 +180,28 @@ trait FoodsAdminQueries extends FoodsAdminService
 
   }
 
+  protected def getFoodLocaleRestrictionsQuery(foodCode: String)(implicit conn: java.sql.Connection): Either[DatabaseError, Seq[String]] = {
+    Right(SQL("SELECT locale_id FROM foods_restrictions WHERE food_code={food_code}").on('food_code -> foodCode).as(SqlParser.str("locale_id").*))
+  }
+
+  protected def updateFoodLocaleRestrictionsQuery(foodCode: String, localeRestrictions: Seq[String])(implicit conn: java.sql.Connection): Either[LocalLookupError, Unit] = {
+
+    val errors = Map[String, PSQLException => LocalLookupError]("foods_restrictions_food_code_fk" -> (e => RecordNotFound), "foods_restrictions_locale_id_fk" -> (e => UndefinedLocale(e)))
+
+    tryWithConstraintsCheck(errors) {
+      SQL("DELETE FROM foods_restrictions WHERE food_code={food_code}").on('food_code -> foodCode).execute()
+
+      if (localeRestrictions.nonEmpty) {
+        val params = localeRestrictions.map(locale => Seq[NamedParameter]('food_code -> foodCode, 'locale_id -> locale))
+        batchSql("INSERT INTO foods_restrictions VALUES({food_code},{locale_id})", params).execute()
+      }
+
+      Right(())
+    }
+  }
+
   protected def updateFoodAttributesQuery(foodCode: String, attributes: InheritableAttributes)(implicit conn: java.sql.Connection): Either[LookupError, Unit] = {
-    try {
+    tryWithConstraintCheck("foods_attributes_food_code_fk", e => RecordNotFound) {
       SQL("DELETE FROM foods_attributes WHERE food_code={food_code}").on('food_code -> foodCode).execute()
 
       SQL(foodAttributesInsertQuery)
@@ -185,13 +209,6 @@ trait FoodsAdminQueries extends FoodsAdminService
           'ready_meal_option -> attributes.readyMealOption, 'reasonable_amount -> attributes.reasonableAmount).execute()
 
       Right(())
-    } catch {
-      case e: PSQLException => {
-        e.getServerErrorMessage.getConstraint match {
-          case "foods_attributes_food_code_fk" => Left(RecordNotFound)
-          case _ => throw e
-        }
-      }
     }
   }
 

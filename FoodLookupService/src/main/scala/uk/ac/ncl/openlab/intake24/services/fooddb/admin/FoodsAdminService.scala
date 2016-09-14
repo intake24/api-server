@@ -30,7 +30,7 @@ trait FoodsAdminService {
   def createFoods(newFoods: Seq[NewFood]): Either[DependentCreateError, Unit]
   def createLocalFoodRecords(localFoodRecords: Map[String, NewLocalFoodRecord], locale: String): Either[LocalDependentCreateError, Unit]
 
-  def updateMainFoodRecord(foodCode: String, update: MainFoodRecordUpdate): Either[DependentUpdateError, Unit]
+  def updateMainFoodRecord(foodCode: String, update: MainFoodRecordUpdate): Either[LocalDependentUpdateError, Unit]
   def updateLocalFoodRecord(foodCode: String, update: LocalFoodRecordUpdate, locale: String): Either[LocalDependentUpdateError, Unit]
 
   def deleteAllFoods(): Either[DatabaseError, Unit]

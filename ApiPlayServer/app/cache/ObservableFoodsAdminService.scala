@@ -81,7 +81,7 @@ class ObservableFoodsAdminServiceImpl @Inject() (@BasicImpl service: FoodsAdminS
       }
   }
 
-  def updateMainFoodRecord(foodCode: String, foodBase: MainFoodRecordUpdate): Either[DependentUpdateError, Unit] = service.updateMainFoodRecord(foodCode, foodBase).right.map {
+  def updateMainFoodRecord(foodCode: String, foodBase: MainFoodRecordUpdate): Either[LocalDependentUpdateError, Unit] = service.updateMainFoodRecord(foodCode, foodBase).right.map {
     _ =>
       observers.foreach(_.onMainFoodRecordUpdated(foodCode))
   }

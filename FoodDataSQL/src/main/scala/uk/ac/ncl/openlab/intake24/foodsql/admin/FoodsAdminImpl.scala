@@ -87,6 +87,7 @@ trait FoodsAdminImpl extends FoodsAdminService
         associatedFoods <- getAssociatedFoodsWithHeadersQuery(code, locale).right;
         parentCategories <- getFoodParentCategoriesHeadersQuery(code, locale).right;
         brandNames <- getBrandNamesQuery(code, locale).right;
+        localeRestrictions <- getFoodLocaleRestrictionsQuery(code).right;
         record <- {
           val foodQueryResult = SQL(foodRecordQuery).on('food_code -> code, 'locale_id -> locale).executeQuery()
 
@@ -94,7 +95,7 @@ trait FoodsAdminImpl extends FoodsAdminService
             result =>
               FoodRecord(
                 MainFoodRecord(result.version, result.code, result.description, result.food_group_id.toInt,
-                  InheritableAttributes(result.ready_meal_option, result.same_as_before_option, result.reasonable_amount), parentCategories),
+                  InheritableAttributes(result.ready_meal_option, result.same_as_before_option, result.reasonable_amount), parentCategories, localeRestrictions),
                 LocalFoodRecord(result.local_version, result.local_description, result.do_not_use.getOrElse(false), nutrientTableCodes, portionSizeMethods,
                   associatedFoods, brandNames))
           }
@@ -190,13 +191,14 @@ trait FoodsAdminImpl extends FoodsAdminService
       }
   }
 
-  def updateMainFoodRecord(foodCode: String, foodRecord: MainFoodRecordUpdate): Either[DependentUpdateError, Unit] = tryWithConnection {
+  def updateMainFoodRecord(foodCode: String, foodRecord: MainFoodRecordUpdate): Either[LocalDependentUpdateError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
         for (
           _ <- updateFoodAttributesQuery(foodCode, foodRecord.attributes).right;
           _ <- removeFoodFromAllCategoriesQuery(foodCode).right;
           _ <- addFoodsToCategoriesQuery(Map(foodCode -> foodRecord.parentCategories)).right;
+          _ <- updateFoodLocaleRestrictionsQuery(foodCode, foodRecord.localeRestrictions).right;
           _ <- updateFoodQuery(foodCode, foodRecord).right
         ) yield ()
       }

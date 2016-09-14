@@ -41,10 +41,11 @@ case class FoodOld(code: String, description: String, isDrink: Boolean, ndnsCode
 
 case class FoodRecord(main: MainFoodRecord, local: LocalFoodRecord)
 
-case class MainFoodRecord(version: UUID, code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes, parentCategories: Seq[CategoryHeader])
+case class MainFoodRecord(version: UUID, code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes, 
+    parentCategories: Seq[CategoryHeader], localeRestrictions: Seq[String])
 
 case class MainFoodRecordUpdate(baseVersion: UUID, code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes, 
-    parentCategories: Seq[String]) 
+    parentCategories: Seq[String], localeRestrictions: Seq[String]) 
 
 case class NewFood(code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes, parentCategories: Seq[String]) {
   def toHeader = FoodHeader(code, englishDescription, None, false)

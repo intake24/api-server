@@ -113,7 +113,7 @@ class FoodsAdminController @Inject() (service: FoodsAdminService, deadbolt: Dead
   def updateMainFoodRecord(foodCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
-        translateDependentUpdateError(service.updateMainFoodRecord(foodCode, read[MainFoodRecordUpdate](request.body)))
+        translateLocalDependentUpdateError(service.updateMainFoodRecord(foodCode, read[MainFoodRecordUpdate](request.body)))
       }
     }
   }
