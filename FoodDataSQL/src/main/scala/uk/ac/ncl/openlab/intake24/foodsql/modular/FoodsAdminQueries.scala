@@ -106,9 +106,9 @@ trait FoodsAdminQueries extends FoodsAdminService
 
         batchSql(foodAttributesInsertQuery, foodAttributeParams).execute()
 
-        val localeRestrictionParams = foods.map {
+        val localeRestrictionParams = foods.flatMap {
           f =>
-            f.localeRestrictions.flatMap {
+            f.localeRestrictions.map {
               locale =>
                 Seq[NamedParameter]('food_code -> f.code, 'locale_id -> locale)
             }
