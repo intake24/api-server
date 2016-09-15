@@ -15,7 +15,7 @@ import com.google.inject.Singleton
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
 import uk.ac.ncl.openlab.intake24.MainFoodRecord
 import uk.ac.ncl.openlab.intake24.FoodRecord
-import uk.ac.ncl.openlab.intake24.NewFood
+import uk.ac.ncl.openlab.intake24.NewMainFoodRecord
 import uk.ac.ncl.openlab.intake24.LocalFoodRecord
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentCreateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentCreateError
@@ -55,17 +55,17 @@ class ObservableFoodsAdminServiceImpl @Inject() (@BasicImpl service: FoodsAdminS
   def isFoodCodeAvailable(code: String): Either[DatabaseError, Boolean] = service.isFoodCodeAvailable(code)
   def isFoodCode(code: String): Either[DatabaseError, Boolean] = service.isFoodCode(code)
 
-  def createFood(newFood: NewFood): Either[DependentCreateError, Unit] = service.createFood(newFood).right.map {
+  def createFood(newFood: NewMainFoodRecord): Either[DependentCreateError, Unit] = service.createFood(newFood).right.map {
     _ => observers.foreach(_.onFoodCreated(newFood.code))
   }
 
-  def createFoodWithTempCode(newFood: NewFood): Either[DependentCreateError, String] = service.createFoodWithTempCode(newFood).right.map {
+  def createFoodWithTempCode(newFood: NewMainFoodRecord): Either[DependentCreateError, String] = service.createFoodWithTempCode(newFood).right.map {
     newCode =>
       observers.foreach(_.onFoodCreated(newCode))
       newCode
   }
 
-  def createFoods(newFoods: Seq[NewFood]): Either[DependentCreateError, Unit] = service.createFoods(newFoods).right.map {
+  def createFoods(newFoods: Seq[NewMainFoodRecord]): Either[DependentCreateError, Unit] = service.createFoods(newFoods).right.map {
     _ =>
       newFoods.foreach {
         food =>

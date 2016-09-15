@@ -6,7 +6,7 @@ import uk.ac.ncl.openlab.intake24.LocalFoodRecord
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.NewFood
+import uk.ac.ncl.openlab.intake24.NewMainFoodRecord
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentCreateError
@@ -25,9 +25,9 @@ trait FoodsAdminService {
   def isFoodCodeAvailable(code: String): Either[DatabaseError, Boolean]
   def isFoodCode(code: String): Either[DatabaseError, Boolean]
 
-  def createFood(newFood: NewFood): Either[DependentCreateError, Unit]
-  def createFoodWithTempCode(newFood: NewFood): Either[DependentCreateError, String]
-  def createFoods(newFoods: Seq[NewFood]): Either[DependentCreateError, Unit]
+  def createFood(newFood: NewMainFoodRecord): Either[DependentCreateError, Unit]
+  def createFoodWithTempCode(newFood: NewMainFoodRecord): Either[DependentCreateError, String]
+  def createFoods(newFoods: Seq[NewMainFoodRecord]): Either[DependentCreateError, Unit]
   def createLocalFoodRecords(localFoodRecords: Map[String, NewLocalFoodRecord], locale: String): Either[LocalDependentCreateError, Unit]
 
   def updateMainFoodRecord(foodCode: String, update: MainFoodRecordUpdate): Either[LocalDependentUpdateError, Unit]

@@ -39,7 +39,9 @@ object InheritableAttributes {
 
 case class FoodOld(code: String, description: String, isDrink: Boolean, ndnsCode: Int, path: String, portionSize: Seq[PortionSizeMethod]) extends IndexEntryOld 
 
-case class FoodRecord(main: MainFoodRecord, local: LocalFoodRecord)
+case class FoodRecord(main: MainFoodRecord, local: LocalFoodRecord) {
+  def allowedInLocale(locale: String) = (main.localeRestrictions.isEmpty || main.localeRestrictions.contains(locale)) && !local.doNotUse
+}
 
 case class MainFoodRecord(version: UUID, code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes, 
     parentCategories: Seq[CategoryHeader], localeRestrictions: Seq[String])
@@ -47,7 +49,7 @@ case class MainFoodRecord(version: UUID, code: String, englishDescription: Strin
 case class MainFoodRecordUpdate(baseVersion: UUID, code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes, 
     parentCategories: Seq[String], localeRestrictions: Seq[String]) 
 
-case class NewFood(code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes, parentCategories: Seq[String]) {
+case class NewMainFoodRecord(code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes, parentCategories: Seq[String], localeRestrictions: Seq[String]) {
   def toHeader = FoodHeader(code, englishDescription, None, false)
 }
 

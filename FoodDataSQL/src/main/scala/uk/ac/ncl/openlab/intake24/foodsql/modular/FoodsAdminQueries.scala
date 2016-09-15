@@ -16,7 +16,7 @@ import anorm.sqlToSimple
 import uk.ac.ncl.openlab.intake24.InheritableAttributes
 import uk.ac.ncl.openlab.intake24.LocalFoodRecordUpdate
 import uk.ac.ncl.openlab.intake24.MainFoodRecordUpdate
-import uk.ac.ncl.openlab.intake24.NewFood
+import uk.ac.ncl.openlab.intake24.NewMainFoodRecord
 import uk.ac.ncl.openlab.intake24.NewLocalFoodRecord
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
@@ -86,7 +86,7 @@ trait FoodsAdminQueries extends FoodsAdminService
 
   }
 
-  protected def createFoodsQuery(foods: Seq[NewFood])(implicit conn: java.sql.Connection): Either[DependentCreateError, Unit] = {
+  protected def createFoodsQuery(foods: Seq[NewMainFoodRecord])(implicit conn: java.sql.Connection): Either[DependentCreateError, Unit] = {
     if (foods.nonEmpty) {
       logger.debug(s"Writing ${foods.size} new food records to database")
 
@@ -114,7 +114,7 @@ trait FoodsAdminQueries extends FoodsAdminService
     }
   }
 
-  private def mkBatchCategoriesMap(foods: Seq[NewFood]) = {
+  private def mkBatchCategoriesMap(foods: Seq[NewMainFoodRecord]) = {
     val z = Map[String, Seq[String]]()
     foods.foldLeft(z) {
       (map, food) => map + (food.code -> food.parentCategories)

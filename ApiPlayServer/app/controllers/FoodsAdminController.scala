@@ -31,7 +31,7 @@ import uk.ac.ncl.openlab.intake24.LocalFoodRecord
 import uk.ac.ncl.openlab.intake24.MainCategoryRecord
 import uk.ac.ncl.openlab.intake24.MainFoodRecord
 import uk.ac.ncl.openlab.intake24.NewCategory
-import uk.ac.ncl.openlab.intake24.NewFood
+import uk.ac.ncl.openlab.intake24.NewMainFoodRecord
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
@@ -63,9 +63,9 @@ class FoodsAdminController @Inject() (service: FoodsAdminService, deadbolt: Dead
   def isFoodCodeAvailable(code: String): Either[DatabaseError, Boolean]
   def isFoodCode(code: String): Either[DatabaseError, Boolean]
 
-  def createFood(newFood: NewFood): Either[DependentCreateError, Unit]
-  def createFoodWithTempCode(newFood: NewFood): Either[DependentCreateError, String]
-  def createFoods(newFoods: Seq[NewFood]): Either[DependentCreateError, Unit]
+  def createFood(newFood: NewMainFoodRecord): Either[DependentCreateError, Unit]
+  def createFoodWithTempCode(newFood: NewMainFoodRecord): Either[DependentCreateError, String]
+  def createFoods(newFoods: Seq[NewMainFoodRecord]): Either[DependentCreateError, Unit]
   def createLocalFoods(localFoodRecords: Map[String, LocalFoodRecord], locale: String): Either[LocalDependentCreateError, Unit]
 
   def updateMainFoodRecord(foodCode: String, foodBase: MainFoodRecord): Either[UpdateError, Unit]
@@ -97,7 +97,7 @@ class FoodsAdminController @Inject() (service: FoodsAdminService, deadbolt: Dead
   def createFood() = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
-        translateDependentCreateError(service.createFood(read[NewFood](request.body)))
+        translateDependentCreateError(service.createFood(read[NewMainFoodRecord](request.body)))
       }
     }
   }
@@ -105,7 +105,7 @@ class FoodsAdminController @Inject() (service: FoodsAdminService, deadbolt: Dead
   def createFoodWithTempCode() = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
-        translateDependentCreateError(service.createFoodWithTempCode(read[NewFood](request.body)))
+        translateDependentCreateError(service.createFoodWithTempCode(read[NewMainFoodRecord](request.body)))
       }
     }
   }

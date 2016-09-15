@@ -18,7 +18,7 @@ import uk.ac.ncl.openlab.intake24.FoodRecord
 import uk.ac.ncl.openlab.intake24.InheritableAttributes
 import uk.ac.ncl.openlab.intake24.LocalFoodRecord
 import uk.ac.ncl.openlab.intake24.MainFoodRecord
-import uk.ac.ncl.openlab.intake24.NewFood
+import uk.ac.ncl.openlab.intake24.NewMainFoodRecord
 import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
 import uk.ac.ncl.openlab.intake24.foodsql.Util
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
@@ -110,7 +110,7 @@ trait FoodsAdminImpl extends FoodsAdminService
 
   def isFoodCodeAvailable(code: String): Either[DatabaseError, Boolean] = isFoodCode(code).right.map(!_)
 
-  def createFood(newFood: NewFood): Either[DependentCreateError, Unit] = tryWithConnection {
+  def createFood(newFood: NewMainFoodRecord): Either[DependentCreateError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
         for (
@@ -120,7 +120,7 @@ trait FoodsAdminImpl extends FoodsAdminService
       }
   }
 
-  def createFoodWithTempCode(newFood: NewFood): Either[DependentCreateError, String] = {
+  def createFoodWithTempCode(newFood: NewMainFoodRecord): Either[DependentCreateError, String] = {
     def tryNextNumber(n: Int): Either[DependentCreateError, String] = {
       if (n > 999)
         Left(DuplicateCode(new RuntimeException("Tried 999 temporary codes, none were available")))
@@ -137,14 +137,14 @@ trait FoodsAdminImpl extends FoodsAdminService
     tryNextNumber(0)
   }
 
-  private def mkBatchCategoriesMap(foods: Seq[NewFood]) = {
+  private def mkBatchCategoriesMap(foods: Seq[NewMainFoodRecord]) = {
     val z = Map[String, Seq[String]]()
     foods.foldLeft(z) {
       (map, food) => map + (food.code -> food.parentCategories)
     }
   }
 
-  def createFoods(foods: Seq[NewFood]): Either[DependentCreateError, Unit] = tryWithConnection {
+  def createFoods(foods: Seq[NewMainFoodRecord]): Either[DependentCreateError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
         for (

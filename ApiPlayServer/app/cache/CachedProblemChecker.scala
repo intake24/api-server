@@ -89,28 +89,32 @@ case class CachedProblemChecker @Inject() (
       uncategorisedFoods <- adminBrowsing.getUncategorisedFoods(locale).right;
       translationRequired <- locales.isTranslationRequired(locale).right
     ) yield {
-      val problems = Buffer[String]()
 
-      if (userFoodRecord.nutrientTableCodes.isEmpty)
-        problems += NutrientCodeMissing
+      if (!adminFoodRecord.allowedInLocale(locale))
+        Seq()
+      else {
+        val problems = Buffer[String]()
 
-      if (userFoodRecord.groupCode == 0)
-        problems += NotAssignedToGroup
+        if (userFoodRecord.nutrientTableCodes.isEmpty)
+          problems += NutrientCodeMissing
 
-      if (uncategorisedFoods.exists(_.code == code))
-        problems += NotAssignedToCategory
+        if (userFoodRecord.groupCode == 0)
+          problems += NotAssignedToGroup
 
-      if (userFoodRecord.portionSize.isEmpty)
-        problems += PortionSizeMethodsEmpty
+        if (uncategorisedFoods.exists(_.code == code))
+          problems += NotAssignedToCategory
 
-      if (userFoodRecord.portionSize.size > 1 && userFoodRecord.portionSize.exists(x => x.description == "no description" || x.imageUrl == "images/placeholder.jpg"))
-        problems += NoMethodDescOrImage
+        if (userFoodRecord.portionSize.isEmpty)
+          problems += PortionSizeMethodsEmpty
 
-      if (adminFoodRecord.local.localDescription.isEmpty && !adminFoodRecord.local.doNotUse && translationRequired)
-        problems += LocalDescriptionMissing
+        if (userFoodRecord.portionSize.size > 1 && userFoodRecord.portionSize.exists(x => x.description == "no description" || x.imageUrl == "images/placeholder.jpg"))
+          problems += NoMethodDescOrImage
 
-      problems.toSeq.map(pcode => FoodProblem(code, userFoodRecord.localDescription, pcode))
+        if (adminFoodRecord.local.localDescription.isEmpty && !adminFoodRecord.local.doNotUse && translationRequired)
+          problems += LocalDescriptionMissing
 
+        problems.toSeq.map(pcode => FoodProblem(code, userFoodRecord.localDescription, pcode))
+      }
     }
   }
 

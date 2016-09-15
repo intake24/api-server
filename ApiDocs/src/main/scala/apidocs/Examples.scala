@@ -33,7 +33,7 @@ import uk.ac.ncl.openlab.intake24.CategoryHeader
 import uk.ac.ncl.openlab.intake24.FoodHeader
 import uk.ac.ncl.openlab.intake24.CategoryContents
 import uk.ac.ncl.openlab.intake24.api.Intake24Credentials
-import uk.ac.ncl.openlab.intake24.services.NewFood
+import uk.ac.ncl.openlab.intake24.services.NewMainFoodRecord
 
 import uk.ac.ncl.openlab.intake24.services.NewCategory
 import uk.ac.ncl.openlab.intake24.MainCategoryRecord
@@ -95,7 +95,7 @@ object Examples {
 
   val invalidRequest = prettyPrint(""" { "error" : "(error type)", "error_code" : "(error code)", "message" : "(debug message)" } """)
 
-  val newFoodRequest = prettyPrint(write(NewFood("F001", "New food", 1, InheritableAttributes(Some(true), None, None))))
+  val newFoodRequest = prettyPrint(write(NewMainFoodRecord("F001", "New food", 1, InheritableAttributes(Some(true), None, None))))
   
   val newCategoryRequest = prettyPrint(write(NewCategory("C001", "New category", false, InheritableAttributes(Some(true), None, None))))
   

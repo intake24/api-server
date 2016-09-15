@@ -51,7 +51,7 @@ import uk.ac.ncl.openlab.intake24.FoodGroupLocal
 
 import uk.ac.ncl.openlab.intake24.LocalFoodRecord
 
-import uk.ac.ncl.openlab.intake24.NewFood
+import uk.ac.ncl.openlab.intake24.NewMainFoodRecord
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.NewCategory
@@ -114,7 +114,7 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
     }
 
     val newFoodRecords = foods.map {
-      f => NewFood(f.code, f.description, f.groupCode, f.attributes, parentCategories(f.code).toSeq)
+      f => NewMainFoodRecord(f.code, f.description, f.groupCode, f.attributes, parentCategories(f.code).toSeq, Seq())
     }
 
     val newLocalRecords = foods.map {

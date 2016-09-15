@@ -3,7 +3,7 @@ package uk.ac.ncl.openlab.intake24.foodsql.test
 import scala.util.Random
 import uk.ac.ncl.openlab.intake24.MainFoodRecord
 import uk.ac.ncl.openlab.intake24.InheritableAttributes
-import uk.ac.ncl.openlab.intake24.NewFood
+import uk.ac.ncl.openlab.intake24.NewMainFoodRecord
 import uk.ac.ncl.openlab.intake24.AsServedImage
 import uk.ac.ncl.openlab.intake24.AsServedSet
 import uk.ac.ncl.openlab.intake24.AssociatedFood
@@ -77,7 +77,7 @@ trait RandomData {
     InheritableAttributes(readyMeal, sameAsBefore, reasonableAmount)
   }
 
-  def randomNewFood(code: String, groupCodes: IndexedSeq[Int]) = NewFood(code, randomDescription, randomElement(groupCodes), randomAttributes, Seq())
+  def randomNewFood(code: String, groupCodes: IndexedSeq[Int]) = NewMainFoodRecord(code, randomDescription, randomElement(groupCodes), randomAttributes, Seq(), Seq())
 
   def randomNewFoods(min: Int, max: Int, groupCodes: IndexedSeq[Int]) = {
     val count = randomCount(min, max)
