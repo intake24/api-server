@@ -73,7 +73,7 @@ class PortuguesePsmTableParser extends PortionSizeTableParser with ErrorHandler 
       as => throwOnError(dataService.getAsServedSet(as))
     }
 
-    logger.info("Building PSM index")
+    logger.info("Building PSM index (this will take a while...)")
 
     case class PsmIndex(guide: Map[String, PortionSizeMethod], asServed: Map[String, PortionSizeMethod])
 
