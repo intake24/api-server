@@ -120,7 +120,7 @@ case class LocalFoodsImport(localeCode: String, englishLocaleName: String, local
 
   logger.info(s"Loading $localeCode new foods table")
   val (newFoods, newLocalFoodRecords) = buildNewLocalFoods(options.newLocalFoodsPath(), localeCode, localNutrientTableId, associatedFoodTranslations)
-
+  
   logger.info(s"Loading $localeCode category translations")
   val categoryTranslations = parseCategoryTranslations(options.categoryTranslationPath())
 

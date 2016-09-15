@@ -23,7 +23,7 @@ trait NewLocalFoodsParser {
       row =>
         val parentCategories = row.drop(5).filterNot(_.isEmpty()).toSeq
 
-        NewMainFoodRecord(row(0), row(2), 0, InheritableAttributes(None, None, None), parentCategories, Seq(localeCode))
+        NewMainFoodRecord(row(0), row(2).replace("\"", ""), 0, InheritableAttributes(None, None, None), parentCategories, Seq(localeCode))
     }
 
     val newLocalRecords = rows.map {
@@ -34,7 +34,7 @@ trait NewLocalFoodsParser {
         val associatedFoods = assocFoods.getOrElse(code, Seq())
         val portionSizeMethods = Seq() // Cannot be set right now due to circular dependencies
         
-        code -> NewLocalFoodRecord(Some(row(3)), false, Map(localNutrientTableId -> row(4)), portionSizeMethods, associatedFoods, Seq())
+        code -> NewLocalFoodRecord(Some(row(3).replace("\"", "")), false, Map(localNutrientTableId -> row(4)), portionSizeMethods, associatedFoods, Seq())
     }.toMap
 
     reader.close()

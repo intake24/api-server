@@ -42,13 +42,13 @@ class PortugueseRecodingTableParser extends RecodingTableParser with XSSFCellCol
 
   def parseUseLocal(row: Row) =
     UseLocalFoodTable(
-      dataFormatter.formatCellValue(row.getCell(localDescriptionCellIndex)),
+      dataFormatter.formatCellValue(row.getCell(localDescriptionCellIndex)).replace("\"",""),
       dataFormatter.formatCellValue(row.getCell(foodTableRecordCellIndex)))
 
   def parseUseNew(row: Row) =
     NewFoodRecord(
-      dataFormatter.formatCellValue(row.getCell(englishDecriptionCellIndex)),
-      dataFormatter.formatCellValue(row.getCell(localDescriptionCellIndex)),
+      dataFormatter.formatCellValue(row.getCell(englishDecriptionCellIndex)).replace("\"",""),
+      dataFormatter.formatCellValue(row.getCell(localDescriptionCellIndex)).replace("\"",""),
       dataFormatter.formatCellValue(row.getCell(foodTableRecordCellIndex)))
 
    def parseRecodingTable(path: String): RecodingTable = {
