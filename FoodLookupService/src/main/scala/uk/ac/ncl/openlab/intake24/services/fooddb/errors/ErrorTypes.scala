@@ -37,7 +37,7 @@ sealed trait LookupError extends LocalLookupError with UpdateError {
   val exception: Throwable
 }
 
-sealed trait LocalDeleteError
+sealed trait LocalDeleteError extends AnyError
 
 sealed trait DeleteError extends LocalDeleteError
 

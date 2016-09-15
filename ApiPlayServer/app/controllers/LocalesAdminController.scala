@@ -40,13 +40,13 @@ class LocalesAdminController @Inject() (service: LocalesAdminService, deadbolt: 
   
   def listLocales() = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateDatabaseError(service.listLocales())
+      translateError(service.listLocales())
     }
   }
   
   def getLocale(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateLookupError(service.getLocale(id))
+      translateError(service.getLocale(id))
     }
   }
 }

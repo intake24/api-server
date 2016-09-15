@@ -66,49 +66,49 @@ class UserFoodDataController @Inject() (service: FoodDatabaseService, deadbolt: 
 
   def getCategoryContents(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateLocalLookupError(service.getCategoryContents(code, locale))
+      translateError(service.getCategoryContents(code, locale))
     }
   }
 
   def getFoodData(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateLocalLookupError(service.getFoodData(code, locale))
+      translateError(service.getFoodData(code, locale))
     }
   }
 
   def getFoodDataWithSources(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateLocalLookupError(service.getFoodData(code, locale))
+      translateError(service.getFoodData(code, locale))
     }
   }
 
   def getAssociatedFoodPrompts(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateLocalLookupError(service.getAssociatedFoods(code, locale))
+      translateError(service.getAssociatedFoods(code, locale))
     }
   }
 
   def getBrandNames(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateLocalLookupError(service.getBrandNames(code, locale))
+      translateError(service.getBrandNames(code, locale))
     }
   }
 
   def getAsServedSet(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateLookupError(service.getAsServedSet(id))
+      translateError(service.getAsServedSet(id))
     }
   }
 
   def getDrinkwareSet(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateLookupError(service.getDrinkwareSet(id))
+      translateError(service.getDrinkwareSet(id))
     }
   }
 
   def getGuideImage(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateLookupError(service.getGuideImage(id))
+      translateError(service.getGuideImage(id))
     }
   }
 }

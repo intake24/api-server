@@ -15,19 +15,19 @@ class ProblemCheckerController @Inject() (service: ProblemCheckerService, deadbo
 
   def checkFood(code: String, locale: String) = deadbolt.Restrict(List(Array("superuser"))) {
     Action {
-      translateLocalLookupError(service.getFoodProblems(code, locale))
+      translateError(service.getFoodProblems(code, locale))
     }
   }
 
   def checkCategory(code: String, locale: String) = deadbolt.Restrict(List(Array("superuser"))) {
     Action {
-      translateLocalLookupError(service.getCategoryProblems(code, locale))
+      translateError(service.getCategoryProblems(code, locale))
     }
   }
 
   def checkCategoryRecursive(code: String, locale: String) = deadbolt.Restrict(List(Array("superuser"))) {
     Action {
-      translateLocalLookupError(service.getRecursiveCategoryProblems(code, locale, maxReturnedProblems))
+      translateError(service.getRecursiveCategoryProblems(code, locale, maxReturnedProblems))
     }
   }
 }

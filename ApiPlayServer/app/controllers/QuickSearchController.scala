@@ -56,13 +56,13 @@ class QuickSearchController @Inject() (service: QuickSearchService, deadbolt: De
 
   def searchFoods(searchTerm: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateLocaleError(service.searchFoods(searchTerm, locale))
+      translateError(service.searchFoods(searchTerm, locale))
     }
   }
 
   def searchCategories(searchTerm: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateLocaleError(service.searchCategories(searchTerm, locale))
+      translateError(service.searchCategories(searchTerm, locale))
     }
   }
 }

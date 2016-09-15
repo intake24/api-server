@@ -31,13 +31,13 @@ class GuideImageAdminController @Inject() (service: GuideImageAdminService, dead
   
    def listGuideImages() = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateDatabaseError(service.listGuideImages())
+      translateError(service.listGuideImages())
     }
   }
    
    def getGuideImage(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateLookupError(service.getGuideImage(id))
+      translateError(service.getGuideImage(id))
     }
   } 
 }

@@ -31,7 +31,7 @@ class NutrientTablesAdminController @Inject() (service: NutrientTablesAdminServi
   
   def listNutrientTables() = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateDatabaseError(service.listNutrientTables())
+      translateError(service.listNutrientTables())
     }
   }
 }

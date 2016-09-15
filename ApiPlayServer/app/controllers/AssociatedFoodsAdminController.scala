@@ -36,7 +36,7 @@ class AssociatedFoodsAdminController @Inject() (service: AssociatedFoodsAdminSer
 
   def getAssociatedFoods(foodCode: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
-      translateLocalLookupError(service.getAssociatedFoods(foodCode, locale))
+      translateError(service.getAssociatedFoods(foodCode, locale))
     }
   }
 
@@ -44,7 +44,7 @@ class AssociatedFoodsAdminController @Inject() (service: AssociatedFoodsAdminSer
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
         val associatedFoods = read[Seq[AssociatedFood]](request.body)
-        translateLocaleOrParentError(service.updateAssociatedFoods(foodCode, associatedFoods, locale))
+        translateError(service.updateAssociatedFoods(foodCode, associatedFoods, locale))
       }
     }
   }

@@ -57,43 +57,43 @@ class FoodBrowsingAdminController @Inject() (service: FoodBrowsingAdminService, 
 
   def getUncategorisedFoods(locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateLocaleError(service.getUncategorisedFoods(locale))
+      translateError(service.getUncategorisedFoods(locale))
     }
   }
 
   def getRootCategories(locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateLocaleError(service.getRootCategories(locale))
+      translateError(service.getRootCategories(locale))
     }
   }
 
   def getCategoryContents(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateLocalLookupError(service.getCategoryContents(code, locale))
+      translateError(service.getCategoryContents(code, locale))
     }
   }
 
   def getFoodParentCategories(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateLocalLookupError(service.getFoodParentCategories(code, locale))
+      translateError(service.getFoodParentCategories(code, locale))
     }
   }
 
   def getFoodAllCategories(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateLocalLookupError(service.getFoodAllCategoriesHeaders(code, locale))
+      translateError(service.getFoodAllCategoriesHeaders(code, locale))
     }
   }
   
   def getCategoryParentCategories(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateLocalLookupError(service.getCategoryParentCategories(code, locale))
+      translateError(service.getCategoryParentCategories(code, locale))
     }
   }
 
   def getCategoryAllCategories(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateLocalLookupError(service.getCategoryAllCategoriesHeaders(code, locale))
+      translateError(service.getCategoryAllCategoriesHeaders(code, locale))
     }
   }
 

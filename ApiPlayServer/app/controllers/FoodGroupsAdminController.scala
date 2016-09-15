@@ -57,13 +57,13 @@ class FoodGroupsAdminController @Inject() (service: FoodGroupsAdminService, dead
   def listFoodGroups(locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
       // Map keys to Strings to force js object serialisation instead of array of arrays
-      translateLocaleError(service.listFoodGroups(locale).right.map(_.map { case (k, v) => (k.toString, v) }))
+      translateError(service.listFoodGroups(locale).right.map(_.map { case (k, v) => (k.toString, v) }))
     }
   }
 
   def getFoodGroup(id: Int, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateLocalLookupError(service.getFoodGroup(id, locale))
+      translateError(service.getFoodGroup(id, locale))
     }
   }
 }

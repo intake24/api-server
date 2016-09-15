@@ -36,39 +36,39 @@ class CategoriesAdminController @Inject() (service: CategoriesAdminService, dead
 
   def getCategoryRecord(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateLocalLookupError(service.getCategoryRecord(code, locale))
+      translateError(service.getCategoryRecord(code, locale))
     }
   }
   def isCategoryCodeAvailable(code: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateDatabaseError(service.isCategoryCodeAvailable(code))
+      translateError(service.isCategoryCodeAvailable(code))
     }
   }
 
   def isCategoryCode(code: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateDatabaseError(service.isCategoryCodeAvailable(code))
+      translateError(service.isCategoryCodeAvailable(code))
     }
   }
 
   def createMainCategoryRecord() = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
-        translateDependentCreateError(service.createMainCategoryRecords(Seq(read[NewMainCategoryRecord](request.body))))
+        translateError(service.createMainCategoryRecords(Seq(read[NewMainCategoryRecord](request.body))))
       }
     }
   }
   
   def deleteCategory(categoryCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action {
-      translateDeleteError(service.deleteCategory(categoryCode))
+      translateError(service.deleteCategory(categoryCode))
     }
   }
 
   def updateMainCategoryRecord(categoryCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
-        translateDependentUpdateError(service.updateMainCategoryRecord(categoryCode, read[MainCategoryRecordUpdate](request.body)))
+        translateError(service.updateMainCategoryRecord(categoryCode, read[MainCategoryRecordUpdate](request.body)))
       }
     }
   }
@@ -76,7 +76,7 @@ class CategoriesAdminController @Inject() (service: CategoriesAdminService, dead
   def updateLocalCategoryRecord(categoryCode: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
     Action(parse.tolerantText) { implicit request =>
       tryWithPickle {
-        translateLocalDependentUpdateError(service.updateLocalCategoryRecord(categoryCode, read[LocalCategoryRecordUpdate](request.body), locale))
+        translateError(service.updateLocalCategoryRecord(categoryCode, read[LocalCategoryRecordUpdate](request.body), locale))
       }
     }
   }
