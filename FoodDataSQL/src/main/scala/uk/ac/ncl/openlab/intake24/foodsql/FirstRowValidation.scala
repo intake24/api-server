@@ -47,16 +47,18 @@ trait FirstRowValidation {
     Seq(FirstRowValidationClause("locale_id", () => Left(UndefinedLocale(new RuntimeException()))))
     
   def foodValidation[T](code: String): Seq[FirstRowValidationClause[LookupError, T]] =
-    Seq(FirstRowValidationClause("food_code", () => Left(RecordNotFound)))
+    Seq(FirstRowValidationClause("food_code", () => Left(RecordNotFound(new RuntimeException(code)))))
     
   def categoryValidation[T](code: String): Seq[FirstRowValidationClause[LookupError, T]] =
-    Seq(FirstRowValidationClause("category_code", () => Left(RecordNotFound)))    
+    Seq(FirstRowValidationClause("category_code", () => Left(RecordNotFound(new RuntimeException(code)))))
 
   def localeAndFoodCodeValidation[T](code: String): Seq[FirstRowValidationClause[LocalLookupError, T]] =
-    Seq(FirstRowValidationClause("food_code", () => Left(RecordNotFound)), FirstRowValidationClause("locale_id", () => Left(UndefinedLocale(new RuntimeException()))))
+    Seq(FirstRowValidationClause("food_code", () => Left(RecordNotFound(new RuntimeException(code)))), 
+        FirstRowValidationClause("locale_id", () => Left(UndefinedLocale(new RuntimeException()))))
 
   def localeAndCategoryCodeValidation[T](code: String): Seq[FirstRowValidationClause[LocalLookupError, T]] =
-    Seq(FirstRowValidationClause("category_code", () => Left(RecordNotFound)), FirstRowValidationClause("locale_id", () => Left(UndefinedLocale(new RuntimeException()))))
+    Seq(FirstRowValidationClause("category_code", () => Left(RecordNotFound(new RuntimeException(code)))), 
+        FirstRowValidationClause("locale_id", () => Left(UndefinedLocale(new RuntimeException()))))
 
   def parseWithLocaleValidation[T](result: SqlQueryResult, parser: ResultSetParser[T])(additionalValidation: Seq[FirstRowValidationClause[LocaleError, T]] = Seq())(implicit conn: java.sql.Connection): Either[LocaleError, T] =
     parseWithFirstRowValidation(result, localeValidation[T] ++ additionalValidation, parser)

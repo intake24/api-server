@@ -175,7 +175,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService
       if (rowsAffected == 1)
         Right(())
       else
-        Left(RecordNotFound)
+        Left(RecordNotFound(new RuntimeException(categoryCode)))
   }
 
   def deleteAllCategories(): Either[DatabaseError, Unit] = tryWithConnection {
@@ -192,7 +192,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService
         Right(())
       else
         // TODO: Could be food or category, needs better validation
-        Left(RecordNotFound)
+        Left(RecordNotFound(new RuntimeException(categoryCode)))
   }
 
   def removeSubcategoryFromCategory(categoryCode: String, subcategoryCode: String): Either[LookupError, Unit] = tryWithConnection {
@@ -205,6 +205,6 @@ trait CategoriesAdminImpl extends CategoriesAdminService
         Right(())
       else
         // TODO: Could be food or category, needs better validation
-        Left(RecordNotFound)
+        Left(RecordNotFound(new RuntimeException(s"categoryCode: $categoryCode, subcategoryCode: $subcategoryCode")))
   }
 }

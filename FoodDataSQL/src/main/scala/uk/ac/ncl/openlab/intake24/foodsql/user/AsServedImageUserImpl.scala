@@ -33,7 +33,7 @@ trait AsServedImageUserImpl extends AsServedImageService with SqlDataService wit
             val images = result.map(row => AsServedImage(row.url, row.weight))
             Right(AsServedSet(id, description, images))
           }
-          case None => Left(RecordNotFound)
+          case None => Left(RecordNotFound(new RuntimeException(id)))
         }
       }
   }

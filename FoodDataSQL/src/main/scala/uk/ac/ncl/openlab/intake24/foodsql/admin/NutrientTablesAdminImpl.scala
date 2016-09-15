@@ -39,7 +39,7 @@ trait NutrientTablesAdminImpl extends NutrientTablesAdminService with SqlDataSer
 
       SQL(query).on('id -> id).executeQuery().as(Macro.namedParser[NutrientTable].singleOpt) match {
         case Some(table) => Right(table)
-        case None => Left(RecordNotFound)
+        case None => Left(RecordNotFound(new RuntimeException(id)))
       }
   }
 
@@ -59,7 +59,7 @@ trait NutrientTablesAdminImpl extends NutrientTablesAdminService with SqlDataSer
       val affectedRows = SQL(query).on('id -> id, 'new_id -> data.id, 'description -> data.description).executeUpdate()
 
       if (affectedRows == 0)
-        Left(RecordNotFound)
+        Left(RecordNotFound(new RuntimeException(id)))
       else
         Right(())
   }
@@ -71,7 +71,7 @@ trait NutrientTablesAdminImpl extends NutrientTablesAdminService with SqlDataSer
       val affectedRows = SQL(query).on('id -> id).executeUpdate()
 
       if (affectedRows == 0)
-        Left(RecordNotFound)
+        Left(RecordNotFound(new RuntimeException(id)))
       else
         Right(())
   }

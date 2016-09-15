@@ -16,27 +16,19 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
+import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
 
-trait AssociatedFoodsUserImpl extends AssociatedFoodsService with SqlDataService with FirstRowValidation {
+trait AssociatedFoodsUserImpl extends AssociatedFoodsService with SqlDataService with SqlResourceLoader with FirstRowValidation {
 
   private case class AssociatedFoodPromptsRow(associated_food_code: Option[String], associated_category_code: Option[String],
     text: String, link_as_main: Boolean, generic_name: String, locale_id: String)
 
-  private val query =
-    """|WITH v AS(
-       |  SELECT (SELECT code FROM foods WHERE code = {food_code}) AS food_code, 
-       |  SELECT (SELECT id FROM locales WHERE id = {locale_id}) AS locale_id
-       |)
-       |SELECT v.food_code, v.locale_id, associated_foods.id, associated_food_code, associated_category_code, text, link_as_main, generic_name
-       |FROM v LEFT JOIN associated_foods 
-       |   ON v.food_code = associated_foods.food_code 
-       |      AND (v.locale_id = associated_foods.locale_id OR associated_foods.locale_id IN (SELECT prototype_locale_id FROM locales WHERE id = v.locale_id))
-       |ORDER BY id""".stripMargin
+  private val getAssociatedFoodsQuery = sqlFromResource("user/get_associated_foods_frv.sql")
 
   def getAssociatedFoods(foodCode: String, locale: String): Either[LocalLookupError, Seq[AssociatedFood]] = tryWithConnection {
     implicit conn =>
 
-      val result = SQL(query).on('food_code -> foodCode, 'locale_id -> locale).executeQuery()
+      val result = SQL(getAssociatedFoodsQuery).on('food_code -> foodCode, 'locale_id -> locale).executeQuery()
 
       val parser = Macro.namedParser[AssociatedFoodPromptsRow].+
 

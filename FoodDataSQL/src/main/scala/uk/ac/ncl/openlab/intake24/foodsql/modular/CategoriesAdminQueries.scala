@@ -90,7 +90,7 @@ trait CategoriesAdminQueries
     } catch {
       case e: PSQLException => {
         e.getServerErrorMessage.getConstraint match {
-          case "categories_attributes_category_code_fk" => Left(RecordNotFound)
+          case "categories_attributes_category_code_fk" => Left(RecordNotFound(new RuntimeException(categoryCode)))
           case _ => throw e
         }
       }
@@ -106,7 +106,7 @@ trait CategoriesAdminQueries
     if (rowsAffected == 1) {
       Right(())
     } else {
-      Left(VersionConflict)
+      Left(VersionConflict(new RuntimeException(categoryCode)))
     }
   }
 
@@ -117,7 +117,7 @@ trait CategoriesAdminQueries
   private val categoriesPsmInsertQuery = "INSERT INTO categories_portion_size_methods VALUES(DEFAULT, {category_code}, {locale_id}, {method}, {description}, {image_url}, {use_for_recipes})"
 
   protected def updateCategoryPortionSizeMethodsQuery(categoryCode: String, portionSize: Seq[PortionSizeMethod], locale: String)(implicit conn: java.sql.Connection): Either[LocalUpdateError, Unit] = {
-    val errors = Map[String, PSQLException => LocalUpdateError]("categories_portion_size_methods_categories_code_fk" -> (e => RecordNotFound),
+    val errors = Map[String, PSQLException => LocalUpdateError]("categories_portion_size_methods_categories_code_fk" -> (e => RecordNotFound(new RuntimeException(categoryCode))),
       "categories_portion_size_methods_locale_id_fk" -> (e => UndefinedLocale(e)))
 
     SQL("DELETE FROM categories_portion_size_methods WHERE category_code={category_code} AND locale_id={locale_id}")
@@ -155,7 +155,7 @@ trait CategoriesAdminQueries
       if (rowsAffected == 1) {
         Right(())
       } else {
-        Left(VersionConflict)
+        Left(VersionConflict(new RuntimeException(categoryCode)))
       }
     }
   }

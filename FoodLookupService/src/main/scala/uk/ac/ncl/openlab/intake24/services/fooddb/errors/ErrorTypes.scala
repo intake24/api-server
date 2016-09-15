@@ -18,7 +18,9 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.services.fooddb.errors
 
-sealed trait AnyError
+sealed trait AnyError {
+  val exception: Throwable
+}
 
 sealed trait LocalLookupError extends LocalUpdateError
 
@@ -27,9 +29,13 @@ sealed trait LocaleError
   with LocalUpdateError
   with LocalCreateError
   with LocalDeleteError
-  with LocaleOrParentError
+  with LocaleOrParentError {
+  val exception: Throwable
+}
 
-sealed trait LookupError extends LocalLookupError with UpdateError
+sealed trait LookupError extends LocalLookupError with UpdateError {
+  val exception: Throwable
+}
 
 sealed trait LocalDeleteError
 
@@ -39,18 +45,24 @@ sealed trait LocalUpdateError extends LocalDependentUpdateError
 
 sealed trait UpdateError
   extends LocalUpdateError
-  with DependentUpdateError
+  with DependentUpdateError {
+  val exception: Throwable
+}
 
 sealed trait LocalCreateError
 
 sealed trait CreateError 
   extends LocalCreateError
-  with DependentCreateError
+  with DependentCreateError {
+  val exception: Throwable
+}
 
 sealed trait ParentError
   extends DependentUpdateError
   with DependentCreateError
-  with LocaleOrParentError
+  with LocaleOrParentError {
+  val exception: Throwable
+}
 
 sealed trait LocaleOrParentError
   extends LocalDependentUpdateError
@@ -65,20 +77,22 @@ sealed trait LocalDependentCreateError extends AnyError
 
 sealed trait DependentCreateError extends LocalDependentCreateError
 
-sealed trait NutrientMappingError
+sealed trait NutrientMappingError {
+  val exception: Throwable
+}
 
 case class UndefinedLocale(exception: Throwable) extends LocaleError
 
 sealed trait RecordType
 
-case object RecordNotFound
+case class RecordNotFound(exception: Throwable)
   extends LookupError
   with NutrientMappingError
   with DeleteError
   with UpdateError
   with AnyError
 
-case object VersionConflict extends UpdateError
+case class VersionConflict(exception: Throwable) extends UpdateError
 
 case class DuplicateCode(exception: Throwable) extends CreateError with UpdateError
 
@@ -86,7 +100,7 @@ case class ParentRecordNotFound(exception: Throwable) extends ParentError
 
 case class IllegalParent(exception: Throwable) extends ParentError
 
-case object TableNotFound extends NutrientMappingError
+case class TableNotFound(exception: Throwable) extends NutrientMappingError
 
 case class DatabaseError(exception: Throwable)
   extends LocaleError

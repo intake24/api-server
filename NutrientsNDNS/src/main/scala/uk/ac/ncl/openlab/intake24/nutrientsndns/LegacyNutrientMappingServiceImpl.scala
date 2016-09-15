@@ -69,8 +69,8 @@ case class LegacyNutrientMappingServiceImpl @Inject() (tables: Map[String, Nutri
   def nutrientsFor(table_id: String, record_id: String, weight: Double): Either[NutrientMappingError, Map[Nutrient, Double]] = tables.get(table_id) match {
     case Some(table) => table.records.get(record_id) match {
       case Some(record) => Right(record.mapValues(v => v / 100.0 * weight))
-      case None => Left(RecordNotFound)
+      case None => Left(RecordNotFound(new RuntimeException(s"table_id: $table_id, record_id: $record_id")))
     }
-    case None => Left(TableNotFound)
+    case None => Left(TableNotFound(new RuntimeException(table_id)))
   }
 }

@@ -40,7 +40,7 @@ class NutrientMappingServiceSqlImpl @Inject() (@Named("intake24_foods") val data
         .as(Macro.namedParser[NutrientsRow].*)
 
       if (rows.isEmpty)
-        Left(RecordNotFound)
+        Left(RecordNotFound(new RuntimeException(s"table_id: $table_id, record_id: $record_id")))
       else
         Right(rows.map(row => (Nutrient.for_id(row.nutrient_type_id).get -> (weight * row.units_per_100g / 100.0))).toMap)
   }

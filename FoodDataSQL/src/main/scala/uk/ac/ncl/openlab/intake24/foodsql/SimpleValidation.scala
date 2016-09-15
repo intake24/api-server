@@ -46,9 +46,9 @@ trait SimpleValidation {
       val validation = SQL(foodAndLocaleValidationQuery).on("food_code" -> foodCode, "locale_id" -> locale).executeQuery().as(Macro.namedParser[FoodAndLocaleValidationRow].single)
 
       if (validation.food_exists.isEmpty) {
-        Left(RecordNotFound)
+        Left(RecordNotFound(new RuntimeException(foodCode)))
       } else if (validation.locale_exists.isEmpty) {
-        Left(UndefinedLocale(new RuntimeException()))
+        Left(UndefinedLocale(new RuntimeException(locale)))
       } else {
         Right(())
       }
@@ -60,9 +60,9 @@ trait SimpleValidation {
       val validation = SQL(categoryAndLocaleValidationQuery).on("category_code" -> categoryCode, "locale_id" -> locale).executeQuery().as(Macro.namedParser[CategoryAndLocaleValidationRow].single)
 
       if (validation.category_exists.isEmpty) {
-        Left(RecordNotFound)
+        Left(RecordNotFound(new RuntimeException(categoryCode)))
       } else if (validation.locale_exists.isEmpty) {
-        Left(UndefinedLocale(new RuntimeException()))
+        Left(UndefinedLocale(new RuntimeException(locale)))
       } else {
         Right(())
       }

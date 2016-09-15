@@ -186,7 +186,7 @@ trait FoodsAdminQueries extends FoodsAdminService
 
   protected def updateFoodLocaleRestrictionsQuery(foodCode: String, localeRestrictions: Seq[String])(implicit conn: java.sql.Connection): Either[LocalLookupError, Unit] = {
 
-    val errors = Map[String, PSQLException => LocalLookupError]("foods_restrictions_food_code_fk" -> (e => RecordNotFound), "foods_restrictions_locale_id_fk" -> (e => UndefinedLocale(e)))
+    val errors = Map[String, PSQLException => LocalLookupError]("foods_restrictions_food_code_fk" -> (e => RecordNotFound(new RuntimeException(foodCode))), "foods_restrictions_locale_id_fk" -> (e => UndefinedLocale(e)))
 
     tryWithConstraintsCheck(errors) {
       SQL("DELETE FROM foods_restrictions WHERE food_code={food_code}").on('food_code -> foodCode).execute()
@@ -201,7 +201,7 @@ trait FoodsAdminQueries extends FoodsAdminService
   }
 
   protected def updateFoodAttributesQuery(foodCode: String, attributes: InheritableAttributes)(implicit conn: java.sql.Connection): Either[LookupError, Unit] = {
-    tryWithConstraintCheck("foods_attributes_food_code_fk", e => RecordNotFound) {
+    tryWithConstraintCheck("foods_attributes_food_code_fk", e => RecordNotFound(new RuntimeException(foodCode))) {
       SQL("DELETE FROM foods_attributes WHERE food_code={food_code}").on('food_code -> foodCode).execute()
 
       SQL(foodAttributesInsertQuery)
@@ -221,7 +221,7 @@ trait FoodsAdminQueries extends FoodsAdminService
     if (rowsAffected == 1) {
       Right(())
     } else
-      Left(VersionConflict)
+      Left(VersionConflict(new RuntimeException(foodCode)))
   }
 
   protected def updateLocalFoodQuery(foodCode: String, foodLocal: LocalFoodRecordUpdate, locale: String)(implicit conn: java.sql.Connection): Either[LocalDependentUpdateError, Unit] = {
@@ -263,7 +263,7 @@ trait FoodsAdminQueries extends FoodsAdminService
           if (rowsAffected == 1) {
             Right(())
           } else
-            Left(VersionConflict)
+            Left(VersionConflict(new RuntimeException(foodCode)))
         }
         case None => {
           try {
@@ -275,7 +275,7 @@ trait FoodsAdminQueries extends FoodsAdminService
           } catch {
             case e: PSQLException =>
               if (e.getServerErrorMessage.getConstraint == "foods_local_pk") {
-                Left(VersionConflict)
+                Left(VersionConflict(new RuntimeException(foodCode)))
               } else
                 throw e
           }
@@ -285,7 +285,7 @@ trait FoodsAdminQueries extends FoodsAdminService
     } catch {
       case e: PSQLException => {
         e.getServerErrorMessage.getConstraint match {
-          case "foods_nutrient_tables_food_code_fk" | "foods_portion_size_methods_food_id_fk" | "foods_local_food_code_fk" => Left(RecordNotFound)
+          case "foods_nutrient_tables_food_code_fk" | "foods_portion_size_methods_food_id_fk" | "foods_local_food_code_fk" => Left(RecordNotFound(new RuntimeException(foodCode)))
           case _ => throw e
         }
       }

@@ -171,10 +171,10 @@ trait FoodsAdminImpl extends FoodsAdminService
 
           val rowsAffected = batchSql("DELETE FROM foods WHERE code={food_code}", params).execute()
 
-          if (rowsAffected.forall(_ == 1))
-            Right(())
-          else
-            Left(RecordNotFound)
+          rowsAffected.zipWithIndex.find(_._1 != 1) match {
+            case Some((_, index)) => Left(RecordNotFound(new RuntimeException(foodCodes(index))))
+            case None => Right(())
+          }
         }
       } else
         Right(())

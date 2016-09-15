@@ -69,6 +69,7 @@ import scala.Tuple2;
 import scala.collection.Iterator;
 import scala.collection.JavaConversions;
 import scala.collection.Seq;
+import scala.util.Either;
 import uk.ac.ncl.openlab.intake24.AsServedSet;
 import uk.ac.ncl.openlab.intake24.AssociatedFood;
 import uk.ac.ncl.openlab.intake24.DrinkwareSet;
@@ -77,6 +78,10 @@ import uk.ac.ncl.openlab.intake24.UserCategoryContents;
 import uk.ac.ncl.openlab.intake24.UserFoodData;
 import uk.ac.ncl.openlab.intake24.nutrients.EnergyKcal$;
 import uk.ac.ncl.openlab.intake24.nutrients.Nutrient;
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError;
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError;
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError;
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.NutrientMappingError;
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDataSources;
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDatabaseService;
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex;
@@ -130,6 +135,34 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 		}
 	}
 
+	private <T> T handleLocaleError(Either<LocaleError, T> result) {
+		if (result.isLeft())
+			throw new RuntimeException("Service error", result.left().get().exception());
+		else
+			return result.right().get();
+	}
+	
+	private <T> T handleLookupError(Either<LookupError, T> result) {
+		if (result.isLeft())
+			throw new RuntimeException("Service error", result.left().get().exception());
+		else
+			return result.right().get();
+	}
+	
+	private <T> T handleLocalLookupError(Either<LocalLookupError, T> result) {
+		if (result.isLeft())
+			throw new RuntimeException("Service error", result.left().get().exception());
+		else
+			return result.right().get();
+	}
+	
+	private <T> T handleNutrientMappingError(Either<NutrientMappingError, T> result) {
+		if (result.isLeft())
+			throw new RuntimeException("Service error", result.left().get().exception());
+		else
+			return result.right().get();
+	}
+	
 	private LookupResult lookupImpl(String description, String locale, int maxResults, boolean includeHidden) {
 		try {
 			crashIfDebugOptionSet("crash-on-food-lookup");
@@ -220,7 +253,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 		ArrayList<CategoryHeader> categories = new ArrayList<CategoryHeader>();
 
 		for (FoodHeader h : lookupResult.foods)
-			for (String c : JavaConversions.asJavaCollection(foodData.getFoodAllCategories(h.code).right().get())) {
+			for (String c : JavaConversions.asJavaCollection(handleLookupError(foodData.getFoodAllCategories(h.code)))) {
 				if (c.equals(categoryCode)) {
 					foods.add(h);
 					break;
@@ -228,7 +261,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 			}
 
 		for (CategoryHeader h : lookupResult.categories)
-			for (String c : JavaConversions.asJavaCollection(foodData.getCategoryAllCategories(h.code).right().get())) {
+			for (String c : JavaConversions.asJavaCollection(handleLookupError(foodData.getCategoryAllCategories(h.code)))) {
 				if (c.equals(categoryCode)) {
 					categories.add(h);
 					break;
@@ -242,14 +275,14 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 	public List<CategoryHeader> getRootCategories(String locale) {
 		crashIfDebugOptionSet("crash-on-get-root-categories");
 
-		return toJavaCategoryHeaders(foodData.getRootCategories(locale).right().get());
+		return toJavaCategoryHeaders(handleLocaleError(foodData.getRootCategories(locale)));
 	}
 
 	@Override
 	public LookupResult browseCategory(String code, String locale) {
 		crashIfDebugOptionSet("crash-on-browse-category");
 
-		UserCategoryContents userCategoryContents = foodData.getCategoryContents(code, locale).right().get();
+		UserCategoryContents userCategoryContents = handleLocalLookupError(foodData.getCategoryContents(code, locale));
 
 		return new LookupResult(toJavaFoodHeaders(userCategoryContents.foods()), toJavaCategoryHeaders(userCategoryContents.subcategories()));
 	}
@@ -283,7 +316,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 	public AsServedDef getAsServedDef(String asServedSet, String locale) {
 		crashIfDebugOptionSet("crash-on-get-as-served-def");
 
-		AsServedSet set = foodData.getAsServedSet(asServedSet).right().get();
+		AsServedSet set = handleLookupError(foodData.getAsServedSet(asServedSet));
 
 		int size = set.images().size();
 
@@ -316,7 +349,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 	public GuideDef getGuideDef(String guideId, String locale) {
 		crashIfDebugOptionSet("crash-on-get-guide-def");
 
-		GuideImage image = foodData.getGuideImage(guideId).right().get();
+		GuideImage image = handleLookupError(foodData.getGuideImage(guideId));
 
 		Map<Integer, Double> weights = new TreeMap<Integer, Double>();
 
@@ -334,7 +367,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 	public DrinkwareDef getDrinkwareDef(String drinkwareId, String locale) {
 		crashIfDebugOptionSet("crash-on-get-drinkware-def");
 
-		DrinkwareSet drinkwareSet = foodData.getDrinkwareSet(drinkwareId).right().get();
+		DrinkwareSet drinkwareSet = handleLookupError(foodData.getDrinkwareSet(drinkwareId));
 
 		ArrayList<DrinkScaleDef> scaleDefs = new ArrayList<DrinkScaleDef>();
 
@@ -354,7 +387,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 	public List<FoodPrompt> getFoodPrompts(String foodCode, String locale) {
 		crashIfDebugOptionSet("crash-on-get-food-prompts");
 
-		Seq<AssociatedFood> foods = foodData.getAssociatedFoods(foodCode, locale).right().get();
+		Seq<AssociatedFood> foods = handleLocalLookupError(foodData.getAssociatedFoods(foodCode, locale));
 
 		Iterator<uk.ac.ncl.openlab.intake24.AssociatedFood> iter = foods.iterator();
 
@@ -373,7 +406,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 	}
 
 	public List<String> getBrandNames(String foodCode, String locale) {
-		Seq<String> brandNames = foodData.getBrandNames(foodCode, locale).right().get();
+		Seq<String> brandNames = handleLocalLookupError(foodData.getBrandNames(foodCode, locale));
 
 		return toJavaList(brandNames);
 	}
@@ -382,7 +415,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 	public FoodData getFoodData(String foodCode, String locale) {
 		crashIfDebugOptionSet("crash-on-get-food-data");
 
-		Tuple2<UserFoodData, FoodDataSources> result = foodData.getFoodData(foodCode, locale).right().get();
+		Tuple2<UserFoodData, FoodDataSources> result = handleLocalLookupError(foodData.getFoodData(foodCode, locale));
 
 		uk.ac.ncl.openlab.intake24.UserFoodData data = result._1();
 
@@ -399,12 +432,11 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 			String nutrientTableId = tableCode.get()._1;
 			String nutrientTableRecordId = tableCode.get()._2;
 
-			Map<Nutrient, Double> nutrients = nutrientMappingService.javaNutrientsFor(nutrientTableId, nutrientTableRecordId, 100.0).right().get();
+			Map<Nutrient, Double> nutrients = handleNutrientMappingError(nutrientMappingService.javaNutrientsFor(nutrientTableId, nutrientTableRecordId, 100.0));
 
-			return new FoodData(data.code(), data.readyMealOption(), data.sameAsBeforeOption(),
-					nutrients.get(EnergyKcal$.MODULE$), data.localDescription(),
-					toJavaPortionSizeMethods(data.portionSize(), imageUrlBase), getFoodPrompts(foodCode, locale), getBrandNames(foodCode, locale),
-					toJavaList(foodData.getFoodAllCategories(foodCode).right().get().toSeq()));
+			return new FoodData(data.code(), data.readyMealOption(), data.sameAsBeforeOption(), nutrients.get(EnergyKcal$.MODULE$),
+					data.localDescription(), toJavaPortionSizeMethods(data.portionSize(), imageUrlBase), getFoodPrompts(foodCode, locale),
+					getBrandNames(foodCode, locale), toJavaList(handleLookupError(foodData.getFoodAllCategories(foodCode)).toSeq()));
 
 		}
 	}

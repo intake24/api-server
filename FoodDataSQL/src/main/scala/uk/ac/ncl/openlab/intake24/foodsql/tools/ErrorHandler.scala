@@ -10,15 +10,9 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.IllegalParent
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 
 trait ErrorHandler {
-  
+
   def throwOnError[T](result: Either[AnyError, T]): T = result match {
-    case Left(VersionConflict) => throw new RuntimeException("Version conflict")
-    case Left(DatabaseError(e)) => throw new RuntimeException(e)
-    case Left(DuplicateCode(e)) => throw new RuntimeException(e)
-    case Left(IllegalParent(e)) => throw new RuntimeException(e)
-    case Left(ParentRecordNotFound(e)) => throw new RuntimeException(e)
-    case Left(UndefinedLocale(e)) => throw new RuntimeException(e)
-    case Left(RecordNotFound) => throw new RuntimeException("Record not found")
+    case Left(e) => throw e.exception
     case Right(r) => r
   }
 }

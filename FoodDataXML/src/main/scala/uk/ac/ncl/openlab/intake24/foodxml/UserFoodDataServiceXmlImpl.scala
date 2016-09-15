@@ -63,7 +63,7 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDat
             Right(UserCategoryContents(foodHeaders, categoryHeaders))
 
           }
-          case None => Left(RecordNotFound)
+          case None => Left(RecordNotFound(new RuntimeException(s"code: $code, locale: $locale")))
         }
     }
 
@@ -116,17 +116,17 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDat
 
   def getAsServedSet(id: String) = data.asServedSets.get(id) match {
     case Some(set) => Right(set)
-    case None => Left(RecordNotFound)
+    case None => Left(RecordNotFound(new RuntimeException(id)))
   }
 
   def getGuideImage(id: String) = data.guideImages.get(id) match {
     case Some(image) => Right(image)
-    case None => Left(RecordNotFound)
+    case None => Left(RecordNotFound(new RuntimeException(id)))
   }
 
   def getDrinkwareSet(id: String) = data.drinkwareSets.get(id) match {
     case Some(set) => Right(set)
-    case None => Left(RecordNotFound)
+    case None => Left(RecordNotFound(new RuntimeException(id)))
   }
 
   def getAssociatedFoods(foodCode: String, locale: String) =
