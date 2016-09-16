@@ -29,22 +29,27 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 	<nav class="navbar navbar-fixed-top">
 		<div class="container">
 			<div class="navbar-header">
-				<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar"
-					aria-expanded="false" aria-controls="navbar">
+				<button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
+					data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
 					<span class="sr-only">Toggle navigation</span> <span class="icon-bar"></span> <span class="icon-bar"></span> <span
 						class="icon-bar"></span>
 				</button>
-				<a class="navbar-brand" href="/">Intake24</a>
+				<a class="navbar-brand" href="#">Intake24</a>
 			</div>
 			<div id="navbar" class="navbar-collapse collapse">
 				<ul class="nav navbar-nav navbar-right">
-					<li class="active"><a href="/">About</a></li>
-					<li><a href="info/sources.html">Open source</a></li>
 					<li><a href="info/recall.html">Dietary recall</a></li>
-					<li><a href="info/features.html">Features</a></li>
-					<!-- <li><a href="info/database.html">Food database</a></li> -->
-					<li><a href="info/output.html">Output</a></li>
-					<li><a href="info/validation.html">Validation</a></li>
+					<li class="dropdown"><a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button"
+						aria-haspopup="true" aria-expanded="false">Features <span class="caret"></span></a>
+						<ul class="dropdown-menu">
+							<li><a href="info/features.html">Overview</a></li>
+							<li><a href="info/sources.html">Open source</a></li>
+							<li><a href="info/output.html">System output</a></li>
+							<li><a href="info/validation.html">Validation</a></li>
+							<li><a href="info/localisation.html">Localisation</a></li>
+						</ul>
+					<li><a href="info/feedback.html">Participant feedback</a></li>
+					<li><a href="info/publications.html">Publications</a></li>
 					<li><a href="info/contacts.html">Contact us</a></li>
 				</ul>
 			</div>
@@ -57,7 +62,9 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 			<p>Intake24 is an open-source self-completed computerised dietary recall system based on multiple-pass 24-hour
 				recall. The online system offers similar data quality to interviewer-led recalls at a significantly lower cost.</p>
 			<p>
-				<a class="btn btn-success btn-lg" href="/demo" role="button">Try a demo &raquo;</a>
+				<a class="btn btn-success btn-lg" href="/demo" role="button">Try a demo &raquo;</a> <a
+					class="btn btn-success btn-lg" href="https://www.youtube.com/watch?v=5vB4NgI4ATc" role="button">Watch a video
+					&raquo;</a>
 			</p>
 		</div>
 	</div>
@@ -114,12 +121,38 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 				<h2>Open-source</h2>
 				<p>
 					Intake24 source code is available under the terms of the <a href="https://www.apache.org/licenses/LICENSE-2.0.html">Apache
-						License</a>. The food database, including food definitions, portion size photographs and nutrient data is available under the
-					terms of the <a href="http://www.nationalarchives.gov.uk/doc/open-government-licence/">Open Government
-						License.</a
+						License</a>. The food database, including food definitions, portion size photographs and nutrient data is available
+					under the terms of the <a href="http://www.nationalarchives.gov.uk/doc/open-government-licence/">Open
+						Government License.</a>
 				</p>
 				<p>
 					<a class="btn btn-default" href="info/sources.html" role="button">View details &raquo;</a>
+				</p>
+			</div>
+		</div>
+
+		<div class="row">
+			<div class="col-md-4">
+				<h2>Local adaptations</h2>
+				<p>Intake24 offers full support for localisation and internationalisation of both the user interface and the
+					food database.</p>
+				<p>
+					<a class="btn btn-default" href="info/adaptations.html" role="button">View details &raquo;</a>
+				</p>
+			</div>
+			<div class="col-md-4">
+				<h2>Publications</h2>
+				<p>Studies and research papers published by the Intake24 team.</p>
+				<p>
+					<a class="btn btn-default" href="info/publications.html" role="button">View publications &raquo;</a>
+				</p>
+			</div>
+			<div class="col-md-4">
+				<h2>Participant feedback</h2>
+				<p>Feedback from participants in the field test of Intake24 in those aged 11+ years (up to and including older
+					adults).</p>
+				<p>
+					<a class="btn btn-default" href="info/feedback.html" role="button">View feedback &raquo;</a>
 				</p>
 			</div>
 		</div>
@@ -135,17 +168,19 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 			</div>
 		</div>
 
+
+
 		<hr>
 
 		<footer>
 			<div class="logo">
-				<a href="https://openlab.ncl.ac.uk/"><img src="/images/nu_logo.png" title="Newcastle University"></a>
+				<a href="https://openlab.ncl.ac.uk/"><img src="images/nu_logo.png" title="Newcastle University"></a>
 			</div>
 			<div class="logo">
-				<a href="http://www.foodstandards.gov.scot/"><img src="/images/fss-logo-small.png"
+				<a href="http://www.foodstandards.gov.scot/"><img src="images/fss-logo-small.png"
 					title="Food Standards Scotland"></a>
 			</div>
-			<p>&copy; 2012–2015 Food Standards Agency, Newcastle University</p>
+			<p>&copy; 2012–2016 Newcastle University, Food Standards Scotland</p>
 		</footer>
 	</div>
 

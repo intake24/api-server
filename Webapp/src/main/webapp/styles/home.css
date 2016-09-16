@@ -27,6 +27,7 @@ h1, h2, h3, h4, h4, h6 {
 	width: 100%;
 	background: rgba(0, 0, 0, 0.075);
 	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+	height: 50px;
 }
 
 .navbar a {
@@ -34,13 +35,34 @@ h1, h2, h3, h4, h4, h6 {
 	font-size: 16px;
 }
 
-.navbar-nav > li.active {
+.navbar-nav li.active {
 	background: rgba(255, 255, 255, 0.3);
 }
 
-.navbar-nav>li>a:hover, .navbar-nav>li>a:focus {
+.navbar-nav li>a:hover, .navbar-nav li>a:focus {
 	color: white;
 	background: rgba(255, 255, 255, 0.2);
+}
+
+.nav .open > a, .nav .open > a:hover, .nav .open > a:focus {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-color: rgba(0,0,0,1);
+}
+
+.navbar-nav > li > .dropdown-menu {
+    background-color: rgba(156, 121, 101, 0.9);
+}
+
+#navbar.collapsing {
+    background-color: rgba(156, 121, 101, 0.9);
+}
+
+#navbar.in {
+    background-color: rgba(156, 121, 101, 0.9);
+}
+
+.dropdown-menu > li > a {
+	color: #ffffff;
 }
 
 .home-banner {
@@ -57,4 +79,25 @@ h1, h2, h3, h4, h4, h6 {
 
 .jumbotron p {
 	max-width: 500px;
+}
+
+.btn-success {
+    color: #fff;
+    background-color: #6ca76c;
+    border-color: #6ca76c;
+}
+
+ul.dash {
+  list-style-type: none;
+}
+ul.dash > li {
+  margin-bottom: 1em;
+}
+ul.dash > li:before {
+  content: "—";
+  margin-right: 5px;
+}
+
+.navbar-toggle .icon-bar {
+    background: white;
 }
