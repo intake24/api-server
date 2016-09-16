@@ -69,7 +69,8 @@ h1, h2, h3, h4, h4, h6 {
 	background-image: url("../images/home-banner.jpg");
 	background-size: cover;
 	background-color: #CF3708;
-	padding-top: 98px;
+	padding-top: 64px;
+	padding-bottom: 16px;
 	color: white;
 }
 
@@ -100,4 +101,8 @@ ul.dash > li:before {
 
 .navbar-toggle .icon-bar {
     background: white;
+}
+
+.btn-success {
+	margin-bottom: 5px;
 }
