@@ -29,10 +29,12 @@ public class AskToLookupFood implements PromptRule<Pair<FoodEntry, Meal>, MealOp
 	
 	final private RecipeManager recipeManager;
 	final private String locale;
+	final private String imageBaseUrl;
 	
-	public AskToLookupFood(String locale, RecipeManager recipeManager) {
+	public AskToLookupFood(String locale, RecipeManager recipeManager, String imageBaseUrl) {
 		this.locale = locale;
 		this.recipeManager = recipeManager;
+		this.imageBaseUrl = imageBaseUrl;
 	}
 
 	@Override
@@ -40,7 +42,7 @@ public class AskToLookupFood implements PromptRule<Pair<FoodEntry, Meal>, MealOp
 		if (!surveyFlags.contains(Survey.FLAG_FREE_ENTRY_COMPLETE) || data.left.isTemplate() || data.left.isCompound() || data.left.isMissing())
 			return Option.none();
 		else if (!data.left.isEncoded())
-			return Option.<Prompt<Pair<FoodEntry, Meal>, MealOperation>>some(new FoodLookupPrompt(locale, data.left, data.right, recipeManager));
+			return Option.<Prompt<Pair<FoodEntry, Meal>, MealOperation>>some(new FoodLookupPrompt(locale, data.left, data.right, recipeManager, imageBaseUrl));
 		else
 			return Option.none();
 	}
@@ -50,7 +52,7 @@ public class AskToLookupFood implements PromptRule<Pair<FoodEntry, Meal>, MealOp
 		return "Ask to look up food";
 	}
 
-	public static WithPriority<PromptRule<Pair<FoodEntry, Meal>, MealOperation>> withPriority(int priority, String locale, RecipeManager recipeManager) {
-		return new WithPriority<PromptRule<Pair<FoodEntry, Meal>, MealOperation>>(new AskToLookupFood(locale, recipeManager), priority);
+	public static WithPriority<PromptRule<Pair<FoodEntry, Meal>, MealOperation>> withPriority(int priority, String locale, RecipeManager recipeManager, String imageBaseUrl) {
+		return new WithPriority<PromptRule<Pair<FoodEntry, Meal>, MealOperation>>(new AskToLookupFood(locale, recipeManager, imageBaseUrl), priority);
 	}
 }

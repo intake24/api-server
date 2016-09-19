@@ -68,7 +68,6 @@ import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.KeyCodes;
 import com.google.gwt.event.dom.client.KeyPressEvent;
 import com.google.gwt.event.dom.client.KeyPressHandler;
-import com.google.gwt.i18n.client.LocaleInfo;
 import com.google.gwt.safehtml.shared.SafeHtml;
 import com.google.gwt.safehtml.shared.SafeHtmlUtils;
 import com.google.gwt.user.client.rpc.AsyncCallback;
@@ -88,13 +87,15 @@ public class FoodLookupPrompt implements Prompt<Pair<FoodEntry, Meal>, MealOpera
 	private final Meal meal;
 	private final RecipeManager recipeManager;
 
-	private final String locale;
+	private final String locale;	
+	private final String baseImageUrl;
 
-	public FoodLookupPrompt(final String locale, final FoodEntry food, final Meal meal, RecipeManager recipeManager) {
+	public FoodLookupPrompt(final String locale, final FoodEntry food, final Meal meal, RecipeManager recipeManager, String baseImageUrl) {
 		this.locale = locale;
 		this.food = food;
 		this.meal = meal;
 		this.recipeManager = recipeManager;
+		this.baseImageUrl = baseImageUrl;
 	}
 
 	private class LookupInterface extends Aligned {
@@ -102,7 +103,7 @@ public class FoodLookupPrompt implements Prompt<Pair<FoodEntry, Meal>, MealOpera
 		private final TextBox searchText;
 		private final Button searchButton;
 		private final RecipeBrowser recipeBrowser;
-		private final FoodBrowser foodBrowser;
+		private final FoodBrowser foodBrowser;		
 
 		private String lastSearchTerm = "";
 
@@ -229,7 +230,7 @@ public class FoodLookupPrompt implements Prompt<Pair<FoodEntry, Meal>, MealOpera
 							FoodEntry parentFood = meal.foods.get(meal.foodIndex(id));
 
 							if (parentFood.isCompound())
-								return foodData.withRecipePortionSizeMethods();
+								return foodData.withRecipePortionSizeMethods(baseImageUrl);
 							else
 								return foodData;
 						}

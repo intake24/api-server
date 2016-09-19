@@ -84,5 +84,6 @@ public interface PortionDescriptions extends ConstantsWithLookup {
 	public String use_a_standard_portion();
 	public String use_an_image();
 	public String use_these_crisps_in_a_bag();
-	public String use_tortilla_chips_in_a_bowl();	
+	public String use_tortilla_chips_in_a_bowl();
+	public String weight();
 }
