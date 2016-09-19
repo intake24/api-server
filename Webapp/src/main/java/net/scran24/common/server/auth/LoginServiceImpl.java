@@ -70,6 +70,8 @@ public class LoginServiceImpl extends RemoteServiceServlet implements LoginServi
 	public void init() throws ServletException {
 		Injector injector = (Injector) getServletContext().getAttribute("intake24.injector");
 		dataStore = injector.getInstance(DataStore.class);
+		
+		getServletContext().getInitParameter(arg0)
 	}
 	
 	private String hidePassword(String password) {
@@ -133,6 +135,8 @@ public class LoginServiceImpl extends RemoteServiceServlet implements LoginServi
 				chars[i] = Character.toLowerCase(c);
 			} else if (Character.isLowerCase(c)) {
 				chars[i] = Character.toUpperCase(c);
+			} else {
+				chars[i] = c;
 			}
 		}
 		return new String(chars);

@@ -20,14 +20,16 @@ public class UserInfo implements IsSerializable {
 	public String surveyId;
 	public Map<String, String> userData;
 	public SurveyParameters surveyParameters;
+	public String imageBaseUrl;
 	
 	@Deprecated
 	public UserInfo() { }
 
-	public UserInfo(String userName, String surveyId, SurveyParameters surveyParameters, Map<String, String> userData) {
+	public UserInfo(String userName, String surveyId, SurveyParameters surveyParameters, Map<String, String> userData, String imageBaseUrl) {
 		this.userName = userName;
 		this.surveyId = surveyId;
 		this.surveyParameters = surveyParameters;
 		this.userData = userData;
+		this.imageBaseUrl = imageBaseUrl;
 	}
 }

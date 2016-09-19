@@ -64,7 +64,7 @@ public class FoodData implements IsSerializable {
 		return new FoodData (code, askIfReadyMeal, sameAsBeforeOption, caloriesPer100g, localDescription, portionSizeMethods, prompts, brands, categories);
 	}
 	
-	public FoodData withRecipePortionSizeMethods() {
+	public FoodData withRecipePortionSizeMethods(String baseImageUrl) {
 		List<PortionSizeMethod> methods = new ArrayList<PortionSizeMethod>();
 		
 		for (PortionSizeMethod m: portionSizeMethods) {
@@ -72,7 +72,7 @@ public class FoodData implements IsSerializable {
 				methods.add(m);
 		}
 		
-		methods.add(new PortionSizeMethod("weight", "Enter weight/volume", "/intake24-images/portion/weight.png", true, new HashMap<String, String>()));
+		methods.add(new PortionSizeMethod("weight", "weight", baseImageUrl + "/portion/weight.png", true, new HashMap<String, String>()));
 		
 		return withPortionSizeMethods(methods);
 	}
