@@ -143,7 +143,7 @@ public class UserDataQuestion implements SurveyStage<Survey> {
 					@Override
 					public void onSuccess(Void result) {
 						UserInfo userInfo = CurrentUser.getUserInfo();
-						CurrentUser.setUserInfo(new UserInfo(userInfo.userName, userInfo.surveyId, userInfo.surveyParameters, data, userInfo.imageBaseUrl));
+						CurrentUser.setUserInfo(new UserInfo(userInfo.userName, userInfo.surveyId, userInfo.surveyParameters, data));
 						onComplete.call(state);
 					}
 				});

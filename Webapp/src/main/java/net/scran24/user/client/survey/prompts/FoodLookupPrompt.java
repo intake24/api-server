@@ -54,6 +54,7 @@ import net.scran24.user.shared.SpecialData;
 import net.scran24.user.shared.TemplateFood;
 import net.scran24.user.shared.UUID;
 import net.scran24.user.shared.lookup.LookupResult;
+import net.scran24.user.shared.lookup.PortionSizeMethod;
 
 import org.pcollections.client.PVector;
 import org.pcollections.client.TreePVector;
@@ -82,24 +83,44 @@ public class FoodLookupPrompt implements Prompt<Pair<FoodEntry, Meal>, MealOpera
 	private final static int MAX_RESULTS = 50;
 	private final static PromptMessages messages = PromptMessages.Util.getInstance();
 	private final static HelpMessages helpMessages = HelpMessages.Util.getInstance();
+	private final static FoodLookupServiceAsync lookupService = FoodLookupServiceAsync.Util.getInstance();
+	private static PortionSizeMethod weightPortionSizeMethod = null;
 
 	private final FoodEntry food;
 	private final Meal meal;
 	private final RecipeManager recipeManager;
 
-	private final String locale;	
-	private final String baseImageUrl;
+	private final String locale;
+	
+	
+	public static void preloadWeightPortionSizeMethod(final Callback onComplete, final Callback onFailure) {
+		AsyncRequestAuthHandler.execute(new AsyncRequest<PortionSizeMethod>() {
+			@Override
+			public void execute(AsyncCallback<PortionSizeMethod> callback) {
+				lookupService.getWeightPortionSizeMethod(callback);
+			}
+		}, new AsyncCallback<PortionSizeMethod>() {
+			@Override
+			public void onFailure(Throwable caught) {
+				onFailure.call();
+			}
 
-	public FoodLookupPrompt(final String locale, final FoodEntry food, final Meal meal, RecipeManager recipeManager, String baseImageUrl) {
+			@Override
+			public void onSuccess(PortionSizeMethod result) {
+				weightPortionSizeMethod = result;
+				onComplete.call();
+			}
+		});
+	}	
+
+	public FoodLookupPrompt(final String locale, final FoodEntry food, final Meal meal, RecipeManager recipeManager) {
 		this.locale = locale;
 		this.food = food;
 		this.meal = meal;
 		this.recipeManager = recipeManager;
-		this.baseImageUrl = baseImageUrl;
 	}
 
 	private class LookupInterface extends Aligned {
-		private final FoodLookupServiceAsync lookupService = FoodLookupServiceAsync.Util.getInstance();
 		private final TextBox searchText;
 		private final Button searchButton;
 		private final RecipeBrowser recipeBrowser;
@@ -230,7 +251,7 @@ public class FoodLookupPrompt implements Prompt<Pair<FoodEntry, Meal>, MealOpera
 							FoodEntry parentFood = meal.foods.get(meal.foodIndex(id));
 
 							if (parentFood.isCompound())
-								return foodData.withRecipePortionSizeMethods(baseImageUrl);
+								return foodData.withRecipePortionSizeMethods(weightPortionSizeMethod);
 							else
 								return foodData;
 						}

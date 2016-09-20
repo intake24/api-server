@@ -35,6 +35,7 @@ import net.scran24.user.shared.lookup.AsServedDef;
 import net.scran24.user.shared.lookup.DrinkwareDef;
 import net.scran24.user.shared.lookup.GuideDef;
 import net.scran24.user.shared.lookup.LookupResult;
+import net.scran24.user.shared.lookup.PortionSizeMethod;
 
 import com.google.gwt.user.client.rpc.RemoteService;
 import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
@@ -62,4 +63,6 @@ public interface FoodLookupService extends RemoteService {
 	DrinkwareDef getDrinkwareDef(String drinkwareId, String locale);
 
 	List<FoodPrompt> getFoodPrompts(String foodCode, String locale);
+	
+	PortionSizeMethod getWeightPortionSizeMethod();
 }

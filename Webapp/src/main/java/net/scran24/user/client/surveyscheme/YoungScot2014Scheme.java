@@ -196,7 +196,7 @@ public class YoungScot2014Scheme extends BasicScheme {
 				survey.customData.containsKey("workFreq");
 	}
 	
-	private Rules rules(PortionSizeScriptManager scriptManager, CompoundFoodTemplateManager templateManager, String imageBaseUrl) {
+	private Rules rules(PortionSizeScriptManager scriptManager, CompoundFoodTemplateManager templateManager) {
 		PromptRule<Meal, MealOperation> showMealLocationPrompt = new PromptRule<Meal, MealOperation>() {
 			@Override
 			public Option<Prompt<Meal, MealOperation>> apply(Meal state, SelectionMode selectionType, PSet<String> surveyFlags) {
@@ -341,7 +341,7 @@ public class YoungScot2014Scheme extends BasicScheme {
 
 				// extended food propmts
 				TreePVector.<WithPriority<PromptRule<Pair<FoodEntry, Meal>, MealOperation>>> empty()
-				.plus(AskToLookupFood.withPriority(2, locale, recipeManager, imageBaseUrl))
+				.plus(AskToLookupFood.withPriority(2, locale, recipeManager))
 				.plus(ShowSameAsBeforePrompt.withPriority(2, getSchemeId(), getDataVersion(), scriptManager, templateManager))
 				.plus(ShowCompoundFoodPrompt.withPriority(0, locale))
 				.plus(ShowAssociatedFoodPrompt.withPriority(0, locale))
@@ -397,7 +397,7 @@ public class YoungScot2014Scheme extends BasicScheme {
 				stateManager.updateState(state.clearFlag(Survey.FLAG_NO_MORE_PROMPTS).withFlag(FLAG_ENABLE_FINAL_RUN).withSelection(new Selection.SelectedMeal(0, SelectionMode.AUTO_SELECTION)), false);
 
 			if (cachedSurveyPage == null) {
-				RuleBasedPromptManager promptManager = new RuleBasedPromptManager(rules(defaultScriptManager, defaultTemplateManager, CurrentUser.getUserInfo().imageBaseUrl));
+				RuleBasedPromptManager promptManager = new RuleBasedPromptManager(rules(defaultScriptManager, defaultTemplateManager));
 				PromptAvailabilityBasedSelectionManager selectionManager = new PromptAvailabilityBasedSelectionManager(promptManager);
 
 				cachedSurveyPage = new IntakeSurvey(stateManager, promptManager, selectionManager, defaultScriptManager);

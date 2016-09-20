@@ -65,6 +65,7 @@ import net.scran24.user.shared.lookup.DrinkScaleDef;
 import net.scran24.user.shared.lookup.DrinkwareDef;
 import net.scran24.user.shared.lookup.GuideDef;
 import net.scran24.user.shared.lookup.LookupResult;
+import net.scran24.user.shared.lookup.PortionSizeMethod;
 import scala.Tuple2;
 import scala.collection.Iterator;
 import scala.collection.JavaConversions;
@@ -439,5 +440,10 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 					getBrandNames(foodCode, locale), toJavaList(handleLookupError(foodData.getFoodAllCategories(foodCode)).toSeq()));
 
 		}
+	}
+
+	@Override
+	public PortionSizeMethod getWeightPortionSizeMethod() {
+		return new PortionSizeMethod("weight", "weight", imageUrlBase + "/portion/weight.png", true, new HashMap<String, String>());
 	}
 }

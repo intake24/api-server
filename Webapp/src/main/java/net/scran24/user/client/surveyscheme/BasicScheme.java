@@ -140,7 +140,7 @@ public abstract class BasicScheme implements SurveyScheme {
 		return postProcessed;		
 	}
 	
-	protected Rules defaultRules(PortionSizeScriptManager scriptManager, CompoundFoodTemplateManager templateManager, RecipeManager recipeManager, String imageBaseUrl) {
+	protected Rules defaultRules(PortionSizeScriptManager scriptManager, CompoundFoodTemplateManager templateManager, RecipeManager recipeManager) {
 		return new Rules(
 				// meal prompts
 				TreePVector.<WithPriority<PromptRule<Meal, MealOperation>>> empty()
@@ -163,7 +163,7 @@ public abstract class BasicScheme implements SurveyScheme {
 				// extended food propmts
 				TreePVector.<WithPriority<PromptRule<Pair<FoodEntry, Meal>, MealOperation>>> empty()
 				.plus(ShowEditIngredientsPrompt.withPriority(3))
-				.plus(AskToLookupFood.withPriority(3, locale, recipeManager, imageBaseUrl))
+				.plus(AskToLookupFood.withPriority(3, locale, recipeManager))
 				.plus(ShowSameAsBeforePrompt.withPriority(3, getSchemeId(), getDataVersion(), scriptManager, templateManager))
 				.plus(ShowHomeRecipeServingsPrompt.withPriority(2))				
 				.plus(ShowTemplateRecipeSavePrompt.withPriority(1, recipeManager))
@@ -222,7 +222,7 @@ public abstract class BasicScheme implements SurveyScheme {
 		
 		recipeManager = new RecipeManager(getSchemeId(), getDataVersion(), defaultScriptManager, defaultTemplateManager);
 	
-		final Rules rules = defaultRules(defaultScriptManager, defaultTemplateManager, recipeManager, CurrentUser.getUserInfo().imageBaseUrl);
+		final Rules rules = defaultRules(defaultScriptManager, defaultTemplateManager, recipeManager);
 		
 		defaultPromptManager = new RuleBasedPromptManager(rules);
 		

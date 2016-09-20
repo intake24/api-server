@@ -37,10 +37,13 @@ import net.scran24.common.client.NavigationBar;
 import net.scran24.common.client.survey.TutorialVideo;
 import net.scran24.datastore.shared.SurveySchemes;
 import net.scran24.datastore.shared.UserInfo;
+import net.scran24.user.client.services.FoodLookupServiceAsync;
 import net.scran24.user.client.survey.SurveyMessages;
+import net.scran24.user.client.survey.prompts.FoodLookupPrompt;
 import net.scran24.user.client.surveyscheme.SurveyScheme;
 import net.scran24.user.client.surveyscheme.SurveySchemeMap;
 
+import org.workcraft.gwt.shared.client.Callback;
 import org.workcraft.gwt.shared.client.Callback1;
 import org.workcraft.gwt.shared.client.Option;
 
@@ -60,10 +63,10 @@ import com.google.gwt.user.client.ui.RootPanel;
  */
 public class Scran24 implements EntryPoint {
 	final private Logger log = Logger.getLogger("Init");
-	
+
 	private final SurveyMessages surveyMessages = SurveyMessages.Util.getInstance();
-	private final CommonMessages commonMessages = CommonMessages.Util.getInstance(); 
-	
+	private final CommonMessages commonMessages = CommonMessages.Util.getInstance();
+
 	private LoginServiceAsync loginService = LoginServiceAsync.Util.getInstance();
 
 	private Element mainContent;
@@ -77,12 +80,12 @@ public class Scran24 implements EntryPoint {
 		final RootPanel links = RootPanel.get("navigation-bar");
 
 		Anchor watchTutorial = new Anchor(surveyMessages.navBar_tutorialVideo(), TutorialVideo.url, "_blank");
-		
-		Anchor logOut = new Anchor(surveyMessages.navBar_logOut(), "../../common/logout" + Location.getQueryString());
-				
 
-		// These divs are no longer used for content, but this code is left here to handle legacy survey files
-		
+		Anchor logOut = new Anchor(surveyMessages.navBar_logOut(), "../../common/logout" + Location.getQueryString());
+
+		// These divs are no longer used for content, but this code is left here
+		// to handle legacy survey files
+
 		Element se = Document.get().getElementById("suspended");
 		if (se != null)
 			se.removeFromParent();
@@ -98,24 +101,25 @@ public class Scran24 implements EntryPoint {
 		Element fpe = Document.get().getElementById("finalPage");
 		if (fpe != null)
 			fpe.removeFromParent();
-		
+
 		mainContent = Document.get().getElementById("main-content");
 		mainContent.setInnerHTML("");
 
 		HTMLPanel mainContentPanel = HTMLPanel.wrap(mainContent);
-		
+
 		switch (userInfo.surveyParameters.state) {
 		case NOT_INITIALISED:
 			mainContentPanel.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(surveyMessages.survey_notInitialised())));
 			links.add(new NavigationBar(watchTutorial, logOut));
 			break;
 		case SUSPENDED:
-			mainContentPanel.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(surveyMessages.survey_suspended(SafeHtmlUtils.htmlEscape(userInfo.surveyParameters.suspensionReason)))));
+			mainContentPanel.add(new HTMLPanel(SafeHtmlUtils
+					.fromSafeConstant(surveyMessages.survey_suspended(SafeHtmlUtils.htmlEscape(userInfo.surveyParameters.suspensionReason)))));
 			links.add(new NavigationBar(watchTutorial, logOut));
 			break;
 		case ACTIVE:
 			Date now = new Date();
-			
+
 			if (now.getTime() > userInfo.surveyParameters.endDate) {
 				mainContentPanel.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(surveyMessages.survey_finished())));
 			} else {
@@ -123,7 +127,7 @@ public class Scran24 implements EntryPoint {
 
 				SurveyScheme scheme = SurveySchemeMap.initScheme(SurveySchemes.schemeForId(userInfo.surveyParameters.schemeName),
 						LocaleInfo.getCurrentLocale().getLocaleName(), surveyInterfaceManager);
-				
+
 				links.add(new NavigationBar(scheme.navBarLinks(), watchTutorial, logOut));
 
 				scheme.showNextPage();
@@ -132,23 +136,24 @@ public class Scran24 implements EntryPoint {
 		}
 
 		RootPanel.get("loading").getElement().removeFromParent();
-		
+
 		initComplete();
 	}
 
 	public void onModuleLoad() {
-		// These divs are no longer used for content, but this code is left here to handle legacy survey files
-		
+		// These divs are no longer used for content, but this code is left here
+		// to handle legacy survey files
+
 		final Element serverError = Document.get().getElementById("serverError");
-		
+
 		if (serverError != null)
 			serverError.removeFromParent();
 
 		log.info("Fetching user information");
-		
+
 		// This page should not be accessed unless the user is authenticated
 		// as a respondent (see net.scran24.common.server.auth.ScranAuthFilter)
-	
+
 		loginService.getUserInfo(new AsyncCallback<Option<UserInfo>>() {
 			@Override
 			public void onSuccess(Option<UserInfo> result) {
@@ -156,14 +161,36 @@ public class Scran24 implements EntryPoint {
 					@Override
 					public void visitSome(final UserInfo userInfo) {
 						CurrentUser.setUserInfo(userInfo);
-						initPage(userInfo);
+						
+						// Singleton portion size method for weight type-in
+						// Inserted dynamically by client runtime but depends on 
+						// server-side configuration parameters (base image url)
+						// so still has to be loaded once
+
+						FoodLookupPrompt.preloadWeightPortionSizeMethod(new Callback() {
+							@Override
+							public void call() {
+								initPage(userInfo);
+							}
+						}, new Callback() {
+
+							@Override
+							public void call() {
+								HTMLPanel mainContentPanel = HTMLPanel.wrap(mainContent);
+								mainContentPanel.add(new HTMLPanel(SafeHtmlUtils.fromString(commonMessages.serverError())));
+							}
+						});
+
 					}
 
 					@Override
 					public void visitNone() {
-						// this should never happen as any unauthenticated user should be
-						// redirected to the log in page, but still may happen in some weird
-						// case where the authentication token is lost between the
+						// this should never happen as any unauthenticated user
+						// should be
+						// redirected to the log in page, but still may happen
+						// in some weird
+						// case where the authentication token is lost between
+						// the
 						// authentication and opening this page
 						LoginForm.showPopup(new Callback1<UserInfo>() {
 							@Override
@@ -179,7 +206,7 @@ public class Scran24 implements EntryPoint {
 			public void onFailure(Throwable caught) {
 				HTMLPanel mainContentPanel = HTMLPanel.wrap(mainContent);
 				mainContentPanel.add(new HTMLPanel(SafeHtmlUtils.fromString(commonMessages.serverError())));
-				
+
 			}
 		});
 	}

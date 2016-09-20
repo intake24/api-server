@@ -70,8 +70,6 @@ public class LoginServiceImpl extends RemoteServiceServlet implements LoginServi
 	public void init() throws ServletException {
 		Injector injector = (Injector) getServletContext().getAttribute("intake24.injector");
 		dataStore = injector.getInstance(DataStore.class);
-		
-		getServletContext().getInitParameter(arg0)
 	}
 	
 	private String hidePassword(String password) {

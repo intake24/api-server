@@ -34,6 +34,7 @@ import net.scran24.user.shared.lookup.AsServedDef;
 import net.scran24.user.shared.lookup.DrinkwareDef;
 import net.scran24.user.shared.lookup.GuideDef;
 import net.scran24.user.shared.lookup.LookupResult;
+import net.scran24.user.shared.lookup.PortionSizeMethod;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.user.client.rpc.AsyncCallback;
@@ -51,6 +52,7 @@ public interface FoodLookupServiceAsync
     void getDrinkwareDef(String drinkwareId, String locale, AsyncCallback<DrinkwareDef> callback);
 	void getFoodPrompts(String foodCode, String locale, AsyncCallback<List<FoodPrompt>> callback);
 	void getFoodData(String foodCode, String locale, AsyncCallback<FoodData> callback);
+	void getWeightPortionSizeMethod(AsyncCallback<PortionSizeMethod> callback);
 		
     public static final class Util 
     { 
@@ -67,4 +69,5 @@ public interface FoodLookupServiceAsync
 
         private Util() { }
     }
+
 }
