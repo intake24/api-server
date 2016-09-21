@@ -43,21 +43,23 @@ class DeadboltHandlerImpl(val env: Environment[User, JWTAuthenticator]) extends 
   override def getDynamicResourceHandler[A](request: Request[A]): Future[Option[DynamicResourceHandler]] = Future(None)
 
   override def getSubject[A](request: Request[A]): Future[Option[Subject]] = {
-    env.authenticatorService.retrieve(request).map(_.flatMap {
-      authenticator =>
-        authenticator.customClaims.map {
-          customClaims =>
-            val roles = (customClaims \ "i24r").get.as[Set[String]]
-            val permissions = (customClaims \ "i24p").get.as[Set[String]]
-            new User(authenticator.loginInfo.providerKey, SecurityInfo(roles, permissions))
-        }
-    })
+    env.authenticatorService.retrieve(request).map {
+      _.flatMap {
+        auth =>
+          if (auth.isValid) auth.customClaims.map {
+            customClaims =>
+              val roles = (customClaims \ "i24r").get.as[Set[String]]
+              val permissions = (customClaims \ "i24p").get.as[Set[String]]
+              new User(auth.loginInfo.providerKey, SecurityInfo(roles, permissions))
+          }
+          else None
+      }
+    }
   }
 
   def onAuthFailure[A](request: Request[A]): Future[Result] =
     env.authenticatorService.retrieve(request).map {
-    case Some(_) => Results.Forbidden
-    case None => Results.Unauthorized.withHeaders(("WWW-Authenticate", "X-Auth-Token"))
-  }
-    
+      case Some(auth) if auth.isValid => Results.Forbidden
+      case _ => Results.Unauthorized.withHeaders(("WWW-Authenticate", "X-Auth-Token"))
+    }
 }

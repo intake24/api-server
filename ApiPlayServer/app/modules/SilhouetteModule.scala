@@ -82,11 +82,11 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     clock: Clock): AuthenticatorService[JWTAuthenticator] = {
 
     val settings = JWTAuthenticatorSettings(
-      headerName = configuration.getString("silhouette.authenticator.headerName").getOrElse { "X-Auth-Token" },
-      issuerClaim = configuration.getString("silhouette.authenticator.issueClaim").getOrElse { "play-silhouette" },
-      encryptSubject = configuration.getBoolean("silhouette.authenticator.encryptSubject").getOrElse { true },
-      authenticatorIdleTimeout = configuration.getInt("silhouette.authenticator.authenticatorIdleTimeout").map(_ seconds), // This feature is disabled by default to prevent the generation of a new JWT on every request
-      authenticatorExpiry = configuration.getInt("silhouette.authenticator.authenticatorExpiry").getOrElse { 12 * 60 * 60 } seconds,
+      headerName = "X-Auth-Token",
+      issuerClaim = "intake24",
+      encryptSubject = true,
+      authenticatorIdleTimeout = Some(20.minutes),
+      authenticatorExpiry = 12.hours,
       sharedSecret = configuration.getString("play.crypto.secret").get)
     
       new JWTAuthenticatorService(settings, None, idGenerator, clock)    
