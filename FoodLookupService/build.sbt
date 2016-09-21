@@ -24,6 +24,8 @@ description := "Intake24 services"
 
 version := "15.9-SNAPSHOT"
 
+resolvers += Resolver.mavenLocal
+
 scalaVersion := "2.11.7"
 
 libraryDependencies ++= Seq(
