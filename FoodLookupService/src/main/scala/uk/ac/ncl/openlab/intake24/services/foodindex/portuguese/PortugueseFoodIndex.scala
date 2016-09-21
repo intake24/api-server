@@ -24,7 +24,7 @@ import uk.ac.ncl.openlab.intake24.services.foodindex.AbstractFoodIndex
 import uk.ac.ncl.openlab.intake24.services.foodindex.english.EnglishStemmerPlingImpl
 
 abstract class PortugueseFoodIndex(foodData: FoodIndexDataService, locale: String)
-  extends AbstractFoodIndex(foodData, None, EnglishStemmerPlingImpl(), PortugueseFoodIndex.indexFilter, 
+  extends AbstractFoodIndex(foodData, None, new PortugueseStemmerImpl(), PortugueseFoodIndex.indexFilter, 
     PortugueseFoodIndex.nonIndexedWords, PortugueseFoodIndex.specialFoodNames, locale)
 
 
