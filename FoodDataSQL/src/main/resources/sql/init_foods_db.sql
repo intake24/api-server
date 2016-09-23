@@ -16,6 +16,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+CREATE TABLE schema_migrations
+(
+	id uuid NOT NULL,
+	CONSTRAINT schema_migrations_pk PRIMARY KEY(id)
+);
+
 -- Locales
 
 CREATE TABLE locales
@@ -131,6 +137,7 @@ CREATE TABLE foods_local
   food_code character varying(8) NOT NULL,
   locale_id character varying(16) NOT NULL,
   local_description character varying(128),
+  simple_local_description character varying(128),
   do_not_use boolean NOT NULL DEFAULT false,
   version uuid NOT NULL,
 
@@ -237,7 +244,8 @@ CREATE TABLE categories_local
 (
   category_code character varying(8) NOT NULL,
   locale_id character varying(16) NOT NULL,
-  local_description character varying(128) NOT NULL,
+  local_description character varying(128),
+  simple_local_description character varying(128),
   version uuid NOT NULL,
 
   CONSTRAINT categories_local_pk PRIMARY KEY(category_code, locale_id),

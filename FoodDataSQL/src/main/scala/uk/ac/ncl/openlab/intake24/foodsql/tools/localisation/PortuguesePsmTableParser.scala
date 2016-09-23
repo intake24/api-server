@@ -28,8 +28,12 @@ class PortuguesePsmTableParser extends PortionSizeTableParser with ErrorHandler 
 
   def parsePortionSizeMethodsTable(csvPath: String, nutrientTableCsvPath: String, localToIntakeCodes: Map[String, String],  indexableFoods: Seq[UserFoodHeader], 
       dataService: FoodDatabaseAdminService): Map[String, Seq[PortionSizeMethod]] = {
+    
+    logger.info("Portuguese portion size methods intentionally ignored")
+    
+    Map()
 
-    logger.info("Building PT food code to ID map")
+    /* logger.info("Building PT food code to ID map")
 
     val nutrientTableReader = new CSVReader(new FileReader(nutrientTableCsvPath))
 
@@ -150,6 +154,6 @@ class PortuguesePsmTableParser extends PortionSizeTableParser with ErrorHandler 
         (map + (foodCode -> psm), badRefs ++ r)
     }
     
-    methods
+    methods*/
   }
 }

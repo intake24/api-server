@@ -57,6 +57,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.IllegalParent
 import uk.ac.ncl.openlab.intake24.LocalCategoryRecordUpdate
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentCreateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalCreateError
+import org.apache.commons.lang3.StringUtils
 
 trait CategoriesAdminQueries
     extends SqlDataService
@@ -112,7 +113,7 @@ trait CategoriesAdminQueries
 
   private val categoriesInsertPsmParamsQuery = "INSERT INTO categories_portion_size_method_params VALUES(DEFAULT, {portion_size_method_id}, {name}, {value})"
 
-  private val categoriesInsertLocalQuery = "INSERT INTO categories_local VALUES({category_code}, {locale_id}, {local_description}, {version}::uuid)"
+  private val categoriesInsertLocalQuery = "INSERT INTO categories_local VALUES({category_code}, {locale_id}, {local_description}, {simple_local_description}, {version}::uuid)"
 
   private val categoriesPsmInsertQuery = "INSERT INTO categories_portion_size_methods VALUES(DEFAULT, {category_code}, {locale_id}, {method}, {description}, {image_url}, {use_for_recipes})"
 
@@ -143,13 +144,14 @@ trait CategoriesAdminQueries
 
   protected def updateCategoryLocalQuery(categoryCode: String, categoryLocal: LocalCategoryRecordUpdate, locale: String)(implicit conn: java.sql.Connection): Either[LocalDependentUpdateError, Unit] = {
     val errors = Map[String, PSQLException => LocalDependentUpdateError](
-        "categories_local_pk" -> (e => DuplicateCode(e)), 
-        "categories_local_category_code_fk" -> (e => ParentRecordNotFound(e)), 
-        "categories_local_locale_id_fk" -> (e => UndefinedLocale(e)))
+      "categories_local_pk" -> (e => DuplicateCode(e)),
+      "categories_local_category_code_fk" -> (e => ParentRecordNotFound(e)),
+      "categories_local_locale_id_fk" -> (e => UndefinedLocale(e)))
 
     tryWithConstraintsCheck(errors) {
-      val rowsAffected = SQL("UPDATE categories_local SET version = {new_version}::uuid, local_description = {local_description} WHERE category_code = {category_code} AND locale_id = {locale_id} AND version = {base_version}::uuid")
-        .on('category_code -> categoryCode, 'locale_id -> locale, 'base_version -> categoryLocal.baseVersion, 'new_version -> UUID.randomUUID(), 'local_description -> categoryLocal.localDescription)
+      val rowsAffected = SQL("UPDATE categories_local SET version = {new_version}::uuid, local_description = {local_description}, simple_local_description = {simple_local_description} WHERE category_code = {category_code} AND locale_id = {locale_id} AND version = {base_version}::uuid")
+        .on('category_code -> categoryCode, 'locale_id -> locale, 'base_version -> categoryLocal.baseVersion, 'new_version -> UUID.randomUUID(), 'local_description -> categoryLocal.localDescription,
+          'simple_local_description -> categoryLocal.localDescription.map(s => StringUtils.stripAccents(s)))
         .executeUpdate()
 
       if (rowsAffected == 1) {
@@ -166,7 +168,8 @@ trait CategoriesAdminQueries
 
     tryWithConstraintsCheck(errors) {
       SQL(categoriesInsertLocalQuery)
-        .on('category_code -> categoryCode, 'locale_id -> locale, 'local_description -> categoryLocal.localDescription, 'version -> UUID.randomUUID())
+        .on('category_code -> categoryCode, 'locale_id -> locale, 'local_description -> categoryLocal.localDescription,
+          'simple_local_description -> categoryLocal.localDescription.map(s => StringUtils.stripAccents(s)), 'version -> UUID.randomUUID())
         .execute()
       Right(())
     }
@@ -255,35 +258,35 @@ trait CategoriesAdminQueries
   private val categoriesAttributesInsertQuery = "INSERT INTO categories_attributes VALUES (DEFAULT, {category_code}, {same_as_before_option}, {ready_meal_option}, {reasonable_amount})"
 
   protected def createCategoriesQuery(categories: Seq[NewCategory])(implicit conn: java.sql.Connection): Either[CreateError, Unit] = {
-      if (!categories.isEmpty) {
-        logger.debug("Writing " + categories.size + " categories to database")
+    if (!categories.isEmpty) {
+      logger.debug("Writing " + categories.size + " categories to database")
 
-        val categoryParams =
-          categories.map(c => Seq[NamedParameter]('code -> c.code, 'description -> c.englishDescription, 'is_hidden -> c.isHidden, 'version -> UUID.randomUUID()))
+      val categoryParams =
+        categories.map(c => Seq[NamedParameter]('code -> c.code, 'description -> c.englishDescription, 'is_hidden -> c.isHidden, 'version -> UUID.randomUUID()))
 
-        tryWithConstraintCheck("categories_pk", DuplicateCode) {
-          batchSql(categoriesInsertQuery, categoryParams).execute()
+      tryWithConstraintCheck("categories_pk", DuplicateCode) {
+        batchSql(categoriesInsertQuery, categoryParams).execute()
 
-          val categoryAttributeParams =
-            categories.map(c => Seq[NamedParameter]('category_code -> c.code, 'same_as_before_option -> c.attributes.sameAsBeforeOption,
-              'ready_meal_option -> c.attributes.readyMealOption, 'reasonable_amount -> c.attributes.reasonableAmount))
+        val categoryAttributeParams =
+          categories.map(c => Seq[NamedParameter]('category_code -> c.code, 'same_as_before_option -> c.attributes.sameAsBeforeOption,
+            'ready_meal_option -> c.attributes.readyMealOption, 'reasonable_amount -> c.attributes.reasonableAmount))
 
-          batchSql(categoriesAttributesInsertQuery, categoryAttributeParams).execute()
+        batchSql(categoriesAttributesInsertQuery, categoryAttributeParams).execute()
 
-          Right(())
-        }
-      } else {
-        logger.debug("Create categories request with empty foods list")
         Right(())
       }
+    } else {
+      logger.debug("Create categories request with empty foods list")
+      Right(())
+    }
   }
 
   protected def createLocalCategoriesQuery(localCategoryRecords: Map[String, NewLocalCategoryRecord], locale: String)(implicit conn: java.sql.Connection): Either[LocalCreateError, Unit] = {
     if (localCategoryRecords.nonEmpty) {
 
       val localCategoryRecordsSeq = localCategoryRecords.toSeq
-      
-      val errors = Map[String, PSQLException => LocalCreateError]("categories_local_locale_id_fk" -> (e => UndefinedLocale(e)), "categories_local_pk" -> (e => DuplicateCode(e))) 
+
+      val errors = Map[String, PSQLException => LocalCreateError]("categories_local_locale_id_fk" -> (e => UndefinedLocale(e)), "categories_local_pk" -> (e => DuplicateCode(e)))
 
       logger.debug(s"Writing ${localCategoryRecordsSeq.size} new local category records to database")
 
@@ -292,7 +295,8 @@ trait CategoriesAdminQueries
         val localCategoryParams =
           localCategoryRecordsSeq.map {
             case (code, local) =>
-              Seq[NamedParameter]('category_code -> code, 'locale_id -> locale, 'local_description -> local.localDescription, 'version -> Some(UUID.randomUUID()))
+              Seq[NamedParameter]('category_code -> code, 'locale_id -> locale, 'local_description -> local.localDescription, 
+                  'simple_local_description -> local.localDescription.map(StringUtils.stripAccents(_)), 'version -> Some(UUID.randomUUID()))
           }
 
         batchSql(categoriesInsertLocalQuery, localCategoryParams).execute()

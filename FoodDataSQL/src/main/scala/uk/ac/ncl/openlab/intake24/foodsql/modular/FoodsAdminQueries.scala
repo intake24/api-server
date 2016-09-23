@@ -38,6 +38,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import anorm.SqlParser
+import org.apache.commons.lang3.StringUtils
 
 trait FoodsAdminQueries extends FoodsAdminService
     with SqlDataService
@@ -132,7 +133,7 @@ trait FoodsAdminQueries extends FoodsAdminService
       (map, food) => map + (food.code -> food.parentCategories)
     }
   }
-  private val foodLocalInsertQuery = "INSERT INTO foods_local VALUES({food_code}, {locale_id}, {local_description}, {do_not_use}, {version}::uuid)"
+  private val foodLocalInsertQuery = "INSERT INTO foods_local VALUES({food_code}, {locale_id}, {local_description}, {simple_local_description}, {do_not_use}, {version}::uuid)"
 
   private val foodNutrientMappingInsertQuery = "INSERT INTO foods_nutrient_mapping VALUES ({food_code}, {locale_id}, {nutrient_table_id}, {nutrient_table_code})"
 
@@ -150,6 +151,7 @@ trait FoodsAdminQueries extends FoodsAdminService
       val foodLocalParams = localFoodRecordsSeq.map {
         case (code, local) =>
           Seq[NamedParameter]('food_code -> code, 'locale_id -> locale, 'local_description -> local.localDescription.map(d => truncateDescription(d, code)),
+              'simple_local_description -> local.localDescription.map(d => StringUtils.stripAccents(truncateDescription(d, code))),
             'do_not_use -> local.doNotUse, 'version -> UUID.randomUUID())
       }.toSeq
 
@@ -268,8 +270,9 @@ trait FoodsAdminQueries extends FoodsAdminService
       foodLocal.baseVersion match {
         case Some(version) => {
 
-          val rowsAffected = SQL("UPDATE foods_local SET version = {new_version}::uuid, local_description = {local_description}, do_not_use = {do_not_use} WHERE food_code = {food_code} AND locale_id = {locale_id} AND version = {base_version}::uuid")
-            .on('food_code -> foodCode, 'locale_id -> locale, 'base_version -> foodLocal.baseVersion, 'new_version -> UUID.randomUUID(), 'local_description -> foodLocal.localDescription, 'do_not_use -> foodLocal.doNotUse)
+          val rowsAffected = SQL("UPDATE foods_local SET version = {new_version}::uuid, local_description = {local_description}, simple_local_description = {simple_local_description}, do_not_use = {do_not_use} WHERE food_code = {food_code} AND locale_id = {locale_id} AND version = {base_version}::uuid")
+            .on('food_code -> foodCode, 'locale_id -> locale, 'base_version -> foodLocal.baseVersion, 'new_version -> UUID.randomUUID(),                
+                'local_description -> foodLocal.localDescription, 'simple_local_description -> foodLocal.localDescription.map(d => StringUtils.stripAccents(d)), 'do_not_use -> foodLocal.doNotUse)
             .executeUpdate()
 
           if (rowsAffected == 1) {
