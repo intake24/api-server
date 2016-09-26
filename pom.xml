@@ -28,8 +28,8 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>net.scran24</groupId>
-  <artifactId>scran24</artifactId>
+  <groupId>uk.ac.ncl.openlab.intake24</groupId>
+  <artifactId>intake24</artifactId>
   <version>1.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
@@ -46,17 +46,16 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
     <module>FoodDBTool</module>
     <module>ImageCompiler</module>
     <module>SlidingScale</module>
-    <module>DataStore</module>
-    <module>DataStoreTools</module>
-    <module>DataStoreMongo</module>
-    <module>DataStoreSQL</module>
+    <module>SystemDataServices</module>
+    <module>SystemDataMongo</module>
+    <module>SystemDataSQL</module>
     <module>ImageMap</module>
     <module>ImageChooser</module>
     <module>PhraseSearch</module>
-    <module>FoodLookupService</module>
+    <module>FoodDataServices</module>
     <module>FoodDataSQL</module>
     <module>FoodDataXML</module>
-    <module>NutrientsNDNS</module>
+    <module>NutrientsCSV</module>
     <module>resty-gwt</module>
     <module>Webapp</module>
   </modules>
