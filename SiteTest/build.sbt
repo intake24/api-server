@@ -22,9 +22,9 @@ organization := "uk.ac.ncl.openlab.intake24"
 
 description := "Intake24 deployment testing suite"
 
-version := "15.9-SNAPSHOT"
+version := "1.0.0-SNAPSHOT"
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
   "org.seleniumhq.selenium" % "selenium-java" % "2.48.2" % "test",

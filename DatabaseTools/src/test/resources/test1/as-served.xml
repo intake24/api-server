@@ -1,0 +1,64 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!--
+This file is part of Intake24.
+
+Copyright 2015, 2016 Newcastle University.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<as-served-sets
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="./Schemas/as-served.xsd">
+	
+	<as-served-set description="As served 1" id="as_served_1">
+		<as-served-image weight="51.3" url="PStApl1.jpg" />
+		<as-served-image weight="66.96" url="PStApl2.jpg" />
+		<as-served-image weight="87.4" url="PStApl3.jpg" />
+		<as-served-image weight="114.07" url="PStApl4.jpg" />
+		<as-served-image weight="148.89" url="PStApl5.jpg" />
+		<as-served-image weight="194.33" url="PStApl6.jpg" />
+		<as-served-image weight="253.65" url="PStApl7.jpg" />
+	</as-served-set>
+
+	<as-served-set description="As served 1 leftovers" id="as_served_1_leftovers">
+		<as-served-image weight="5.0" url="PStApl8.jpg" />
+		<as-served-image weight="7.37" url="PStApl9.jpg" />
+		<as-served-image weight="10.86" url="PStApl10.jpg" />
+		<as-served-image weight="16.02" url="PStApl11.jpg" />
+		<as-served-image weight="23.61" url="PStApl12.jpg" />
+		<as-served-image weight="34.8" url="PStApl13.jpg" />
+		<as-served-image weight="51.3" url="PStApl14.jpg" />
+	</as-served-set>
+
+	<as-served-set description="As served 2" id="as_served_2">
+		<as-served-image weight="51.3" url="PStApl1.jpg" />
+		<as-served-image weight="66.96" url="PStApl2.jpg" />
+		<as-served-image weight="87.4" url="PStApl3.jpg" />
+		<as-served-image weight="114.07" url="PStApl4.jpg" />
+		<as-served-image weight="148.89" url="PStApl5.jpg" />
+		<as-served-image weight="194.33" url="PStApl6.jpg" />
+		<as-served-image weight="253.65" url="PStApl7.jpg" />
+	</as-served-set>
+
+	<as-served-set description="As served 2 leftovers" id="as_served_2_leftovers">
+		<as-served-image weight="5.0" url="PStApl8.jpg" />
+		<as-served-image weight="7.37" url="PStApl9.jpg" />
+		<as-served-image weight="10.86" url="PStApl10.jpg" />
+		<as-served-image weight="16.02" url="PStApl11.jpg" />
+		<as-served-image weight="23.61" url="PStApl12.jpg" />
+		<as-served-image weight="34.8" url="PStApl13.jpg" />
+		<as-served-image weight="51.3" url="PStApl14.jpg" />
+	</as-served-set>
+
+</as-served-sets>

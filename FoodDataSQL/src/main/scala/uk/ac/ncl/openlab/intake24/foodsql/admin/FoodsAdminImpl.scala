@@ -19,8 +19,6 @@ import uk.ac.ncl.openlab.intake24.InheritableAttributes
 import uk.ac.ncl.openlab.intake24.LocalFoodRecord
 import uk.ac.ncl.openlab.intake24.MainFoodRecord
 import uk.ac.ncl.openlab.intake24.NewMainFoodRecord
-import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
-import uk.ac.ncl.openlab.intake24.foodsql.Util
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DuplicateCode
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
@@ -34,7 +32,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
-import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
+
 import uk.ac.ncl.openlab.intake24.foodsql.shared.FoodPortionSizeShared
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentCreateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentRecordNotFound

@@ -22,8 +22,8 @@ organization := "uk.ac.ncl.openlab.intake24"
 
 description := "Intake24 API shared types"
 
-version := "15.9-SNAPSHOT"
+version := "1.0.0-SNAPSHOT"
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.11.8"
 
 libraryDependencies += "ca.mrvisser" %% "sealerate" % "0.0.4"

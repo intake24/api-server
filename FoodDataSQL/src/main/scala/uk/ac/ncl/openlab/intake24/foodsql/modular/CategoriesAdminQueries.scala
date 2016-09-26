@@ -13,15 +13,13 @@ import anorm.NamedParameter.symbol
 import scala.Left
 import scala.Right
 
-import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
-import uk.ac.ncl.openlab.intake24.foodsql.Util
-
 import org.postgresql.util.PSQLException
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.PortionSizeMethod
+
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
 
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
@@ -37,7 +35,7 @@ import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
 import org.slf4j.LoggerFactory
 import java.sql.BatchUpdateException
 import scala.collection.mutable.ArrayBuffer
-import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
+
 import uk.ac.ncl.openlab.intake24.foodsql.shared.FoodPortionSizeShared
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
 import uk.ac.ncl.openlab.intake24.foodsql.SimpleValidation
@@ -58,9 +56,11 @@ import uk.ac.ncl.openlab.intake24.LocalCategoryRecordUpdate
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentCreateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalCreateError
 import org.apache.commons.lang3.StringUtils
+import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
+import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
 
 trait CategoriesAdminQueries
-    extends SqlDataService
+    extends FoodDataSqlService
     with SqlResourceLoader
     with FoodPortionSizeShared
     with FirstRowValidation {
@@ -128,7 +128,7 @@ trait CategoriesAdminQueries
       tryWithConstraintsCheck(errors) {
         val psmParams = portionSize.map(ps => Seq[NamedParameter]('category_code -> categoryCode, 'locale_id -> locale, 'method -> ps.method, 'description -> ps.description, 'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes))
 
-        val psmKeys = Util.batchKeys(batchSql(categoriesPsmInsertQuery, psmParams))
+        val psmKeys = AnormUtil.batchKeys(batchSql(categoriesPsmInsertQuery, psmParams))
 
         val psmParamParams = portionSize.zip(psmKeys).flatMap {
           case (psm, id) => psm.parameters.map(param => Seq[NamedParameter]('portion_size_method_id -> id, 'name -> param.name, 'value -> param.value))
@@ -314,7 +314,7 @@ trait CategoriesAdminQueries
         if (!psmParams.isEmpty) {
           logger.debug("Writing " + psmParams.size + " category portion size method definitions")
 
-          val keys = Util.batchKeys(batchSql(categoriesPsmInsertQuery, psmParams))
+          val keys = AnormUtil.batchKeys(batchSql(categoriesPsmInsertQuery, psmParams))
 
           val psmParamParams = localCategoryRecordsSeq.flatMap(_._2.portionSize).zip(keys).flatMap {
             case (psm, id) => psm.parameters.map(param => Seq[NamedParameter]('portion_size_method_id -> id, 'name -> param.name, 'value -> param.value))

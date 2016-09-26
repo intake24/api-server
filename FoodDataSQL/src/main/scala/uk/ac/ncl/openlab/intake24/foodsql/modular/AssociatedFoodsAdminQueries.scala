@@ -11,15 +11,17 @@ import uk.ac.ncl.openlab.intake24.AssociatedFoodWithHeader
 import uk.ac.ncl.openlab.intake24.CategoryHeader
 import uk.ac.ncl.openlab.intake24.FoodHeader
 import anorm.NamedParameter
-import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
+
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
+
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentRecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleOrParentError
 import org.postgresql.util.PSQLException
+import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
+import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
 
-trait AssociatedFoodsAdminQueries extends SqlDataService with SqlResourceLoader {
+trait AssociatedFoodsAdminQueries extends FoodDataSqlService with SqlResourceLoader {
 
   private val logger = LoggerFactory.getLogger(classOf[AssociatedFoodsAdminQueries])
 

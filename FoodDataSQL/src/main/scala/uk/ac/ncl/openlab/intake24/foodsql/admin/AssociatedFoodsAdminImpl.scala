@@ -15,7 +15,7 @@ import anorm.NamedParameter
 
 import org.postgresql.util.PSQLException
 
-import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
+
 
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
@@ -24,7 +24,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
+
 import java.sql.Connection
 import uk.ac.ncl.openlab.intake24.foodsql.SimpleValidation
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentCreateError

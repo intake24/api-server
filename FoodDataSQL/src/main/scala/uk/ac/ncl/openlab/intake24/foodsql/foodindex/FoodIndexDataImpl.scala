@@ -27,15 +27,17 @@ import anorm.sqlToSimple
 import javax.sql.DataSource
 import uk.ac.ncl.openlab.intake24.UserCategoryHeader
 import uk.ac.ncl.openlab.intake24.UserFoodHeader
-import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
+
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
 import anorm.Macro
 import anorm.SQL
-import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
+import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
+import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
+
 
 @Singleton
-class FoodIndexDataImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends SqlDataService 
+class FoodIndexDataImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends FoodDataSqlService 
   with SqlResourceLoader with FoodIndexDataService with FoodIndexDataSharedImpl {
 
   private val logger = LoggerFactory.getLogger(classOf[FoodIndexDataImpl])

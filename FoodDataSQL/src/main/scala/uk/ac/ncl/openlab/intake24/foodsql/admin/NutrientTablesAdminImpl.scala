@@ -4,7 +4,7 @@ import uk.ac.ncl.openlab.intake24.NutrientTable
 import anorm.SQL
 import anorm.Macro
 import anorm.sqlToSimple
-import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
+
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.NutrientTablesAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
@@ -16,11 +16,12 @@ import com.google.inject.Singleton
 import javax.sql.DataSource
 import com.google.inject.name.Named
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
+import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
 
 @Singleton
 class NutrientTablesAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends NutrientTablesAdminImpl
 
-trait NutrientTablesAdminImpl extends NutrientTablesAdminService with SqlDataService {
+trait NutrientTablesAdminImpl extends NutrientTablesAdminService with FoodDataSqlService {
   private case class NutrientTableDescRow(id: String, description: String) {
     def asNutrientTable = NutrientTable(id, description)
   }

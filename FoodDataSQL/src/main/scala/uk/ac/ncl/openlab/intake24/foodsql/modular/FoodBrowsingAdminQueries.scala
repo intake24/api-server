@@ -15,17 +15,17 @@ import uk.ac.ncl.openlab.intake24.CategoryHeader
 import uk.ac.ncl.openlab.intake24.FoodHeader
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
-import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
-import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodBrowsingAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.foodsql.admin.HeaderRows
+import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
+import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
 
 trait FoodBrowsingAdminQueries
-    extends SqlDataService
+    extends FoodDataSqlService
     with SqlResourceLoader
     with FirstRowValidation
     with HeaderRows {

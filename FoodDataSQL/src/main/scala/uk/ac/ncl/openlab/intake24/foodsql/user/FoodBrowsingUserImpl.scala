@@ -11,8 +11,6 @@ import uk.ac.ncl.openlab.intake24.UserCategoryHeader
 import uk.ac.ncl.openlab.intake24.UserFoodHeader
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
-import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
-import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodBrowsingService
@@ -20,8 +18,10 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodBrowsingService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.foodsql.shared.SuperCategoriesQueries
+import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
+import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
 
-trait FoodBrowsingUserImpl extends FoodBrowsingService with SqlDataService with SqlResourceLoader with FirstRowValidation with SuperCategoriesQueries {
+trait FoodBrowsingUserImpl extends FoodBrowsingService with FoodDataSqlService with SqlResourceLoader with FirstRowValidation with SuperCategoriesQueries {
 
   private lazy val rootCategoriesQuery = sqlFromResource("user/root_categories.sql")
 

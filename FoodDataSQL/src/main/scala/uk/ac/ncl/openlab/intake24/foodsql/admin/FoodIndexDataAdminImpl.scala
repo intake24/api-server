@@ -8,7 +8,7 @@ import anorm.SQL
 
 import anorm.sqlToSimple
 import uk.ac.ncl.openlab.intake24.SplitList
-import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
+
 import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataSharedImpl
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodIndexDataAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
@@ -16,10 +16,11 @@ import anorm.NamedParameter
 import com.google.inject.Inject
 import javax.sql.DataSource
 import com.google.inject.name.Named
+import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
 
 class FoodIndexDataAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends FoodIndexDataAdminImpl
 
-trait FoodIndexDataAdminImpl extends FoodIndexDataAdminService with SqlDataService with FoodIndexDataSharedImpl {
+trait FoodIndexDataAdminImpl extends FoodIndexDataAdminService with FoodDataSqlService with FoodIndexDataSharedImpl {
 
   private val logger = LoggerFactory.getLogger(classOf[FoodIndexDataAdminImpl])
 

@@ -16,23 +16,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-name := "phrasesearch"
+name := "phrase-search"
 
 organization := "org.workcraft"
 
 description := "Indexing and searching tools for short phrases"
 
-version := "15.9-SNAPSHOT"
+version := "1.0.0-SNAPSHOT"
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.11.8"
 
 javacOptions ++= Seq("-source", "1.6", "-target", "1.8", "-encoding", "UTF-8")
 
 resolvers += Resolver.mavenLocal // for InfiAuto library
 
-libraryDependencies ++= Seq(  
-  "org.slf4j" % "slf4j-api" % "1.7.12",
+libraryDependencies ++= Seq(
+  "org.slf4j" % "slf4j-api" % "1.7.21",
   "com.infiauto" % "infiauto-datastr" % "0.3.3",
   "org.scalatest" %% "scalatest" % "2.2.5" % "test"
 )
-

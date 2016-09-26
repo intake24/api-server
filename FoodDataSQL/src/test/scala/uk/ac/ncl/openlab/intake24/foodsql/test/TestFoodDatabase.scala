@@ -18,13 +18,14 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodsql.test
 
-import anorm.SQL
 import java.sql.DriverManager
+
+import org.postgresql.ds.PGSimpleDataSource
+
+import anorm.SQL
 import anorm.SqlParser
-import uk.ac.ncl.openlab.intake24.foodsql.SqlFileUtil
-import java.util.Properties
-import com.zaxxer.hikari.HikariDataSource
-import com.zaxxer.hikari.HikariConfig
+import anorm.sqlToSimple
+import uk.ac.ncl.openlab.intake24.sql.SqlFileUtil
 
 trait TestFoodDatabase extends SqlFileUtil {
 
@@ -33,18 +34,18 @@ trait TestFoodDatabase extends SqlFileUtil {
   val testDataSource = {
     DriverManager.registerDriver(new org.postgresql.Driver)
 
-    val dbConnectionProps = new Properties();
-    dbConnectionProps.setProperty("dataSourceClassName", "org.postgresql.ds.PGSimpleDataSource")
-    dbConnectionProps.setProperty("dataSource.user", "postgres")
-    dbConnectionProps.setProperty("dataSource.databaseName", "intake24_foods_test")
-    dbConnectionProps.setProperty("dataSource.serverName", "localhost")
+    val dataSource = new PGSimpleDataSource()
 
-    new HikariDataSource(new HikariConfig(dbConnectionProps))
+    dataSource.setServerName("localhost");
+    dataSource.setDatabaseName("intake24_foods_test");
+    dataSource.setUser("postgres");
+
+    dataSource
   }
 
   def resetTestDatabase() = {
     implicit val conn = testDataSource.getConnection()
-    
+
     val dropTableStatements =
       SQL("SELECT 'DROP TABLE IF EXISTS ' || tablename || ' CASCADE;' AS query FROM pg_tables WHERE schemaname='public'")
         .executeQuery()

@@ -30,7 +30,7 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.workcraft</groupId>
   <artifactId>phrasesearch</artifactId>
-  <version>15.9-SNAPSHOT</version>
+  <version>1.0.0-SNAPSHOT</version>
 
   <name>Indexing and searching tools for short phrases</name>
 

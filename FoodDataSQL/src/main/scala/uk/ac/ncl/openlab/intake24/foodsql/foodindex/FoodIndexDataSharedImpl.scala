@@ -5,9 +5,10 @@ import uk.ac.ncl.openlab.intake24.SplitList
 import anorm.Macro
 import anorm.SqlParser.str
 import anorm._
-import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
+import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
 
-trait FoodIndexDataSharedImpl extends SqlDataService {
+
+trait FoodIndexDataSharedImpl extends FoodDataSqlService {
   private case class SplitListRow(first_word: String, words: String)
 
   def splitList(locale: String): Either[DatabaseError, SplitList] = tryWithConnection {

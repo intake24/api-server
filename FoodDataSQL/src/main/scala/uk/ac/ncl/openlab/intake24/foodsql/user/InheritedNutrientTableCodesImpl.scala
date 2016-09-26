@@ -2,12 +2,13 @@ package uk.ac.ncl.openlab.intake24.foodsql.user
 
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.SourceLocale
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
-import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
+
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
 
 import anorm.SQL
 import anorm.Macro
+import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
 
 trait InheritedNutrientTableCodesImpl extends SqlResourceLoader with FirstRowValidation {
   private case class NutrientTableRow(nutrient_table_id: String, nutrient_table_record_id: String)

@@ -18,7 +18,7 @@
 	<groupId>net.scran24</groupId>
 	<artifactId>webapp</artifactId>
 	<packaging>war</packaging>
-	<version>15.9-SNAPSHOT</version>
+	<version>1.0.0-SNAPSHOT</version>
 	<name>Intake24 web application</name>
 
 	<properties>
@@ -33,61 +33,61 @@
 		<dependency>
 			<groupId>org.workcraft.gwt</groupId>
 			<artifactId>shared</artifactId>
-			<version>15.9-SNAPSHOT</version>
+			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.workcraft.gwt</groupId>
 			<artifactId>imagemap</artifactId>
-			<version>15.9-SNAPSHOT</version>
+			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.workcraft.gwt</groupId>
 			<artifactId>imagechooser</artifactId>
-			<version>15.9-SNAPSHOT</version>
+			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>
 			<groupId>net.scran24</groupId>
 			<artifactId>foodlookup</artifactId>
-			<version>15.9-SNAPSHOT</version>
+			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>
 			<groupId>net.scran24</groupId>
 			<artifactId>datastore</artifactId>
-			<version>15.9-SNAPSHOT</version>
+			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>
 			<groupId>net.scran24</groupId>
 			<artifactId>datastore-mongodb</artifactId>
-			<version>15.9-SNAPSHOT</version>
+			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>
 			<groupId>uk.ac.ncl.openlab.intake24</groupId>
 			<artifactId>datastore-sql</artifactId>
-			<version>15.9-SNAPSHOT</version>
+			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>
 			<groupId>uk.ac.ncl.openlab.intake24</groupId>
 			<artifactId>fooddata-xml</artifactId>
-			<version>15.9-SNAPSHOT</version>
+			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>
 			<groupId>uk.ac.ncl.openlab.intake24</groupId>
 			<artifactId>fooddata-sql</artifactId>
-			<version>15.9-SNAPSHOT</version>
+			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>
 			<groupId>uk.ac.ncl.openlab.intake24</groupId>
 			<artifactId>nutrients-ndns</artifactId>
-			<version>15.9-SNAPSHOT</version>
+			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 		
 		<dependency>
@@ -156,7 +156,7 @@
 		<dependency>
 			<groupId>org.workcraft.gwt</groupId>
 			<artifactId>slidingscale</artifactId>
-			<version>15.9-SNAPSHOT</version>
+			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>

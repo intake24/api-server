@@ -2,13 +2,14 @@ package uk.ac.ncl.openlab.intake24.foodsql.user
 
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.InheritableAttributeSource
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.InheritableAttributeSources
-import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
+
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import anorm.SQL
 import anorm.Macro
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
+import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
 
 trait InheritedAttributesImpl extends SqlResourceLoader with FirstRowValidation {
 

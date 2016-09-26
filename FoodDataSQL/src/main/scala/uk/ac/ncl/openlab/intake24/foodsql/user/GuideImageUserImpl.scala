@@ -9,12 +9,13 @@ import anorm.SQL
 import anorm.sqlToSimple
 import uk.ac.ncl.openlab.intake24.GuideImage
 import uk.ac.ncl.openlab.intake24.GuideImageWeightRecord
-import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
+
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.GuideImageService
+import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
 
-trait GuideImageUserImpl extends GuideImageService with SqlDataService {
+trait GuideImageUserImpl extends GuideImageService with FoodDataSqlService {
 
   protected case class GuideResultRow(image_description: String, object_id: Int, object_description: String, weight: Double)
 

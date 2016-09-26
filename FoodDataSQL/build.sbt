@@ -16,28 +16,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-name := "fooddata-sql"
+name := "food-data-sql"
 
 organization := "uk.ac.ncl.openlab.intake24"
 
 description := "Intake24 SQL based food database"
 
-version := "15.9-SNAPSHOT"
+version := "1.0.0-SNAPSHOT"
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.11.8"
 
 parallelExecution in Test := false
 
 libraryDependencies ++= Seq(
-  "org.postgresql" % "postgresql" % "9.4-1201-jdbc41",
-  "org.postgresql" % "postgresql" % "9.4-1201-jdbc41" % "test",
-  "com.zaxxer" % "HikariCP" % "2.4.1",
-  "com.typesafe.play" %% "anorm" % "2.5.0",
   "org.slf4j" % "slf4j-api" % "1.7.12",
-  "org.slf4j" % "slf4j-simple" % "1.7.12", 
-  "com.lihaoyi" %% "upickle" % "0.3.4",  
-  "org.scalatest" %% "scalatest" % "2.2.5" % "test",
-  "org.rogach" %% "scallop" % "0.9.5",  
-  "org.apache.poi" % "poi-ooxml" % "3.9"
-
+  "org.scalatest" %% "scalatest" % "2.2.5" % "test"
 )

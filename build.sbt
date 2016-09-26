@@ -16,29 +16,35 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-lazy val apiShared = Project(id = "apiShared", base = file("ApiShared"))
-
 lazy val sharedTypes = Project(id = "sharedTypes", base = file("SharedTypes"))
 
 lazy val phraseSearch = Project(id = "phrasesearch", base = file ("PhraseSearch"))
 
 lazy val gwtShared = Project(id = "gwtShared", base = file("ClientShared"))
 
-lazy val dataStore = Project(id = "dataStore", base = file("DataStore")).dependsOn(gwtShared)
 
-lazy val services = Project(id = "services", base = file("FoodLookupService")).dependsOn(sharedTypes, phraseSearch)
+lazy val commonSql = Project(id = "commonSql", base = file("CommonSQL"))
 
-lazy val foodDataXml = Project(id = "foodDataXml", base = file("FoodDataXML")).dependsOn(services, sharedTypes)
 
-lazy val nutrientsNdns = Project(id = "nutrientsNdns", base = file("NutrientsNDNS")).dependsOn(services, sharedTypes)
+lazy val systemDataServices = Project(id = "systemDataServices", base = file("SystemDataServices")).dependsOn(gwtShared)
 
-lazy val foodDataSql = Project(id = "foodDataSql", base = file("FoodDataSQL")).dependsOn(services % "compile->compile;test->test", sharedTypes, foodDataXml, nutrientsNdns)
+lazy val systemDataMongo = Project(id = "systemDataMongo", base = file ("SystemDataMongo")).dependsOn(systemDataServices % "compile->compile;test->test")
 
-lazy val dataStoreMongo = Project(id = "dataStoreMongo", base = file ("DataStoreMongo")).dependsOn(services, dataStore)
+lazy val systemDataSql = Project(id = "systemDataSql", base = file("SystemDataSQL")).dependsOn(commonSql, systemDataServices % "compile->compile;test->test")
 
-lazy val dataStoreSql = Project(id = "dataStoreSql", base = file("DataStoreSQL")).dependsOn(services % "compile->compile;test->test", dataStore, sharedTypes, dataStoreMongo)
 
-lazy val apiPlayServer = Project(id = "apiPlayServer", base = file("ApiPlayServer")).enablePlugins(PlayScala, SystemdPlugin).dependsOn(foodDataSql, dataStoreSql, apiShared, services)
+lazy val foodDataServices = Project(id = "foodDataServices", base = file("FoodDataServices")).dependsOn(sharedTypes, phraseSearch)
+
+lazy val foodDataXml = Project(id = "foodDataXml", base = file("FoodDataXML")).dependsOn(foodDataServices)
+
+lazy val nutrientsCsv = Project(id = "nutrientsCsv", base = file("NutrientsCSV")).dependsOn(sharedTypes, foodDataServices)
+
+lazy val foodDataSql = Project(id = "foodDataSql", base = file("FoodDataSQL")).dependsOn(commonSql, foodDataServices % "compile->compile;test->test", sharedTypes, foodDataXml, nutrientsCsv)
+
+
+lazy val databaseTools = Project(id = "databaseTools", base = file("DatabaseTools")).dependsOn(systemDataMongo, systemDataSql, foodDataXml, foodDataSql)
+
+lazy val apiPlayServer = Project(id = "apiPlayServer", base = file("ApiPlayServer")).enablePlugins(PlayScala, SystemdPlugin).dependsOn(foodDataSql, systemDataSql)
 
 lazy val siteTest = Project(id = "siteTest", base = file("SiteTest"))
 
@@ -48,10 +54,9 @@ lazy val apiDocs = scalatex.ScalatexReadme(
   url = "",
   source = "ApiDocs"
 ).settings(
-  scalaVersion := "2.11.7",
+  scalaVersion := "2.11.8",
   libraryDependencies ++= Seq (
     "com.lihaoyi" %% "upickle" % "0.3.7",
     "com.google.code.gson" % "gson" % "2.3.1" // for JSON pretty-printing
   )
-).dependsOn(sharedTypes, apiShared, services)
-
+).dependsOn(sharedTypes, foodDataServices)

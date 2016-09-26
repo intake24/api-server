@@ -16,15 +16,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-name := "fooddata-xml"
+name := "food-data-xml"
 
 organization := "uk.ac.ncl.openlab.intake24"
 
 description := "Intake24 XML based food database"
 
-version := "15.9-SNAPSHOT"
+version := "1.0.0-SNAPSHOT"
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
   "org.scala-lang.modules" % "scala-xml_2.11" % "1.0.5",

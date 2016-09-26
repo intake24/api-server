@@ -25,8 +25,6 @@ import org.scalatest.FunSuite
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
-import com.zaxxer.hikari.HikariConfig
-import com.zaxxer.hikari.HikariDataSource
 
 import anorm.SQL
 import anorm.sqlToSimple

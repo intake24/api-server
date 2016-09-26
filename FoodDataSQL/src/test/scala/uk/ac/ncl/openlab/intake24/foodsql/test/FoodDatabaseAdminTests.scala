@@ -20,11 +20,9 @@ package uk.ac.ncl.openlab.intake24.foodsql.test
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
-import com.zaxxer.hikari.HikariConfig
-import com.zaxxer.hikari.HikariDataSource
 
 import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
-import uk.ac.ncl.openlab.intake24.foodsql.tools.XmlImporter
+
 import org.scalatest.FunSuite
 import org.scalatest.BeforeAndAfterAll
 
@@ -40,7 +38,7 @@ class FoodDatabaseAdminTest extends Spec with SequentialNestedSuiteExecution wit
   }
 
   override def afterAll(configMap: ConfigMap) {
-    testDataSource.close()
+    
   }
 
   override def nestedSuites() = {

@@ -8,7 +8,6 @@ import anorm.NamedParameter.symbol
 import anorm.SQL
 import anorm.sqlToSimple
 import uk.ac.ncl.openlab.intake24.AssociatedFood
-import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
 
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.AssociatedFoodsService
@@ -16,9 +15,11 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
-import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
 
-trait AssociatedFoodsUserImpl extends AssociatedFoodsService with SqlDataService with SqlResourceLoader with FirstRowValidation {
+import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
+import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
+
+trait AssociatedFoodsUserImpl extends AssociatedFoodsService with FoodDataSqlService with SqlResourceLoader with FirstRowValidation {
 
   private case class AssociatedFoodPromptsRow(associated_food_code: Option[String], associated_category_code: Option[String],
     text: String, link_as_main: Boolean, generic_name: String, locale_id: String)

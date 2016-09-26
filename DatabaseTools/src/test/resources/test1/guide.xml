@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!--
+This file is part of Intake24.
+
+Copyright 2015, 2016 Newcastle University.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<guide-images xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="./Schemas/guide.xsd">
+  
+  <guide-image id="guide_1" description="Guide 1">
+    <weight id="1" description="Aero - Bubbles bag" value="135.0"/>
+    <weight id="2" description="Aero - standard Bubbles bag" value="39.0"/>
+    <weight id="3" description="Aero - standard bar" value="42.5"/>
+    <weight id="4" description="Aero - single" value="27.0"/>
+    <weight id="5" description="Aero - medium" value="19.0"/>
+    <weight id="6" description="Aero - treatsize" value="9.0"/>
+  </guide-image>
+
+  <guide-image id="guide_2" description="Guide 2">
+    <weight id="1" description="1" value="1.0"/>
+    <weight id="2" description="2" value="2.0"/>
+    <weight id="3" description="3" value="3.0"/>
+    <weight id="4" description="4" value="4.0"/>
+  </guide-image>
+
+</guide-images>

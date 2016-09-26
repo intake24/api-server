@@ -10,14 +10,14 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.user.DrinkwareService
 import anorm.NamedParameter.symbol
 import anorm.sqlToSimple
 import scala.Right
-import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
-import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
 import java.sql.Connection
 import anorm.SqlParser
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
+import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
+import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
 
-trait DrinkwareUserImpl extends DrinkwareService with SqlDataService with SqlResourceLoader {
+trait DrinkwareUserImpl extends DrinkwareService with FoodDataSqlService with SqlResourceLoader {
   protected case class DrinkwareResultRow(id: String, scale_id: Long, description: String, guide_image_id: String,
     width: Int, height: Int, empty_level: Int, full_level: Int, choice_id: Int, base_image_url: String,
     overlay_image_url: String)

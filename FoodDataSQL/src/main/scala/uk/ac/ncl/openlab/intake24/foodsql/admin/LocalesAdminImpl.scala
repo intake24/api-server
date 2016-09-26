@@ -31,7 +31,7 @@ import anorm.SQL
 import anorm.sqlToSimple
 import javax.sql.DataSource
 import uk.ac.ncl.openlab.intake24.Locale
-import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
+
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.LocalesAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
@@ -41,11 +41,12 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
+import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
 
 @Singleton
 class LocalesAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends LocalesAdminImpl
 
-trait LocalesAdminImpl extends LocalesAdminService with SqlDataService {
+trait LocalesAdminImpl extends LocalesAdminService with FoodDataSqlService {
 
   private case class LocaleRow(id: String, english_name: String, local_name: String, respondent_language_id: String, admin_language_id: String, country_flag_code: String, prototype_locale_id: Option[String]) {
     def mkLocale = Locale(id, english_name, local_name, respondent_language_id, admin_language_id, country_flag_code, prototype_locale_id)

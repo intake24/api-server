@@ -3,11 +3,12 @@ package uk.ac.ncl.openlab.intake24.foodsql.shared
 import anorm.Macro
 import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
 import uk.ac.ncl.openlab.intake24.PortionSizeMethod
-import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
+
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
 import anorm.SQL
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
+import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
 
 trait FoodPortionSizeShared extends SqlResourceLoader with FirstRowValidation {
 

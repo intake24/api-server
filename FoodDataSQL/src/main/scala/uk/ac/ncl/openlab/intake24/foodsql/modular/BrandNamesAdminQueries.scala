@@ -4,7 +4,7 @@ import anorm.SQL
 import anorm.SqlParser.str
 import anorm.NamedParameter.symbol
 import anorm.sqlToSimple
-import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
+
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.BrandNamesAdminService
 import org.slf4j.LoggerFactory
@@ -23,8 +23,9 @@ import com.google.inject.name.Named
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentUpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleOrParentError
+import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
 
-trait BrandNamesAdminQueries extends SqlDataService {
+trait BrandNamesAdminQueries extends FoodDataSqlService {
   private val logger = LoggerFactory.getLogger(classOf[BrandNamesAdminQueries])
 
   protected def deleteBrandNamesQuery(foodCode: String, locale: String)(implicit conn: java.sql.Connection): Either[Nothing, Unit] = {

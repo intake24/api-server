@@ -20,9 +20,9 @@ name := """api-play-server"""
 
 description := "Intake24 Play Framework API server"
 
-version := "15.9-SNAPSHOT"
+version := "1.0.0-SNAPSHOT"
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.11.8"
 
 maintainer := "Ivan Poliakov <ivan.poliakov@ncl.ac.uk>"
 
@@ -33,7 +33,7 @@ resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases/"
 libraryDependencies ++= Seq(
   jdbc,
   cache,
-  "net.codingwell" %% "scala-guice" % "4.0.0",
+  "net.codingwell" %% "scala-guice" % "4.0.1",
   "com.mohiva" %% "play-silhouette" % "3.0.0",
   "be.objectify" %% "deadbolt-scala" % "2.4.2",  
   "com.lihaoyi" %% "upickle" % "0.4.1",

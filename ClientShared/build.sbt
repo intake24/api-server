@@ -22,9 +22,9 @@ organization := "uk.ac.ncl.openlab.intake24"
 
 description := "GWT shared types"
 
-version := "15.9-SNAPSHOT"
+version := "1.0.0-SNAPSHOT"
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.11.8"
 
 libraryDependencies ++= 
 	Seq("com.google.gwt" % "gwt-user" % "2.7.0" % "provided",

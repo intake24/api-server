@@ -17,12 +17,10 @@ import uk.ac.ncl.openlab.intake24.InheritableAttributes
 import uk.ac.ncl.openlab.intake24.LocalFoodRecordUpdate
 import uk.ac.ncl.openlab.intake24.MainFoodRecordUpdate
 import uk.ac.ncl.openlab.intake24.NewMainFoodRecord
+
 import uk.ac.ncl.openlab.intake24.NewLocalFoodRecord
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
-import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
-import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
-import uk.ac.ncl.openlab.intake24.foodsql.Util
 import uk.ac.ncl.openlab.intake24.foodsql.shared.FoodPortionSizeShared
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentCreateError
@@ -39,9 +37,12 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import anorm.SqlParser
 import org.apache.commons.lang3.StringUtils
+import anorm.AnormUtil
+import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
+import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
 
 trait FoodsAdminQueries extends FoodsAdminService
-    with SqlDataService
+    with FoodDataSqlService
     with SqlResourceLoader
     with FirstRowValidation
     with FoodPortionSizeShared {
@@ -175,7 +176,7 @@ trait FoodsAdminQueries extends FoodsAdminService
         }.toSeq
 
       if (psmParams.nonEmpty) {
-        val ids = Util.batchKeys(batchSql(foodPsmInsertQuery, psmParams))
+        val ids = AnormUtil.batchKeys(batchSql(foodPsmInsertQuery, psmParams))
 
         val psmParamParams = localFoodRecordsSeq.flatMap(_._2.portionSize).zip(ids).flatMap {
           case (psm, id) => psm.parameters.map(param => Seq[NamedParameter]('portion_size_method_id -> id, 'name -> param.name, 'value -> param.value))
@@ -257,7 +258,7 @@ trait FoodsAdminQueries extends FoodsAdminService
       if (foodLocal.portionSize.nonEmpty) {
         val psmParams = foodLocal.portionSize.map(ps => Seq[NamedParameter]('food_code -> foodCode, 'locale_id -> locale, 'method -> ps.method, 'description -> ps.description, 'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes))
 
-        val psmKeys = Util.batchKeys(batchSql(foodPsmInsertQuery, psmParams))
+        val psmKeys = AnormUtil.batchKeys(batchSql(foodPsmInsertQuery, psmParams))
 
         val psmParamParams = foodLocal.portionSize.zip(psmKeys).flatMap {
           case (psm, id) => psm.parameters.map(param => Seq[NamedParameter]('portion_size_method_id -> id, 'name -> param.name, 'value -> param.value))

@@ -41,8 +41,6 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
 import uk.ac.ncl.openlab.intake24.InheritableAttributes
-import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
-import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDataService
@@ -53,11 +51,13 @@ import com.google.inject.name.Named
 import javax.inject.Inject
 import javax.sql.DataSource
 import org.slf4j.LoggerFactory
+import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
+import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
 
 class FoodDataUserStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends FoodDataUserImpl
 
 trait FoodDataUserImpl extends FoodDataService
-    with SqlDataService
+    with FoodDataSqlService
     with SqlResourceLoader
     with FirstRowValidation
     with InheritedAttributesImpl

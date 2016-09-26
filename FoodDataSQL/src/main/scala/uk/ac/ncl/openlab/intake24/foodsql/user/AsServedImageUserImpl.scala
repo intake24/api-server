@@ -10,13 +10,14 @@ import anorm.SqlParser
 import anorm.sqlToSimple
 import uk.ac.ncl.openlab.intake24.AsServedImage
 import uk.ac.ncl.openlab.intake24.AsServedSet
-import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
-import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.AsServedImageService
+import uk.ac.ncl.openlab.intake24.sql.SqlDataService
+import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
+import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
 
-trait AsServedImageUserImpl extends AsServedImageService with SqlDataService with SqlResourceLoader {
+trait AsServedImageUserImpl extends AsServedImageService with FoodDataSqlService with SqlResourceLoader {
 
   protected case class AsServedResultRow(id: String, description: String, weight: Double, url: String)
 

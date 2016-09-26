@@ -3,7 +3,7 @@ package uk.ac.ncl.openlab.intake24.foodsql.admin
 import anorm._
 import anorm.SqlParser.str
 import anorm.NamedParameter.symbol
-import uk.ac.ncl.openlab.intake24.foodsql.SqlDataService
+
 import uk.ac.ncl.openlab.intake24.FoodGroupRecord
 import uk.ac.ncl.openlab.intake24.FoodGroupMain
 import uk.ac.ncl.openlab.intake24.FoodGroupLocal
@@ -13,7 +13,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
-import uk.ac.ncl.openlab.intake24.foodsql.SqlResourceLoader
+
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
@@ -24,11 +24,13 @@ import com.google.inject.Singleton
 import javax.sql.DataSource
 import com.google.inject.name.Named
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
+import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
+import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
 
 @Singleton
 class FoodGroupsAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends FoodGroupsAdminImpl
 
-trait FoodGroupsAdminImpl extends FoodGroupsAdminService with SqlDataService with FirstRowValidation with SqlResourceLoader {
+trait FoodGroupsAdminImpl extends FoodGroupsAdminService with FoodDataSqlService with FirstRowValidation with SqlResourceLoader {
   private case class FoodGroupRow(id: Long, description: String, local_description: Option[String])
 
   private val parser = Macro.namedParser[FoodGroupRow]
