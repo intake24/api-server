@@ -21,7 +21,7 @@ limitations under the License.
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>net.scran24</groupId>
+	<groupId>uk.ac.ncl.openlab.intake24</groupId>
 	<artifactId>system-data-mongodb</artifactId>
 	<packaging>jar</packaging>
 	<version>1.0.0-SNAPSHOT</version>
@@ -34,8 +34,8 @@ limitations under the License.
 
 	<dependencies>
 		<dependency>
-			<groupId>net.scran24</groupId>
-			<artifactId>datastore</artifactId>
+			<groupId>uk.ac.ncl.openlab.intake24</groupId>
+			<artifactId>system-data-services</artifactId>
 			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>

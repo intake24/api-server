@@ -30,8 +30,7 @@ libraryDependencies ++= Seq(
   "org.scala-lang.modules" % "scala-xml_2.11" % "1.0.5",
   "net.sf.opencsv" % "opencsv" % "2.1",
   "org.slf4j" % "slf4j-api" % "1.7.12",
-  "org.slf4j" % "slf4j-simple" % "1.7.12",
   "org.scalatest" %% "scalatest" % "2.2.5" % "test",
-  "net.codingwell" %% "scala-guice" % "4.0.0"
+  "net.codingwell" %% "scala-guice" % "4.1.0"
 )
 

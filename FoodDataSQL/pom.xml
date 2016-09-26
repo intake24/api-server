@@ -44,41 +44,6 @@
 			<version>2.11.8</version>
 		</dependency>
 
-		<dependency>
-			<groupId>org.scala-lang.modules</groupId>
-			<artifactId>scala-xml_2.11</artifactId>
-			<version>1.0.3</version>
-		</dependency>
-
-		<dependency>
-			<groupId>net.sf.opencsv</groupId>
-			<artifactId>opencsv</artifactId>
-			<version>2.1</version>
-		</dependency>
-		<dependency>
-			<groupId>com.lihaoyi</groupId>
-			<artifactId>upickle_2.11</artifactId>
-			<version>0.3.4</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.postgresql</groupId>
-			<artifactId>postgresql</artifactId>
-			<version>9.4-1201-jdbc41</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.zaxxer</groupId>
-			<artifactId>HikariCP</artifactId>
-			<version>2.4.1</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.typesafe.play</groupId>
-			<artifactId>anorm_2.11</artifactId>
-			<version>2.5.0</version>
-		</dependency>
-
 
 		<dependency>
 			<groupId>org.scalatest</groupId>
@@ -90,45 +55,20 @@
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
-			<version>1.7.12</version>
+			<version>1.7.21</version>
 		</dependency>
 
 		<dependency>
-			<groupId>net.codingwell</groupId>
-			<artifactId>scala-guice_2.11</artifactId>
-			<version>4.0.0</version>
-		</dependency>
-
-		<dependency>
-			<groupId>net.scran24</groupId>
-			<artifactId>foodlookup</artifactId>
+			<groupId>uk.ac.ncl.openlab.intake24</groupId>
+			<artifactId>food-data-services</artifactId>
 			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>
 			<groupId>uk.ac.ncl.openlab.intake24</groupId>
-			<artifactId>fooddata-xml</artifactId>
+			<artifactId>food-data-xml</artifactId>
 			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
-
-		<dependency>
-			<groupId>org.rogach</groupId>
-			<artifactId>scallop_2.11</artifactId>
-			<version>0.9.5</version>
-		</dependency>
-
-		<dependency>
-			<groupId>uk.ac.ncl.openlab.intake24</groupId>
-			<artifactId>nutrients-ndns</artifactId>
-			<version>1.0.0-SNAPSHOT</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.poi</groupId>
-			<artifactId>poi-ooxml</artifactId>
-			<version>3.9</version>
-		</dependency>
-
 	</dependencies>
 
 	<build>
@@ -136,7 +76,7 @@
 			<plugin>
 				<groupId>org.scala-tools</groupId>
 				<artifactId>maven-scala-plugin</artifactId>
-				<version>2.15.2</version>
+				<version>3.2.2</version>
 				<executions>
 					<execution>
 						<goals>

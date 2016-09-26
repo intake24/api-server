@@ -27,7 +27,7 @@ version := "1.0.0-SNAPSHOT"
 scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
-  "net.codingwell" %% "scala-guice" % "4.0.0",
+  "net.codingwell" %% "scala-guice" % "4.1.0",
   "org.scalatest" %% "scalatest" % "2.2.5" % "test",
   "net.sf.opencsv" % "opencsv" % "2.1"
 )
