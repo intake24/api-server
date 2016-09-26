@@ -62,22 +62,9 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 		</dependency>
 
 		<dependency>
-			<groupId>org.scalatest</groupId>
-			<artifactId>scalatest_2.11</artifactId>
-			<version>2.2.4</version>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
 			<groupId>uk.ac.ncl.openlab.intake24</groupId>
-			<artifactId>fooddata-xml</artifactId>
+			<artifactId>food-data-xml</artifactId>
 			<version>1.0.0-SNAPSHOT</version>
-		</dependency>
-
-		<dependency>
-			<groupId>net.sf.opencsv</groupId>
-			<artifactId>opencsv</artifactId>
-			<version>2.1</version>
 		</dependency>
 	</dependencies>
 

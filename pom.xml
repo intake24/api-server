@@ -48,6 +48,7 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
     <module>SlidingScale</module>
     <module>SystemDataServices</module>
     <module>SystemDataMongo</module>
+	<module>CommonSQL</module>
     <module>SystemDataSQL</module>
     <module>ImageMap</module>
     <module>ImageChooser</module>
