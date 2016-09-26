@@ -66,13 +66,13 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
     <dependency>
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-library</artifactId>
-      <version>2.11.6</version>
+      <version>2.11.8</version>
     </dependency>
     
     <dependency>
       <groupId>org.scalatest</groupId>
       <artifactId>scalatest_2.11</artifactId>
-      <version>2.2.4</version>
+      <version>2.2.5</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -82,7 +82,7 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
       <plugin>
 	<groupId>org.scala-tools</groupId>
 	<artifactId>maven-scala-plugin</artifactId>
-	<version>2.15.2</version>
+	<version>3.2.2</version>
 	<executions>
 	  <execution>
 	    <goals>
