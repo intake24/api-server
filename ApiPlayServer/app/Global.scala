@@ -19,7 +19,13 @@ limitations under the License.
 import play.api.mvc.WithFilters
 import filters.DebugFilter
 import filters.CorsFilter
+import play.api.Application
 
 object Global extends WithFilters(DebugFilter, CorsFilter) {
+  
+  override def beforeStart(app: Application) = {
+    sys.SystemProperties.noTraceSupression.enable()
+  }
+    
 
 }
