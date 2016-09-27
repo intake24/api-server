@@ -30,7 +30,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -134,8 +137,19 @@ public class DownloadSurveyDataService extends HttpServlet {
 			header.add("Missing food description");
 			header.add("Missing food portion size");
 			header.add("Missing food leftovers");
+			
+			Set<Nutrient> nutrients = scala.collection.JavaConverters.setAsJavaSetConverter(Nutrient$.MODULE$.types()).asJava();
+			
+			final List<Nutrient> sortedNutrients = new ArrayList<Nutrient>(nutrients);
+			
+			Collections.sort(sortedNutrients, new Comparator<Nutrient>() {
+				@Override
+				public int compare(Nutrient arg0, Nutrient arg1) {
+					return arg0.key().compareTo(arg1.key());
+				}
+			});
 						 
-			for (Nutrient n : scala.collection.JavaConverters.setAsJavaSetConverter(Nutrient$.MODULE$.types()).asJava())
+			for (Nutrient n : sortedNutrients)
 				header.add(n.key());
 
 			writer.writeNext(header.toArray(new String[header.size()]));
@@ -235,7 +249,7 @@ public class DownloadSurveyDataService extends HttpServlet {
 							row.add(missingFoodPortionSize);
 							row.add(missingFoodLeftovers);
 
-							for (Nutrient n : scala.collection.JavaConverters.setAsJavaSetConverter(Nutrient$.MODULE$.types()).asJava())								
+							for (Nutrient n : sortedNutrients)								
 								if (food.nutrients.containsKey(n.key())) 
 									row.add(String.format("%.2f", food.nutrients.get(n.key())));
 								else
