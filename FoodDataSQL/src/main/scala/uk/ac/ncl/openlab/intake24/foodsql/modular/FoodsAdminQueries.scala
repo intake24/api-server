@@ -284,7 +284,8 @@ trait FoodsAdminQueries extends FoodsAdminService
         case None => {
           try {
             SQL(foodLocalInsertQuery)
-              .on('food_code -> foodCode, 'locale_id -> locale, 'local_description -> foodLocal.localDescription, 'do_not_use -> foodLocal.doNotUse, 'version -> UUID.randomUUID())
+              .on('food_code -> foodCode, 'locale_id -> locale, 'local_description -> foodLocal.localDescription, 'simple_local_description -> foodLocal.localDescription.map(d => StringUtils.stripAccents(d)),
+                  'do_not_use -> foodLocal.doNotUse, 'version -> UUID.randomUUID())
               .execute()
 
             Right(())
