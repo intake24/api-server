@@ -22,7 +22,7 @@ organization := "uk.ac.ncl.openlab.intake24"
 
 description := "Intake24 services"
 
-version := "1.0.0-SNAPSHOT"
+version := "2.0.0-SNAPSHOT"
 
 resolvers += Resolver.mavenLocal
 
