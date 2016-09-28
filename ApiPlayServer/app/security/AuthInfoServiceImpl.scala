@@ -24,8 +24,7 @@ import com.mohiva.play.silhouette.api.util.PasswordInfo
 import scala.reflect.ClassTag
 import scala.concurrent.Future
 import play.api.Logger
-import play.api.Play.current
-import com.mohiva.play.silhouette.impl.util.BCryptPasswordHasher
+
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.libs.concurrent.Execution.Implicits.defaultContext

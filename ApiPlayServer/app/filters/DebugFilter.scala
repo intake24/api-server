@@ -24,13 +24,15 @@ import play.api.Logger
 import play.api.mvc.Filter
 import scala.concurrent.Future
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import akka.stream.Materializer
+import javax.inject.Inject
 
-object DebugFilter extends Filter {
+class DebugFilter @Inject() (implicit val mat: Materializer) extends Filter {
   def apply(next: RequestHeader => Future[Result])(rh: RequestHeader): Future[Result] = {
     next.apply(rh).map {
       result =>
-        Logger.info(s"${rh.method} ${rh.uri}")
-        Logger.info("REQUEST HEADERS:")
+        Logger.debug(s"${rh.method} ${rh.uri}")
+        Logger.debug("REQUEST HEADERS:")
         rh.headers.keys.foreach {
           k =>
             Logger.info(s"${k}: ${rh.headers(k)}")

@@ -11,7 +11,7 @@ import com.oracle.webservices.internal.api.message.ContentType
 import play.api.http.ContentTypes
 import javax.inject.Inject
 import be.objectify.deadbolt.scala.DeadboltActions
-import be.objectify.deadbolt.core.PatternType
+
 import scala.collection.mutable.Buffer
 import uk.ac.ncl.openlab.intake24.CategoryHeader
 import org.slf4j.LoggerFactory

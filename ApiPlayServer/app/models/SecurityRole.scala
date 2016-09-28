@@ -18,8 +18,6 @@ limitations under the License.
 
 package models
 
-import be.objectify.deadbolt.core.models.Role
+import be.objectify.deadbolt.scala.models.Role
 
-case class SecurityRole(val roleName: String) extends Role {
-  override def getName() = roleName
-}
+case class SecurityRole(val name: String) extends Role

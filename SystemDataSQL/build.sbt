@@ -34,8 +34,7 @@ parallelExecution in Test := false
 
 libraryDependencies ++= Seq(
   "com.google.gwt" % "gwt-user" % "2.7.0" % "provided",
-  "org.slf4j" % "slf4j-api" % "1.7.12",
+  "org.slf4j" % "slf4j-api" % "1.7.21",
   "net.codingwell" %% "scala-guice" % "4.1.0",
-  "org.scala-lang.modules" %% "scala-xml" % "1.0.5",
   "org.scalatest" %% "scalatest" % "2.2.5" % "test"
 )

@@ -54,4 +54,6 @@ class ShiroPasswordHasher extends PasswordHasher {
 
     passwordHashBase64 == passwordInfo.password
   }
+
+  def isDeprecated(passwordInfo: PasswordInfo): Option[Boolean] = Some(false)
 }

@@ -28,6 +28,6 @@ scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
   "org.mongodb" % "mongo-java-driver" % "2.10.1",
-  "com.google.inject" % "guice" % "4.0",
+  "com.google.inject" % "guice" % "4.1.0",
   "com.google.gwt" % "gwt-user" % "2.7.0" % "provided"
 )

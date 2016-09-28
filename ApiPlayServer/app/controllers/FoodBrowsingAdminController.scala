@@ -18,81 +18,57 @@ limitations under the License.
 
 package controllers
 
-import be.objectify.deadbolt.scala.DeadboltActions
+import scala.concurrent.Future
+
 import javax.inject.Inject
-import models.AdminFoodRecord
-import play.api.http.ContentTypes
-import play.api.mvc.Action
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
+import security.DeadboltActionsAdapter
 import security.Roles
-import uk.ac.ncl.openlab.intake24.AssociatedFood
-import uk.ac.ncl.openlab.intake24.LocalCategoryRecord
-import uk.ac.ncl.openlab.intake24.LocalFoodRecord
-import uk.ac.ncl.openlab.intake24.MainCategoryRecord
-import uk.ac.ncl.openlab.intake24.MainFoodRecord
-import uk.ac.ncl.openlab.intake24.NewCategory
-import uk.ac.ncl.openlab.intake24.NewMainFoodRecord
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentCreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
-import upickle.default.Writer
-import upickle.default.read
-import upickle.default.write
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoriesAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodBrowsingAdminService
 
-class FoodBrowsingAdminController @Inject() (service: FoodBrowsingAdminService, deadbolt: DeadboltActions) extends Controller
+class FoodBrowsingAdminController @Inject() (service: FoodBrowsingAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
     with PickleErrorHandler
     with ApiErrorHandler {
 
-
-  def getUncategorisedFoods(locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+  def getUncategorisedFoods(locale: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.getUncategorisedFoods(locale))
     }
   }
 
-  def getRootCategories(locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+  def getRootCategories(locale: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.getRootCategories(locale))
     }
   }
 
-  def getCategoryContents(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+  def getCategoryContents(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.getCategoryContents(code, locale))
     }
   }
 
-  def getFoodParentCategories(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+  def getFoodParentCategories(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.getFoodParentCategories(code, locale))
     }
   }
 
-  def getFoodAllCategories(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+  def getFoodAllCategories(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.getFoodAllCategoriesHeaders(code, locale))
     }
   }
-  
-  def getCategoryParentCategories(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+
+  def getCategoryParentCategories(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.getCategoryParentCategories(code, locale))
     }
   }
 
-  def getCategoryAllCategories(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+  def getCategoryAllCategories(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.getCategoryAllCategoriesHeaders(code, locale))
     }
   }

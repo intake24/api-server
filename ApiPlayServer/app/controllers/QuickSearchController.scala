@@ -18,50 +18,28 @@ limitations under the License.
 
 package controllers
 
-import be.objectify.deadbolt.scala.DeadboltActions
-import javax.inject.Inject
-import models.AdminFoodRecord
-import play.api.http.ContentTypes
-import play.api.mvc.Action
-import play.api.mvc.Controller
-import security.Roles
-import uk.ac.ncl.openlab.intake24.AssociatedFood
-import uk.ac.ncl.openlab.intake24.LocalCategoryRecord
-import uk.ac.ncl.openlab.intake24.LocalFoodRecord
-import uk.ac.ncl.openlab.intake24.MainCategoryRecord
-import uk.ac.ncl.openlab.intake24.MainFoodRecord
-import uk.ac.ncl.openlab.intake24.NewCategory
-import uk.ac.ncl.openlab.intake24.NewMainFoodRecord
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentCreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
-import upickle.default.Writer
-import upickle.default.read
-import upickle.default.write
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoriesAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.QuickSearchService
+import scala.concurrent.Future
 
-class QuickSearchController @Inject() (service: QuickSearchService, deadbolt: DeadboltActions) extends Controller
+import javax.inject.Inject
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import play.api.mvc.Controller
+import security.DeadboltActionsAdapter
+import security.Roles
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.QuickSearchService
+import upickle.default._
+
+class QuickSearchController @Inject() (service: QuickSearchService, deadbolt: DeadboltActionsAdapter) extends Controller
     with PickleErrorHandler
     with ApiErrorHandler {
 
-  def searchFoods(searchTerm: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+  def searchFoods(searchTerm: String, locale: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.searchFoods(searchTerm, locale))
     }
   }
 
-  def searchCategories(searchTerm: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+  def searchCategories(searchTerm: String, locale: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.searchCategories(searchTerm, locale))
     }
   }

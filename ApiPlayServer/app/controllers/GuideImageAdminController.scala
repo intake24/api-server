@@ -24,19 +24,22 @@ import play.api.mvc.Action
 import play.api.mvc.Controller
 import security.Roles
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.GuideImageAdminService
+import security.DeadboltActionsAdapter
+import scala.concurrent.Future
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
-class GuideImageAdminController @Inject() (service: GuideImageAdminService, deadbolt: DeadboltActions) extends Controller
+class GuideImageAdminController @Inject() (service: GuideImageAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
     with PickleErrorHandler
     with ApiErrorHandler {
   
-   def listGuideImages() = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+   def listGuideImages() = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.listGuideImages())
     }
   }
    
-   def getGuideImage(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+   def getGuideImage(id: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.getGuideImage(id))
     }
   } 

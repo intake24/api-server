@@ -30,7 +30,7 @@ import be.objectify.deadbolt.scala.HandlerKey
 case object DefaultHandler extends HandlerKey
 
 @Singleton
-class DeadboltHandlerCacheImpl @Inject() (env: Environment[User, JWTAuthenticator]) extends HandlerCache {
+class DeadboltHandlerCacheImpl @Inject() (env: Environment[Intake24ApiEnv]) extends HandlerCache {
     val defaultHandler: DeadboltHandler = new DeadboltHandlerImpl(env)
 
     // HandlerKeys is an user-defined object, containing instances of a case class that extends HandlerKey  

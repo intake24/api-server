@@ -6,13 +6,9 @@
 
 POST    /signin                     controllers.Auth.signin
 
-GET     /users/:survey/:userName    controllers.Users.info(survey: String, userName: String)
-
-GET     /surveys/:survey            controllers.Surveys.info(survey: String)
-
 GET     /index/lookup/:locale/:term               controllers.FoodIndexController.lookup(locale, term)
 
-OPTIONS /*dontcare                  controllers.Application.corsPreflight(dontcare: String)
+OPTIONS /*dontcare                  controllers.CorsPreflightController.corsPreflight(dontcare: String)
 
 # ADMIN CONTROLLERS #
 

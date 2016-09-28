@@ -18,85 +18,66 @@ limitations under the License.
 
 package controllers
 
+import scala.annotation.implicitNotFound
 import scala.concurrent.Future
+
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginEvent
-import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Credentials
-import com.mohiva.play.silhouette.impl.authenticators.JWTAuthenticator
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.exceptions.InvalidPasswordException
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
+
 import javax.inject.Inject
-import models.User
-import play.api.Logger
-import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
 import play.api.libs.json.Json.toJsFieldJsValueWrapper
 import play.api.mvc.Action
-import security.AuthenticationException
+import play.api.mvc.Controller
 import security.DatabaseAccessException
 import security.DatabaseFormatException
-import upickle.Invalid
-import upickle.default.read
-
-import play.api.libs.iteratee.Enumerator
-import play.api.http.Writeable
-
+import security.Intake24ApiEnv
 import security.Intake24Credentials
+import upickle.default._
+import play.api.http.ContentTypes
 
-class Auth @Inject() (
-  val messagesApi: MessagesApi,
-  val env: Environment[User, JWTAuthenticator],
-  val credentialsProvider: CredentialsProvider)
+class Auth @Inject() (silEnv: Environment[Intake24ApiEnv], credentialsProvider: CredentialsProvider)
+    extends Controller
+    with PickleErrorHandler {
 
-  extends Silhouette[User, JWTAuthenticator] {
+  private case class AuthSuccess(token: String)
 
-  def signin = Action.async(parse.tolerantText) { implicit request =>
+  def signin = Action.async(parse.tolerantText) {
+    implicit request =>
 
-    try {
-      val credentials = read[Intake24Credentials](request.body)
+      tryWithPickleAsync {
+        val credentials = read[Intake24Credentials](request.body)
 
-      val authResult = credentialsProvider.authenticate(Credentials(credentials.username + "#" + credentials.survey_id, credentials.password))
+        val authResult = credentialsProvider.authenticate(Credentials(credentials.username + "#" + credentials.survey_id, credentials.password))
 
-      authResult.flatMap { loginInfo =>
-        env.identityService.retrieve(loginInfo).flatMap {
-          case Some(user) => env.authenticatorService.create(loginInfo).flatMap {
-            authenticator =>
-              
-              val customClaims = Json.obj( "i24r" -> user.securityInfo.roles, "i24p" -> user.securityInfo.permissions)
-              
-              env.eventBus.publish(LoginEvent(user, request, request2Messages))
-              env.authenticatorService.init(authenticator.copy(customClaims = Some(customClaims))).map { token =>
-                Ok(Json.obj("token" -> token))
+        authResult.flatMap {
+          loginInfo =>
+            silEnv.identityService.retrieve(loginInfo).flatMap {
+              case Some(user) => silEnv.authenticatorService.create(loginInfo).flatMap {
+                authenticator =>
+
+                  val customClaims = Json.obj("i24r" -> user.securityInfo.roles, "i24p" -> user.securityInfo.permissions)
+
+                  silEnv.eventBus.publish(LoginEvent(user, request))
+                  silEnv.authenticatorService.init(authenticator.copy(customClaims = Some(customClaims))).map { token =>
+                    Ok(write(AuthSuccess(token))).as(ContentTypes.JSON)
+                  }
               }
-          }
-          case None =>
-            Future.failed(new AuthenticationException("Couldn't find user"))
+              case None =>
+                Future.successful(Unauthorized)
+            }
+        }.recover {
+          case e: IdentityNotFoundException => Unauthorized
+          case e: InvalidPasswordException => Unauthorized
+          case e: DatabaseFormatException => InternalServerError(Json.obj("error" -> "databaseFormatException", "debugMessage" -> e.toString()))
+          case e: DatabaseAccessException => InternalServerError(Json.obj("error" -> "databaseAccessException", "debugMessage" -> e.toString()))
         }
-      }.recoverWith(exceptionHandler).recover {
-        case e: IdentityNotFoundException => Unauthorized
-        case e: InvalidPasswordException => Unauthorized
-        case e: DatabaseFormatException => InternalServerError(Json.obj("error" -> "databaseFormatException", "debugMessage" -> e.toString()))
-        case e: DatabaseAccessException => InternalServerError(Json.obj("error" -> "databaseAccessException", "debugMessage" -> e.toString()))
       }
-    } catch {
-      case Invalid.Data(_, msg) => Future.successful(BadRequest(Json.obj("error" -> "jsonException", "debugMessage" -> msg)))
-      case Invalid.Json(msg, input) => Future.successful(BadRequest(Json.obj("error" -> "jsonException", "debugMessage" -> msg)))
-    }
   }
 
-  def test = UserAwareAction.async { implicit request =>
-    request.identity match {
-      case Some(user) => {
-        Logger.debug("Some user")
-        Future.successful(Ok(user.toString()))
-      }
-      case None => {
-        Logger.debug("None")
-        Future.successful(Ok(":("))
-      }
-    }
-  }
 }

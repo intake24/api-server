@@ -21,9 +21,9 @@ package controllers
 import play.api._
 import play.api.mvc._
 
-class Application extends Controller {
+class CorsPreflightController extends Controller {
   def corsPreflight(dontcare: String) = Action {
-    Ok("").withHeaders(
+    Ok.withHeaders(
     "Access-Control-Allow-Origin" -> "*",
     "Allow" -> "*",
     "Access-Control-Allow-Methods" -> "POST, GET, PUT, DELETE, OPTIONS",

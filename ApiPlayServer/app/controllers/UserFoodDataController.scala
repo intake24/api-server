@@ -18,22 +18,18 @@ limitations under the License.
 
 package controllers
 
-import be.objectify.deadbolt.core.PatternType
-import be.objectify.deadbolt.scala.DeadboltActions
+import scala.concurrent.Future
+
 import javax.inject.Inject
-import play.api.http.ContentTypes
-import play.api.mvc.Action
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
-
-import upickle.default._
-
-import upickle.Js
+import security.DeadboltActionsAdapter
 import security.Roles
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDatabaseService
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.InheritableAttributeSource
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.SourceLocale
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.SourceRecord
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.SourceRecord
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.InheritableAttributeSource
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDatabaseService
+import upickle._
 
 object FoodSourceWriters {
   implicit val sourceLocaleWriter = upickle.default.Writer[SourceLocale] {
@@ -60,54 +56,53 @@ object FoodSourceWriters {
   }
 }
 
-class UserFoodDataController @Inject() (service: FoodDatabaseService, deadbolt: DeadboltActions) extends Controller with ApiErrorHandler {
+class UserFoodDataController @Inject() (service: FoodDatabaseService, deadbolt: DeadboltActionsAdapter) extends Controller with ApiErrorHandler {
 
-  import FoodSourceWriters._
 
-  def getCategoryContents(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+  def getCategoryContents(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.getCategoryContents(code, locale))
     }
   }
 
-  def getFoodData(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+  def getFoodData(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.getFoodData(code, locale))
     }
   }
 
-  def getFoodDataWithSources(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+  def getFoodDataWithSources(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.getFoodData(code, locale))
     }
   }
 
-  def getAssociatedFoodPrompts(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+  def getAssociatedFoodPrompts(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.getAssociatedFoods(code, locale))
     }
   }
 
-  def getBrandNames(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+  def getBrandNames(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.getBrandNames(code, locale))
     }
   }
 
-  def getAsServedSet(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+  def getAsServedSet(id: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.getAsServedSet(id))
     }
   }
 
-  def getDrinkwareSet(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+  def getDrinkwareSet(id: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.getDrinkwareSet(id))
     }
   }
 
-  def getGuideImage(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+  def getGuideImage(id: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.getGuideImage(id))
     }
   }

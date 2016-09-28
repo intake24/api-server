@@ -32,7 +32,7 @@ import net.codingwell.scalaguice.ScalaModule
 import com.mohiva.play.silhouette.api.util.IDGenerator
 import com.mohiva.play.silhouette.impl.util.SecureRandomIDGenerator
 import com.mohiva.play.silhouette.api.util.PasswordHasher
-import com.mohiva.play.silhouette.impl.util.BCryptPasswordHasher
+
 import com.mohiva.play.silhouette.api.util.FingerprintGenerator
 import com.mohiva.play.silhouette.impl.util.DefaultFingerprintGenerator
 import play.api.Configuration
@@ -44,6 +44,10 @@ import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import security.AuthInfoServiceImpl
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import security.ShiroPasswordHasher
+import security.Intake24ApiEnv
+import com.mohiva.play.silhouette.api.util.RequestPart
+import com.mohiva.play.silhouette.api.crypto.Base64AuthenticatorEncoder
+import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 
 
 class SilhouetteModule extends AbstractModule with ScalaModule {
@@ -64,9 +68,9 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   def provideEnvironment(
     identityService: IdentityService[User],
     authenticatorService: AuthenticatorService[JWTAuthenticator],
-    eventBus: EventBus): Environment[User, JWTAuthenticator] = {
+    eventBus: EventBus): Environment[Intake24ApiEnv] = {
 
-    Environment[User, JWTAuthenticator](
+    Environment[Intake24ApiEnv](
       identityService,
       authenticatorService,
       Seq(),
@@ -82,14 +86,14 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     clock: Clock): AuthenticatorService[JWTAuthenticator] = {
 
     val settings = JWTAuthenticatorSettings(
-      headerName = "X-Auth-Token",
+      fieldName = "X-Auth-Token",
       issuerClaim = "intake24",
-      encryptSubject = true,
-      authenticatorIdleTimeout = Some(20.minutes),
-      authenticatorExpiry = 12.hours,
+      requestParts = Some(Seq(RequestPart.Headers)),      
+      authenticatorIdleTimeout = None,
+      authenticatorExpiry = configuration.getInt("intake24.security.tokenExpiryMinutes").getOrElse(5).minutes,
       sharedSecret = configuration.getString("play.crypto.secret").get)
     
-      new JWTAuthenticatorService(settings, None, idGenerator, clock)    
+      new JWTAuthenticatorService(settings, None, new Base64AuthenticatorEncoder(), idGenerator, clock)    
   }
 
   /**
@@ -105,6 +109,6 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
 
     val shiroHasher = new ShiroPasswordHasher
     
-    new CredentialsProvider(authInfoRepository, shiroHasher, Seq(shiroHasher))
+    new CredentialsProvider(authInfoRepository, PasswordHasherRegistry(shiroHasher, Seq()))
   }
 }

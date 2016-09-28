@@ -18,8 +18,6 @@ limitations under the License.
 
 package models
 
-import be.objectify.deadbolt.core.models.Permission
+import be.objectify.deadbolt.scala.models.Permission
 
-case class SecurityPermission(value: String) extends Permission {
-  override def getValue() = value
-}
+case class SecurityPermission(val value: String) extends Permission

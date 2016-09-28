@@ -1,12 +1,21 @@
 package controllers
 
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors._
+import scala.annotation.implicitNotFound
+
+import org.slf4j.LoggerFactory
 
 import play.api.http.ContentTypes
 import play.api.mvc.Results
-
-import upickle.default._
-import org.slf4j.LoggerFactory
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.AnyError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DuplicateCode
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.IllegalParent
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentRecordNotFound
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.VersionConflict
+import upickle.default.Writer
+import upickle.default.write
 
 trait ApiErrorHandler extends Results {
 

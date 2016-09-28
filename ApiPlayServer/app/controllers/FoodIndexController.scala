@@ -18,24 +18,20 @@ limitations under the License.
 
 package controllers
 
-import play.api.mvc.Controller
-import play.api.libs.json.Json
-import play.api.mvc.Action
-import uk.ac.ncl.openlab.intake24.nutrients.EnergyKcal
-import play.api.libs.json.JsError
 import scala.concurrent.Future
-import upickle.default._
-import com.oracle.webservices.internal.api.message.ContentType
-import play.api.http.ContentTypes
-import javax.inject.Inject
-import be.objectify.deadbolt.scala.DeadboltActions
-import be.objectify.deadbolt.core.PatternType
-import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex
-import security.Roles
 
-class FoodIndexController @Inject() (foodIndexes: Map[String, FoodIndex], deadbolt: DeadboltActions) extends Controller {
-  def lookup(locale: String, term: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+import javax.inject.Inject
+import play.api.http.ContentTypes
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import play.api.mvc.Controller
+import security.DeadboltActionsAdapter
+import security.Roles
+import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex
+import upickle.default._
+
+class FoodIndexController @Inject() (foodIndexes: Map[String, FoodIndex], deadbolt: DeadboltActionsAdapter) extends Controller {
+  def lookup(locale: String, term: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       foodIndexes.get(locale) match {
         case Some(index) => Ok(write(index.lookup(term, 50))).as(ContentTypes.JSON)
         case None => BadRequest(s"Food index not configured for locale $locale")

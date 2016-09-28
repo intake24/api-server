@@ -18,26 +18,28 @@ limitations under the License.
 
 package controllers
 
-import be.objectify.deadbolt.scala.DeadboltActions
+import scala.concurrent.Future
+
 import javax.inject.Inject
-import play.api.mvc.Action
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
+import security.DeadboltActionsAdapter
 import security.Roles
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AsServedImageAdminService
 
-class AsServedImageAdminController @Inject() (service: AsServedImageAdminService, deadbolt: DeadboltActions) extends Controller
+class AsServedImageAdminController @Inject() (service: AsServedImageAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
     with PickleErrorHandler
     with ApiErrorHandler {
-  
-  def listAsServedSets() = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+
+  def listAsServedSets() = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.listAsServedSets())
     }
   }
-  
-  def getAsServedSet(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+
+  def getAsServedSet(id: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.getAsServedSet(id))
     }
-  } 
+  }
 }

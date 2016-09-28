@@ -18,34 +18,35 @@ limitations under the License.
 
 package controllers
 
-import be.objectify.deadbolt.scala.DeadboltActions
-import javax.inject.Inject
-import play.api.mvc.Action
+import scala.concurrent.Future
+
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
 import security.Roles
-import uk.ac.ncl.openlab.intake24.AssociatedFood
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
-import upickle.default.SeqishR
-import upickle.default.SeqishW
-import upickle.default.UnitRW
-import upickle.default.read
+import security.DeadboltActionsAdapter
 
-class AssociatedFoodsAdminController @Inject() (service: AssociatedFoodsAdminService, deadbolt: DeadboltActions) extends Controller
+import upickle.default._
+import uk.ac.ncl.openlab.intake24.AssociatedFood
+import javax.inject.Inject
+
+class AssociatedFoodsAdminController @Inject() (service: AssociatedFoodsAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
     with PickleErrorHandler
     with ApiErrorHandler {
 
-  def getAssociatedFoods(foodCode: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action(parse.tolerantText) { implicit request =>
+  def getAssociatedFoods(foodCode: String, locale: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.getAssociatedFoods(foodCode, locale))
     }
   }
 
-  def updateAssociatedFoods(foodCode: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action(parse.tolerantText) { implicit request =>
-      tryWithPickle {
-        val associatedFoods = read[Seq[AssociatedFood]](request.body)
-        translateError(service.updateAssociatedFoods(foodCode, associatedFoods, locale))
+  def updateAssociatedFoods(foodCode: String, locale: String) = deadbolt.restrict(Roles.superuser)(parse.tolerantText) {
+    request =>
+      Future {
+        tryWithPickle {
+          val associatedFoods = read[Seq[AssociatedFood]](request.body)
+          translateError(service.updateAssociatedFoods(foodCode, associatedFoods, locale))
+        }
       }
-    }
   }
 }

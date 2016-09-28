@@ -20,14 +20,15 @@ package models
 
 import com.mohiva.play.silhouette.api.Identity
 import com.mohiva.play.silhouette.api.LoginInfo
-import be.objectify.deadbolt.core.models.Subject
+
 import play.libs.Scala
+import be.objectify.deadbolt.scala.models.Subject
 
 case class User(id: String, securityInfo: SecurityInfo) extends Identity with Subject {    
   
-  def getRoles: java.util.List[SecurityRole] = Scala.asJava(securityInfo.roles.map(SecurityRole).toSeq)
+  def identifier = id
 
-  def getPermissions: java.util.List[SecurityPermission] =  Scala.asJava((securityInfo.permissions).map(SecurityPermission).toSeq)
+  def permissions = securityInfo.permissions.map(SecurityPermission).toList
   
-  def getIdentifier() = id
+  def roles = securityInfo.roles.map(SecurityRole).toList
 }

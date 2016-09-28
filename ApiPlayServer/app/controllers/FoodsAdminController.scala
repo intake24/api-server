@@ -18,118 +18,84 @@ limitations under the License.
 
 package controllers
 
+import scala.concurrent.Future
+
 import be.objectify.deadbolt.scala.DeadboltActions
 import javax.inject.Inject
-import models.AdminFoodRecord
-import play.api.http.ContentTypes
-import play.api.mvc.Action
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
-import security.Roles
-import uk.ac.ncl.openlab.intake24.AssociatedFood
-import uk.ac.ncl.openlab.intake24.LocalCategoryRecord
-import uk.ac.ncl.openlab.intake24.LocalFoodRecord
-import uk.ac.ncl.openlab.intake24.MainCategoryRecord
-import uk.ac.ncl.openlab.intake24.MainFoodRecord
-import uk.ac.ncl.openlab.intake24.NewCategory
-import uk.ac.ncl.openlab.intake24.NewMainFoodRecord
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentCreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
-import upickle.default.Writer
-import upickle.default.read
-import upickle.default.write
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoriesAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
-import uk.ac.ncl.openlab.intake24.MainFoodRecordUpdate
-import uk.ac.ncl.openlab.intake24.LocalFoodRecordUpdate
 
-class FoodsAdminController @Inject() (service: FoodsAdminService, deadbolt: DeadboltActions) extends Controller
+import security.DeadboltActionsAdapter
+import security.Roles
+import uk.ac.ncl.openlab.intake24.LocalFoodRecordUpdate
+import uk.ac.ncl.openlab.intake24.MainFoodRecordUpdate
+import uk.ac.ncl.openlab.intake24.NewMainFoodRecord
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoriesAdminService
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
+import upickle.default._
+
+class FoodsAdminController @Inject() (service: FoodsAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
     with PickleErrorHandler
     with ApiErrorHandler {
 
-  /*
-   * 
-   *   def getFoodRecord(code: String, locale: String): Either[LocalLookupError, FoodRecord]
-  
-  def isFoodCodeAvailable(code: String): Either[DatabaseError, Boolean]
-  def isFoodCode(code: String): Either[DatabaseError, Boolean]
-
-  def createFood(newFood: NewMainFoodRecord): Either[DependentCreateError, Unit]
-  def createFoodWithTempCode(newFood: NewMainFoodRecord): Either[DependentCreateError, String]
-  def createFoods(newFoods: Seq[NewMainFoodRecord]): Either[DependentCreateError, Unit]
-  def createLocalFoods(localFoodRecords: Map[String, LocalFoodRecord], locale: String): Either[LocalDependentCreateError, Unit]
-
-  def updateMainFoodRecord(foodCode: String, foodBase: MainFoodRecord): Either[UpdateError, Unit]
-  def updateLocalFoodRecord(foodCode: String, locale: String, foodLocal: LocalFoodRecord): Either[LocalUpdateError, Unit]
-
-  def deleteAllFoods(): Either[DatabaseError, Unit]
-  def deleteFood(foodCode: String): Either[DeleteError, Unit]  
-   * 
-   */
-
-  def getFoodRecord(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+  def getFoodRecord(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.getFoodRecord(code, locale))
     }
   }
 
-  def isFoodCodeAvailable(code: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+  def isFoodCodeAvailable(code: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.isFoodCodeAvailable(code))
     }
   }
 
-  def isFoodCode(code: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+  def isFoodCode(code: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.isFoodCode(code))
     }
   }
 
-  def createFood() = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action(parse.tolerantText) { implicit request =>
-      tryWithPickle {
-        translateError(service.createFood(read[NewMainFoodRecord](request.body)))
+  def createFood() = deadbolt.restrict(Roles.superuser)(parse.tolerantText) {
+    request =>
+      Future {
+        tryWithPickle {
+          translateError(service.createFood(read[NewMainFoodRecord](request.body)))
+        }
       }
-    }
   }
 
-  def createFoodWithTempCode() = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action(parse.tolerantText) { implicit request =>
-      tryWithPickle {
-        translateError(service.createFoodWithTempCode(read[NewMainFoodRecord](request.body)))
+  def createFoodWithTempCode() = deadbolt.restrict(Roles.superuser)(parse.tolerantText) {
+    request =>
+      Future {
+        tryWithPickle {
+          translateError(service.createFoodWithTempCode(read[NewMainFoodRecord](request.body)))
+        }
       }
-    }
   }
 
-  def updateMainFoodRecord(foodCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action(parse.tolerantText) { implicit request =>
-      tryWithPickle {
-        translateError(service.updateMainFoodRecord(foodCode, read[MainFoodRecordUpdate](request.body)))
+  def updateMainFoodRecord(foodCode: String) = deadbolt.restrict(Roles.superuser)(parse.tolerantText) {
+    request =>
+      Future {
+        tryWithPickle {
+          translateError(service.updateMainFoodRecord(foodCode, read[MainFoodRecordUpdate](request.body)))
+        }
       }
-    }
   }
 
-  def updateLocalFoodRecord(foodCode: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action(parse.tolerantText) { implicit request =>
-      tryWithPickle {
-        translateError(service.updateLocalFoodRecord(foodCode, read[LocalFoodRecordUpdate](request.body), locale))
+  def updateLocalFoodRecord(foodCode: String, locale: String) = deadbolt.restrict(Roles.superuser)(parse.tolerantText) {
+    request =>
+      Future {
+        tryWithPickle {
+          translateError(service.updateLocalFoodRecord(foodCode, read[LocalFoodRecordUpdate](request.body), locale))
+        }
       }
-    }
   }
 
-  def deleteFood(code: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+  def deleteFood(code: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.deleteFoods(Seq(code)))
     }
   }
-
 }

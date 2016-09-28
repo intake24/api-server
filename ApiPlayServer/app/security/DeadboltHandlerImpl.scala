@@ -25,24 +25,31 @@ import scala.concurrent.Future
 import models.User
 import be.objectify.deadbolt.scala.DynamicResourceHandler
 import scala.concurrent.ExecutionContext.Implicits.global
-import be.objectify.deadbolt.core.models.Subject
+
 import javax.inject.Inject
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.impl.authenticators.JWTAuthenticator
+
+
 import play.api.mvc.Result
 
 import upickle.default._
 import play.api.libs.json._
 import play.Logger
 import models.SecurityInfo
+import be.objectify.deadbolt.scala.models.Subject
 
-class DeadboltHandlerImpl(val env: Environment[User, JWTAuthenticator]) extends DeadboltHandler {
+import com.mohiva.play.silhouette.api.Environment
+import com.mohiva.play.silhouette.api.Env
+import com.mohiva.play.silhouette.impl.authenticators.JWTAuthenticator
+import be.objectify.deadbolt.scala.AuthenticatedRequest
+
+
+class DeadboltHandlerImpl(val env: Environment[Intake24ApiEnv]) extends DeadboltHandler {
 
   def beforeAuthCheck[A](request: Request[A]) = Future(None)
 
   override def getDynamicResourceHandler[A](request: Request[A]): Future[Option[DynamicResourceHandler]] = Future(None)
 
-  override def getSubject[A](request: Request[A]): Future[Option[Subject]] = {
+  override def getSubject[A](request: AuthenticatedRequest[A]): Future[Option[Subject]] = {
     env.authenticatorService.retrieve(request).map {
       _.flatMap {
         auth =>
@@ -57,7 +64,7 @@ class DeadboltHandlerImpl(val env: Environment[User, JWTAuthenticator]) extends 
     }
   }
 
-  def onAuthFailure[A](request: Request[A]): Future[Result] =
+  def onAuthFailure[A](request: AuthenticatedRequest[A]): Future[Result] =
     env.authenticatorService.retrieve(request).map {
       case Some(auth) if auth.isValid => Results.Forbidden
       case _ => Results.Unauthorized.withHeaders(("WWW-Authenticate", "X-Auth-Token"))

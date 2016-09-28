@@ -18,34 +18,26 @@ limitations under the License.
 
 package controllers
 
-import play.api.mvc.Controller
-import play.api.libs.json.Json
-import play.api.mvc.Action
-import uk.ac.ncl.openlab.intake24.nutrients.EnergyKcal
-import play.api.libs.json.JsError
-import scala.concurrent.Future
-import upickle.default._
-import com.oracle.webservices.internal.api.message.ContentType
-import play.api.http.ContentTypes
-import javax.inject.Inject
 import be.objectify.deadbolt.scala.DeadboltActions
-import be.objectify.deadbolt.core.PatternType
-import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex
-import security.Permissions
-import security.Roles
+import javax.inject.Inject
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import play.api.mvc.Controller
+import security.DeadboltActionsAdapter
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.LocalesAdminService
+import upickle.default._
+import security.Roles
+import scala.concurrent.Future
 
-
-class LocalesAdminController @Inject() (service: LocalesAdminService, deadbolt: DeadboltActions) extends Controller with ApiErrorHandler {
+class LocalesAdminController @Inject() (service: LocalesAdminService, deadbolt: DeadboltActionsAdapter) extends Controller with ApiErrorHandler {
   
-  def listLocales() = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+  def listLocales() = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.listLocales())
     }
   }
   
-  def getLocale(id: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+  def getLocale(id: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.getLocale(id))
     }
   }

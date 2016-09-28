@@ -33,12 +33,12 @@ resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases/"
 libraryDependencies ++= Seq(
   jdbc,
   cache,
-  "net.codingwell" %% "scala-guice" % "4.0.1",
-  "com.mohiva" %% "play-silhouette" % "3.0.0",
-  "be.objectify" %% "deadbolt-scala" % "2.4.2",  
+  "net.codingwell" %% "scala-guice" % "4.1.0",
+  "com.mohiva" %% "play-silhouette" % "4.0.0",
+  "be.objectify" %% "deadbolt-scala" % "2.5.0",  
   "com.lihaoyi" %% "upickle" % "0.4.1",
   "org.apache.shiro" % "shiro-core" % "1.2.3", // for v1.0 authentication support
-  "com.typesafe.play" % "play-integration-test_2.11" % "2.4.3" % "test"  
+  "com.typesafe.play" % "play-integration-test_2.11" % "2.5.8" % "test"  
 )
 
 javaOptions in Universal ++= Seq(

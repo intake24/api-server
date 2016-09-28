@@ -18,67 +18,70 @@ limitations under the License.
 
 package controllers
 
-import be.objectify.deadbolt.scala.DeadboltActions
+import scala.concurrent.Future
+
 import javax.inject.Inject
-import play.api.mvc.Action
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
+import security.DeadboltActionsAdapter
 import security.Roles
 import uk.ac.ncl.openlab.intake24.LocalCategoryRecordUpdate
 import uk.ac.ncl.openlab.intake24.MainCategoryRecordUpdate
-import uk.ac.ncl.openlab.intake24.NewCategory
+import uk.ac.ncl.openlab.intake24.NewMainCategoryRecord
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoriesAdminService
 import upickle.default.read
-import uk.ac.ncl.openlab.intake24.NewMainCategoryRecord
 
-class CategoriesAdminController @Inject() (service: CategoriesAdminService, deadbolt: DeadboltActions) extends Controller
+class CategoriesAdminController @Inject() (service: CategoriesAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
     with PickleErrorHandler
     with ApiErrorHandler {
 
-  def getCategoryRecord(code: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+  def getCategoryRecord(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.getCategoryRecord(code, locale))
     }
   }
-  def isCategoryCodeAvailable(code: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+  def isCategoryCodeAvailable(code: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.isCategoryCodeAvailable(code))
     }
   }
 
-  def isCategoryCode(code: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+  def isCategoryCode(code: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.isCategoryCodeAvailable(code))
     }
   }
 
-  def createMainCategoryRecord() = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action(parse.tolerantText) { implicit request =>
-      tryWithPickle {
-        translateError(service.createMainCategoryRecords(Seq(read[NewMainCategoryRecord](request.body))))
+  def createMainCategoryRecord() = deadbolt.restrict(Roles.superuser)(parse.tolerantText) {
+    request =>
+      Future {
+        tryWithPickle {
+          translateError(service.createMainCategoryRecords(Seq(read[NewMainCategoryRecord](request.body))))
+        }
       }
-    }
   }
-  
-  def deleteCategory(categoryCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action {
+
+  def deleteCategory(categoryCode: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
       translateError(service.deleteCategory(categoryCode))
     }
   }
 
-  def updateMainCategoryRecord(categoryCode: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action(parse.tolerantText) { implicit request =>
-      tryWithPickle {
-        translateError(service.updateMainCategoryRecord(categoryCode, read[MainCategoryRecordUpdate](request.body)))
+  def updateMainCategoryRecord(categoryCode: String) = deadbolt.restrict(Roles.superuser)(parse.tolerantText) {
+    request =>
+      Future {
+        tryWithPickle {
+          translateError(service.updateMainCategoryRecord(categoryCode, read[MainCategoryRecordUpdate](request.body)))
+        }
       }
-    }
   }
 
-  def updateLocalCategoryRecord(categoryCode: String, locale: String) = deadbolt.Restrict(List(Array(Roles.superuser))) {
-    Action(parse.tolerantText) { implicit request =>
-      tryWithPickle {
-        translateError(service.updateLocalCategoryRecord(categoryCode, read[LocalCategoryRecordUpdate](request.body), locale))
+  def updateLocalCategoryRecord(categoryCode: String, locale: String) = deadbolt.restrict(Roles.superuser)(parse.tolerantText) {
+    request =>
+      Future {
+        tryWithPickle {
+          translateError(service.updateLocalCategoryRecord(categoryCode, read[LocalCategoryRecordUpdate](request.body), locale))
+        }
       }
-    }
   }
-
 }
