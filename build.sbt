@@ -42,13 +42,13 @@ lazy val nutrientsCsv = Project(id = "nutrientsCsv", base = file("NutrientsCSV")
 lazy val foodDataSql = Project(id = "foodDataSql", base = file("FoodDataSQL")).dependsOn(commonSql, foodDataServices % "compile->compile;test->test", sharedTypes, foodDataXml, nutrientsCsv)
 
 
-lazy val databaseTools = Project(id = "databaseTools", base = file("DatabaseTools")).dependsOn(systemDataMongo, systemDataSql, foodDataXml, foodDataSql)
+lazy val databaseTools = Project(id = "databaseTools", base = file("DatabaseTools")).dependsOn(commonSql, systemDataMongo, systemDataSql, foodDataXml, foodDataSql)
 
 lazy val apiPlayServer = Project(id = "apiPlayServer", base = file("ApiPlayServer")).enablePlugins(PlayScala, SystemdPlugin).dependsOn(foodDataSql, systemDataSql)
 
 lazy val siteTest = Project(id = "siteTest", base = file("SiteTest"))
 
-lazy val apiDocs = scalatex.ScalatexReadme(
+/* lazy val apiDocs = scalatex.ScalatexReadme(
   projectId = "ApiDocs",
   wd = file(""),
   url = "",
@@ -59,4 +59,4 @@ lazy val apiDocs = scalatex.ScalatexReadme(
     "com.lihaoyi" %% "upickle" % "0.4.1",
     "com.google.code.gson" % "gson" % "2.3.1" // for JSON pretty-printing
   )
-).dependsOn(sharedTypes, foodDataServices)
+).dependsOn(sharedTypes, foodDataServices) */

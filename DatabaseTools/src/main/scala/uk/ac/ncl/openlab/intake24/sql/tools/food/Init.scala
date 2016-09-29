@@ -16,16 +16,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package uk.ac.ncl.openlab.intake24.foodsql.tools
+package uk.ac.ncl.openlab.intake24.sql.tools.food
 
 import org.slf4j.LoggerFactory
 import anorm.SqlParser
 import org.rogach.scallop.ScallopConf
 import anorm._
+import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseConnection
+import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseOptions
+import uk.ac.ncl.openlab.intake24.sql.tools.WarningMessage
+import uk.ac.ncl.openlab.intake24.sql.SqlFileUtil
 
 
-
-object Init extends App with WarningMessage with DatabaseConnection with SqlUtil {
+object Init extends App with WarningMessage with DatabaseConnection with SqlFileUtil {
 
   val logger = LoggerFactory.getLogger(getClass)
   
@@ -42,30 +45,16 @@ object Init extends App with WarningMessage with DatabaseConnection with SqlUtil
   val initDbStatements = separateSqlStatements(stripComments(scala.io.Source.fromInputStream(getClass.getResourceAsStream("/sql/init_foods_db.sql"), "utf-8").mkString))
 
   logger.info("Dropping all tables and sequences")
-
-  val dropTableStatements =
-    SQL("""SELECT 'DROP TABLE IF EXISTS ' || tablename || ' CASCADE;' AS query FROM pg_tables WHERE schemaname='public'""")
-      .executeQuery()
-      .as(SqlParser.str("query").*)
-
-  val dropSequenceStatements =
-    SQL("""SELECT 'DROP SEQUENCE IF EXISTS ' || relname || ' CASCADE;' AS query FROM pg_class WHERE relkind = 'S'""")
-      .executeQuery()
-      .as(SqlParser.str("query").*)
-      
-  val clearDbStatements = dropTableStatements ++ dropSequenceStatements
   
-  clearDbStatements.foreach {
-    statement =>
-      logger.debug(statement)
-      SQL(statement).execute()
-  }
+  dropAllTables(dbConn, logger)
 
-  logger.info("Creating tables and default records")
+  logger.info("Initialising database")
 
   initDbStatements.foreach { statement =>
     logger.debug(statement)
     SQL(statement).execute()
   }
+  
+  dbConn.close()
 
 }

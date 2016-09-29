@@ -1,4 +1,4 @@
-package uk.ac.ncl.openlab.intake24.foodsql.tools
+package uk.ac.ncl.openlab.intake24.sql.tools
 
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -27,3 +27,5 @@ trait WarningMessage {
     }
   }
 }
+
+object WarningMessage extends WarningMessage

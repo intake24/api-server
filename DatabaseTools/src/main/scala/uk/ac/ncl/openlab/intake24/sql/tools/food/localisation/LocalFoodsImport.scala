@@ -1,4 +1,4 @@
-package uk.ac.ncl.openlab.intake24.foodsql.tools.localisation
+package uk.ac.ncl.openlab.intake24.sql.tools.food.localisation
 
 import java.io.File
 import java.io.FileWriter
@@ -15,9 +15,9 @@ import uk.ac.ncl.openlab.intake24.Locale
 import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
 import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl
 import uk.ac.ncl.openlab.intake24.foodsql.admin.LocalesAdminImpl
-import uk.ac.ncl.openlab.intake24.foodsql.tools.DatabaseConnection
-import uk.ac.ncl.openlab.intake24.foodsql.tools.DatabaseOptions
-import uk.ac.ncl.openlab.intake24.foodsql.tools.WarningMessage
+import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseConnection
+import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseOptions
+import uk.ac.ncl.openlab.intake24.sql.tools.WarningMessage
 import uk.ac.ncl.openlab.intake24.AssociatedFood
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentError
@@ -32,7 +32,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.VersionConflict
 import uk.ac.ncl.openlab.intake24.NewCategory
 import uk.ac.ncl.openlab.intake24.InheritableAttributes
-import uk.ac.ncl.openlab.intake24.foodsql.tools.ErrorHandler
+import uk.ac.ncl.openlab.intake24.sql.tools.ErrorHandler
 import uk.ac.ncl.openlab.intake24.NewLocalFoodRecord
 import uk.ac.ncl.openlab.intake24.NewLocalCategoryRecord
 

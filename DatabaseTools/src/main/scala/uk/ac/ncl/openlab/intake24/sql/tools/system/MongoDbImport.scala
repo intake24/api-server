@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package uk.ac.ncl.openlab.intake24.datastoresql.tools
+package uk.ac.ncl.openlab.intake24.sql.tools.system
 
 import anorm._
 import org.rogach.scallop._
@@ -28,6 +28,7 @@ import scala.collection.mutable.ArrayBuffer
 import java.sql.Connection
 import net.scran24.datastore.mongodb.MongoDbDataStore
 import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import java.sql.Timestamp
 import org.workcraft.gwt.shared.client.Callback1
 import net.scran24.datastore.NutritionMappedSurveyRecord
@@ -41,6 +42,11 @@ import java.util.Properties
 import uk.ac.ncl.openlab.intake24.datastoresql.JavaConversions
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import uk.ac.ncl.openlab.intake24.sql.tools.WarningMessage
+import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseOptions
+import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseConfiguration
+import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseConnection
+import net.scran24.datastore.SecureUserRecord
 
 class MongoDbImporter(dbConn: Connection, mongoStore: MongoDbDataStore) {
 
@@ -48,12 +54,12 @@ class MongoDbImporter(dbConn: Connection, mongoStore: MongoDbDataStore) {
 
   implicit val implicitConn = dbConn
 
-  def importSurveys() = {
+  def importSurveys(ignoreSurveys: Set[String]) = {
     val surveys = mongoStore.getSurveyNames()
 
-    val surveyParams = surveys.map(survey_id => (survey_id, mongoStore.getSurveyParameters(survey_id))).map {
+    val surveyParams = surveys.filterNot(ignoreSurveys.contains(_)).map(survey_id => (survey_id, mongoStore.getSurveyParameters(survey_id))).map {
       case (survey_id, params) => Seq[NamedParameter]('id -> survey_id, 'state -> params.state.ordinal(), 'start_date -> new Timestamp(params.startDate), 'end_date -> new Timestamp(params.endDate), 'scheme_id -> params.schemeName,
-          'locale -> params.locale, 'allow_gen_users -> params.allowGenUsers, 'suspension_reason -> params.suspensionReason, 'survey_monkey_url -> jopt2option(params.surveyMonkeyUrl))
+        'locale -> params.locale, 'allow_gen_users -> params.allowGenUsers, 'suspension_reason -> params.suspensionReason, 'survey_monkey_url -> jopt2option(params.surveyMonkeyUrl))
     }
 
     if (!surveyParams.isEmpty) {
@@ -64,41 +70,43 @@ class MongoDbImporter(dbConn: Connection, mongoStore: MongoDbDataStore) {
         case e: java.sql.BatchUpdateException => throw e.getNextException
       }
     } else
-      logger.warn("There are no survey records to import")
+      logger.info("There are no survey records to import")
   }
 
   private def importUsersFor(survey_id: String, rename: Option[String] = None) = {
     logger.info("Importing users for " + survey_id)
 
-    val userRecords = mongoStore.getUserRecords(survey_id)
+    val userRecords = mongoStore.getUserRecords(survey_id).asScala.toSeq
 
-    if (!userRecords.isEmpty())
-      Queries.batchUserInsert(rename.getOrElse(survey_id), userRecords.map(fromJavaSecureUserRecord))
+    val filteredUserRecords = Buffer[SecureUserRecord]()
+
+    val knownUserNames = scala.collection.mutable.Set[String]()
+
+    userRecords.foreach {
+
+      record =>
+
+        if (knownUserNames.contains(record.username)) {
+          logger.warn(s"User name ${record.username} is used more than once, skipping this record!")
+        } else {
+          filteredUserRecords += record
+          knownUserNames += record.username
+        }
+    }
+
+    if (!filteredUserRecords.isEmpty())
+      Queries.batchUserInsert(rename.getOrElse(survey_id), filteredUserRecords.map(fromJavaSecureUserRecord))
     else
-      logger.warn("Survey " + survey_id + " has no user records")
+      logger.info("Survey " + survey_id + " has no user records")
   }
 
-  def importUsers() = {
+  def importUsers(ignoreSurveys: Set[String]) = {
     importUsersFor("admin", Some(""))
-    mongoStore.getSurveyNames().foreach(importUsersFor(_))
+    mongoStore.getSurveyNames().filterNot(ignoreSurveys.contains(_)).foreach(importUsersFor(_))
   }
 
-  private def importSurveySubmissionsFor(survey_id: String) = {
-    logger.info("Importing submissions for " + survey_id)
-
-    val surveysBuffer = Buffer[NutritionMappedSurveyRecordWithId]()
-
+  private def writeSurveySubmissions(survey_id: String, surveys: Seq[NutritionMappedSurveyRecordWithId]) = {
     val ids = scala.collection.mutable.Map[NutritionMappedSurveyRecordWithId, UUID]()
-
-    logger.info("Retrieving submission records from MongoDB")
-
-    mongoStore.processSurveys(survey_id, Long.MinValue, Long.MaxValue, new Callback1[NutritionMappedSurveyRecordWithId] {
-      def call(record: NutritionMappedSurveyRecordWithId) = {
-        surveysBuffer += record
-      }
-    })
-
-    val surveys = surveysBuffer.toSeq
 
     val submissionParams = surveys.map {
       record =>
@@ -116,7 +124,7 @@ class MongoDbImporter(dbConn: Connection, mongoStore: MongoDbDataStore) {
         case e: java.sql.BatchUpdateException => throw e.getNextException
       }
     } else
-      logger.warn("There are no submission records to import")
+      logger.info("There are no submission records to import")
 
     val customFieldParams = surveys.flatMap {
       record =>
@@ -133,7 +141,7 @@ class MongoDbImporter(dbConn: Connection, mongoStore: MongoDbDataStore) {
         case e: java.sql.BatchUpdateException => throw e.getNextException
       }
     } else
-      logger.warn("There are no custom field records to import")
+      logger.info("There are no custom field records to import")
 
     val userCustomFieldParams = surveys.flatMap {
       record =>
@@ -150,7 +158,7 @@ class MongoDbImporter(dbConn: Connection, mongoStore: MongoDbDataStore) {
         case e: java.sql.BatchUpdateException => throw e.getNextException
       }
     } else
-      logger.warn("There are no submission user custom field records to import")
+      logger.info("There are no submission user custom field records to import")
 
     val submissionMeals = surveys.toSeq.map(s => (ids(s), s.survey.meals))
 
@@ -183,7 +191,7 @@ class MongoDbImporter(dbConn: Connection, mongoStore: MongoDbDataStore) {
           logger.info("Importing " + mealCustomFieldParams.size() + " meal custom field records")
           BatchSql(Queries.surveyMealsCustomFieldsInsert, mealCustomFieldParams).execute()
         } else
-          logger.warn("There are no meal custom field records to import")
+          logger.info("There are no meal custom field records to import")
 
         // Foods
 
@@ -191,9 +199,6 @@ class MongoDbImporter(dbConn: Connection, mongoStore: MongoDbDataStore) {
           case (meal_id, meal) =>
             meal.foods.map {
               case food =>
-                
-                logger.debug(food.toString())
-
                 // Some entries use 5-character special food code for missing foods which is no longer allowed
 
                 val corrected_food_code = food.code match {
@@ -201,7 +206,14 @@ class MongoDbImporter(dbConn: Connection, mongoStore: MongoDbDataStore) {
                   case x => x
                 }
 
-                Seq[NamedParameter]('meal_id -> meal_id, 'code -> corrected_food_code, 'english_description -> food.englishDescription, 'local_description -> JavaConversions.jopt2option(food.localDescription), 'ready_meal -> food.isReadyMeal, 'search_term -> food.searchTerm,
+                val truncatedSearchTerm = if (food.searchTerm.length() > 256) {
+                  logger.warn(s"""Food search term "${food.searchTerm}" too long, truncating""")
+                  food.searchTerm.take(256)
+                } else {
+                  food.searchTerm
+                }
+
+                Seq[NamedParameter]('meal_id -> meal_id, 'code -> corrected_food_code, 'english_description -> food.englishDescription, 'local_description -> JavaConversions.jopt2option(food.localDescription), 'ready_meal -> food.isReadyMeal, 'search_term -> truncatedSearchTerm,
                   'portion_size_method_id -> food.portionSize.scriptName, 'reasonable_amount -> food.reasonableAmount, 'food_group_id -> food.foodGroupCode, 'food_group_english_description -> food.foodGroupEnglishDescription,
                   'food_group_local_description -> JavaConversions.jopt2option(food.foodGroupLocalDescription), 'brand -> food.brand, 'nutrient_table_id -> food.nutrientTableID, 'nutrient_table_code -> food.nutrientTableCode)
             }
@@ -228,7 +240,7 @@ class MongoDbImporter(dbConn: Connection, mongoStore: MongoDbDataStore) {
             logger.info("Importing " + foodCustomFieldParams.size() + " food custom field records")
             BatchSql(Queries.surveyFoodCustomFieldsInsert, foodCustomFieldParams).execute()
           } else
-            logger.warn("There are no food custom field records to import")
+            logger.info("There are no food custom field records to import")
 
           // Food portion size method parameters
 
@@ -243,7 +255,7 @@ class MongoDbImporter(dbConn: Connection, mongoStore: MongoDbDataStore) {
             logger.info("Importing " + foodPortionSizeMethodParams.size() + " portion size parameter records")
             BatchSql(Queries.surveyFoodPortionSizeFieldsInsert, foodPortionSizeMethodParams).execute()
           } else
-            logger.warn("There are no portion size parameter records to import")
+            logger.info("There are no portion size parameter records to import")
 
           // Food nutrient values
 
@@ -258,120 +270,113 @@ class MongoDbImporter(dbConn: Connection, mongoStore: MongoDbDataStore) {
             logger.info("Importing " + foodNutrientParams.size() + " nutrient records")
             BatchSql(Queries.surveyFoodNutrientValuesInsert, foodNutrientParams).execute()
           } else
-            logger.warn("There are no nutrient records to import")
+            logger.info("There are no nutrient records to import")
 
         } else
-          logger.warn("There are no food records to import")
+          logger.info("There are no food records to import")
 
       } catch {
         case e: java.sql.BatchUpdateException => throw e.getNextException
       }
 
     } else {
-      logger.warn("There are no meal records to import")
+      logger.info("There are no meal records to import")
     }
   }
 
-  def importSurveySubmissions() = {
-    val surveys = mongoStore.getSurveyNames()
+  private def importSurveySubmissionsFor(survey_id: String) = {
+    logger.info("Importing submissions for " + survey_id)
 
-    surveys.foreach(importSurveySubmissionsFor)
+    val userRecords = mongoStore.getUserRecords(survey_id).asScala.map(_.username).toSet
+
+    val surveysBuffer = Buffer[NutritionMappedSurveyRecordWithId]()
+
+    logger.info("Retrieving submission records from MongoDB")
+
+    var counter = 0
+
+    mongoStore.processSurveys(survey_id, Long.MinValue, Long.MaxValue, new Callback1[NutritionMappedSurveyRecordWithId] {
+      def call(record: NutritionMappedSurveyRecordWithId) = {
+
+        if (!userRecords.contains(record.survey.userName)) {
+          logger.warn(s"User record missing for ${record.survey.userName} (survey submission ${record.id}), skipping!")
+        } else {
+
+          if (surveysBuffer.size == 500) {
+            writeSurveySubmissions(survey_id, surveysBuffer)
+            counter += surveysBuffer.size
+            logger.info(s"... $counter surveys processed")
+            surveysBuffer.clear()
+          }
+
+          surveysBuffer += record
+        }
+      }
+    })
+
+    writeSurveySubmissions(survey_id, surveysBuffer)
+    counter += surveysBuffer.size
+    logger.info(s"... $counter surveys processed")
+
   }
 
-  def importMongoDbData() = {
-    importSurveys()
-    importUsers()
-    importSurveySubmissions()
+  def importSurveySubmissions(ignoreSurveys: Set[String]) = {
+    val surveys = mongoStore.getSurveyNames()
+
+    surveys.filterNot(ignoreSurveys.contains(_)).foreach(importSurveySubmissionsFor)
+  }
+
+  def importMongoDbData(ignoreSurveys: Set[String] = Set()) = {
+    importSurveys(ignoreSurveys)
+    importUsers(ignoreSurveys)
+    importSurveySubmissions(ignoreSurveys)
   }
 }
 
-case class Options(arguments: Seq[String]) extends ScallopConf(arguments) {
-  version("Intake24 MongoDB to SQL migration tool 16.1-SNAPSHOT")
+trait ImportOptions extends ScallopConf {
+  version("Intake24 MongoDB to SQL migration tool 2.0.0-SNAPSHOT")
 
   val mongoHost = opt[String](required = true, noshort = true)
   val mongoDatabase = opt[String](required = true, noshort = true)
   val mongoUser = opt[String](noshort = true)
   val mongoPassword = opt[String](noshort = true)
-  val pgHost = opt[String](required = true, noshort = true)
-  val pgDatabase = opt[String](required = true, noshort = true)
-  val pgUser = opt[String](required = true, noshort = true)
-  val pgPassword = opt[String](noshort = true)
-  val pgUseSsl = opt[Boolean](noshort = true)
+
+  val noWarning = opt[Boolean](noshort = true)
+
+  def mongoConfiguration = MongoConfiguration(mongoHost(), mongoDatabase(), mongoUser.get, mongoPassword.get)
 }
 
-object MongoDbImport extends App {
+case class MongoConfiguration(host: String, database: String, user: Option[String], password: Option[String])
 
-  val opts = Options(args)
+object MongoDbImportConsole extends App with WarningMessage {
 
-  println("""|=============================================================
-              |WARNING: THIS WILL DESTROY ALL EXISTING DATA IN THE DATABASE!
-              |=============================================================
-              |""".stripMargin)
+  val options = new ScallopConf(args) with ImportOptions with DatabaseOptions
 
-  var proceed = false;
+  options.afterInit()
 
-  val reader = new BufferedReader(new InputStreamReader(System.in))
-  
-  while (!proceed) {
-    println("Are you sure you wish to continue? Type 'yes' to proceed, type 'no' or hit Control-C to exit.")    
-    val input = reader.readLine()
-    if (input == "yes") proceed = true;
-    if (input == "no") System.exit(0);
-  }
+  if (!options.noWarning())
+    displayWarningMessage("Please make sure that the database has been initialised with the Init tool first.")
+
+  MongoDbImport.run(options.databaseConfig, options.mongoConfiguration, Set())
+
+}
+
+object MongoDbImport extends DatabaseConnection {
 
   val logger = LoggerFactory.getLogger(getClass)
 
-  DriverManager.registerDriver(new org.postgresql.Driver)
+  def run(databaseConfig: DatabaseConfiguration, mongoConfig: MongoConfiguration, ignoreSurveys: Set[String]) = {
 
-  val dataSource = new org.postgresql.ds.PGSimpleDataSource()
-  
-  dataSource.setServerName(opts.pgHost())
-  dataSource.setDatabaseName(opts.pgDatabase())
-  dataSource.setUser(opts.pgUser())
-  
-  opts.pgPassword.foreach(pw => dataSource.setPassword(pw))
-  opts.pgUseSsl.foreach(ssl => dataSource.setSsl(ssl))
-  
-  implicit val dbConn = dataSource.getConnection
+    val ds = getDataSource(databaseConfig)
 
-  def separateSqlStatements(sql: String) =
-    // Regex matches on semicolons that neither precede nor follow other semicolons
-    sql.split("(?<!;);(?!;)").map(_.trim.replace(";;", ";")).filterNot(_.isEmpty)
+    val mongoDataStore = new MongoDbDataStore(mongoConfig.host, 27017, mongoConfig.database, mongoConfig.user.getOrElse(""), mongoConfig.password.getOrElse(""))
 
-  def stripComments(s: String) = """(?m)/\*(\*(?!/)|[^*])*\*/""".r.replaceAllIn(s, "")
-    
-  val initDbStatements = separateSqlStatements(stripComments(scala.io.Source.fromInputStream(getClass.getResourceAsStream("/sql/init_system_db.sql"), "utf-8").mkString))
+    val connection = ds.getConnection
 
-  logger.info("Dropping all tables and sequences")
+    val importer = new MongoDbImporter(connection, mongoDataStore)
 
-  val dropTableStatements =
-    SQL("""SELECT 'DROP TABLE IF EXISTS ' || tablename || ' CASCADE;' AS query FROM pg_tables WHERE schemaname='public'""")
-      .executeQuery()
-      .as(SqlParser.str("query").*)
+    importer.importMongoDbData(ignoreSurveys)
 
-  val dropSequenceStatements =
-    SQL("""SELECT 'DROP SEQUENCE IF EXISTS ' || relname || ' CASCADE;' AS query FROM pg_class WHERE relkind = 'S'""")
-      .executeQuery()
-      .as(SqlParser.str("query").*)
-
-  val clearDbStatements = dropTableStatements ++ dropSequenceStatements
-  
-  clearDbStatements.foreach {
-    statement =>
-      logger.debug(statement)
-      SQL(statement).execute()
+    connection.close()
   }
-
-  logger.info("Creating tables")
-
-  initDbStatements.foreach { statement =>
-    logger.debug(statement)
-    SQL(statement).execute()
-  }
-
-  val mongoDataStore = new MongoDbDataStore(opts.mongoHost(), 27017, opts.mongoDatabase(), opts.mongoUser.get.getOrElse(""), opts.mongoPassword.get.getOrElse(""))
-
-  val importer = new MongoDbImporter(dbConn, mongoDataStore)
-
-  importer.importMongoDbData()
 }

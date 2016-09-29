@@ -1,4 +1,4 @@
-package uk.ac.ncl.openlab.intake24.foodsql.tools.localisation
+package uk.ac.ncl.openlab.intake24.sql.tools.food.localisation
 
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.apache.poi.xssf.usermodel.XSSFCell

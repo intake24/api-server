@@ -16,17 +16,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package uk.ac.ncl.openlab.intake24.foodsql.tools
+package uk.ac.ncl.openlab.intake24.sql.tools.food
 
 import anorm._
 import upickle.default._
-import java.sql.DriverManager
 import scala.xml.XML
 import java.io.File
 import org.slf4j.LoggerFactory
-import scala.collection.mutable.ArrayBuffer
-import java.sql.Connection
-import upickle.Invalid
 import uk.ac.ncl.openlab.intake24.foodxml.FoodGroupDef
 import uk.ac.ncl.openlab.intake24.foodxml.FoodDef
 import uk.ac.ncl.openlab.intake24.foodxml.GuideImageDef
@@ -35,34 +31,17 @@ import uk.ac.ncl.openlab.intake24.foodxml.DrinkwareDef
 import uk.ac.ncl.openlab.intake24.foodxml.PromptDef
 import uk.ac.ncl.openlab.intake24.foodxml.CategoryDef
 import uk.ac.ncl.openlab.intake24.foodxml.AsServedDef
-import java.sql.BatchUpdateException
 import org.rogach.scallop.ScallopConf
-import java.util.Properties
-import java.io.BufferedReader
-import java.io.InputStreamReader
-
-import java.util.UUID
-
-import org.postgresql.util.PSQLException
-import org.rogach.scallop.ScallopOption
 import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
-
 import uk.ac.ncl.openlab.intake24.FoodGroupLocal
-
-import uk.ac.ncl.openlab.intake24.LocalFoodRecord
-
 import uk.ac.ncl.openlab.intake24.NewMainFoodRecord
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
-import uk.ac.ncl.openlab.intake24.NewCategory
-import uk.ac.ncl.openlab.intake24.LocalCategoryRecord
 import uk.ac.ncl.openlab.intake24.AssociatedFood
 import uk.ac.ncl.openlab.intake24.SplitList
 import uk.ac.ncl.openlab.intake24.NewLocalFoodRecord
 import uk.ac.ncl.openlab.intake24.foodxml.XmlFoodRecord
 import uk.ac.ncl.openlab.intake24.FoodGroupMain
 import uk.ac.ncl.openlab.intake24.foodxml.XmlCategoryRecord
-import uk.ac.ncl.openlab.intake24.AsServedImage
 import uk.ac.ncl.openlab.intake24.AsServedSet
 import uk.ac.ncl.openlab.intake24.GuideImage
 import uk.ac.ncl.openlab.intake24.DrinkwareSet
@@ -71,6 +50,12 @@ import uk.ac.ncl.openlab.intake24.NewMainCategoryRecord
 import uk.ac.ncl.openlab.intake24.Locale
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentRecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.IllegalParent
+import scala.Left
+import scala.Right
+import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseConnection
+import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseOptions
+import uk.ac.ncl.openlab.intake24.sql.tools.WarningMessage
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 
 class XmlImporter(adminService: FoodDatabaseAdminService) {
 

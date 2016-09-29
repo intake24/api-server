@@ -1,4 +1,4 @@
-package uk.ac.ncl.openlab.intake24.foodsql.tools.localisation
+package uk.ac.ncl.openlab.intake24.sql.tools.food.localisation
 
 import org.slf4j.LoggerFactory
 import org.rogach.scallop.ScallopConf
@@ -10,21 +10,23 @@ import uk.ac.ncl.openlab.intake24.nutrients._
 import uk.ac.ncl.openlab.intake24.nutrientsndns.CsvNutrientTableParser
 import uk.ac.ncl.openlab.intake24.nutrientsndns.CsvNutrientTableMapping
 import com.google.inject.Inject
-import uk.ac.ncl.openlab.intake24.foodsql.tools.DatabaseConnection
-import uk.ac.ncl.openlab.intake24.foodsql.tools.DatabaseOptions
-import uk.ac.ncl.openlab.intake24.foodsql.tools.WarningMessage
+import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseConnection
+import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseOptions
+import uk.ac.ncl.openlab.intake24.sql.tools.WarningMessage
 import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
 
-object PortugueseNutrientsImport extends App with WarningMessage with DatabaseConnection {
+object DanishNutrientsImport extends App with WarningMessage with DatabaseConnection {
 
-  val ptTableCode = "PT_INSA"
-  val ptTableDescription = "Portuguese Food Composition Table (INSA)"
+  val dkTableCode = "DK_DTU"
+  val dkTableDescription = "Danish Food Composition Table (DTU)"
   
   import CsvNutrientTableParser.{ excelColumnToOffset => col, parseTable }  
   
-  val csvIdColumnOffset = 0
+  val csvIdColumnOffset = 2
   
-  val csvRowOffset = 3
+  val csvRowOffset = 2
+  
+  // Junk data for now
   
   def tableMapping(nutrient: Nutrient): Option[Int] = nutrient match {
     case Protein => Some(col("H"))
@@ -56,7 +58,7 @@ object PortugueseNutrientsImport extends App with WarningMessage with DatabaseCo
   val logger = LoggerFactory.getLogger(getClass)
 
   trait Options extends ScallopConf {
-    version("Intake24 Portuguese food composition table import tool 16.7")
+    version("Intake24 Danish food composition table import tool 16.7")
 
     val csvPath = opt[String](required = true, noshort = true)
   }
@@ -65,21 +67,21 @@ object PortugueseNutrientsImport extends App with WarningMessage with DatabaseCo
 
   options.afterInit()
 
-  displayWarningMessage("WARNING: THIS WILL DESTROY ALL FOOD RECORDS HAVING PT FOOD COMPOSITION CODES!")
+  displayWarningMessage("WARNING: THIS WILL DESTROY ALL FOOD RECORDS HAVING DK_DTU FOOD COMPOSITION CODES!")
 
   val dataSource = getDataSource(options)
 
   val nutrientTableService = new FoodDatabaseAdminImpl(dataSource)
 
-  nutrientTableService.deleteNutrientTable(ptTableCode)
+  nutrientTableService.deleteNutrientTable(dkTableCode)
 
-  nutrientTableService.createNutrientTable(NutrientTable(ptTableCode, ptTableDescription))
+  nutrientTableService.createNutrientTable(NutrientTable(dkTableCode, dkTableDescription))
 
   val table = CsvNutrientTableParser.parseTable(options.csvPath(), CsvNutrientTableMapping(csvRowOffset, csvIdColumnOffset, tableMapping))
 
   val records = table.records.map {
     case (code, nmap) =>
-      NutrientTableRecord(ptTableCode, code, nmap)
+      NutrientTableRecord(dkTableCode, code, nmap)
   }.toSeq
 
   nutrientTableService.createNutrientTableRecords(records)

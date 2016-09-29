@@ -1,4 +1,4 @@
-package uk.ac.ncl.openlab.intake24.foodsql.tools.localisation
+package uk.ac.ncl.openlab.intake24.sql.tools.food.localisation
 
 import java.io.File
 

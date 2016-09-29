@@ -1,4 +1,4 @@
-package uk.ac.ncl.openlab.intake24.foodsql.tools.localisation
+package uk.ac.ncl.openlab.intake24.sql.tools.food.localisation
 
 import uk.ac.ncl.openlab.intake24.PortionSizeMethod
 import au.com.bytecode.opencsv.CSVReader
@@ -9,13 +9,13 @@ import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
 
 import org.slf4j.LoggerFactory
 import org.rogach.scallop.ScallopConf
-import uk.ac.ncl.openlab.intake24.foodsql.tools.DatabaseOptions
+import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseOptions
 import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
 import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl
-import uk.ac.ncl.openlab.intake24.foodsql.tools.WarningMessage
-import uk.ac.ncl.openlab.intake24.foodsql.tools.DatabaseConnection
+import uk.ac.ncl.openlab.intake24.sql.tools.WarningMessage
+import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseConnection
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
-import uk.ac.ncl.openlab.intake24.foodsql.tools.ErrorHandler
+import uk.ac.ncl.openlab.intake24.sql.tools.ErrorHandler
 import uk.ac.ncl.openlab.intake24.UserFoodHeader
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
 

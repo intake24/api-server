@@ -1,15 +1,17 @@
-package uk.ac.ncl.openlab.intake24.foodsql.tools
+package uk.ac.ncl.openlab.intake24.sql.tools.food
 
 import org.slf4j.LoggerFactory
 import org.rogach.scallop.ScallopConf
-
 import uk.ac.ncl.openlab.intake24.NutrientTable
-import uk.ac.ncl.openlab.intake24.nutrients.Nutrient
 import uk.ac.ncl.openlab.intake24.NutrientTableRecord
 import uk.ac.ncl.openlab.intake24.nutrientsndns.CsvNutrientTableParser
 import uk.ac.ncl.openlab.intake24.nutrientsndns.LegacyNutrientTables
-import uk.ac.ncl.openlab.intake24.foodsql.admin.NutrientTablesAdminImpl
 import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
+import uk.ac.ncl.openlab.intake24.sql.tools.WarningMessage
+import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseOptions
+import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseConnection
+import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseOptions
+import uk.ac.ncl.openlab.intake24.sql.tools.WarningMessage
 
 object NdnsImport extends App with WarningMessage with DatabaseConnection {
 

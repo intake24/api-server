@@ -1,4 +1,4 @@
-package uk.ac.ncl.openlab.intake24.foodsql.tools.localisation
+package uk.ac.ncl.openlab.intake24.sql.tools.food.localisation
 
 import org.rogach.scallop.ScallopConf
 import org.slf4j.LoggerFactory
@@ -8,9 +8,9 @@ import uk.ac.ncl.openlab.intake24.NutrientTableRecord
 
 import uk.ac.ncl.openlab.intake24.nutrientsndns.CsvNutrientTableParser
 import uk.ac.ncl.openlab.intake24.nutrientsndns.LegacyNutrientTables
-import uk.ac.ncl.openlab.intake24.foodsql.tools.DatabaseConnection
-import uk.ac.ncl.openlab.intake24.foodsql.tools.DatabaseOptions
-import uk.ac.ncl.openlab.intake24.foodsql.tools.WarningMessage
+import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseConnection
+import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseOptions
+import uk.ac.ncl.openlab.intake24.sql.tools.WarningMessage
 import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
 
 object NewZealandNutrientsImport extends App with WarningMessage with DatabaseConnection {
