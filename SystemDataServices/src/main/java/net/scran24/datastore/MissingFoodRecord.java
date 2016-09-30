@@ -13,6 +13,13 @@ package net.scran24.datastore;
 import com.google.gwt.user.client.rpc.IsSerializable;
 
 public class MissingFoodRecord implements IsSerializable {
+	
+	public static final String KEY_ASSOC_FOOD_NAME = "assocFoodName";
+	public static final String KEY_PROMPT_TEXT = "promptText";
+	public static final String KEY_ASSOC_FOOD_CATEGORY = "assocFoodCategory";
+	public static final String KEY_DESCRIPTION = "missingFoodDescription";
+	public static final String KEY_PORTION_SIZE = "missingFoodPortionSize";
+	public static final String KEY_LEFTOVERS = "missingFoodLeftovers";
 
 	public long submittedAt;
 	public String surveyId;
