@@ -57,6 +57,9 @@ public class DownloadSurveyDataService extends HttpServlet {
 		final long timeFrom = Long.parseLong(req.getParameter("timeFrom"));
 		final long timeTo = Long.parseLong(req.getParameter("timeTo"));
 		final String surveyId = req.getParameter("surveyId");
+		
+		resp.setContentType("text/csv");
+		resp.setHeader("Content-Disposition", "attachment; filename=" + "\"intake24_output_" + surveyId + ".csv\"");
 
 		final ServletOutputStream outputStream = resp.getOutputStream();
 		
