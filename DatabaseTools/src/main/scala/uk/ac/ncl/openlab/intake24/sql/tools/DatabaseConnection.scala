@@ -36,7 +36,8 @@ trait DatabaseConnection {
     dbConnectionProps.setProperty("dataSource.user", config.user)
     dbConnectionProps.setProperty("dataSource.databaseName", config.database)
     dbConnectionProps.setProperty("dataSource.serverName", config.host)
-    dbConnectionProps.put("dataSource.logWriter", new PrintWriter(System.out))
+    dbConnectionProps.put("dataSource.logWriter", new PrintWriter(System.out))    
+    dbConnectionProps.put("maximumPoolSize", "1")
 
     config.password.foreach(pw => dbConnectionProps.setProperty("dataSource.password", pw))
 
@@ -67,3 +68,5 @@ trait DatabaseConnection {
     }
   }
 }
+
+object DatabaseConnection extends DatabaseConnection
