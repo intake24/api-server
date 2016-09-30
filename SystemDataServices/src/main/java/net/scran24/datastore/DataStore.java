@@ -39,6 +39,8 @@ import org.workcraft.gwt.shared.client.Option;
 public interface DataStore {
 	public void initSurvey(String survey_id, String scheme_name, String locale, boolean allowGenUsers, Option<String> surveyMonkeyUrl) throws DataStoreException;
 	
+	public List<String> getSurveyNames() throws DataStoreException;
+	
 	public void deleteUsers (String survey_id, String role) throws DataStoreException;
 	
 	public Map<String, String> getUserData (String survey_id, String user_id) throws DataStoreException;
