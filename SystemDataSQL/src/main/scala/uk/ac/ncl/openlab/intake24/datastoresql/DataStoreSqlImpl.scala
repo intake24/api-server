@@ -60,6 +60,11 @@ class DataStoreSqlImpl @Inject() (@Named("intake24_system") dataSource: DataSour
         .execute()
   }
 
+  def getSurveyNames() = tryWithConnection {
+    implicit conn =>
+      SQL("SELECT id FROM surveys WHERE id <> ''").executeQuery().as(SqlParser.str("id").*)
+  }
+
   def deleteUsers(survey_id: String, role: String) = tryWithConnection {
     implicit conn => SQL(Queries.usersDeleteByRole).on('role -> role, 'survey_id -> survey_id).execute()
   }
@@ -480,7 +485,7 @@ class DataStoreSqlImpl @Inject() (@Named("intake24_system") dataSource: DataSour
   def processSurveys(survey_id: String, timeFrom: Long, timeTo: Long, processSurvey: NutritionMappedSurveyRecordWithId => Unit): Unit = tryWithConnection {
     implicit conn =>
       SQL(Queries.surveySubmissionsSelectByTime)
-        .on('time_from -> new Timestamp(timeFrom), 'time_to -> new Timestamp(timeTo))
+        .on('survey_id -> survey_id, 'time_from -> new Timestamp(timeFrom), 'time_to -> new Timestamp(timeTo))
         .withResult(cursor => processNextRecord(cursor, processSurvey)) match {
           case Left(errors) => throw new DataStoreException(errors.head)
           case Right(_) => ()
@@ -666,16 +671,16 @@ class DataStoreSqlImpl @Inject() (@Named("intake24_system") dataSource: DataSour
       SQL("""INSERT INTO external_test_users VALUES (DEFAULT, {survey_id}, {username}, {external_user_id}, {code})""")
         .on('survey_id -> survey, 'username -> username, 'external_user_id -> external_user_id, 'code -> code)
         .executeInsert()
-        
+
       code
   }
-  
+
   def validateCompletionCode(survey: String, external_user_id: String, code: String) = tryWithConnection {
     implicit conn =>
       SQL("""SELECT id FROM external_test_users WHERE survey_id={survey_id} AND external_user_id={external_user_id} AND code={code}""")
-      .on('survey_id -> survey, 'external_user_id -> external_user_id, 'code -> code)
-      .executeQuery()
-      .as(SqlParser.long("id").*)
-      .nonEmpty
+        .on('survey_id -> survey, 'external_user_id -> external_user_id, 'code -> code)
+        .executeQuery()
+        .as(SqlParser.long("id").*)
+        .nonEmpty
   }
 }

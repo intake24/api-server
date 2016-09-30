@@ -40,7 +40,7 @@ import com.google.inject.Singleton
 import com.google.inject.Inject
 
 @Singleton
-class DataStoreJavaAdapter @Inject()(scalaImpl: DataStoreScala) extends DataStore {
+class DataStoreJavaAdapter @Inject() (scalaImpl: DataStoreScala) extends DataStore {
 
   // This is a nasty hack to make SQL datastore compatible with MongoDB data store
   // that uses a special survey name 'admin' for users not belonging to a survey
@@ -124,5 +124,9 @@ class DataStoreJavaAdapter @Inject()(scalaImpl: DataStoreScala) extends DataStor
 
   def validateCompletionCode(survey: String, external_user_id: String, code: String): Boolean = 
     scalaImpl.validateCompletionCode(survey, external_user_id, code)
+
+  def getSurveyNames(): JList[String] = {
+    copyToJavaList(scalaImpl.getSurveyNames())
+  }
   
 }

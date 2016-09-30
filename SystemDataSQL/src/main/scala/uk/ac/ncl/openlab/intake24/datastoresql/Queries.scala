@@ -109,7 +109,7 @@ object Queries {
 
   val surveyFoodNutrientValuesInsert = """INSERT INTO survey_submission_nutrients VALUES (DEFAULT, {food_id}, {name}, {value})"""
 
-  val surveySubmissionsSelectByTime = """SELECT id, survey_id, user_id, start_time, end_time, log FROM survey_submissions WHERE start_time > {time_from} AND end_time < {time_to}"""
+  val surveySubmissionsSelectByTime = """SELECT id, survey_id, user_id, start_time, end_time, log FROM survey_submissions WHERE survey_id={survey_id} AND start_time>{time_from} AND end_time<{time_to} ORDER BY end_time ASC"""
 
   val surveySubmissionCustomFieldsSelect = """SELECT name, value FROM survey_submission_custom_fields WHERE survey_submission_id = {survey_submission_id}::uuid"""
 

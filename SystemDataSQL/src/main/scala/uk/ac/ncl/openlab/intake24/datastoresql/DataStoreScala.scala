@@ -21,6 +21,8 @@ package uk.ac.ncl.openlab.intake24.datastoresql
 trait DataStoreScala {
 
   def initSurvey(survey_id: String, scheme_name: String, locale: String, allowGenUsers: Boolean, surveyMonkeyUrl: Option[String]): Unit
+  
+  def getSurveyNames(): Seq[String]
 
   def deleteUsers(survey_id: String, role: String): Unit
 
