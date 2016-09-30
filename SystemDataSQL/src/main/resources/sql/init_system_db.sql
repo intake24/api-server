@@ -179,7 +179,7 @@ CREATE INDEX survey_submission_meal_custom_fields_meal_id_index ON survey_submis
 CREATE TABLE survey_submission_foods (
   id serial NOT NULL,
   meal_id integer NOT NULL,
-  code character(4) NOT NULL,
+  code character varying(8) NOT NULL,
   english_description character varying(128) NOT NULL,
   local_description character varying(128),
   ready_meal boolean NOT NULL,
