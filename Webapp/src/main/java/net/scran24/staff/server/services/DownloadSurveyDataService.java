@@ -60,6 +60,6 @@ public class DownloadSurveyDataService extends HttpServlet {
 
 		final ServletOutputStream outputStream = resp.getOutputStream();
 		
-		csvOutput.writeCSV(surveyId, timeFrom, timeTo, outputStream);		
+		csvOutput.writeCSV(surveyId, timeFrom, timeTo, outputStream, false);		
 	}
 }
