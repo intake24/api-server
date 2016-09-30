@@ -199,12 +199,6 @@ class MongoDbImporter(dbConn: Connection, mongoStore: MongoDbDataStore) {
           case (meal_id, meal) =>
             meal.foods.map {
               case food =>
-                // Some entries use 5-character special food code for missing foods which is no longer allowed
-
-                val corrected_food_code = food.code match {
-                  case "$MISS" => "$MIS"
-                  case x => x
-                }
 
                 val truncatedSearchTerm = if (food.searchTerm.length() > 256) {
                   logger.warn(s"""Food search term "${food.searchTerm}" too long, truncating""")
@@ -213,7 +207,7 @@ class MongoDbImporter(dbConn: Connection, mongoStore: MongoDbDataStore) {
                   food.searchTerm
                 }
 
-                Seq[NamedParameter]('meal_id -> meal_id, 'code -> corrected_food_code, 'english_description -> food.englishDescription, 'local_description -> JavaConversions.jopt2option(food.localDescription), 'ready_meal -> food.isReadyMeal, 'search_term -> truncatedSearchTerm,
+                Seq[NamedParameter]('meal_id -> meal_id, 'code -> food.code, 'english_description -> food.englishDescription, 'local_description -> JavaConversions.jopt2option(food.localDescription), 'ready_meal -> food.isReadyMeal, 'search_term -> truncatedSearchTerm,
                   'portion_size_method_id -> food.portionSize.scriptName, 'reasonable_amount -> food.reasonableAmount, 'food_group_id -> food.foodGroupCode, 'food_group_english_description -> food.foodGroupEnglishDescription,
                   'food_group_local_description -> JavaConversions.jopt2option(food.foodGroupLocalDescription), 'brand -> food.brand, 'nutrient_table_id -> food.nutrientTableID, 'nutrient_table_code -> food.nutrientTableCode)
             }
