@@ -36,7 +36,8 @@ public class CSVOutput {
 		this.dataStore = dataStore;
 	}
 
-	public void writeCSV(final String survey_id, final long timeFrom, final long timeTo, OutputStream outputStream) throws IOException {
+	public void writeCSV(final String survey_id, final long timeFrom, final long timeTo, OutputStream outputStream,
+			final boolean useSequentialIds) throws IOException {
 		final CSVWriter writer = new CSVWriter(new PrintWriter(outputStream));
 
 		try {
@@ -93,7 +94,8 @@ public class CSVOutput {
 			header.add("Missing food portion size");
 			header.add("Missing food leftovers");
 
-			Set<Nutrient> nutrients = scala.collection.JavaConverters.setAsJavaSetConverter(Nutrient$.MODULE$.types()).asJava();
+			Set<Nutrient> nutrients = scala.collection.JavaConverters.setAsJavaSetConverter(Nutrient$.MODULE$.types())
+					.asJava();
 
 			final List<Nutrient> sortedNutrients = new ArrayList<Nutrient>(nutrients);
 
@@ -112,7 +114,12 @@ public class CSVOutput {
 			final DateFormat dateFormat = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.UK);
 
 			dataStore.processSurveys(survey_id, timeFrom, timeTo, new Callback1<NutritionMappedSurveyRecordWithId>() {
+
+				int sequentialId = 0;
+
 				public void call(NutritionMappedSurveyRecordWithId survey) {
+
+					sequentialId++;
 
 					int mealId = 0;
 
@@ -122,7 +129,11 @@ public class CSVOutput {
 						for (NutritionMappedFood food : meal.foods) {
 							ArrayList<String> row = new ArrayList<String>();
 
-							row.add(survey.id);
+							if (useSequentialIds)
+								row.add(Integer.toString(sequentialId));
+							else
+								row.add(survey.id);
+
 							row.add(survey.survey.userName);
 
 							// user custom fields
@@ -181,9 +192,11 @@ public class CSVOutput {
 							double weight = food.portionSize.servingWeight() - food.portionSize.leftoversWeight();
 
 							row.add(String.format("%.2f", food.portionSize.servingWeight()));
-							row.add(food.portionSize.data.containsKey("servingImage") ? food.portionSize.data.get("servingImage") : "N/A");
+							row.add(food.portionSize.data.containsKey("servingImage")
+									? food.portionSize.data.get("servingImage") : "N/A");
 							row.add(String.format("%.2f", food.portionSize.leftoversWeight()));
-							row.add(food.portionSize.data.containsKey("leftoversImage") ? food.portionSize.data.get("leftoversImage") : "N/A");
+							row.add(food.portionSize.data.containsKey("leftoversImage")
+									? food.portionSize.data.get("leftoversImage") : "N/A");
 							row.add(String.format("%.2f", weight));
 
 							row.add(food.reasonableAmount ? "yes" : "no");
