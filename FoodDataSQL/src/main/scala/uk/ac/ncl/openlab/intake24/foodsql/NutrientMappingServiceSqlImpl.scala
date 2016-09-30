@@ -2,6 +2,7 @@ package uk.ac.ncl.openlab.intake24.foodsql
 
 import com.google.inject.Inject
 import com.google.inject.name.Named
+import com.google.inject.Singleton
 
 import anorm.Macro
 import anorm.SQL
@@ -17,6 +18,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.NutrientMappingError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
 
+@Singleton
 class NutrientMappingServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends NutrientMappingService with FoodDataSqlService {
 
   private case class NutrientDescriptionRow(id: Int, description: String, symbol: String)

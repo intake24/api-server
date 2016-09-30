@@ -22,6 +22,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import javax.inject.Named;
+import javax.sql.DataSource;
+
 import net.scran24.datastore.DataStore;
 import scala.concurrent.duration.Duration;
 import scala.runtime.AbstractFunction0;
@@ -80,14 +83,13 @@ public class SqlConfig extends AbstractModule {
 				return new FoodIndexImpl_pt_PT(foodDataService);
 			}
 		}, Duration.create(30, TimeUnit.MINUTES), Duration.create(60, TimeUnit.MINUTES), "Portuguese"));
-		
+
 		result.put("da_DK", new AutoReloadIndex(new AbstractFunction0<AbstractFoodIndex>() {
 			@Override
 			public AbstractFoodIndex apply() {
 				return new FoodIndexImpl_da_DK(foodDataService);
 			}
 		}, Duration.create(30, TimeUnit.MINUTES), Duration.create(60, TimeUnit.MINUTES), "Danish"));
-		
 
 		return result;
 	}
@@ -103,65 +105,40 @@ public class SqlConfig extends AbstractModule {
 		result.put("da_DK", new SplitterImpl_da_DK(foodDataService));
 		return result;
 	}
-	
 
 	@Provides
 	@Singleton
-	protected DataStoreScala dataStoreSqlImpl(Injector injector) {
+	@Named("intake24_system")
+	protected DataSource systemDatabase(Injector injector) {
 		HikariConfig cpConfig = new HikariConfig();
 		cpConfig.setJdbcUrl(webXmlConfig.get("sql-system-db-url"));
 		cpConfig.setUsername(webXmlConfig.get("sql-system-db-user"));
 		cpConfig.setPassword(webXmlConfig.get("sql-system-db-password"));
+		cpConfig.setMaximumPoolSize(2);
 
-		return new DataStoreSqlImpl(new HikariDataSource(cpConfig));
+		return new HikariDataSource(cpConfig);
 	}
 
 	@Provides
 	@Singleton
-	protected FoodDatabaseService foodDataServiceSqlImpl(Injector injector) {
+	@Named("intake24_foods")
+	protected DataSource foodDatabase(Injector injector) {
 		HikariConfig cpConfig = new HikariConfig();
 		cpConfig.setJdbcUrl(webXmlConfig.get("sql-foods-db-url"));
 		cpConfig.setUsername(webXmlConfig.get("sql-foods-db-user"));
 		cpConfig.setPassword(webXmlConfig.get("sql-foods-db-password"));
+		cpConfig.setMaximumPoolSize(2);
 
-		return new FoodDatabaseUserImpl(new HikariDataSource(cpConfig));
-	}
-	
-	@Provides
-	@Singleton
-	protected FoodDatabaseAdminService adminDataServiceSqlImpl(Injector injector) {
-		HikariConfig cpConfig = new HikariConfig();
-		cpConfig.setJdbcUrl(webXmlConfig.get("sql-foods-db-url"));
-		cpConfig.setUsername(webXmlConfig.get("sql-foods-db-user"));
-		cpConfig.setPassword(webXmlConfig.get("sql-foods-db-password"));
-
-		return new FoodDatabaseAdminImpl(new HikariDataSource(cpConfig));
-	}
-	
-	@Provides
-	@Singleton
-	protected FoodIndexDataService indexDataServiceSqlImpl(Injector injector) {
-		HikariConfig cpConfig = new HikariConfig();
-		cpConfig.setJdbcUrl(webXmlConfig.get("sql-foods-db-url"));
-		cpConfig.setUsername(webXmlConfig.get("sql-foods-db-user"));
-		cpConfig.setPassword(webXmlConfig.get("sql-foods-db-password"));
-
-		return new FoodIndexDataImpl(new HikariDataSource(cpConfig));		
-	}
-	
-	@Provides
-	@Singleton
-	protected NutrientMappingService nutrientMappingServiceSqlImpl(Injector injector) {
-		HikariConfig cpConfig = new HikariConfig();
-		cpConfig.setJdbcUrl(webXmlConfig.get("sql-foods-db-url"));
-		cpConfig.setUsername(webXmlConfig.get("sql-foods-db-user"));
-		cpConfig.setPassword(webXmlConfig.get("sql-foods-db-password"));
-
-		return new NutrientMappingServiceSqlImpl(new HikariDataSource(cpConfig));		
+		return new HikariDataSource(cpConfig);
 	}
 
 	@Override
 	protected void configure() {
 		bind(DataStore.class).to(DataStoreJavaAdapter.class);
+		bind(DataStoreScala.class).to(DataStoreSqlImpl.class);
+		bind(FoodDatabaseService.class).to(FoodDatabaseUserImpl.class);
+		bind(FoodDatabaseAdminService.class).to(FoodDatabaseAdminImpl.class);
+		bind(FoodIndexDataService.class).to(FoodIndexDataImpl.class);
+		bind(NutrientMappingService.class).to(NutrientMappingServiceSqlImpl.class);
 	}
 }

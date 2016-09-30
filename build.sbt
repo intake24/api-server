@@ -26,7 +26,7 @@ lazy val gwtShared = Project(id = "gwtShared", base = file("ClientShared"))
 lazy val commonSql = Project(id = "commonSql", base = file("CommonSQL"))
 
 
-lazy val systemDataServices = Project(id = "systemDataServices", base = file("SystemDataServices")).dependsOn(gwtShared)
+lazy val systemDataServices = Project(id = "systemDataServices", base = file("SystemDataServices")).dependsOn(gwtShared, sharedTypes)
 
 lazy val systemDataMongo = Project(id = "systemDataMongo", base = file ("SystemDataMongo")).dependsOn(systemDataServices % "compile->compile;test->test")
 
