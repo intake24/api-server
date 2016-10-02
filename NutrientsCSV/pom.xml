@@ -75,8 +75,8 @@ limitations under the License.
 			<groupId>uk.ac.ncl.openlab.intake24</groupId>
 			<artifactId>shared-types</artifactId>
 			<version>2.0.0-SNAPSHOT</version>
-		</dependency>		
-		
+		</dependency>
+
 		<dependency>
 			<groupId>uk.ac.ncl.openlab.intake24</groupId>
 			<artifactId>food-data-services</artifactId>
@@ -87,9 +87,9 @@ limitations under the License.
 	<build>
 		<plugins>
 			<plugin>
-				<groupId>org.scala-tools</groupId>
-				<artifactId>maven-scala-plugin</artifactId>
-				<version>2.14.1</version>
+				<groupId>net.alchim31.maven</groupId>
+        <artifactId>scala-maven-plugin</artifactId>
+        <version>3.2.1</version>
 				<executions>
 					<execution>
 						<goals>

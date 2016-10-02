@@ -20,7 +20,7 @@ This file is based on Intake24 v1.0.
 
 © Crown copyright, 2012, 2013, 2014
 
-Licensed under the Open Government Licence 3.0: 
+Licensed under the Open Government Licence 3.0:
 
 http://www.nationalarchives.gov.uk/doc/open-government-licence/
 -->
@@ -81,9 +81,9 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 			</plugin>
 
 			<plugin>
-				<groupId>org.scala-tools</groupId>
-				<artifactId>maven-scala-plugin</artifactId>
-				<version>2.15.2</version>
+				<groupId>net.alchim31.maven</groupId>
+        <artifactId>scala-maven-plugin</artifactId>
+        <version>3.2.1</version>
 				<executions>
 					<execution>
 						<goals>
@@ -127,7 +127,7 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 					</execution>
 				</executions>
 			</plugin>
-			
+
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>build-helper-maven-plugin</artifactId>
