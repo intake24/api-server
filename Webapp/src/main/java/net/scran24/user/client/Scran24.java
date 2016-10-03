@@ -29,25 +29,12 @@ package net.scran24.user.client;
 import java.util.Date;
 import java.util.logging.Logger;
 
-import net.scran24.common.client.CommonMessages;
-import net.scran24.common.client.CurrentUser;
-import net.scran24.common.client.LoginForm;
-import net.scran24.common.client.LoginServiceAsync;
-import net.scran24.common.client.NavigationBar;
-import net.scran24.common.client.survey.TutorialVideo;
-import net.scran24.datastore.shared.SurveySchemes;
-import net.scran24.datastore.shared.UserInfo;
-import net.scran24.user.client.services.FoodLookupServiceAsync;
-import net.scran24.user.client.survey.SurveyMessages;
-import net.scran24.user.client.survey.prompts.FoodLookupPrompt;
-import net.scran24.user.client.surveyscheme.SurveyScheme;
-import net.scran24.user.client.surveyscheme.SurveySchemeMap;
-
 import org.workcraft.gwt.shared.client.Callback;
 import org.workcraft.gwt.shared.client.Callback1;
 import org.workcraft.gwt.shared.client.Option;
 
 import com.google.gwt.core.client.EntryPoint;
+import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.Document;
 import com.google.gwt.dom.client.Element;
 import com.google.gwt.i18n.client.LocaleInfo;
@@ -57,6 +44,19 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.HTMLPanel;
 import com.google.gwt.user.client.ui.RootPanel;
+
+import net.scran24.common.client.CommonMessages;
+import net.scran24.common.client.CurrentUser;
+import net.scran24.common.client.LoginForm;
+import net.scran24.common.client.LoginServiceAsync;
+import net.scran24.common.client.NavigationBar;
+import net.scran24.common.client.survey.TutorialVideo;
+import net.scran24.datastore.shared.SurveySchemes;
+import net.scran24.datastore.shared.UserInfo;
+import net.scran24.user.client.survey.SurveyMessages;
+import net.scran24.user.client.survey.prompts.FoodLookupPrompt;
+import net.scran24.user.client.surveyscheme.SurveyScheme;
+import net.scran24.user.client.surveyscheme.SurveySchemeMap;
 
 /**
  * Entry point for respondent interface.
@@ -141,6 +141,9 @@ public class Scran24 implements EntryPoint {
 	}
 
 	public void onModuleLoad() {
+
+		GWT.setUncaughtExceptionHandler(new Intake24UncaughtExceptionHandler());
+
 		// These divs are no longer used for content, but this code is left here
 		// to handle legacy survey files
 
@@ -161,9 +164,9 @@ public class Scran24 implements EntryPoint {
 					@Override
 					public void visitSome(final UserInfo userInfo) {
 						CurrentUser.setUserInfo(userInfo);
-						
+
 						// Singleton portion size method for weight type-in
-						// Inserted dynamically by client runtime but depends on 
+						// Inserted dynamically by client runtime but depends on
 						// server-side configuration parameters (base image url)
 						// so still has to be loaded once
 
@@ -210,4 +213,5 @@ public class Scran24 implements EntryPoint {
 			}
 		});
 	}
+
 }

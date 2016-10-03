@@ -26,6 +26,8 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package net.scran24.user.server.services;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,6 +42,7 @@ import net.scran24.user.client.services.HelpServiceException;
 
 import org.apache.commons.mail.DefaultAuthenticator;
 import org.apache.commons.mail.Email;
+import org.apache.commons.mail.EmailConstants;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.SimpleEmail;
 import org.apache.http.NameValuePair;
@@ -50,6 +53,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.workcraft.gwt.shared.client.Option;
 
+import com.google.gwt.core.server.StackTraceDeobfuscator;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 import com.google.inject.Injector;
 import com.twilio.sdk.TwilioRestClient;
@@ -82,7 +86,7 @@ public class HelpServiceImpl extends RemoteServiceServlet implements HelpService
 	@Override
 	public void init() throws ServletException {
 		Injector injector = (Injector) this.getServletContext().getAttribute("intake24.injector");
-
+		
 		dataStore = injector.getInstance(DataStore.class);
 		
 		twilioClient = new TwilioRestClient(getServletContext().getInitParameter("twilioAccountSid"), getServletContext().getInitParameter(
@@ -123,6 +127,7 @@ public class HelpServiceImpl extends RemoteServiceServlet implements HelpService
 		email.setSmtpPort(smtpPort);
 		email.setAuthenticator(new DefaultAuthenticator(smtpUserName, smtpPassword));
 		email.setSSLOnConnect(true);
+		email.setCharset(EmailConstants.UTF_8);
 
 		try {
 			email.setFrom(fromEmail, fromName);
@@ -137,7 +142,7 @@ public class HelpServiceImpl extends RemoteServiceServlet implements HelpService
 			log.error("Failed to send e-mail notification", e);
 		}
 	}
-
+	
 	@Override
 	public boolean requestCall(final String name, final String number) {
 		Subject subject = SecurityUtils.getSubject();
@@ -222,5 +227,46 @@ public class HelpServiceImpl extends RemoteServiceServlet implements HelpService
 				throw new HelpServiceException(e);
 			}
 		}
+	}
+
+	@Override
+	public void reportUncaughtException(String surveyId, String username, String type, String message, StackTraceElement[] stackTrace) {
+		
+		StackTraceDeobfuscator deobfuscator = StackTraceDeobfuscator.fromFileSystem(getServletContext().getRealPath("WEB-INF/deploy");
+		
+		
+		
+		Email email = new SimpleEmail();
+
+		email.setHostName(smtpHostName);
+		email.setSmtpPort(smtpPort);
+		email.setCharset(EmailConstants.UTF_8);
+		email.setAuthenticator(new DefaultAuthenticator(smtpUserName, smtpPassword));
+		email.setSSLOnConnect(true);
+
+		try {
+			email.setFrom("no-reply@intake24.co.uk", "Intake24");
+			email.setSubject(String.format("Automated Bug Report: %s: %s", type, message));
+			
+			StringBuilder sb = new StringBuilder();
+			
+			sb.append(String.format("Automated uncaught exception report from %s/%s:\n\n", surveyId, username));
+			sb.append(String.format("%s: %s:\n", type, message));
+			
+			for (String ste: stackTrace) {
+				sb.append(ste.toString());
+				sb.append("\n");
+			}
+					
+			
+			email.setMsg(sb.toString());
+
+			email.addTo("bugs@intake24.co.uk");
+
+			email.send();
+		} catch (EmailException e) {
+			log.error("Failed to send e-mail notification", e);
+		}
+		
 	}
 }

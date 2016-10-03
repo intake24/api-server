@@ -62,12 +62,23 @@ public class WelcomePage implements SurveyStage<Survey> {
 		});
 		
 		HTMLPanel tutorialVideo = new HTMLPanel(SafeHtmlUtils.fromSafeConstant(TutorialVideo.embedHTML));
+		
+		Button exceptionTest = new Button("Throw exception", new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				throw new RuntimeException("Test exception");			
+				
+			}
+		});
 				
 		FlowPanel contents = new FlowPanel();
 		contents.getElement().addClassName("intake24-survey-content-container");
 		
+		contents.add(exceptionTest);
 		contents.add(tutorialVideo);
-		HTMLPanel htmlPanel = new HTMLPanel(SafeHtmlUtils.fromSafeConstant(welcomeHtml));		
+		HTMLPanel htmlPanel = new HTMLPanel(SafeHtmlUtils.fromSafeConstant(welcomeHtml));
+		
 		contents.add(htmlPanel);
 		contents.add(startButton);
 
