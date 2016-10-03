@@ -32,6 +32,7 @@ trait FoodsAdminObserver {
   def onMainFoodRecordUpdated(code: String): Unit
   def onLocalFoodRecordCreated(code: String, locale: String): Unit
   def onLocalFoodRecordUpdated(code: String, locale: String): Unit
+  def onFoodToBeDeleted(code: String): Unit
   def onFoodDeleted(code: String): Unit
   def onFoodCreated(code: String): Unit
   def onAllFoodsDeleted(): Unit
@@ -96,12 +97,18 @@ class ObservableFoodsAdminServiceImpl @Inject() (@BasicImpl service: FoodsAdminS
       observers.foreach(_.onAllFoodsDeleted())
   }
 
-  def deleteFoods(foodCodes: Seq[String]): Either[DeleteError, Unit] = service.deleteFoods(foodCodes).right.map {
-    _ =>
-      foodCodes.foreach {
-        foodCode =>
-          observers.foreach(_.onFoodDeleted(foodCode))
-      }
-  }
+  def deleteFoods(foodCodes: Seq[String]): Either[DeleteError, Unit] = {
+    foodCodes.foreach {
+      foodCode =>
+        observers.foreach(_.onFoodToBeDeleted(foodCode))
+    }
 
+    service.deleteFoods(foodCodes).right.map {
+      _ =>
+        foodCodes.foreach {
+          foodCode =>
+            observers.foreach(_.onFoodDeleted(foodCode))
+        }
+    }
+  }
 }

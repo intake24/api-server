@@ -184,59 +184,78 @@ case class CachedProblemChecker @Inject() (
       }
     }
 
-  def invalidateLocalFoodProblems(code: String, locale: String) = adminBrowsing.getFoodAllCategoriesCodes(code).right.map {
-    superCategories =>
+  def invalidateFood(code: String): Unit = {
+    val allLocales = locales.listLocales().right.get.keySet
+    val parentCodes = adminBrowsing.getFoodAllCategoriesCodes(code).right.get
+
+    for (locale <- allLocales) yield {
       removeCached(foodProblemsCacheKey(code, locale))
-      superCategories.foreach {
-        categoryCode =>
-          invalidateChildProblems(categoryCode, locale)
+
+      for (categoryCode <- parentCodes) yield {
+        removeCached(categoryProblemsCacheKey(categoryCode, locale))
+        removeCached(recursiveCategoryProblemsCacheKey(categoryCode, locale))
       }
-  }
-
-  def invalidateFoodProblems(code: String): Either[DatabaseError, Unit] = locales.listLocales().right.map {
-    locales =>
-      locales.keySet.foreach {
-        locale => invalidateLocalFoodProblems(code, locale)
-      }
-  }
-
-  def invalidateLocalCategoryProblems(code: String, locale: String) = adminBrowsing.getCategoryAllCategoriesCodes(code).right.map {
-    superCategories =>
-      removeCached(categoryProblemsCacheKey(code, locale))
-      superCategories.foreach {
-        categoryCode =>
-          invalidateChildProblems(categoryCode, locale)
-      }
-  }
-
-  def invalidateCategoryProblems(code: String) = locales.listLocales().right.map {
-    locales =>
-      locales.keySet.foreach {
-        locale => invalidateLocalCategoryProblems(code, locale)
-      }
-  }
-
-  def invalidateChildProblems(code: String, locale: String) = removeCached(recursiveCategoryProblemsCacheKey(code, locale))
-
-  def onMainCategoryRecordUpdated(code: String, update: MainCategoryRecordUpdate) = {
-    invalidateCategoryProblems(code)
-    update.parentCategories.foreach {
-      parent =>
-        invalidateCategoryProblems(parent)
     }
   }
 
-  def onLocalCategoryRecordUpdated(code: String, update: LocalCategoryRecordUpdate, locale: String) = invalidateLocalCategoryProblems(code, locale)
+  def invalidateCategory(code: String): Unit = {
+    val allLocales = locales.listLocales().right.get.keySet
 
-  // FIXME: Actually need to handle "about to be deleted" to invalidate parents properly
-  def onCategoryDeleted(code: String) = invalidateCategoryProblems(code)
+    // need to invalidate all locales because of potential locale inheritance
+
+    for (locale <- allLocales) yield {
+      removeCached(categoryProblemsCacheKey(code, locale))
+      removeCached(recursiveCategoryProblemsCacheKey(code, locale))
+
+      val parentCodes = adminBrowsing.getCategoryAllCategoriesCodes(code).right.get
+
+      for (
+        parentCode <- parentCodes
+      ) yield {
+        removeCached(categoryProblemsCacheKey(parentCode, locale))
+        removeCached(recursiveCategoryProblemsCacheKey(parentCode, locale))
+      }
+
+      val descendants = adminBrowsing.getAllCategoryDescendantsCodes(code).right.get
+
+      for (
+        categoryCode <- descendants.subcategories
+      ) yield {
+        removeCached(categoryProblemsCacheKey(categoryCode, locale))
+        removeCached(recursiveCategoryProblemsCacheKey(categoryCode, locale))
+      }
+
+      for (
+        foodCode <- descendants.foods
+      ) yield {
+        removeCached(foodProblemsCacheKey(foodCode, locale))
+      }
+    }
+  }
+
+  def onMainCategoryRecordUpdated(code: String, update: MainCategoryRecordUpdate) = {
+    invalidateCategory(code)
+  }
+
+  def onLocalCategoryRecordUpdated(code: String, update: LocalCategoryRecordUpdate, locale: String) = {
+    invalidateCategory(code)
+  }
+
+  //FIXME: Race conditions! This needs to be done AFTER the food has been deleted, but the parents 
+  // can only be read before it is deleted which can result in data being re-cached right before it 
+  // is actually deleted. Low probability, so ignoring for now.
+  def onCategoryToBeDeleted(code: String) = {
+    invalidateCategory(code)
+  }
+
+  def onCategoryDeleted(code: String) = { }
 
   def onLocaleDeleted(id: String) = {
     removeCachedByPredicate {
       k =>
         k.startsWith(foodProblemsCacheKey("", id)) ||
-          k.startsWith(categoryProblemsCacheKey("", id)) ||
-          k.startsWith(recursiveCategoryProblemsCacheKey("", id))
+        k.startsWith(categoryProblemsCacheKey("", id)) ||
+        k.startsWith(recursiveCategoryProblemsCacheKey("", id))
     }
   }
 
@@ -245,14 +264,11 @@ case class CachedProblemChecker @Inject() (
   }
 
   def onMainCategoryRecordCreated(record: NewMainCategoryRecord) = {
-    record.parentCategories.foreach {
-      code =>
-        invalidateCategoryProblems(code)
-    }
+    invalidateCategory(record.code)
   }
 
   def onLocalCategoryRecordCreated(code: String, record: NewLocalCategoryRecord, locale: String) = {
-    invalidateLocalCategoryProblems(code, locale)
+    invalidateCategory(code)
   }
 
   def onAllFoodsDeleted() = {
@@ -260,23 +276,28 @@ case class CachedProblemChecker @Inject() (
   }
 
   def onFoodCreated(code: String) = {
-    invalidateFoodProblems(code)
+    invalidateFood(code)
   }
 
-  def onFoodDeleted(code: String) = {
-    invalidateFoodProblems(code)
+  //FIXME: Race conditions! This needs to be done AFTER the food has been deleted, but the parents 
+  // can only be read before it is deleted which can result in data being re-cached right before it 
+  // is actually deleted. Low probability, so ignoring for now.
+  def onFoodToBeDeleted(code: String) = {
+    invalidateFood(code)
   }
+
+  def onFoodDeleted(code: String) = { }
 
   def onLocalFoodRecordCreated(code: String, locale: String) = {
-    invalidateLocalFoodProblems(code, locale)
+    invalidateFood(code)
   }
 
   def onLocalFoodRecordUpdated(code: String, locale: String) = {
-    invalidateLocalFoodProblems(code, locale)
+    invalidateFood(code)
   }
 
   def onMainFoodRecordUpdated(code: String) = {
-    invalidateFoodProblems(code)
+    invalidateFood(code)
   }
 
   def onLocaleCreated(id: String) = {}

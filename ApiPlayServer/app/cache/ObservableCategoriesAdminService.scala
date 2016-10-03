@@ -42,6 +42,7 @@ import modules.BasicImpl
   def updateLocalCategoryRecord(categoryCode: String, localCategoryUpdate: LocalCategoryRecordUpdate, locale: String): Either[LocalDependentUpdateError, Unit]
  */
 trait CategoriesAdminObserver {
+  def onCategoryToBeDeleted(code: String): Unit
   def onCategoryDeleted(code: String): Unit
   def onAllCategoriesDeleted(): Unit
 
@@ -88,8 +89,12 @@ class ObservableCategoriesAdminServiceImpl @Inject() (@BasicImpl service: Catego
     _ => observers.foreach(_.onAllCategoriesDeleted())
   }
 
-  def deleteCategory(categoryCode: String): Either[DeleteError, Unit] = service.deleteCategory(categoryCode).right.map {
-    _ => observers.foreach(_.onCategoryDeleted(categoryCode))
+  def deleteCategory(categoryCode: String): Either[DeleteError, Unit] = {
+    observers.foreach(_.onCategoryToBeDeleted(categoryCode))
+
+    service.deleteCategory(categoryCode).right.map {
+      _ => observers.foreach(_.onCategoryDeleted(categoryCode))
+    }
   }
 
   def updateMainCategoryRecord(categoryCode: String, categoryMain: MainCategoryRecordUpdate): Either[DependentUpdateError, Unit] =

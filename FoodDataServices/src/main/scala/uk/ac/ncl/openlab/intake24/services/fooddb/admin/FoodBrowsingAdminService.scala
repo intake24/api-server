@@ -11,6 +11,8 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 
+case class CategoryDescendantsCodes(foods: Set[String], subcategories: Set[String])
+
 trait FoodBrowsingAdminService {
   
   def getUncategorisedFoods(locale: String): Either[LocaleError, Seq[FoodHeader]]
@@ -18,6 +20,8 @@ trait FoodBrowsingAdminService {
   def getRootCategories(locale: String): Either[LocaleError, Seq[CategoryHeader]]
 
   def getCategoryContents(code: String, locale: String): Either[LocalLookupError, CategoryContents]
+  
+  def getAllCategoryDescendantsCodes(code: String): Either[LookupError, CategoryDescendantsCodes]
 
   def getFoodParentCategories(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]]
 
@@ -27,7 +31,7 @@ trait FoodBrowsingAdminService {
   
   def getCategoryParentCategories(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]]
   
-  def getCategoryAllCategoriesCodes(code: String): Either[LookupError, Set[String]]
+  def getCategoryAllCategoriesCodes(code: String): Either[LookupError, Set[String]]  
   
   def getCategoryAllCategoriesHeaders(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]]
 }

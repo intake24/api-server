@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.foodsql.admin.HeaderRows
 import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
 import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
+import anorm.SqlParser
 
 trait FoodBrowsingAdminQueries
     extends FoodDataSqlService
@@ -32,26 +33,42 @@ trait FoodBrowsingAdminQueries
 
   private val logger = LoggerFactory.getLogger(classOf[FoodBrowsingAdminQueries])
 
-  lazy private val categoryFoodContentsQuery = sqlFromResource("admin/category_contents_foods.sql")
+  lazy private val categoryFoodContentsHeadersQuery = sqlFromResource("admin/category_contents_foods_headers.sql")
 
-  protected def categoryFoodContentsQuery(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[FoodHeader]] = {
-    val result = SQL(categoryFoodContentsQuery).on('category_code -> code, 'locale_id -> locale).executeQuery()
+  protected def categoryFoodContentsHeadersQuery(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[FoodHeader]] = {
+    val result = SQL(categoryFoodContentsHeadersQuery).on('category_code -> code, 'locale_id -> locale).executeQuery()
 
     parseWithLocaleAndCategoryValidation(code, result, Macro.namedParser[FoodHeaderRow].+)(Seq(FirstRowValidationClause("code", () => Right(List())))).right.map(_.map(_.asFoodHeader))
   }
 
-  lazy private val categorySubcategoryContentsQuery = sqlFromResource("admin/category_contents_subcategories.sql")
+  lazy private val categoryFoodContentsCodesQuery = sqlFromResource("admin/category_contents_foods_codes.sql")
 
-  protected def categorySubcategoryContentsQuery(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[CategoryHeader]] = {
-    val result = SQL(categorySubcategoryContentsQuery).on('category_code -> code, 'locale_id -> locale).executeQuery()
+  protected def categoryFoodContentsCodesQuery(code: String)(implicit conn: java.sql.Connection): Either[LookupError, Set[String]] = {
+    val result = SQL(categoryFoodContentsCodesQuery).on('category_code -> code).executeQuery()
+
+    parseWithCategoryValidation(code, result, SqlParser.str("code").+)(Seq(FirstRowValidationClause("code", () => Right(List())))).right.map(_.toSet)
+  }
+
+  lazy private val categorySubcategoryContentsHeadersQuery = sqlFromResource("admin/category_contents_subcategories_headers.sql")
+
+  protected def categorySubcategoryContentsHeadersQuery(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[CategoryHeader]] = {
+    val result = SQL(categorySubcategoryContentsHeadersQuery).on('category_code -> code, 'locale_id -> locale).executeQuery()
 
     parseWithLocaleAndCategoryValidation(code, result, Macro.namedParser[CategoryHeaderRow].+)(Seq(FirstRowValidationClause("code", () => Right(List())))).right.map(_.map(_.asCategoryHeader))
   }
 
+  lazy private val categorySubcategoryContentsCodesQuery = sqlFromResource("admin/category_contents_subcategories_codes.sql")
+
+  protected def categorySubcategoryContentsCodesQuery(code: String)(implicit conn: java.sql.Connection): Either[LookupError, Set[String]] = {
+    val result = SQL(categorySubcategoryContentsCodesQuery).on('category_code -> code).executeQuery()
+
+    parseWithCategoryValidation(code, result, SqlParser.str("code").+)(Seq(FirstRowValidationClause("code", () => Right(List())))).right.map(_.toSet)
+  }
+
   protected def getCategoryContentsQuery(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, CategoryContents] =
     for (
-      foods <- categoryFoodContentsQuery(code, locale).right;
-      subcategories <- categorySubcategoryContentsQuery(code, locale).right
+      foods <- categoryFoodContentsHeadersQuery(code, locale).right;
+      subcategories <- categorySubcategoryContentsHeadersQuery(code, locale).right
     ) yield CategoryContents(foods, subcategories)
 
   protected def getFoodParentCategoriesHeadersQuery(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[CategoryHeader]] = {

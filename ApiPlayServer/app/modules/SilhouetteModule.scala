@@ -90,7 +90,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
       issuerClaim = "intake24",
       requestParts = Some(Seq(RequestPart.Headers)),      
       authenticatorIdleTimeout = None,
-      authenticatorExpiry = configuration.getInt("intake24.security.tokenExpiryMinutes").getOrElse(5).minutes,
+      authenticatorExpiry = configuration.getInt("intake24.security.tokenExpiryMinutes").getOrElse(30).days,
       sharedSecret = configuration.getString("play.crypto.secret").get)
     
       new JWTAuthenticatorService(settings, None, new Base64AuthenticatorEncoder(), idGenerator, clock)    
