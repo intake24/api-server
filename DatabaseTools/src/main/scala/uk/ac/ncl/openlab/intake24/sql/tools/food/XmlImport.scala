@@ -290,8 +290,6 @@ object XmlImport extends App with WarningMessage with DatabaseConnection {
 
   val adminService = new FoodDatabaseAdminImpl(dataSource)
 
-  implicit val dbConn = dataSource.getConnection
-
   val importer = new XmlImporter(adminService)
 
   importer.importXmlData(options.xmlPath())
