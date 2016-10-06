@@ -39,18 +39,18 @@ class ImageStorageLocal @Inject() (val settings: LocalImageStorageSettings) exte
     try {
       val destFile = {
         
-        logger.debug("Attempting to create $path")
+        logger.debug(s"Attempting to create $path")
         
         val f = new File(path)
         if (f.createNewFile())
           f
         else {
-          logger.debug("$path already exists, attempting to create $altPath instead")
+          logger.debug(s"$path already exists, attempting to create $altPath instead")
           val alt = new File(altPath)
           if (alt.createNewFile())
             alt
           else
-            throw new RuntimeException("Failed to create file: $altPath")
+            throw new RuntimeException(s"Failed to create file: $altPath")
         }
       }
 

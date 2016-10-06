@@ -47,7 +47,7 @@ class ImageAdminServiceDefaultImpl @Inject() (val imageDatabase: ImageDatabaseSe
   // Maybe some garbage collection is a better idea?
   def uploadSourceImage(suggestedPath: String, source: Path, keywords: Seq[String], uploaderName: String): Either[ImageServiceError, Long] =
     for (
-      actualPath <- storage.uploadImage("source" + File.pathSeparator + suggestedPath, source).right;
+      actualPath <- storage.uploadImage("source" + File.separator + suggestedPath, source).right;
       id <- wrapDatabaseError(imageDatabase.createSourceImageRecords(Seq(SourceImageRecord(actualPath, keywords, uploaderName)))).right
     ) yield id.head
 
