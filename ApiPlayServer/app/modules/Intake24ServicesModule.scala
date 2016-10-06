@@ -85,6 +85,14 @@ import uk.ac.ncl.openlab.intake24.foodsql.user.FoodDataUserStandaloneImpl
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDataService
 import uk.ac.ncl.openlab.intake24.foodsql.admin.QuickSearchAdminStandaloneImpl
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.QuickSearchService
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageProcessor
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageProcessorIM
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageProcessorSettings
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.AsServedImageSettings
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageAdminService
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageAdminServiceDefaultImpl
+import uk.ac.ncl.openlab.intake24.foodsql.images.ImageDatabaseServiceSqlImpl
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageDatabaseService
 
 class Intake24ServicesModule(env: Environment, config: Configuration) extends AbstractModule {
   @Provides
@@ -99,6 +107,18 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
   @Provides
   @Named("intake24_foods")
   def foodsDataSource(@NamedDatabase("intake24_foods") db: Database) = db.dataSource
+
+  @Provides
+  @Singleton
+  def imageProcessorSettings(configuration: Configuration): ImageProcessorSettings = {
+    val asServed = AsServedImageSettings(
+      configuration.getInt("intake24.images.processor.asServed.mainImageWidth").getOrElse(500),
+      configuration.getInt("intake24.images.processor.asServed.mainImageHeight").getOrElse(500),
+      configuration.getInt("intake24.images.processor.asServed.thumbnailWidth").getOrElse(500),
+      configuration.getInt("intake24.images.processor.asServed.thumbnailHeight").getOrElse(500))
+
+    ImageProcessorSettings(asServed)
+  }
 
   def configure() = {
     bind(classOf[DataStoreScala]).to(classOf[DataStoreSqlImpl])
@@ -133,6 +153,11 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     bind(classOf[ObservableFoodsAdminService]).to(classOf[ObservableFoodsAdminServiceImpl])
     bind(classOf[ObservableCategoriesAdminService]).to(classOf[ObservableCategoriesAdminServiceImpl])
     bind(classOf[ObservableLocalesAdminService]).to(classOf[ObservableLocalesAdminServiceImpl])
+
+    
+    bind(classOf[ImageDatabaseService]).to(classOf[ImageDatabaseServiceSqlImpl])
+    bind(classOf[ImageAdminService]).to(classOf[ImageAdminServiceDefaultImpl])
+    bind(classOf[ImageProcessor]).to(classOf[ImageProcessorIM])
 
     // Admin services -- cached
 

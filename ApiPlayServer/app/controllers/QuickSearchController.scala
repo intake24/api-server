@@ -30,7 +30,7 @@ import upickle.default._
 
 class QuickSearchController @Inject() (service: QuickSearchService, deadbolt: DeadboltActionsAdapter) extends Controller
     with PickleErrorHandler
-    with ApiErrorHandler {
+    with FoodDatabaseErrorHandler {
 
   def searchFoods(searchTerm: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {

@@ -1,17 +1,17 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.images
 
-import java.io.File
+import java.nio.file.Path
 
 trait ImageStorageService {
   /**
    * Uploads image to the storage service, keeping the source file in place.
    */
-  def uploadImage(suggestedPath: String, file: File): Either[ImageStorageError, String]
+  def uploadImage(suggestedPath: String, file: Path): Either[ImageStorageError, String]
   
   /**
-   * Downloads a copy of an image from the storage service into a temporary file. Caller is responsible for deleting the file when they're done with it.
+   * Downloads a copy of an image from the storage service into the specified file.
    */
-  def downloadImage(path: String): Either[ImageStorageError, File]
+  def downloadImage(path: String, dest: Path): Either[ImageStorageError, Unit]
   
   def deleteImage(path: String): Either[ImageStorageError, Unit]
 }

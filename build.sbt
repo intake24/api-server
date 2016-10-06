@@ -50,7 +50,7 @@ lazy val imageStorageLocal = Project(id = "imageStorageLocal", base = file("Imag
 lazy val imageProcessorIM = Project(id = "imageProcessorIM", base = file("ImageProcessorIM")).dependsOn(foodDataServices)
 
 
-lazy val apiPlayServer = Project(id = "apiPlayServer", base = file("ApiPlayServer")).enablePlugins(PlayScala, SystemdPlugin).dependsOn(foodDataSql, systemDataSql, imageProcessorIM)
+lazy val apiPlayServer = Project(id = "apiPlayServer", base = file("ApiPlayServer")).enablePlugins(PlayScala, SystemdPlugin).dependsOn(foodDataSql, systemDataSql, imageStorageLocal, imageProcessorIM)
 
 lazy val siteTest = Project(id = "siteTest", base = file("SiteTest"))
 

@@ -11,7 +11,7 @@ import upickle.default._
 import security.Roles
 import scala.concurrent.Future
 
-class ProblemCheckerController @Inject() (service: ProblemCheckerService, deadbolt: DeadboltActionsAdapter) extends Controller with ApiErrorHandler {
+class ProblemCheckerController @Inject() (service: ProblemCheckerService, deadbolt: DeadboltActionsAdapter) extends Controller with FoodDatabaseErrorHandler {
 
   val maxReturnedProblems = 10
 

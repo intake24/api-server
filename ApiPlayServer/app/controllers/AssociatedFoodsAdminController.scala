@@ -32,7 +32,7 @@ import javax.inject.Inject
 
 class AssociatedFoodsAdminController @Inject() (service: AssociatedFoodsAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
     with PickleErrorHandler
-    with ApiErrorHandler {
+    with FoodDatabaseErrorHandler {
 
   def getAssociatedFoods(foodCode: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {

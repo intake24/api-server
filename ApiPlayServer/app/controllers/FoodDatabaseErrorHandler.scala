@@ -17,9 +17,9 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.VersionConflict
 import upickle.default.Writer
 import upickle.default.write
 
-trait ApiErrorHandler extends Results {
+trait FoodDatabaseErrorHandler extends Results {
 
-  private val logger = LoggerFactory.getLogger(classOf[ApiErrorHandler])
+  private val logger = LoggerFactory.getLogger(classOf[FoodDatabaseErrorHandler])
 
   def databaseErrorBody(message: String) = s"""{"cause":"DatabaseError","errorMessage":"$message"}"""
   val recordNotFoundErrorBody = s"""{"cause":"RecordNotFound}"""

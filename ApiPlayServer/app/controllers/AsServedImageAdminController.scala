@@ -29,7 +29,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AsServedImageAdminServic
 
 class AsServedImageAdminController @Inject() (service: AsServedImageAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
     with PickleErrorHandler
-    with ApiErrorHandler {
+    with FoodDatabaseErrorHandler {
 
   def listAsServedSets() = deadbolt.restrict(Roles.superuser) {
     Future {

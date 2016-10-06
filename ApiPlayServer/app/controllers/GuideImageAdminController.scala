@@ -30,7 +30,7 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
 class GuideImageAdminController @Inject() (service: GuideImageAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
     with PickleErrorHandler
-    with ApiErrorHandler {
+    with FoodDatabaseErrorHandler {
   
    def listGuideImages() = deadbolt.restrict(Roles.superuser) {
     Future {

@@ -15,9 +15,9 @@ import anorm.BatchSql
 
 trait SqlDataService[DBErrorT] {
   val dataSource: DataSource
-  
+
   def defaultDatabaseError(e: PSQLException): DBErrorT
-  
+
   /**
    * Anorm's BatchSql with Seq[Seq[NamedParameter]] is deprecated due to the requirement
    * that there must be at least one set of parameters. The new apply method signature
@@ -36,16 +36,14 @@ trait SqlDataService[DBErrorT] {
     conn.setAutoCommit(false)
     conn.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ)
 
-    block match {
-      case result: Left[E, T] => {
-        conn.rollback()
-        result
-      }
-      case result: Right[E, T] => {
-        conn.commit()
-        result
-      }
-    }
+    val result = block
+
+    if (result.isLeft)
+      conn.rollback()
+    else
+      conn.commit()
+
+    result
   }
 
   def tryWithConstraintsCheck[E, T](cf: PartialFunction[String, PSQLException => E])(block: => Either[E, T])(implicit conn: java.sql.Connection): Either[E, T] = {

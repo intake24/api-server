@@ -96,6 +96,11 @@ GET     /user/foods/:locale/:code/associated-foods           controllers.UserFoo
 
 GET     /admin/nutrient-tables                controllers.NutrientTablesAdminController.listNutrientTables()
 
+# Image database
+
+POST    /admin/images/source                  controllers.ImageAdminController.uploadSourceImage()
+
+
 
 # GET     /index/synsets/:locale                controllers.FoodIndexController.synsets(locale: String)
 # GET     /index/split-list/:locale             controllers.FoodIndexController.splitList(locale: String)

@@ -31,6 +31,7 @@ scalaVersion := "2.11.8"
 libraryDependencies ++= Seq(
   "net.codingwell" %% "scala-guice" % "4.1.0",
   "org.apache.commons" % "commons-lang3" % "3.4",
+  "commons-io" % "commons-io" % "2.5",
   "br.com.socialsla" % "ptstemmer-java" % "0.3.b1",
   "org.scalatest" %% "scalatest" % "2.2.5" % "test"
 )

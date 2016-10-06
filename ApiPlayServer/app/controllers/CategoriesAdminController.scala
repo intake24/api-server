@@ -33,7 +33,7 @@ import upickle.default.read
 
 class CategoriesAdminController @Inject() (service: CategoriesAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
     with PickleErrorHandler
-    with ApiErrorHandler {
+    with FoodDatabaseErrorHandler {
 
   def getCategoryRecord(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {

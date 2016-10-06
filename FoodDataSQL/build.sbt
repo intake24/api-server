@@ -30,6 +30,5 @@ parallelExecution in Test := false
 
 libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % "1.7.21",
-  "commons-io" % "commons-io" % "2.5",
   "org.scalatest" %% "scalatest" % "2.2.5" % "test"
 )

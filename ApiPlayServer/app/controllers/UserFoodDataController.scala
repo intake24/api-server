@@ -56,7 +56,7 @@ object FoodSourceWriters {
   }
 }
 
-class UserFoodDataController @Inject() (service: FoodDatabaseService, deadbolt: DeadboltActionsAdapter) extends Controller with ApiErrorHandler {
+class UserFoodDataController @Inject() (service: FoodDatabaseService, deadbolt: DeadboltActionsAdapter) extends Controller with FoodDatabaseErrorHandler {
 
 
   def getCategoryContents(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
