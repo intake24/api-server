@@ -11,8 +11,9 @@ import org.slf4j.LoggerFactory
 import play.api.Logger
 import play.api.http.ContentTypes
 import java.nio.file.Paths
+import upickle.default._
 
-class ImageAdminController @Inject() (service: ImageAdminService, deadbolt: DeadboltActionsAdapter) extends Controller with ImageServiceErrorHandler {
+class ImageAdminController @Inject() (service: ImageAdminService, deadbolt: DeadboltActionsAdapter) extends Controller with ImageServiceErrorHandler with PickleErrorHandler {
 
   private val logger = LoggerFactory.getLogger(classOf[ImageAdminController])
 
@@ -35,6 +36,15 @@ class ImageAdminController @Inject() (service: ImageAdminService, deadbolt: Dead
           }
 
           case None => BadRequest("""{"cause":"Failed to parse form data"}""").as(ContentTypes.JSON)
+        }
+      }
+  }
+
+  def createAsServed() = deadbolt.restrict(Roles.superuser)(parse.tolerantText) {
+    request =>
+      Future {
+        tryWithPickle {
+          translateError(service.processForAsServed(read[Seq[Int]](request.body).map(_.toLong)))
         }
       }
   }

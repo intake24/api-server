@@ -17,10 +17,11 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageProcessorError
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageStorageError
 
 import play.api.Logger
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.FileTypeNotAllowed
 
 trait ImageServiceErrorHandler extends Results {
 
-  def genericErrorBody(e: Throwable) = s"""{"cause":"${e.getMessage}"}"""
+  def genericErrorBody(e: Throwable) = s"""{"cause":"${e.getClass.getName}: ${e.getMessage}"}"""
 
   def logException(e: Throwable) = Logger.error("Image service exception", e)
 
@@ -45,6 +46,10 @@ trait ImageServiceErrorHandler extends Results {
     case Left(ImageStorageError(e)) => {
       logException(e)
       InternalServerError(genericErrorBody(e))
+    }
+    case Left(FileTypeNotAllowed(e)) => {
+      logException(e)
+      BadRequest(genericErrorBody(e))
     }
   }
 }

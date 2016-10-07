@@ -93,6 +93,8 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageAdminServiceDefaultImpl
 import uk.ac.ncl.openlab.intake24.foodsql.images.ImageDatabaseServiceSqlImpl
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageDatabaseService
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.FileTypeAnalyzer
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.FileCommandFileTypeAnalyzer
 
 class Intake24ServicesModule(env: Environment, config: Configuration) extends AbstractModule {
   @Provides
@@ -112,10 +114,9 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
   @Singleton
   def imageProcessorSettings(configuration: Configuration): ImageProcessorSettings = {
     val asServed = AsServedImageSettings(
-      configuration.getInt("intake24.images.processor.asServed.mainImageWidth").getOrElse(500),
-      configuration.getInt("intake24.images.processor.asServed.mainImageHeight").getOrElse(500),
-      configuration.getInt("intake24.images.processor.asServed.thumbnailWidth").getOrElse(500),
-      configuration.getInt("intake24.images.processor.asServed.thumbnailHeight").getOrElse(500))
+      configuration.getInt("intake24.images.processor.asServed.mainImageWidth").getOrElse(654),
+      configuration.getInt("intake24.images.processor.asServed.mainImageHeight").getOrElse(436),
+      configuration.getInt("intake24.images.processor.asServed.thumbnailWidth").getOrElse(80))     
 
     ImageProcessorSettings(asServed)
   }
@@ -157,6 +158,7 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     
     bind(classOf[ImageDatabaseService]).to(classOf[ImageDatabaseServiceSqlImpl])
     bind(classOf[ImageAdminService]).to(classOf[ImageAdminServiceDefaultImpl])
+    bind(classOf[FileTypeAnalyzer]).to(classOf[FileCommandFileTypeAnalyzer])
     bind(classOf[ImageProcessor]).to(classOf[ImageProcessorIM])
 
     // Admin services -- cached

@@ -16,12 +16,13 @@ import java.nio.file.Files
 import java.nio.file.CopyOption
 import java.nio.file.Paths
 import org.slf4j.LoggerFactory
+import java.io.FileOutputStream
 
 @Singleton
 class ImageStorageLocal @Inject() (val settings: LocalImageStorageSettings) extends ImageStorageService {
-  
+
   val logger = LoggerFactory.getLogger(classOf[ImageStorageLocal])
-  
+
   def deleteImage(path: String): Either[ImageStorageError, Unit] =
     try {
       logger.debug("Attempting to delete $path")
@@ -31,32 +32,40 @@ class ImageStorageLocal @Inject() (val settings: LocalImageStorageSettings) exte
       case e: Throwable => Left(ImageStorageError(e))
     }
 
-  def uploadImage(suggestedName: String, sourceFile: Path): Either[ImageStorageError, String] = {
-    val path = s"${settings.baseDirectory}${File.separator}${suggestedName}"
+  def uploadImage(suggestedPath: String, sourceFile: Path): Either[ImageStorageError, String] = {
+    val localPath = settings.baseDirectory + File.separator + suggestedPath
 
-    val altPath = s"${settings.baseDirectory}${File.separator}${FilenameUtils.getBaseName(suggestedName)}-${UUID.randomUUID().toString()}-${FilenameUtils.getExtension(suggestedName)}"
+    val altPath = FilenameUtils.getFullPath(suggestedPath) + FilenameUtils.getBaseName(suggestedPath) +
+      "-" + UUID.randomUUID().toString() + "." + FilenameUtils.getExtension(suggestedPath)
+    
+    val localAltPath = settings.baseDirectory + File.separator + altPath
 
     try {
-      val destFile = {
-        
-        logger.debug(s"Attempting to create $path")
-        
-        val f = new File(path)
+      val (destFile, relativePath) = {
+
+        logger.debug(s"Attempting to create localPath")
+
+        val f = new File(localPath)
+        Option(f.getParentFile).foreach(_.mkdirs())
+
         if (f.createNewFile())
-          f
+          (f, suggestedPath)
         else {
-          logger.debug(s"$path already exists, attempting to create $altPath instead")
-          val alt = new File(altPath)
+          logger.debug(s"$localPath already exists, attempting to create $localAltPath instead")
+          val alt = new File(localAltPath)
+          Option(alt.getParentFile).foreach(_.mkdirs())
           if (alt.createNewFile())
-            alt
+            (alt, altPath)
           else
-            throw new RuntimeException(s"Failed to create file: $altPath")
+            throw new RuntimeException(s"Failed to create file: $localAltPath")
         }
       }
+      
+      logger.debug(s"Copying ${sourceFile.toString()} to ${destFile.getAbsolutePath}")
 
       FileUtils.copyFile(sourceFile.toFile(), destFile)
 
-      Right(destFile.getPath)
+      Right(relativePath)
     } catch {
       case e: Throwable => Left(ImageStorageError(e))
     }
@@ -64,7 +73,7 @@ class ImageStorageLocal @Inject() (val settings: LocalImageStorageSettings) exte
 
   def downloadImage(path: String, dest: Path): Either[ImageStorageError, Unit] = {
     try {
-      Files.copy(Paths.get(path), dest)
+      Files.copy(Paths.get(path), new FileOutputStream(dest.toFile()))
       Right(())
     } catch {
       case e: Throwable => Left(ImageStorageError(e))

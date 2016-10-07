@@ -99,7 +99,7 @@ GET     /admin/nutrient-tables                controllers.NutrientTablesAdminCon
 # Image database
 
 POST    /admin/images/source                  controllers.ImageAdminController.uploadSourceImage()
-
+POST    /admin/images/create-as-served        controllers.ImageAdminController.createAsServed()
 
 
 # GET     /index/synsets/:locale                controllers.FoodIndexController.synsets(locale: String)

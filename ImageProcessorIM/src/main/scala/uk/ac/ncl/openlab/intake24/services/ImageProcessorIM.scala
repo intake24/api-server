@@ -27,7 +27,7 @@ class ImageProcessorIM @Inject() (val settings: ImageProcessorSettings) extends 
       op.addImage(sourceImage.toString())
       op.addImage(mainImageDest.toString())
       
-      logger.debug(s"Invoking ImageMagick for main image: ${cmd.getCommand.asScala.mkString(" ")}")
+      logger.debug(s"Invoking ImageMagick for main image: ${((cmd.getCommand.asScala) ++ (op.getCmdArgs.asScala)).mkString(" ")}")
       
       cmd.run(op)
 
@@ -38,7 +38,7 @@ class ImageProcessorIM @Inject() (val settings: ImageProcessorSettings) extends 
       op2.addImage(sourceImage.toString())
       op2.addImage(thumbnailDest.toString())
       
-      logger.debug(s"Invoking ImageMagick for thumbnail: ${cmd.getCommand.asScala.mkString(" ")}")
+      logger.debug(s"Invoking ImageMagick for thumbnail: ${((cmd.getCommand.asScala) ++ (op2.getCmdArgs.asScala)).mkString(" ")}")
       
       cmd.run(op2)
 

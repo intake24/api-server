@@ -7,6 +7,8 @@ sealed trait ImageServiceError
 
 case class IOError(e: Throwable) extends ImageServiceError
 
+case class FileTypeNotAllowed(e: Throwable) extends ImageServiceError
+
 case class ImageStorageError(e: Throwable) extends ImageServiceError
 
 case class ImageDatabaseError(e: LookupError) extends ImageServiceError
