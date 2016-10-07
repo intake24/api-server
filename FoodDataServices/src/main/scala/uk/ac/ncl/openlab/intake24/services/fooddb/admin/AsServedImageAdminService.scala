@@ -1,12 +1,15 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.admin
 
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.AsServedImageService
-import uk.ac.ncl.openlab.intake24.AsServedHeader
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.AsServedSet
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
 
-trait AsServedImageAdminService extends AsServedImageService {
+case class AsServedHeader(id: String, description: String)
+
+case class AsServedImageUpdate(image_id: Long, weight: Double)
+
+trait AsServedImageAdminService {
   
   def listAsServedSets(): Either[DatabaseError, Map[String, AsServedHeader]]
   

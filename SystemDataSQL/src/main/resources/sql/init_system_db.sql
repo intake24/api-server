@@ -16,6 +16,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+CREATE TABLE schema_migrations
+(
+  version bigint NOT NULL,
+  CONSTRAINT schema_migrations_pk PRIMARY KEY(version)
+);
+
 CREATE TABLE surveys (
   id character varying(64) NOT NULL,
   state integer NOT NULL,
