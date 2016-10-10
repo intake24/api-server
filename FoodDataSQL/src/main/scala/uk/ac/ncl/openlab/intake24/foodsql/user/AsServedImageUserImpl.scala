@@ -21,7 +21,7 @@ trait AsServedImageUserImpl extends AsServedImageService with FoodDataSqlService
 
   protected case class AsServedResultRow(id: String, description: String, weight: Double, url: String)
 
-  private lazy val getAsServedSetQuery = sqlFromResource("user/get_as_served_set.sql")
+  private lazy val getAsServedSetQuery = sqlFromResource("user/get_as_served_v1.sql")
 
   def getAsServedSet(id: String): Either[LookupError, Seq[AsServedImageV1]] = tryWithConnection {
     implicit conn =>
