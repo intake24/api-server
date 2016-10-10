@@ -119,11 +119,11 @@ case class UserFoodData(code: String, localDescription: String, nutrientTableCod
 
 case class SplitList(splitWords: Seq[String], keepPairs: Map[String, Set[String]])
   
-case class AsServedImage(url: String, weight: Double)
+case class AsServedImageV1(url: String, weight: Double)
 
 case class AsServedHeader (id: String, description: String)
 
-case class AsServedSet (id: String, description: String, images: Seq[AsServedImage]) {
+case class AsServedSetV1 (id: String, description: String, images: Seq[AsServedImageV1]) {
   def toHeader = AsServedHeader(id, description)
 }
 

@@ -2,10 +2,9 @@ package uk.ac.ncl.openlab.intake24.services.fooddb.admin
 
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.AsServedImageService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
-import uk.ac.ncl.openlab.intake24.AsServedSet
+import uk.ac.ncl.openlab.intake24.AsServedSetV1
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
-
-case class AsServedHeader(id: String, description: String)
+import uk.ac.ncl.openlab.intake24.AsServedHeader
 
 case class AsServedImageUpdate(image_id: Long, weight: Double)
 
@@ -15,5 +14,5 @@ trait AsServedImageAdminService {
   
   def deleteAllAsServedSets(): Either[DatabaseError, Unit]
 
-  def createAsServedSets(sets: Seq[AsServedSet]): Either[CreateError, Unit]
+  def createAsServedSets(sets: Seq[AsServedSetV1]): Either[CreateError, Unit]
 }

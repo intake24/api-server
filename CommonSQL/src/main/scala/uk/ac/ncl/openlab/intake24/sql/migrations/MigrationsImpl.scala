@@ -1,6 +1,5 @@
 package uk.ac.ncl.openlab.intake24.sql.migrations
 
-
 import javax.sql.DataSource
 import anorm.SQL
 import anorm.SqlParser
@@ -10,28 +9,49 @@ import scala.Right
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
 import org.postgresql.util.PSQLException
 
-case class SimpleDatabaseError(e: Throwable)
+sealed trait MigrationError
+
+case class MigrationFailed(e: Throwable) extends MigrationError
+
+case class SimpleDatabaseError(e: Throwable) extends MigrationError
 
 class MigrationsImpl(val dataSource: DataSource) extends SqlDataService[SimpleDatabaseError] {
 
   private val logger = LoggerFactory.getLogger(classOf[MigrationsImpl])
 
-  private def getCompletedMigrationsQuery()(implicit conn: java.sql.Connection): Set[Long] =
-    SQL("SELECT id FROM schema_migrations").executeQuery().as(SqlParser.long("id").*).toSet
+  private def getCurrentVersion()(implicit conn: java.sql.Connection): Long =
+    SQL("SELECT version FROM schema_version").executeQuery().as(SqlParser.long("version").single)
 
-  def applyNewMigrations(migrations: Seq[Migration]): Either[SimpleDatabaseError, Unit] = tryWithConnection {
+  def applyMigrations(migrations: Seq[Migration]): Either[MigrationError, Unit] = tryWithConnection {
     implicit conn =>
 
-      val completed = getCompletedMigrationsQuery()
-      val migrationsToRun = migrations.filterNot(m => completed.contains(m.timestamp))
+      def migrateFrom(version: Long): Either[MigrationError, Unit] = {
+        val applicable = migrations.filter(_.versionFrom == version)
+        if (applicable.isEmpty) {
+          logger.info(s"No migrations left. Database schema is now at version $version.")
+          Right(())
+        } else if (applicable.size > 1) {
+          Left(MigrationFailed(new RuntimeException("Found more than one migration from version $version. This is not allowed.")))
+        } else {
+          val migration = applicable(0)
 
-      migrationsToRun.sortBy(_.timestamp).foreach {
-        migration =>
-          logger.info(s"Applying migration: ${migration.description}")
-          migration.apply(logger)
+          logger.info(s"Migrating to version ${migration.versionTo}: ${migration.description}")
+
+          migration.apply(logger).right.map {
+            _ =>
+              SQL("UPDATE schema_version SET version={version}").on('version -> migration.versionTo).executeUpdate()
+              logger.info(s"Migration to ${migration.versionTo} complete.")
+          }.right.flatMap {
+            _ => migrateFrom(migration.versionTo)
+          }
+        }
       }
 
-      Right(())
+      val version = getCurrentVersion()
+      
+      logger.info(s"Current database schema version: $version")
+
+      migrateFrom(version) 
   }
 
   def defaultDatabaseError(e: PSQLException) = SimpleDatabaseError(e)

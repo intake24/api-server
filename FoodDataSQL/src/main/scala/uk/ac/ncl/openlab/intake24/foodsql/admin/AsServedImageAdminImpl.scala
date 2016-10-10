@@ -5,7 +5,7 @@ import anorm._
 import uk.ac.ncl.openlab.intake24.foodsql.user.AsServedImageUserImpl
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AsServedImageAdminService
-import uk.ac.ncl.openlab.intake24.AsServedSet
+
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
 import org.postgresql.util.PSQLException
@@ -14,6 +14,7 @@ import javax.sql.DataSource
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.google.inject.name.Named
+import uk.ac.ncl.openlab.intake24.AsServedSetV1
 
 @Singleton
 class AsServedImageAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends AsServedImageAdminImpl
@@ -36,7 +37,7 @@ trait AsServedImageAdminImpl extends AsServedImageAdminService with AsServedImag
       Right(())
   }
 
-  def createAsServedSets(sets: Seq[AsServedSet]): Either[CreateError, Unit] = tryWithConnection {
+  def createAsServedSets(sets: Seq[AsServedSetV1]): Either[CreateError, Unit] = tryWithConnection {
     implicit conn =>
       if (sets.nonEmpty) {
         withTransaction {
