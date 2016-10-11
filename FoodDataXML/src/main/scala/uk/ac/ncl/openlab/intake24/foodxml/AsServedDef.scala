@@ -22,12 +22,12 @@ import scala.xml.Attribute
 import scala.xml.Text
 import scala.xml.Null
 import scala.xml.NodeSeq
-import uk.ac.ncl.openlab.intake24.AsServedSet
-import uk.ac.ncl.openlab.intake24.AsServedImage
+import uk.ac.ncl.openlab.intake24.AsServedSetV1
+import uk.ac.ncl.openlab.intake24.AsServedImageV1
 import scala.xml.NodeSeq.seqToNodeSeq
 
 object AsServedDef {
-  def toXml(sets: Iterable[AsServedSet]) =
+  def toXml(sets: Iterable[AsServedSetV1]) =
     <as-served-sets>
       {
         sets.toSeq.sortBy(_.id).map(set =>
@@ -44,12 +44,12 @@ object AsServedDef {
 
   def parseXml(root: NodeSeq) = {
     (root \ "as-served-set").map(set => {
-      val as = (set \ "as-served-image").map(n => AsServedImage(n.attribute("url").get.text, n.attribute("weight").map(_.text.toDouble).get))
+      val as = (set \ "as-served-image").map(n => AsServedImageV1(n.attribute("url").get.text, n.attribute("weight").map(_.text.toDouble).get))
 
       val id = set.attribute("id").get.text
       val description = set.attribute("description").get.text
 
-      (id, AsServedSet(id, description, as))
+      (id, AsServedSetV1(id, description, as))
     }).toMap
   }
 }

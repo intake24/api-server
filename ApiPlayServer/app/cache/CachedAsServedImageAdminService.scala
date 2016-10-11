@@ -5,12 +5,13 @@ import com.google.inject.Inject
 
 import play.api.cache.CacheApi
 import uk.ac.ncl.openlab.intake24.AsServedHeader
-import uk.ac.ncl.openlab.intake24.AsServedSet
+import uk.ac.ncl.openlab.intake24.AsServedSetV1
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AsServedImageAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import modules.BasicImpl
+import uk.ac.ncl.openlab.intake24.AsServedImageV1
 
 case class CachedAsServedImageAdminService @Inject() (@BasicImpl service: AsServedImageAdminService, cache: CacheApi)
     extends AsServedImageAdminService
@@ -26,11 +27,8 @@ case class CachedAsServedImageAdminService @Inject() (@BasicImpl service: AsServ
     service.listAsServedSets()
   }
   
-  def getAsServedSet(id: String): Either[LookupError, AsServedSet] = cachePositiveResult(asServedSetCacheKey(id)) {
-    service.getAsServedSet(id)
-  }
   
-  def createAsServedSets(sets: Seq[AsServedSet]): Either[CreateError, Unit] = service.createAsServedSets(sets)
+  def createAsServedSets(sets: Seq[AsServedSetV1]): Either[CreateError, Unit] = service.createAsServedSets(sets)
   
   def deleteAllAsServedSets(): Either[DatabaseError, Unit] = notSupported
   

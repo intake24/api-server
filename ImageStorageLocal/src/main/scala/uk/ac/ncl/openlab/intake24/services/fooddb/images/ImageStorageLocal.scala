@@ -70,6 +70,8 @@ class ImageStorageLocal @Inject() (val settings: LocalImageStorageSettings) exte
       case e: Throwable => Left(ImageStorageError(e))
     }
   }
+  
+  def getUrl(path: String): String = s"${settings.urlPrefix}/$path"
 
   def downloadImage(path: String, dest: Path): Either[ImageStorageError, Unit] = {
     try {
@@ -78,6 +80,5 @@ class ImageStorageLocal @Inject() (val settings: LocalImageStorageSettings) exte
     } catch {
       case e: Throwable => Left(ImageStorageError(e))
     }
-
   }
 }

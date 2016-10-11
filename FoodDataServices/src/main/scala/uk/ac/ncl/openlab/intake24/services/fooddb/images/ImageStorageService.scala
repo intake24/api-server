@@ -13,5 +13,7 @@ trait ImageStorageService {
    */
   def downloadImage(path: String, dest: Path): Either[ImageStorageError, Unit]
   
+  def getUrl(path: String): String
+  
   def deleteImage(path: String): Either[ImageStorageError, Unit]
 }

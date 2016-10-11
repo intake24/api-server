@@ -24,7 +24,7 @@ import scala.xml.XML
 import au.com.bytecode.opencsv.CSVWriter
 import java.io.FileWriter
 import scala.collection.JavaConversions._
-import uk.ac.ncl.openlab.intake24.AsServedSet
+import uk.ac.ncl.openlab.intake24.AsServedSetV1
 import uk.ac.ncl.openlab.intake24.GuideImageWeightRecord
 import uk.ac.ncl.openlab.intake24.foodxml.GuideImageDef
 import uk.ac.ncl.openlab.intake24.foodxml.AsServedDef
@@ -36,7 +36,7 @@ object ExportWeights extends App {
   
   val guide = GuideImageDef.parseXml(XML.load("/home/ivan/Projects/Intake24/intake24-data/guide.xml")) 
 
-  def toCSV(set: AsServedSet) =
+  def toCSV(set: AsServedSetV1) =
     set.images.map(ps => Array(set.description, ps.url, ps.url.replaceAll(".jpg", ""), ps.weight.toString))
 
   writer.writeAll(Array("Description", "Image URL", "Image ID", "Weight, g") +: asServedSets.values.toSeq.sortBy(_.description).flatMap(toCSV(_)))

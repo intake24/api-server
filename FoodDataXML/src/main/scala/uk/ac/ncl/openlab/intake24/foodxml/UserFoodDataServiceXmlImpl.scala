@@ -21,7 +21,7 @@ package uk.ac.ncl.openlab.intake24.foodxml
 import org.slf4j.LoggerFactory
 import com.google.inject.Inject
 import com.google.inject.Singleton
-import uk.ac.ncl.openlab.intake24.AsServedSet
+import uk.ac.ncl.openlab.intake24.AsServedSetV1
 import uk.ac.ncl.openlab.intake24.DrinkwareSet
 import uk.ac.ncl.openlab.intake24.GuideImage
 import uk.ac.ncl.openlab.intake24.InheritableAttributes
@@ -115,7 +115,7 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDat
     }
 
   def getAsServedSet(id: String) = data.asServedSets.get(id) match {
-    case Some(set) => Right(set)
+    case Some(set) => Right(set.images)
     case None => Left(RecordNotFound(new RuntimeException(id)))
   }
 

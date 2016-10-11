@@ -42,7 +42,7 @@ import uk.ac.ncl.openlab.intake24.NewLocalFoodRecord
 import uk.ac.ncl.openlab.intake24.foodxml.XmlFoodRecord
 import uk.ac.ncl.openlab.intake24.FoodGroupMain
 import uk.ac.ncl.openlab.intake24.foodxml.XmlCategoryRecord
-import uk.ac.ncl.openlab.intake24.AsServedSet
+import uk.ac.ncl.openlab.intake24.AsServedSetV1
 import uk.ac.ncl.openlab.intake24.GuideImage
 import uk.ac.ncl.openlab.intake24.DrinkwareSet
 import uk.ac.ncl.openlab.intake24.NewLocalCategoryRecord
@@ -143,7 +143,7 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
     ) yield ())
   }
 
-  def importAsServedSets(asServed: Seq[AsServedSet]) =
+  def importAsServedSets(asServed: Seq[AsServedSetV1]) =
     checkError("As served sets import", for (
       _ <- adminService.deleteAllAsServedSets().right;
       _ <- adminService.createAsServedSets(asServed).right
