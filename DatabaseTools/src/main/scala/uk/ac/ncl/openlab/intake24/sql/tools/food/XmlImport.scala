@@ -143,11 +143,11 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
     ) yield ())
   }
 
-  def importAsServedSets(asServed: Seq[AsServedSetV1]) =
-    checkError("As served sets import", for (
+  def importAsServedSets(asServed: Seq[AsServedSetV1]) = ???
+    /* checkError("As served sets import", for (
       _ <- adminService.deleteAllAsServedSets().right;
       _ <- adminService.createAsServedSets(asServed).right
-    ) yield ())
+    ) yield ()) */
 
   private case class ImageMapArea(id: Int, coords: Seq[Double])
   private case class ImageMapRecord(navigation: Seq[Seq[Int]], areas: Seq[ImageMapArea])

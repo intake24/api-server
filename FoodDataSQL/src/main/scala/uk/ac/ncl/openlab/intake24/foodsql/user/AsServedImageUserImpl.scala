@@ -19,19 +19,19 @@ import uk.ac.ncl.openlab.intake24.AsServedImageV1
 
 trait AsServedImageUserImpl extends AsServedImageService with FoodDataSqlService with SqlResourceLoader {
 
-  protected case class AsServedResultRow(id: String, description: String, weight: Double, url: String)
+  protected case class AsServedResultRow(image_path: String, thumbnail_path: String, weight: Double)
 
-  private lazy val getAsServedSetQuery = sqlFromResource("user/get_as_served_v1.sql")
+  private lazy val getAsServedSetQuery = sqlFromResource("user/get_as_served_set.sql")
 
-  def getAsServedSet(id: String): Either[LookupError, Seq[AsServedImageV1]] = tryWithConnection {
+  def getAsServedSet(id: String): Either[LookupError, Seq[UserAsServedImage]] = tryWithConnection {
     implicit conn =>
       withTransaction {
         val validation = SQL("SELECT 1 FROM as_served_sets WHERE id={id}").on('id -> id).executeQuery().as(SqlParser.long(1).singleOpt)
 
         validation match {
-          case Some(description) => {
-            val result = SQL(getAsServedSetQuery).on('id -> id).executeQuery().as(Macro.namedParser[AsServedResultRow].*)
-            val images = result.map(row => AsServedImageV1(row.url, row.weight))
+          case Some(_) => {
+            val result = SQL(getAsServedSetQuery).on('as_served_set_id -> id).executeQuery().as(Macro.namedParser[AsServedResultRow].*)
+            val images = result.map(row => UserAsServedImage(row.image_path, row.thumbnail_path, row.weight))
             Right(images)
           }
           case None => Left(RecordNotFound(new RuntimeException(id)))

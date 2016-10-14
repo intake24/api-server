@@ -36,6 +36,12 @@ class AsServedImageAdminController @Inject() (service: AsServedImageAdminService
       translateError(service.listAsServedSets())
     }
   }
+  
+  def createAsServedSet() = deadbolt.restrict(Roles.superuser) {
+    Future {
+      ???
+    }
+  } 
 
 
 }

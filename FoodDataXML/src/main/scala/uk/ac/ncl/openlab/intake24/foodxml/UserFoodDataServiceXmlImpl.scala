@@ -41,6 +41,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.UserAsServedImage
 
 @Singleton
 class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDatabaseService {
@@ -115,7 +116,7 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDat
     }
 
   def getAsServedSet(id: String) = data.asServedSets.get(id) match {
-    case Some(set) => Right(set.images)
+    case Some(set) => Right(set.images.map( m => UserAsServedImage(m.url, m.url, m.weight)))
     case None => Left(RecordNotFound(new RuntimeException(id)))
   }
 

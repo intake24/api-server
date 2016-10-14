@@ -26,14 +26,15 @@ object Migrations {
                |  CONSTRAINT source_images_pk PRIMARY KEY(id)
                |)""".stripMargin).execute()
 
-        SQL("""CREATE TABLE processed_images(
-                 id serial NOT NULL,
-                 path character varying(1024) NOT NULL,
-                 source_id integer NOT NULL,
-                 purpose integer NOT NULL,
-                 created_at timestamp without time zone NOT NULL DEFAULT now(),
-                 CONSTRAINT processed_images_pk PRIMARY KEY(id)
-               )""".stripMargin).execute()
+        SQL("""|CREATE TABLE processed_images(
+               |  id serial NOT NULL,
+               |  path character varying(1024) NOT NULL,
+               |  source_id integer NOT NULL,
+               |  purpose integer NOT NULL,
+               |  created_at timestamp without time zone NOT NULL DEFAULT now(),
+               |  CONSTRAINT processed_images_pk PRIMARY KEY(id),
+               |  CONSTRAINT processed_images_source_image_fk FOREIGN KEY(source_id) REFERENCES source_images(id) ON UPDATE CASCADE ON DELETE CASCADE               
+               |)""".stripMargin).execute()
 
         Right(())
       }

@@ -1,33 +1,35 @@
 package uk.ac.ncl.openlab.intake24.sql.tools.food
 
+import java.nio.charset.Charset
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.function.BiPredicate
 
+import scala.collection.mutable.Buffer
+
 import org.apache.commons.io.FilenameUtils
 import org.rogach.scallop.ScallopConf
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-import anorm.AnormUtil
-import anorm.BatchSql
-import anorm.BatchSqlErrors
 import anorm.Macro
-import anorm.NamedParameter
-import anorm.NamedParameter.symbol
 import anorm.SQL
 import anorm.SqlParser
 import anorm.sqlToSimple
 import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseConnection
 import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseOptions
 import uk.ac.ncl.openlab.intake24.sql.tools.WarningMessage
+import upickle.default.SeqishW
+import upickle.default.write
 
-object AsServedToV4 extends App with WarningMessage with DatabaseConnection {
-  private case class AsServedImageRow(id: Long, as_served_set_id: String, url: String)
+object AsServedV4_Prepare extends App with WarningMessage with DatabaseConnection {
+  private case class AsServedImageRow(as_served_set_id: String, url: String)
 
-  private case class RemappedAsServedImage(id: Long, set_id: String, sourcePath: String, mainImagePath: String, thumbnailPath: String)
+  private case class RemappedAsServedImage(set_id: String, url: String, sourcePath: String, mainImagePath: String, thumbnailPath: String)
+
+  val cleanUp = Buffer[Path]()
 
   def copySource(id: String, sourceImageDir: String, imageDir: String, imagePath: String, targetDir: String, logger: Logger): String = {
 
@@ -75,6 +77,8 @@ object AsServedToV4 extends App with WarningMessage with DatabaseConnection {
 
     Files.copy(srcPath, dstPath)
 
+    cleanUp.append(srcPath)
+
     dstName
   }
 
@@ -91,23 +95,23 @@ object AsServedToV4 extends App with WarningMessage with DatabaseConnection {
 
     Files.copy(srcPath, dstPath)
 
+    cleanUp.append(srcPath)
+
     dstName
   }
 
   trait Options extends ScallopConf {
-    version("Intake24 v3 as served tables data tool")
+    version("Intake24 v4 as served prepare")
 
     val imageDir = opt[String](required = true, noshort = true)
     val sourceImageDir = opt[String](required = true, noshort = true)
     val targetImageDir = opt[String](required = true, noshort = true)
+    val remappingFile = opt[String](required = true, noshort = true)
   }
 
   val versionFrom = 3l
-  val versionTo = 4l
 
   val logger = LoggerFactory.getLogger(getClass)
-
-  displayWarningMessage("WARNING: THIS OPERATION IS DESTRUCTIVE AND CANNOT BE UNDONE!")
 
   val options = new ScallopConf(args) with Options with DatabaseOptions
 
@@ -123,52 +127,26 @@ object AsServedToV4 extends App with WarningMessage with DatabaseConnection {
     logger.error(s"Wrong schema version: expected $versionFrom, got $version")
   } else {
 
-    val rows = SQL("SELECT id, as_served_set_id, url FROM as_served_images ORDER BY id").executeQuery().as(Macro.namedParser[AsServedImageRow].*)
+    val rows = SQL("SELECT as_served_set_id, url FROM as_served_images ORDER BY id").executeQuery().as(Macro.namedParser[AsServedImageRow].*)
 
     val remapped = rows.map {
       row =>
-        RemappedAsServedImage(row.id, row.as_served_set_id,
+        RemappedAsServedImage(row.as_served_set_id, row.url,
           copySource(row.as_served_set_id, options.sourceImageDir(), options.imageDir(), row.url, options.targetImageDir(), logger),
           copyMain(options.imageDir(), options.targetImageDir(), row.as_served_set_id, row.url, logger),
           copyThumb(options.imageDir(), options.targetImageDir(), row.as_served_set_id, row.url, logger))
     }
 
-    val availableSource = remapped.map(_.sourcePath)
+    val writer = Files.newBufferedWriter(Paths.get(options.remappingFile()), Charset.forName("utf-8"))
 
-    val sourceParams = availableSource.map {
+    writer.write(write(remapped))
+
+    writer.close()
+
+    cleanUp.foreach {
       path =>
-        Seq[NamedParameter]('path -> path, 'keywords -> "", 'uploader -> "admin#")
+        if (Files.exists(path))
+          Files.delete(path)
     }
-
-    val keys = AnormUtil.batchKeys(BatchSql("INSERT INTO source_images VALUES (DEFAULT,{path},{keywords},{uploader},DEFAULT)", sourceParams))
-
-    val sourceIdMap = availableSource.zip(keys).toMap
-
-    val processedMainParams = remapped.map {
-      r =>
-        Seq[NamedParameter]('path -> r.mainImagePath, 'source_id -> sourceIdMap(r.sourcePath), 'purpose -> 1l)
-    }
-
-    val processedMainKeys = AnormUtil.batchKeys(BatchSql("INSERT INTO processed_images VALUES(DEFAULT,{path},{source_id},{purpose},DEFAULT)", processedMainParams))
-
-    val processedThumbParams = remapped.map {
-      r =>
-        Seq[NamedParameter]('path -> r.thumbnailPath, 'source_id -> sourceIdMap(r.sourcePath), 'purpose -> 2l)
-    }
-    
-    val mainIdMap = remapped.map(_.mainImagePath).zip(processedMainKeys).toMap
-
-    val processedThumbKeys = AnormUtil.batchKeys(BatchSql("INSERT INTO processed_images VALUES(DEFAULT,{path},{source_id},{purpose},DEFAULT)", processedThumbParams))
-    
-    val thumbIdMap = remapped.map(_.thumbnailPath).zip(processedThumbKeys).toMap
-    
-    val asServedImageParams = remapped.map {
-      r =>
-        Seq[NamedParameter]('as_served_image_id -> r.id, 'image_id -> mainIdMap(r.mainImagePath), 'thumbnail_image_id -> thumbIdMap(r.thumbnailPath))
-    }
-    
-    BatchSql("UPDATE as_served_images SET image_id={image_id},thumbnail_image_id={thumbnail_image_id} WHERE id={as_served_image_id}", asServedImageParams).execute()
-    
-    SQL("UPDATE schema_version SET version={version}").on('version -> versionTo).execute()
   }
 }

@@ -79,7 +79,10 @@ POST    /admin/associated-foods/:locale/:code                controllers.Associa
 # Portion size methods
 
 GET     /admin/portion-size/as-served                        controllers.AsServedImageAdminController.listAsServedSets()
-# GET     /admin/portion-size/as-served/:id                    controllers.AsServedImageAdminController.getAsServedSet(id: String)
+GET     /admin/portion-size/as-served/:id                    controllers.AsServedImageAdminController.getAsServedSet(id: String)
+
+POST    /admin/images/as-served/new                          controllers.AsServedImageAdminController.createAsServedSet()
+POST    /admin/images/as-served/:id                          controllers.AsServedImageAdminController.updateAsServedSet()
 
 GET     /admin/portion-size/guide-image                      controllers.GuideImageAdminController.listGuideImages()
 GET     /admin/portion-size/guide-image/:id                  controllers.GuideImageAdminController.getGuideImage(id: String)
@@ -99,10 +102,7 @@ GET     /admin/nutrient-tables                controllers.NutrientTablesAdminCon
 # Image database
 
 POST    /admin/images/source                  controllers.ImageAdminController.uploadSourceImage()
-POST    /admin/images/as-served               controllers.ImageAdminController.createAsServed()
-
+POST    /admin/images/as-served               controllers.ImageAdminController.processForAsServed()
 
 # GET     /index/synsets/:locale                controllers.FoodIndexController.synsets(locale: String)
 # GET     /index/split-list/:locale             controllers.FoodIndexController.splitList(locale: String)
-
-
