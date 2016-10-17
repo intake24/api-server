@@ -18,6 +18,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageStorageError
 
 import play.api.Logger
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.FileTypeNotAllowed
+import play.api.mvc.Result
 
 trait ImageServiceErrorHandler extends Results {
 
@@ -25,31 +26,35 @@ trait ImageServiceErrorHandler extends Results {
 
   def logException(e: Throwable) = Logger.error("Image service exception", e)
 
-  def translateError[T](result: Either[ImageServiceError, T])(implicit writer: Writer[T]) = result match {
-    case Right(result) => Ok(write(result)).as(ContentTypes.JSON)
-    case Left(ImageDatabaseError(DatabaseError(e))) => {
+  def translateError(error: ImageServiceError): Result = error match {
+    case ImageDatabaseError(DatabaseError(e)) => {
       logException(e)
       InternalServerError(genericErrorBody(e))
     }
-    case Left(ImageDatabaseError(RecordNotFound(exception))) => {
+    case ImageDatabaseError(RecordNotFound(exception)) => {
       logException(exception)
       NotFound(genericErrorBody(exception)).as(ContentTypes.JSON)
     }
-    case Left(IOError(e)) => {
+    case IOError(e) => {
       logException(e)
       InternalServerError(genericErrorBody(e))
     }
-    case Left(ImageProcessorError(e)) => {
+    case ImageProcessorError(e) => {
       logException(e)
       InternalServerError(genericErrorBody(e))
     }
-    case Left(ImageStorageError(e)) => {
+    case ImageStorageError(e) => {
       logException(e)
       InternalServerError(genericErrorBody(e))
     }
-    case Left(FileTypeNotAllowed(e)) => {
+    case FileTypeNotAllowed(e) => {
       logException(e)
       BadRequest(genericErrorBody(e))
     }
+  }
+
+  def translateError[T](result: Either[ImageServiceError, T])(implicit writer: Writer[T]): Result = result match {
+    case Right(result) => Ok(write(result)).as(ContentTypes.JSON)
+    case Left(error) => translateError(error)
   }
 }

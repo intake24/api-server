@@ -27,24 +27,22 @@ class ImageAdminController @Inject() (service: ImageAdminService, deadbolt: Dead
 
             val keywords = formData.dataParts.get("keywords").getOrElse(Seq())
 
-            if (formData.files.length != 1)
-              BadRequest("""{"cause":"Expected exactly 1 file attachment"}""").as(ContentTypes.JSON)
+            if (formData.files.length < 1)
+              BadRequest("""{"cause":"Expected file attachments"}""").as(ContentTypes.JSON)
             else {
-              val file = formData.files(0)
-              translateError(service.uploadSourceImage(file.filename, Paths.get(file.ref.file.getPath), keywords, uploaderName))
+              val results = formData.files.map {
+                file =>
+                  service.uploadSourceImage(file.filename, Paths.get(file.ref.file.getPath), keywords, uploaderName)
+              }
+
+              results.find(_.isLeft) match {
+                case Some(Left(error)) => translateError(error)
+                case _ => Ok
+              }
             }
           }
 
           case None => BadRequest("""{"cause":"Failed to parse form data"}""").as(ContentTypes.JSON)
-        }
-      }
-  }
-
-  def createAsServed() = deadbolt.restrict(Roles.superuser)(parse.tolerantText) {
-    request =>
-      Future {
-        tryWithPickle {
-          translateError(service.processForAsServed(read[Seq[Int]](request.body).map(_.toLong)))
         }
       }
   }
