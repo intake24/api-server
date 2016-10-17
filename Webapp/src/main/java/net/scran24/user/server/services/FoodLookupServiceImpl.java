@@ -71,7 +71,7 @@ import scala.collection.Iterator;
 import scala.collection.JavaConversions;
 import scala.collection.Seq;
 import scala.util.Either;
-import uk.ac.ncl.openlab.intake24.AsServedSet;
+
 import uk.ac.ncl.openlab.intake24.AssociatedFood;
 import uk.ac.ncl.openlab.intake24.DrinkwareSet;
 import uk.ac.ncl.openlab.intake24.GuideImage;
@@ -83,8 +83,10 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError;
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError;
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError;
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.NutrientMappingError;
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageStorageService;
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDataSources;
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDatabaseService;
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.UserAsServedImage;
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex;
 import uk.ac.ncl.openlab.intake24.services.foodindex.IndexLookupResult;
 import uk.ac.ncl.openlab.intake24.services.foodindex.MatchedCategory;
@@ -98,6 +100,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 
 	private DataStore dataStore;
 	private FoodDatabaseService foodData;
+	private ImageStorageService imageStorage;
 
 	private Map<String, FoodIndex> foodIndexes;
 	private Map<String, Splitter> splitters;
@@ -119,6 +122,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 			Injector injector = (Injector) this.getServletContext().getAttribute("intake24.injector");
 
 			dataStore = injector.getInstance(DataStore.class);
+			imageStorage = injector.getInstance(ImageStorageService.class);
 			foodData = injector.getInstance(FoodDatabaseService.class);
 			foodIndexes = injector.getInstance(Key.get(new TypeLiteral<Map<String, FoodIndex>>() {
 			}));
@@ -317,23 +321,21 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 	public AsServedDef getAsServedDef(String asServedSet, String locale) {
 		crashIfDebugOptionSet("crash-on-get-as-served-def");
 
-		AsServedSet set = handleLookupError(foodData.getAsServedSet(asServedSet));
+		Seq<UserAsServedImage> images = handleLookupError(foodData.getAsServedSet(asServedSet));
 
-		int size = set.images().size();
+		AsServedDef.ImageInfo[] info = new AsServedDef.ImageInfo[images.size()];
 
-		AsServedDef.ImageInfo[] info = new AsServedDef.ImageInfo[size];
-
-		Iterator<uk.ac.ncl.openlab.intake24.AsServedImage> iter = set.images().iterator();
+		Iterator<UserAsServedImage> iter = images.iterator();
 
 		int i = 0;
 		while (iter.hasNext()) {
-			uk.ac.ncl.openlab.intake24.AsServedImage img = iter.next();
+			UserAsServedImage img = iter.next();
 
 			info[i++] = new AsServedDef.ImageInfo(
-					new ImageDef(imageUrlBase + "/" + img.url(), thumbnailUrlBase + "/" + img.url(), labelForAsServed(img.weight())), img.weight());
+					new ImageDef(imageStorage.getUrl(img.mainImagePath()), imageStorage.getUrl(img.thumbnailPath()), labelForAsServed(img.weight())), img.weight());
 		}
 
-		return new AsServedDef(set.description(), info);
+		return new AsServedDef(info);
 	}
 
 	@Override

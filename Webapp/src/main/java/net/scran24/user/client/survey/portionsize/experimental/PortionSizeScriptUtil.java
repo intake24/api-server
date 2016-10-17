@@ -60,24 +60,13 @@ import com.google.gwt.user.client.ui.Panel;
 
 public class PortionSizeScriptUtil {
 	private static final PromptMessages messages = GWT.create(PromptMessages.class);
-	
-	public static final Function1<String, SafeHtml> defaultServingSizePrompt(final String foodDescription) {
-		return new Function1<String, SafeHtml>() {
-			@Override
-			public SafeHtml apply(String imageDescription) {
-				return SafeHtmlUtils.fromSafeConstant(messages.asServed_servingPromptText(SafeHtmlUtils.htmlEscape(foodDescription.toLowerCase())));
 
-			}
-		};
+	public static final SafeHtml defaultServingSizePrompt(final String foodDescription) {
+		return SafeHtmlUtils.fromSafeConstant(messages.asServed_servingPromptText(SafeHtmlUtils.htmlEscape(foodDescription.toLowerCase())));
 	}
 
-	public static final Function1<String, SafeHtml> defaultLeftoversPrompt(final String foodDescription) {
-		return new Function1<String, SafeHtml>() {
-			@Override
-			public SafeHtml apply(String imageDescription) {
-				return SafeHtmlUtils.fromSafeConstant(messages.asServed_leftoversPromptText(SafeHtmlUtils.htmlEscape(foodDescription.toLowerCase())));
-			}
-		};
+	public static final SafeHtml defaultLeftoversPrompt(final String foodDescription) {
+		return SafeHtmlUtils.fromSafeConstant(messages.asServed_leftoversPromptText(SafeHtmlUtils.htmlEscape(foodDescription.toLowerCase())));
 	}
 
 	public static Option<SimplePrompt<UpdateFunc>> done() {
@@ -92,8 +81,9 @@ public class PortionSizeScriptUtil {
 			}
 		}));
 	}
-	
-	public static SimplePrompt<UpdateFunc> standardUnitChoicePrompt(final SafeHtml promptHtml, final String confirmText, List<StandardUnitDef> units, Function1<StandardUnitDef, String> label, final String field) {
+
+	public static SimplePrompt<UpdateFunc> standardUnitChoicePrompt(final SafeHtml promptHtml, final String confirmText, List<StandardUnitDef> units,
+			Function1<StandardUnitDef, String> label, final String field) {
 		return (map(new StandardUnitPrompt(promptHtml, confirmText, units, label), new Function1<Integer, UpdateFunc>() {
 			@Override
 			public UpdateFunc apply(Integer argument) {
@@ -101,24 +91,21 @@ public class PortionSizeScriptUtil {
 			}
 		}));
 	}
-	
-	public static SimplePrompt<UpdateFunc> foodWeightPrompt(final SafeHtml promptHtml, final SafeHtml unitLabel, final String confirmText, final String field, final String leftoversField) {
+
+	public static SimplePrompt<UpdateFunc> foodWeightPrompt(final SafeHtml promptHtml, final SafeHtml unitLabel, final String confirmText,
+			final String field, final String leftoversField) {
 		return (map(new WeightTypeInPrompt(promptHtml, unitLabel, confirmText), new Function1<Double, UpdateFunc>() {
 			@Override
 			public UpdateFunc apply(Double argument) {
-				return new UpdateFunc().setField(field, Double.toString(argument)).setField(leftoversField, "0.0");				
+				return new UpdateFunc().setField(field, Double.toString(argument)).setField(leftoversField, "0.0");
 			}
 		}));
 	}
-	
-	public static SimplePrompt<UpdateFunc> optionalFoodPrompt (final String locale, final SafeHtml promptHtml, final String yesText, final String noText, final SafeHtml foodChoicePrompt, final String category, final String choiceField, final String codeField) {
-		OptionalFoodPromptDef def = new OptionalFoodPromptDef(
-				promptHtml,
-				yesText,
-				noText,
-				foodChoicePrompt,
-				category);
-		
+
+	public static SimplePrompt<UpdateFunc> optionalFoodPrompt(final String locale, final SafeHtml promptHtml, final String yesText,
+			final String noText, final SafeHtml foodChoicePrompt, final String category, final String choiceField, final String codeField) {
+		OptionalFoodPromptDef def = new OptionalFoodPromptDef(promptHtml, yesText, noText, foodChoicePrompt, category);
+
 		return map(new OptionalFoodPrompt(locale, def), new Function1<Option<String>, UpdateFunc>() {
 			@Override
 			public UpdateFunc apply(Option<String> argument) {
@@ -162,29 +149,28 @@ public class PortionSizeScriptUtil {
 	}
 
 	public static SimplePrompt<UpdateFunc> asServedPrompt(final AsServedDef asServedDef, final String lessText, final String moreText,
-			final String confirmText, final String indexField, final String imageUrlField, final String weightField,
-			final Function1<String, SafeHtml> promptText) {
+			final String confirmText, final String indexField, final String imageUrlField, final String weightField, SafeHtml promptText) {
 
 		final ImageDef[] defs = new ImageDef[asServedDef.images.length];
 
 		final NumberFormat nf = NumberFormat.getDecimalFormat();
-		
+
 		for (int i = 0; i < asServedDef.images.length; i++) {
 			defs[i] = asServedDef.images[i].def;
 			defs[i].label = nf.format(Math.round(asServedDef.images[i].weight)) + " " + messages.asServed_weightUnitLabel();
 		}
 
-		AsServedPromptDef def = new AsServedPromptDef(promptText.apply(asServedDef.description), defs, moreText, lessText, confirmText);
+		AsServedPromptDef def = new AsServedPromptDef(promptText, defs, moreText, lessText, confirmText);
 
 		return map(new AsServedPrompt(def), new Function1<Integer, UpdateFunc>() {
 			@Override
 			public UpdateFunc apply(Integer choice) {
-				return new UpdateFunc().setField(indexField, choice.toString()).setField(weightField, Double.toString(asServedDef.images[choice].weight))
-						.setField(imageUrlField, defs[choice].url);
+				return new UpdateFunc().setField(indexField, choice.toString())
+						.setField(weightField, Double.toString(asServedDef.images[choice].weight)).setField(imageUrlField, defs[choice].url);
 			}
 		});
 	}
-	
+
 	public static SimplePrompt<UpdateFunc> guidePromptEx(final SafeHtml promptText, final ImageMapDefinition imageMap, final String indexField,
 			final String imageUrlField, final Function1<Callback1<Integer>, Panel> additionalControlsCtor) {
 		return map(new GuidePrompt(promptText, imageMap, additionalControlsCtor), new Function1<Integer, UpdateFunc>() {
@@ -194,7 +180,7 @@ public class PortionSizeScriptUtil {
 			}
 		});
 	}
-	
+
 	public static SimplePrompt<UpdateFunc> guidePrompt(final SafeHtml promptText, final ImageMapDefinition imageMap, final String indexField,
 			final String imageUrlField) {
 		return map(new GuidePrompt(promptText, imageMap), new Function1<Integer, UpdateFunc>() {

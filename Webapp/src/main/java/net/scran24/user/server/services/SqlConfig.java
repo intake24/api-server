@@ -36,6 +36,9 @@ import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl;
 import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl;
 import uk.ac.ncl.openlab.intake24.foodsql.user.FoodDatabaseUserImpl;
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService;
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageStorageLocal;
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageStorageService;
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.LocalImageStorageSettings;
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDatabaseService;
 import uk.ac.ncl.openlab.intake24.services.foodindex.AbstractFoodIndex;
 import uk.ac.ncl.openlab.intake24.services.foodindex.AutoReloadIndex;
@@ -130,6 +133,12 @@ public class SqlConfig extends AbstractModule {
 		cpConfig.setMaximumPoolSize(2);
 
 		return new HikariDataSource(cpConfig);
+	}
+	
+	@Provides
+	@Singleton
+	protected ImageStorageService imageStorageService() {
+		return new ImageStorageLocal(new LocalImageStorageSettings(webXmlConfig.get("image-storage-local-directory"), webXmlConfig.get("image-storage-local-url-prefix")));
 	}
 
 	@Override

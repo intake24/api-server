@@ -28,15 +28,13 @@ public class AsServedDef implements IsSerializable {
 		}
 	}
 	
-	public String description;
 	public ImageInfo[] images;
 	
 	@Deprecated
 	public AsServedDef() {
 	}
 
-	public AsServedDef(String description, ImageInfo[] images) {
-		this.description = description;
+	public AsServedDef(ImageInfo[] images) {
 		this.images = images;
 	}
 }
