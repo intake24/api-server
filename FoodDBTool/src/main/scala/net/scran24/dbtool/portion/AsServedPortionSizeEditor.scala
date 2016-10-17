@@ -40,11 +40,12 @@ import net.scran24.dbtool.SwingUtil._
 import net.scran24.dbtool.SelectionDialog
 import net.scran24.dbtool.Util._
 import java.awt.SystemColor
-import uk.ac.ncl.openlab.intake24.AsServedSet
-import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
 
-class AsServedPortionSizeEditor(params: Seq[PortionSizeMethodParameter], asServedSets: Seq[AsServedSet], changesMade: () => Unit) extends PortionSizeEditor {
-  case class AsServedWrapper(set: AsServedSet) {
+import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
+import uk.ac.ncl.openlab.intake24.AsServedSetV1
+
+class AsServedPortionSizeEditor(params: Seq[PortionSizeMethodParameter], asServedSets: Seq[AsServedSetV1], changesMade: () => Unit) extends PortionSizeEditor {
+  case class AsServedWrapper(set: AsServedSetV1) {
     override def toString = set.description + " (" + set.id + ")"
   }
 

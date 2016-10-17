@@ -38,7 +38,7 @@ import javax.swing.ImageIcon
 import javax.swing.JCheckBox
 import net.scran24.dbtool.SwingUtil._
 import net.scran24.dbtool.Util._
-import uk.ac.ncl.openlab.intake24.AsServedSet
+
 import net.scran24.dbtool.SelectionDialog
 import uk.ac.ncl.openlab.intake24.GuideImage
 import uk.ac.ncl.openlab.intake24.DrinkwareSet

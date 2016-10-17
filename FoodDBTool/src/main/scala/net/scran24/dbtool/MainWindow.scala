@@ -40,7 +40,7 @@ import SwingUtil._
 import java.io.File
 import java.io.PrintWriter
 import uk.ac.ncl.openlab.intake24.FoodRecord
-import uk.ac.ncl.openlab.intake24.AsServedSet
+import uk.ac.ncl.openlab.intake24.AsServedSetV1
 import uk.ac.ncl.openlab.intake24.DrinkwareSet
 import uk.ac.ncl.openlab.intake24.GuideImage
 import uk.ac.ncl.openlab.intake24.CategoryV2
@@ -67,7 +67,7 @@ import uk.ac.ncl.openlab.intake24.foodxml.XmlFoodGroup
 import uk.ac.ncl.openlab.intake24.foodxml.XmlCategoryRecord
 import uk.ac.ncl.openlab.intake24.foodxml.XmlFoodRecord
 
-case class Intake24Data(foods: Seq[XmlFoodRecord], foodGroups: Seq[XmlFoodGroup], categories: Seq[XmlCategoryRecord], asServedSets: Seq[AsServedSet], guideImages: Seq[GuideImage], drinkwareSets: Seq[DrinkwareSet])
+case class Intake24Data(foods: Seq[XmlFoodRecord], foodGroups: Seq[XmlFoodGroup], categories: Seq[XmlCategoryRecord], asServedSets: Seq[AsServedSetV1], guideImages: Seq[GuideImage], drinkwareSets: Seq[DrinkwareSet])
 
 case class Intake24DataPaths(foods: String, foodGroups: String, categories: String, asServedSets: String, guideImages: String, drinkwareSets: String)
 

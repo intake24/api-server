@@ -39,7 +39,7 @@ import org.workcraft.gui.SimpleFlowLayout.LineBreak
 import javax.swing.JButton
 import net.scran24.dbtool.portion.AsServedPortionSizeEditor
 import java.awt.SystemColor
-import uk.ac.ncl.openlab.intake24.AsServedSet
+
 import net.scran24.dbtool.portion.GuidePortionSizeEditor
 import uk.ac.ncl.openlab.intake24.GuideImage
 import net.scran24.dbtool.portion.DrinkScalePortionSizeEditor
