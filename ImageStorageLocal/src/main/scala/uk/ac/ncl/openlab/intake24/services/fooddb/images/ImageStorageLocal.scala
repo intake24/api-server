@@ -25,7 +25,7 @@ class ImageStorageLocal @Inject() (val settings: LocalImageStorageSettings) exte
 
   def deleteImage(path: String): Either[ImageStorageError, Unit] =
     try {
-      logger.debug("Attempting to delete $path")
+      logger.debug(s"Attempting to delete $path")
       Files.delete(Paths.get(settings.baseDirectory + File.separator + path))
       Right(())
     } catch {
@@ -43,7 +43,7 @@ class ImageStorageLocal @Inject() (val settings: LocalImageStorageSettings) exte
     try {
       val (destFile, relativePath) = {
 
-        logger.debug(s"Attempting to create localPath")
+        logger.debug(s"Attempting to create $localPath")
 
         val f = new File(localPath)
         Option(f.getParentFile).foreach(_.mkdirs())
@@ -75,7 +75,7 @@ class ImageStorageLocal @Inject() (val settings: LocalImageStorageSettings) exte
 
   def downloadImage(path: String, dest: Path): Either[ImageStorageError, Unit] = {
     try {
-      Files.copy(Paths.get(path), new FileOutputStream(dest.toFile()))
+      Files.copy(Paths.get(settings.baseDirectory + File.separator + path), new FileOutputStream(dest.toFile()))
       Right(())
     } catch {
       case e: Throwable => Left(ImageStorageError(e))

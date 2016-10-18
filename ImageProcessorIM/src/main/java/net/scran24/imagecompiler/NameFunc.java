@@ -10,8 +10,6 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package net.scran24.imagecompiler;
 
-import net.scran24.imagecompiler.ImageCompiler.Outline;
-
 public interface NameFunc {
-	String mkName(Outline outline);
+	String mkName(net.scran24.imagecompiler.ImageCompiler.Outline outline);
 }

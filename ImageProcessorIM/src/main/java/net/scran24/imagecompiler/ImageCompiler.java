@@ -50,7 +50,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class ImageCompiler {
-	class Outline {
+	public class Outline {
 		public final Shape shape;
 		public final AffineTransform transformToRootSpace;
 		public final int id;

@@ -25,6 +25,8 @@ trait WarningMessage {
       if (input == "yes") proceed = true;
       if (input == "no") System.exit(0);
     }
+    
+    reader.close()
   }
 }
 
