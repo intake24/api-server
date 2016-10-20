@@ -39,7 +39,7 @@ libraryDependencies ++= Seq(
   "com.lihaoyi" %% "upickle" % "0.4.1",
   "org.scalaz" %% "scalaz-core" % "7.2.6",
   "org.apache.shiro" % "shiro-core" % "1.2.3", // for v1.0 authentication support
-  "com.typesafe.play" % "play-integration-test_2.11" % "2.5.8" % "test"  
+  "com.typesafe.play" % "play-integration-test_2.11" % "2.5.9" % "test"  
 )
 
 javaOptions in Universal ++= Seq(
