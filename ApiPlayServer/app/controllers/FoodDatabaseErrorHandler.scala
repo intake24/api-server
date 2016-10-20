@@ -22,7 +22,7 @@ trait FoodDatabaseErrorHandler extends Results {
   private val logger = LoggerFactory.getLogger(classOf[FoodDatabaseErrorHandler])
 
   def databaseErrorBody(message: String) = s"""{"cause":"DatabaseError","errorMessage":"$message"}"""
-  val recordNotFoundErrorBody = s"""{"cause":"RecordNotFound}"""
+  val recordNotFoundErrorBody = s"""{"cause":"RecordNotFound"}"""
   val undefinedLocaleErrorBody = s"""{"cause":"UndefinedLocale"}"""
   val duplicateCodeErrorBody = s"""{"cause":"DuplicateCode"}"""
   val parentRecordNotFoundErrorBody = s"""{"cause":"ParentRecordNotFound"}"""
@@ -33,7 +33,7 @@ trait FoodDatabaseErrorHandler extends Results {
     InternalServerError(databaseErrorBody(e.getMessage())).as(ContentTypes.JSON)
   }
 
-  def translateError[T](result: Either[AnyError, T])(implicit writer: Writer[T]) = result match {
+  def translateResult[T](result: Either[AnyError, T])(implicit writer: Writer[T]) = result match {
     case Right(result) => Ok(write(result)).as(ContentTypes.JSON)
     case Left(DuplicateCode(_)) => BadRequest(duplicateCodeErrorBody).as(ContentTypes.JSON)
     case Left(VersionConflict(_)) => Conflict.as(ContentTypes.JSON)

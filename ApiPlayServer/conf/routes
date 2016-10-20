@@ -96,6 +96,8 @@ GET     /user/foods/:locale/:code/with-sources               controllers.UserFoo
 GET     /user/foods/:locale/:code/brand-names                controllers.UserFoodDataController.getBrandNames(code: String, locale: String)
 GET     /user/foods/:locale/:code/associated-foods           controllers.UserFoodDataController.getAssociatedFoodPrompts(code: String, locale: String)
 
+GET     /user/portion-size/as-served/:id                     controllers.UserFoodDataController.getAsServedSet(id: String)
+
 # Nutrient tables
 
 GET     /admin/nutrient-tables                controllers.NutrientTablesAdminController.listNutrientTables()

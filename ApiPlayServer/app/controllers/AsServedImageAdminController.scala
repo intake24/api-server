@@ -67,13 +67,13 @@ class AsServedImageAdminController @Inject() (
 
   def listAsServedSets() = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.listAsServedSets())
+      translateResult(service.listAsServedSets())
     }
   }
 
   def getAsServedSet(id: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.getAsServedSet(id).right.map(resolveUrls))
+      translateResult(service.getAsServedSet(id).right.map(resolveUrls))
     }
   }
 
@@ -89,7 +89,7 @@ class AsServedImageAdminController @Inject() (
                 case (image, descriptor) => AsServedImage(descriptor.mainImage.id, descriptor.thumbnail.id, image.weight)
               }
 
-              translateError(service.createAsServedSets(Seq(AsServedSet(newSet.id, newSet.description, images))))
+              translateResult(service.createAsServedSets(Seq(AsServedSet(newSet.id, newSet.description, images))))
             }
             case Left(error) => translateError(error)
           }
@@ -146,7 +146,7 @@ class AsServedImageAdminController @Inject() (
                       case ((_, weight), descriptor) => AsServedImage(descriptor.mainImage.id, descriptor.thumbnail.id, weight)
                     }
 
-                    translateError(service.createAsServedSets(Seq(AsServedSet(setId, description, images))))
+                    translateResult(service.createAsServedSets(Seq(AsServedSet(setId, description, images))))
                   }
                   case Left(e) => translateError(e)
                 }

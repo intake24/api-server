@@ -32,13 +32,13 @@ class LocalesAdminController @Inject() (service: LocalesAdminService, deadbolt: 
   
   def listLocales() = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.listLocales())
+      translateResult(service.listLocales())
     }
   }
   
   def getLocale(id: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.getLocale(id))
+      translateResult(service.getLocale(id))
     }
   }
 }

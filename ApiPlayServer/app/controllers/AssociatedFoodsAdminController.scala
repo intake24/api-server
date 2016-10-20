@@ -36,7 +36,7 @@ class AssociatedFoodsAdminController @Inject() (service: AssociatedFoodsAdminSer
 
   def getAssociatedFoods(foodCode: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.getAssociatedFoods(foodCode, locale))
+      translateResult(service.getAssociatedFoods(foodCode, locale))
     }
   }
 
@@ -45,7 +45,7 @@ class AssociatedFoodsAdminController @Inject() (service: AssociatedFoodsAdminSer
       Future {
         tryWithPickle {
           val associatedFoods = read[Seq[AssociatedFood]](request.body)
-          translateError(service.updateAssociatedFoods(foodCode, associatedFoods, locale))
+          translateResult(service.updateAssociatedFoods(foodCode, associatedFoods, locale))
         }
       }
   }

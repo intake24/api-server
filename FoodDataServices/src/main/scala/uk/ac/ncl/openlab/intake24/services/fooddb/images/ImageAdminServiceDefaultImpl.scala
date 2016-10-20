@@ -141,12 +141,16 @@ class ImageAdminServiceDefaultImpl @Inject() (val imageDatabase: ImageDatabaseSe
         processAndUploadAsServed(setId, sources).right
       };
       mainImageIds <- {
-        logger.debug("Creating processed image records for main images")
-        wrapDatabaseError(imageDatabase.createProcessedImageRecords(mkProcessedMainImageRecords(sourceImageIds, uploadedPaths))).right
+        val records = mkProcessedMainImageRecords(sourceImageIds, uploadedPaths)        
+        logger.debug(s"Creating processed image records for main images")
+        records.foreach(r => logger.debug(r.toString()))
+        wrapDatabaseError(imageDatabase.createProcessedImageRecords(records)).right
       };
       thumbnailIds <- {
+        val records = mkProcessedThumbnailRecords(sourceImageIds, uploadedPaths)
         logger.debug("Creating processed image records for thumbnail images")
-        wrapDatabaseError(imageDatabase.createProcessedImageRecords(mkProcessedThumbnailRecords(sourceImageIds, uploadedPaths))).right
+        records.foreach(r => logger.debug(r.toString()))
+        wrapDatabaseError(imageDatabase.createProcessedImageRecords(records)).right
       }
     ) yield {
       uploadedPaths.zip(mainImageIds).zip(thumbnailIds).map {

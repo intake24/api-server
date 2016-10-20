@@ -30,6 +30,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.user.InheritableAttributeSourc
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.SourceLocale
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.SourceRecord
 import upickle._
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageStorageService
 
 object FoodSourceWriters {
   implicit val sourceLocaleWriter = upickle.default.Writer[SourceLocale] {
@@ -56,54 +57,59 @@ object FoodSourceWriters {
   }
 }
 
-class UserFoodDataController @Inject() (service: FoodDatabaseService, deadbolt: DeadboltActionsAdapter) extends Controller with FoodDatabaseErrorHandler {
+case class UserAsServedImageWithUrls(mainImageUrl: String, thumbnailUrl: String, weight: Double)
 
+class UserFoodDataController @Inject() (service: FoodDatabaseService, deadbolt: DeadboltActionsAdapter, imageStorageService: ImageStorageService) extends Controller with FoodDatabaseErrorHandler {
 
   def getCategoryContents(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.getCategoryContents(code, locale))
+      translateResult(service.getCategoryContents(code, locale))
     }
   }
 
   def getFoodData(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.getFoodData(code, locale))
+      translateResult(service.getFoodData(code, locale))
     }
   }
 
   def getFoodDataWithSources(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.getFoodData(code, locale))
+      translateResult(service.getFoodData(code, locale))
     }
   }
 
   def getAssociatedFoodPrompts(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.getAssociatedFoods(code, locale))
+      translateResult(service.getAssociatedFoods(code, locale))
     }
   }
 
   def getBrandNames(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.getBrandNames(code, locale))
+      translateResult(service.getBrandNames(code, locale))
     }
   }
 
   def getAsServedSet(id: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.getAsServedSet(id))
+      translateResult(service.getAsServedSet(id).right.map {
+        _.map {
+          image => UserAsServedImageWithUrls(imageStorageService.getUrl(image.mainImagePath), imageStorageService.getUrl(image.thumbnailPath), image.weight)
+        }
+      })
     }
   }
 
   def getDrinkwareSet(id: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.getDrinkwareSet(id))
+      translateResult(service.getDrinkwareSet(id))
     }
   }
 
   def getGuideImage(id: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.getGuideImage(id))
+      translateResult(service.getGuideImage(id))
     }
   }
 }

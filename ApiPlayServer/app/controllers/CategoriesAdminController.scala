@@ -37,18 +37,18 @@ class CategoriesAdminController @Inject() (service: CategoriesAdminService, dead
 
   def getCategoryRecord(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.getCategoryRecord(code, locale))
+      translateResult(service.getCategoryRecord(code, locale))
     }
   }
   def isCategoryCodeAvailable(code: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.isCategoryCodeAvailable(code))
+      translateResult(service.isCategoryCodeAvailable(code))
     }
   }
 
   def isCategoryCode(code: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.isCategoryCodeAvailable(code))
+      translateResult(service.isCategoryCodeAvailable(code))
     }
   }
 
@@ -56,14 +56,14 @@ class CategoriesAdminController @Inject() (service: CategoriesAdminService, dead
     request =>
       Future {
         tryWithPickle {
-          translateError(service.createMainCategoryRecords(Seq(read[NewMainCategoryRecord](request.body))))
+          translateResult(service.createMainCategoryRecords(Seq(read[NewMainCategoryRecord](request.body))))
         }
       }
   }
 
   def deleteCategory(categoryCode: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.deleteCategory(categoryCode))
+      translateResult(service.deleteCategory(categoryCode))
     }
   }
 
@@ -71,7 +71,7 @@ class CategoriesAdminController @Inject() (service: CategoriesAdminService, dead
     request =>
       Future {
         tryWithPickle {
-          translateError(service.updateMainCategoryRecord(categoryCode, read[MainCategoryRecordUpdate](request.body)))
+          translateResult(service.updateMainCategoryRecord(categoryCode, read[MainCategoryRecordUpdate](request.body)))
         }
       }
   }
@@ -80,7 +80,7 @@ class CategoriesAdminController @Inject() (service: CategoriesAdminService, dead
     request =>
       Future {
         tryWithPickle {
-          translateError(service.updateLocalCategoryRecord(categoryCode, read[LocalCategoryRecordUpdate](request.body), locale))
+          translateResult(service.updateLocalCategoryRecord(categoryCode, read[LocalCategoryRecordUpdate](request.body), locale))
         }
       }
   }

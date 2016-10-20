@@ -34,7 +34,7 @@ class NutrientTablesAdminController @Inject() (service: NutrientTablesAdminServi
   
   def listNutrientTables() = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.listNutrientTables())
+      translateResult(service.listNutrientTables())
     }
   }
 }

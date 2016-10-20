@@ -34,13 +34,13 @@ class FoodGroupsAdminController @Inject() (service: FoodGroupsAdminService, dead
   def listFoodGroups(locale: String) = deadbolt.restrict(Roles.superuser) {
      Future {
       // Map keys to Strings to force upickle to use js object serialisation instead of array of arrays
-      translateError(service.listFoodGroups(locale).right.map(_.map { case (k, v) => (k.toString, v) }))
+      translateResult(service.listFoodGroups(locale).right.map(_.map { case (k, v) => (k.toString, v) }))
     }
   }
 
   def getFoodGroup(id: Int, locale: String) = deadbolt.restrict(Roles.superuser) {
      Future {
-      translateError(service.getFoodGroup(id, locale))
+      translateResult(service.getFoodGroup(id, locale))
     }
   }
 }
