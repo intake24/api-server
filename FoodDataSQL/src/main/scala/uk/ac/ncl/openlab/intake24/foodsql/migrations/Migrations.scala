@@ -55,8 +55,9 @@ object Migrations {
       def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
 
         SQL("ALTER TABLE as_served_images ADD COLUMN image_id integer").execute()
-
         SQL("ALTER TABLE as_served_images ADD COLUMN thumbnail_image_id integer").execute()
+        SQL("ALTER TABLE as_served_images ADD CONSTRAINT image_id_fk FOREIGN KEY(image_id) REFERENCES processed_images(id) ON UPDATE CASCADE ON DELETE CASCADE").execute()
+        SQL("ALTER TABLE as_served_images ADD CONSTRAINT thumbnail_image_id_fk FOREIGN KEY(thumbnail_image_id) REFERENCES processed_images(id) ON UPDATE CASCADE ON DELETE CASCADE").execute()
 
         Right(())
       }
@@ -75,20 +76,21 @@ object Migrations {
       val versionFrom = 4l
       val versionTo = 5l
 
-      val description = "Add temporary nullable image_id and thumbnail_image_id columns to as_served_images"
+      val description = "Apply NON NULL restriction and drop url column from as_served_images"
 
       def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
 
-        SQL("ALTER TABLE as_served_images ADD COLUMN image_id integer").execute()
-
-        SQL("ALTER TABLE as_served_images ADD COLUMN thumbnail_image_id integer").execute()
+        SQL("ALTER TABLE as_served_images DROP COLUMN url").execute()
+        SQL("ALTER TABLE as_served_images ALTER COLUMN image_id SET NOT NULL").execute()
+        SQL("ALTER TABLE as_served_images ALTER COLUMN thumbnail_image_id SET NOT NULL").execute()
 
         Right(())
       }
 
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
-        SQL("ALTER TABLE as_served_images DROP COLUMN image_id").execute()
-        SQL("ALTER TABLE as_served_images DROP COLUMN thumbnail_image_id").execute()
+        SQL("ALTER TABLE as_served_images ALTER COLUMN image_id DROP NOT NULL").execute()
+        SQL("ALTER TABLE as_served_images ALTER COLUMN thumbnail_image_id DROP NOT NULL").execute()        
+        SQL("ALTER TABLE as_served_images ADD COLUMN url character varying(512)").execute()
 
         Right(())
       }
