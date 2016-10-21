@@ -16,13 +16,12 @@
     <appender-ref ref="STDOUT" />
   </appender>
   
-  <root level="DEBUG">
-    <appender-ref ref="ASYNCSTDOUT" />
-  </root>
-  
+	<root level="INFO">
+		<appender-ref ref="ASYNCSTDOUT" />
+	</root>
 
-  <logger name="play" level="INFO" />
-  <logger name="application" level="DEBUG" />  
-  <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />
+	<logger name="play" level="INFO" />
+	<logger name="application" level="DEBUG" />
+	<logger name="uk.ac.ncl.openlab.intake24" level="DEBUG" />
 
 </configuration>
