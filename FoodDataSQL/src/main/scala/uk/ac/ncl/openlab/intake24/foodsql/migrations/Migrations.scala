@@ -94,5 +94,25 @@ object Migrations {
 
         Right(())
       }
+    },
+    
+    new Migration {
+      val versionFrom = 5l
+      val versionTo = 6l
+
+      val description = "Convert source_images.keywords to array"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("ALTER TABLE source_images ALTER COLUMN keywords TYPE character varying(512)[] USING string_to_array(keywords, ' ')").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("ALTER TABLE source_images ALTER COLUMN keywords TYPE character varying(512) USING array_to_string(keywords, ' ')").execute()
+
+        Right(())
+      }
     })
+    
 }

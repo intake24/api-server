@@ -15,11 +15,17 @@ case class AsServedSetWithPaths(id: String, description: String, images: Seq[AsS
 
 case class AsServedSet(id: String, description: String, images: Seq[AsServedImage])
 
+case class PortableAsServedImage(sourcePath: String, sourceKeywords: Seq[String], mainImagePath: String, thumbnailPath: String, weight: Double)
+
+case class PortableAsServedSet(id: String, description: String, images: Seq[PortableAsServedImage])
+
 trait AsServedImageAdminService {
   
   def listAsServedSets(): Either[DatabaseError, Map[String, AsServedHeader]]
   
   def getAsServedSet(id: String): Either[LookupError, AsServedSetWithPaths]  
+  
+  def getPortableAsServedSet(id: String): Either[LookupError, PortableAsServedSet]
   
   def deleteAllAsServedSets(): Either[DatabaseError, Unit]
 

@@ -23,6 +23,8 @@ import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AsServedSetWithPaths
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AsServedImageWithPaths
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.PortableAsServedSet
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.PortableAsServedImage
 
 @Singleton
 class AsServedImageAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends AsServedImageAdminImpl
@@ -61,7 +63,7 @@ trait AsServedImageAdminImpl extends AsServedImageAdminService with FoodDataSqlS
 
             if (!asServedImageParams.isEmpty) {
               logger.debug("Writing " + asServedImageParams.size + " as served images to database")
-              batchSql("INSERT INTO as_served_images VALUES(DEFAULT,{as_served_set_id},{weight},'',{main_image_id},{thumbnail_id})", asServedImageParams).execute()
+              batchSql("INSERT INTO as_served_images VALUES(DEFAULT,{as_served_set_id},{weight},{main_image_id},{thumbnail_id})", asServedImageParams).execute()
             } else
               logger.debug("As served sets in createAsServedSets request contain no image references")
 
@@ -103,6 +105,26 @@ trait AsServedImageAdminImpl extends AsServedImageAdminService with FoodDataSqlS
       }
   }
 
+  private case class PortableAsServedImageRow(weight: Double, source_path: String, keywords: Array[String], image_path: String, thumbnail_image_path: String)
+
+  val portableQuery = sqlFromResource("admin/get_portable_as_served_set.sql")
+
+  def getPortableAsServedSet(id: String): Either[LookupError, PortableAsServedSet] = tryWithConnection {
+    implicit conn =>
+      withTransaction {
+        SQL("SELECT description FROM as_served_sets WHERE id={id}").on('id -> id).executeQuery().as(SqlParser.str("description").singleOpt) match {
+          case Some(description) => {
+            val images = SQL(portableQuery).on('as_served_set_id -> id).as(Macro.namedParser[PortableAsServedImageRow].*).map {
+              row =>
+                PortableAsServedImage(row.source_path, row.keywords, row.image_path, row.thumbnail_image_path, row.weight)
+            }
+            Right(PortableAsServedSet(id, description, images))
+          }
+          case None => Left(RecordNotFound(new RuntimeException(s"As served set $id not found")))
+        }
+      }
+  }
+
   def updateAsServedSet(id: String, update: AsServedSet): Either[UpdateError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
@@ -116,7 +138,7 @@ trait AsServedImageAdminImpl extends AsServedImageAdminService with FoodDataSqlS
               image => Seq[NamedParameter]()
             }
 
-            batchSql("INSERT INTO as_served_images VALUES(DEFAULT,{as_served_set_it},{weight},'',{image_id},{thumbnail_image_id})", imageParams).execute()
+            batchSql("INSERT INTO as_served_images VALUES(DEFAULT,{as_served_set_it},{weight},{image_id},{thumbnail_image_id})", imageParams).execute()
           }
 
           Right(())

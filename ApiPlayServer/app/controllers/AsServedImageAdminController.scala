@@ -40,6 +40,12 @@ import java.nio.file.Paths
 
 import scalaz._
 import Scalaz._
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.PortableAsServedImage
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.PortableAsServedSet
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageDatabaseService
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.SourceImageRecord
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.ProcessedImagePurpose
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.ProcessedImageRecord
 
 case class AsServedImageWithUrls(mainImageId: Long, mainImageUrl: String, thumbnailId: Long, thumbnailUrl: String, weight: Double)
 
@@ -51,6 +57,7 @@ case class NewAsServedSet(id: String, description: String, images: Seq[NewAsServ
 
 class AsServedImageAdminController @Inject() (
   service: AsServedImageAdminService,
+  imageDatabase: ImageDatabaseService,
   imageAdmin: ImageAdminService,
   imageStorage: ImageStorageService,
   deadbolt: DeadboltActionsAdapter) extends Controller
@@ -75,6 +82,57 @@ class AsServedImageAdminController @Inject() (
     Future {
       translateResult(service.getAsServedSet(id).right.map(resolveUrls))
     }
+  }
+
+  def exportAsServedSet(id: String) = deadbolt.restrict(Roles.superuser) {
+    Future {
+      translateResult(service.getPortableAsServedSet(id))
+    }
+  }
+
+  def importAsServedSet() = deadbolt.restrict(Roles.superuser)(parse.tolerantText) {
+    request =>
+      Future {
+        tryWithPickle {
+          val set = read[PortableAsServedSet](request.body)
+
+          val sourceImages = set.images.map {
+            img =>
+              SourceImageRecord(img.sourcePath, img.sourceKeywords, request.subject.get.identifier.split('#')(0))
+          }
+
+          val result = for (
+            sourceIds <- imageDatabase.createSourceImageRecords(sourceImages).right;
+            mainImageIds <- {
+              val mainImages = set.images.zip(sourceIds).map {
+                case (img, sourceId) =>
+                  ProcessedImageRecord(img.mainImagePath, sourceId, ProcessedImagePurpose.AsServedMainImage)
+              }
+
+              imageDatabase.createProcessedImageRecords(mainImages).right
+            };
+            thumbnailIds <- {
+              val thumbnailImages = set.images.zip(sourceIds).map {
+                case (img, sourceId) =>
+                  ProcessedImageRecord(img.thumbnailPath, sourceId, ProcessedImagePurpose.AsServedThumbnail)
+              }
+
+              imageDatabase.createProcessedImageRecords(thumbnailImages).right
+            };
+            _ <- {
+              val images = set.images.zip(mainImageIds).zip(thumbnailIds).map {
+                case ((img, mainImageId), thumbnailId) =>
+                  AsServedImage(mainImageId, thumbnailId, img.weight)
+              }
+
+              service.createAsServedSets(Seq(AsServedSet(set.id, set.description, images))).right
+            }
+
+          ) yield ()
+
+          translateResult(result)
+        }
+      }
   }
 
   def createAsServedSetFromSource() = deadbolt.restrict(Roles.superuser)(parse.tolerantText) {

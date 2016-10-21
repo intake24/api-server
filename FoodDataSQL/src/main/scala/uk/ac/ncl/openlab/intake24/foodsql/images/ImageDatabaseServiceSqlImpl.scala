@@ -35,7 +35,7 @@ class ImageDatabaseServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
       val query = "INSERT INTO source_images VALUES(DEFAULT,{path},{keywords},{uploader},DEFAULT)"
 
       val params = records.map {
-        rec => Seq[NamedParameter]('path -> rec.path, 'keywords -> rec.keywords.mkString(" ").toLowerCase(), 'uploader -> rec.uploader)
+        rec => Seq[NamedParameter]('path -> rec.path, 'keywords -> rec.keywords.map(_.toLowerCase()).toArray, 'uploader -> rec.uploader)
       }
       
       val result = AnormUtil.batchKeys(batchSql(query, params))
