@@ -16,43 +16,49 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-lazy val sharedTypes = Project(id = "sharedTypes", base = file("SharedTypes"))
+lazy val commonSettings = Seq(
+  organization := "uk.ac.ncl.openlab.intake24",
+  version := "2.0.0-SNAPSHOT",
+  scalaVersion := "2.11.8"
+)
 
-lazy val phraseSearch = Project(id = "phrasesearch", base = file ("PhraseSearch"))
+lazy val sharedTypes = Project(id = "sharedTypes", base = file("SharedTypes")).settings(commonSettings: _*)
 
-lazy val gwtShared = Project(id = "gwtShared", base = file("ClientShared"))
+lazy val phraseSearch = Project(id = "phrasesearch", base = file ("PhraseSearch")).settings(commonSettings: _*)
 
-
-lazy val commonSql = Project(id = "commonSql", base = file("CommonSQL"))
-
-
-lazy val systemDataServices = Project(id = "systemDataServices", base = file("SystemDataServices")).dependsOn(gwtShared, sharedTypes)
-
-lazy val systemDataMongo = Project(id = "systemDataMongo", base = file ("SystemDataMongo")).dependsOn(systemDataServices % "compile->compile;test->test")
-
-lazy val systemDataSql = Project(id = "systemDataSql", base = file("SystemDataSQL")).dependsOn(commonSql, systemDataServices % "compile->compile;test->test")
+lazy val gwtShared = Project(id = "gwtShared", base = file("ClientShared")).settings(commonSettings: _*)
 
 
-lazy val foodDataServices = Project(id = "foodDataServices", base = file("FoodDataServices")).dependsOn(sharedTypes, phraseSearch)
-
-lazy val foodDataXml = Project(id = "foodDataXml", base = file("FoodDataXML")).dependsOn(foodDataServices)
-
-lazy val nutrientsCsv = Project(id = "nutrientsCsv", base = file("NutrientsCSV")).dependsOn(sharedTypes, foodDataServices)
-
-lazy val foodDataSql = Project(id = "foodDataSql", base = file("FoodDataSQL")).dependsOn(commonSql, foodDataServices % "compile->compile;test->test", sharedTypes, foodDataXml, nutrientsCsv)
+lazy val commonSql = Project(id = "commonSql", base = file("CommonSQL")).settings(commonSettings: _*)
 
 
-lazy val databaseTools = Project(id = "databaseTools", base = file("DatabaseTools")).dependsOn(commonSql, systemDataMongo, systemDataSql, foodDataXml, foodDataSql)
+lazy val systemDataServices = Project(id = "systemDataServices", base = file("SystemDataServices")).dependsOn(gwtShared, sharedTypes).settings(commonSettings: _*)
+
+lazy val systemDataMongo = Project(id = "systemDataMongo", base = file ("SystemDataMongo")).dependsOn(systemDataServices % "compile->compile;test->test").settings(commonSettings: _*)
+
+lazy val systemDataSql = Project(id = "systemDataSql", base = file("SystemDataSQL")).dependsOn(commonSql, systemDataServices % "compile->compile;test->test").settings(commonSettings: _*)
 
 
-lazy val imageStorageLocal = Project(id = "imageStorageLocal", base = file("ImageStorageLocal")).dependsOn(foodDataServices)
+lazy val foodDataServices = Project(id = "foodDataServices", base = file("FoodDataServices")).dependsOn(sharedTypes, phraseSearch).settings(commonSettings: _*)
 
-lazy val imageProcessorIM = Project(id = "imageProcessorIM", base = file("ImageProcessorIM")).dependsOn(foodDataServices)
+lazy val foodDataXml = Project(id = "foodDataXml", base = file("FoodDataXML")).dependsOn(foodDataServices).settings(commonSettings: _*)
+
+lazy val nutrientsCsv = Project(id = "nutrientsCsv", base = file("NutrientsCSV")).dependsOn(sharedTypes, foodDataServices).settings(commonSettings: _*)
+
+lazy val foodDataSql = Project(id = "foodDataSql", base = file("FoodDataSQL")).dependsOn(commonSql, foodDataServices % "compile->compile;test->test", sharedTypes, foodDataXml, nutrientsCsv).settings(commonSettings: _*)
 
 
-lazy val apiPlayServer = Project(id = "apiPlayServer", base = file("ApiPlayServer")).enablePlugins(PlayScala, SystemdPlugin).dependsOn(foodDataSql, systemDataSql, imageStorageLocal, imageProcessorIM)
+lazy val databaseTools = Project(id = "databaseTools", base = file("DatabaseTools")).dependsOn(commonSql, systemDataMongo, systemDataSql, foodDataXml, foodDataSql).settings(commonSettings: _*)
 
-lazy val siteTest = Project(id = "siteTest", base = file("SiteTest"))
+
+lazy val imageStorageLocal = Project(id = "imageStorageLocal", base = file("ImageStorageLocal")).dependsOn(foodDataServices).settings(commonSettings: _*)
+
+lazy val imageProcessorIM = Project(id = "imageProcessorIM", base = file("ImageProcessorIM")).dependsOn(foodDataServices).settings(commonSettings: _*)
+
+
+lazy val apiPlayServer = Project(id = "apiPlayServer", base = file("ApiPlayServer")).enablePlugins(PlayScala, SystemdPlugin).dependsOn(foodDataSql, systemDataSql, imageStorageLocal, imageProcessorIM).settings(commonSettings: _*)
+
+lazy val siteTest = Project(id = "siteTest", base = file("SiteTest")).settings(commonSettings: _*)
 
 /* lazy val apiDocs = scalatex.ScalatexReadme(
   projectId = "ApiDocs",

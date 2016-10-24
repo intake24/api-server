@@ -18,16 +18,9 @@ limitations under the License.
 
 name := "image-storage-local"
 
-organization := "uk.ac.ncl.openlab.intake24"
-
 description := "Intake24 local image storage implementation"
-
-version := "2.0.0-SNAPSHOT"
-
-scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % "1.7.21",
   "commons-io" % "commons-io" % "2.5"
 )
-

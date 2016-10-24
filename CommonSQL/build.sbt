@@ -18,13 +18,7 @@ limitations under the License.
 
 name := "common-sql"
 
-organization := "uk.ac.ncl.openlab.intake24"
-
 description := "Intake24 shared SQL code"
-
-version := "2.0.0-SNAPSHOT"
-
-scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
   "org.postgresql" % "postgresql" % "9.4.1211",

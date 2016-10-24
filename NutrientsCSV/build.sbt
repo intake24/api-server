@@ -18,13 +18,7 @@ limitations under the License.
 
 name := "nutrients-csv"
 
-organization := "uk.ac.ncl.openlab.intake24"
-
 description := "Intake24 CSV file based NDNS and NZ nutrients"
-
-version := "2.0.0-SNAPSHOT"
-
-scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
   "net.codingwell" %% "scala-guice" % "4.1.0",

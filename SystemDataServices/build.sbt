@@ -18,13 +18,7 @@ limitations under the License.
 
 name := "system-data-services"
 
-organization := "uk.ac.ncl.openlab.intake24"
-
 description := "Intake24 system data services"
-
-version := "2.0.0-SNAPSHOT"
-
-scalaVersion := "2.11.8"
 
 libraryDependencies ++=
  Seq(

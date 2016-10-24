@@ -18,15 +18,8 @@ limitations under the License.
 
 name := "gwt-shared"
 
-organization := "uk.ac.ncl.openlab.intake24"
-
 description := "GWT shared types"
 
-version := "2.0.0-SNAPSHOT"
-
-scalaVersion := "2.11.8"
-
-libraryDependencies ++= 
+libraryDependencies ++=
 	Seq("com.google.gwt" % "gwt-user" % "2.7.0" % "provided",
 	"com.fasterxml.jackson.core" % "jackson-databind" % "2.7.2")
-

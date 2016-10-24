@@ -18,16 +18,9 @@ limitations under the License.
 
 name := "sitetest"
 
-organization := "uk.ac.ncl.openlab.intake24"
-
 description := "Intake24 deployment testing suite"
-
-version := "2.0.0-SNAPSHOT"
-
-scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
   "org.seleniumhq.selenium" % "selenium-java" % "2.48.2" % "test",
   "org.scalatest" %% "scalatest" % "2.2.5" % "test"
 )
-

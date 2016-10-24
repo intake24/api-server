@@ -18,13 +18,7 @@ limitations under the License.
 
 name := "food-data-sql"
 
-organization := "uk.ac.ncl.openlab.intake24"
-
 description := "Intake24 SQL based food database"
-
-version := "2.0.0-SNAPSHOT"
-
-scalaVersion := "2.11.8"
 
 parallelExecution in Test := false
 

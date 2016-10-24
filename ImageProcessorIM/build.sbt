@@ -18,13 +18,7 @@ limitations under the License.
 
 name := "image-processor-imagemagick"
 
-organization := "uk.ac.ncl.openlab.intake24"
-
 description := "Intake24 ImageMagick image processor implementation"
-
-version := "2.0.0-SNAPSHOT"
-
-scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % "1.7.21",
@@ -34,4 +28,3 @@ libraryDependencies ++= Seq(
   "net.sf.opencsv" % "opencsv" % "2.1",
   "org.im4java" % "im4java" % "1.4.0"
 )
-
