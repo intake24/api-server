@@ -16,6 +16,7 @@ import net.scran24.common.client.WidgetFactory;
 import net.scran24.user.client.ShepherdTour;
 import net.scran24.user.client.survey.RecipeManager;
 import net.scran24.user.client.survey.prompts.messages.HelpMessages;
+import net.scran24.user.client.survey.prompts.messages.PromptMessages;
 import net.scran24.user.shared.Recipe;
 
 import org.pcollections.client.PVector;
@@ -35,6 +36,7 @@ import com.google.gwt.user.client.ui.Label;
 public class RecipeBrowser extends Composite {
 
 	private static final HelpMessages helpMessages = HelpMessages.Util.getInstance();
+	private static final PromptMessages promptMessages = PromptMessages.Util.getInstance();
 
 	private static class RecipeButton {
 
@@ -85,7 +87,7 @@ public class RecipeBrowser extends Composite {
 
 		contents.addStyleName("intake24-food-browser");
 
-		showAllRecipesButton = WidgetFactory.createButton("Show all saved recipes", new ClickHandler() {
+		showAllRecipesButton = WidgetFactory.createButton(SafeHtmlUtils.htmlEscape(promptMessages.recipeBrowser_showAllRecipes()), new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
 				showRecipes(manager.getSavedRecipes());
@@ -95,17 +97,17 @@ public class RecipeBrowser extends Composite {
 
 		showAllRecipesButton.getElement().setId("intake24-recipe-browser-show-all-button");
 
-		deleteRecipesButton = WidgetFactory.createButton("Delete recipes", new ClickHandler() {
+		deleteRecipesButton = WidgetFactory.createButton(SafeHtmlUtils.htmlEscape(promptMessages.recipeBrowser_deleteRecipes()), new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
 				if (deleting) {
-					deleteRecipesButton.setText("Delete recipes");
+					deleteRecipesButton.setText(SafeHtmlUtils.htmlEscape(promptMessages.recipeBrowser_deleteRecipes()));
 					deleting = false;
 
 					for (RecipeButton r : recipeButtons)
 						r.hideDeleteButton();
 				} else {
-					deleteRecipesButton.setText("Done");
+					deleteRecipesButton.setText(SafeHtmlUtils.htmlEscape(promptMessages.recipeBrowser_done()));
 					deleting = true;
 
 					for (RecipeButton r : recipeButtons)
@@ -140,7 +142,7 @@ public class RecipeBrowser extends Composite {
 			recipesPanel.addStyleName("intake24-food-browser-foods-container");
 			recipesPanel.getElement().setId("intake24-recipe-browser-recipes-panel");
 
-			HTMLPanel header = new HTMLPanel("h2", "Your recipes");
+			HTMLPanel header = new HTMLPanel("h2", SafeHtmlUtils.htmlEscape(promptMessages.recipeBrowser_yourRecipes()));
 			recipesPanel.add(header);
 
 			for (final Recipe recipe : recipes) {

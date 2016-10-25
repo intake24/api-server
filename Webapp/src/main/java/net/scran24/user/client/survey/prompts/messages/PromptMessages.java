@@ -331,6 +331,14 @@ public interface PromptMessages extends Messages {
 	public String foodBrowser_homemadeSandwich();
 
 	public String foodBrowser_homemadeSalad();
+	
+	public String recipeBrowser_showAllRecipes();
+	
+	public String recipeBrowser_deleteRecipes();
+	
+	public String recipeBrowser_yourRecipes();
+	
+	public String recipeBrowser_done();	
 
 	public String foodComplete_promptText(String foodName);
 
