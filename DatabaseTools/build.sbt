@@ -18,13 +18,7 @@ limitations under the License.
 
 name := "database-tools"
 
-organization := "uk.ac.ncl.openlab.intake24"
-
 description := "Intake24 database tools"
-
-version := "2.0.0-SNAPSHOT"
-
-scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
   "com.google.gwt" % "gwt-user" % "2.7.0" % "provided",
