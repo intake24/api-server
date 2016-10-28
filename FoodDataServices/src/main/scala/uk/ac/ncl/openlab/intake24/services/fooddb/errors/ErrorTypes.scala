@@ -49,7 +49,7 @@ sealed trait UpdateError
   val exception: Throwable
 }
 
-sealed trait LocalCreateError
+sealed trait LocalCreateError extends AnyError
 
 sealed trait CreateError 
   extends LocalCreateError
