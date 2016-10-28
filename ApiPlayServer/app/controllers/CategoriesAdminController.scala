@@ -30,6 +30,7 @@ import uk.ac.ncl.openlab.intake24.MainCategoryRecordUpdate
 import uk.ac.ncl.openlab.intake24.NewMainCategoryRecord
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoriesAdminService
 import upickle.default.read
+import uk.ac.ncl.openlab.intake24.NewLocalCategoryRecord
 
 class CategoriesAdminController @Inject() (service: CategoriesAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
     with PickleErrorHandler
@@ -80,7 +81,14 @@ class CategoriesAdminController @Inject() (service: CategoriesAdminService, dead
     request =>
       Future {
         tryWithPickle {
-          translateResult(service.updateLocalCategoryRecord(categoryCode, read[LocalCategoryRecordUpdate](request.body), locale))
+          
+          val req = read[LocalCategoryRecordUpdate](request.body)
+          
+          // FIXME: Needs a better protocol
+          req.baseVersion match {
+            case Some(version) => translateResult(service.updateLocalCategoryRecord(categoryCode, read[LocalCategoryRecordUpdate](request.body), locale))
+            case None => translateResult(service.createLocalCategoryRecords(Map(categoryCode -> NewLocalCategoryRecord(req.localDescription, req.portionSize)), locale))
+          }
         }
       }
   }
