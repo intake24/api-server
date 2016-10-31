@@ -59,6 +59,8 @@ object FoodSourceWriters {
 
 case class UserAsServedImageWithUrls(mainImageUrl: String, thumbnailUrl: String, weight: Double)
 
+case class UserAsServedSetWithUrls(selectionImageUrl: String, images: Seq[UserAsServedImageWithUrls])
+
 class UserFoodDataController @Inject() (service: FoodDatabaseService, deadbolt: DeadboltActionsAdapter, imageStorageService: ImageStorageService) extends Controller with FoodDatabaseErrorHandler {
 
   def getCategoryContents(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
@@ -94,9 +96,12 @@ class UserFoodDataController @Inject() (service: FoodDatabaseService, deadbolt: 
   def getAsServedSet(id: String) = deadbolt.restrict(Roles.superuser) {
     Future {
       translateResult(service.getAsServedSet(id).right.map {
-        _.map {
+        set =>
+        val images = set.images.map {
           image => UserAsServedImageWithUrls(imageStorageService.getUrl(image.mainImagePath), imageStorageService.getUrl(image.thumbnailPath), image.weight)
         }
+        
+        UserAsServedSetWithUrls(imageStorageService.getUrl(set.selectionImagePath), images)
       })
     }
   }

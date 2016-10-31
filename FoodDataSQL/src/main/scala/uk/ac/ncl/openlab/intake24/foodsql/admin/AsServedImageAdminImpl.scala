@@ -25,6 +25,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AsServedSetWithPaths
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AsServedImageWithPaths
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.PortableAsServedSet
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.PortableAsServedImage
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageDescriptor
 
 @Singleton
 class AsServedImageAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends AsServedImageAdminImpl
@@ -87,18 +88,22 @@ trait AsServedImageAdminImpl extends AsServedImageAdminService with FoodDataSqlS
    */
   private case class AsServedImageRow(weight: Double, image_id: Long, image_path: String, thumbnail_image_id: Long, thumbnail_image_path: String)
 
-  val query = sqlFromResource("admin/get_as_served_set.sql")
+  private case class AsServedSetRow(description: String, selection_image_id: Long, selection_image_path: String)
+  
+  val setQuery = sqlFromResource("admin/get_as_served_set.sql")
+  
+  val imagesQuery = sqlFromResource("admin/get_as_served_images.sql")
 
   def getAsServedSet(id: String): Either[LookupError, AsServedSetWithPaths] = tryWithConnection {
     implicit conn =>
       withTransaction {
-        SQL("SELECT description FROM as_served_sets WHERE id={id}").on('id -> id).executeQuery().as(SqlParser.str("description").singleOpt) match {
-          case Some(description) => {
-            val images = SQL(query).on('as_served_set_id -> id).as(Macro.namedParser[AsServedImageRow].*).map {
+        SQL(setQuery).on('id -> id).executeQuery().as(Macro.namedParser[AsServedSetRow].singleOpt) match {
+          case Some(row) => {
+            val images = SQL(imagesQuery).on('as_served_set_id -> id).as(Macro.namedParser[AsServedImageRow].*).map {
               row =>
-                AsServedImageWithPaths(row.image_id, row.image_path, row.thumbnail_image_id, row.thumbnail_image_path, row.weight)
+                AsServedImageWithPaths(ImageDescriptor(row.image_id, row.image_path), ImageDescriptor(row.thumbnail_image_id, row.thumbnail_image_path), row.weight)
             }
-            Right(AsServedSetWithPaths(id, description, images))
+            Right(AsServedSetWithPaths(id, row.description, ImageDescriptor(row.selection_image_id, row.selection_image_path), images))
           }
           case None => Left(RecordNotFound(new RuntimeException(s"As served set $id not found")))
         }
@@ -106,19 +111,23 @@ trait AsServedImageAdminImpl extends AsServedImageAdminService with FoodDataSqlS
   }
 
   private case class PortableAsServedImageRow(weight: Double, source_path: String, keywords: Array[String], image_path: String, thumbnail_image_path: String)
+  
+  private case class PortableAsServedSetRow(description: String, selection_source_path: String, selection_image_path: String) 
+  
+  val portableSetQuery = sqlFromResource("admin/get_portable_as_served_set.sql")
 
-  val portableQuery = sqlFromResource("admin/get_portable_as_served_set.sql")
+  val portableImagesQuery = sqlFromResource("admin/get_portable_as_served_images.sql")
 
   def getPortableAsServedSet(id: String): Either[LookupError, PortableAsServedSet] = tryWithConnection {
     implicit conn =>
       withTransaction {
-        SQL("SELECT description FROM as_served_sets WHERE id={id}").on('id -> id).executeQuery().as(SqlParser.str("description").singleOpt) match {
-          case Some(description) => {
-            val images = SQL(portableQuery).on('as_served_set_id -> id).as(Macro.namedParser[PortableAsServedImageRow].*).map {
+        SQL(portableSetQuery).on('id -> id).executeQuery().as(Macro.namedParser[PortableAsServedSetRow].singleOpt) match {
+          case Some(row) => {
+            val images = SQL(portableImagesQuery).on('as_served_set_id -> id).as(Macro.namedParser[PortableAsServedImageRow].*).map {
               row =>
                 PortableAsServedImage(row.source_path, row.keywords, row.image_path, row.thumbnail_image_path, row.weight)
             }
-            Right(PortableAsServedSet(id, description, images))
+            Right(PortableAsServedSet(id, row.description, row.selection_source_path, row.selection_image_path, images))
           }
           case None => Left(RecordNotFound(new RuntimeException(s"As served set $id not found")))
         }

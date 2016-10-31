@@ -69,9 +69,9 @@ object Migrations {
         Right(())
       }
     },
-    
+
     // 3 to 4 is complicated, see AsServedToV4
-    
+
     new Migration {
       val versionFrom = 4l
       val versionTo = 5l
@@ -89,13 +89,13 @@ object Migrations {
 
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         SQL("ALTER TABLE as_served_images ALTER COLUMN image_id DROP NOT NULL").execute()
-        SQL("ALTER TABLE as_served_images ALTER COLUMN thumbnail_image_id DROP NOT NULL").execute()        
+        SQL("ALTER TABLE as_served_images ALTER COLUMN thumbnail_image_id DROP NOT NULL").execute()
         SQL("ALTER TABLE as_served_images ADD COLUMN url character varying(512)").execute()
 
         Right(())
       }
     },
-    
+
     new Migration {
       val versionFrom = 5l
       val versionTo = 6l
@@ -113,6 +113,29 @@ object Migrations {
 
         Right(())
       }
-    })
+    },
+
+    new Migration {
+      val versionFrom = 6l
+      val versionTo = 7l
+
+      val description = "Add selection screen thumbnail for as served"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("ALTER TABLE as_served_sets ADD COLUMN selection_image_id integer").execute()       
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("ALTER TABLE as_served_sets DROP COLUMN selection_image_id").execute()
+
+        Right(())
+      }
+    }
     
+    // 7 - 8 
+  
+  )
+
 }

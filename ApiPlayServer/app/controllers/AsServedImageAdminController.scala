@@ -46,10 +46,12 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageDatabaseService
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.SourceImageRecord
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.ProcessedImagePurpose
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.ProcessedImageRecord
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageWithUrl
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageDescriptor
 
-case class AsServedImageWithUrls(mainImageId: Long, mainImageUrl: String, thumbnailId: Long, thumbnailUrl: String, weight: Double)
+case class AsServedImageWithUrls(image: ImageWithUrl, thumbnail: ImageWithUrl, weight: Double)
 
-case class AsServedSetWithUrls(id: String, description: String, images: Seq[AsServedImageWithUrls])
+case class AsServedSetWithUrls(id: String, description: String, selectionImage: ImageWithUrl, images: Seq[AsServedImageWithUrls])
 
 case class NewAsServedImage(sourceImageId: Long, weight: Double)
 
@@ -64,13 +66,13 @@ class AsServedImageAdminController @Inject() (
     with PickleErrorHandler
     with FoodDatabaseErrorHandler
     with ImageServiceErrorHandler {
+  
+  def resolveUrl(image: ImageDescriptor) = ImageWithUrl(image.id, imageStorage.getUrl(image.path))
 
   def resolveUrls(image: AsServedImageWithPaths): AsServedImageWithUrls =
-    AsServedImageWithUrls(image.mainImageId, imageStorage.getUrl(image.mainImagePath),
-      image.thumbnailId, imageStorage.getUrl(image.thumbnailPath), image.weight)
+    AsServedImageWithUrls(resolveUrl(image.image), resolveUrl(image.thumbnail), image.weight)
 
-  def resolveUrls(set: AsServedSetWithPaths): AsServedSetWithUrls =
-    AsServedSetWithUrls(set.id, set.description, set.images.map(resolveUrls))
+  def resolveUrls(set: AsServedSetWithPaths): AsServedSetWithUrls = AsServedSetWithUrls(set.id, set.description, resolveUrl(set.selectionImage), set.images.map(resolveUrls))
 
   def listAsServedSets() = deadbolt.restrict(Roles.superuser) {
     Future {
@@ -119,13 +121,21 @@ class AsServedImageAdminController @Inject() (
 
               imageDatabase.createProcessedImageRecords(thumbnailImages).right
             };
+            selectionImageId <- {
+              val sourceImageId = set.images.zip(sourceIds).find(_._1.sourcePath == set.selectionSourcePath) match {
+                case Some((_, id)) => id
+                case None  => throw new RuntimeException("Selection image source path must be one of the as served images")
+              }
+              
+              imageDatabase.createProcessedImageRecords(Seq(ProcessedImageRecord(set.selectionImagePath, sourceImageId, ProcessedImagePurpose.PortionSizeSelectionImage))).right.map(_(0)).right
+            };
             _ <- {
               val images = set.images.zip(mainImageIds).zip(thumbnailIds).map {
                 case ((img, mainImageId), thumbnailId) =>
                   AsServedImage(mainImageId, thumbnailId, img.weight)
               }
 
-              service.createAsServedSets(Seq(AsServedSet(set.id, set.description, images))).right
+              service.createAsServedSets(Seq(AsServedSet(set.id, set.description, selectionImageId, images))).right
             }
 
           ) yield ()
@@ -143,11 +153,11 @@ class AsServedImageAdminController @Inject() (
 
           imageAdmin.processForAsServed(newSet.id, newSet.images.map(_.sourceImageId)) match {
             case Right(descriptors) => {
-              val images = newSet.images.zip(descriptors).map {
+              val images = newSet.images.zip(descriptors.images).map {
                 case (image, descriptor) => AsServedImage(descriptor.mainImage.id, descriptor.thumbnail.id, image.weight)
               }
 
-              translateResult(service.createAsServedSets(Seq(AsServedSet(newSet.id, newSet.description, images))))
+              translateResult(service.createAsServedSets(Seq(AsServedSet(newSet.id, newSet.description, descriptors.selectionImage.id, images))))
             }
             case Left(error) => translateError(error)
           }
@@ -192,7 +202,7 @@ class AsServedImageAdminController @Inject() (
 
             val sourceIds = records.map {
               record =>
-                imageAdmin.uploadSourceImageForAsServed(setId, record._1.filename, Paths.get(record._1.ref.file.getPath), keywords, uploaderName)
+                imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForAsServed(setId, record._1.filename), Paths.get(record._1.ref.file.getPath), keywords, uploaderName)
             }.toList.sequenceU
 
             sourceIds match {
@@ -200,11 +210,11 @@ class AsServedImageAdminController @Inject() (
               case Right(ids) => {
                 imageAdmin.processForAsServed(setId, ids) match {
                   case Right(descriptors) => {
-                    val images = records.zip(descriptors).map {
+                    val images = records.zip(descriptors.images).map {
                       case ((_, weight), descriptor) => AsServedImage(descriptor.mainImage.id, descriptor.thumbnail.id, weight)
                     }
 
-                    translateResult(service.createAsServedSets(Seq(AsServedSet(setId, description, images))))
+                    translateResult(service.createAsServedSets(Seq(AsServedSet(setId, description, descriptors.selectionImage.id, images))))
                   }
                   case Left(e) => translateError(e)
                 }

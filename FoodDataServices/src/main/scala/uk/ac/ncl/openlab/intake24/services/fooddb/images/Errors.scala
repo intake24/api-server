@@ -17,3 +17,4 @@ case class ImageProcessorError(e: Throwable) extends ImageServiceError
 
 case class ImageDescriptor(id: Long, path: String)
 
+case class ImageWithUrl(id: Long, url: String)

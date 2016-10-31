@@ -51,4 +51,25 @@ class ImageProcessorIM @Inject() (val settings: ImageProcessorSettings) extends 
 
   def processForGuideImageBase(sourceImage: Path, dest: Path): Either[ImageProcessorError, Unit] = ???
   def processForGuideImageOverlays(sourceImage: Path, destDir: Path): Either[ImageProcessorError, Map[Int, Path]] = ???
+
+  def processForSelectionScreen(sourceImage: Path, dest: Path): Either[ImageProcessorError, Unit] = { 
+    try {
+      val cmd = new ConvertCmd()
+      val op = new IMOperation()
+
+      op.resize(settings.selection.width)
+      op.background("white")
+      op.gravity("Center")
+      op.extent(settings.selection.width, settings.selection.height)
+      op.addImage(sourceImage.toString())
+      op.addImage(dest.toString())
+      
+      logger.debug(s"Invoking ImageMagick for selection screen image: ${((cmd.getCommand.asScala) ++ (op.getCmdArgs.asScala)).mkString(" ")}")
+
+      Right(())
+
+    } catch {
+      case e: Throwable => Left(ImageProcessorError(e))
+    }   
+  }
 }

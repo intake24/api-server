@@ -22,7 +22,7 @@ object Migrate extends App with WarningMessage with DatabaseConnection {
   val logger = LoggerFactory.getLogger(getClass)
 
   trait Options extends ScallopConf {
-    version("Intake24 food database migration 2.0.0-SNAPSHOT")
+    version("Intake24 food database migration 2.2.0-SNAPSHOT")
   }
 
   val options = new ScallopConf(args) with Options with DatabaseOptions

@@ -14,6 +14,7 @@ sealed trait ProcessedImagePurpose
 object ProcessedImagePurpose {
   case object AsServedMainImage extends ProcessedImagePurpose
   case object AsServedThumbnail extends ProcessedImagePurpose
+  case object PortionSizeSelectionImage extends ProcessedImagePurpose
 }
 
 trait ImageDatabaseService {

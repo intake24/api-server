@@ -95,6 +95,7 @@ import uk.ac.ncl.openlab.intake24.foodsql.images.ImageDatabaseServiceSqlImpl
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageDatabaseService
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.FileTypeAnalyzer
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.FileCommandFileTypeAnalyzer
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.SelectionImageSettings
 
 class Intake24ServicesModule(env: Environment, config: Configuration) extends AbstractModule {
   @Provides
@@ -116,9 +117,13 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     val asServed = AsServedImageSettings(
       configuration.getInt("intake24.images.processor.asServed.mainImageWidth").getOrElse(654),
       configuration.getInt("intake24.images.processor.asServed.mainImageHeight").getOrElse(436),
-      configuration.getInt("intake24.images.processor.asServed.thumbnailWidth").getOrElse(80))     
+      configuration.getInt("intake24.images.processor.asServed.thumbnailWidth").getOrElse(80))
 
-    ImageProcessorSettings(asServed)
+    val selection = SelectionImageSettings(
+      configuration.getInt("intake24.images.processor.selectionImage.width").getOrElse(300),
+      configuration.getInt("intake24.images.processor.selectionImage.height").getOrElse(200))
+
+    ImageProcessorSettings(selection, asServed)
   }
 
   def configure() = {
@@ -155,7 +160,6 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     bind(classOf[ObservableCategoriesAdminService]).to(classOf[ObservableCategoriesAdminServiceImpl])
     bind(classOf[ObservableLocalesAdminService]).to(classOf[ObservableLocalesAdminServiceImpl])
 
-    
     bind(classOf[ImageDatabaseService]).to(classOf[ImageDatabaseServiceSqlImpl])
     bind(classOf[ImageAdminService]).to(classOf[ImageAdminServiceDefaultImpl])
     bind(classOf[FileTypeAnalyzer]).to(classOf[FileCommandFileTypeAnalyzer])
