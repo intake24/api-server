@@ -8,6 +8,5 @@ case class UserAsServedSet(selectionImagePath: String, images: Seq[UserAsServedI
 case class UserAsServedImage(mainImagePath: String, thumbnailPath: String, weight: Double)
 
 trait AsServedImageService {
-  
-   def getAsServedSet(id: String): Either[LookupError, UserAsServedSet]
+  def getAsServedSet(id: String): Either[LookupError, UserAsServedSet]
 }
