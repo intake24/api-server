@@ -122,20 +122,39 @@ object Migrations {
       val description = "Add selection screen thumbnail for as served"
 
       def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
-        SQL("ALTER TABLE as_served_sets ADD COLUMN selection_image_id integer").execute()       
+        SQL("ALTER TABLE as_served_sets ADD COLUMN selection_image_id integer").execute()
+        SQL("CREATE INDEX source_images_path_index ON source_images(path)").execute()
 
         Right(())
       }
 
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         SQL("ALTER TABLE as_served_sets DROP COLUMN selection_image_id").execute()
+        SQL("DROP INDEX source_images_path_index").execute()
 
         Right(())
       }
-    }
-    
-    // 7 - 8 
-  
-  )
+    },
 
+    // 7 -> 8 see AsServedV8_SelectionImages_Apply 
+    new Migration {
+      val versionFrom = 8l
+      val versionTo = 9l
+
+      val description = "Add constraints for selection screen images"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("ALTER TABLE as_served_sets ALTER COLUMN selection_image_id SET NOT NULL").execute()
+        SQL("ALTER TABLE as_served_sets ADD CONSTRAINT as_served_sets_selection_image_fk FOREIGN KEY(selection_image_id) REFERENCES processed_images(id) ON DELETE CASCADE ON UPDATE CASCADE").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("ALTER TABLE as_served_sets ALTER COLUMN selection_image_id DROP NOT NULL").execute()
+        SQL("ALTER TABLE as_served_sets DROP CONSTRAINT as_served_sets_selection_image_fk").execute()
+
+        Right(())
+      }
+    })
 }

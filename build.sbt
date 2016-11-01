@@ -19,7 +19,8 @@ limitations under the License.
 lazy val commonSettings = Seq(
   organization := "uk.ac.ncl.openlab.intake24",
   version := "2.2.0-SNAPSHOT",
-  scalaVersion := "2.11.8"
+  scalaVersion := "2.11.8",
+  publishArtifact in (Compile, packageDoc) := false
 )
 
 lazy val sharedTypes = Project(id = "sharedTypes", base = file("SharedTypes")).settings(commonSettings: _*)
