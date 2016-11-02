@@ -65,6 +65,8 @@ class ImageProcessorIM @Inject() (val settings: ImageProcessorSettings) extends 
       op.addImage(dest.toString())
       
       logger.debug(s"Invoking ImageMagick for selection screen image: ${((cmd.getCommand.asScala) ++ (op.getCmdArgs.asScala)).mkString(" ")}")
+      
+      cmd.run(op)
 
       Right(())
 

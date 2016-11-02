@@ -84,8 +84,8 @@ GET       /admin/portion-size/as-served/:id/export                 controllers.A
 
 POST      /admin/portion-size/as-served/import                     controllers.AsServedImageAdminController.importAsServedSet()
 
-POST      /admin/images/as-served/new                              controllers.AsServedImageAdminController.createAsServedSet()
-POST      /admin/images/as-served/from-source                      controllers.AsServedImageAdminController.createAsServedSetFromSource()
+POST      /admin/portion-size/as-served/new                        controllers.AsServedImageAdminController.createAsServedSet()
+POST      /admin/portion-size/as-served/new-from-source            controllers.AsServedImageAdminController.createAsServedSetFromSource()
 
 # POST    /admin/images/as-served/:id                          controllers.AsServedImageAdminController.updateAsServedSet(id)
 
@@ -108,7 +108,7 @@ GET       /admin/nutrient-tables                                   controllers.N
 
 # Image database
 
-POST      /admin/images/source                                     controllers.ImageAdminController.uploadSourceImage()
+POST      /admin/images/source/new                                 controllers.ImageAdminController.uploadSourceImage()
 # POST    /admin/images/as-served               controllers.ImageAdminController.processForAsServed()
 
 # GET     /index/synsets/:locale                controllers.FoodIndexController.synsets(locale: String)

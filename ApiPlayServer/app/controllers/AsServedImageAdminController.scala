@@ -66,7 +66,7 @@ class AsServedImageAdminController @Inject() (
     with PickleErrorHandler
     with FoodDatabaseErrorHandler
     with ImageServiceErrorHandler {
-  
+
   def resolveUrl(image: ImageDescriptor) = ImageWithUrl(image.id, imageStorage.getUrl(image.path))
 
   def resolveUrls(image: AsServedImageWithPaths): AsServedImageWithUrls =
@@ -124,9 +124,9 @@ class AsServedImageAdminController @Inject() (
             selectionImageId <- {
               val sourceImageId = set.images.zip(sourceIds).find(_._1.sourcePath == set.selectionSourcePath) match {
                 case Some((_, id)) => id
-                case None  => throw new RuntimeException("Selection image source path must be one of the as served images")
+                case None => throw new RuntimeException("Selection image source path must be one of the as served images")
               }
-              
+
               imageDatabase.createProcessedImageRecords(Seq(ProcessedImageRecord(set.selectionImagePath, sourceImageId, ProcessedImagePurpose.PortionSizeSelectionImage))).right.map(_(0)).right
             };
             _ <- {
@@ -157,7 +157,12 @@ class AsServedImageAdminController @Inject() (
                 case (image, descriptor) => AsServedImage(descriptor.mainImage.id, descriptor.thumbnail.id, image.weight)
               }
 
-              translateResult(service.createAsServedSets(Seq(AsServedSet(newSet.id, newSet.description, descriptors.selectionImage.id, images))))
+              val result = for (
+                _ <- service.createAsServedSets(Seq(AsServedSet(newSet.id, newSet.description, descriptors.selectionImage.id, images))).right;
+                res <- service.getAsServedSet(newSet.id).right
+              ) yield res
+
+              translateResult(result)
             }
             case Left(error) => translateError(error)
           }

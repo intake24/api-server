@@ -53,6 +53,7 @@ class ImageDatabaseServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
           val purpose = rec.purpose match {
             case ProcessedImagePurpose.AsServedMainImage => 1l
             case ProcessedImagePurpose.AsServedThumbnail => 2l
+            case ProcessedImagePurpose.PortionSizeSelectionImage => 3l
           }
 
           Seq[NamedParameter]('path -> rec.path, 'source_id -> rec.sourceId, 'purpose -> purpose)

@@ -54,10 +54,10 @@ trait AsServedImageAdminImpl extends AsServedImageAdminService with FoodDataSqlS
         withTransaction {
           logger.debug("Writing " + sets.size + " as served sets to database")
 
-          val asServedSetParams = sets.map(set => Seq[NamedParameter]('id -> set.id, 'description -> set.description))
+          val asServedSetParams = sets.map(set => Seq[NamedParameter]('id -> set.id, 'selection_image_id -> set.selectionImageId, 'description -> set.description))
 
           tryWithConstraintCheck("as_served_sets_pk", DuplicateCode) {
-            batchSql("INSERT INTO as_served_sets VALUES({id}, {description})", asServedSetParams).execute()
+            batchSql("INSERT INTO as_served_sets VALUES({id},{description},{selection_image_id})", asServedSetParams).execute()
 
             val asServedImageParams = sets.flatMap(set => set.images.map(image => Seq[NamedParameter]('as_served_set_id -> set.id, 'weight -> image.weight,
               'main_image_id -> image.mainImageId, 'thumbnail_id -> image.thumbnailId)))

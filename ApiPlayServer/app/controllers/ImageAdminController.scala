@@ -12,6 +12,8 @@ import play.api.Logger
 import play.api.http.ContentTypes
 import java.nio.file.Paths
 import upickle.default._
+import scalaz._
+import Scalaz._
 
 class ImageAdminController @Inject() (service: ImageAdminService, deadbolt: DeadboltActionsAdapter) extends Controller with ImageServiceErrorHandler with PickleErrorHandler {
 
@@ -33,12 +35,14 @@ class ImageAdminController @Inject() (service: ImageAdminService, deadbolt: Dead
               val results = formData.files.map {
                 file =>
                   service.uploadSourceImage(file.filename, Paths.get(file.ref.file.getPath), keywords, uploaderName)
-              }
-
-              results.find(_.isLeft) match {
-                case Some(Left(error)) => translateError(error)
-                case _ => Ok
-              }
+              }.toList
+              
+              val (errors, ids) = results.separate
+              
+              if (errors.nonEmpty)
+                translateError(errors.head)
+              else
+                Ok(write(ids))
             }
           }
 

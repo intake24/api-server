@@ -31,6 +31,7 @@ class ImageAdminServiceDefaultImpl @Inject() (val imageDatabase: ImageDatabaseSe
       try {
         block(tempDir)
       } finally {
+        /*
         Files.walkFileTree(tempDir, new SimpleFileVisitor[Path]() {
           override def visitFile(file: Path, attrs: BasicFileAttributes) = {
             Files.delete(file)
@@ -41,7 +42,7 @@ class ImageAdminServiceDefaultImpl @Inject() (val imageDatabase: ImageDatabaseSe
             Files.delete(dir)
             FileVisitResult.CONTINUE
           }
-        })
+        })*/
       }
     } catch {
       case e: IOException => Left(IOError(e))
@@ -126,7 +127,7 @@ class ImageAdminServiceDefaultImpl @Inject() (val imageDatabase: ImageDatabaseSe
         val srcPath = Files.createTempFile(tempDir, "intake24", extension)
         val dstPath = Files.createTempFile(tempDir, "intake24", extension)
 
-        val randomName = "selection-" + UUID.randomUUID().toString() + extension
+        val randomName = "selection/" + UUID.randomUUID().toString() + extension
 
         for (
           _ <- storage.downloadImage(source.path, srcPath).right;
@@ -166,6 +167,7 @@ class ImageAdminServiceDefaultImpl @Inject() (val imageDatabase: ImageDatabaseSe
         wrapDatabaseError(imageDatabase.createProcessedImageRecords(records)).right
       };
       selectionImageId <- {
+        logger.debug("Creating processed image record for PSM selection screen image")
         wrapDatabaseError(imageDatabase.createProcessedImageRecords(Seq(ProcessedImageRecord(uploadedSelectionImagePath, selectionImageSource.id, ProcessedImagePurpose.PortionSizeSelectionImage)))).right.map(_(0)).right
       }
     ) yield {
