@@ -89,12 +89,12 @@ trait AsServedSetsAdminImpl extends AsServedSetsAdminService with FoodDataSqlSer
   private case class AsServedImageRow(image_path: String, thumbnail_image_path: String, weight: Double, source_id: Long)
 
   private case class AsServedSetRow(description: String)
-  
+
   val setQuery = sqlFromResource("admin/get_as_served_set.sql")
-  
+
   val imagesQuery = sqlFromResource("admin/get_as_served_images.sql")
 
-  def getAsServedSet(id: String): Either[LookupError, AsServedSetWithPaths] = tryWithConnection {
+  def getAsServedSetWithPaths(id: String): Either[LookupError, AsServedSetWithPaths] = tryWithConnection {
     implicit conn =>
       withTransaction {
         SQL(setQuery).on('id -> id).executeQuery().as(Macro.namedParser[AsServedSetRow].singleOpt) match {
@@ -109,11 +109,19 @@ trait AsServedSetsAdminImpl extends AsServedSetsAdminService with FoodDataSqlSer
         }
       }
   }
+  
+  def getAsServedSetRecord(id: String): Either[LookupError, AsServedSetRecord] = tryWithConnection {
+    implicit conn =>
+      withTransaction {
+        
+      }
+    
+  }
 
   private case class PortableAsServedImageRow(weight: Double, source_path: String, keywords: Array[String], image_path: String, thumbnail_image_path: String)
-  
-  private case class PortableAsServedSetRow(description: String, selection_source_path: String, selection_image_path: String) 
-  
+
+  private case class PortableAsServedSetRow(description: String, selection_source_path: String, selection_image_path: String)
+
   val portableSetQuery = sqlFromResource("admin/get_portable_as_served_set.sql")
 
   val portableImagesQuery = sqlFromResource("admin/get_portable_as_served_images.sql")

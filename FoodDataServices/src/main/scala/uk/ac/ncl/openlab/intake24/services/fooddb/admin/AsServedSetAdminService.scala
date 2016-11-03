@@ -25,7 +25,9 @@ trait AsServedSetsAdminService {
   
   def listAsServedSets(): Either[DatabaseError, Map[String, AsServedHeader]]
   
-  def getAsServedSet(id: String): Either[LookupError, AsServedSetWithPaths]  
+  def getAsServedSetWithPaths(id: String): Either[LookupError, AsServedSetWithPaths]
+  
+  def getAsServedSetRecord(id: String): Either[LookupError, AsServedSetRecord]
   
   def getPortableAsServedSet(id: String): Either[LookupError, PortableAsServedSet]
   

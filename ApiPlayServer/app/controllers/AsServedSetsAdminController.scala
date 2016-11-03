@@ -50,18 +50,19 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.images.ProcessedImagePurpose
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.ProcessedImageRecord
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageWithUrl
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageDescriptor
+import play.api.mvc.Result
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageServiceError
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.AsServedImageDescriptor
 
 case class AsServedImageWithUrls(sourceId: Long, imageUrl: String, thumbnailUrl: String, weight: Double)
 
-case class AsServedSetWithUrls(id: String, description: String,  images: Seq[AsServedImageWithUrls])
+case class AsServedSetWithUrls(id: String, description: String, images: Seq[AsServedImageWithUrls])
 
 case class NewAsServedImage(sourceImageId: Long, weight: Double)
 
 case class ExistingAsServedImage(processedImageId: Long, processedThumbnailId: Long, weight: Double)
 
 case class NewAsServedSet(id: String, description: String, images: Seq[NewAsServedImage])
-
-case class AsServedSetUpdate(id: String, description: String, images: Seq[Either[ExistingAsServedImage, NewAsServedImage]])
 
 class AsServedSetsAdminController @Inject() (
   service: AsServedSetsAdminService,
@@ -148,33 +149,42 @@ class AsServedSetsAdminController @Inject() (
       }
   }
 
+  private def processImages(setId: String, sourceImages: Seq[Long]): Either[ImageServiceError, (Seq[AsServedImageDescriptor], ImageDescriptor)] = {
+    val ssiSourceId = sourceImages(sourceImages.length / 2)
+
+    for (
+      imageDescriptors <- imageAdmin.processForAsServed(setId, sourceImages).right;
+      ssiDescriptor <- imageAdmin.processForSelectionScreen(ImageAdminService.ssiPrefixAsServed(setId), ssiSourceId).right
+    ) yield (imageDescriptors, ssiDescriptor)
+  }
+
+  private def createAsServedSetImpl(newSet: NewAsServedSet): Result = {
+    processImages(newSet.id, newSet.images.map(_.sourceImageId)) match {
+      case Right((imageDescriptors, ssiDescriptor)) => {
+        val images = newSet.images.zip(imageDescriptors).map {
+          case (image, descriptor) => AsServedImageRecord(descriptor.mainImage.id, descriptor.thumbnail.id, image.weight)
+        }
+
+        val result = for (
+          _ <- service.createAsServedSets(Seq(AsServedSetRecord(newSet.id, newSet.description, ssiDescriptor.id, images))).right;
+          res <- service.getAsServedSet(newSet.id).right
+        ) yield res
+
+        translateResult(result)
+      }
+      case Left(error) => translateError(error)
+    }
+  }
+
   def createAsServedSetFromSource() = deadbolt.restrict(Roles.superuser)(upickleRead[NewAsServedSet]) {
     request =>
       Future {
         val newSet = request.body
-        
-        val ssiSourceId = newSet.images(newSet.images.length/2).sourceImageId
 
-        val imageProcessorResult = for (
-            imageDescriptors <- imageAdmin.processForAsServed(newSet.id, newSet.images.map(_.sourceImageId)).right;
-            ssiDescriptor <- imageAdmin.processForSelectionScreen(ImageAdminService.ssiPrefixAsServed(newSet.id), ssiSourceId).right
-            ) yield (imageDescriptors, ssiDescriptor)  
-            
-        imageProcessorResult match {
-          case Right((imageDescriptors, ssiDescriptor)) => {
-            val images = newSet.images.zip(imageDescriptors).map {
-              case (image, descriptor) => AsServedImageRecord(descriptor.mainImage.id, descriptor.thumbnail.id, image.weight)
-            }
-
-            val result = for (
-              _ <- service.createAsServedSets(Seq(AsServedSetRecord(newSet.id, newSet.description, ssiDescriptor.id, images))).right;
-              res <- service.getAsServedSet(newSet.id).right
-            ) yield res
-
-            translateResult(result)
-          }
-          case Left(error) => translateError(error)
-        }
+        if (newSet.images.isEmpty)
+          BadRequest("""{"cause":"As served set must contain at least one image"}""")
+        else
+          createAsServedSetImpl(newSet)
       }
   }
 
@@ -220,34 +230,22 @@ class AsServedSetsAdminController @Inject() (
 
             sourceIds match {
               case Left(e) => translateError(e)
-              case Right(ids) => {
-                imageAdmin.processForAsServed(setId, ids) match {
-                  case Right(descriptors) => {
-                    val images = records.zip(descriptors).map {
-                      case ((_, weight), descriptor) => AsServedImageRecord(descriptor.mainImage.id, descriptor.thumbnail.id, weight)
-                    }
-
-                    translateResult(service.createAsServedSets(Seq(AsServedSetRecord(setId, description, 1, images)))) // FIXME: process selection screen image
-                  }
-                  case Left(e) => translateError(e)
-                }
-              }
+              case Right(ids) => createAsServedSetImpl(NewAsServedSet(setId, description, ids.zip(weights).map { case (id, weight) => NewAsServedImage(id, weight) }))
             }
           }
         }
       }
   }
 
-  def updateAsServedSet(id: String) = deadbolt.restrict(Roles.superuser)(upickleRead[AsServedSetUpdate]) {
+  def updateAsServedSet(id: String) = deadbolt.restrict(Roles.superuser)(upickleRead[NewAsServedSet]) {
     request =>
       Future {
         val update = request.body
         
-        // id: String, description: String, images: Seq[Either[ExistingAsServedImage, NewAsServedImage]
+        for (
+            oldSet <- service.getAsServedSet(id)
 
-        println(update.toString())
-
-        Ok
+       
       }
   }
 }
