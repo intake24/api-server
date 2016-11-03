@@ -28,9 +28,7 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import security.DeadboltActionsAdapter
 import scala.concurrent.Future
 
-class NutrientTablesAdminController @Inject() (service: NutrientTablesAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
-    with PickleErrorHandler
-    with FoodDatabaseErrorHandler {
+class NutrientTablesAdminController @Inject() (service: NutrientTablesAdminService, deadbolt: DeadboltActionsAdapter) extends Controller with FoodDatabaseErrorHandler {
   
   def listNutrientTables() = deadbolt.restrict(Roles.superuser) {
     Future {

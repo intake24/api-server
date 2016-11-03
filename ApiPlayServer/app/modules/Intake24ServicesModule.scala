@@ -45,8 +45,8 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
 import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
 import uk.ac.ncl.openlab.intake24.foodsql.user.FoodDatabaseUserImpl
 import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AsServedImageAdminService
-import uk.ac.ncl.openlab.intake24.foodsql.admin.AsServedImageAdminImpl
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AsServedSetsAdminService
+import uk.ac.ncl.openlab.intake24.foodsql.admin.AsServedSetsAdminImpl
 import uk.ac.ncl.openlab.intake24.foodsql.admin.AssociatedFoodsAdminImpl
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoriesAdminService
@@ -78,7 +78,7 @@ import uk.ac.ncl.openlab.intake24.foodsql.admin.CategoriesAdminStandaloneImpl
 import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodBrowsingAdminStandaloneImpl
 import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodsAdminStandaloneImpl
 import uk.ac.ncl.openlab.intake24.foodsql.admin.DrinkwareAdminStandaloneImpl
-import uk.ac.ncl.openlab.intake24.foodsql.admin.AsServedImageAdminStandaloneImpl
+import uk.ac.ncl.openlab.intake24.foodsql.admin.AsServedSetsAdminStandaloneImpl
 import uk.ac.ncl.openlab.intake24.foodsql.admin.AssociatedFoodsAdminStandaloneImpl
 import uk.ac.ncl.openlab.intake24.foodsql.admin.NutrientTablesAdminStandaloneImpl
 import uk.ac.ncl.openlab.intake24.foodsql.user.FoodDataUserStandaloneImpl
@@ -145,7 +145,7 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
 
     // User facing services
 
-    bind(classOf[AsServedImageAdminService]).to(classOf[AsServedImageAdminStandaloneImpl])
+    bind(classOf[AsServedSetsAdminService]).to(classOf[AsServedSetsAdminStandaloneImpl])
     bind(classOf[AssociatedFoodsAdminService]).to(classOf[AssociatedFoodsAdminStandaloneImpl])
     bind(classOf[DrinkwareAdminService]).to(classOf[DrinkwareAdminStandaloneImpl])
     bind(classOf[FoodBrowsingAdminService]).to(classOf[FoodBrowsingAdminStandaloneImpl])

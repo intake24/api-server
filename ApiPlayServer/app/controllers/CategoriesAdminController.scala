@@ -31,9 +31,9 @@ import uk.ac.ncl.openlab.intake24.NewMainCategoryRecord
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoriesAdminService
 import upickle.default.read
 import uk.ac.ncl.openlab.intake24.NewLocalCategoryRecord
+import parsers.Upickle._
 
 class CategoriesAdminController @Inject() (service: CategoriesAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
-    with PickleErrorHandler
     with FoodDatabaseErrorHandler {
 
   def getCategoryRecord(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
@@ -53,12 +53,10 @@ class CategoriesAdminController @Inject() (service: CategoriesAdminService, dead
     }
   }
 
-  def createMainCategoryRecord() = deadbolt.restrict(Roles.superuser)(parse.tolerantText) {
+  def createMainCategoryRecord() = deadbolt.restrict(Roles.superuser)(upickleRead[NewMainCategoryRecord]) {
     request =>
       Future {
-        tryWithPickle {
-          translateResult(service.createMainCategoryRecords(Seq(read[NewMainCategoryRecord](request.body))))
-        }
+        translateResult(service.createMainCategoryRecords(Seq(request.body)))
       }
   }
 
@@ -68,27 +66,22 @@ class CategoriesAdminController @Inject() (service: CategoriesAdminService, dead
     }
   }
 
-  def updateMainCategoryRecord(categoryCode: String) = deadbolt.restrict(Roles.superuser)(parse.tolerantText) {
+  def updateMainCategoryRecord(categoryCode: String) = deadbolt.restrict(Roles.superuser)(upickleRead[MainCategoryRecordUpdate]) {
     request =>
       Future {
-        tryWithPickle {
-          translateResult(service.updateMainCategoryRecord(categoryCode, read[MainCategoryRecordUpdate](request.body)))
-        }
+        translateResult(service.updateMainCategoryRecord(categoryCode, request.body))
       }
   }
 
-  def updateLocalCategoryRecord(categoryCode: String, locale: String) = deadbolt.restrict(Roles.superuser)(parse.tolerantText) {
+  def updateLocalCategoryRecord(categoryCode: String, locale: String) = deadbolt.restrict(Roles.superuser)(upickleRead[LocalCategoryRecordUpdate]) {
     request =>
       Future {
-        tryWithPickle {
-          
-          val req = read[LocalCategoryRecordUpdate](request.body)
-          
-          // FIXME: Needs a better protocol
-          req.baseVersion match {
-            case Some(version) => translateResult(service.updateLocalCategoryRecord(categoryCode, read[LocalCategoryRecordUpdate](request.body), locale))
-            case None => translateResult(service.createLocalCategoryRecords(Map(categoryCode -> NewLocalCategoryRecord(req.localDescription, req.portionSize)), locale))
-          }
+        val req = request.body
+
+        // FIXME: Needs a better protocol
+        req.baseVersion match {
+          case Some(version) => translateResult(service.updateLocalCategoryRecord(categoryCode, req, locale))
+          case None => translateResult(service.createLocalCategoryRecords(Map(categoryCode -> NewLocalCategoryRecord(req.localDescription, req.portionSize)), locale))
         }
       }
   }

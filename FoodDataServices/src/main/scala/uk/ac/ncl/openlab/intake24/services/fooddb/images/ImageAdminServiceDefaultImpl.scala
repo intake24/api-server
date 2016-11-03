@@ -14,14 +14,13 @@ import org.apache.commons.io.FilenameUtils
 import org.slf4j.LoggerFactory
 import scala.sys.process
 
-class ImageAdminServiceDefaultImpl @Inject() (val imageDatabase: ImageDatabaseService, val imageProcessor: ImageProcessor, val storage: ImageStorageService,
+class ImageAdminServiceDefaultImpl @Inject() (val imageDatabase: ImageDatabaseService, val imageProcessor: ImageProcessor, val storage: ImageStorageService, 
   val fileTypeAnalyzer: FileTypeAnalyzer)
     extends ImageAdminService {
 
   private val allowedFileTypes = Seq("image/jpeg", "image/png", "image/svg+xml")
 
   private val sourcePathPrefix = "source"
-
 
   private val logger = LoggerFactory.getLogger(classOf[ImageAdminServiceDefaultImpl])
 
@@ -142,7 +141,7 @@ class ImageAdminServiceDefaultImpl @Inject() (val imageDatabase: ImageDatabaseSe
   private def mkProcessedThumbnailRecords(sourceIds: Seq[Long], paths: Seq[AsServedImagePaths]): Seq[ProcessedImageRecord] =
     sourceIds.zip(paths).map { case (id, paths) => ProcessedImageRecord(paths.thumbnail, id, ProcessedImagePurpose.AsServedThumbnail) }
 
-  def processForAsServed(setId: String, sourceImageIds: Seq[Long]): Either[ImageServiceError, AsServedSetDescriptors] =
+  def processForAsServed(setId: String, sourceImageIds: Seq[Long]): Either[ImageServiceError, Seq[AsServedImageDescriptor]] =
     for (
       sources <- {
         logger.debug("Getting source image descriptors");
@@ -152,8 +151,6 @@ class ImageAdminServiceDefaultImpl @Inject() (val imageDatabase: ImageDatabaseSe
         logger.debug("Processing and uploading as served images")
         processAndUploadAsServed(setId, sources).right
       };
-      selectionImageSource <- Right(sources(sources.length / 2)).right;
-      uploadedSelectionImagePath <- processAndUploadSelectionScreenImage(s"as_served/$setId", selectionImageSource).right;
       mainImageIds <- {
         val records = mkProcessedMainImageRecords(sourceImageIds, uploadedPaths)
         logger.debug(s"Creating processed image records for main images")
@@ -165,18 +162,12 @@ class ImageAdminServiceDefaultImpl @Inject() (val imageDatabase: ImageDatabaseSe
         logger.debug("Creating processed image records for thumbnail images")
         records.foreach(r => logger.debug(r.toString()))
         wrapDatabaseError(imageDatabase.createProcessedImageRecords(records)).right
-      };
-      selectionImageId <- {
-        logger.debug("Creating processed image record for PSM selection screen image")
-        wrapDatabaseError(imageDatabase.createProcessedImageRecords(Seq(ProcessedImageRecord(uploadedSelectionImagePath, selectionImageSource.id, ProcessedImagePurpose.PortionSizeSelectionImage)))).right.map(_(0)).right
       }
     ) yield {
-      val images = uploadedPaths.zip(mainImageIds).zip(thumbnailIds).map {
+      uploadedPaths.zip(mainImageIds).zip(thumbnailIds).map {
         case (((AsServedImagePaths(mainImagePath, thumbnailPath), mainImageId), thumbnailId)) =>
           AsServedImageDescriptor(ImageDescriptor(mainImageId, mainImagePath), ImageDescriptor(thumbnailId, thumbnailPath))
       }
-      
-      AsServedSetDescriptors(ImageDescriptor(selectionImageId, uploadedSelectionImagePath), images)
     }
 
   def processForGuideImageBase(sourceImageId: Long): Either[ImageServiceError, ImageDescriptor] = {
@@ -188,6 +179,10 @@ class ImageAdminServiceDefaultImpl @Inject() (val imageDatabase: ImageDatabaseSe
   }
 
   def uploadSourceImage(file: File, keywords: Seq[String]): Either[ImageServiceError, Long] = {
+    ???
+  }
+
+  def processForSelectionScreen(pathPrefix: String, sourceImageId: Long): Either[ImageServiceError, ImageDescriptor] = {
     ???
   }
 }

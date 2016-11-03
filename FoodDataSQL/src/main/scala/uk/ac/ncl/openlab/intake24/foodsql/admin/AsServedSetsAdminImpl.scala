@@ -4,7 +4,7 @@ import uk.ac.ncl.openlab.intake24.AsServedHeader
 import anorm._
 import uk.ac.ncl.openlab.intake24.foodsql.user.AsServedImageUserImpl
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AsServedImageAdminService
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AsServedSetsAdminService
 
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
@@ -15,7 +15,7 @@ import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.google.inject.name.Named
 import uk.ac.ncl.openlab.intake24.AsServedSetV1
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AsServedSet
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AsServedSetRecord
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
@@ -28,11 +28,11 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.admin.PortableAsServedImage
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageDescriptor
 
 @Singleton
-class AsServedImageAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends AsServedImageAdminImpl
+class AsServedSetsAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends AsServedSetsAdminImpl
 
-trait AsServedImageAdminImpl extends AsServedImageAdminService with FoodDataSqlService with SqlResourceLoader {
+trait AsServedSetsAdminImpl extends AsServedSetsAdminService with FoodDataSqlService with SqlResourceLoader {
 
-  private val logger = LoggerFactory.getLogger(classOf[AsServedImageAdminImpl])
+  private val logger = LoggerFactory.getLogger(classOf[AsServedSetsAdminImpl])
 
   def listAsServedSets(): Either[DatabaseError, Map[String, AsServedHeader]] = tryWithConnection {
     implicit conn =>
@@ -48,7 +48,7 @@ trait AsServedImageAdminImpl extends AsServedImageAdminService with FoodDataSqlS
       Right(())
   }
 
-  def createAsServedSets(sets: Seq[AsServedSet]): Either[CreateError, Unit] = tryWithConnection {
+  def createAsServedSets(sets: Seq[AsServedSetRecord]): Either[CreateError, Unit] = tryWithConnection {
     implicit conn =>
       if (sets.nonEmpty) {
         withTransaction {
@@ -86,9 +86,9 @@ trait AsServedImageAdminImpl extends AsServedImageAdminService with FoodDataSqlS
   
   weight, image_id, p1.path as image_path, thumbnail_image_id, p2.path as thumbnail_image_path FROM as_served_images
    */
-  private case class AsServedImageRow(weight: Double, image_id: Long, image_path: String, thumbnail_image_id: Long, thumbnail_image_path: String)
+  private case class AsServedImageRow(image_path: String, thumbnail_image_path: String, weight: Double, source_id: Long)
 
-  private case class AsServedSetRow(description: String, selection_image_id: Long, selection_image_path: String)
+  private case class AsServedSetRow(description: String)
   
   val setQuery = sqlFromResource("admin/get_as_served_set.sql")
   
@@ -101,9 +101,9 @@ trait AsServedImageAdminImpl extends AsServedImageAdminService with FoodDataSqlS
           case Some(row) => {
             val images = SQL(imagesQuery).on('as_served_set_id -> id).as(Macro.namedParser[AsServedImageRow].*).map {
               row =>
-                AsServedImageWithPaths(ImageDescriptor(row.image_id, row.image_path), ImageDescriptor(row.thumbnail_image_id, row.thumbnail_image_path), row.weight)
+                AsServedImageWithPaths(row.source_id, row.image_path, row.thumbnail_image_path, row.weight)
             }
-            Right(AsServedSetWithPaths(id, row.description, ImageDescriptor(row.selection_image_id, row.selection_image_path), images))
+            Right(AsServedSetWithPaths(id, row.description, images))
           }
           case None => Left(RecordNotFound(new RuntimeException(s"As served set $id not found")))
         }
@@ -134,7 +134,7 @@ trait AsServedImageAdminImpl extends AsServedImageAdminService with FoodDataSqlS
       }
   }
 
-  def updateAsServedSet(id: String, update: AsServedSet): Either[UpdateError, Unit] = tryWithConnection {
+  def updateAsServedSet(id: String, update: AsServedSetRecord): Either[UpdateError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
         if (SQL("UPDATE as_served_sets SET id={new_id},description={description} WHERE id={id}").on('id -> id, 'new_id -> update.id, 'description -> update.description).executeUpdate() != 1)

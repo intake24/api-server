@@ -28,7 +28,6 @@ import security.Roles
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 
 class FoodGroupsAdminController @Inject() (service: FoodGroupsAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
-    with PickleErrorHandler
     with FoodDatabaseErrorHandler {
   
   def listFoodGroups(locale: String) = deadbolt.restrict(Roles.superuser) {

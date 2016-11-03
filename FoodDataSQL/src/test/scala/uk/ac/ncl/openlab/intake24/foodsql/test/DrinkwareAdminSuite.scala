@@ -1,7 +1,7 @@
 package uk.ac.ncl.openlab.intake24.foodsql.test
 
 import org.scalatest.FunSuite
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AsServedImageAdminService
+
 import org.scalatest.DoNotDiscover
 import uk.ac.ncl.openlab.intake24.AsServedImageV1
 import uk.ac.ncl.openlab.intake24.AsServedSetV1

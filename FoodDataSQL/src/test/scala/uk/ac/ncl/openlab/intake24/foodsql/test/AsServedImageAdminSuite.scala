@@ -1,7 +1,7 @@
 package uk.ac.ncl.openlab.intake24.foodsql.test
 
 import org.scalatest.FunSuite
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AsServedImageAdminService
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AsServedSetsAdminService
 import org.scalatest.DoNotDiscover
 import uk.ac.ncl.openlab.intake24.AsServedImageV1
 import uk.ac.ncl.openlab.intake24.AsServedSetV1
@@ -11,7 +11,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DuplicateCode
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 
 @DoNotDiscover
-class AsServedImageAdminSuite(service: AsServedImageAdminService) extends FunSuite with RandomData {
+class AsServedImageAdminSuite(service: AsServedSetsAdminService) extends FunSuite with RandomData {
   
   private val sets = randomAsServedSets
   

@@ -40,44 +40,41 @@ import security.Intake24ApiEnv
 import security.Intake24Credentials
 import upickle.default._
 import play.api.http.ContentTypes
+import parsers.Upickle._
 
 class Auth @Inject() (silEnv: Environment[Intake24ApiEnv], credentialsProvider: CredentialsProvider)
-    extends Controller
-    with PickleErrorHandler {
+    extends Controller {
 
   private case class AuthSuccess(token: String)
 
-  def signin = Action.async(parse.tolerantText) {
+  def signin = Action.async(upickleRead[Intake24Credentials]) {
     implicit request =>
 
-      tryWithPickleAsync {
-        val credentials = read[Intake24Credentials](request.body)
+      val credentials = request.body
 
-        val authResult = credentialsProvider.authenticate(Credentials(credentials.username + "#" + credentials.survey_id, credentials.password))
+      val authResult = credentialsProvider.authenticate(Credentials(credentials.username + "#" + credentials.survey_id, credentials.password))
 
-        authResult.flatMap {
-          loginInfo =>
-            silEnv.identityService.retrieve(loginInfo).flatMap {
-              case Some(user) => silEnv.authenticatorService.create(loginInfo).flatMap {
-                authenticator =>
+      authResult.flatMap {
+        loginInfo =>
+          silEnv.identityService.retrieve(loginInfo).flatMap {
+            case Some(user) => silEnv.authenticatorService.create(loginInfo).flatMap {
+              authenticator =>
 
-                  val customClaims = Json.obj("i24r" -> user.securityInfo.roles, "i24p" -> user.securityInfo.permissions)
+                val customClaims = Json.obj("i24r" -> user.securityInfo.roles, "i24p" -> user.securityInfo.permissions)
 
-                  silEnv.eventBus.publish(LoginEvent(user, request))
-                  silEnv.authenticatorService.init(authenticator.copy(customClaims = Some(customClaims))).map { token =>
-                    Ok(write(AuthSuccess(token))).as(ContentTypes.JSON)
-                  }
-              }
-              case None =>
-                Future.successful(Unauthorized)
+                silEnv.eventBus.publish(LoginEvent(user, request))
+                silEnv.authenticatorService.init(authenticator.copy(customClaims = Some(customClaims))).map { token =>
+                  Ok(write(AuthSuccess(token))).as(ContentTypes.JSON)
+                }
             }
-        }.recover {
-          case e: IdentityNotFoundException => Unauthorized
-          case e: InvalidPasswordException => Unauthorized
-          case e: DatabaseFormatException => InternalServerError(Json.obj("error" -> "databaseFormatException", "debugMessage" -> e.toString()))
-          case e: DatabaseAccessException => InternalServerError(Json.obj("error" -> "databaseAccessException", "debugMessage" -> e.toString()))
-        }
+            case None =>
+              Future.successful(Unauthorized)
+          }
+      }.recover {
+        case e: IdentityNotFoundException => Unauthorized
+        case e: InvalidPasswordException => Unauthorized
+        case e: DatabaseFormatException => InternalServerError(Json.obj("error" -> "databaseFormatException", "debugMessage" -> e.toString()))
+        case e: DatabaseAccessException => InternalServerError(Json.obj("error" -> "databaseAccessException", "debugMessage" -> e.toString()))
       }
   }
-
 }

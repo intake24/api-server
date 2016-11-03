@@ -29,9 +29,8 @@ import security.DeadboltActionsAdapter
 import upickle.default._
 import uk.ac.ncl.openlab.intake24.AssociatedFood
 import javax.inject.Inject
-
+import parsers.Upickle._
 class AssociatedFoodsAdminController @Inject() (service: AssociatedFoodsAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
-    with PickleErrorHandler
     with FoodDatabaseErrorHandler {
 
   def getAssociatedFoods(foodCode: String, locale: String) = deadbolt.restrict(Roles.superuser) {
@@ -40,13 +39,10 @@ class AssociatedFoodsAdminController @Inject() (service: AssociatedFoodsAdminSer
     }
   }
 
-  def updateAssociatedFoods(foodCode: String, locale: String) = deadbolt.restrict(Roles.superuser)(parse.tolerantText) {
+  def updateAssociatedFoods(foodCode: String, locale: String) = deadbolt.restrict(Roles.superuser)(upickleRead[Seq[AssociatedFood]]) {
     request =>
       Future {
-        tryWithPickle {
-          val associatedFoods = read[Seq[AssociatedFood]](request.body)
-          translateResult(service.updateAssociatedFoods(foodCode, associatedFoods, locale))
-        }
+        translateResult(service.updateAssociatedFoods(foodCode, request.body, locale))
       }
   }
 }

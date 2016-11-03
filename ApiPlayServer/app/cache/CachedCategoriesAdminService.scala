@@ -6,7 +6,6 @@ import modules.BasicImpl
 import play.api.cache.CacheApi
 import uk.ac.ncl.openlab.intake24.AsServedHeader
 
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AsServedImageAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError

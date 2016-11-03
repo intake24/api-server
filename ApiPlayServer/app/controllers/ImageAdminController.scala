@@ -15,7 +15,7 @@ import upickle.default._
 import scalaz._
 import Scalaz._
 
-class ImageAdminController @Inject() (service: ImageAdminService, deadbolt: DeadboltActionsAdapter) extends Controller with ImageServiceErrorHandler with PickleErrorHandler {
+class ImageAdminController @Inject() (service: ImageAdminService, deadbolt: DeadboltActionsAdapter) extends Controller with ImageServiceErrorHandler {
 
   private val logger = LoggerFactory.getLogger(classOf[ImageAdminController])
 

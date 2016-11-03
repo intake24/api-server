@@ -78,14 +78,15 @@ POST      /admin/associated-foods/:locale/:code                    controllers.A
 
 # Portion size methods
 
-GET       /admin/portion-size/as-served                            controllers.AsServedImageAdminController.listAsServedSets()
-GET       /admin/portion-size/as-served/:id                        controllers.AsServedImageAdminController.getAsServedSet(id: String)
-GET       /admin/portion-size/as-served/:id/export                 controllers.AsServedImageAdminController.exportAsServedSet(id: String)
+GET       /admin/portion-size/as-served                            controllers.AsServedSetsAdminController.listAsServedSets()
+GET       /admin/portion-size/as-served/:id                        controllers.AsServedSetsAdminController.getAsServedSet(id: String)
 
-POST      /admin/portion-size/as-served/import                     controllers.AsServedImageAdminController.importAsServedSet()
+GET       /admin/portion-size/as-served/:id/export                 controllers.AsServedSetsAdminController.exportAsServedSet(id: String)
+POST      /admin/portion-size/as-served/import                     controllers.AsServedSetsAdminController.importAsServedSet()
 
-POST      /admin/portion-size/as-served/new                        controllers.AsServedImageAdminController.createAsServedSet()
-POST      /admin/portion-size/as-served/new-from-source            controllers.AsServedImageAdminController.createAsServedSetFromSource()
+POST      /admin/portion-size/as-served/new                        controllers.AsServedSetsAdminController.createAsServedSet()
+POST      /admin/portion-size/as-served/new-from-source            controllers.AsServedSetsAdminController.createAsServedSetFromSource()
+PUT       /admin/portion-size/as-served/:id                        controllers.AsServedSetsAdminController.updateAsServedSet(id: String)
 
 # POST    /admin/images/as-served/:id                          controllers.AsServedImageAdminController.updateAsServedSet(id)
 

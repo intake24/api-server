@@ -1,6 +1,6 @@
 package uk.ac.ncl.openlab.intake24.foodsql.test
 
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AsServedImageAdminService
+
 import org.scalatest.FunSuite
 
 import uk.ac.ncl.openlab.intake24.Locale
