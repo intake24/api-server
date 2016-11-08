@@ -32,13 +32,13 @@ class DrinkwareAdminController @Inject() (service: DrinkwareAdminService, deadbo
   
   def listDrinkwareSets() = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.listDrinkwareSets())
+      translateDatabaseResult(service.listDrinkwareSets())
     }
   }
 
   def getDrinkwareSet(id: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.getDrinkwareSet(id))
+      translateDatabaseResult(service.getDrinkwareSet(id))
     }
   } 
 }

@@ -18,41 +18,22 @@ limitations under the License.
 
 package controllers
 
-import scala.concurrent.Future
-
-import javax.inject.Inject
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.Controller
-import security.DeadboltActionsAdapter
-import security.Roles
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AsServedSetsAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageStorageService
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AsServedImageWithPaths
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AsServedSetWithPaths
-import upickle.default._
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AsServedImageRecord
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AsServedSetRecord
-import play.api.mvc.MultipartFormData.FilePart
-import play.api.libs.Files.TemporaryFile
-import java.io.File
 import java.nio.file.Paths
+import javax.inject.Inject
 
 import parsers.Upickle._
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import play.api.mvc.{Controller, Result}
+import security.{DeadboltActionsAdapter, Roles}
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
+import uk.ac.ncl.openlab.intake24.services.fooddb.images._
+import upickle.default._
 
-import scalaz._
-import Scalaz._
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.PortableAsServedImage
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.PortableAsServedSet
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageDatabaseService
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.SourceImageRecord
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.ProcessedImagePurpose
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.ProcessedImageRecord
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageWithUrl
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageDescriptor
-import play.api.mvc.Result
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageServiceError
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.AsServedImageDescriptor
+import scala.concurrent.Future
+import scalaz.Scalaz._
+
+import play.api.Logger
+import ImageServiceOrDatabaseErrors._
 
 case class AsServedImageWithUrls(sourceId: Long, imageUrl: String, thumbnailUrl: String, weight: Double)
 
@@ -64,14 +45,13 @@ case class ExistingAsServedImage(processedImageId: Long, processedThumbnailId: L
 
 case class NewAsServedSet(id: String, description: String, images: Seq[NewAsServedImage])
 
-class AsServedSetsAdminController @Inject() (
-  service: AsServedSetsAdminService,
-  imageDatabase: ImageDatabaseService,
-  imageAdmin: ImageAdminService,
-  imageStorage: ImageStorageService,
-  deadbolt: DeadboltActionsAdapter) extends Controller
-    with FoodDatabaseErrorHandler
-    with ImageServiceErrorHandler {
+class AsServedSetsAdminController @Inject()(
+                                             service: AsServedSetsAdminService,
+                                             imageDatabase: ImageDatabaseService,
+                                             imageAdmin: ImageAdminService,
+                                             imageStorage: ImageStorageService,
+                                             deadbolt: DeadboltActionsAdapter) extends Controller
+  with ImageOrDatabaseServiceErrorHandler {
 
   def resolveUrls(image: AsServedImageWithPaths): AsServedImageWithUrls =
     AsServedImageWithUrls(image.sourceId, imageStorage.getUrl(image.imagePath), imageStorage.getUrl(image.thumbnailPath), image.weight)
@@ -80,19 +60,19 @@ class AsServedSetsAdminController @Inject() (
 
   def listAsServedSets() = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.listAsServedSets())
+      translateDatabaseResult(service.listAsServedSets())
     }
   }
 
   def getAsServedSet(id: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.getAsServedSet(id).right.map(resolveUrls))
+      translateDatabaseResult(service.getAsServedSetWithPaths(id).right.map(resolveUrls))
     }
   }
 
   def exportAsServedSet(id: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.getPortableAsServedSet(id))
+      translateDatabaseResult(service.getPortableAsServedSet(id))
     }
   }
 
@@ -131,25 +111,25 @@ class AsServedSetsAdminController @Inject() (
               case None => throw new RuntimeException("Selection image source path must be one of the as served images")
             }
 
-            imageDatabase.createProcessedImageRecords(Seq(ProcessedImageRecord(set.selectionImagePath, sourceImageId, ProcessedImagePurpose.PortionSizeSelectionImage))).right.map(_(0)).right
+            imageDatabase.createProcessedImageRecords(Seq(ProcessedImageRecord(set.selectionImagePath, sourceImageId, ProcessedImagePurpose.PortionSizeSelectionImage))).right.map(_.head).right
           };
           _ <- {
             val images = set.images.zip(mainImageIds).zip(thumbnailIds).map {
               case ((img, mainImageId), thumbnailId) =>
-                AsServedImageRecord(mainImageId, thumbnailId, img.weight)
+                NewAsServedImageRecord(mainImageId, thumbnailId, img.weight)
             }
 
-            service.createAsServedSets(Seq(AsServedSetRecord(set.id, set.description, selectionImageId, images))).right
+            service.createAsServedSets(Seq(NewAsServedSetRecord(set.id, set.description, selectionImageId, images))).right
           }
 
         ) yield ()
 
-        translateResult(result)
+        translateImageServiceAndDatabaseResult(result)
 
       }
   }
 
-  private def processImages(setId: String, sourceImages: Seq[Long]): Either[ImageServiceError, (Seq[AsServedImageDescriptor], ImageDescriptor)] = {
+  private def processImages(setId: String, sourceImages: Seq[Long]): Either[ImageServiceOrDatabaseError, (Seq[AsServedImageDescriptor], ImageDescriptor)] = {
     val ssiSourceId = sourceImages(sourceImages.length / 2)
 
     for (
@@ -158,23 +138,18 @@ class AsServedSetsAdminController @Inject() (
     ) yield (imageDescriptors, ssiDescriptor)
   }
 
-  private def createAsServedSetImpl(newSet: NewAsServedSet): Result = {
-    processImages(newSet.id, newSet.images.map(_.sourceImageId)) match {
-      case Right((imageDescriptors, ssiDescriptor)) => {
-        val images = newSet.images.zip(imageDescriptors).map {
-          case (image, descriptor) => AsServedImageRecord(descriptor.mainImage.id, descriptor.thumbnail.id, image.weight)
+  private def createAsServedSetImpl(newSet: NewAsServedSet): Either[ImageServiceOrDatabaseError, AsServedSetWithPaths] =
+    for (
+      descriptors <- processImages(newSet.id, newSet.images.map(_.sourceImageId)).right;
+      _ <- {
+        val images = newSet.images.zip(descriptors._1).map {
+          case (image, descriptor) => NewAsServedImageRecord(descriptor.mainImage.id, descriptor.thumbnail.id, image.weight)
         }
 
-        val result = for (
-          _ <- service.createAsServedSets(Seq(AsServedSetRecord(newSet.id, newSet.description, ssiDescriptor.id, images))).right;
-          res <- service.getAsServedSet(newSet.id).right
-        ) yield res
-
-        translateResult(result)
-      }
-      case Left(error) => translateError(error)
-    }
-  }
+        wrapDatabaseError(service.createAsServedSets(Seq(NewAsServedSetRecord(newSet.id, newSet.description, descriptors._2.id, images)))).right
+      };
+      res <- wrapDatabaseError(service.getAsServedSetWithPaths(newSet.id)).right
+    ) yield res
 
   def createAsServedSetFromSource() = deadbolt.restrict(Roles.superuser)(upickleRead[NewAsServedSet]) {
     request =>
@@ -184,7 +159,7 @@ class AsServedSetsAdminController @Inject() (
         if (newSet.images.isEmpty)
           BadRequest("""{"cause":"As served set must contain at least one image"}""")
         else
-          createAsServedSetImpl(newSet)
+          translateImageServiceAndDatabaseResult(createAsServedSetImpl(newSet))
       }
   }
 
@@ -220,32 +195,55 @@ class AsServedSetsAdminController @Inject() (
 
             val uploaderName = request.subject.get.identifier.split('#')(0)
             val keywords = request.body.dataParts.getOrElse("keywords", Seq())
-            val setId = request.body.dataParts("id")(0)
-            val description = request.body.dataParts("description")(0)
+            val setId = request.body.dataParts("id").head
+            val description = request.body.dataParts("description").head
 
-            val sourceIds = records.map {
-              record =>
-                imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForAsServed(setId, record._1.filename), Paths.get(record._1.ref.file.getPath), keywords, uploaderName)
-            }.toList.sequenceU
+            val result = for (
+              sourceIds <- records.map {
+                record => imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForAsServed(setId, record._1.filename), Paths.get(record._1.ref.file.getPath), keywords, uploaderName)
+              }.toList.sequenceU.right;
+              result <- createAsServedSetImpl(NewAsServedSet(setId, description, sourceIds.zip(weights).map { case (id, weight) => NewAsServedImage(id, weight) })).right)
+              yield result
 
-            sourceIds match {
-              case Left(e) => translateError(e)
-              case Right(ids) => createAsServedSetImpl(NewAsServedSet(setId, description, ids.zip(weights).map { case (id, weight) => NewAsServedImage(id, weight) }))
-            }
+            translateImageServiceAndDatabaseResult(result)
           }
         }
       }
+  }
+
+  private def cleanUpOldImages(set: AsServedSetRecord): Either[Nothing, Unit] = {
+    val images = List(set.selectionImageId) ++ set.images.map(_.mainImageId) ++ set.images.map(_.thumbnailId)
+
+    // It's OK to continue if image deletion failed, but still log it
+    imageAdmin.deleteProcessedImages(images) match {
+      case Right(()) => Right(())
+      case Left(e) =>
+        Logger.warn("Could not delete old as served images", e.exception)
+        Right(())
+    }
   }
 
   def updateAsServedSet(id: String) = deadbolt.restrict(Roles.superuser)(upickleRead[NewAsServedSet]) {
     request =>
       Future {
         val update = request.body
-        
-        for (
-            oldSet <- service.getAsServedSet(id)
 
-       
+        val result = for (
+          oldSet <- wrapDatabaseError(service.getAsServedSetRecord(id)).right;
+          newDescriptors <- processImages(update.id, update.images.map(_.sourceImageId)).right;
+          _ <- {
+            val newImageRecords = newDescriptors._1.zip(update.images.map(_.weight)).map {
+              case (AsServedImageDescriptor(ImageDescriptor(mainImageId, _), ImageDescriptor(thumbnailId, _)), weight) =>
+                NewAsServedImageRecord(mainImageId, thumbnailId, weight)
+            }
+
+            wrapDatabaseError(service.updateAsServedSet(id, NewAsServedSetRecord(update.id, update.description, newDescriptors._2.id, newImageRecords))).right
+          };
+          _ <- cleanUpOldImages(oldSet).right;
+          res <- wrapDatabaseError(service.getAsServedSetWithPaths(id)).right
+        ) yield res
+
+        translateImageServiceAndDatabaseResult(result)
       }
   }
 }

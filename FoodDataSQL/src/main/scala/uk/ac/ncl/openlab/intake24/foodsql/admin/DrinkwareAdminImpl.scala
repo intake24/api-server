@@ -5,7 +5,7 @@ import anorm.SQL
 import anorm.Macro
 import anorm.sqlToSimple
 import uk.ac.ncl.openlab.intake24.foodsql.user.DrinkwareUserImpl
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.DrinkwareAdminService
 import uk.ac.ncl.openlab.intake24.DrinkwareSet
 import org.slf4j.LoggerFactory
@@ -24,14 +24,14 @@ trait DrinkwareAdminImpl extends DrinkwareAdminService with DrinkwareUserImpl {
 
   private val logger = LoggerFactory.getLogger(classOf[DrinkwareAdminImpl])
 
-  def listDrinkwareSets(): Either[DatabaseError, Map[String, DrinkwareHeader]] = tryWithConnection {
+  def listDrinkwareSets(): Either[UnexpectedDatabaseError, Map[String, DrinkwareHeader]] = tryWithConnection {
     implicit conn =>
       Right(SQL("SELECT id, description FROM drinkware_sets").executeQuery().as(Macro.namedParser[DrinkwareHeader].*).map {
         h => (h.id -> h)
       }.toMap)
   }
 
-  def deleteAllDrinkwareSets(): Either[DatabaseError, Unit] = tryWithConnection {
+  def deleteAllDrinkwareSets(): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
       logger.debug("Deleting existing drinkware definitions")
 

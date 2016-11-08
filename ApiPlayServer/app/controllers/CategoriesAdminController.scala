@@ -38,38 +38,38 @@ class CategoriesAdminController @Inject() (service: CategoriesAdminService, dead
 
   def getCategoryRecord(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.getCategoryRecord(code, locale))
+      translateDatabaseResult(service.getCategoryRecord(code, locale))
     }
   }
   def isCategoryCodeAvailable(code: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.isCategoryCodeAvailable(code))
+      translateDatabaseResult(service.isCategoryCodeAvailable(code))
     }
   }
 
   def isCategoryCode(code: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.isCategoryCodeAvailable(code))
+      translateDatabaseResult(service.isCategoryCodeAvailable(code))
     }
   }
 
   def createMainCategoryRecord() = deadbolt.restrict(Roles.superuser)(upickleRead[NewMainCategoryRecord]) {
     request =>
       Future {
-        translateResult(service.createMainCategoryRecords(Seq(request.body)))
+        translateDatabaseResult(service.createMainCategoryRecords(Seq(request.body)))
       }
   }
 
   def deleteCategory(categoryCode: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.deleteCategory(categoryCode))
+      translateDatabaseResult(service.deleteCategory(categoryCode))
     }
   }
 
   def updateMainCategoryRecord(categoryCode: String) = deadbolt.restrict(Roles.superuser)(upickleRead[MainCategoryRecordUpdate]) {
     request =>
       Future {
-        translateResult(service.updateMainCategoryRecord(categoryCode, request.body))
+        translateDatabaseResult(service.updateMainCategoryRecord(categoryCode, request.body))
       }
   }
 
@@ -80,8 +80,8 @@ class CategoriesAdminController @Inject() (service: CategoriesAdminService, dead
 
         // FIXME: Needs a better protocol
         req.baseVersion match {
-          case Some(version) => translateResult(service.updateLocalCategoryRecord(categoryCode, req, locale))
-          case None => translateResult(service.createLocalCategoryRecords(Map(categoryCode -> NewLocalCategoryRecord(req.localDescription, req.portionSize)), locale))
+          case Some(version) => translateDatabaseResult(service.updateLocalCategoryRecord(categoryCode, req, locale))
+          case None => translateDatabaseResult(service.createLocalCategoryRecords(Map(categoryCode -> NewLocalCategoryRecord(req.localDescription, req.portionSize)), locale))
         }
       }
   }

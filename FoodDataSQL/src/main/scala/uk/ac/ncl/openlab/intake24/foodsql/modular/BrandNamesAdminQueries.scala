@@ -5,7 +5,7 @@ import anorm.SqlParser.str
 import anorm.NamedParameter.symbol
 import anorm.sqlToSimple
 
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.BrandNamesAdminService
 import org.slf4j.LoggerFactory
 import anorm.NamedParameter

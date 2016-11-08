@@ -34,7 +34,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.VersionConflict
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 import anorm.SqlParser
 import org.apache.commons.lang3.StringUtils
 import anorm.AnormUtil
@@ -195,7 +195,7 @@ trait FoodsAdminQueries extends FoodsAdminService
 
   }
 
-  protected def getFoodLocaleRestrictionsQuery(foodCode: String)(implicit conn: java.sql.Connection): Either[DatabaseError, Seq[String]] = {
+  protected def getFoodLocaleRestrictionsQuery(foodCode: String)(implicit conn: java.sql.Connection): Either[UnexpectedDatabaseError, Seq[String]] = {
     Right(SQL("SELECT locale_id FROM foods_restrictions WHERE food_code={food_code}").on('food_code -> foodCode).as(SqlParser.str("locale_id").*))
   }
 

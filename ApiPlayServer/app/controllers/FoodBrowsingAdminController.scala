@@ -32,43 +32,43 @@ class FoodBrowsingAdminController @Inject() (service: FoodBrowsingAdminService, 
 
   def getUncategorisedFoods(locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.getUncategorisedFoods(locale))
+      translateDatabaseResult(service.getUncategorisedFoods(locale))
     }
   }
 
   def getRootCategories(locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.getRootCategories(locale))
+      translateDatabaseResult(service.getRootCategories(locale))
     }
   }
 
   def getCategoryContents(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.getCategoryContents(code, locale))
+      translateDatabaseResult(service.getCategoryContents(code, locale))
     }
   }
 
   def getFoodParentCategories(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.getFoodParentCategories(code, locale))
+      translateDatabaseResult(service.getFoodParentCategories(code, locale))
     }
   }
 
   def getFoodAllCategories(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.getFoodAllCategoriesHeaders(code, locale))
+      translateDatabaseResult(service.getFoodAllCategoriesHeaders(code, locale))
     }
   }
 
   def getCategoryParentCategories(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.getCategoryParentCategories(code, locale))
+      translateDatabaseResult(service.getCategoryParentCategories(code, locale))
     }
   }
 
   def getCategoryAllCategories(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.getCategoryAllCategoriesHeaders(code, locale))
+      translateDatabaseResult(service.getCategoryAllCategoriesHeaders(code, locale))
     }
   }
 

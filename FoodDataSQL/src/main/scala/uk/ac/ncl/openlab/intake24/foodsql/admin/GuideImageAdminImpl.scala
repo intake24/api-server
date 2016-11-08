@@ -3,7 +3,7 @@ package uk.ac.ncl.openlab.intake24.foodsql.admin
 import uk.ac.ncl.openlab.intake24.GuideHeader
 import anorm._
 import uk.ac.ncl.openlab.intake24.foodsql.user.GuideImageUserImpl
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.GuideImageAdminService
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.GuideImage
@@ -19,21 +19,21 @@ trait GuideImageAdminImpl extends GuideImageAdminService with GuideImageUserImpl
 
   private val logger = LoggerFactory.getLogger(classOf[GuideImageAdminImpl])
 
-  def listGuideImages(): Either[DatabaseError, Map[String, GuideHeader]] = tryWithConnection {
+  def listGuideImages(): Either[UnexpectedDatabaseError, Map[String, GuideHeader]] = tryWithConnection {
     implicit conn =>
       val headers = SQL("""SELECT id, description from guide_images ORDER BY description ASC""").executeQuery().as(Macro.namedParser[GuideHeader].*)
       
       Right(headers.map(h => h.id -> h).toMap) 
   }
 
-  def deleteAllGuideImages(): Either[DatabaseError, Unit] = tryWithConnection {
+  def deleteAllGuideImages(): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
       logger.debug("Deleting existing guide image definitions")
       SQL("DELETE FROM guide_images").execute()
       Right(())
   }
 
-  def createGuideImages(guideImages: Seq[GuideImage]): Either[DatabaseError, Unit] = tryWithConnection {
+  def createGuideImages(guideImages: Seq[GuideImage]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
 
       if (!guideImages.isEmpty) {

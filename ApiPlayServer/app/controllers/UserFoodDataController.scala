@@ -65,37 +65,37 @@ class UserFoodDataController @Inject() (service: FoodDatabaseService, deadbolt: 
 
   def getCategoryContents(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.getCategoryContents(code, locale))
+      translateDatabaseResult(service.getCategoryContents(code, locale))
     }
   }
 
   def getFoodData(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.getFoodData(code, locale))
+      translateDatabaseResult(service.getFoodData(code, locale))
     }
   }
 
   def getFoodDataWithSources(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.getFoodData(code, locale))
+      translateDatabaseResult(service.getFoodData(code, locale))
     }
   }
 
   def getAssociatedFoodPrompts(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.getAssociatedFoods(code, locale))
+      translateDatabaseResult(service.getAssociatedFoods(code, locale))
     }
   }
 
   def getBrandNames(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.getBrandNames(code, locale))
+      translateDatabaseResult(service.getBrandNames(code, locale))
     }
   }
 
   def getAsServedSet(id: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.getAsServedSet(id).right.map {
+      translateDatabaseResult(service.getAsServedSet(id).right.map {
         set =>
         val images = set.images.map {
           image => UserAsServedImageWithUrls(imageStorageService.getUrl(image.mainImagePath), imageStorageService.getUrl(image.thumbnailPath), image.weight)
@@ -108,13 +108,13 @@ class UserFoodDataController @Inject() (service: FoodDatabaseService, deadbolt: 
 
   def getDrinkwareSet(id: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.getDrinkwareSet(id))
+      translateDatabaseResult(service.getDrinkwareSet(id))
     }
   }
 
   def getGuideImage(id: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.getGuideImage(id))
+      translateDatabaseResult(service.getGuideImage(id))
     }
   }
 }

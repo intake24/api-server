@@ -17,19 +17,19 @@ class ProblemCheckerController @Inject() (service: ProblemCheckerService, deadbo
 
   def checkFood(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.getFoodProblems(code, locale))
+      translateDatabaseResult(service.getFoodProblems(code, locale))
     }
   }
 
   def checkCategory(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.getCategoryProblems(code, locale))
+      translateDatabaseResult(service.getCategoryProblems(code, locale))
     }
   }
 
   def checkCategoryRecursive(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.getRecursiveCategoryProblems(code, locale, maxReturnedProblems))
+      translateDatabaseResult(service.getRecursiveCategoryProblems(code, locale, maxReturnedProblems))
     }
   }
 }

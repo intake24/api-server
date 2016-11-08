@@ -24,8 +24,8 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentRecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.IllegalParent
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.AnyError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.AnyDatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentUpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DuplicateCode
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound

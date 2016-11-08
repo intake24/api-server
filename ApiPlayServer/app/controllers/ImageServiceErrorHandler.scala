@@ -1,40 +1,19 @@
 package controllers
 
-import scala.annotation.implicitNotFound
-
-import org.slf4j.LoggerFactory
-
-import play.api.http.ContentTypes
-import play.api.mvc.Results
-
-import upickle.default._
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageServiceError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageDatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.IOError
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageProcessorError
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageStorageError
-
 import play.api.Logger
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.FileTypeNotAllowed
-import play.api.mvc.Result
+import play.api.http.ContentTypes
+import play.api.mvc.{Result, Results}
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.{RecordNotFound, UnexpectedDatabaseError}
+import uk.ac.ncl.openlab.intake24.services.fooddb.images._
+import upickle.default._
 
 trait ImageServiceErrorHandler extends Results {
 
-  def genericErrorBody(e: Throwable) = s"""{"cause":"${e.getClass.getName}: ${e.getMessage}"}"""
+  private def genericErrorBody(e: Throwable) = s"""{"cause":"${e.getClass.getName}: ${e.getMessage}"}"""
 
-  def logException(e: Throwable) = Logger.error("Image service exception", e)
+  private def logException(e: Throwable) = Logger.error("Image service exception", e)
 
-  def translateError(error: ImageServiceError): Result = error match {
-    case ImageDatabaseError(DatabaseError(e)) => {
-      logException(e)
-      InternalServerError(genericErrorBody(e))
-    }
-    case ImageDatabaseError(RecordNotFound(exception)) => {
-      logException(exception)
-      NotFound(genericErrorBody(exception)).as(ContentTypes.JSON)
-    }
+  def translateImageServiceError(error: ImageServiceError): Result = error match {
     case IOError(e) => {
       logException(e)
       InternalServerError(genericErrorBody(e))
@@ -53,8 +32,8 @@ trait ImageServiceErrorHandler extends Results {
     }
   }
 
-  def translateError[T](result: Either[ImageServiceError, T])(implicit writer: Writer[T]): Result = result match {
+  def translateImageServiceResult [T](result: Either[ImageServiceError, T])(implicit writer: Writer[T]): Result = result match {
     case Right(result) => Ok(write(result)).as(ContentTypes.JSON)
-    case Left(error) => translateError(error)
+    case Left(error) => translateImageServiceError(error)
   }
 }

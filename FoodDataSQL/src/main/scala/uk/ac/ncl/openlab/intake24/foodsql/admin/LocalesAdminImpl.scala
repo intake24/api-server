@@ -34,7 +34,7 @@ import uk.ac.ncl.openlab.intake24.Locale
 
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.LocalesAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DuplicateCode
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
@@ -52,7 +52,7 @@ trait LocalesAdminImpl extends LocalesAdminService with FoodDataSqlService {
     def mkLocale = Locale(id, english_name, local_name, respondent_language_id, admin_language_id, country_flag_code, prototype_locale_id)
   }
 
-  def listLocales(): Either[DatabaseError, Map[String, Locale]] = tryWithConnection {
+  def listLocales(): Either[UnexpectedDatabaseError, Map[String, Locale]] = tryWithConnection {
     implicit conn =>
 
       var query = """SELECT id, english_name, local_name, respondent_language_id, admin_language_id, country_flag_code, prototype_locale_id FROM locales ORDER BY english_name"""

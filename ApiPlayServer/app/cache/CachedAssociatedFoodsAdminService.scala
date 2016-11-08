@@ -1,20 +1,11 @@
 package cache
 
 import com.google.inject.Inject
-
 import modules.BasicImpl
 import play.api.cache.CacheApi
-import uk.ac.ncl.openlab.intake24.AsServedHeader
-
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
+import uk.ac.ncl.openlab.intake24.{AssociatedFood, AssociatedFoodWithHeader}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
-import uk.ac.ncl.openlab.intake24.AssociatedFoodWithHeader
-import uk.ac.ncl.openlab.intake24.AssociatedFood
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleOrParentError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.{LocalLookupError, LocaleOrParentError, UnexpectedDatabaseError}
 
 case class CachedAssociatedFoodsAdminService @Inject() (@BasicImpl service: AssociatedFoodsAdminService, cache: CacheApi)
     extends AssociatedFoodsAdminService
@@ -36,7 +27,7 @@ case class CachedAssociatedFoodsAdminService @Inject() (@BasicImpl service: Asso
       _ => cache.remove(associatedFoodsWithHeadersCacheKey(foodCode, locale))
     }
 
-  def deleteAllAssociatedFoods(locale: String): Either[DatabaseError, Unit] = service.deleteAllAssociatedFoods(locale)
+  def deleteAllAssociatedFoods(locale: String): Either[UnexpectedDatabaseError, Unit] = service.deleteAllAssociatedFoods(locale)
 
   def createAssociatedFoods(assocFoods: Map[String, Seq[AssociatedFood]], locale: String) = service.createAssociatedFoods(assocFoods, locale)
 }

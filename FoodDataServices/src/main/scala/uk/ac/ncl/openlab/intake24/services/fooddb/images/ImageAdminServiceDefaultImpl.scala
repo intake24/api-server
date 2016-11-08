@@ -1,22 +1,18 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.images
 
-import java.util.UUID
-import java.nio.file.SimpleFileVisitor
+import java.io.{File, IOException}
+import java.nio.file.{FileVisitResult, Files, Path, SimpleFileVisitor}
 import java.nio.file.attribute.BasicFileAttributes
-import java.io.IOException
-import java.nio.file.FileVisitResult
-import java.nio.file.Path
+import java.util.UUID
 import javax.inject.Inject
-import java.io.File
-import java.nio.file.Files
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
+
 import org.apache.commons.io.FilenameUtils
 import org.slf4j.LoggerFactory
-import scala.sys.process
+import ImageServiceOrDatabaseErrors._
 
-class ImageAdminServiceDefaultImpl @Inject() (val imageDatabase: ImageDatabaseService, val imageProcessor: ImageProcessor, val storage: ImageStorageService, 
-  val fileTypeAnalyzer: FileTypeAnalyzer)
-    extends ImageAdminService {
+class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseService, val imageProcessor: ImageProcessor, val storage: ImageStorageService,
+                                             val fileTypeAnalyzer: FileTypeAnalyzer)
+  extends ImageAdminService {
 
   private val allowedFileTypes = Seq("image/jpeg", "image/png", "image/svg+xml")
 
@@ -30,7 +26,6 @@ class ImageAdminServiceDefaultImpl @Inject() (val imageDatabase: ImageDatabaseSe
       try {
         block(tempDir)
       } finally {
-        /*
         Files.walkFileTree(tempDir, new SimpleFileVisitor[Path]() {
           override def visitFile(file: Path, attrs: BasicFileAttributes) = {
             Files.delete(file)
@@ -41,16 +36,12 @@ class ImageAdminServiceDefaultImpl @Inject() (val imageDatabase: ImageDatabaseSe
             Files.delete(dir)
             FileVisitResult.CONTINUE
           }
-        })*/
+        })
       }
     } catch {
       case e: IOException => Left(IOError(e))
     }
 
-  def wrapDatabaseError[T](e: Either[LookupError, T]): Either[ImageDatabaseError, T] = e match {
-    case Right(result) => Right(result)
-    case Left(e) => Left(ImageDatabaseError(e))
-  }
 
   def checkFileType(path: Path): Either[ImageServiceError, Unit] = {
     val actualType = fileTypeAnalyzer.getFileMimeType(path)
@@ -61,24 +52,46 @@ class ImageAdminServiceDefaultImpl @Inject() (val imageDatabase: ImageDatabaseSe
       Left(FileTypeNotAllowed(new RuntimeException(s"""File type not allowed: $actualType, allowed types: ${allowedFileTypes.mkString(", ")}""")))
   }
 
+  private def deleteImagesFromStorageImpl(paths: Seq[String]): Either[ImageServiceError, Unit] = {
+    // TODO: change to parallel
+    val results = paths.map {
+      path => storage.deleteImage(path)
+    }
+
+    results.find(_.isLeft) match {
+      case Some(Left(error)) => Left(error)
+      case _ => Right(())
+    }
+  }
+
+  def deleteProcessedImages(ids: Seq[Long]): Either[ImageServiceOrDatabaseError, Unit] = {
+    for (
+      paths <- wrapDatabaseError(imageDatabase.getSourceImageDescriptors(ids)).right.map {
+        _.map(_.path)
+      }.right;
+      _ <- wrapImageServiceError(deleteImagesFromStorageImpl(paths)).right;
+      _ <- wrapDatabaseError(imageDatabase.deleteProcessedImageRecords(ids)).right
+    ) yield ()
+  }
+
   // TODO: if the database operation fails, images need to be deleted from storage.
   // Failing to do that won't break anything, but will result in unused files.
   // Maybe some garbage collection is a better idea?
-  def uploadSourceImage(suggestedPath: String, source: Path, keywords: Seq[String], uploaderName: String): Either[ImageServiceError, Long] =
-    for (
-      _ <- {
-        logger.debug("Checking file type")
-        checkFileType(source).right
-      };
-      actualPath <- {
-        logger.debug("Uploading source image to storage")
-        storage.uploadImage(sourcePathPrefix + File.separator + suggestedPath, source).right
-      };
-      id <- {
-        logger.debug("Creating a database record for the source image")
-        wrapDatabaseError(imageDatabase.createSourceImageRecords(Seq(SourceImageRecord(actualPath, keywords, uploaderName)))).right
-      }
-    ) yield id.head
+  def uploadSourceImage(suggestedPath: String, source: Path, keywords: Seq[String], uploaderName: String): Either[ImageServiceOrDatabaseError, Long] =
+  for (
+    _ <- {
+      logger.debug("Checking file type")
+      wrapImageServiceError(checkFileType(source)).right
+    };
+    actualPath <- {
+      logger.debug("Uploading source image to storage")
+      wrapImageServiceError(storage.uploadImage(sourcePathPrefix + File.separator + suggestedPath, source)).right
+    };
+    id <- {
+      logger.debug("Creating a database record for the source image")
+      wrapDatabaseError(imageDatabase.createSourceImageRecords(Seq(SourceImageRecord(actualPath, keywords, uploaderName)))).right
+    }
+  ) yield id.head
 
   private case class AsServedImagePaths(mainImage: String, thumbnail: String)
 
@@ -141,7 +154,7 @@ class ImageAdminServiceDefaultImpl @Inject() (val imageDatabase: ImageDatabaseSe
   private def mkProcessedThumbnailRecords(sourceIds: Seq[Long], paths: Seq[AsServedImagePaths]): Seq[ProcessedImageRecord] =
     sourceIds.zip(paths).map { case (id, paths) => ProcessedImageRecord(paths.thumbnail, id, ProcessedImagePurpose.AsServedThumbnail) }
 
-  def processForAsServed(setId: String, sourceImageIds: Seq[Long]): Either[ImageServiceError, Seq[AsServedImageDescriptor]] =
+  def processForAsServed(setId: String, sourceImageIds: Seq[Long]): Either[ImageServiceOrDatabaseError, Seq[AsServedImageDescriptor]] =
     for (
       sources <- {
         logger.debug("Getting source image descriptors");
@@ -149,7 +162,7 @@ class ImageAdminServiceDefaultImpl @Inject() (val imageDatabase: ImageDatabaseSe
       };
       uploadedPaths <- {
         logger.debug("Processing and uploading as served images")
-        processAndUploadAsServed(setId, sources).right
+        wrapImageServiceError(processAndUploadAsServed(setId, sources)).right
       };
       mainImageIds <- {
         val records = mkProcessedMainImageRecords(sourceImageIds, uploadedPaths)
@@ -170,19 +183,19 @@ class ImageAdminServiceDefaultImpl @Inject() (val imageDatabase: ImageDatabaseSe
       }
     }
 
-  def processForGuideImageBase(sourceImageId: Long): Either[ImageServiceError, ImageDescriptor] = {
+  def processForGuideImageBase(sourceImageId: Long): Either[ImageServiceOrDatabaseError, ImageDescriptor] = {
     ???
   }
 
-  def processForGuideImageOverlays(sourceImageId: Long): Either[ImageServiceError, Seq[ImageDescriptor]] = {
+  def processForGuideImageOverlays(sourceImageId: Long): Either[ImageServiceOrDatabaseError, Seq[ImageDescriptor]] = {
     ???
   }
 
-  def uploadSourceImage(file: File, keywords: Seq[String]): Either[ImageServiceError, Long] = {
+  def uploadSourceImage(file: File, keywords: Seq[String]): Either[ImageServiceOrDatabaseError, Long] = {
     ???
   }
 
-  def processForSelectionScreen(pathPrefix: String, sourceImageId: Long): Either[ImageServiceError, ImageDescriptor] = {
-    ???
+  def processForSelectionScreen(pathPrefix: String, sourceImageId: Long): Either[ImageServiceOrDatabaseError, ImageDescriptor] = {
+???
   }
 }

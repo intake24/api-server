@@ -1,0 +1,1 @@
+SELECT id, image_id, thumbnail_image_id, weight FROM as_served_images WHERE as_served_set_id={as_served_set_it} ORDER BY weight

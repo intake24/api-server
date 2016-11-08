@@ -2,8 +2,8 @@ package uk.ac.ncl.openlab.intake24.services.fooddb.images
 
 
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 
 case class SourceImageRecord(path: String, keywords: Seq[String], uploader: String)
 
@@ -18,7 +18,8 @@ object ProcessedImagePurpose {
 }
 
 trait ImageDatabaseService {
-  def createSourceImageRecords(records: Seq[SourceImageRecord]): Either[DatabaseError, Seq[Long]]
-  def createProcessedImageRecords(records: Seq[ProcessedImageRecord]): Either[DatabaseError, Seq[Long]]
+  def createSourceImageRecords(records: Seq[SourceImageRecord]): Either[UnexpectedDatabaseError, Seq[Long]]
+  def createProcessedImageRecords(records: Seq[ProcessedImageRecord]): Either[UnexpectedDatabaseError, Seq[Long]]
+  def deleteProcessedImageRecords(ids: Seq[Long]): Either[UnexpectedDatabaseError, Unit]
   def getSourceImageDescriptors(ids: Seq[Long]): Either[LookupError, Seq[ImageDescriptor]]
 }

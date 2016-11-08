@@ -8,7 +8,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
 import anorm.SqlParser
 import java.sql.Connection
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
 
 trait SimpleValidation {
@@ -23,9 +23,9 @@ trait SimpleValidation {
 
   private case class CategoryAndLocaleValidationRow(category_exists: Option[Boolean], locale_exists: Option[Boolean])
 
-  private def checkTransactionIsolation[E >: DatabaseError](conn: Connection)(block: => Either[E, Unit]) = {
+  private def checkTransactionIsolation[E >: UnexpectedDatabaseError](conn: Connection)(block: => Either[E, Unit]) = {
     if (conn.getAutoCommit() || (conn.getTransactionIsolation != Connection.TRANSACTION_REPEATABLE_READ))
-      Left(DatabaseError(new RuntimeException("Connection must be in manual commit, repeatable read mode for simple validation")))
+      Left(UnexpectedDatabaseError(new RuntimeException("Connection must be in manual commit, repeatable read mode for simple validation")))
     else
       block
   }

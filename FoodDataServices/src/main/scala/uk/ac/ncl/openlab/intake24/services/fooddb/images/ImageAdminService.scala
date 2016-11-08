@@ -1,20 +1,48 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.images
 
-import java.io.File
 import java.nio.file.Path
+
 import org.apache.commons.io.FilenameUtils
 import java.util.UUID
 
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.AnyError
+
+
+case class ImageDescriptor(id: Long, path: String)
+
+case class ImageWithUrl(id: Long, url: String)
+
 case class AsServedImageDescriptor(mainImage: ImageDescriptor, thumbnail: ImageDescriptor)
 
+sealed trait ImageServiceOrDatabaseError {
+  def exception: Throwable = this match {
+    case ImageServiceErrorWrapper(error) => error.e
+    case DatabaseErrorWrapper(error) => error.exception
+  }
+}
+
+case class DatabaseErrorWrapper(error: AnyError) extends ImageServiceOrDatabaseError
+
+case class ImageServiceErrorWrapper(error: ImageServiceError) extends ImageServiceOrDatabaseError
+
+object ImageServiceOrDatabaseErrors {
+
+  implicit def wrapImageServiceError[T](result: Either[ImageServiceError, T]): Either[ImageServiceOrDatabaseError, T] = result.left.map(ImageServiceErrorWrapper(_))
+
+  implicit def wrapDatabaseError[T](result: Either[AnyError, T]): Either[ImageServiceOrDatabaseError, T] = result.left.map(DatabaseErrorWrapper(_))
+}
+
+
 trait ImageAdminService {
-  def uploadSourceImage(suggestedPath: String, source: Path, keywords: Seq[String], uploaderName: String): Either[ImageServiceError, Long]
+  def uploadSourceImage(suggestedPath: String, source: Path, keywords: Seq[String], uploaderName: String): Either[ImageServiceOrDatabaseError, Long]
 
-  def processForAsServed(setId: String, sourceImageIds: Seq[Long]): Either[ImageServiceError, Seq[AsServedImageDescriptor]]
-  def processForSelectionScreen(pathPrefix: String, sourceImageId: Long): Either[ImageServiceError, ImageDescriptor]
+  def deleteProcessedImages(ids: Seq[Long]): Either[ImageServiceOrDatabaseError, Unit]
 
-  def processForGuideImageBase(sourceImageId: Long): Either[ImageServiceError, ImageDescriptor]
-  def processForGuideImageOverlays(sourceImageId: Long): Either[ImageServiceError, Seq[ImageDescriptor]]
+  def processForAsServed(setId: String, sourceImageIds: Seq[Long]): Either[ImageServiceOrDatabaseError, Seq[AsServedImageDescriptor]]
+  def processForSelectionScreen(pathPrefix: String, sourceImageId: Long): Either[ImageServiceOrDatabaseError, ImageDescriptor]
+
+  def processForGuideImageBase(sourceImageId: Long): Either[ImageServiceOrDatabaseError, ImageDescriptor]
+  def processForGuideImageOverlays(sourceImageId: Long): Either[ImageServiceOrDatabaseError, Seq[ImageDescriptor]]
 }
 
 object ImageAdminService {

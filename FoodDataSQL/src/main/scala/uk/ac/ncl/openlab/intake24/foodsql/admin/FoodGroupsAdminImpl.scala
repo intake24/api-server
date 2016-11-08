@@ -8,7 +8,7 @@ import uk.ac.ncl.openlab.intake24.FoodGroupRecord
 import uk.ac.ncl.openlab.intake24.FoodGroupMain
 import uk.ac.ncl.openlab.intake24.FoodGroupLocal
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
@@ -55,7 +55,7 @@ trait FoodGroupsAdminImpl extends FoodGroupsAdminService with FoodDataSqlService
     implicit conn =>
       val result = SQL(getFoodGroupQuery).on('id -> id, 'locale_id -> locale).executeQuery()
 
-      val validation: Seq[FirstRowValidationClause[LocalLookupError, FoodGroupRow]] = 
+      val validation: Seq[FirstRowValidationClause[LocalLookupError, FoodGroupRow]] =
         Seq(FirstRowValidationClause("locale_id", () => Left(UndefinedLocale(new RuntimeException()))), FirstRowValidationClause[LocalLookupError, FoodGroupRow]("id", () => Left(RecordNotFound(new RuntimeException(id.toString())))))
 
       parseWithFirstRowValidation(result, validation, parser.single)
@@ -65,7 +65,7 @@ trait FoodGroupsAdminImpl extends FoodGroupsAdminService with FoodDataSqlService
         }
   }
 
-  def deleteAllFoodGroups(): Either[DatabaseError, Unit] = tryWithConnection {
+  def deleteAllFoodGroups(): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
       SQL("DELETE FROM food_groups").execute()
       Right(())
@@ -87,7 +87,7 @@ trait FoodGroupsAdminImpl extends FoodGroupsAdminService with FoodDataSqlService
         Right(())
   }
 
-  def deleteLocalFoodGroups(locale: String): Either[DatabaseError, Unit] = tryWithConnection {
+  def deleteLocalFoodGroups(locale: String): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
       SQL("DELETE FROM food_groups_locale WHERE locale_id={locale_id}")
         .on('locale_id -> locale)
@@ -96,7 +96,7 @@ trait FoodGroupsAdminImpl extends FoodGroupsAdminService with FoodDataSqlService
       Right(())
   }
 
-  def createLocalFoodGroups(localFoodGroups: Map[Int, FoodGroupLocal], locale: String): Either[DatabaseError, Unit] = tryWithConnection {
+  def createLocalFoodGroups(localFoodGroups: Map[Int, FoodGroupLocal], locale: String): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
 
       val foodGroupLocalParams = localFoodGroups.map {

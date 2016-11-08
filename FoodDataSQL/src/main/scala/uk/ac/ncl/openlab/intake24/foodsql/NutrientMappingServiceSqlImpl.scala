@@ -13,7 +13,7 @@ import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientDescription
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService
 
 import org.postgresql.util.PSQLException
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.NutrientMappingError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
@@ -23,7 +23,7 @@ class NutrientMappingServiceSqlImpl @Inject() (@Named("intake24_foods") val data
 
   private case class NutrientDescriptionRow(id: Int, description: String, symbol: String)
 
-  def supportedNutrients(): Either[DatabaseError, Seq[NutrientDescription]] = tryWithConnection {
+  def supportedNutrients(): Either[UnexpectedDatabaseError, Seq[NutrientDescription]] = tryWithConnection {
     implicit conn =>
       Right(SQL("SELECT nutrient_types.id, nutrient_types.description, nutrient_units.symbol FROM nutrient_types INNER JOIN nutrient_units ON nutrient_types.unit_id = nutrient_units.id")
         .executeQuery()

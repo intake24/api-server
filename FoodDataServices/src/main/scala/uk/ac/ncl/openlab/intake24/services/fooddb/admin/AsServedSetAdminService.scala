@@ -1,20 +1,19 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.admin
 
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.AsServedImageService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
 import uk.ac.ncl.openlab.intake24.AsServedHeader
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageDescriptor
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors._
 
 case class AsServedImageWithPaths(sourceId: Long, imagePath: String, thumbnailPath: String, weight: Double)
 
-case class AsServedImageRecord(mainImageId: Long, thumbnailId: Long, weight: Double)
+case class AsServedImageRecord(id: Long, mainImageId: Long, thumbnailId: Long, weight: Double)
+
+case class NewAsServedImageRecord(mainImageId: Long, thumbnailId: Long, weight: Double)
 
 case class AsServedSetWithPaths(id: String, description: String, images: Seq[AsServedImageWithPaths])
 
 case class AsServedSetRecord(id: String, description: String, selectionImageId: Long, images: Seq[AsServedImageRecord])
+
+case class NewAsServedSetRecord(id: String, description: String, selectionImageId: Long, images: Seq[NewAsServedImageRecord])
 
 case class PortableAsServedImage(sourcePath: String, sourceKeywords: Seq[String], mainImagePath: String, thumbnailPath: String, weight: Double)
 
@@ -23,7 +22,7 @@ case class PortableAsServedSet(id: String, description: String, selectionSourceP
 
 trait AsServedSetsAdminService {
   
-  def listAsServedSets(): Either[DatabaseError, Map[String, AsServedHeader]]
+  def listAsServedSets(): Either[UnexpectedDatabaseError, Map[String, AsServedHeader]]
   
   def getAsServedSetWithPaths(id: String): Either[LookupError, AsServedSetWithPaths]
   
@@ -31,9 +30,9 @@ trait AsServedSetsAdminService {
   
   def getPortableAsServedSet(id: String): Either[LookupError, PortableAsServedSet]
   
-  def deleteAllAsServedSets(): Either[DatabaseError, Unit]
+  def deleteAllAsServedSets(): Either[UnexpectedDatabaseError, Unit]
 
-  def createAsServedSets(sets: Seq[AsServedSetRecord]): Either[CreateError, Unit]
+  def createAsServedSets(sets: Seq[NewAsServedSetRecord]): Either[CreateError, Unit]
   
-  def updateAsServedSet(id: String, update: AsServedSetRecord): Either[UpdateError, Unit]
+  def updateAsServedSet(id: String, update: NewAsServedSetRecord): Either[UpdateError, Unit]
 }

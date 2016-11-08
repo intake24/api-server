@@ -102,7 +102,7 @@ case class IllegalParent(exception: Throwable) extends ParentError
 
 case class TableNotFound(exception: Throwable) extends NutrientMappingError
 
-case class DatabaseError(exception: Throwable)
+case class UnexpectedDatabaseError(exception: Throwable)
   extends LocaleError
   with LookupError
   with DeleteError

@@ -16,7 +16,7 @@ import uk.ac.ncl.openlab.intake24.foodsql.SimpleValidation
 import uk.ac.ncl.openlab.intake24.foodsql.modular.BrandNamesAdminQueries
 import uk.ac.ncl.openlab.intake24.foodsql.user.BrandNamesUserImpl
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.BrandNamesAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentCreateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentRecordNotFound

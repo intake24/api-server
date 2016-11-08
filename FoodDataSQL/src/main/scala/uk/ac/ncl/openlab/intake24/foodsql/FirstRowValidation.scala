@@ -8,7 +8,7 @@ import anorm.SqlQueryResult
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import anorm.ResultSetParser
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import anorm.AnormUtil.isNull
 import anorm.AnormException
@@ -20,7 +20,7 @@ trait FirstRowValidation {
   
     // see http://stackoverflow.com/a/38793141/622196 for explanation
   
-    def parseWithFirstRowValidation[E >: DatabaseError, T](result: SqlQueryResult, validation: Seq[FirstRowValidationClause[E, T]], parser: ResultSetParser[T])(implicit connection: java.sql.Connection): Either[E, T] = {
+    def parseWithFirstRowValidation[E >: UnexpectedDatabaseError, T](result: SqlQueryResult, validation: Seq[FirstRowValidationClause[E, T]], parser: ResultSetParser[T])(implicit connection: java.sql.Connection): Either[E, T] = {
     result.withResult {
       cursorOpt =>
         val firstRow = cursorOpt.get.row
@@ -33,12 +33,12 @@ trait FirstRowValidation {
             case anorm.Success(parsed) => Right(parsed)
             case anorm.Error(e) => {
               // val exception = new AnormException(e.message)              
-              Left(DatabaseError(new RuntimeException(e.message)))
+              Left(UnexpectedDatabaseError(new RuntimeException(e.message)))
             }
           }
         }
     } match {
-      case Left(errors) => Left(DatabaseError(errors.head))
+      case Left(errors) => Left(UnexpectedDatabaseError(errors.head))
       case Right(data) => data
     }
   }

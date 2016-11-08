@@ -42,53 +42,53 @@ class FoodsAdminController @Inject() (service: FoodsAdminService, deadbolt: Dead
 
   def getFoodRecord(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.getFoodRecord(code, locale))
+      translateDatabaseResult(service.getFoodRecord(code, locale))
     }
   }
 
   def isFoodCodeAvailable(code: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.isFoodCodeAvailable(code))
+      translateDatabaseResult(service.isFoodCodeAvailable(code))
     }
   }
 
   def isFoodCode(code: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.isFoodCode(code))
+      translateDatabaseResult(service.isFoodCode(code))
     }
   }
 
   def createFood() = deadbolt.restrict(Roles.superuser)(upickleRead[NewMainFoodRecord]) {
     request =>
       Future {
-        translateResult(service.createFood(request.body))
+        translateDatabaseResult(service.createFood(request.body))
       }
   }
 
   def createFoodWithTempCode() = deadbolt.restrict(Roles.superuser)(upickleRead[NewMainFoodRecord]) {
     request =>
       Future {
-        translateResult(service.createFoodWithTempCode(request.body))
+        translateDatabaseResult(service.createFoodWithTempCode(request.body))
       }
   }
 
   def updateMainFoodRecord(foodCode: String) = deadbolt.restrict(Roles.superuser)(upickleRead[MainFoodRecordUpdate]) {
     request =>
       Future {
-        translateResult(service.updateMainFoodRecord(foodCode, request.body))
+        translateDatabaseResult(service.updateMainFoodRecord(foodCode, request.body))
       }
   }
 
   def updateLocalFoodRecord(foodCode: String, locale: String) = deadbolt.restrict(Roles.superuser)(upickleRead[LocalFoodRecordUpdate]) {
     request =>
       Future {
-        translateResult(service.updateLocalFoodRecord(foodCode, request.body, locale))
+        translateDatabaseResult(service.updateLocalFoodRecord(foodCode, request.body, locale))
       }
   }
 
   def deleteFood(code: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.deleteFoods(Seq(code)))
+      translateDatabaseResult(service.deleteFoods(Seq(code)))
     }
   }
 }

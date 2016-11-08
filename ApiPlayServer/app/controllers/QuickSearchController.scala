@@ -33,13 +33,13 @@ class QuickSearchController @Inject() (service: QuickSearchService, deadbolt: De
 
   def searchFoods(searchTerm: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.searchFoods(searchTerm, locale))
+      translateDatabaseResult(service.searchFoods(searchTerm, locale))
     }
   }
 
   def searchCategories(searchTerm: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.searchCategories(searchTerm, locale))
+      translateDatabaseResult(service.searchCategories(searchTerm, locale))
     }
   }
 }

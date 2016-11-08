@@ -13,7 +13,7 @@ import javax.inject.Inject
 import javax.inject.Named
 import javax.sql.DataSource
 import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageDatabaseService
@@ -24,26 +24,26 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.images.SourceImageRecord
 import org.slf4j.LoggerFactory
 import org.joda.time.DateTime
 
-class ImageDatabaseServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends ImageDatabaseService with FoodDataSqlService {
-  
+class ImageDatabaseServiceSqlImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends ImageDatabaseService with FoodDataSqlService {
+
   private val logger = LoggerFactory.getLogger(classOf[ImageDatabaseServiceSqlImpl])
 
   private case class SourceImageDescriptorRow(id: Long, path: String)
 
-  def createSourceImageRecords(records: Seq[SourceImageRecord]): Either[DatabaseError, Seq[Long]] = tryWithConnection {
+  def createSourceImageRecords(records: Seq[SourceImageRecord]): Either[UnexpectedDatabaseError, Seq[Long]] = tryWithConnection {
     implicit conn =>
       val query = "INSERT INTO source_images VALUES(DEFAULT,{path},{keywords},{uploader},DEFAULT)"
 
       val params = records.map {
         rec => Seq[NamedParameter]('path -> rec.path, 'keywords -> rec.keywords.map(_.toLowerCase()).toArray, 'uploader -> rec.uploader)
       }
-      
+
       val result = AnormUtil.batchKeys(batchSql(query, params))
-      
+
       Right(result)
   }
 
-  def createProcessedImageRecords(records: Seq[ProcessedImageRecord]): Either[DatabaseError, Seq[Long]] = tryWithConnection {
+  def createProcessedImageRecords(records: Seq[ProcessedImageRecord]): Either[UnexpectedDatabaseError, Seq[Long]] = tryWithConnection {
     implicit conn =>
       val query = "INSERT INTO processed_images VALUES(DEFAULT,{path},{source_id},{purpose},DEFAULT)"
 
@@ -61,6 +61,16 @@ class ImageDatabaseServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSo
 
       Right(AnormUtil.batchKeys(batchSql(query, params)))
   }
+
+  def deleteProcessedImageRecords(ids: Seq[Long]): Either[UnexpectedDatabaseError, Unit] =
+    tryWithConnection {
+      implicit conn =>
+        val query = "DELETE FROM processed_images WHERE id IN {ids}"
+
+        SQL(query).on('ids -> ids).execute()
+
+        Right(())
+    }
 
   def getSourceImageDescriptors(ids: Seq[Long]): Either[LookupError, Seq[ImageDescriptor]] = tryWithConnection {
     implicit conn =>

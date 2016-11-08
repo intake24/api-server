@@ -1,46 +1,43 @@
 package controllers
 
-import scala.annotation.implicitNotFound
-
 import org.slf4j.LoggerFactory
-
+import play.api.Logger
 import play.api.http.ContentTypes
-import play.api.mvc.Results
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.AnyError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DuplicateCode
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.IllegalParent
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentRecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.VersionConflict
-import upickle.default.Writer
-import upickle.default.write
+import play.api.mvc.{Result, Results}
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors._
+import upickle.default._
 
 trait FoodDatabaseErrorHandler extends Results {
 
   private val logger = LoggerFactory.getLogger(classOf[FoodDatabaseErrorHandler])
 
-  def databaseErrorBody(message: String) = s"""{"cause":"DatabaseError","errorMessage":"$message"}"""
-  val recordNotFoundErrorBody = s"""{"cause":"RecordNotFound"}"""
-  val undefinedLocaleErrorBody = s"""{"cause":"UndefinedLocale"}"""
-  val duplicateCodeErrorBody = s"""{"cause":"DuplicateCode"}"""
-  val parentRecordNotFoundErrorBody = s"""{"cause":"ParentRecordNotFound"}"""
-  val illegalParentErrorBody = s"""{"cause":"IllegalParent"}"""
+  private def databaseErrorBody(message: String) = s"""{"cause":"DatabaseError","errorMessage":"$message"}"""
 
-  def handleDatabaseError(e: Throwable) = {
+  private val recordNotFoundErrorBody = s"""{"cause":"RecordNotFound"}"""
+  private val undefinedLocaleErrorBody = s"""{"cause":"UndefinedLocale"}"""
+  private val duplicateCodeErrorBody = s"""{"cause":"DuplicateCode"}"""
+  private val parentRecordNotFoundErrorBody = s"""{"cause":"ParentRecordNotFound"}"""
+  private val illegalParentErrorBody = s"""{"cause":"IllegalParent"}"""
+
+  private def logException(e: Throwable) = Logger.error("Database exception", e)
+
+  private def handleDatabaseError(e: Throwable): Result = {
     logger.error("DatabaseError", e)
     InternalServerError(databaseErrorBody(e.getMessage())).as(ContentTypes.JSON)
   }
 
-  def translateResult[T](result: Either[AnyError, T])(implicit writer: Writer[T]) = result match {
+  def translateDatabaseError(error: AnyError): Result = error match {
+    case DuplicateCode(_) => BadRequest(duplicateCodeErrorBody).as(ContentTypes.JSON)
+    case VersionConflict(_) => Conflict.as(ContentTypes.JSON)
+    case RecordNotFound(_) => NotFound(recordNotFoundErrorBody).as(ContentTypes.JSON)
+    case UndefinedLocale(_) => BadRequest(undefinedLocaleErrorBody).as(ContentTypes.JSON)
+    case ParentRecordNotFound(_) => BadRequest(parentRecordNotFoundErrorBody).as(ContentTypes.JSON)
+    case IllegalParent(_) => BadRequest(illegalParentErrorBody).as(ContentTypes.JSON)
+    case UnexpectedDatabaseError(exception) => handleDatabaseError(exception)
+  }
+
+  def translateDatabaseResult[T](result: Either[AnyError, T])(implicit writer: Writer[T]) = result match {
     case Right(result) => Ok(write(result)).as(ContentTypes.JSON)
-    case Left(DuplicateCode(_)) => BadRequest(duplicateCodeErrorBody).as(ContentTypes.JSON)
-    case Left(VersionConflict(_)) => Conflict.as(ContentTypes.JSON)
-    case Left(RecordNotFound(_)) => NotFound(recordNotFoundErrorBody).as(ContentTypes.JSON)
-    case Left(UndefinedLocale(_)) => BadRequest(undefinedLocaleErrorBody).as(ContentTypes.JSON)
-    case Left(ParentRecordNotFound(_)) => BadRequest(parentRecordNotFoundErrorBody).as(ContentTypes.JSON)
-    case Left(IllegalParent(_)) => BadRequest(illegalParentErrorBody).as(ContentTypes.JSON)
-    case Left(DatabaseError(exception)) => handleDatabaseError(exception)
+    case Left(error) => translateDatabaseError(error)
   }
 }

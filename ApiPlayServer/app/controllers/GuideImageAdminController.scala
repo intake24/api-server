@@ -33,13 +33,13 @@ class GuideImageAdminController @Inject() (service: GuideImageAdminService, dead
   
    def listGuideImages() = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.listGuideImages())
+      translateDatabaseResult(service.listGuideImages())
     }
   }
    
    def getGuideImage(id: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateResult(service.getGuideImage(id))
+      translateDatabaseResult(service.getGuideImage(id))
     }
   } 
 }
