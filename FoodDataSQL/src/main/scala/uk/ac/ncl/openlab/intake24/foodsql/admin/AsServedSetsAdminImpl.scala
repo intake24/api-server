@@ -109,7 +109,7 @@ trait AsServedSetsAdminImpl extends AsServedSetsAdminService with FoodDataSqlSer
       }
   }
 
-  private case class PortableAsServedImageRow(weight: Double, source_path: String, keywords: Array[String], image_path: String, thumbnail_image_path: String)
+  private case class PortableAsServedImageRow(weight: Double, source_path: String, source_thumbnail_path: String, keywords: Array[String], image_path: String, thumbnail_image_path: String)
 
   private case class PortableAsServedSetRow(description: String, selection_source_path: String, selection_image_path: String)
 
@@ -124,7 +124,7 @@ trait AsServedSetsAdminImpl extends AsServedSetsAdminService with FoodDataSqlSer
           case Some(row) =>
             val images = SQL(portableImagesQuery).on('as_served_set_id -> id).as(Macro.namedParser[PortableAsServedImageRow].*).map {
               row =>
-                PortableAsServedImage(row.source_path, row.keywords, row.image_path, row.thumbnail_image_path, row.weight)
+                PortableAsServedImage(row.source_path, row.source_thumbnail_path, row.keywords, row.image_path, row.thumbnail_image_path, row.weight)
             }
             Right(PortableAsServedSet(id, row.description, row.selection_source_path, row.selection_image_path, images))
           case None => Left(RecordNotFound(new RuntimeException(s"As served set $id not found")))
@@ -135,17 +135,18 @@ trait AsServedSetsAdminImpl extends AsServedSetsAdminService with FoodDataSqlSer
   def updateAsServedSet(id: String, update: NewAsServedSetRecord): Either[UpdateError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
-        if (SQL("UPDATE as_served_sets SET id={new_id},description={description} WHERE id={id}").on('id -> id, 'new_id -> update.id, 'description -> update.description).executeUpdate() != 1)
+        if (SQL("UPDATE as_served_sets SET id={new_id},selection_image_id={selection_image_id},description={description} WHERE id={id}")
+          .on('id -> id, 'new_id -> update.id, 'selection_image_id -> update.selectionImageId, 'description -> update.description).executeUpdate() != 1)
           Left(RecordNotFound(new RuntimeException(s"As served set $id not found")))
         else {
           SQL("DELETE FROM as_served_images WHERE as_served_set_id={id}").on('id -> update.id).execute()
 
           if (update.images.nonEmpty) {
             val imageParams = update.images.map {
-              image => Seq[NamedParameter]()
+              image => Seq[NamedParameter]('as_served_set_id -> update.id, 'weight -> image.weight, 'image_id -> image.mainImageId, 'thumbnail_image_id -> image.thumbnailId)
             }
 
-            batchSql("INSERT INTO as_served_images VALUES(DEFAULT,{as_served_set_it},{weight},{image_id},{thumbnail_image_id})", imageParams).execute()
+            batchSql("INSERT INTO as_served_images VALUES(DEFAULT,{as_served_set_id},{weight},{image_id},{thumbnail_image_id})", imageParams).execute()
           }
 
           Right(())

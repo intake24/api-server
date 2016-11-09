@@ -18,84 +18,22 @@ limitations under the License.
 
 package modules
 
-import com.google.inject.AbstractModule
-import com.google.inject.Injector
-import com.google.inject.Provides
-import com.google.inject.Singleton
+import cache._
+import com.google.inject.{AbstractModule, Injector, Provides, Singleton}
 import com.google.inject.name.Named
-import play.api.Configuration
-import play.api.Environment
+import play.api.{Configuration, Environment, Logger}
 import play.api.db.Database
 import play.db.NamedDatabase
-import uk.ac.ncl.openlab.intake24.datastoresql.DataStoreScala
-import uk.ac.ncl.openlab.intake24.datastoresql.DataStoreSqlImpl
-import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex
-import uk.ac.ncl.openlab.intake24.services.foodindex.english.EnglishStemmerPlingImpl
-import uk.ac.ncl.openlab.intake24.services.foodindex.english.EnglishWordStemmer
-import uk.ac.ncl.openlab.intake24.services.foodindex.english.FoodIndexImpl_en_GB
-import java.lang.annotation.Retention
-import com.google.inject.BindingAnnotation
-import java.lang.annotation.RetentionPolicy
-import java.lang.annotation.Annotation
-
-import cache.CachedProblemChecker
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDatabaseService
-import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
-import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
-import uk.ac.ncl.openlab.intake24.foodsql.user.FoodDatabaseUserImpl
+import uk.ac.ncl.openlab.intake24.datastoresql.{DataStoreScala, DataStoreSqlImpl}
+import uk.ac.ncl.openlab.intake24.foodsql.admin._
 import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AsServedSetsAdminService
-import uk.ac.ncl.openlab.intake24.foodsql.admin.AsServedSetsAdminImpl
-import uk.ac.ncl.openlab.intake24.foodsql.admin.AssociatedFoodsAdminImpl
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoriesAdminService
-import uk.ac.ncl.openlab.intake24.foodsql.admin.CategoriesAdminImpl
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.DrinkwareAdminService
-import uk.ac.ncl.openlab.intake24.foodsql.admin.DrinkwareAdminImpl
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodBrowsingAdminService
-import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodBrowsingAdminImpl
-import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodGroupsAdminImpl
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
-import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodsAdminImpl
-import uk.ac.ncl.openlab.intake24.foodsql.admin.GuideImageAdminImpl
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.GuideImageAdminService
-import uk.ac.ncl.openlab.intake24.foodsql.admin.LocalesAdminImpl
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.LocalesAdminService
-import uk.ac.ncl.openlab.intake24.foodsql.admin.NutrientTablesAdminImpl
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.NutrientTablesAdminService
-import cache.ObservableFoodsAdminService
-import cache.ObservableFoodsAdminServiceImpl
-import cache.ObservableCategoriesAdminService
-import cache.ObservableCategoriesAdminServiceImpl
-import cache.ObservableLocalesAdminService
-import cache.ObservableLocalesAdminServiceImpl
-import uk.ac.ncl.openlab.intake24.foodsql.admin.LocalesAdminStandaloneImpl
-import uk.ac.ncl.openlab.intake24.foodsql.admin.GuideImageAdminStandaloneImpl
-import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodGroupsAdminStandaloneImpl
-import uk.ac.ncl.openlab.intake24.foodsql.admin.CategoriesAdminStandaloneImpl
-import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodBrowsingAdminStandaloneImpl
-import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodsAdminStandaloneImpl
-import uk.ac.ncl.openlab.intake24.foodsql.admin.DrinkwareAdminStandaloneImpl
-import uk.ac.ncl.openlab.intake24.foodsql.admin.AsServedSetsAdminStandaloneImpl
-import uk.ac.ncl.openlab.intake24.foodsql.admin.AssociatedFoodsAdminStandaloneImpl
-import uk.ac.ncl.openlab.intake24.foodsql.admin.NutrientTablesAdminStandaloneImpl
-import uk.ac.ncl.openlab.intake24.foodsql.user.FoodDataUserStandaloneImpl
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDataService
-import uk.ac.ncl.openlab.intake24.foodsql.admin.QuickSearchAdminStandaloneImpl
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.QuickSearchService
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageProcessor
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageProcessorIM
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageProcessorSettings
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.AsServedImageSettings
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageAdminServiceDefaultImpl
 import uk.ac.ncl.openlab.intake24.foodsql.images.ImageDatabaseServiceSqlImpl
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageDatabaseService
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.FileTypeAnalyzer
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.FileCommandFileTypeAnalyzer
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.SelectionImageSettings
+import uk.ac.ncl.openlab.intake24.foodsql.user.{FoodDataUserStandaloneImpl, FoodDatabaseUserImpl}
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
+import uk.ac.ncl.openlab.intake24.services.fooddb.images._
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.{FoodDataService, FoodDatabaseService}
+import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, FoodIndexDataService}
+import uk.ac.ncl.openlab.intake24.services.foodindex.english.{EnglishStemmerPlingImpl, EnglishWordStemmer, FoodIndexImpl_en_GB}
 
 class Intake24ServicesModule(env: Environment, config: Configuration) extends AbstractModule {
   @Provides
@@ -114,16 +52,21 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
   @Provides
   @Singleton
   def imageProcessorSettings(configuration: Configuration): ImageProcessorSettings = {
+
+    val source = SourceImageSettings(
+      configuration.getInt("intake24.images.processor.source.thumbnailWidth").get,
+      configuration.getInt("intake24.images.processor.source.thumbnailHeight").get)
+
     val asServed = AsServedImageSettings(
-      configuration.getInt("intake24.images.processor.asServed.mainImageWidth").getOrElse(654),
-      configuration.getInt("intake24.images.processor.asServed.mainImageHeight").getOrElse(436),
-      configuration.getInt("intake24.images.processor.asServed.thumbnailWidth").getOrElse(80))
+      configuration.getInt("intake24.images.processor.asServed.mainImageWidth").get,
+      configuration.getInt("intake24.images.processor.asServed.mainImageHeight").get,
+      configuration.getInt("intake24.images.processor.asServed.thumbnailWidth").get)
 
     val selection = SelectionImageSettings(
-      configuration.getInt("intake24.images.processor.selectionImage.width").getOrElse(300),
-      configuration.getInt("intake24.images.processor.selectionImage.height").getOrElse(200))
+      configuration.getInt("intake24.images.processor.selectionScreen.width").get,
+      configuration.getInt("intake24.images.processor.selectionScreen.height").get)
 
-    ImageProcessorSettings(selection, asServed)
+    ImageProcessorSettings(source, selection, asServed)
   }
 
   def configure() = {

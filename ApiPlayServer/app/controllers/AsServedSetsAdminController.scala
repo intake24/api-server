@@ -84,7 +84,7 @@ class AsServedSetsAdminController @Inject()(
 
         val sourceImages = set.images.map {
           img =>
-            SourceImageRecord(img.sourcePath, img.sourceKeywords, request.subject.get.identifier.split('#')(0))
+            NewSourceImageRecord(img.sourcePath, img.sourceThumbnailPath, img.sourceKeywords, request.subject.get.identifier.split('#')(0))
         }
 
         val result = for (
@@ -240,7 +240,7 @@ class AsServedSetsAdminController @Inject()(
             wrapDatabaseError(service.updateAsServedSet(id, NewAsServedSetRecord(update.id, update.description, newDescriptors._2.id, newImageRecords))).right
           };
           _ <- cleanUpOldImages(oldSet).right;
-          res <- wrapDatabaseError(service.getAsServedSetWithPaths(id)).right
+          res <- wrapDatabaseError(service.getAsServedSetWithPaths(update.id)).right
         ) yield res
 
         translateImageServiceAndDatabaseResult(result)

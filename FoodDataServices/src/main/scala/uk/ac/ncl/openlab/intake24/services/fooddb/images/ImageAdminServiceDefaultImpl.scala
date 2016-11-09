@@ -1,14 +1,14 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.images
 
 import java.io.{File, IOException}
-import java.nio.file.{FileVisitResult, Files, Path, SimpleFileVisitor}
 import java.nio.file.attribute.BasicFileAttributes
+import java.nio.file.{FileVisitResult, Files, Path, SimpleFileVisitor}
 import java.util.UUID
 import javax.inject.Inject
 
 import org.apache.commons.io.FilenameUtils
 import org.slf4j.LoggerFactory
-import ImageServiceOrDatabaseErrors._
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageServiceOrDatabaseErrors._
 
 class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseService, val imageProcessor: ImageProcessor, val storage: ImageStorageService,
                                              val fileTypeAnalyzer: FileTypeAnalyzer)
@@ -20,7 +20,7 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
 
   private val logger = LoggerFactory.getLogger(classOf[ImageAdminServiceDefaultImpl])
 
-  private def withTempDir[T](block: Path => Either[ImageServiceError, T]): Either[ImageServiceError, T] =
+  private def withTempDir[T](block: Path => Either[ImageServiceOrDatabaseError, T]): Either[ImageServiceOrDatabaseError, T] =
     try {
       val tempDir = Files.createTempDirectory("intake24")
       try {
@@ -39,7 +39,7 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
         })
       }
     } catch {
-      case e: IOException => Left(IOError(e))
+      case e: IOException => Left(ImageServiceErrorWrapper(IOError(e)))
     }
 
 
@@ -66,7 +66,7 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
 
   def deleteProcessedImages(ids: Seq[Long]): Either[ImageServiceOrDatabaseError, Unit] = {
     for (
-      paths <- wrapDatabaseError(imageDatabase.getSourceImageDescriptors(ids)).right.map {
+      paths <- wrapDatabaseError(imageDatabase.getProcessedImageRecords(ids)).right.map {
         _.map(_.path)
       }.right;
       _ <- wrapImageServiceError(deleteImagesFromStorageImpl(paths)).right;
@@ -78,29 +78,43 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
   // Failing to do that won't break anything, but will result in unused files.
   // Maybe some garbage collection is a better idea?
   def uploadSourceImage(suggestedPath: String, source: Path, keywords: Seq[String], uploaderName: String): Either[ImageServiceOrDatabaseError, Long] =
-  for (
-    _ <- {
-      logger.debug("Checking file type")
-      wrapImageServiceError(checkFileType(source)).right
-    };
-    actualPath <- {
-      logger.debug("Uploading source image to storage")
-      wrapImageServiceError(storage.uploadImage(sourcePathPrefix + File.separator + suggestedPath, source)).right
-    };
-    id <- {
-      logger.debug("Creating a database record for the source image")
-      wrapDatabaseError(imageDatabase.createSourceImageRecords(Seq(SourceImageRecord(actualPath, keywords, uploaderName)))).right
-    }
-  ) yield id.head
+  withTempDir {
+    tempDir =>
+      val extension = getExtension(source.toString)
+      val thumbDst = Files.createTempFile(tempDir, "intake24", extension)
+
+      for (
+        _ <- {
+          logger.debug("Checking file type")
+          wrapImageServiceError(checkFileType(source)).right
+        };
+        _ <- {
+          logger.debug("Generating fixed size thumbnail")
+          wrapImageServiceError(imageProcessor.processForSourceThumbnail(source, thumbDst)).right
+        };
+        actualPath <- {
+          logger.debug("Uploading source image to storage")
+          wrapImageServiceError(storage.uploadImage(sourcePathPrefix + File.separator + suggestedPath, source)).right
+        };
+        actualThumbPath <- {
+          logger.debug("Uploading thumbnail image to storage")
+          wrapImageServiceError(storage.uploadImage(sourcePathPrefix + "/thumbnails/" + suggestedPath, thumbDst)).right
+        };
+        id <- {
+          logger.debug("Creating a database record for the source image")
+          wrapDatabaseError(imageDatabase.createSourceImageRecords(Seq(NewSourceImageRecord(actualPath, actualThumbPath, keywords, uploaderName)))).right
+        }
+      ) yield id.head
+  }
 
   private case class AsServedImagePaths(mainImage: String, thumbnail: String)
 
   private def getExtension(path: String) = "." + FilenameUtils.getExtension(path).toLowerCase()
 
-  private def processAndUploadAsServed(setId: String, sources: Seq[ImageDescriptor]): Either[ImageServiceError, Seq[AsServedImagePaths]] = {
+  private def processAndUploadAsServed(setId: String, sources: Seq[ImageDescriptor]): Either[ImageServiceOrDatabaseError, Seq[AsServedImagePaths]] = {
     withTempDir {
       tempDir =>
-        def rec(src: Seq[ImageDescriptor], acc: Vector[AsServedImagePaths]): Either[ImageServiceError, Vector[AsServedImagePaths]] =
+        def rec(src: Seq[ImageDescriptor], acc: Vector[AsServedImagePaths]): Either[ImageServiceOrDatabaseError, Vector[AsServedImagePaths]] =
           if (src.isEmpty)
             Right(acc)
           else {
@@ -115,10 +129,10 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
             val randomName = UUID.randomUUID().toString() + extension
 
             val processResult = for (
-              _ <- storage.downloadImage(desc.path, srcPath).right;
-              _ <- imageProcessor.processForAsServed(srcPath, dstMainPath, dstThumbnailPath).right;
-              actualMainPath <- storage.uploadImage(s"as_served/$setId/$randomName", dstMainPath).right;
-              actualThumbPath <- storage.uploadImage(s"as_served/$setId/thumbnails/$randomName", dstThumbnailPath).right
+              _ <- wrapImageServiceError(storage.downloadImage(desc.path, srcPath)).right;
+              _ <- wrapImageServiceError(imageProcessor.processForAsServed(srcPath, dstMainPath, dstThumbnailPath)).right;
+              actualMainPath <- wrapImageServiceError(storage.uploadImage(s"as_served/$setId/$randomName", dstMainPath)).right;
+              actualThumbPath <- wrapImageServiceError(storage.uploadImage(s"as_served/$setId/thumbnails/$randomName", dstThumbnailPath)).right
             ) yield AsServedImagePaths(actualMainPath, actualThumbPath)
 
             processResult match {
@@ -131,7 +145,7 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
     }
   }
 
-  private def processAndUploadSelectionScreenImage(pathPrefix: String, source: ImageDescriptor): Either[ImageServiceError, String] =
+  private def processAndUploadSelectionScreenImage(pathPrefix: String, source: ImageDescriptor): Either[ImageServiceOrDatabaseError, String] =
     withTempDir {
       tempDir =>
         val extension = getExtension(source.path)
@@ -139,12 +153,12 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
         val srcPath = Files.createTempFile(tempDir, "intake24", extension)
         val dstPath = Files.createTempFile(tempDir, "intake24", extension)
 
-        val randomName = "selection/" + UUID.randomUUID().toString() + extension
+        val randomName = UUID.randomUUID().toString() + extension
 
         for (
-          _ <- storage.downloadImage(source.path, srcPath).right;
-          _ <- imageProcessor.processForSelectionScreen(srcPath, dstPath).right;
-          actualPath <- storage.uploadImage(s"$pathPrefix/$randomName", dstPath).right
+          _ <- wrapImageServiceError(storage.downloadImage(source.path, srcPath)).right;
+          _ <- wrapImageServiceError(imageProcessor.processForSelectionScreen(srcPath, dstPath)).right;
+          actualPath <- wrapImageServiceError(storage.uploadImage(s"$pathPrefix/$randomName", dstPath)).right
         ) yield actualPath
     }
 
@@ -162,7 +176,7 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
       };
       uploadedPaths <- {
         logger.debug("Processing and uploading as served images")
-        wrapImageServiceError(processAndUploadAsServed(setId, sources)).right
+        processAndUploadAsServed(setId, sources).right
       };
       mainImageIds <- {
         val records = mkProcessedMainImageRecords(sourceImageIds, uploadedPaths)
@@ -191,11 +205,10 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
     ???
   }
 
-  def uploadSourceImage(file: File, keywords: Seq[String]): Either[ImageServiceOrDatabaseError, Long] = {
-    ???
-  }
+  def processForSelectionScreen(pathPrefix: String, sourceImageId: Long): Either[ImageServiceOrDatabaseError, ImageDescriptor] =
+    for (sourceDescriptor <- wrapDatabaseError(imageDatabase.getSourceImageDescriptors(Seq(sourceImageId))).right;
+         actualPath <- processAndUploadSelectionScreenImage(pathPrefix, sourceDescriptor.head).right;
+         ssiId <- wrapDatabaseError(imageDatabase.createProcessedImageRecords(Seq(ProcessedImageRecord(actualPath, sourceDescriptor.head.id, ProcessedImagePurpose.PortionSizeSelectionImage)))).right)
+      yield ImageDescriptor(ssiId.head, actualPath)
 
-  def processForSelectionScreen(pathPrefix: String, sourceImageId: Long): Either[ImageServiceOrDatabaseError, ImageDescriptor] = {
-???
-  }
 }

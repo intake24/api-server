@@ -15,7 +15,7 @@ case class AsServedSetRecord(id: String, description: String, selectionImageId: 
 
 case class NewAsServedSetRecord(id: String, description: String, selectionImageId: Long, images: Seq[NewAsServedImageRecord])
 
-case class PortableAsServedImage(sourcePath: String, sourceKeywords: Seq[String], mainImagePath: String, thumbnailPath: String, weight: Double)
+case class PortableAsServedImage(sourcePath: String, sourceThumbnailPath: String, sourceKeywords: Seq[String], mainImagePath: String, thumbnailPath: String, weight: Double)
 
 // Selection source image is one of the source as served images, avoid creating twice when porting
 case class PortableAsServedSet(id: String, description: String, selectionSourcePath: String, selectionImagePath: String, images: Seq[PortableAsServedImage])

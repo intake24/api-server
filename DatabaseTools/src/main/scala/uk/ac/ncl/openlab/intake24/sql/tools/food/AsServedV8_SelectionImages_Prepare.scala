@@ -29,20 +29,19 @@ import java.util.UUID
 
 import scala.collection.JavaConverters._
 import java.io.File
-import anorm.NamedParameter
-import anorm.BatchSql
-import anorm.AnormUtil
 
-object AsServedV8_SelectionImages_Apply extends App with WarningMessage with DatabaseConnection {
+private case class ImagePaths(sourceImagePath: String, selectionImagePath: String)
+
+object AsServedV8_SelectionImages_Prepare extends App with WarningMessage with DatabaseConnection {
 
   trait Options extends ScallopConf {
-    version("Intake24 v8 as served apply")
+    version("Intake24 v8 as served prepare")
 
+    val imageDir = opt[String](required = true, noshort = true)
     val remappingFile = opt[String](required = true, noshort = true)
   }
 
   val versionFrom = 7l
-  val versionTo = 8l
 
   val options = new ScallopConf(args) with Options with DatabaseOptions
 
@@ -54,41 +53,64 @@ object AsServedV8_SelectionImages_Apply extends App with WarningMessage with Dat
 
   val version = SQL("SELECT version FROM schema_version").executeQuery().as(SqlParser.long("version").single)
 
-    if (version != versionFrom) {
+  if (version != versionFrom) {
     println(s"Wrong schema version: expected $versionFrom, got $version")
   } else {
-    
-    val images = read[Map[String, ImagePaths]](scala.io.Source.fromFile(options.remappingFile()).getLines().mkString).toSeq
-    
-    val params = images.map {
-      case (_, ImagePaths(sourcePath, processedPath)) => 
-        Seq[NamedParameter]('processed_path -> processedPath, 'source_path -> sourcePath)         
+
+    val sets = SQL("SELECT id FROM as_served_sets ORDER BY id").executeQuery().as(SqlParser.str("id").*)
+
+    var imageMap = Map[String, ImagePaths]()
+
+    sets.foreach {
+      setId =>
+        println(s"Processing $setId")
+
+        val rows = SQL("""|SELECT source_images.path
+                          |  FROM as_served_images
+                          |    JOIN processed_images ON as_served_images.image_id=processed_images.id
+                          |    JOIN source_images ON processed_images.source_id=source_images.id
+                          |WHERE as_served_images.as_served_set_id={as_served_set_id}
+                          |ORDER BY as_served_images.weight ASC""".stripMargin).on('as_served_set_id -> setId).executeQuery().as(SqlParser.str("path").+)
+
+        val selectionImageSourcePath = rows(rows.length / 2)
+
+        val extension = "." + FilenameUtils.getExtension(selectionImageSourcePath)
+
+        val randomName = UUID.randomUUID().toString() + extension
+
+        val srcPath = selectionImageSourcePath
+
+        val dstPath = s"as_served/$setId/selection/$randomName"
+        
+        val srcFsPath = options.imageDir() + "/" + srcPath
+        
+        val dstFsPath = options.imageDir() + "/" + dstPath
+        
+        new File(dstFsPath).getParentFile.mkdirs()
+
+        println(s"Using $srcFsPath as source")
+
+        val cmd = new ConvertCmd()        
+        val op = new IMOperation()
+
+        op.resize(300)
+        op.background("white")
+        op.gravity("Center")
+        op.extent(300, 200)
+        op.addImage(srcFsPath)
+        op.addImage(dstFsPath)
+
+        println(s"Invoking ImageMagick: ${((cmd.getCommand.asScala) ++ (op.getCmdArgs.asScala)).mkString(" ")}")
+        
+        cmd.run(op)
+
+        imageMap += (setId -> ImagePaths(srcPath, dstPath))
     }
-    
-    dbConn.setAutoCommit(false)
-    
-    println("Creating processed image records...")
-    
-    val query = "INSERT INTO processed_images VALUES (DEFAULT,{processed_path},(SELECT id FROM source_images WHERE path={source_path}),3,DEFAULT)"
-    
-    val processedKeys = AnormUtil.batchKeys(BatchSql(query, params.head, params.tail:_*))
-    
-    val keysParams = images.map(_._1).zip(processedKeys).map {
-      case (setId, key) =>
-        Seq[NamedParameter]('set_id -> setId, 'image_id -> key)
-    }
-    
-    println("Setting selection image ids for as served sets...")
-    
-    BatchSql("UPDATE as_served_sets SET selection_image_id={image_id} WHERE id={set_id}", keysParams.head, keysParams.tail:_*).execute()
-    
-    println("Updating schema version...")
-    
-    SQL("UPDATE schema_version SET version={version_to} WHERE version={version_from}").on('version_from -> versionFrom, 'version_to -> versionTo).execute()
-    
-    println("Done!")
-    
-    dbConn.commit()
-    
+
+    val writer = Files.newBufferedWriter(Paths.get(options.remappingFile()), Charset.forName("utf-8"))
+
+    writer.write(write(imageMap))
+
+    writer.close()
   }
 }

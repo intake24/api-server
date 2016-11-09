@@ -5,7 +5,7 @@ import java.nio.file.Path
 import org.apache.commons.io.FilenameUtils
 import java.util.UUID
 
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.AnyError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.{AnyError, UnexpectedDatabaseError}
 
 
 case class ImageDescriptor(id: Long, path: String)
@@ -58,5 +58,5 @@ object ImageAdminService {
     s"$asServedPathPrefix/$setId/${randomName(originalName)}"
 
   def ssiPrefixAsServed(setId: String): String =
-    s"$asServedPathPrefix/$setId/selection}"
+    s"$asServedPathPrefix/$setId/selection"
 }

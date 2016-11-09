@@ -156,5 +156,46 @@ object Migrations {
 
         Right(())
       }
-    })
+    },
+
+    new Migration {
+      val versionFrom = 9l
+      val versionTo = 10l
+
+      val description = "Add thumbnail_path to source_images"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("ALTER TABLE source_images ADD COLUMN thumbnail_path character varying(1024)").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("ALTER TABLE source_images DROP COLUMN thumbnail_path").execute()
+
+        Right(())
+      }
+    },
+
+    // 10 -> 11 see V10_SourceImageThumbnails_Apply
+
+    new Migration {
+      val versionFrom = 11l
+      val versionTo = 12l
+
+      val description = "Add NOT NULL constraint to thumbnail_path in source_images"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("ALTER TABLE source_images ALTER COLUMN thumbnail_path SET NOT NULL").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("ALTER TABLE source_images ALTER COLUMN thumbnail_path DROP NOT NULL").execute()
+
+        Right(())
+      }
+    }
+  )
 }
