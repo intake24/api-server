@@ -1,12 +1,10 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.images
 
 import java.nio.file.Path
-
-import org.apache.commons.io.FilenameUtils
 import java.util.UUID
 
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.{AnyError, UnexpectedDatabaseError}
-
+import org.apache.commons.io.FilenameUtils
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.AnyError
 
 case class ImageDescriptor(id: Long, path: String)
 
@@ -25,16 +23,9 @@ case class DatabaseErrorWrapper(error: AnyError) extends ImageServiceOrDatabaseE
 
 case class ImageServiceErrorWrapper(error: ImageServiceError) extends ImageServiceOrDatabaseError
 
-object ImageServiceOrDatabaseErrors {
-
-  implicit def wrapImageServiceError[T](result: Either[ImageServiceError, T]): Either[ImageServiceOrDatabaseError, T] = result.left.map(ImageServiceErrorWrapper(_))
-
-  implicit def wrapDatabaseError[T](result: Either[AnyError, T]): Either[ImageServiceOrDatabaseError, T] = result.left.map(DatabaseErrorWrapper(_))
-}
-
-
 trait ImageAdminService {
   def uploadSourceImage(suggestedPath: String, source: Path, keywords: Seq[String], uploaderName: String): Either[ImageServiceOrDatabaseError, Long]
+  def deleteSourceImages(ids: Seq[Long]): Either[ImageServiceOrDatabaseError, Unit]
 
   def deleteProcessedImages(ids: Seq[Long]): Either[ImageServiceOrDatabaseError, Unit]
 
@@ -47,11 +38,20 @@ trait ImageAdminService {
 
 object ImageAdminService {
 
+  implicit class WrapImageServiceError[T](result: Either[ImageServiceError, T]) {
+    def wrapped: Either[ImageServiceOrDatabaseError, T] = result.left.map(ImageServiceErrorWrapper(_))
+  }
+
+  implicit class WrapDatabaseError[T](result: Either[AnyError, T]) {
+    def wrapped: Either[ImageServiceOrDatabaseError, T] = result.left.map(DatabaseErrorWrapper(_))
+  }
+
   val asServedPathPrefix = "as_served"
 
   def randomName(originalName: String) = {
     val extension = "." + FilenameUtils.getExtension(originalName).toLowerCase()
-    val randomName = UUID.randomUUID().toString() + extension
+
+    UUID.randomUUID().toString() + extension
   }
 
   def getSourcePathForAsServed(setId: String, originalName: String): String =

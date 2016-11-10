@@ -33,7 +33,6 @@ import scala.concurrent.Future
 import scalaz.Scalaz._
 
 import play.api.Logger
-import ImageServiceOrDatabaseErrors._
 
 case class AsServedImageWithUrls(sourceId: Long, imageUrl: String, thumbnailUrl: String, weight: Double)
 
@@ -52,6 +51,8 @@ class AsServedSetsAdminController @Inject()(
                                              imageStorage: ImageStorageService,
                                              deadbolt: DeadboltActionsAdapter) extends Controller
   with ImageOrDatabaseServiceErrorHandler {
+
+  import ImageAdminService.{WrapDatabaseError, WrapImageServiceError}
 
   def resolveUrls(image: AsServedImageWithPaths): AsServedImageWithUrls =
     AsServedImageWithUrls(image.sourceId, imageStorage.getUrl(image.imagePath), imageStorage.getUrl(image.thumbnailPath), image.weight)
@@ -124,7 +125,7 @@ class AsServedSetsAdminController @Inject()(
 
         ) yield ()
 
-        translateImageServiceAndDatabaseResult(result)
+        translateDatabaseResult(result)
 
       }
   }
@@ -146,9 +147,9 @@ class AsServedSetsAdminController @Inject()(
           case (image, descriptor) => NewAsServedImageRecord(descriptor.mainImage.id, descriptor.thumbnail.id, image.weight)
         }
 
-        wrapDatabaseError(service.createAsServedSets(Seq(NewAsServedSetRecord(newSet.id, newSet.description, descriptors._2.id, images)))).right
+        service.createAsServedSets(Seq(NewAsServedSetRecord(newSet.id, newSet.description, descriptors._2.id, images))).wrapped.right
       };
-      res <- wrapDatabaseError(service.getAsServedSetWithPaths(newSet.id)).right
+      res <- service.getAsServedSetWithPaths(newSet.id).wrapped.right
     ) yield res
 
   def createAsServedSetFromSource() = deadbolt.restrict(Roles.superuser)(upickleRead[NewAsServedSet]) {
@@ -229,7 +230,7 @@ class AsServedSetsAdminController @Inject()(
         val update = request.body
 
         val result = for (
-          oldSet <- wrapDatabaseError(service.getAsServedSetRecord(id)).right;
+          oldSet <- service.getAsServedSetRecord(id).wrapped.right;
           newDescriptors <- processImages(update.id, update.images.map(_.sourceImageId)).right;
           _ <- {
             val newImageRecords = newDescriptors._1.zip(update.images.map(_.weight)).map {
@@ -237,10 +238,10 @@ class AsServedSetsAdminController @Inject()(
                 NewAsServedImageRecord(mainImageId, thumbnailId, weight)
             }
 
-            wrapDatabaseError(service.updateAsServedSet(id, NewAsServedSetRecord(update.id, update.description, newDescriptors._2.id, newImageRecords))).right
+            service.updateAsServedSet(id, NewAsServedSetRecord(update.id, update.description, newDescriptors._2.id, newImageRecords)).wrapped.right
           };
           _ <- cleanUpOldImages(oldSet).right;
-          res <- wrapDatabaseError(service.getAsServedSetWithPaths(update.id)).right
+          res <- service.getAsServedSetWithPaths(update.id).wrapped.right
         ) yield res
 
         translateImageServiceAndDatabaseResult(result)

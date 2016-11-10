@@ -196,6 +196,49 @@ object Migrations {
 
         Right(())
       }
+    },
+
+    new Migration {
+      val versionFrom = 12l
+      val versionTo = 13l
+
+      val description = "Move source_images.keywords to a separate table source_image_keywords"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("""|CREATE TABLE source_image_keywords(
+               |  source_image_id integer NOT NULL,
+               |  keyword character varying(512) NOT NULL,
+               |  CONSTRAINT source_image_keywords_source_image_id_fk FOREIGN KEY(source_image_id) REFERENCES source_images(id) ON DELETE CASCADE ON UPDATE CASCADE)""".stripMargin).execute()
+
+        SQL("CREATE INDEX source_image_keywords_index ON source_image_keywords(keyword varchar_pattern_ops)").execute()
+
+        SQL("CREATE INDEX source_image_keyword_fk_index on source_image_keywords(source_image_id)").execute()
+
+        SQL("INSERT INTO source_image_keywords(source_image_id, keyword) SELECT id, unnest(keywords) FROM source_images").execute()
+
+        SQL("ALTER TABLE source_images DROP COLUMN keywords")
+
+        Right(())
+      }
+
+      override def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = Left(MigrationFailed(new Throwable("This migration cannot be unapplied")))
+    },
+
+    new Migration {
+      val versionFrom = 13l
+      val versionTo = 14l
+
+      val description = "Prevent deletion of referenced source images"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("ALTER TABLE processed_images DROP CONSTRAINT processed_images_source_image_fk").execute()
+        SQL("ALTER TABLE processed_images ADD CONSTRAINT processed_images_source_image_fk FOREIGN KEY (source_id) REFERENCES source_images(id) ON UPDATE CASCADE ON DELETE RESTRICT")
+
+        Right(())
+      }
+
+      override def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = Left(MigrationFailed(new Throwable("This migration cannot be unapplied")))
     }
+
   )
 }

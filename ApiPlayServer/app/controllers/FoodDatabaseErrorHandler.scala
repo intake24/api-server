@@ -18,6 +18,8 @@ trait FoodDatabaseErrorHandler extends Results {
   private val duplicateCodeErrorBody = s"""{"cause":"DuplicateCode"}"""
   private val parentRecordNotFoundErrorBody = s"""{"cause":"ParentRecordNotFound"}"""
   private val illegalParentErrorBody = s"""{"cause":"IllegalParent"}"""
+  private val stillReferencedErrorBody = s"""{"cause": "StillReferenced"}"""
+
 
   private def logException(e: Throwable) = Logger.error("Database exception", e)
 
@@ -30,6 +32,7 @@ trait FoodDatabaseErrorHandler extends Results {
     case DuplicateCode(_) => BadRequest(duplicateCodeErrorBody).as(ContentTypes.JSON)
     case VersionConflict(_) => Conflict.as(ContentTypes.JSON)
     case RecordNotFound(_) => NotFound(recordNotFoundErrorBody).as(ContentTypes.JSON)
+    case StillReferenced(_) => BadRequest(stillReferencedErrorBody).as(ContentTypes.JSON)
     case UndefinedLocale(_) => BadRequest(undefinedLocaleErrorBody).as(ContentTypes.JSON)
     case ParentRecordNotFound(_) => BadRequest(parentRecordNotFoundErrorBody).as(ContentTypes.JSON)
     case IllegalParent(_) => BadRequest(illegalParentErrorBody).as(ContentTypes.JSON)

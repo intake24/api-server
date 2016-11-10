@@ -105,11 +105,13 @@ GET            /user/portion-size/as-served/:id                              con
 
 GET            /admin/nutrient-tables                                        controllers.NutrientTablesAdminController.listNutrientTables()
 
-# Image database
+# Source image management
 
+GET            /admin/images/source                                          controllers.ImageAdminController.listSourceImages(offset: Int, limit: Int, search: Option[String])
 POST           /admin/images/source/new                                      controllers.ImageAdminController.uploadSourceImage()
-GET            /admin/images/source/:offset                                  controllers.ImageAdminController.listSourceImages(offset: Int)
-POST           /admin/images/source/filter                                   controllers.ImageAdminController.filterSourceImages()
+POST           /admin/images/source/new-as-served                            controllers.ImageAdminController.uploadSourceImageForAsServed(setId: String)
+PATCH          /admin/images/source/:id                                      controllers.ImageAdminController.updateSourceImage(id: Int)
+DELETE         /admin/images/source/delete                                   controllers.ImageAdminController.deleteSourceImages()
 
 # POST    /admin/images/as-served               controllers.ImageAdminController.processForAsServed()
 

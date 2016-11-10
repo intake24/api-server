@@ -8,40 +8,105 @@ import anorm.NamedParameter.symbol
 import anorm.{AnormUtil, Macro, NamedParameter, SQL, sqlToSimple}
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.{LookupError, RecordNotFound, UnexpectedDatabaseError}
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
+import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
 
-class ImageDatabaseServiceSqlImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends ImageDatabaseService with FoodDataSqlService {
+class ImageDatabaseServiceSqlImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends ImageDatabaseService with FoodDataSqlService with SqlResourceLoader {
 
   private val logger = LoggerFactory.getLogger(classOf[ImageDatabaseServiceSqlImpl])
 
-    private case class SourceImageDescriptorRow(id: Long, path: String)
+  private case class SourceImageRecordRow(id: Long, path: String, thumbnail_path: String, keywords: Array[String], uploader: String, uploaded_at: LocalDateTime) {
+    def toSourceImageRecord = SourceImageRecord(id, path, thumbnail_path, keywords, uploader, uploaded_at)
+  }
 
-  private case class SourceImageRecordRow(id: Long, path: String, thumbnail_path: String, keywords: Array[String], uploader: String, uploaded_at: LocalDateTime)
+  private lazy val listSourceImagesQuery = sqlFromResource("admin/list_source_image_records.sql")
 
-  def listSourceImageRecords(offset: Int, limit: Int): Either[UnexpectedDatabaseError, Seq[SourceImageRecord]] = tryWithConnection {
+  private lazy val getSourceImagesQuery = sqlFromResource("admin/get_source_image_records.sql")
+
+  private lazy val filterSourceImagesQuery = sqlFromResource("admin/filter_source_image_records.sql")
+
+  def createSourceImageRecords(records: Seq[NewSourceImageRecord]): Either[UnexpectedDatabaseError, Seq[Long]] = tryWithConnection {
     implicit conn =>
-      val query = "SELECT id, path, thumbnail_path, keywords, uploader, uploaded_at FROM source_images ORDER BY id OFFSET {offset} LIMIT {limit}"
+      withTransaction {
+        val query = "INSERT INTO source_images(id,path,thumbnail_path,uploader,uploaded_at) VALUES(DEFAULT,{path},{thumbnail_path},{uploader},DEFAULT)"
 
-      val result = SQL(query).on('offset -> offset, 'limit -> limit).as(Macro.namedParser[SourceImageRecordRow].*).map {
-        row =>
-          SourceImageRecord(row.id, row.path, row.thumbnail_path, row.keywords, row.uploader, row.uploaded_at)
+        val params = records.map {
+          rec => Seq[NamedParameter]('path -> rec.path, 'thumbnail_path -> rec.thumbnailPath, 'uploader -> rec.uploader)
+        }
+
+        val ids = AnormUtil.batchKeys(batchSql(query, params))
+
+        val keywordParams = records.zip(ids).flatMap {
+          case (r, id) =>
+            r.keywords.map {
+              keyword =>
+                Seq[NamedParameter]('id -> id, 'keyword -> keyword)
+            }
+        }
+
+        val keywordsQuery = "INSERT INTO source_image_keywords VALUES ({id},{keyword})"
+
+        batchSql(keywordsQuery, keywordParams).execute()
+
+        Right(ids)
       }
+  }
+
+  def getSourceImageRecords(ids: Seq[Long]): Either[LookupError, Seq[SourceImageRecord]] = tryWithConnection {
+    implicit conn =>
+
+      val result = SQL(getSourceImagesQuery).on('ids -> ids).executeQuery().as(Macro.namedParser[SourceImageRecordRow].*).map {
+        row =>
+          row.id -> row.toSourceImageRecord
+      }.toMap
+
+      ids.find(!result.contains(_)) match {
+        case Some(missingKey) => Left(RecordNotFound(new RuntimeException(s"Missing source image record: $missingKey")))
+        case None => Right(ids.map(result(_)))
+      }
+  }
+
+
+  def listSourceImageRecords(offset: Int, limit: Int, search: Option[String]): Either[UnexpectedDatabaseError, Seq[SourceImageRecord]] = tryWithConnection {
+    implicit conn =>
+      val query = search match {
+        case Some(term) if term.nonEmpty => SQL(filterSourceImagesQuery).on('offset -> offset, 'limit -> limit, 'pattern -> s"${term.toLowerCase}%")
+        case _ => SQL(listSourceImagesQuery).on('offset -> offset, 'limit -> limit)
+      }
+
+      val result = query.as(Macro.namedParser[SourceImageRecordRow].*).map(_.toSourceImageRecord)
 
       Right(result)
   }
 
-  def createSourceImageRecords(records: Seq[NewSourceImageRecord]): Either[UnexpectedDatabaseError, Seq[Long]] = tryWithConnection {
+  def updateSourceImageRecord(id: Long, update: SourceImageRecordUpdate): Either[LookupError, Unit] = tryWithConnection {
     implicit conn =>
-      val query = "INSERT INTO source_images VALUES(DEFAULT,{path},{thumbnail_path},{keywords},{uploader},DEFAULT)"
+      withTransaction {
+        SQL("DELETE FROM source_image_keywords WHERE source_image_id={id}").on('id -> id).execute()
 
-      val params = records.map {
-        rec => Seq[NamedParameter]('path -> rec.path, 'thumbnail_path -> rec.thumbnailPath, 'keywords -> rec.keywords.map(_.toLowerCase()).toArray, 'uploader -> rec.uploader)
+        val keywordParams = update.keywords.map {
+          keyword =>
+            Seq[NamedParameter]('id -> id, 'keyword -> keyword)
+        }
+
+        tryWithConstraintCheck[LookupError, Unit]("source_image_keywords_source_image_id_fk", e => RecordNotFound(e)) {
+          batchSql("INSERT INTO source_image_keywords VALUES({id},{keyword})", keywordParams).execute()
+          Right(())
+        }
       }
+  }
 
-      val result = AnormUtil.batchKeys(batchSql(query, params))
-
-      Right(result)
+  override def deleteSourceImageRecords(ids: Seq[Long]): Either[DeleteError, Unit] = tryWithConnection {
+    implicit conn =>
+      withTransaction {
+        tryWithConstraintCheck[DeleteError, Unit]("processed_images_source_image_fk", e => StillReferenced(e)) {
+          if (SQL("DELETE FROM source_images WHERE id IN ({ids})").on('ids -> ids).executeUpdate() == ids.length)
+            Right(())
+          else
+            Left(RecordNotFound(new RuntimeException("One of the ids does not exist")))
+        }
+      }
   }
 
   def createProcessedImageRecords(records: Seq[ProcessedImageRecord]): Either[UnexpectedDatabaseError, Seq[Long]] = tryWithConnection {
@@ -66,19 +131,6 @@ class ImageDatabaseServiceSqlImpl @Inject()(@Named("intake24_foods") val dataSou
         Right(())
     }
 
-  def getSourceImageDescriptors(ids: Seq[Long]): Either[LookupError, Seq[ImageDescriptor]] = tryWithConnection {
-    implicit conn =>
-
-      val result = SQL("SELECT id, path FROM source_images WHERE id IN({ids})").on('ids -> ids).executeQuery().as(Macro.namedParser[SourceImageDescriptorRow].*).map {
-        row =>
-          row.id -> ImageDescriptor(row.id, row.path)
-      }.toMap
-
-      ids.find(!result.contains(_)) match {
-        case Some(missingKey) => Left(RecordNotFound(new RuntimeException(s"Missing source image record: $missingKey")))
-        case None => Right(ids.map(result(_)))
-      }
-  }
 
   private case class ProcessedImageRecordRow(id: Long, path: String, source_id: Long, purpose: Long)
 

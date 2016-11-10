@@ -3,19 +3,24 @@ package uk.ac.ncl.openlab.intake24.services.fooddb.images
 
 import java.time.LocalDateTime
 
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.{LookupError, UnexpectedDatabaseError}
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.{DeleteError, LookupError, UnexpectedDatabaseError, UpdateError}
 
 case class SourceImageRecord(id: Long, path: String, thumbnailPath: String, keywords: Seq[String], uploader: String, uploadedAt: LocalDateTime)
 
 case class NewSourceImageRecord(path: String, thumbnailPath: String, keywords: Seq[String], uploader: String)
+
+case class SourceImageRecordUpdate(keywords: Seq[String])
 
 case class ProcessedImageRecord(path: String, sourceId: Long, purpose: ProcessedImagePurpose)
 
 sealed trait ProcessedImagePurpose
 
 object ProcessedImagePurpose {
+
   case object AsServedMainImage extends ProcessedImagePurpose
+
   case object AsServedThumbnail extends ProcessedImagePurpose
+
   case object PortionSizeSelectionImage extends ProcessedImagePurpose
 
   def toId(p: ProcessedImagePurpose) = p match {
@@ -34,10 +39,19 @@ object ProcessedImagePurpose {
 
 trait ImageDatabaseService {
 
-  def listSourceImageRecords(offset: Int, limit: Int): Either[UnexpectedDatabaseError, Seq[SourceImageRecord]]
   def createSourceImageRecords(records: Seq[NewSourceImageRecord]): Either[UnexpectedDatabaseError, Seq[Long]]
+
+  def getSourceImageRecords(ids: Seq[Long]): Either[LookupError, Seq[SourceImageRecord]]
+
+  def listSourceImageRecords(offset: Int, limit: Int, searchTerm: Option[String]): Either[UnexpectedDatabaseError, Seq[SourceImageRecord]]
+
+  def updateSourceImageRecord(id: Long, update: SourceImageRecordUpdate): Either[LookupError, Unit]
+
+  def deleteSourceImageRecords(ids: Seq[Long]): Either[DeleteError, Unit]
+
   def createProcessedImageRecords(records: Seq[ProcessedImageRecord]): Either[UnexpectedDatabaseError, Seq[Long]]
+
   def deleteProcessedImageRecords(ids: Seq[Long]): Either[UnexpectedDatabaseError, Unit]
-  def getSourceImageDescriptors(ids: Seq[Long]): Either[LookupError, Seq[ImageDescriptor]]
+
   def getProcessedImageRecords(ids: Seq[Long]): Either[LookupError, Seq[ProcessedImageRecord]]
 }
