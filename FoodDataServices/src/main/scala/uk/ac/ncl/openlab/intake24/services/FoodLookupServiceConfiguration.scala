@@ -29,7 +29,7 @@ case class FoodLookupServiceConfiguration (
     excludeListPath: String,
     indexFilterPath: String,
     synsetPath: String,
-    splitListPath: String,    
+    splitListPath: String,
     guideFilePath: String,
     promptFilePath: String,
     nutrientTablePath: String
