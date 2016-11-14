@@ -10,15 +10,13 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package net.scran24.user.client.services;
 
-import java.util.List;
-
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 
 public interface HelpServiceAsync {
 	void requestCall(String name, String phoneNumber, AsyncCallback<Boolean> callback);
 	
-	void reportUncaughtException(String surveyId, String username, String type, String message, StackTraceElement[] stackTrace, AsyncCallback<Void> callback);
+	void reportUncaughtException(StackTraceElement[] e, AsyncCallback<Void> callback);
 
 	public static final class Util {
 		private static HelpServiceAsync instance;

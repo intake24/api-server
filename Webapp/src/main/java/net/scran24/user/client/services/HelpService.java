@@ -10,8 +10,6 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package net.scran24.user.client.services;
 
-import java.util.List;
-
 import com.google.gwt.user.client.rpc.RemoteService;
 import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
 
@@ -19,5 +17,5 @@ import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
 public interface HelpService extends RemoteService {
 	boolean requestCall(String name, String number);
 
-	void reportUncaughtException(String surveyId, String username, String type, String message, StackTraceElement[] stackTrace);
+	void reportUncaughtException(StackTraceElement[] e);
 }

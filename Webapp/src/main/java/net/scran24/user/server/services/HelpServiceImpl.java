@@ -26,19 +26,10 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package net.scran24.user.server.services;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.servlet.ServletException;
-
-import net.scran24.common.server.auth.ScranUserId;
-import net.scran24.datastore.DataStore;
-import net.scran24.datastore.DataStoreException;
-import net.scran24.datastore.SupportStaffRecord;
-import net.scran24.user.client.services.HelpService;
-import net.scran24.user.client.services.HelpServiceException;
 
 import org.apache.commons.mail.DefaultAuthenticator;
 import org.apache.commons.mail.Email;
@@ -53,7 +44,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.workcraft.gwt.shared.client.Option;
 
-import com.google.gwt.core.server.StackTraceDeobfuscator;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 import com.google.inject.Injector;
 import com.twilio.sdk.TwilioRestClient;
@@ -61,212 +51,218 @@ import com.twilio.sdk.TwilioRestException;
 import com.twilio.sdk.resource.factory.MessageFactory;
 import com.twilio.sdk.resource.instance.Account;
 
+import net.scran24.common.server.auth.ScranUserId;
+import net.scran24.datastore.DataStore;
+import net.scran24.datastore.DataStoreException;
+import net.scran24.datastore.SupportStaffRecord;
+import net.scran24.user.client.services.HelpService;
+import net.scran24.user.client.services.HelpServiceException;
+
+import com.google.gwt.core.server.StackTraceDeobfuscator;
+
 public class HelpServiceImpl extends RemoteServiceServlet implements HelpService {
-	private static final long serialVersionUID = -5525469181691523598L;
+  private static final long serialVersionUID = -5525469181691523598L;
 
-	// private final NotificationMessages messages =
-	// GWT.create(NotificationMessages.class);
+  // private final NotificationMessages messages =
+  // GWT.create(NotificationMessages.class);
 
-	private final Logger log = LoggerFactory.getLogger(HelpServiceImpl.class);
+  private final Logger log = LoggerFactory.getLogger(HelpServiceImpl.class);
 
-	public static final long helpRequestCooldown = 60 * 60 * 1000;
+  public static final long helpRequestCooldown = 60 * 60 * 1000;
 
-	private DataStore dataStore;
+  private StackTraceDeobfuscator deobfuscator;
 
-	private TwilioRestClient twilioClient;
+  private DataStore dataStore;
 
-	private String smtpHostName;
-	private int smtpPort;
-	private String smtpUserName;
-	private String smtpPassword;
-	private String fromEmail;
-	private String fromName;
-	private String fromPhoneNumber;
+  private TwilioRestClient twilioClient;
 
-	@Override
-	public void init() throws ServletException {
-		Injector injector = (Injector) this.getServletContext().getAttribute("intake24.injector");
-		
-		dataStore = injector.getInstance(DataStore.class);
-		
-		twilioClient = new TwilioRestClient(getServletContext().getInitParameter("twilioAccountSid"), getServletContext().getInitParameter(
-				"twilioAuthToken"));
+  private String smtpHostName;
+  private int smtpPort;
+  private String smtpUserName;
+  private String smtpPassword;
+  private String fromEmail;
+  private String fromName;
+  private String fromPhoneNumber;
 
-		smtpHostName = getServletContext().getInitParameter("smtpHostName");
-		smtpPort = Integer.parseInt(getServletContext().getInitParameter("smtpPort"));
-		smtpUserName = getServletContext().getInitParameter("smtpUserName");
-		smtpPassword = getServletContext().getInitParameter("smtpPassword");
-		fromEmail = getServletContext().getInitParameter("emailNotificationFromAddress");
-		fromName = getServletContext().getInitParameter("emailNotificationFromName");
+  @Override
+  public void init() throws ServletException {
+    Injector injector = (Injector) this.getServletContext()
+      .getAttribute("intake24.injector");
 
-		fromPhoneNumber = getServletContext().getInitParameter("smsNotificationFromNumber");
-	}
+    dataStore = injector.getInstance(DataStore.class);
 
-	private void sendSmsNotification(String name, String surveyId, String number, List<String> numbers) {
-		Account account = twilioClient.getAccount();
+    twilioClient = new TwilioRestClient(getServletContext().getInitParameter("twilioAccountSid"),
+        getServletContext().getInitParameter("twilioAuthToken"));
 
-		for (String to : numbers) {
+    smtpHostName = getServletContext().getInitParameter("smtpHostName");
+    smtpPort = Integer.parseInt(getServletContext().getInitParameter("smtpPort"));
+    smtpUserName = getServletContext().getInitParameter("smtpUserName");
+    smtpPassword = getServletContext().getInitParameter("smtpPassword");
+    fromEmail = getServletContext().getInitParameter("emailNotificationFromAddress");
+    fromName = getServletContext().getInitParameter("emailNotificationFromName");
 
-			MessageFactory messageFactory = account.getMessageFactory();
-			List<NameValuePair> params = new ArrayList<NameValuePair>();
-			params.add(new BasicNameValuePair("To", to));
-			params.add(new BasicNameValuePair("From", fromPhoneNumber));
-			params.add(new BasicNameValuePair("Body", "Please call " + name + " on " + number + " (survey id: " + surveyId + ")"));
-			try {
-				messageFactory.create(params);
-			} catch (TwilioRestException e) {
-				log.error("Failed to send SMS notification", e);
-			}
-		}
-	}
+    fromPhoneNumber = getServletContext().getInitParameter("smsNotificationFromNumber");
 
-	private void sendEmailNotification(String name, String surveyId, String number, List<String> addresses) {
-		Email email = new SimpleEmail();
+    deobfuscator = StackTraceDeobfuscator.fromFileSystem(getServletContext().getRealPath("/WEB-INF/deploy/user/symbolMaps"));
+  }
 
-		email.setHostName(smtpHostName);
-		email.setSmtpPort(smtpPort);
-		email.setAuthenticator(new DefaultAuthenticator(smtpUserName, smtpPassword));
-		email.setSSLOnConnect(true);
-		email.setCharset(EmailConstants.UTF_8);
+  private void sendSmsNotification(String name, String surveyId, String number, List<String> numbers) {
+    Account account = twilioClient.getAccount();
 
-		try {
-			email.setFrom(fromEmail, fromName);
-			email.setSubject("Someone needs help completing their survey");
-			email.setMsg("Please call " + name + " on " + number + " (survey id: " + surveyId + ")");
+    for (String to : numbers) {
 
-			for (String address : addresses)
-				email.addTo(address);
+      MessageFactory messageFactory = account.getMessageFactory();
+      List<NameValuePair> params = new ArrayList<NameValuePair>();
+      params.add(new BasicNameValuePair("To", to));
+      params.add(new BasicNameValuePair("From", fromPhoneNumber));
+      params.add(
+          new BasicNameValuePair("Body", "Please call " + name + " on " + number + " (survey id: " + surveyId + ")"));
+      try {
+        messageFactory.create(params);
+      } catch (TwilioRestException e) {
+        log.error("Failed to send SMS notification", e);
+      }
+    }
+  }
 
-			email.send();
-		} catch (EmailException e) {
-			log.error("Failed to send e-mail notification", e);
-		}
-	}
-	
-	@Override
-	public boolean requestCall(final String name, final String number) {
-		Subject subject = SecurityUtils.getSubject();
-		ScranUserId userId = (ScranUserId) subject.getPrincipal();
+  private void sendEmailNotification(String name, String surveyId, String number, List<String> addresses) {
+    Email email = new SimpleEmail();
 
-		if (userId == null)
-			throw new HelpServiceException("User must be logged in");
-		else if (userId.survey.equals("demo"))
-			throw new HelpServiceException("This feature is disabled for demo survey");
-		else {
+    email.setHostName(smtpHostName);
+    email.setSmtpPort(smtpPort);
+    email.setAuthenticator(new DefaultAuthenticator(smtpUserName, smtpPassword));
+    email.setSSLOnConnect(true);
+    email.setCharset(EmailConstants.UTF_8);
 
-			log.info("Received call back request from " + userId.survey + "/" + userId.username);
+    try {
+      email.setFrom(fromEmail, fromName);
+      email.setSubject("Someone needs help completing their survey");
+      email.setMsg("Please call " + name + " on " + number + " (survey id: " + surveyId + ")");
 
-			try {
-				Option<Long> lastRequestTime = dataStore.getLastHelpRequestTime(userId.survey, userId.username);
-				
-				long timeSinceLastRequest;
-				
-				if (lastRequestTime.isEmpty()) {
-					log.info("No previous call back requests from this user");
-					timeSinceLastRequest = Long.MAX_VALUE;
-				}
-				else {
-					timeSinceLastRequest = System.currentTimeMillis() - lastRequestTime.getOrDie();
-					log.info("Last call back request was " + timeSinceLastRequest / 1000 + " seconds ago");
-				}
+      for (String address : addresses)
+        email.addTo(address);
 
-				if (timeSinceLastRequest < helpRequestCooldown) {
-					log.info("Request refused");
-					return false;
-				} else {
-					log.info("Request accepted");
+      email.send();
+    } catch (EmailException e) {
+      log.error("Failed to send e-mail notification", e);
+    }
+  }
 
-					dataStore.setLastHelpRequestTime(userId.survey, userId.username, System.currentTimeMillis());
+  @Override
+  public boolean requestCall(final String name, final String number) {
+    Subject subject = SecurityUtils.getSubject();
+    ScranUserId userId = (ScranUserId) subject.getPrincipal();
 
-					List<SupportStaffRecord> supportStaff = dataStore.getSupportStaffRecords();
+    if (userId == null)
+      throw new HelpServiceException("User must be logged in");
+    else if (userId.survey.equals("demo"))
+      throw new HelpServiceException("This feature is disabled for demo survey");
+    else {
 
-					final ArrayList<String> sendToAddresses = new ArrayList<String>();
-					final ArrayList<String> sendToNumbers = new ArrayList<String>();
+      log.info("Received call back request from " + userId.survey + "/" + userId.username);
 
-					for (SupportStaffRecord staff : supportStaff) {
-						staff.email.accept(new Option.SideEffectVisitor<String>() {
-							@Override
-							public void visitSome(String item) {
-								sendToAddresses.add(item);
-							}
+      try {
+        Option<Long> lastRequestTime = dataStore.getLastHelpRequestTime(userId.survey, userId.username);
 
-							@Override
-							public void visitNone() {
-							}
-						});
+        long timeSinceLastRequest;
 
-						staff.phoneNumber.accept(new Option.SideEffectVisitor<String>() {
-							@Override
-							public void visitSome(String item) {
-								sendToNumbers.add(item);
-							}
+        if (lastRequestTime.isEmpty()) {
+          log.info("No previous call back requests from this user");
+          timeSinceLastRequest = Long.MAX_VALUE;
+        } else {
+          timeSinceLastRequest = System.currentTimeMillis() - lastRequestTime.getOrDie();
+          log.info("Last call back request was " + timeSinceLastRequest / 1000 + " seconds ago");
+        }
 
-							@Override
-							public void visitNone() {
-							}
-						});
-					}
+        if (timeSinceLastRequest < helpRequestCooldown) {
+          log.info("Request refused");
+          return false;
+        } else {
+          log.info("Request accepted");
 
-					if (sendToAddresses.isEmpty())
-						log.warn("No staff e-mail addresses available to receive e-mail notification!");
-					else {
-						sendEmailNotification(name, userId.survey, number, sendToAddresses);
-						log.info("E-mail notification sent");
-					}
+          dataStore.setLastHelpRequestTime(userId.survey, userId.username, System.currentTimeMillis());
 
-					if (sendToNumbers.isEmpty())
-						log.warn("No staff phone numbers available to receive SMS notification!");
-					else {
-						sendSmsNotification(name, userId.survey, number, sendToNumbers);
-						log.info("SMS notification sent");
-					}
+          List<SupportStaffRecord> supportStaff = dataStore.getSupportStaffRecords();
 
-					return true;
-				}
-			} catch (DataStoreException e) {
-				throw new HelpServiceException(e);
-			}
-		}
-	}
+          final ArrayList<String> sendToAddresses = new ArrayList<String>();
+          final ArrayList<String> sendToNumbers = new ArrayList<String>();
 
-	@Override
-	public void reportUncaughtException(String surveyId, String username, String type, String message, StackTraceElement[] stackTrace) {
-		
-		StackTraceDeobfuscator deobfuscator = StackTraceDeobfuscator.fromFileSystem(getServletContext().getRealPath("WEB-INF/deploy");
-		
-		
-		
-		Email email = new SimpleEmail();
+          for (SupportStaffRecord staff : supportStaff) {
+            staff.email.accept(new Option.SideEffectVisitor<String>() {
+              @Override
+              public void visitSome(String item) {
+                sendToAddresses.add(item);
+              }
 
-		email.setHostName(smtpHostName);
-		email.setSmtpPort(smtpPort);
-		email.setCharset(EmailConstants.UTF_8);
-		email.setAuthenticator(new DefaultAuthenticator(smtpUserName, smtpPassword));
-		email.setSSLOnConnect(true);
+              @Override
+              public void visitNone() {
+              }
+            });
 
-		try {
-			email.setFrom("no-reply@intake24.co.uk", "Intake24");
-			email.setSubject(String.format("Automated Bug Report: %s: %s", type, message));
-			
-			StringBuilder sb = new StringBuilder();
-			
-			sb.append(String.format("Automated uncaught exception report from %s/%s:\n\n", surveyId, username));
-			sb.append(String.format("%s: %s:\n", type, message));
-			
-			for (String ste: stackTrace) {
-				sb.append(ste.toString());
-				sb.append("\n");
-			}
-					
-			
-			email.setMsg(sb.toString());
+            staff.phoneNumber.accept(new Option.SideEffectVisitor<String>() {
+              @Override
+              public void visitSome(String item) {
+                sendToNumbers.add(item);
+              }
 
-			email.addTo("bugs@intake24.co.uk");
+              @Override
+              public void visitNone() {
+              }
+            });
+          }
 
-			email.send();
-		} catch (EmailException e) {
-			log.error("Failed to send e-mail notification", e);
-		}
-		
-	}
+          if (sendToAddresses.isEmpty())
+            log.warn("No staff e-mail addresses available to receive e-mail notification!");
+          else {
+            sendEmailNotification(name, userId.survey, number, sendToAddresses);
+            log.info("E-mail notification sent");
+          }
+
+          if (sendToNumbers.isEmpty())
+            log.warn("No staff phone numbers available to receive SMS notification!");
+          else {
+            sendSmsNotification(name, userId.survey, number, sendToNumbers);
+            log.info("SMS notification sent");
+          }
+
+          return true;
+        }
+      } catch (DataStoreException e) {
+        throw new HelpServiceException(e);
+      }
+    }
+  }
+
+  @Override
+  public void reportUncaughtException(StackTraceElement[] st) {
+
+    Email email = new SimpleEmail();
+
+    email.setHostName(smtpHostName);
+    email.setSmtpPort(smtpPort);
+    email.setCharset(EmailConstants.UTF_8);
+    email.setAuthenticator(new DefaultAuthenticator(smtpUserName, smtpPassword));
+    email.setSSLOnConnect(true);
+
+    StringBuilder sb = new StringBuilder();
+
+    for (StackTraceElement ste: deobfuscator.resymbolize(st, "stronk")) {
+      sb.append(ste.toString());
+      sb.append("\n");
+    }
+
+    try {
+      email.setFrom("no-reply@intake24.co.uk", "Intake24");
+      email.setSubject(String.format("Client-side bug report"));
+
+      email.setMsg(sb.toString());
+
+      email.addTo("bugs@intake24.co.uk");
+
+      email.send();
+    } catch (EmailException ee) {
+      log.error("Failed to send e-mail notification", ee);
+    }
+
+  }
 }
