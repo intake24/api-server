@@ -35,67 +35,60 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
 import upickle.default._
 
+import parsers.Upickle._
+
 class FoodsAdminController @Inject() (service: FoodsAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
-    with PickleErrorHandler
-    with ApiErrorHandler {
+    with FoodDatabaseErrorHandler {
 
   def getFoodRecord(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.getFoodRecord(code, locale))
+      translateDatabaseResult(service.getFoodRecord(code, locale))
     }
   }
 
   def isFoodCodeAvailable(code: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.isFoodCodeAvailable(code))
+      translateDatabaseResult(service.isFoodCodeAvailable(code))
     }
   }
 
   def isFoodCode(code: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.isFoodCode(code))
+      translateDatabaseResult(service.isFoodCode(code))
     }
   }
 
-  def createFood() = deadbolt.restrict(Roles.superuser)(parse.tolerantText) {
+  def createFood() = deadbolt.restrict(Roles.superuser)(upickleRead[NewMainFoodRecord]) {
     request =>
       Future {
-        tryWithPickle {
-          translateError(service.createFood(read[NewMainFoodRecord](request.body)))
-        }
+        translateDatabaseResult(service.createFood(request.body))
       }
   }
 
-  def createFoodWithTempCode() = deadbolt.restrict(Roles.superuser)(parse.tolerantText) {
+  def createFoodWithTempCode() = deadbolt.restrict(Roles.superuser)(upickleRead[NewMainFoodRecord]) {
     request =>
       Future {
-        tryWithPickle {
-          translateError(service.createFoodWithTempCode(read[NewMainFoodRecord](request.body)))
-        }
+        translateDatabaseResult(service.createFoodWithTempCode(request.body))
       }
   }
 
-  def updateMainFoodRecord(foodCode: String) = deadbolt.restrict(Roles.superuser)(parse.tolerantText) {
+  def updateMainFoodRecord(foodCode: String) = deadbolt.restrict(Roles.superuser)(upickleRead[MainFoodRecordUpdate]) {
     request =>
       Future {
-        tryWithPickle {
-          translateError(service.updateMainFoodRecord(foodCode, read[MainFoodRecordUpdate](request.body)))
-        }
+        translateDatabaseResult(service.updateMainFoodRecord(foodCode, request.body))
       }
   }
 
-  def updateLocalFoodRecord(foodCode: String, locale: String) = deadbolt.restrict(Roles.superuser)(parse.tolerantText) {
+  def updateLocalFoodRecord(foodCode: String, locale: String) = deadbolt.restrict(Roles.superuser)(upickleRead[LocalFoodRecordUpdate]) {
     request =>
       Future {
-        tryWithPickle {
-          translateError(service.updateLocalFoodRecord(foodCode, read[LocalFoodRecordUpdate](request.body), locale))
-        }
+        translateDatabaseResult(service.updateLocalFoodRecord(foodCode, request.body, locale))
       }
   }
 
   def deleteFood(code: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.deleteFoods(Seq(code)))
+      translateDatabaseResult(service.deleteFoods(Seq(code)))
     }
   }
 }

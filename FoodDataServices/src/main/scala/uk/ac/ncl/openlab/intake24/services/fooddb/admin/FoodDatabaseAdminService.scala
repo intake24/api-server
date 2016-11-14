@@ -25,7 +25,7 @@ trait FoodDatabaseAdminService extends
   with CategoriesAdminService
   with QuickSearchService
   with AssociatedFoodsAdminService
-  with AsServedImageAdminService
+  with AsServedSetsAdminService
   with GuideImageAdminService
   with BrandNamesAdminService
   with DrinkwareAdminService

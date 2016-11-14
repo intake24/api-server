@@ -46,7 +46,7 @@ import javax.swing.JOptionPane
 import uk.ac.ncl.openlab.intake24.CategoryV2
 import javax.swing.ImageIcon
 import SwingUtil._
-import uk.ac.ncl.openlab.intake24.AsServedSet
+
 import uk.ac.ncl.openlab.intake24.GuideImage
 import uk.ac.ncl.openlab.intake24.DrinkwareSet
 import uk.ac.ncl.openlab.intake24.PortionSizeMethod

@@ -18,19 +18,14 @@ limitations under the License.
 
 name := "food-data-services"
 
-organization := "uk.ac.ncl.openlab.intake24"
-
 description := "Intake24 services"
 
-version := "2.0.0-SNAPSHOT"
-
 resolvers += Resolver.mavenLocal
-
-scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
   "net.codingwell" %% "scala-guice" % "4.1.0",
   "org.apache.commons" % "commons-lang3" % "3.4",
+  "commons-io" % "commons-io" % "2.5",
   "br.com.socialsla" % "ptstemmer-java" % "0.3.b1",
   "org.scalatest" %% "scalatest" % "2.2.5" % "test"
 )

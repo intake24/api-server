@@ -18,13 +18,7 @@ limitations under the License.
 
 name := "system-data-mongodb"
 
-organization := "uk.ac.ncl.openlab.intake24"
-
 description := "Intake24 MongoDB system data implementation"
-
-version := "2.0.0-SNAPSHOT"
-
-scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
   "org.mongodb" % "mongo-java-driver" % "2.10.1",

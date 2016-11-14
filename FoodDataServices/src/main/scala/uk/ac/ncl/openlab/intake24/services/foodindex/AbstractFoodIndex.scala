@@ -31,36 +31,30 @@ import uk.ac.ncl.openlab.intake24.UserFoodHeader
 abstract class AbstractFoodIndex (foodData: FoodIndexDataService, phoneticEncoder: Option[PhoneticEncoder], stemmer: WordStemmer, indexFilter: Seq[String], nonIndexedWords: Seq[String], localSpecialFoods: LocalSpecialFoodNames, locale: String) extends FoodIndex {
 
   val log = LoggerFactory.getLogger(classOf[AbstractFoodIndex])
-  
+
   val ft0 = System.currentTimeMillis()
-  
+
+  val localSpecialFoodHeaders = Seq(UserFoodHeader(FoodIndex.specialFoodSalad, localSpecialFoods.buildMySaladLabel), UserFoodHeader(FoodIndex.specialFoodSandwich, localSpecialFoods.buildMySandwichLabel))
   // FIXME: Error handling  
-  val indexableFoods = foodData.indexableFoods(locale).right.get
-  
+  val indexableFoods = foodData.indexableFoods(locale).right.get ++ localSpecialFoodHeaders 
+
   log.debug(s"Indexable foods loaded in ${System.currentTimeMillis() - ft0} ms")
-  
+
   val ct0 = System.currentTimeMillis()
-  
+
   // FIXME: Error handling
   val indexableCategories = foodData.indexableCategories(locale).right.get
-  
+
   log.debug(s"Indexable categories loaded in ${System.currentTimeMillis() - ct0} ms")
 
   val indexEntries = indexableFoods.map(f => (f.localDescription, FoodEntry(f))) ++ indexableCategories.map(c => (c.localDescription, CategoryEntry(c)))
 
   val it0 = System.currentTimeMillis()
-  
+
   // FIXME: Error handling
   val index = new PhraseIndex(indexEntries, indexFilter.map(CaseInsensitiveString(_)), nonIndexedWords.map(CaseInsensitiveString(_)), phoneticEncoder, stemmer, foodData.synsets(locale).right.get.map(_.map(CaseInsensitiveString(_))))
-  
+
   log.debug(s"Indexing complete in ${System.currentTimeMillis() - it0} ms")
-  
-  def specialFoodMatches(interpretation: InterpretedPhrase): Seq[MatchedFood] =
-    if (interpretation.words.exists(_.interpretations.exists(_.image == CaseInsensitiveString(localSpecialFoods.sandwich))))
-      Seq(MatchedFood(UserFoodHeader(FoodIndex.specialFoodSandwich, localSpecialFoods.buildMySandwichLabel), 0))
-    else if (interpretation.words.exists(_.interpretations.exists(_.image == CaseInsensitiveString(localSpecialFoods.salad))))
-      Seq(MatchedFood(UserFoodHeader(FoodIndex.specialFoodSalad, localSpecialFoods.buildMySaladLabel), 0))
-    else Seq()
 
   def lookup(description: String, maxResults: Int): IndexLookupResult = {
     log.debug("Lookup request: \"" + description + "\"")
@@ -76,10 +70,6 @@ abstract class AbstractFoodIndex (foodData: FoodIndexDataService, phoneticEncode
     }
     log.debug("Lookup completed in " + (System.currentTimeMillis() - t0) + " ms")
 
-    val specialFoods = specialFoodMatches(interpretation)
-    
-    log.debug(s"Special food matches: $specialFoods")
-    
-    IndexLookupResult( specialFoods ++ matchedFoods, matchedCategories)
+    IndexLookupResult(matchedFoods, matchedCategories)
   }
 }

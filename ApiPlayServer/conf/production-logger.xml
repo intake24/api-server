@@ -15,14 +15,13 @@
   <appender name="ASYNCSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
     <appender-ref ref="STDOUT" />
   </appender>
+  
+	<root level="INFO">
+		<appender-ref ref="ASYNCSTDOUT" />
+	</root>
 
-  <logger name="play" level="INFO" />
-  <logger name="application" level="INFO" />
-
-  <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />
-
-  <root level="WARN">
-    <appender-ref ref="ASYNCSTDOUT" />
-  </root>
+	<logger name="play" level="INFO" />
+	<logger name="application" level="DEBUG" />
+	<logger name="uk.ac.ncl.openlab.intake24" level="DEBUG" />
 
 </configuration>

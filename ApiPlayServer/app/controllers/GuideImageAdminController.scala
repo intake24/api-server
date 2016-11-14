@@ -29,18 +29,17 @@ import scala.concurrent.Future
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
 class GuideImageAdminController @Inject() (service: GuideImageAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
-    with PickleErrorHandler
-    with ApiErrorHandler {
+    with FoodDatabaseErrorHandler {
   
    def listGuideImages() = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.listGuideImages())
+      translateDatabaseResult(service.listGuideImages())
     }
   }
    
    def getGuideImage(id: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.getGuideImage(id))
+      translateDatabaseResult(service.getGuideImage(id))
     }
   } 
 }

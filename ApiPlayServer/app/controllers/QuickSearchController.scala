@@ -29,18 +29,17 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.admin.QuickSearchService
 import upickle.default._
 
 class QuickSearchController @Inject() (service: QuickSearchService, deadbolt: DeadboltActionsAdapter) extends Controller
-    with PickleErrorHandler
-    with ApiErrorHandler {
+    with FoodDatabaseErrorHandler {
 
   def searchFoods(searchTerm: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.searchFoods(searchTerm, locale))
+      translateDatabaseResult(service.searchFoods(searchTerm, locale))
     }
   }
 
   def searchCategories(searchTerm: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.searchCategories(searchTerm, locale))
+      translateDatabaseResult(service.searchCategories(searchTerm, locale))
     }
   }
 }

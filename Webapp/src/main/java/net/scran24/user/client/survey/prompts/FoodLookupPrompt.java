@@ -270,10 +270,10 @@ public class FoodLookupPrompt implements Prompt<Pair<FoodEntry, Meal>, MealOpera
 				public void call(String code) {
 					if (code.equals(SpecialData.FOOD_CODE_SANDWICH))
 						onComplete.call(MealOperation.replaceFood(meal.foodIndex(food),
-								new TemplateFood(FoodLink.newUnlinked(), SafeHtmlUtils.htmlEscape("Sandwich"), false, FoodTemplates.sandwich)));
+								new TemplateFood(FoodLink.newUnlinked(), SafeHtmlUtils.htmlEscape(messages.foodBrowser_sandwichShortName()), false, FoodTemplates.sandwich)));
 					else if (code.equals(SpecialData.FOOD_CODE_SALAD))
 						onComplete.call(MealOperation.replaceFood(meal.foodIndex(food),
-								new TemplateFood(FoodLink.newUnlinked(), SafeHtmlUtils.htmlEscape("Salad"), false, FoodTemplates.salad)));
+								new TemplateFood(FoodLink.newUnlinked(), SafeHtmlUtils.htmlEscape(messages.foodBrowser_saladShortName()), false, FoodTemplates.salad)));
 
 				}
 			}, new Callback() {

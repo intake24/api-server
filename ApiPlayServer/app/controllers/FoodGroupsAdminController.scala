@@ -28,19 +28,18 @@ import security.Roles
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 
 class FoodGroupsAdminController @Inject() (service: FoodGroupsAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
-    with PickleErrorHandler
-    with ApiErrorHandler {
+    with FoodDatabaseErrorHandler {
   
   def listFoodGroups(locale: String) = deadbolt.restrict(Roles.superuser) {
      Future {
       // Map keys to Strings to force upickle to use js object serialisation instead of array of arrays
-      translateError(service.listFoodGroups(locale).right.map(_.map { case (k, v) => (k.toString, v) }))
+      translateDatabaseResult(service.listFoodGroups(locale).right.map(_.map { case (k, v) => (k.toString, v) }))
     }
   }
 
   def getFoodGroup(id: Int, locale: String) = deadbolt.restrict(Roles.superuser) {
      Future {
-      translateError(service.getFoodGroup(id, locale))
+      translateDatabaseResult(service.getFoodGroup(id, locale))
     }
   }
 }

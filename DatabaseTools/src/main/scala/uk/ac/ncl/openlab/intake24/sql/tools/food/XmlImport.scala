@@ -42,7 +42,7 @@ import uk.ac.ncl.openlab.intake24.NewLocalFoodRecord
 import uk.ac.ncl.openlab.intake24.foodxml.XmlFoodRecord
 import uk.ac.ncl.openlab.intake24.FoodGroupMain
 import uk.ac.ncl.openlab.intake24.foodxml.XmlCategoryRecord
-import uk.ac.ncl.openlab.intake24.AsServedSet
+import uk.ac.ncl.openlab.intake24.AsServedSetV1
 import uk.ac.ncl.openlab.intake24.GuideImage
 import uk.ac.ncl.openlab.intake24.DrinkwareSet
 import uk.ac.ncl.openlab.intake24.NewLocalCategoryRecord
@@ -55,7 +55,7 @@ import scala.Right
 import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseConnection
 import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseOptions
 import uk.ac.ncl.openlab.intake24.sql.tools.WarningMessage
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 
 class XmlImporter(adminService: FoodDatabaseAdminService) {
 
@@ -66,7 +66,7 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
   private def checkError[E, T](op: String, result: Either[E, T]) = result match {
     case Left(ParentRecordNotFound(e)) => logger.error(s"$op failed", e)
     case Left(IllegalParent(e)) => logger.error(s"$op failed", e)
-    case Left(DatabaseError(e)) => logger.error(s"$op failed", e)
+    case Left(UnexpectedDatabaseError(e)) => logger.error(s"$op failed", e)
     case Left(e) => logger.error(s"$op failed ${e.toString()}")
     case _ => logger.info(s"$op successful")
   }
@@ -143,11 +143,11 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
     ) yield ())
   }
 
-  def importAsServedSets(asServed: Seq[AsServedSet]) =
-    checkError("As served sets import", for (
+  def importAsServedSets(asServed: Seq[AsServedSetV1]) = ???
+    /* checkError("As served sets import", for (
       _ <- adminService.deleteAllAsServedSets().right;
       _ <- adminService.createAsServedSets(asServed).right
-    ) yield ())
+    ) yield ()) */
 
   private case class ImageMapArea(id: Int, coords: Seq[Double])
   private case class ImageMapRecord(navigation: Seq[Seq[Int]], areas: Seq[ImageMapArea])
@@ -289,8 +289,6 @@ object XmlImport extends App with WarningMessage with DatabaseConnection {
   val dataSource = getDataSource(options)
 
   val adminService = new FoodDatabaseAdminImpl(dataSource)
-
-  implicit val dbConn = dataSource.getConnection
 
   val importer = new XmlImporter(adminService)
 

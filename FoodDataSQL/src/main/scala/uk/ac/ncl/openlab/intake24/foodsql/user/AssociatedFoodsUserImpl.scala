@@ -22,10 +22,10 @@ import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
 trait AssociatedFoodsUserImpl extends AssociatedFoodsService with FoodDataSqlService with SqlResourceLoader with FirstRowValidation {
 
   private case class AssociatedFoodPromptsRow(associated_food_code: Option[String], associated_category_code: Option[String],
-    text: String, link_as_main: Boolean, generic_name: String, locale_id: String)
+    text: String, link_as_main: Boolean, generic_name: String, locale_id: String, af_locale_id: String)
 
   private val getAssociatedFoodsQuery = sqlFromResource("user/get_associated_foods_frv.sql")
-
+  
   def getAssociatedFoods(foodCode: String, locale: String): Either[LocalLookupError, Seq[AssociatedFood]] = tryWithConnection {
     implicit conn =>
 
@@ -46,7 +46,7 @@ trait AssociatedFoodsUserImpl extends AssociatedFoodsService with FoodDataSqlSer
 
       parseWithLocaleAndFoodValidation(foodCode, result, parser)(Seq(FirstRowValidationClause("id", () => Right(List())))).right.map {
         rows =>
-          val (local, prototype) = rows.partition(_.locale_id == locale)
+          val (local, prototype) = rows.partition(_.af_locale_id == locale)
 
           if (local.nonEmpty)
             local.map(mkPrompt)

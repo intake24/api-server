@@ -5,7 +5,7 @@ import uk.ac.ncl.openlab.intake24.CategoryHeader
 
 import anorm._
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.QuickSearchService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
@@ -21,7 +21,7 @@ trait QuickSearchAdminImpl extends QuickSearchService with FoodDataSqlService wi
   
   private lazy val foodsQuickSearchQuery = sqlFromResource("admin/foods_quick_search.sql")
   
-  def searchFoods(searchTerm: String, locale: String): Either[DatabaseError, Seq[FoodHeader]] = tryWithConnection {
+  def searchFoods(searchTerm: String, locale: String): Either[UnexpectedDatabaseError, Seq[FoodHeader]] = tryWithConnection {
     implicit conn =>
       val lowerCaseTerm = searchTerm.toLowerCase
 
@@ -30,7 +30,7 @@ trait QuickSearchAdminImpl extends QuickSearchService with FoodDataSqlService wi
   
   private lazy val categoriesQuickSearchQuery = sqlFromResource("admin/categories_quick_search.sql")
 
-  def searchCategories(searchTerm: String, locale: String): Either[DatabaseError, Seq[CategoryHeader]] = tryWithConnection {
+  def searchCategories(searchTerm: String, locale: String): Either[UnexpectedDatabaseError, Seq[CategoryHeader]] = tryWithConnection {
     implicit conn =>
       val lowerCaseTerm = searchTerm.toLowerCase
 

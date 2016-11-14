@@ -18,13 +18,7 @@ limitations under the License.
 
 name := "system-data-sql"
 
-organization := "uk.ac.ncl.openlab.intake24"
-
 description := "Intake24 SQL based system database"
-
-version := "2.0.0-SNAPSHOT"
-
-scalaVersion := "2.11.8"
 
 resolvers += "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/"
 

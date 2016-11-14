@@ -18,13 +18,7 @@ limitations under the License.
 
 name := "food-data-xml"
 
-organization := "uk.ac.ncl.openlab.intake24"
-
 description := "Intake24 XML based food database"
-
-version := "2.0.0-SNAPSHOT"
-
-scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
   "org.scala-lang.modules" % "scala-xml_2.11" % "1.0.5",
@@ -33,4 +27,3 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "2.2.5" % "test",
   "net.codingwell" %% "scala-guice" % "4.1.0"
 )
-

@@ -28,7 +28,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.PortionSizeMethod
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
@@ -101,12 +101,12 @@ trait FoodsAdminImpl extends FoodsAdminService
       ) yield record
   }
 
-  def isFoodCode(code: String): Either[DatabaseError, Boolean] = tryWithConnection {
+  def isFoodCode(code: String): Either[UnexpectedDatabaseError, Boolean] = tryWithConnection {
     implicit conn =>
       Right(SQL("""SELECT code FROM foods WHERE code={food_code}""").on('food_code -> code).executeQuery().as(SqlParser.str("code").*).nonEmpty)
   }
 
-  def isFoodCodeAvailable(code: String): Either[DatabaseError, Boolean] = isFoodCode(code).right.map(!_)
+  def isFoodCodeAvailable(code: String): Either[UnexpectedDatabaseError, Boolean] = isFoodCode(code).right.map(!_)
 
   def createFood(newFood: NewMainFoodRecord): Either[DependentCreateError, Unit] = tryWithConnection {
     implicit conn =>
@@ -152,7 +152,7 @@ trait FoodsAdminImpl extends FoodsAdminService
       }
   }
 
-  def deleteAllFoods(): Either[DatabaseError, Unit] = tryWithConnection {
+  def deleteAllFoods(): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
       SQL("DELETE FROM foods").execute()
       Right(())

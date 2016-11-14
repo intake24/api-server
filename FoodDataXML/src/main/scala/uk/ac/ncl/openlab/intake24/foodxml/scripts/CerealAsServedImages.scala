@@ -23,8 +23,8 @@ import java.io.FileFilter
 import au.com.bytecode.opencsv.CSVReader
 import java.io.FileReader
 import scala.collection.JavaConversions._
-import uk.ac.ncl.openlab.intake24.AsServedSet
-import uk.ac.ncl.openlab.intake24.AsServedImage
+import uk.ac.ncl.openlab.intake24.AsServedSetV1
+import uk.ac.ncl.openlab.intake24.AsServedImageV1
 import scala.xml.XML
 import uk.ac.ncl.openlab.intake24.foodxml.AsServedDef
 import uk.ac.ncl.openlab.intake24.foodxml.Util
@@ -53,10 +53,10 @@ object CerealAsServedImages extends App {
   val types = Seq("hoop", "flake", "rkris")
   val bowls = Seq("A", "B", "C", "D", "E", "F")
 
-  def images(prefix: String, bowl: String, t: String): AsServedSet = {
+  def images(prefix: String, bowl: String, t: String): AsServedSetV1 = {
     def photoCode(f: File) = f.getName().dropRight(4)
-    val images = asServedImages(prefix, bowl, baseDir).filter(f => photoType(photoCode(f)) == t).map(f => AsServedImage(f.getPath.drop(photoBaseDir.length + 1).replaceAll("\\\\", "\\/"), weights(photoCode(f))))
-    AsServedSet("cereal_" + prefix + bowl + (if (t == "LO") "_leftovers" else ""), "Cereal, " + prefix + ", bowl " + bowl + (if (t == "LO") ", leftovers" else ""), images)
+    val images = asServedImages(prefix, bowl, baseDir).filter(f => photoType(photoCode(f)) == t).map(f => AsServedImageV1(f.getPath.drop(photoBaseDir.length + 1).replaceAll("\\\\", "\\/"), weights(photoCode(f))))
+    AsServedSetV1("cereal_" + prefix + bowl + (if (t == "LO") "_leftovers" else ""), "Cereal, " + prefix + ", bowl " + bowl + (if (t == "LO") ", leftovers" else ""), images)
   }
 
   val sets =

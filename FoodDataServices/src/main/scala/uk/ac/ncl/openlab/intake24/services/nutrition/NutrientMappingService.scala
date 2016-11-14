@@ -21,12 +21,12 @@ package uk.ac.ncl.openlab.intake24.services.nutrition
 import uk.ac.ncl.openlab.intake24.nutrients.Nutrient
 
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.NutrientMappingError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 
 case class NutrientDescription(nutrientType: Nutrient, description: String, unit: String)
 
 trait NutrientMappingService {
-  def supportedNutrients(): Either[DatabaseError, Seq[NutrientDescription]]
+  def supportedNutrients(): Either[UnexpectedDatabaseError, Seq[NutrientDescription]]
   def nutrientsFor(table_id: String, record_id: String, weight: Double): Either[NutrientMappingError, Map[Nutrient, Double]]
 
   def javaNutrientsFor(table_id: String, record_id: String, weight: Double): Either[NutrientMappingError, java.util.Map[Nutrient, java.lang.Double]] =

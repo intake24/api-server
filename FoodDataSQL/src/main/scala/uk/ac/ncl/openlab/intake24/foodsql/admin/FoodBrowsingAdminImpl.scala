@@ -23,6 +23,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodBrowsingAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoryDescendantsCodes
 
 @Singleton
 class FoodBrowsingAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends FoodBrowsingAdminImpl
@@ -65,6 +66,24 @@ trait FoodBrowsingAdminImpl extends FoodBrowsingAdminService
   def getCategoryParentCategories(code: String, locale: String): Either[LocalLookupError, Seq[CategoryHeader]] = tryWithConnection {
     implicit conn =>
       getCategoryParentCategoriesHeadersQuery(code, locale)
+  }
+
+  def getAllCategoryDescendantsCodes(code: String): Either[LookupError, CategoryDescendantsCodes] = tryWithConnection {
+    implicit conn =>
+
+      def rec(queue: Set[String], acc: CategoryDescendantsCodes): Either[LookupError, CategoryDescendantsCodes] = queue.headOption match {
+        case Some(code) =>
+          categoryFoodContentsCodesQuery(code).right.flatMap {
+            foodCodes =>
+              categorySubcategoryContentsCodesQuery(code).right.flatMap {
+                subcategoryCodes =>
+                  rec(subcategoryCodes ++ queue.tail, CategoryDescendantsCodes(acc.foods ++ foodCodes, acc.subcategories ++ subcategoryCodes))
+              }
+          }
+        case None => Right(acc)
+      }
+
+      rec(Set(code), CategoryDescendantsCodes(Set[String](), Set[String]()))
   }
 
   def getFoodAllCategoriesCodes(code: String): Either[LookupError, Set[String]] = tryWithConnection {

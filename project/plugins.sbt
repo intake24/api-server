@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.5.8")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.5.9")
 
 addSbtPlugin("com.lihaoyi" % "scalatex-sbt-plugin" % "0.3.3")
 
@@ -24,5 +24,5 @@ addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.8.2")
 
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.3")
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.2.0-M5")
+addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.2.0-M6")
 

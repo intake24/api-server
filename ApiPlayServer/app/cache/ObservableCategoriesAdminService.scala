@@ -9,7 +9,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
 import uk.ac.ncl.openlab.intake24.LocalCategoryRecord
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.MainCategoryRecord
 import com.google.inject.Inject
 import com.google.inject.Singleton
@@ -42,6 +42,7 @@ import modules.BasicImpl
   def updateLocalCategoryRecord(categoryCode: String, localCategoryUpdate: LocalCategoryRecordUpdate, locale: String): Either[LocalDependentUpdateError, Unit]
  */
 trait CategoriesAdminObserver {
+  def onCategoryToBeDeleted(code: String): Unit
   def onCategoryDeleted(code: String): Unit
   def onAllCategoriesDeleted(): Unit
 
@@ -65,8 +66,8 @@ class ObservableCategoriesAdminServiceImpl @Inject() (@BasicImpl service: Catego
 
   def getCategoryRecord(code: String, locale: String): Either[LocalLookupError, CategoryRecord] = service.getCategoryRecord(code, locale)
 
-  def isCategoryCodeAvailable(code: String): Either[DatabaseError, Boolean] = service.isCategoryCodeAvailable(code)
-  def isCategoryCode(code: String): Either[DatabaseError, Boolean] = service.isCategoryCode(code)
+  def isCategoryCodeAvailable(code: String): Either[UnexpectedDatabaseError, Boolean] = service.isCategoryCodeAvailable(code)
+  def isCategoryCode(code: String): Either[UnexpectedDatabaseError, Boolean] = service.isCategoryCode(code)
 
   def createMainCategoryRecords(records: Seq[NewMainCategoryRecord]): Either[DependentCreateError, Unit] = service.createMainCategoryRecords(records).right.map {
     _ => records.foreach(record => observers.foreach(_.onMainCategoryRecordCreated(record)))
@@ -84,12 +85,16 @@ class ObservableCategoriesAdminServiceImpl @Inject() (@BasicImpl service: Catego
         }
     }
 
-  def deleteAllCategories(): Either[DatabaseError, Unit] = service.deleteAllCategories().right.map {
+  def deleteAllCategories(): Either[UnexpectedDatabaseError, Unit] = service.deleteAllCategories().right.map {
     _ => observers.foreach(_.onAllCategoriesDeleted())
   }
 
-  def deleteCategory(categoryCode: String): Either[DeleteError, Unit] = service.deleteCategory(categoryCode).right.map {
-    _ => observers.foreach(_.onCategoryDeleted(categoryCode))
+  def deleteCategory(categoryCode: String): Either[DeleteError, Unit] = {
+    observers.foreach(_.onCategoryToBeDeleted(categoryCode))
+
+    service.deleteCategory(categoryCode).right.map {
+      _ => observers.foreach(_.onCategoryDeleted(categoryCode))
+    }
   }
 
   def updateMainCategoryRecord(categoryCode: String, categoryMain: MainCategoryRecordUpdate): Either[DependentUpdateError, Unit] =

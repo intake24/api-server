@@ -18,12 +18,6 @@ limitations under the License.
 
 name := "shared-types"
 
-organization := "uk.ac.ncl.openlab.intake24"
-
 description := "Intake24 API shared types"
-
-version := "2.0.0-SNAPSHOT"
-
-scalaVersion := "2.11.8"
 
 libraryDependencies += "ca.mrvisser" %% "sealerate" % "0.0.4"

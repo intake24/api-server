@@ -18,13 +18,7 @@ limitations under the License.
 
 name := "database-tools"
 
-organization := "uk.ac.ncl.openlab.intake24"
-
 description := "Intake24 database tools"
-
-version := "2.0.0-SNAPSHOT"
-
-scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
   "com.google.gwt" % "gwt-user" % "2.7.0" % "provided",
@@ -33,5 +27,6 @@ libraryDependencies ++= Seq(
   "com.zaxxer" % "HikariCP" % "2.5.1",
   "org.apache.poi" % "poi-ooxml" % "3.9",
   "com.lihaoyi" %% "upickle" % "0.4.1",
-  "org.rogach" %% "scallop" % "0.9.6"
+  "org.rogach" %% "scallop" % "0.9.6",
+  "commons-io" % "commons-io" % "2.5"
 )

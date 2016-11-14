@@ -6,7 +6,7 @@ import anorm.Macro
 import anorm.sqlToSimple
 
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.NutrientTablesAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.NutrientTableRecord
@@ -26,7 +26,7 @@ trait NutrientTablesAdminImpl extends NutrientTablesAdminService with FoodDataSq
     def asNutrientTable = NutrientTable(id, description)
   }
 
-  def listNutrientTables(): Either[DatabaseError, Map[String, NutrientTable]] = tryWithConnection {
+  def listNutrientTables(): Either[UnexpectedDatabaseError, Map[String, NutrientTable]] = tryWithConnection {
     implicit conn =>
       val query = "SELECT id, description FROM nutrient_tables"
       Right(SQL(query).executeQuery().as(Macro.namedParser[NutrientTableDescRow].*).foldLeft(Map[String, NutrientTable]()) {
@@ -44,7 +44,7 @@ trait NutrientTablesAdminImpl extends NutrientTablesAdminService with FoodDataSq
       }
   }
 
-  def createNutrientTable(data: NutrientTable): Either[DatabaseError, Unit] = tryWithConnection {
+  def createNutrientTable(data: NutrientTable): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
       var query = """INSERT INTO nutrient_tables VALUES({id}, {description})"""
 
@@ -77,13 +77,13 @@ trait NutrientTablesAdminImpl extends NutrientTablesAdminService with FoodDataSq
         Right(())
   }
   
-  def deleteAllNutrientTables(): Either[DatabaseError, Unit] = tryWithConnection {
+  def deleteAllNutrientTables(): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
       SQL("DELETE FROM nutrient_tables").execute()
       Right(())
   }
 
-  def createNutrientTableRecords(records: Seq[NutrientTableRecord]): Either[DatabaseError, Unit] = tryWithConnection {
+  def createNutrientTableRecords(records: Seq[NutrientTableRecord]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
 
       conn.setAutoCommit(false)

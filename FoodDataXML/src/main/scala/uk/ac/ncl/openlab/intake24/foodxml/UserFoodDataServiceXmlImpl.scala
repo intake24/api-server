@@ -21,7 +21,7 @@ package uk.ac.ncl.openlab.intake24.foodxml
 import org.slf4j.LoggerFactory
 import com.google.inject.Inject
 import com.google.inject.Singleton
-import uk.ac.ncl.openlab.intake24.AsServedSet
+import uk.ac.ncl.openlab.intake24.AsServedSetV1
 import uk.ac.ncl.openlab.intake24.DrinkwareSet
 import uk.ac.ncl.openlab.intake24.GuideImage
 import uk.ac.ncl.openlab.intake24.InheritableAttributes
@@ -36,11 +36,13 @@ import uk.ac.ncl.openlab.intake24.UserFoodData
 import uk.ac.ncl.openlab.intake24.UserFoodHeader
 import uk.ac.ncl.openlab.intake24.AssociatedFood
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDatabaseService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.UserAsServedImage
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.UserAsServedSet
 
 @Singleton
 class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDatabaseService {
@@ -115,7 +117,7 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDat
     }
 
   def getAsServedSet(id: String) = data.asServedSets.get(id) match {
-    case Some(set) => Right(set)
+    case Some(set) => Right(UserAsServedSet(set.images(0).url, set.images.map( m => UserAsServedImage(m.url, m.url, m.weight))))
     case None => Left(RecordNotFound(new RuntimeException(id)))
   }
 

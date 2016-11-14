@@ -32,7 +32,7 @@ class FoodDatabaseAdminImpl @Inject() (@Named("intake24_foods") val dataSource: 
     with QuickSearchAdminImpl
     with FoodGroupsAdminImpl
     with GuideImageAdminImpl
-    with AsServedImageAdminImpl
+    with AsServedSetsAdminImpl
     with DrinkwareAdminImpl
     with HeaderRows
     with NutrientTablesAdminImpl    

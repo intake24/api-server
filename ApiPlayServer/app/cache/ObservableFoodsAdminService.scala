@@ -8,7 +8,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
 import uk.ac.ncl.openlab.intake24.LocalCategoryRecord
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.MainCategoryRecord
 import com.google.inject.Inject
 import com.google.inject.Singleton
@@ -32,6 +32,7 @@ trait FoodsAdminObserver {
   def onMainFoodRecordUpdated(code: String): Unit
   def onLocalFoodRecordCreated(code: String, locale: String): Unit
   def onLocalFoodRecordUpdated(code: String, locale: String): Unit
+  def onFoodToBeDeleted(code: String): Unit
   def onFoodDeleted(code: String): Unit
   def onFoodCreated(code: String): Unit
   def onAllFoodsDeleted(): Unit
@@ -52,8 +53,8 @@ class ObservableFoodsAdminServiceImpl @Inject() (@BasicImpl service: FoodsAdminS
 
   def getFoodRecord(code: String, locale: String): Either[LocalLookupError, FoodRecord] = service.getFoodRecord(code, locale)
 
-  def isFoodCodeAvailable(code: String): Either[DatabaseError, Boolean] = service.isFoodCodeAvailable(code)
-  def isFoodCode(code: String): Either[DatabaseError, Boolean] = service.isFoodCode(code)
+  def isFoodCodeAvailable(code: String): Either[UnexpectedDatabaseError, Boolean] = service.isFoodCodeAvailable(code)
+  def isFoodCode(code: String): Either[UnexpectedDatabaseError, Boolean] = service.isFoodCode(code)
 
   def createFood(newFood: NewMainFoodRecord): Either[DependentCreateError, Unit] = service.createFood(newFood).right.map {
     _ => observers.foreach(_.onFoodCreated(newFood.code))
@@ -91,17 +92,23 @@ class ObservableFoodsAdminServiceImpl @Inject() (@BasicImpl service: FoodsAdminS
       observers.foreach(_.onLocalFoodRecordUpdated(foodCode, locale))
   }
 
-  def deleteAllFoods(): Either[DatabaseError, Unit] = service.deleteAllFoods().right.map {
+  def deleteAllFoods(): Either[UnexpectedDatabaseError, Unit] = service.deleteAllFoods().right.map {
     _ =>
       observers.foreach(_.onAllFoodsDeleted())
   }
 
-  def deleteFoods(foodCodes: Seq[String]): Either[DeleteError, Unit] = service.deleteFoods(foodCodes).right.map {
-    _ =>
-      foodCodes.foreach {
-        foodCode =>
-          observers.foreach(_.onFoodDeleted(foodCode))
-      }
-  }
+  def deleteFoods(foodCodes: Seq[String]): Either[DeleteError, Unit] = {
+    foodCodes.foreach {
+      foodCode =>
+        observers.foreach(_.onFoodToBeDeleted(foodCode))
+    }
 
+    service.deleteFoods(foodCodes).right.map {
+      _ =>
+        foodCodes.foreach {
+          foodCode =>
+            observers.foreach(_.onFoodDeleted(foodCode))
+        }
+    }
+  }
 }

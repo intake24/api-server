@@ -29,7 +29,7 @@ import uk.ac.ncl.openlab.intake24.foodsql.SimpleValidation
 import uk.ac.ncl.openlab.intake24.foodsql.modular.CategoriesAdminQueries
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoriesAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentUpdateError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentUpdateError
@@ -54,12 +54,12 @@ trait CategoriesAdminImpl extends CategoriesAdminService
 
   private val logger = LoggerFactory.getLogger(classOf[CategoriesAdminImpl])
 
-  def isCategoryCode(code: String): Either[DatabaseError, Boolean] = tryWithConnection {
+  def isCategoryCode(code: String): Either[UnexpectedDatabaseError, Boolean] = tryWithConnection {
     implicit conn =>
       Right(SQL("""SELECT code FROM categories WHERE code={category_code}""").on('category_code -> code).executeQuery().as(SqlParser.str("code").singleOpt).nonEmpty)
   }
 
-  def isCategoryCodeAvailable(code: String): Either[DatabaseError, Boolean] = isCategoryCode(code).right.map(!_)
+  def isCategoryCodeAvailable(code: String): Either[UnexpectedDatabaseError, Boolean] = isCategoryCode(code).right.map(!_)
 
   case class CategoryResultRow(version: UUID, local_version: Option[UUID], code: String, description: String, local_description: Option[String], is_hidden: Boolean, same_as_before_option: Option[Boolean],
     ready_meal_option: Option[Boolean], reasonable_amount: Option[Int])
@@ -178,7 +178,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService
         Left(RecordNotFound(new RuntimeException(categoryCode)))
   }
 
-  def deleteAllCategories(): Either[DatabaseError, Unit] = tryWithConnection {
+  def deleteAllCategories(): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
       SQL("DELETE FROM categories").execute()
       Right(())

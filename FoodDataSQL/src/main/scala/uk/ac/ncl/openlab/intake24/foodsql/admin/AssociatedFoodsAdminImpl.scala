@@ -19,7 +19,7 @@ import org.postgresql.util.PSQLException
 
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
@@ -65,7 +65,7 @@ trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with Associat
       }
   }
 
-  def deleteAllAssociatedFoods(locale: String): Either[DatabaseError, Unit] = tryWithConnection {
+  def deleteAllAssociatedFoods(locale: String): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
       deleteAllAssociatedFoodsQuery(locale)
   }

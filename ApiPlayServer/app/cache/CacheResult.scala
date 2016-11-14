@@ -29,7 +29,7 @@ trait CacheResult {
     knownCacheKeys = Set()
   }
   
-  def removeCached(key: String) {
+  def removeCached(key: String) {    
     cache.remove(key)
     knownCacheKeys -= key
   }

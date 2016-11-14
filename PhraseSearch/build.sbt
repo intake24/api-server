@@ -18,13 +18,7 @@ limitations under the License.
 
 name := "phrase-search"
 
-organization := "org.workcraft"
-
 description := "Indexing and searching tools for short phrases"
-
-version := "2.0.0-SNAPSHOT"
-
-scalaVersion := "2.11.8"
 
 javacOptions ++= Seq("-source", "1.6", "-target", "1.8", "-encoding", "UTF-8")
 

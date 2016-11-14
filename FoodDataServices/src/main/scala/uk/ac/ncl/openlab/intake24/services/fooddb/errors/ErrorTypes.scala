@@ -49,7 +49,7 @@ sealed trait UpdateError
   val exception: Throwable
 }
 
-sealed trait LocalCreateError
+sealed trait LocalCreateError extends AnyError
 
 sealed trait CreateError 
   extends LocalCreateError
@@ -92,6 +92,8 @@ case class RecordNotFound(exception: Throwable)
   with UpdateError
   with AnyError
 
+case class StillReferenced(exception: Throwable) extends DeleteError
+
 case class VersionConflict(exception: Throwable) extends UpdateError
 
 case class DuplicateCode(exception: Throwable) extends CreateError with UpdateError
@@ -102,7 +104,7 @@ case class IllegalParent(exception: Throwable) extends ParentError
 
 case class TableNotFound(exception: Throwable) extends NutrientMappingError
 
-case class DatabaseError(exception: Throwable)
+case class UnexpectedDatabaseError(exception: Throwable)
   extends LocaleError
   with LookupError
   with DeleteError

@@ -11,7 +11,7 @@ import uk.ac.ncl.openlab.intake24.SplitList
 
 import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataSharedImpl
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodIndexDataAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 import anorm.NamedParameter
 import com.google.inject.Inject
 import javax.sql.DataSource
@@ -24,14 +24,14 @@ trait FoodIndexDataAdminImpl extends FoodIndexDataAdminService with FoodDataSqlS
 
   private val logger = LoggerFactory.getLogger(classOf[FoodIndexDataAdminImpl])
 
-  def deleteSynsets(locale: String): Either[DatabaseError, Unit] = tryWithConnection {
+  def deleteSynsets(locale: String): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
       logger.debug("Deleting existing synonym sets")
       SQL("DELETE FROM synonym_sets WHERE locale_id={locale_id}").on('locale_id -> locale).execute()
       Right(())
   }
 
-  def deleteSplitList(locale: String): Either[DatabaseError, Unit] = tryWithConnection {
+  def deleteSplitList(locale: String): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
 
       logger.debug("Deleting existing split list")
@@ -43,7 +43,7 @@ trait FoodIndexDataAdminImpl extends FoodIndexDataAdminService with FoodDataSqlS
       Right(())
   }
 
-  def createSynsets(synsets: Seq[Set[String]], locale: String): Either[DatabaseError, Unit] = tryWithConnection {
+  def createSynsets(synsets: Seq[Set[String]], locale: String): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
 
       conn.setAutoCommit(false)
@@ -65,7 +65,7 @@ trait FoodIndexDataAdminImpl extends FoodIndexDataAdminService with FoodDataSqlS
       Right(())
   }
   
-  def createSplitList(splitList: SplitList, locale: String): Either[DatabaseError, Unit] = tryWithConnection {
+  def createSplitList(splitList: SplitList, locale: String): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
       conn.setAutoCommit(false)
 

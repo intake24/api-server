@@ -20,10 +20,6 @@ name := """api-play-server"""
 
 description := "Intake24 Play Framework API server"
 
-version := "2.0.0-SNAPSHOT"
-
-scalaVersion := "2.11.8"
-
 maintainer := "Ivan Poliakov <ivan.poliakov@ncl.ac.uk>"
 
 resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
@@ -35,10 +31,11 @@ libraryDependencies ++= Seq(
   cache,
   "net.codingwell" %% "scala-guice" % "4.1.0",
   "com.mohiva" %% "play-silhouette" % "4.0.0",
-  "be.objectify" %% "deadbolt-scala" % "2.5.0",  
+  "be.objectify" %% "deadbolt-scala" % "2.5.0",
   "com.lihaoyi" %% "upickle" % "0.4.1",
+  "org.scalaz" %% "scalaz-core" % "7.2.6",
   "org.apache.shiro" % "shiro-core" % "1.2.3", // for v1.0 authentication support
-  "com.typesafe.play" % "play-integration-test_2.11" % "2.5.8" % "test"  
+  "com.typesafe.play" % "play-integration-test_2.11" % "2.5.9" % "test"
 )
 
 javaOptions in Universal ++= Seq(
@@ -61,4 +58,3 @@ routesGenerator := InjectedRoutesGenerator
 EclipseKeys.withSource := true
 
 EclipseKeys.preTasks := Seq(compile in Compile)
-

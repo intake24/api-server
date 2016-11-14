@@ -10,17 +10,6 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package net.scran24.user.client.survey.prompts;
 
-import net.scran24.common.client.WidgetFactory;
-import net.scran24.user.client.ShepherdTour;
-import net.scran24.user.client.survey.SurveyStageInterface;
-import net.scran24.user.client.survey.flat.FoodOperation;
-import net.scran24.user.client.survey.flat.Prompt;
-import net.scran24.user.client.survey.prompts.messages.HelpMessages;
-import net.scran24.user.client.survey.prompts.messages.PromptMessages;
-import net.scran24.user.shared.FoodEntry;
-import net.scran24.user.shared.MissingFood;
-import net.scran24.user.shared.MissingFoodDescription;
-
 import org.pcollections.client.PVector;
 import org.pcollections.client.TreePVector;
 import org.workcraft.gwt.shared.client.Callback1;
@@ -40,6 +29,17 @@ import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.Panel;
 import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
+
+import net.scran24.common.client.WidgetFactory;
+import net.scran24.user.client.ShepherdTour;
+import net.scran24.user.client.survey.SurveyStageInterface;
+import net.scran24.user.client.survey.flat.FoodOperation;
+import net.scran24.user.client.survey.flat.Prompt;
+import net.scran24.user.client.survey.prompts.messages.HelpMessages;
+import net.scran24.user.client.survey.prompts.messages.PromptMessages;
+import net.scran24.user.shared.FoodEntry;
+import net.scran24.user.shared.MissingFood;
+import net.scran24.user.shared.MissingFoodDescription;
 
 public class MissingFoodDescriptionPrompt implements Prompt<FoodEntry, FoodOperation> {
 	private static final PromptMessages messages = PromptMessages.Util.getInstance();

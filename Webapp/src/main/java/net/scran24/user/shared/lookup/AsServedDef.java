@@ -15,28 +15,28 @@ import org.workcraft.gwt.imagechooser.shared.ImageDef;
 import com.google.gwt.user.client.rpc.IsSerializable;
 
 public class AsServedDef implements IsSerializable {
-	public static class ImageInfo implements IsSerializable {
-		public ImageDef def;
-		public double weight;
-		
-		@Deprecated
-		public ImageInfo () { }
+  public static class ImageInfo implements IsSerializable {
+    public ImageDef def;
 
-		public ImageInfo(ImageDef def, double weight) {
-			this.def = def;
-			this.weight = weight;
-		}
-	}
-	
-	public String description;
-	public ImageInfo[] images;
-	
-	@Deprecated
-	public AsServedDef() {
-	}
+    public double weight;
 
-	public AsServedDef(String description, ImageInfo[] images) {
-		this.description = description;
-		this.images = images;
-	}
+    @Deprecated
+    public ImageInfo() {
+    }
+
+    public ImageInfo(ImageDef def, double weight) {
+      this.def = def;
+      this.weight = weight;
+    }
+  }
+
+  public ImageInfo[] images;
+
+  @Deprecated
+  public AsServedDef() {
+  }
+
+  public AsServedDef(ImageInfo[] images) {
+    this.images = images;
+  }
 }

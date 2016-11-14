@@ -1,7 +1,7 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.admin
 
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 
 import uk.ac.ncl.openlab.intake24.CategoryRecord
 import uk.ac.ncl.openlab.intake24.MainCategoryRecord
@@ -25,12 +25,12 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalCreateError
 trait CategoriesAdminService {
   def getCategoryRecord(code: String, locale: String): Either[LocalLookupError, CategoryRecord]
 
-  def isCategoryCodeAvailable(code: String): Either[DatabaseError, Boolean]
-  def isCategoryCode(code: String): Either[DatabaseError, Boolean]
+  def isCategoryCodeAvailable(code: String): Either[UnexpectedDatabaseError, Boolean]
+  def isCategoryCode(code: String): Either[UnexpectedDatabaseError, Boolean]
 
   def deleteCategory(categoryCode: String): Either[DeleteError, Unit]
 
-  def deleteAllCategories(): Either[DatabaseError, Unit]
+  def deleteAllCategories(): Either[UnexpectedDatabaseError, Unit]
 
   def createMainCategoryRecords(records: Seq[NewMainCategoryRecord]): Either[DependentCreateError, Unit]
   def createLocalCategoryRecords(localCategoryRecords: Map[String, NewLocalCategoryRecord], locale: String): Either[LocalCreateError, Unit]

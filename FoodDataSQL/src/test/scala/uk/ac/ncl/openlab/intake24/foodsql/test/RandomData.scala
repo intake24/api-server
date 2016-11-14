@@ -4,8 +4,8 @@ import scala.util.Random
 import uk.ac.ncl.openlab.intake24.MainFoodRecord
 import uk.ac.ncl.openlab.intake24.InheritableAttributes
 import uk.ac.ncl.openlab.intake24.NewMainFoodRecord
-import uk.ac.ncl.openlab.intake24.AsServedImage
-import uk.ac.ncl.openlab.intake24.AsServedSet
+import uk.ac.ncl.openlab.intake24.AsServedImageV1
+import uk.ac.ncl.openlab.intake24.AsServedSetV1
 import uk.ac.ncl.openlab.intake24.AssociatedFood
 import uk.ac.ncl.openlab.intake24.NewCategory
 import uk.ac.ncl.openlab.intake24.FoodGroupRecord
@@ -176,12 +176,12 @@ trait RandomData {
       map + (group.id -> FoodGroupLocal(Some(randomDescription)))
   }
 
-  def randomAsServedImage = AsServedImage(randomIdentifier, Random.nextDouble() * 100)
+  def randomAsServedImage = AsServedImageV1(randomIdentifier, Random.nextDouble() * 100)
 
   def randomAsServedSet = {
     val count = Random.nextInt(5)
 
-    AsServedSet(randomIdentifier, randomDescription, Seq.fill(count)(randomAsServedImage))
+    AsServedSetV1(randomIdentifier, randomDescription, Seq.fill(count)(randomAsServedImage))
   }
 
   def randomAsServedSets = {

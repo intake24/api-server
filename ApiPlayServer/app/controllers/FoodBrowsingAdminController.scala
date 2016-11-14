@@ -28,48 +28,47 @@ import security.Roles
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodBrowsingAdminService
 
 class FoodBrowsingAdminController @Inject() (service: FoodBrowsingAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
-    with PickleErrorHandler
-    with ApiErrorHandler {
+    with FoodDatabaseErrorHandler {
 
   def getUncategorisedFoods(locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.getUncategorisedFoods(locale))
+      translateDatabaseResult(service.getUncategorisedFoods(locale))
     }
   }
 
   def getRootCategories(locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.getRootCategories(locale))
+      translateDatabaseResult(service.getRootCategories(locale))
     }
   }
 
   def getCategoryContents(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.getCategoryContents(code, locale))
+      translateDatabaseResult(service.getCategoryContents(code, locale))
     }
   }
 
   def getFoodParentCategories(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.getFoodParentCategories(code, locale))
+      translateDatabaseResult(service.getFoodParentCategories(code, locale))
     }
   }
 
   def getFoodAllCategories(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.getFoodAllCategoriesHeaders(code, locale))
+      translateDatabaseResult(service.getFoodAllCategoriesHeaders(code, locale))
     }
   }
 
   def getCategoryParentCategories(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.getCategoryParentCategories(code, locale))
+      translateDatabaseResult(service.getCategoryParentCategories(code, locale))
     }
   }
 
   def getCategoryAllCategories(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateError(service.getCategoryAllCategoriesHeaders(code, locale))
+      translateDatabaseResult(service.getCategoryAllCategoriesHeaders(code, locale))
     }
   }
 

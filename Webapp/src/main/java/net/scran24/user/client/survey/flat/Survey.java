@@ -183,8 +183,8 @@ public class Survey {
 								MissingFoodDescription desc = food.description
 										.getOrDie("Cannot finalise survey because it contains a missing food entry with no description");
 
-								return Option.some(new CompletedMissingFood(food.name, desc.brand.getOrElse(null), desc.description.getOrElse(null),
-										desc.portionSize.getOrElse(null), desc.leftovers.getOrElse(null)));
+								return Option.some(new CompletedMissingFood(food.name, desc.brand.getOrElse(""), desc.description.getOrElse(""),
+										desc.portionSize.getOrElse(""), desc.leftovers.getOrElse("")));
 							}
 
 							@Override

@@ -14,7 +14,7 @@ import java.util.Map;
 
 import com.google.gwt.user.client.rpc.IsSerializable;
 
-public  class PortionSizeMethod implements IsSerializable {
+public class PortionSizeMethod implements IsSerializable {
 	public String name;
 	public Map<String, String> params;
 	public String description;

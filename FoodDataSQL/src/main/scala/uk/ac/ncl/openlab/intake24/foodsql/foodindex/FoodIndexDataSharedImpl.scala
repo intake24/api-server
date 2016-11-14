@@ -1,6 +1,6 @@
 package uk.ac.ncl.openlab.intake24.foodsql.foodindex
 
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.SplitList
 import anorm.Macro
 import anorm.SqlParser.str
@@ -11,7 +11,7 @@ import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
 trait FoodIndexDataSharedImpl extends FoodDataSqlService {
   private case class SplitListRow(first_word: String, words: String)
 
-  def splitList(locale: String): Either[DatabaseError, SplitList] = tryWithConnection {
+  def splitList(locale: String): Either[UnexpectedDatabaseError, SplitList] = tryWithConnection {
     implicit conn =>
       val words = SQL("""SELECT words FROM split_words WHERE locale_id={locale}""")
         .on('locale -> locale)
@@ -31,7 +31,7 @@ trait FoodIndexDataSharedImpl extends FoodDataSqlService {
       Right(SplitList(words, splitList))
   }
 
-  def synsets(locale: String): Either[DatabaseError, Seq[Set[String]]] = tryWithConnection {
+  def synsets(locale: String): Either[UnexpectedDatabaseError, Seq[Set[String]]] = tryWithConnection {
     implicit conn =>
       Right(SQL("""SELECT synonyms FROM synonym_sets WHERE locale_id={locale}""")
         .on('locale -> locale)

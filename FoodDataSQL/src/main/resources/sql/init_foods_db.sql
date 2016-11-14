@@ -18,8 +18,8 @@ limitations under the License.
 
 CREATE TABLE schema_migrations
 (
-	id uuid NOT NULL,
-	CONSTRAINT schema_migrations_pk PRIMARY KEY(id)
+  version bigint NOT NULL,
+  CONSTRAINT schema_migrations_pk PRIMARY KEY(version)
 );
 
 -- Locales

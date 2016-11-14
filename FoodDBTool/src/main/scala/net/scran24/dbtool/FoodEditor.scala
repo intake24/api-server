@@ -33,7 +33,7 @@ import javax.swing.JLabel
 
 import uk.ac.ncl.openlab.intake24.InheritableAttributes
 
-import uk.ac.ncl.openlab.intake24.AsServedSet
+
 import uk.ac.ncl.openlab.intake24.GuideImage
 import uk.ac.ncl.openlab.intake24.DrinkwareSet
 import javax.swing.JScrollPane

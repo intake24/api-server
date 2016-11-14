@@ -29,6 +29,7 @@ import net.scran24.user.shared.FoodHeader;
 import net.scran24.user.shared.FoodPrompt;
 import net.scran24.user.shared.lookup.PortionSizeMethod;
 
+import org.workcraft.gwt.shared.client.Function1;
 import org.workcraft.gwt.shared.client.Option;
 
 import scala.collection.Iterator;
@@ -77,7 +78,7 @@ public class ScalaConversions {
 		return result;		
 	}
 	
-	public static List<PortionSizeMethod> toJavaPortionSizeMethods(Seq<uk.ac.ncl.openlab.intake24.PortionSizeMethod> methods, String imageUrlBase) {
+	public static List<PortionSizeMethod> toJavaPortionSizeMethods(Seq<uk.ac.ncl.openlab.intake24.PortionSizeMethod> methods, Function1<String, String> resolveUrl) {
 		Iterator<uk.ac.ncl.openlab.intake24.PortionSizeMethod> iter = methods.iterator();
 
 		ArrayList<PortionSizeMethod> result = new ArrayList<PortionSizeMethod>();
@@ -93,7 +94,7 @@ public class ScalaConversions {
 				params.put(param.name(), param.value());
 			}
 
-			result.add(new PortionSizeMethod(next.method(), next.description(), imageUrlBase + "/" + next.imageUrl(), next.useForRecipes(), params));
+			result.add(new PortionSizeMethod(next.method(), next.description(), resolveUrl.apply(next.imageUrl()), next.useForRecipes(), params));
 
 		}
 
@@ -131,7 +132,7 @@ public class ScalaConversions {
 		return result;
 	}
 
-	public static FoodData buildJavaFoodData(uk.ac.ncl.openlab.intake24.UserFoodData data, double calPer100g, Seq<uk.ac.ncl.openlab.intake24.AssociatedFood> prompts, Seq<String> brands, Seq<uk.ac.ncl.openlab.intake24.CategoryHeader> allSuperCategories, String imageUrlBase) {
+	public static FoodData buildJavaFoodData(uk.ac.ncl.openlab.intake24.UserFoodData data, double calPer100g, Seq<uk.ac.ncl.openlab.intake24.AssociatedFood> prompts, Seq<String> brands, Seq<uk.ac.ncl.openlab.intake24.CategoryHeader> allSuperCategories, Function1<String, String> resolveUrl) {
 		
 		ArrayList<String> categoryCodes = new ArrayList<String>();
 		
@@ -140,7 +141,7 @@ public class ScalaConversions {
 		while (i.hasNext())
 			categoryCodes.add(i.next().code());
 						
-		return new FoodData(data.code(), data.readyMealOption(), data.sameAsBeforeOption(), calPer100g, data.localDescription(), toJavaPortionSizeMethods(data.portionSize(), imageUrlBase),
+		return new FoodData(data.code(), data.readyMealOption(), data.sameAsBeforeOption(), calPer100g, data.localDescription(), toJavaPortionSizeMethods(data.portionSize(), resolveUrl),
 				toJavaPrompts(prompts), toJavaList(brands), categoryCodes);
 	}
 }

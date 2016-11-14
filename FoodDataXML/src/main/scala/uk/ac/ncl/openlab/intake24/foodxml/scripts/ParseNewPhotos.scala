@@ -22,8 +22,6 @@ import java.io.FileReader
 import scala.collection.JavaConversions.asScalaBuffer
 import au.com.bytecode.opencsv.CSVReader
 
-import uk.ac.ncl.openlab.intake24.AsServedImage
-import uk.ac.ncl.openlab.intake24.AsServedSet
 
 import scala.xml.XML
 import java.io.File
