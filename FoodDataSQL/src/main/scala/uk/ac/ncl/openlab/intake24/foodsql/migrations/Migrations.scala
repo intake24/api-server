@@ -216,7 +216,7 @@ object Migrations {
 
         SQL("INSERT INTO source_image_keywords(source_image_id, keyword) SELECT id, unnest(keywords) FROM source_images").execute()
 
-        SQL("ALTER TABLE source_images DROP COLUMN keywords")
+        SQL("ALTER TABLE source_images DROP COLUMN keywords").execute()
 
         Right(())
       }
