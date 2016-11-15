@@ -44,7 +44,7 @@ object V10_SourceImageThumbnails_Apply extends App with WarningMessage with Data
 
     val query = "UPDATE source_images SET thumbnail_path={thumbnail_path} WHERE path={path}"
 
-    val processedKeys = AnormUtil.batchKeys(BatchSql(query, params.head, params.tail:_*))
+    BatchSql(query, params.head, params.tail:_*).execute()
 
     println("Updating schema version...")
 
