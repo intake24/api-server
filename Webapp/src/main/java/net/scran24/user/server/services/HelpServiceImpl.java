@@ -28,6 +28,8 @@ package net.scran24.user.server.services;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.ServletException;
 
@@ -44,6 +46,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.workcraft.gwt.shared.client.Option;
 
+import com.google.gwt.core.server.StackTraceDeobfuscator;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 import com.google.inject.Injector;
 import com.twilio.sdk.TwilioRestClient;
@@ -57,8 +60,6 @@ import net.scran24.datastore.DataStoreException;
 import net.scran24.datastore.SupportStaffRecord;
 import net.scran24.user.client.services.HelpService;
 import net.scran24.user.client.services.HelpServiceException;
-
-import com.google.gwt.core.server.StackTraceDeobfuscator;
 
 public class HelpServiceImpl extends RemoteServiceServlet implements HelpService {
   private static final long serialVersionUID = -5525469181691523598L;
@@ -84,6 +85,8 @@ public class HelpServiceImpl extends RemoteServiceServlet implements HelpService
   private String fromName;
   private String fromPhoneNumber;
 
+  private Map<String, RateInfo> rateMap = new ConcurrentHashMap<String, RateInfo>();
+
   @Override
   public void init() throws ServletException {
     Injector injector = (Injector) this.getServletContext()
@@ -103,7 +106,11 @@ public class HelpServiceImpl extends RemoteServiceServlet implements HelpService
 
     fromPhoneNumber = getServletContext().getInitParameter("smsNotificationFromNumber");
 
-    deobfuscator = StackTraceDeobfuscator.fromFileSystem(getServletContext().getRealPath("/WEB-INF/deploy/user/symbolMaps"));
+    String path = getServletContext().getRealPath("/WEB-INF/deploy/user/symbolMaps");
+
+    log.debug("Symbol maps path: " + path);
+
+    deobfuscator = StackTraceDeobfuscator.fromFileSystem(path);
   }
 
   private void sendSmsNotification(String name, String surveyId, String number, List<String> numbers) {
@@ -234,34 +241,76 @@ public class HelpServiceImpl extends RemoteServiceServlet implements HelpService
   }
 
   @Override
-  public void reportUncaughtException(StackTraceElement[] st) {
+  public void reportUncaughtException(String strongName, List<String> classNames, List<String> messages,
+      List<StackTraceElement[]> stackTraces, String surveyState) {
+    Subject subject = SecurityUtils.getSubject();
+    ScranUserId userId = (ScranUserId) subject.getPrincipal();
 
-    Email email = new SimpleEmail();
+    if (userId == null)
+      throw new RuntimeException("User must be logged in");
 
-    email.setHostName(smtpHostName);
-    email.setSmtpPort(smtpPort);
-    email.setCharset(EmailConstants.UTF_8);
-    email.setAuthenticator(new DefaultAuthenticator(smtpUserName, smtpPassword));
-    email.setSSLOnConnect(true);
+    String rateKey = userId.survey + "#" + userId.username;
+    RateInfo rateInfo = rateMap.get(rateKey);
 
-    StringBuilder sb = new StringBuilder();
+    boolean rateExceeded = false;
 
-    for (StackTraceElement ste: deobfuscator.resymbolize(st, "stronk")) {
-      sb.append(ste.toString());
-      sb.append("\n");
+    long time = System.currentTimeMillis();
+
+    if (rateInfo == null) {
+      rateMap.put(rateKey, new RateInfo(1, time));
+    } else {
+      long timeSinceLastRequest = time - rateInfo.lastRequestTime;
+
+      if (timeSinceLastRequest > 10000) {
+        rateMap.put(rateKey, new RateInfo(1, time));
+      } else if (rateInfo.requestCount >= 10) {
+        rateExceeded = true;
+      } else {
+        rateMap.put(rateKey, new RateInfo(rateInfo.requestCount + 1, time));
+      }
     }
 
-    try {
-      email.setFrom("no-reply@intake24.co.uk", "Intake24");
-      email.setSubject(String.format("Client-side bug report"));
+    if (!rateExceeded) {
+      System.out.println(String.format("Sending email", userId.survey, userId.username));
 
-      email.setMsg(sb.toString());
+      Email email = new SimpleEmail();
 
-      email.addTo("bugs@intake24.co.uk");
+      email.setHostName(smtpHostName);
+      email.setSmtpPort(smtpPort);
+      email.setCharset(EmailConstants.UTF_8);
+      email.setAuthenticator(new DefaultAuthenticator(smtpUserName, smtpPassword));
+      email.setSSLOnConnect(true);
 
-      email.send();
-    } catch (EmailException ee) {
-      log.error("Failed to send e-mail notification", ee);
+      StringBuilder sb = new StringBuilder();
+
+      for (int i = 0; i < classNames.size(); i++) {
+        sb.append(String.format("%s: %s\n", classNames.get(i), messages.get(i)));
+
+        StackTraceElement[] deobfStackTrace = deobfuscator.resymbolize(stackTraces.get(i), strongName);
+
+        for (StackTraceElement ste : deobfStackTrace) {
+          sb.append(String.format("  %s\n", ste.toString()));
+        }
+        sb.append("\n");
+      }
+
+      sb.append("Survey state:\n");
+      sb.append(surveyState);
+      sb.append("\n");
+
+      try {
+        email.setFrom("no-reply@intake24.co.uk", "Intake24");
+        email
+          .setSubject(String.format("Client exception (%s/%s): %s", userId.survey, userId.username, messages.get(0)));
+
+        email.setMsg(sb.toString());
+
+        email.addTo("bugs@intake24.co.uk");
+
+        email.send();
+      } catch (EmailException ee) {
+        log.error("Failed to send e-mail notification", ee);
+      }
     }
 
   }

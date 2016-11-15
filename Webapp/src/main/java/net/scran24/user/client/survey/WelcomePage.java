@@ -41,47 +41,37 @@ import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.HTMLPanel;
 
 public class WelcomePage implements SurveyStage<Survey> {
-	public static final String FLAG_WELCOME_PAGE_SHOWN = "welcome-page-shown";
-	
-	private static final SurveyMessages surveyMessages = SurveyMessages.Util.getInstance();
-	
-	private final Survey initialData;
-	private final String welcomeHtml;
+  public static final String FLAG_WELCOME_PAGE_SHOWN = "welcome-page-shown";
 
-	public WelcomePage(String welcomeHtml, Survey initialData) {
-		this.welcomeHtml = welcomeHtml;
-		this.initialData = initialData;
-	}
+  private static final SurveyMessages surveyMessages = SurveyMessages.Util.getInstance();
 
-	@Override
-	public SimpleSurveyStageInterface getInterface(final Callback1<Survey> onComplete, Callback2<Survey, Boolean> onIntermediateStateChange) {
-		final Button startButton = WidgetFactory.createGreenButton(surveyMessages.welcomePage_ready(), new ClickHandler() {
-			public void onClick(ClickEvent event) {
-				onComplete.call(initialData.withFlag(FLAG_WELCOME_PAGE_SHOWN));
-			}
-		});
-		
-		HTMLPanel tutorialVideo = new HTMLPanel(SafeHtmlUtils.fromSafeConstant(TutorialVideo.embedHTML));
-		
-		Button exceptionTest = new Button("Throw exception", new ClickHandler() {
-			
-			@Override
-			public void onClick(ClickEvent event) {
-				throw new RuntimeException("Test exception");			
-				
-			}
-		});
-				
-		FlowPanel contents = new FlowPanel();
-		contents.getElement().addClassName("intake24-survey-content-container");
-		
-		contents.add(exceptionTest);
-		contents.add(tutorialVideo);
-		HTMLPanel htmlPanel = new HTMLPanel(SafeHtmlUtils.fromSafeConstant(welcomeHtml));
-		
-		contents.add(htmlPanel);
-		contents.add(startButton);
+  private final Survey initialData;
+  private final String welcomeHtml;
 
-		return new SimpleSurveyStageInterface(contents);
-	}
+  public WelcomePage(String welcomeHtml, Survey initialData) {
+    this.welcomeHtml = welcomeHtml;
+    this.initialData = initialData;
+  }
+
+  @Override
+  public SimpleSurveyStageInterface getInterface(final Callback1<Survey> onComplete,
+      Callback2<Survey, Boolean> onIntermediateStateChange) {
+    final Button startButton = WidgetFactory.createGreenButton(surveyMessages.welcomePage_ready(), new ClickHandler() {
+      public void onClick(ClickEvent event) {
+        onComplete.call(initialData.withFlag(FLAG_WELCOME_PAGE_SHOWN));
+      }
+    });
+
+    HTMLPanel tutorialVideo = new HTMLPanel(SafeHtmlUtils.fromSafeConstant(TutorialVideo.embedHTML));
+
+    FlowPanel contents = new FlowPanel();
+    contents.getElement().addClassName("intake24-survey-content-container");
+    contents.add(tutorialVideo);
+    HTMLPanel htmlPanel = new HTMLPanel(SafeHtmlUtils.fromSafeConstant(welcomeHtml));
+
+    contents.add(htmlPanel);
+    contents.add(startButton);
+
+    return new SimpleSurveyStageInterface(contents);
+  }
 }
