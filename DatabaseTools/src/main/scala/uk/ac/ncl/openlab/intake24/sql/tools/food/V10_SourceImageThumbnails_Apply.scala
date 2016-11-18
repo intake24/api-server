@@ -20,7 +20,7 @@ object V10_SourceImageThumbnails_Apply extends App with WarningMessage with Data
 
   val options = new ScallopConf(args) with Options with DatabaseOptions
 
-  options.afterInit()
+  options.verify()
 
   val dataSource = getDataSource(options)
 

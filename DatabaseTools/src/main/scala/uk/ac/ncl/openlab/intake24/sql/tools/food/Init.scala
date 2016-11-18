@@ -36,7 +36,7 @@ object Init extends App with WarningMessage with DatabaseConnection with SqlFile
   
   val options = new ScallopConf(args) with DatabaseOptions
   
-  options.afterInit()
+  options.verify()
   
   val dataSource = getDataSource(options)
 

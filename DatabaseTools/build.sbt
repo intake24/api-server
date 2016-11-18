@@ -27,6 +27,6 @@ libraryDependencies ++= Seq(
   "com.zaxxer" % "HikariCP" % "2.5.1",
   "org.apache.poi" % "poi-ooxml" % "3.9",
   "com.lihaoyi" %% "upickle" % "0.4.1",
-  "org.rogach" %% "scallop" % "0.9.6",
+  "org.rogach" %% "scallop" % "2.0.5",
   "commons-io" % "commons-io" % "2.5"
 )

@@ -61,7 +61,7 @@ object InitConsole extends App with WarningMessage {
 
   val options = new ScallopConf(args) with InitOptions with DatabaseOptions
 
-  options.afterInit()
+  options.verify()
 
   if (!options.noWarning())
     displayWarningMessage("WARNING: THIS WILL DESTROY ALL DATA IN THE SYSTEM DATABASE!")

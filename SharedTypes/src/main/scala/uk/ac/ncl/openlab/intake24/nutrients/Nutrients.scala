@@ -56,6 +56,7 @@ case object Ash extends Nutrient { val key = "ash"; val id = 26 }
 
 object Nutrient {  
   // See https://github.com/mrvisser/sealerate for macro explanation
+  // TODO: replace with enumeratum https://github.com/lloydmeta/enumeratum
   
   def types: Set[Nutrient] = sealerate.values[Nutrient]
   

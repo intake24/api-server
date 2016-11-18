@@ -21,6 +21,11 @@ trait DatabaseOptions extends ScallopConf {
   def databaseConfig = DatabaseConfiguration(pgHost(), pgUseSsl(), pgDatabase(), pgUser(), pgPassword.get) 
 }
 
+trait MigrationAppOptions extends ScallopConf {
+
+  val dbConfigDir = opt[String](required = true)
+}
+
 case class DatabaseConfiguration(host: String, useSsl: Boolean, database: String, user: String, password: Option[String])
 
 trait DatabaseConnection {  

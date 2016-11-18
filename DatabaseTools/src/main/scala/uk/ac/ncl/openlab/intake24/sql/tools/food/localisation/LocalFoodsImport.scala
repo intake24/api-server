@@ -50,7 +50,7 @@ case class LocalFoodsImport(localeCode: String, englishLocaleName: String, local
 
   val options = new ScallopConf(args) with Options with DatabaseOptions
 
-  options.afterInit()
+  options.verify()
 
   displayWarningMessage(s"WARNING: This will destroy all existing data for ${englishLocaleName} (${localeCode}) locale!")
 

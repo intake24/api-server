@@ -115,7 +115,7 @@ object AsServedV4_Prepare extends App with WarningMessage with DatabaseConnectio
 
   val options = new ScallopConf(args) with Options with DatabaseOptions
 
-  options.afterInit()
+  options.verify()
 
   val dataSource = getDataSource(options)
 

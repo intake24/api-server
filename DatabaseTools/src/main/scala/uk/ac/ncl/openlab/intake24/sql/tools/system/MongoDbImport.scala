@@ -346,7 +346,7 @@ object MongoDbImportConsole extends App with WarningMessage {
 
   val options = new ScallopConf(args) with ImportOptions with DatabaseOptions
 
-  options.afterInit()
+  options.verify()
 
   if (!options.noWarning())
     displayWarningMessage("Please make sure that the database has been initialised with the Init tool first.")

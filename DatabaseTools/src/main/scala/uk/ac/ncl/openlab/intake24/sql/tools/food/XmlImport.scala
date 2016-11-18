@@ -270,19 +270,19 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
   }
 }
 
-trait Options extends ScallopConf {
-  version("Intake24 XML to SQL food database migration tool 16.8")
-
-  val xmlPath = opt[String](required = true, noshort = true)
-}
-
 object XmlImport extends App with WarningMessage with DatabaseConnection {
+
+  trait Options extends ScallopConf {
+    version("Intake24 XML to SQL food database migration tool 16.8")
+
+    val xmlPath = opt[String](required = true, noshort = true)
+  }
 
   val logger = LoggerFactory.getLogger(getClass)
 
   val options = new ScallopConf(args) with Options with DatabaseOptions
 
-  options.afterInit()
+  options.verify()
 
   displayWarningMessage("THIS WILL DESTROY ALL FOOD AND CATEGORY RECORDS IN THE DATABASE!")
 

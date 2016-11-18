@@ -8,9 +8,7 @@ object DatabaseConfigChooser {
 
   val default = IndexedSeq("Development" -> "development-database-config.json", "Test" -> "test-database-config.json", "Production" -> "production-database-config.json")
   
-  def getDevelopmentDatabaseConfiguration(configDirRelativePath: String = "./database-config") = read[DatabaseConfiguration](scala.io.Source.fromFile(configDirRelativePath + "/" + "development-database-config.json").mkString)
-
-  def chooseDatabaseConfiguration(configDirRelativePath: String = "./database-config", options: IndexedSeq[(String, String)] = default): DatabaseConfiguration = {
+  def chooseDatabaseConfiguration(configDirPath: String = "./database-config", options: IndexedSeq[(String, String)] = default): DatabaseConfiguration = {
     
     println()
     println("Please choose the database for this operation:")
@@ -44,6 +42,6 @@ object DatabaseConfigChooser {
     
     println()
     
-    read[DatabaseConfiguration](scala.io.Source.fromFile(configDirRelativePath + "/" + options(choice.get)._2).mkString)    
+    read[DatabaseConfiguration](scala.io.Source.fromFile(configDirPath + "/" + options(choice.get)._2).mkString)
   }
 }

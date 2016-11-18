@@ -28,7 +28,7 @@ object NdnsImport extends App with WarningMessage with DatabaseConnection {
 
   val options = new ScallopConf(args) with Options with DatabaseOptions
 
-  options.afterInit()
+  options.verify()
 
   displayWarningMessage("WARNING: THIS WILL DESTROY ALL FOOD RECORDS HAVING NDNS CODES!")
 

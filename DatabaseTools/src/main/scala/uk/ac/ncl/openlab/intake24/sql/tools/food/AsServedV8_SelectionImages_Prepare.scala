@@ -45,7 +45,7 @@ object AsServedV8_SelectionImages_Prepare extends App with WarningMessage with D
 
   val options = new ScallopConf(args) with Options with DatabaseOptions
 
-  options.afterInit()
+  options.verify()
 
   val dataSource = getDataSource(options)
 

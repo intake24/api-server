@@ -27,7 +27,7 @@ object Migrate extends App with WarningMessage with DatabaseConnection {
 
   val options = new ScallopConf(args) with Options with DatabaseOptions
 
-  options.afterInit()
+  options.verify()
 
   displayWarningMessage("Warning: this will change the database format. Make sure your client code is compatible.")
 

@@ -65,7 +65,7 @@ object DanishNutrientsImport extends App with WarningMessage with DatabaseConnec
 
   val options = new ScallopConf(args) with Options with DatabaseOptions
 
-  options.afterInit()
+  options.verify()
 
   displayWarningMessage("WARNING: THIS WILL DESTROY ALL FOOD RECORDS HAVING DK_DTU FOOD COMPOSITION CODES!")
 
