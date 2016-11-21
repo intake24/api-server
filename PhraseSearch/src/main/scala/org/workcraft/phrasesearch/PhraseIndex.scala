@@ -116,7 +116,7 @@ class PhraseIndex[T](phrases: Seq[(String, T)], indexFilter: Seq[CaseInsensitive
       // make a list of words
       .split("\\s+")
       // drop words that are too short
-      .filter(_.length > 2)
+      .filter(_.length > 1)
       .map(CaseInsensitiveString(_))
       .map(stemmer.stem(_))
       .filterNot(nonIndexedWords.contains(_))
