@@ -26,7 +26,6 @@ import net.scran24.datastore.MissingFoodRecord;
 import net.scran24.datastore.NutritionMappedFood;
 import net.scran24.datastore.NutritionMappedMeal;
 import net.scran24.datastore.NutritionMappedSurvey;
-import net.scran24.datastore.NutritionMappedSurveyRecord;
 import net.scran24.datastore.NutritionMappedSurveyRecordWithId;
 import net.scran24.datastore.shared.CompletedPortionSize;
 import net.scran24.datastore.shared.Time;
@@ -40,10 +39,10 @@ import com.mongodb.DBObject;
 
 public class MongoDbDeserializer {
 
-	private Map<String, Double> parseNutrients(DBObject obj) {
-		HashMap<String, Double> result = new HashMap<String, Double>();
+	private Map<Long, Double> parseNutrients(DBObject obj) {
+		HashMap<Long, Double> result = new HashMap<Long, Double>();
 		for (String k : obj.keySet())
-			result.put(k, (Double) obj.get(k));
+			result.put(LegacyNutrientTypes.legacyKeyToId.get(k), (Double) obj.get(k));
 		return result;
 	}
 

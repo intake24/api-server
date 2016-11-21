@@ -2,6 +2,7 @@ package net.scran24.datastore.mongodb;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 public class LegacyNutrientTypes {
   
@@ -29,18 +30,18 @@ public class LegacyNutrientTypes {
     legacyKeyToId.put("sodium", 138l);
     legacyKeyToId.put("iron", 143l);
     legacyKeyToId.put("zinc", 147l);
-    v
+    legacyKeyToId.put("selenium", 152l);
+    legacyKeyToId.put("dietary_fiber", 17l);
+    legacyKeyToId.put("total_monosac", 35l); 
+    legacyKeyToId.put("organic_acids", 47l);
+    legacyKeyToId.put("pufa", 52l);
+    legacyKeyToId.put("nacl", 154l);
+    legacyKeyToId.put("ash", 157l);
     
+    idToLegacyKey = new HashMap<>();
     
+    for (Entry<String,Long> e: legacyKeyToId.entrySet()) {
+      idToLegacyKey.put(e.getValue(), e.getKey());
+    }
   }
-  case object Calcium extends Nutrient { val key = "calcium"; val id = 17 }
-  case object Iron extends Nutrient { val key = "iron"; val id = 18 }
-  case object Zinc extends Nutrient { val key = "zinc"; val id = 19 }
-  case object Selenium extends Nutrient { val key = "selenium"; val id = 20 }
-  case object DietaryFiber extends Nutrient { val key = "dietary_fiber"; val id = 21 }
-  case object TotalMonosaccharides extends Nutrient { val key = "total_monosac"; val id = 22 }
-  case object OrganicAcids extends Nutrient { val key = "organic_acids"; val id = 23 }
-  case object PolyunsaturatedFattyAcids extends Nutrient { val key = "pufa"; val id = 24 }
-  case object NaCl extends Nutrient { val key = "nacl"; val id = 25 }
-  case object Ash extends Nutrient { val key = "ash"; val id = 26
 }

@@ -49,11 +49,11 @@ public class MongoDbSerializer {
 		return res.append("data", mapAsDBObject(size.data));
 	}
 
-	public DBObject nutrientsAsDBObject(Map<String, Double> nutrients) {
+	public DBObject nutrientsAsDBObject(Map<Long, Double> nutrients) {
 		BasicDBObject result = new BasicDBObject();
 
-		for (String k : nutrients.keySet())
-			result = result.append(k, nutrients.get(k));
+		for (Long k : nutrients.keySet())
+			result = result.append(LegacyNutrientTypes.idToLegacyKey.get(k), nutrients.get(k));
 
 		return result;
 	}
