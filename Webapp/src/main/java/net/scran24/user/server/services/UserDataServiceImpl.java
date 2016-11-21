@@ -14,14 +14,14 @@ import java.util.Map;
 
 import javax.servlet.ServletException;
 
+import org.apache.shiro.SecurityUtils;
+
+import com.google.gwt.user.server.rpc.RemoteServiceServlet;
+
 import net.scran24.common.server.auth.ScranUserId;
 import net.scran24.datastore.DataStore;
 import net.scran24.datastore.DataStoreException;
 import net.scran24.user.client.services.UserDataService;
-
-import org.apache.shiro.SecurityUtils;
-
-import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
 public class UserDataServiceImpl extends RemoteServiceServlet implements UserDataService {
   private static final long serialVersionUID = -5525469181691523598L;

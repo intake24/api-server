@@ -30,17 +30,18 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.workcraft.gwt.shared.client.Option;
+
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+
 import net.scran24.datastore.NutritionMappedFood;
 import net.scran24.datastore.NutritionMappedMeal;
 import net.scran24.datastore.NutritionMappedSurvey;
 import net.scran24.user.shared.CompletedFood;
 import net.scran24.user.shared.CompletedMeal;
 import net.scran24.user.shared.CompletedSurvey;
-
-import org.workcraft.gwt.shared.client.Option;
-
 import scala.Tuple2;
-
 import uk.ac.ncl.openlab.intake24.FoodGroupRecord;
 import uk.ac.ncl.openlab.intake24.FoodRecord;
 import uk.ac.ncl.openlab.intake24.UserFoodData;
@@ -49,9 +50,6 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDataSources;
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDatabaseService;
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 
 @Singleton
 public class NutrientMapper {

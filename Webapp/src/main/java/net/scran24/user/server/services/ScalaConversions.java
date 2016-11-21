@@ -22,18 +22,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter;
+import org.workcraft.gwt.shared.client.Function1;
+import org.workcraft.gwt.shared.client.Option;
+
 import net.scran24.user.shared.CategoryHeader;
 import net.scran24.user.shared.FoodData;
 import net.scran24.user.shared.FoodHeader;
 import net.scran24.user.shared.FoodPrompt;
 import net.scran24.user.shared.lookup.PortionSizeMethod;
-
-import org.workcraft.gwt.shared.client.Function1;
-import org.workcraft.gwt.shared.client.Option;
-
 import scala.collection.Iterator;
 import scala.collection.Seq;
+import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter;
 
 public class ScalaConversions {
 	

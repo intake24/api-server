@@ -36,9 +36,6 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
-import net.scran24.common.server.auth.ScranAuthRealm;
-import net.scran24.datastore.DataStore;
-
 import org.apache.shiro.authc.credential.HashedCredentialsMatcher;
 import org.apache.shiro.crypto.hash.Sha256Hash;
 import org.apache.shiro.mgt.RealmSecurityManager;
@@ -48,6 +45,9 @@ import org.apache.shiro.web.env.WebEnvironment;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+
+import net.scran24.common.server.auth.ScranAuthRealm;
+import net.scran24.datastore.DataStore;
 
 public class InitListener implements ServletContextListener {
 

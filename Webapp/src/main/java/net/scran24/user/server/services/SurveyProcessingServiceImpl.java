@@ -32,6 +32,15 @@ import java.util.List;
 
 import javax.servlet.ServletException;
 
+import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.subject.Subject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.workcraft.gwt.shared.client.Option;
+
+import com.google.gwt.user.server.rpc.RemoteServiceServlet;
+import com.google.inject.Injector;
+
 import net.scran24.common.server.auth.ScranUserId;
 import net.scran24.datastore.DataStore;
 import net.scran24.datastore.DataStoreException;
@@ -45,15 +54,6 @@ import net.scran24.user.shared.CompletedFood;
 import net.scran24.user.shared.CompletedMeal;
 import net.scran24.user.shared.CompletedMissingFood;
 import net.scran24.user.shared.CompletedSurvey;
-
-import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.subject.Subject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.workcraft.gwt.shared.client.Option;
-
-import com.google.gwt.user.server.rpc.RemoteServiceServlet;
-import com.google.inject.Injector;
 
 public class SurveyProcessingServiceImpl extends RemoteServiceServlet implements SurveyProcessingService {
 	private static final long serialVersionUID = -5525469181691523598L;

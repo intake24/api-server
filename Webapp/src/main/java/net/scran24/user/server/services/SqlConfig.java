@@ -25,6 +25,13 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Named;
 import javax.sql.DataSource;
 
+import com.google.inject.AbstractModule;
+import com.google.inject.Injector;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
 import net.scran24.datastore.DataStore;
 import scala.concurrent.duration.Duration;
 import scala.runtime.AbstractFunction0;
@@ -52,13 +59,6 @@ import uk.ac.ncl.openlab.intake24.services.foodindex.english.SplitterImpl_en_GB;
 import uk.ac.ncl.openlab.intake24.services.foodindex.portuguese.FoodIndexImpl_pt_PT;
 import uk.ac.ncl.openlab.intake24.services.foodindex.portuguese.SplitterImpl_pt_PT;
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService;
-
-import com.google.inject.AbstractModule;
-import com.google.inject.Injector;
-import com.google.inject.Provides;
-import com.google.inject.Singleton;
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
 
 public class SqlConfig extends AbstractModule {
 	public final Map<String, String> webXmlConfig;

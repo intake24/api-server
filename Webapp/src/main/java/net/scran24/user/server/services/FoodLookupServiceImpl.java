@@ -72,7 +72,6 @@ import scala.collection.Iterator;
 import scala.collection.JavaConversions;
 import scala.collection.Seq;
 import scala.util.Either;
-
 import uk.ac.ncl.openlab.intake24.AssociatedFood;
 import uk.ac.ncl.openlab.intake24.DrinkwareSet;
 import uk.ac.ncl.openlab.intake24.GuideImage;

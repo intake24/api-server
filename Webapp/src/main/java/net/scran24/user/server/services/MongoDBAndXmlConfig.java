@@ -21,12 +21,17 @@ package net.scran24.user.server.services;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.inject.AbstractModule;
+import com.google.inject.Injector;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
+import com.google.inject.name.Names;
+
 import net.scran24.datastore.DataStore;
 import net.scran24.datastore.DataStoreException;
 import net.scran24.datastore.mongodb.MongoDbDataStore;
 import uk.ac.ncl.openlab.intake24.foodsql.user.FoodDatabaseUserImpl;
 import uk.ac.ncl.openlab.intake24.foodxml.FoodIndexDataServiceXmlImpl;
-
 import uk.ac.ncl.openlab.intake24.nutrientsndns.CsvNutrientTableParser;
 import uk.ac.ncl.openlab.intake24.nutrientsndns.LegacyNutrientMappingServiceImpl;
 import uk.ac.ncl.openlab.intake24.nutrientsndns.LegacyNutrientTables;
@@ -38,12 +43,6 @@ import uk.ac.ncl.openlab.intake24.services.foodindex.Splitter;
 import uk.ac.ncl.openlab.intake24.services.foodindex.english.FoodIndexImpl_en_GB;
 import uk.ac.ncl.openlab.intake24.services.foodindex.english.SplitterImpl_en_GB;
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService;
-
-import com.google.inject.AbstractModule;
-import com.google.inject.Injector;
-import com.google.inject.Provides;
-import com.google.inject.Singleton;
-import com.google.inject.name.Names;
 
 public class MongoDBAndXmlConfig extends AbstractModule {
 	public final Map<String, String> webXmlConfig;
