@@ -77,8 +77,6 @@ import uk.ac.ncl.openlab.intake24.DrinkwareSet;
 import uk.ac.ncl.openlab.intake24.GuideImage;
 import uk.ac.ncl.openlab.intake24.UserCategoryContents;
 import uk.ac.ncl.openlab.intake24.UserFoodData;
-import uk.ac.ncl.openlab.intake24.nutrients.EnergyKcal$;
-import uk.ac.ncl.openlab.intake24.nutrients.Nutrient;
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError;
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError;
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError;
@@ -475,11 +473,11 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
       String nutrientTableId = tableCode.get()._1;
       String nutrientTableRecordId = tableCode.get()._2;
 
-      Map<Nutrient, Double> nutrients = handleNutrientMappingError(
+      Map<Long, Double> nutrients = handleNutrientMappingError(
           nutrientMappingService.javaNutrientsFor(nutrientTableId, nutrientTableRecordId, 100.0));
 
       return new FoodData(data.code(), data.readyMealOption(), data.sameAsBeforeOption(),
-          nutrients.get(EnergyKcal$.MODULE$), data.localDescription(),
+          nutrients.get(nutrientMappingService.energyKcalNutrientId()), data.localDescription(),
           toJavaPortionSizeMethods(data.portionSize(), resolveImageUrl), getFoodPrompts(foodCode, locale),
           getBrandNames(foodCode, locale),
           toJavaList(handleLookupError(foodData.getFoodAllCategories(foodCode)).toSeq()));

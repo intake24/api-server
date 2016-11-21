@@ -48,7 +48,7 @@ public class NutritionMappedFood implements IsSerializable {
 	public Option<String> foodGroupLocalDescription;
 	public boolean reasonableAmount;
 	public String brand;
-	public Map<String, Double> nutrients;
+	public Map<Long, Double> nutrients;
 	public Map<String, String> customData;
 
 	@Deprecated
@@ -56,7 +56,7 @@ public class NutritionMappedFood implements IsSerializable {
 	}
 
 	public NutritionMappedFood(String code, String englishDescription, Option<String> localDescription, String nutrientTableID, String nutrientTableCode, boolean isReadyMeal, String searchTerm, CompletedPortionSize portionSize,
-			int foodGroupCode, String foodGroupEnglishDescription, Option<String> foodGroupLocalDescription, boolean reasonableAmount, String brand, Map<String, Double> nutrients, Map<String, String> customData) {
+			int foodGroupCode, String foodGroupEnglishDescription, Option<String> foodGroupLocalDescription, boolean reasonableAmount, String brand, Map<Long, Double> nutrients, Map<String, String> customData) {
 		this.code = code;
 		this.englishDescription = englishDescription;
 		this.localDescription = localDescription;

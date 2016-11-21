@@ -17,7 +17,7 @@ import uk.ac.ncl.openlab.intake24.FoodGroupLocal
 import uk.ac.ncl.openlab.intake24.LocalFoodRecord
 import uk.ac.ncl.openlab.intake24.NutrientTable
 import uk.ac.ncl.openlab.intake24.NutrientTableRecord
-import uk.ac.ncl.openlab.intake24.nutrients.Nutrient
+
 import uk.ac.ncl.openlab.intake24.NewLocalFoodRecord
 import uk.ac.ncl.openlab.intake24.NewLocalCategoryRecord
 
@@ -115,8 +115,9 @@ trait RandomData {
     forTables.flatMap {
       table =>
         val count = randomCount(min, max)
+        val q = Seq(1l, 2l, 3l, 4l, 5l)
         Seq.fill(count) {
-          NutrientTableRecord(table.id, randomIdentifier, Nutrient.types.map(n => (n -> Random.nextDouble() * 100.0)).toMap)
+          NutrientTableRecord(table.id, randomIdentifier, q.map(n => (n -> Random.nextDouble() * 100.0)).toMap)
         }
     }
   }

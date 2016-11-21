@@ -6,7 +6,7 @@ import java.sql.Connection
 import anorm.SQL
 import uk.ac.ncl.openlab.intake24.sql.migrations.MigrationFailed
 
-object Migrations {
+object FoodDatabaseMigrations {
 
   val activeMigrations: Seq[Migration] = Seq(
     new Migration {

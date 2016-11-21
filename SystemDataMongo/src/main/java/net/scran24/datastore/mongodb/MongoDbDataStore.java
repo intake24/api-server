@@ -29,6 +29,7 @@ import java.util.Set;
 import net.scran24.datastore.DataStore;
 import net.scran24.datastore.DataStoreException;
 import net.scran24.datastore.DuplicateKeyException;
+import net.scran24.datastore.LocalNutrientType;
 import net.scran24.datastore.MissingFoodRecord;
 import net.scran24.datastore.NutritionMappedSurveyRecord;
 import net.scran24.datastore.NutritionMappedSurveyRecordWithId;
@@ -642,4 +643,9 @@ public class MongoDbDataStore extends MongoDbConstants implements DataStore {
 	public boolean validateCompletionCode(String survey, String externalUserName, String code) throws DataStoreException {
 		throw new DataStoreException("Not supported by this backend");
 	}
+
+  @Override
+  public List<LocalNutrientType> getLocalNutrientTypes(String locale) throws DataStoreException {
+    throw new DataStoreException("Operation not implemented");
+  }
 }

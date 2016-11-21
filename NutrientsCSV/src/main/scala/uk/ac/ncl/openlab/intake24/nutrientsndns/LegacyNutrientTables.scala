@@ -1,70 +1,156 @@
 package uk.ac.ncl.openlab.intake24.nutrientsndns
 
-import uk.ac.ncl.openlab.intake24.nutrients._
-
 object LegacyNutrientTables {
-  
+
   import CsvNutrientTableParser.{ excelColumnToOffset => col }
 
-  private def ndnsCsvNutrientMapping(nutrientType: Nutrient): Option[Int] = nutrientType match {
-    case Protein => Some(20)
-    case Fat => Some(22)
-    case Carbohydrate => Some(24)
-    case EnergyKcal => Some(26)
-    case EnergyKj => Some(28)
-    case Alcohol => Some(30)
-    case TotalSugars => Some(38)
-    case Nmes => Some(40)
-    case SaturatedFattyAcids => Some(56)
-    case Cholesterol => Some(66)
-    case VitaminA => Some(78)
-    case VitaminD => Some(80)
-    case VitaminC => Some(92)
-    case VitaminE => Some(94)
-    case Folate => Some(100)
-    case Sodium => Some(106)
-    case Calcium => Some(110)
-    case Iron => Some(116)
-    case Zinc => Some(124)
-    case Selenium => Some(132)
-    case DietaryFiber => None
-    case TotalMonosaccharides => None
-    case OrganicAcids => None
-    case PolyunsaturatedFattyAcids => None
-    case NaCl => None
-    case Ash => None
-  }
+  private val ndnsCsvNutrientMapping: Map[Long, Int] =
+    Map(
+      1l -> col("G"),
+      2l -> col("H"),
+      8l -> col("A"),
+      9l -> col("B"),
+      10l -> col("C"),
+      11l -> col("D"),
+      13l -> col("F"),
+      15l -> col("J"),
+      16l -> col("K"),
+      20l -> col("I"),
+      21l -> col("L"),
+      22l -> col("M"),
+      23l -> col("N"),
+      24l -> col("O"),
+      25l -> col("P"),
+      26l -> col("Q"),
+      27l -> col("R"),
+      28l -> col("S"),
+      29l -> col("T"),
+      30l -> col("U"),
+      49l -> col("E"),
+      50l -> col("V"),
+      55l -> col("W"),
+      56l -> col("X"),
+      57l -> col("Y"),
+      58l -> col("Z"),
+      59l -> col("AA"),
+      114l -> col("AB"),
+      115l -> col("AC"),
+      116l -> col("AD"),
+      117l -> col("AE"),
+      119l -> col("AF"),
+      120l -> col("AG"),
+      122l -> col("AH"),
+      123l -> col("AI"),
+      124l -> col("AJ"),
+      125l -> col("AK"),
+      126l -> col("AL"),
+      128l -> col("AM"),
+      129l -> col("AN"),
+      130l -> col("AO"),
+      132l -> col("AP"),
+      133l -> col("AQ"),
+      134l -> col("AR"),
+      136l -> col("AS"),
+      137l -> col("AT"),
+      138l -> col("AU"),
+      139l -> col("AV"),
+      140l -> col("AW"),
+      141l -> col("AX"),
+      142l -> col("AY"),
+      143l -> col("AZ"),
+      144l -> col("BA"),
+      145l -> col("BB"),
+      146l -> col("BC"),
+      147l -> col("BD"),
+      148l -> col("BE"),
+      149l -> col("BF"),
+      151l -> col("BG"),
+      152l -> col("BH"))
 
   val ndnsCsvTableMapping = CsvNutrientTableMapping(1, 0, ndnsCsvNutrientMapping)
 
-  private def nzCsvNutrientMapping(nutrientType: Nutrient): Option[Int] = nutrientType match {
-    case Protein => Some(col("BP"))
-    case Fat => Some(col("AF"))
-    case Carbohydrate => Some(col("I"))
-    case EnergyKcal => Some(col("X"))
-    case EnergyKj => Some(col("Z"))
-    case Alcohol => Some(col("D"))
-    case TotalSugars => Some(col("BW"))
-    case Nmes => None
-    case SaturatedFattyAcids => Some(col("AS"))
-    case Cholesterol => Some(col("R"))
-    case VitaminA => Some(col("CB"))
-    case VitaminD => Some(col("CF"))
-    case VitaminC => Some(col("CE"))
-    case VitaminE => Some(col("CG"))
-    case Folate => Some(col("AY"))
-    case Sodium => Some(col("BT"))
-    case Calcium => Some(col("P"))
-    case Iron => Some(col("BE"))
-    case Zinc => Some(col("CI"))
-    case Selenium => Some(col("BS"))
-    case DietaryFiber => None
-    case TotalMonosaccharides => None
-    case OrganicAcids => None
-    case PolyunsaturatedFattyAcids => None
-    case NaCl => None
-    case Ash => None
-  }
+  private val nzCsvNutrientMapping: Map[Long, Int] = Map(
+    1l -> col("X"),
+    2l -> col("Z"),
+    3l -> col("Y"),
+    4l -> col("AB"),
+    5l -> col("AC"),
+    6l -> col("AD"),
+    7l -> col("AE"),
+    8l -> col("CH"),
+    9l -> col("BM"),
+    11l -> col("BP"),
+    13l -> col("I"),
+    14l -> col("K"),
+    17l -> col("AU"),
+    18l -> col("AV"),
+    19l -> col("AW"),
+    20l -> col("D"),
+    21l -> col("BU"),
+    22l -> col("BW"),
+    25l -> col("BC"),
+    26l -> col("BA"),
+    27l -> col("BV"),
+    28l -> col("BH"),
+    29l -> col("BF"),
+    49l -> col("AF"),
+    50l -> col("AS"),
+    51l -> col("AO"),
+    52l -> col("AP"),
+    58l -> col("AT"),
+    59l -> col("R"),
+    60l -> col("AG"),
+    61l -> col("AH"),
+    62l -> col("AI"),
+    63l -> col("AJ"),
+    64l -> col("AK"),
+    65l -> col("AL"),
+    66l -> col("AM"),
+    67l -> col("AN"),
+    68l -> col("AQ"),
+    69l -> col("AR"),
+    114l -> col("BQ"),
+    116l -> col("E"),
+    117l -> col("L"),
+    118l -> col("M"),
+    121l -> col("CB"),
+    122l -> col("CF"),
+    123l -> col("BX"),
+    124l -> col("BR"),
+    127l -> col("CA"),
+    128l -> col("BK"),
+    129l -> col("CE"),
+    131l -> col("CG"),
+    132l -> col("CD"),
+    133l -> col("CC"),
+    134l -> col("AY"),
+    135l -> col("AX"),
+    138l -> col("BT"),
+    139l -> col("BO"),
+    140l -> col("P"),
+    141l -> col("BG"),
+    142l -> col("BN"),
+    143l -> col("BE"),
+    146l -> col("S"),
+    147l -> col("CI"),
+    150l -> col("BD"),
+    151l -> col("BI"),
+    152l -> col("BS"),
+    155l -> col("F"),
+    156l -> col("N"),
+    157l -> col("G"),
+    158l -> col("O"),
+    159l -> col("Q"),
+    160l -> col("T"),
+    161l -> col("BB"),
+    162l -> col("U"),
+    163l -> col("AZ"),
+    164l -> col("BJ"),
+    165l -> col("BY"),
+    167l -> col("H"),
+    168l -> col("J"),
+    169l -> col("BZ"),
+    173l -> col("V"))
 
   val nzCsvTableMapping = CsvNutrientTableMapping(3, 0, nzCsvNutrientMapping)
 }

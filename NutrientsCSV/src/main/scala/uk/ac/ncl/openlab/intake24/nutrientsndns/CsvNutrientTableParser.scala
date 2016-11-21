@@ -19,22 +19,20 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.nutrientsndns
 
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.nutrients._
+
 import au.com.bytecode.opencsv.CSVReader
 import java.io.FileReader
 import scala.collection.JavaConversions._
 
-case class CsvNutrientTableMapping(rowOffset: Int, idColumn: Int, nutrientMapping: Nutrient => Option[Int])
+case class CsvNutrientTableMapping(rowOffset: Int, idColumn: Int, nutrientMapping: Map[Long, Int])
 
 /* This is a silly type to work around the issues with Java-based dependency injection in Webapp 
  * The Scala type Map[Nutrient, Double] is compiled to Map<Nutrient, Object> in Java which breaks 
  * the injection.
  * */
-case class NutrientTable(records: Map[String, Map[Nutrient, Double]])
+case class NutrientTable(records: Map[String, Map[Long, Double]])
 
 object CsvNutrientTableParser {
-  import Nutrient._
-
   val log = LoggerFactory.getLogger(CsvNutrientTableParser.getClass)
 
   def excelColumnToOffset(colRef: String) = {
@@ -47,24 +45,21 @@ object CsvNutrientTableParser {
   def parseTable(fileName: String, mapping: CsvNutrientTableMapping): NutrientTable = {
     val rows = new CSVReader(new FileReader(fileName)).readAll().toSeq.map(_.toIndexedSeq)
 
-    def readRow(row: IndexedSeq[String], rowIndex: Int): Map[Nutrient, Double] = Nutrient.types.foldLeft(Map[Nutrient, Double]()) {
-      (acc, n) =>
+    def readRow(row: IndexedSeq[String], rowIndex: Int): Map[Long, Double] = mapping.nutrientMapping.foldLeft(Map[Long, Double]()) {
+      case (acc, (nutrientId, colNum)) =>
         {
           try {
-            mapping.nutrientMapping(n) match {
-              case Some(colNum) => acc + (n -> row(colNum - 1).toDouble)
-              case None => acc
-            }
+              acc + (nutrientId -> row(colNum - 1).toDouble)
           } catch {
             case e: Throwable => {
-              log.warn("Failed to read " + n.toString + " in row " + rowIndex + ", assuming data N/A")
+              log.warn("Failed to read nutrient type " + nutrientId.toString + " in row " + rowIndex + ", assuming data N/A")
               acc
             }
           }
         }
     }
 
-    val records = rows.zipWithIndex.drop(mapping.rowOffset).foldLeft(Map[String, Map[Nutrient, Double]]()) {
+    val records = rows.zipWithIndex.drop(mapping.rowOffset).foldLeft(Map[String, Map[Long, Double]]()) {
       case (map, row) => {
         val (rowSeq, rowIndex) = row
 

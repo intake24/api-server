@@ -100,7 +100,7 @@ trait NutrientTablesAdminImpl extends NutrientTablesAdminService with FoodDataSq
           record =>
             record.nutrients.map {
               case (nutrientType, unitsPer100g) =>
-                Seq[NamedParameter]('record_id -> record.record_id, 'nutrient_table_id -> record.table_id, 'nutrient_type_id -> nutrientType.id, 'units_per_100g -> unitsPer100g)
+                Seq[NamedParameter]('record_id -> record.record_id, 'nutrient_table_id -> record.table_id, 'nutrient_type_id -> nutrientType, 'units_per_100g -> unitsPer100g)
             }
         }
 

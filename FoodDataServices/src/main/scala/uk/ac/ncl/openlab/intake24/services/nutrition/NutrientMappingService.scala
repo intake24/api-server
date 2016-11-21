@@ -18,17 +18,20 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.services.nutrition
 
-import uk.ac.ncl.openlab.intake24.nutrients.Nutrient
-
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.NutrientMappingError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 
-case class NutrientDescription(nutrientType: Nutrient, description: String, unit: String)
+case class NutrientDescription(nutrientId: Long, description: String, unit: String)
 
 trait NutrientMappingService {
   def supportedNutrients(): Either[UnexpectedDatabaseError, Seq[NutrientDescription]]
-  def nutrientsFor(table_id: String, record_id: String, weight: Double): Either[NutrientMappingError, Map[Nutrient, Double]]
+  
+  def energyKcalNutrientId(): Long
+  
+  def nutrientsFor(table_id: String, record_id: String, weight: Double): Either[NutrientMappingError, Map[Long, Double]]
 
-  def javaNutrientsFor(table_id: String, record_id: String, weight: Double): Either[NutrientMappingError, java.util.Map[Nutrient, java.lang.Double]] =
-    nutrientsFor(table_id, record_id, weight).right.map(scalaMap => scala.collection.JavaConversions.mapAsJavaMap(scalaMap.mapValues(new java.lang.Double(_))))
+  def javaNutrientsFor(table_id: String, record_id: String, weight: Double): Either[NutrientMappingError, java.util.Map[java.lang.Long, java.lang.Double]] =
+    nutrientsFor(table_id, record_id, weight).right.map(scalaMap => scala.collection.JavaConversions.mapAsJavaMap(scalaMap.map {
+      case (k, v) => (new java.lang.Long(k), new java.lang.Double(v))
+    }))
 }

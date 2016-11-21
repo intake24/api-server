@@ -8,7 +8,7 @@ import anorm.Macro
 import anorm.SQL
 import anorm.sqlToSimple
 import javax.sql.DataSource
-import uk.ac.ncl.openlab.intake24.nutrients.Nutrient
+
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientDescription
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService
 
@@ -19,9 +19,9 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
 
 @Singleton
-class NutrientMappingServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends NutrientMappingService with FoodDataSqlService {
+class NutrientMappingServiceSqlImpl @Inject() @Named("intake24_foods") (val dataSource: DataSource) extends NutrientMappingService with FoodDataSqlService {
 
-  private case class NutrientDescriptionRow(id: Int, description: String, symbol: String)
+  private case class NutrientDescriptionRow(id: Long, description: String, symbol: String)
 
   def supportedNutrients(): Either[UnexpectedDatabaseError, Seq[NutrientDescription]] = tryWithConnection {
     implicit conn =>
@@ -29,13 +29,13 @@ class NutrientMappingServiceSqlImpl @Inject() (@Named("intake24_foods") val data
         .executeQuery()
         .as(Macro.namedParser[NutrientDescriptionRow].*)
         .map {
-          row => NutrientDescription(Nutrient.for_id(row.id).get, row.description, row.symbol)
+          row => NutrientDescription(row.id, row.description, row.symbol)
         })
   }
 
-  private case class NutrientsRow(nutrient_type_id: Int, units_per_100g: Double)
+  private case class NutrientsRow(nutrient_type_id: Long, units_per_100g: Double)
 
-  def nutrientsFor(table_id: String, record_id: String, weight: Double): Either[NutrientMappingError, Map[Nutrient, Double]] = tryWithConnection {
+  def nutrientsFor(table_id: String, record_id: String, weight: Double): Either[NutrientMappingError, Map[Long, Double]] = tryWithConnection {
     implicit conn =>
       val rows = SQL("SELECT nutrient_type_id, units_per_100g FROM nutrient_table_records_nutrients WHERE nutrient_table_record_id={record_id} and nutrient_table_id={table_id}")
         .on('record_id -> record_id, 'table_id -> table_id)
@@ -44,7 +44,8 @@ class NutrientMappingServiceSqlImpl @Inject() (@Named("intake24_foods") val data
       if (rows.isEmpty)
         Left(RecordNotFound(new RuntimeException(s"table_id: $table_id, record_id: $record_id")))
       else
-        Right(rows.map(row => (Nutrient.for_id(row.nutrient_type_id).get -> (weight * row.units_per_100g / 100.0))).toMap)
+        Right(rows.map(row => (row.nutrient_type_id -> (weight * row.units_per_100g / 100.0))).toMap)
   }
-}
 
+  def energyKcalNutrientId(): Long = 1
+}

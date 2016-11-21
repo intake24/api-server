@@ -100,6 +100,8 @@ public interface DataStore {
 
 	public void setLastHelpRequestTime(String survey, String username, long time) throws DataStoreException;
 	
+	public List<LocalNutrientType> getLocalNutrientTypes(String locale) throws DataStoreException;
+	
 	public String generateCompletionCode(String survey, String username, String externalUserName) throws DataStoreException;
 	
 	public boolean validateCompletionCode(String survey, String externalUserName, String code) throws DataStoreException;
