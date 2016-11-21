@@ -27,9 +27,9 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 package net.scran24.user.shared;
 
 public class SpecialData {
-	public static final String FOOD_CODE_SALAD = "$SLD";
-	public static final String FOOD_CODE_SANDWICH = "$SND";
-	public static final String FOOD_CODE_MISSING = "$MIS";
-	public static final String FOOD_CODE_MILK_IN_HOT_DRINK = "MHDK";
-	public static final String CATEGORY_CODE_RECIPE_INGREDIENTS = "RECP";			
+  public static final String FOOD_CODE_SALAD = "$SLD";
+  public static final String FOOD_CODE_SANDWICH = "$SND";
+  public static final String FOOD_CODE_MISSING = "$MIS";
+  public static final String FOOD_CODE_MILK_IN_HOT_DRINK = "MHDK";
+  public static final String CATEGORY_CODE_RECIPE_INGREDIENTS = "RECP";
 }
