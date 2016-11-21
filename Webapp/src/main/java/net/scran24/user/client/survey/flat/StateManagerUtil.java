@@ -75,7 +75,7 @@ public class StateManagerUtil {
   }
 
   public static Option<String> getLatestStateSerialised(String userName) {
-    return Option.fromNullable(localStorage.getItem(localStorage.getItem(latestStateKey(userName))));
+    return Option.fromNullable(localStorage.getItem(latestStateKey(userName)));
 	}
 
   public static Option<Survey> getLatestState(String userName, String scheme_id, String version_id,
