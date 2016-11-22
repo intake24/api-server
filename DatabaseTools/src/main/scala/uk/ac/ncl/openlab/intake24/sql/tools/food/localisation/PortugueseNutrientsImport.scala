@@ -4,9 +4,9 @@ import org.slf4j.LoggerFactory
 import org.rogach.scallop.ScallopConf
 
 import uk.ac.ncl.openlab.intake24.NutrientTable
-import uk.ac.ncl.openlab.intake24.nutrients.Nutrient
+
 import uk.ac.ncl.openlab.intake24.NutrientTableRecord
-import uk.ac.ncl.openlab.intake24.nutrients._
+
 import uk.ac.ncl.openlab.intake24.nutrientsndns.CsvNutrientTableParser
 import uk.ac.ncl.openlab.intake24.nutrientsndns.CsvNutrientTableMapping
 import com.google.inject.Inject
@@ -17,7 +17,7 @@ import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
 
 object PortugueseNutrientsImport extends App with WarningMessage with DatabaseConnection {
 
-  val ptTableCode = "PT_INSA"
+/*  val ptTableCode = "PT_INSA"
   val ptTableDescription = "Portuguese Food Composition Table (INSA)"
   
   import CsvNutrientTableParser.{ excelColumnToOffset => col, parseTable }  
@@ -82,6 +82,6 @@ object PortugueseNutrientsImport extends App with WarningMessage with DatabaseCo
       NutrientTableRecord(ptTableCode, code, nmap)
   }.toSeq
 
-  nutrientTableService.createNutrientTableRecords(records)
+  nutrientTableService.createNutrientTableRecords(records)*/
 
 }

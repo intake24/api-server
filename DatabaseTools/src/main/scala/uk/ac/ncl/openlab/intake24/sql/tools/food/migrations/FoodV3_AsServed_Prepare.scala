@@ -1,35 +1,25 @@
-package uk.ac.ncl.openlab.intake24.sql.tools.food
+package uk.ac.ncl.openlab.intake24.sql.tools.food.migrations
 
 import java.nio.charset.Charset
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
 import java.nio.file.attribute.BasicFileAttributes
+import java.nio.file.{Files, Path, Paths}
 import java.util.function.BiPredicate
 
-import scala.collection.mutable.Buffer
-
+import anorm.{Macro, SqlParser, _}
 import org.apache.commons.io.FilenameUtils
 import org.rogach.scallop.ScallopConf
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
+import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConnection, DatabaseOptions, WarningMessage}
+import upickle.default._
 
-import anorm.Macro
-import anorm.SQL
-import anorm.SqlParser
-import anorm.sqlToSimple
-import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseConnection
-import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseOptions
-import uk.ac.ncl.openlab.intake24.sql.tools.WarningMessage
-import upickle.default.SeqishW
-import upickle.default.write
+import scala.collection.mutable
 
-object AsServedV4_Prepare extends App with WarningMessage with DatabaseConnection {
+object FoodV3_AsServed_Prepare extends App with WarningMessage with DatabaseConnection {
   private case class AsServedImageRow(as_served_set_id: String, url: String)
 
   private case class RemappedAsServedImage(set_id: String, url: String, sourcePath: String, mainImagePath: String, thumbnailPath: String)
 
-  val cleanUp = Buffer[Path]()
+  val cleanUp = mutable.Buffer[Path]()
 
   def copySource(id: String, sourceImageDir: String, imageDir: String, imagePath: String, targetDir: String, logger: Logger): String = {
 

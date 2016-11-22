@@ -1,4 +1,4 @@
-package uk.ac.ncl.openlab.intake24.sql.tools.food
+package uk.ac.ncl.openlab.intake24.sql.tools.system.migrations
 
 import java.io.FileReader
 
@@ -10,7 +10,7 @@ import uk.ac.ncl.openlab.intake24.sql.tools.food.localisation.MigrationRunner
 
 import scala.collection.JavaConverters._
 
-object V14_UpdateMasterNutrientsList extends App with MigrationRunner {
+object SystemV2_CreateMasterNutrientsList extends App with MigrationRunner {
 
   val options = new ScallopConf(args) with MigrationAppOptions {
     val nutrientsList = opt[String](required = true)
@@ -20,7 +20,7 @@ object V14_UpdateMasterNutrientsList extends App with MigrationRunner {
 
   private case class NutrientRow(id: Long, description: String, unit: Long)
 
-  runMigration(14l, 15l, options) {
+  runMigration(2l, 3l, options) {
     implicit connection =>
       val unitIds = SQL("SELECT id, symbol FROM nutrient_units").executeQuery().as((SqlParser.long("id") ~ SqlParser.str("symbol")).*).map {
         case id ~ symbol => symbol -> id

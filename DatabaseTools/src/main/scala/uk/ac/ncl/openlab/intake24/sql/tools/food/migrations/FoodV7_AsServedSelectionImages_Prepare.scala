@@ -1,38 +1,20 @@
-package uk.ac.ncl.openlab.intake24.sql.tools.food
+package uk.ac.ncl.openlab.intake24.sql.tools.food.migrations
 
+import java.io.File
 import java.nio.charset.Charset
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.nio.file.attribute.BasicFileAttributes
-import java.util.function.BiPredicate
-
-import scala.collection.mutable.Buffer
-
-import org.apache.commons.io.FilenameUtils
-import org.rogach.scallop.ScallopConf
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-
-import anorm.Macro
-import anorm.SQL
-import anorm.SqlParser
-import anorm.sqlToSimple
-import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseConnection
-import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseOptions
-import uk.ac.ncl.openlab.intake24.sql.tools.WarningMessage
-import upickle.default._
-
-import org.im4java.core.ConvertCmd
-import org.im4java.core.IMOperation
+import java.nio.file.{Files, Paths}
 import java.util.UUID
 
+import anorm.{SqlParser, _}
+import org.apache.commons.io.FilenameUtils
+import org.im4java.core.{ConvertCmd, IMOperation}
+import org.rogach.scallop.ScallopConf
+import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConnection, DatabaseOptions, WarningMessage}
+import upickle.default._
+
 import scala.collection.JavaConverters._
-import java.io.File
 
-private case class ImagePaths(sourceImagePath: String, selectionImagePath: String)
-
-object AsServedV8_SelectionImages_Prepare extends App with WarningMessage with DatabaseConnection {
+object FoodV7_AsServedSelectionImages_Prepare extends App with WarningMessage with DatabaseConnection {
 
   trait Options extends ScallopConf {
     version("Intake24 v8 as served prepare")
@@ -81,16 +63,16 @@ object AsServedV8_SelectionImages_Prepare extends App with WarningMessage with D
         val srcPath = selectionImageSourcePath
 
         val dstPath = s"as_served/$setId/selection/$randomName"
-        
+
         val srcFsPath = options.imageDir() + "/" + srcPath
-        
+
         val dstFsPath = options.imageDir() + "/" + dstPath
-        
+
         new File(dstFsPath).getParentFile.mkdirs()
 
         println(s"Using $srcFsPath as source")
 
-        val cmd = new ConvertCmd()        
+        val cmd = new ConvertCmd()
         val op = new IMOperation()
 
         op.resize(300)
@@ -101,7 +83,7 @@ object AsServedV8_SelectionImages_Prepare extends App with WarningMessage with D
         op.addImage(dstFsPath)
 
         println(s"Invoking ImageMagick: ${((cmd.getCommand.asScala) ++ (op.getCmdArgs.asScala)).mkString(" ")}")
-        
+
         cmd.run(op)
 
         imageMap += (setId -> ImagePaths(srcPath, dstPath))

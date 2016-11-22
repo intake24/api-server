@@ -37,6 +37,7 @@ public class LegacyNutrientTypes {
     legacyKeyToId.put("pufa", 52l);
     legacyKeyToId.put("nacl", 154l);
     legacyKeyToId.put("ash", 157l);
+    legacyKeyToId.put("calcium", 140l);
     
     idToLegacyKey = new HashMap<>();
     

@@ -2,11 +2,10 @@ package uk.ac.ncl.openlab.intake24.datastoresql.migrations
 
 import org.slf4j.Logger
 import java.sql.Connection
-import anorm.SQL
+
+import anorm.{BatchSql, NamedParameter, SQL, SqlParser}
 import uk.ac.ncl.openlab.intake24.sql.migrations.Migration
 import uk.ac.ncl.openlab.intake24.sql.migrations.MigrationFailed
-import anorm.NamedParameter
-import anorm.BatchSql
 
 object SystemDatabaseMigrations {
 
@@ -19,11 +18,12 @@ object SystemDatabaseMigrations {
 
       def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
 
-        SQL("""|CREATE TABLE nutrient_units(
-               |id integer NOT NULL,
-               |description character varying(512) COLLATE pg_catalog."default" NOT NULL,
-               |symbol character varying(32) COLLATE pg_catalog."default" NOT NULL,
-               |CONSTRAINT nutrient_units_pk PRIMARY KEY (id))""".stripMargin).execute()
+        SQL(
+          """|CREATE TABLE nutrient_units(
+            |id integer NOT NULL,
+            |description character varying(512) COLLATE pg_catalog."default" NOT NULL,
+            |symbol character varying(32) COLLATE pg_catalog."default" NOT NULL,
+            |CONSTRAINT nutrient_units_pk PRIMARY KEY (id))""".stripMargin).execute()
 
         val unitParams = Seq(
           Seq[NamedParameter]('id -> 1, 'description -> "Gram", 'symbol -> "g"),
@@ -34,11 +34,12 @@ object SystemDatabaseMigrations {
 
         BatchSql("INSERT INTO nutrient_units VALUES({id},{description},{symbol})", unitParams.head, unitParams.tail: _*).execute()
 
-        SQL("""|CREATE TABLE nutrient_types(id integer NOT NULL,
-               |description character varying(512) NOT NULL,
-               |unit_id integer NOT NULL,
-               |CONSTRAINT nutrient_types_pk PRIMARY KEY (id),
-               |CONSTRAINT nutrient_types_nutrient_unit_fk FOREIGN KEY (unit_id) REFERENCES public.nutrient_units (id) ON UPDATE CASCADE ON DELETE CASCADE)""".stripMargin).execute()
+        SQL(
+          """|CREATE TABLE nutrient_types(id integer NOT NULL,
+            |description character varying(512) NOT NULL,
+            |unit_id integer NOT NULL,
+            |CONSTRAINT nutrient_types_pk PRIMARY KEY (id),
+            |CONSTRAINT nutrient_types_nutrient_unit_fk FOREIGN KEY (unit_id) REFERENCES public.nutrient_units (id) ON UPDATE CASCADE ON DELETE CASCADE)""".stripMargin).execute()
 
         Right(())
       }
@@ -52,21 +53,149 @@ object SystemDatabaseMigrations {
       }
     },
 
-    // 2 -> 3 external
+    // 2 -> 3 see SystemV2_CreateMasterNutrientList
 
     new Migration {
       val versionFrom = 3l
       val versionTo = 4l
 
-      val description = "Add integer nutrient_id to survey_submission_nutrients"
+      val mapping = Seq(
+        Seq[NamedParameter]('legacy_name -> "protein", 'type_id -> 11l),
+        Seq[NamedParameter]('legacy_name -> "fat", 'type_id -> 49l),
+        Seq[NamedParameter]('legacy_name -> "carbohydrate", 'type_id -> 13l),
+        Seq[NamedParameter]('legacy_name -> "energy_kcal", 'type_id -> 1l),
+        Seq[NamedParameter]('legacy_name -> "energy_kj", 'type_id -> 2l),
+        Seq[NamedParameter]('legacy_name -> "alcohol", 'type_id -> 20l),
+        Seq[NamedParameter]('legacy_name -> "total_sugars", 'type_id -> 22l),
+        Seq[NamedParameter]('legacy_name -> "nmes", 'type_id -> 23l),
+        Seq[NamedParameter]('legacy_name -> "satd_fa", 'type_id -> 50l),
+        Seq[NamedParameter]('legacy_name -> "cholesterol", 'type_id -> 59l),
+        Seq[NamedParameter]('legacy_name -> "vitamin_a", 'type_id -> 120l),
+        Seq[NamedParameter]('legacy_name -> "vitamin_d", 'type_id -> 122l),
+        Seq[NamedParameter]('legacy_name -> "vitamin_c", 'type_id -> 129l),
+        Seq[NamedParameter]('legacy_name -> "vitamin_e", 'type_id -> 130l),
+        Seq[NamedParameter]('legacy_name -> "folate", 'type_id -> 134l),
+        Seq[NamedParameter]('legacy_name -> "sodium", 'type_id -> 138l),
+        Seq[NamedParameter]('legacy_name -> "iron", 'type_id -> 143l),
+        Seq[NamedParameter]('legacy_name -> "zinc", 'type_id -> 147l),
+        Seq[NamedParameter]('legacy_name -> "selenium", 'type_id -> 152l),
+        Seq[NamedParameter]('legacy_name -> "dietary_fiber", 'type_id -> 17l),
+        Seq[NamedParameter]('legacy_name -> "total_monosac", 'type_id -> 35l),
+        Seq[NamedParameter]('legacy_name -> "organic_acids", 'type_id -> 47l),
+        Seq[NamedParameter]('legacy_name -> "pufa", 'type_id -> 52l),
+        Seq[NamedParameter]('legacy_name -> "nacl", 'type_id -> 154l),
+        Seq[NamedParameter]('legacy_name -> "ash", 'type_id -> 157l),
+        Seq[NamedParameter]('legacy_name -> "calcium", 'type_id -> 140l)
+      )
+
+      val description = "Add new integer nutrient_id to survey_submission_nutrients"
 
       def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE survey_submission_nutrients ADD COLUMN nutrient_type_id integer").execute()
+        SQL("ALTER TABLE survey_submission_nutrients ADD CONSTRAINT ssn_nutrient_type_id_fk FOREIGN KEY(nutrient_type_id) REFERENCES nutrient_types(id)").execute()
+
+        BatchSql("UPDATE survey_submission_nutrients SET nutrient_type_id={type_id} WHERE name={legacy_name}", mapping.head, mapping.tail:_*).execute()
+
+        val missingIds = SQL("SELECT name FROM survey_submission_nutrients WHERE nutrient_type_id IS NULL").executeQuery().as(SqlParser.str("name").*)
+
+        if (missingIds.nonEmpty) {
+          Left(MigrationFailed(new RuntimeException("Missing nutrient ids for legacy names: " + missingIds.distinct.mkString(", "))))
+        } else {
+          SQL("ALTER TABLE survey_submission_nutrients ALTER COLUMN nutrient_type_id SET NOT NULL").execute()
+          SQL("ALTER TABLE survey_submission_nutrients DROP COLUMN name").execute()
+          Right(())
+        }
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE survey_submission_nutrients ADD COLUMN name character varying(64)").execute()
+
+        BatchSql("UPDATE survey_submission_nutrients SET name={legacy_name} WHERE nutrient_type_id={type_id}", mapping.head, mapping.tail:_*).execute()
+
+        SQL("ALTER TABLE survey_submission_nutrients ALTER COLUMN name SET NOT NULL").execute()
+
+        SQL("ALTER TABLE survey_submission_nutrients DROP COLUMN nutrient_type_id").execute()
+
+        Right(())
+      }
+    },
+
+    new Migration {
+      val versionFrom = 4l
+      val versionTo = 5l
+
+      val description = "Create locales"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL(
+          """|CREATE TABLE locales
+             |(
+             |    id character varying(16) NOT NULL,
+             |    english_name character varying(64) NOT NULL,
+             |    local_name character varying(64) NOT NULL,
+             |    respondent_language_id character varying(16) NOT NULL,
+             |    admin_language_id character varying(16) NOT NULL,
+             |    country_flag_code character varying(16) NOT NULL,
+             |    prototype_locale_id character varying(16),
+             |    CONSTRAINT locales_pk PRIMARY KEY (id),
+             |    CONSTRAINT locales_prototype_locale_id_fk FOREIGN KEY (prototype_locale_id)
+             |        REFERENCES locales (id)
+             |        ON UPDATE CASCADE
+             |        ON DELETE CASCADE
+             |)""".stripMargin).execute()
+
+        val localeParams = Seq(
+          Seq[NamedParameter]('id -> "en_GB", 'english_name -> "English (United Kingdom)", 'local_name -> "English (United Kingdom)", 'respondent_language_id -> "en_GB", 'admin_language_id -> "en", 'country_flag_code -> "gb", 'prototype_locale_id -> None),
+          Seq[NamedParameter]('id -> "da_DK", 'english_name -> "Danish (Denmark)", 'local_name -> "Dansk (Danmark)", 'respondent_language_id -> "da", 'admin_language_id -> "da", 'country_flag_code -> "dk", 'prototype_locale_id -> Some("en_GB")),
+          Seq[NamedParameter]('id -> "pt_PT", 'english_name -> "Portuguese (Portugal)", 'local_name -> "Português (Portugal)", 'respondent_language_id -> "pt", 'admin_language_id -> "pt", 'country_flag_code -> "pt", 'prototype_locale_id -> Some("en_GB")),
+          Seq[NamedParameter]('id -> "en_NZ", 'english_name -> "English (New Zealand)", 'local_name -> "English (New Zealand)", 'respondent_language_id -> "en_NZ", 'admin_language_id -> "en", 'country_flag_code -> "nz", 'prototype_locale_id -> Some("en_GB"))
+        )
+
+        BatchSql("INSERT INTO locales VALUES({id},{english_name},{local_name},{respondent_language_id},{admin_language_id},{country_flag_code},{prototype_locale_id})", localeParams.head, localeParams.tail: _*).execute()
+
         Right(())
       }
 
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
 
+        SQL("DROP TABLE locales").execute()
+
         Right(())
       }
-    })
+    },
+
+    new Migration {
+      val versionFrom = 5l
+      val versionTo = 6l
+
+      val description = "Create local_nutrient_types"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL(
+          """|CREATE TABLE local_nutrient_types
+             |(
+             |  id serial NOT NULL,
+             |  locale_id character varying(16) NOT NULL,
+             |  nutrient_type_id integer NOT NULL,
+             |  CONSTRAINT local_nutrient_types_pk PRIMARY KEY (id),
+             |  CONSTRAINT local_nutrient_types_locale_fk FOREIGN KEY(locale_id) REFERENCES locales(id) ON UPDATE CASCADE ON DELETE CASCADE,
+             |  CONSTRAINT local_nutrient_types_nutrient_type_fk FOREIGN KEY(nutrient_type_id) REFERENCES nutrient_types(id) ON UPDATE CASCADE ON DELETE CASCADE
+             |)""".stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("DROP TABLE local_nutrient_types").execute()
+
+        Right(())
+      }
+    }
+  // 6 -> 7 see SystemV5_CreateLocalNutrientLists
+  )
 }

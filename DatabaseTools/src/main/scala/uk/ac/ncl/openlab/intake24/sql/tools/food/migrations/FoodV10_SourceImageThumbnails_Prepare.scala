@@ -1,20 +1,19 @@
-package uk.ac.ncl.openlab.intake24.sql.tools.food
+package uk.ac.ncl.openlab.intake24.sql.tools.food.migrations
 
 import java.io.File
 import java.nio.charset.Charset
 import java.nio.file.{Files, Paths}
 import java.util.UUID
 
-import anorm.{SQL, SqlParser, sqlToSimple}
+import anorm.{SqlParser, _}
 import org.apache.commons.io.FilenameUtils
 import org.im4java.core.{ConvertCmd, IMOperation}
 import org.rogach.scallop.ScallopConf
 import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConnection, DatabaseOptions, WarningMessage}
 import upickle.default._
-
 import scala.collection.JavaConverters._
 
-object V10_SourceImageThumbnails_Prepare extends App with WarningMessage with DatabaseConnection {
+object FoodV10_SourceImageThumbnails_Prepare extends App with WarningMessage with DatabaseConnection {
 
   trait Options extends ScallopConf {
     version("Intake24 food database generate source image thumbnails")

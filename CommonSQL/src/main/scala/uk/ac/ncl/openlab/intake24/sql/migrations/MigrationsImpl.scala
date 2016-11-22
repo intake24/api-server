@@ -37,21 +37,25 @@ class MigrationsImpl(val dataSource: DataSource) extends SqlDataService[SimpleDa
 
           logger.info(s"Migrating to version ${migration.versionTo}: ${migration.description}")
 
-          migration.apply(logger).right.map {
-            _ =>
-              SQL("UPDATE schema_version SET version={version}").on('version -> migration.versionTo).executeUpdate()
-              logger.info(s"Migration to ${migration.versionTo} complete.")
-          }.right.flatMap {
+          val result = withTransaction {
+            migration.apply(logger).right.map {
+              _ =>
+                SQL("UPDATE schema_version SET version={version}").on('version -> migration.versionTo).executeUpdate()
+                logger.info(s"Migration to ${migration.versionTo} complete.")
+            }
+          }
+
+          result.right.flatMap {
             _ => migrateFrom(migration.versionTo)
           }
         }
       }
 
       val version = getCurrentVersion()
-      
+
       logger.info(s"Current database schema version: $version")
 
-      migrateFrom(version) 
+      migrateFrom(version)
   }
 
   def defaultDatabaseError(e: PSQLException) = SimpleDatabaseError(e)

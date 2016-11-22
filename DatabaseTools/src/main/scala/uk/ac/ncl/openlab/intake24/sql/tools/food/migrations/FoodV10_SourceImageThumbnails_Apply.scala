@@ -1,11 +1,14 @@
-package uk.ac.ncl.openlab.intake24.sql.tools.food
+package uk.ac.ncl.openlab.intake24.sql.tools.food.migrations
 
-import anorm.{AnormUtil, BatchSql, NamedParameter, SQL, SqlParser, sqlToSimple}
+import anorm.{BatchSql, NamedParameter, SqlParser, _}
 import org.rogach.scallop.ScallopConf
 import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConnection, DatabaseOptions, WarningMessage}
 import upickle.default._
 
-object V10_SourceImageThumbnails_Apply extends App with WarningMessage with DatabaseConnection {
+/**
+  * Created by nip13 on 22/11/2016.
+  */
+object FoodV10_SourceImageThumbnails_Apply extends App with WarningMessage with DatabaseConnection {
 
   trait Options extends ScallopConf {
     version("Intake24 food database generate source image thumbnails")
