@@ -28,6 +28,9 @@ package net.scran24.user.client.services;
 
 import java.util.List;
 
+import com.google.gwt.core.client.GWT;
+import com.google.gwt.user.client.rpc.AsyncCallback;
+
 import net.scran24.user.shared.FoodData;
 import net.scran24.user.shared.FoodPrompt;
 import net.scran24.user.shared.lookup.AsServedDef;
@@ -35,9 +38,6 @@ import net.scran24.user.shared.lookup.DrinkwareDef;
 import net.scran24.user.shared.lookup.GuideDef;
 import net.scran24.user.shared.lookup.LookupResult;
 import net.scran24.user.shared.lookup.PortionSizeMethod;
-
-import com.google.gwt.core.client.GWT;
-import com.google.gwt.user.client.rpc.AsyncCallback;
 
 public interface FoodLookupServiceAsync
 {
