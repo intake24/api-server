@@ -7,7 +7,10 @@ WITH v AS(
            LEFT JOIN foods ON foods.code = foods_categories.food_code 
            LEFT JOIN foods_local as fl1 ON foods.code = fl1.food_code AND fl1.locale_id = v.locale_id
            LEFT JOIN foods_local as fl2 ON foods.code = fl2.food_code AND fl2.locale_id IN (SELECT prototype_locale_id FROM locales WHERE id=v.locale_id)
-  WHERE NOT COALESCE(fl1.do_not_use, fl2.do_not_use) 
+           LEFT JOIN foods_restrictions ON foods.code = foods_restrictions.food_code
+    WHERE NOT (COALESCE(fl1.do_not_use, fl2.do_not_use))
+          AND NOT (COALESCE(fl1.do_not_use, fl2.do_not_use))
+          AND (foods_restrictions.locale_id = {locale_id} OR foods_restrictions.locale_id IS NULL) 
 )
 SELECT locale_id, category_code, code, description, local_description FROM t
 UNION ALL
