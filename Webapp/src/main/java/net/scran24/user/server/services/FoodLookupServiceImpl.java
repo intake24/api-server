@@ -109,21 +109,20 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 
   private String imageUrlBase;
   private String thumbnailUrlBase;
-  
+
   private Function1<String, String> resolveImageUrl;
 
   private void crashIfDebugOptionSet(String name) {
     String param = getServletContext().getInitParameter(name);
     if (param != null && param.equals("true"))
-      throw new RuntimeException("Crashed on request. If this exception is unexpected, check the \"" + name
-          + "\" context parameter in WEB-INF/web.xml config file.");
+      throw new RuntimeException(
+          "Crashed on request. If this exception is unexpected, check the \"" + name + "\" context parameter in WEB-INF/web.xml config file.");
   }
 
   @Override
   public void init() throws ServletException {
     try {
-      Injector injector = (Injector) this.getServletContext()
-        .getAttribute("intake24.injector");
+      Injector injector = (Injector) this.getServletContext().getAttribute("intake24.injector");
 
       dataStore = injector.getInstance(DataStore.class);
       imageStorage = injector.getInstance(ImageStorageService.class);
@@ -153,42 +152,30 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 
   private <T> T handleLocaleError(Either<LocaleError, T> result) {
     if (result.isLeft())
-      throw new RuntimeException("Service error", result.left()
-        .get()
-        .exception());
+      throw new RuntimeException("Service error", result.left().get().exception());
     else
-      return result.right()
-        .get();
+      return result.right().get();
   }
 
   private <T> T handleLookupError(Either<LookupError, T> result) {
     if (result.isLeft())
-      throw new RuntimeException("Service error", result.left()
-        .get()
-        .exception());
+      throw new RuntimeException("Service error", result.left().get().exception());
     else
-      return result.right()
-        .get();
+      return result.right().get();
   }
 
   private <T> T handleLocalLookupError(Either<LocalLookupError, T> result) {
     if (result.isLeft())
-      throw new RuntimeException("Service error", result.left()
-        .get()
-        .exception());
+      throw new RuntimeException("Service error", result.left().get().exception());
     else
-      return result.right()
-        .get();
+      return result.right().get();
   }
 
   private <T> T handleNutrientMappingError(Either<NutrientMappingError, T> result) {
     if (result.isLeft())
-      throw new RuntimeException("Service error", result.left()
-        .get()
-        .exception());
+      throw new RuntimeException("Service error", result.left().get().exception());
     else
-      return result.right()
-        .get();
+      return result.right().get();
   }
 
   private LookupResult lookupImpl(String description, String locale, int maxResults, boolean includeHidden) {
@@ -198,8 +185,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
       if (!foodIndexes.containsKey(locale))
         throw new RuntimeException("Missing food index for locale " + locale);
 
-      IndexLookupResult lookupResult = foodIndexes.get(locale)
-        .lookup(description, maxResults);
+      IndexLookupResult lookupResult = foodIndexes.get(locale).lookup(description, maxResults);
 
       HashSet<String> foodCodes = new HashSet<String>();
 
@@ -207,8 +193,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 
       ArrayList<CategoryHeader> categoryHeaders = new ArrayList<CategoryHeader>();
 
-      Iterator<MatchedFood> iter = lookupResult.foods()
-        .iterator();
+      Iterator<MatchedFood> iter = lookupResult.foods().iterator();
 
       HashMap<String, Integer> matchCost = new HashMap<String, Integer>();
 
@@ -225,8 +210,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 
       }
 
-      Iterator<MatchedCategory> iter2 = lookupResult.categories()
-        .iterator();
+      Iterator<MatchedCategory> iter2 = lookupResult.categories().iterator();
 
       while (iter2.hasNext()) {
         MatchedCategory next = iter2.next();
@@ -252,8 +236,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
       Collections.sort(foodHeaders, new Comparator<FoodHeader>() {
         @Override
         public int compare(FoodHeader o1, FoodHeader o2) {
-          return finalCost.get(o2.code)
-            .compareTo(finalCost.get(o1.code));
+          return finalCost.get(o2.code).compareTo(finalCost.get(o1.code));
         }
       });
 
@@ -316,8 +299,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 
     UserCategoryContents userCategoryContents = handleLocalLookupError(foodData.getCategoryContents(code, locale));
 
-    return new LookupResult(toJavaFoodHeaders(userCategoryContents.foods()),
-        toJavaCategoryHeaders(userCategoryContents.subcategories()));
+    return new LookupResult(toJavaFoodHeaders(userCategoryContents.foods()), toJavaCategoryHeaders(userCategoryContents.subcategories()));
   }
 
   private String labelForAsServed(double weight) {
@@ -333,8 +315,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
     Splitter splitter = splitters.get(locale);
 
     if (splitter != null) {
-      Iterator<String> iter = splitter.split(description)
-        .iterator();
+      Iterator<String> iter = splitter.split(description).iterator();
 
       while (iter.hasNext())
         result.add(iter.next());
@@ -360,8 +341,9 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
     while (iter.hasNext()) {
       UserAsServedImage img = iter.next();
 
-      images[i++] = new AsServedDef.ImageInfo(new ImageDef(imageStorage.getUrl(img.mainImagePath()),
-          imageStorage.getUrl(img.thumbnailPath()), labelForAsServed(img.weight())), img.weight());
+      images[i++] = new AsServedDef.ImageInfo(
+          new ImageDef(imageStorage.getUrl(img.mainImagePath()), imageStorage.getUrl(img.thumbnailPath()), labelForAsServed(img.weight())),
+          img.weight());
     }
 
     return new AsServedDef(images);
@@ -385,8 +367,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 
     Map<Integer, Double> weights = new TreeMap<Integer, Double>();
 
-    Iterator<uk.ac.ncl.openlab.intake24.GuideImageWeightRecord> iter = image.weights()
-      .iterator();
+    Iterator<uk.ac.ncl.openlab.intake24.GuideImageWeightRecord> iter = image.weights().iterator();
 
     while (iter.hasNext()) {
       uk.ac.ncl.openlab.intake24.GuideImageWeightRecord wr = iter.next();
@@ -404,16 +385,13 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 
     ArrayList<DrinkScaleDef> scaleDefs = new ArrayList<DrinkScaleDef>();
 
-    Iterator<uk.ac.ncl.openlab.intake24.DrinkScale> iter = drinkwareSet.scaleDefs()
-      .iterator();
+    Iterator<uk.ac.ncl.openlab.intake24.DrinkScale> iter = drinkwareSet.scaleDefs().iterator();
 
     while (iter.hasNext()) {
       uk.ac.ncl.openlab.intake24.DrinkScale def = iter.next();
 
-      scaleDefs.add(new DrinkScaleDef(def.choice_id(), imageUrlBase + "/" + def.baseImage(),
-          imageUrlBase + "/" + def.overlayImage(), def.width(), def.height(), def.emptyLevel(), def.fullLevel(),
-          def.vf()
-            .asArray()));
+      scaleDefs.add(new DrinkScaleDef(def.choice_id(), imageUrlBase + "/" + def.baseImage(), imageUrlBase + "/" + def.overlayImage(), def.width(),
+          def.height(), def.emptyLevel(), def.fullLevel(), def.vf().asArray()));
     }
 
     return new DrinkwareDef(drinkwareSet.guide_id(), scaleDefs.toArray(new DrinkScaleDef[scaleDefs.size()]));
@@ -432,15 +410,10 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
     while (iter.hasNext()) {
       uk.ac.ncl.openlab.intake24.AssociatedFood next = iter.next();
 
-      if (next.foodOrCategoryCode()
-        .isRight())
-        result.add(new FoodPrompt(next.foodOrCategoryCode()
-          .right()
-          .get(), true, next.promptText(), next.linkAsMain(), next.genericName()));
+      if (next.foodOrCategoryCode().isRight())
+        result.add(new FoodPrompt(next.foodOrCategoryCode().right().get(), true, next.promptText(), next.linkAsMain(), next.genericName()));
       else
-        result.add(new FoodPrompt(next.foodOrCategoryCode()
-          .left()
-          .get(), false, next.promptText(), next.linkAsMain(), next.genericName()));
+        result.add(new FoodPrompt(next.foodOrCategoryCode().left().get(), false, next.promptText(), next.linkAsMain(), next.genericName()));
     }
 
     return result;
@@ -465,23 +438,26 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
     // FIXME: Undefined behaviour: only the first nutrient table code
     // (in random order) will be used
 
-    scala.Option<Tuple2<String, String>> tableCode = data.nutrientTableCodes()
-      .headOption();
+    scala.Option<Tuple2<String, String>> tableCode = data.nutrientTableCodes().headOption();
 
     if (tableCode.isEmpty())
-      throw new RuntimeException(
-          String.format("Food %s (%s) has no nutrient table codes", data.localDescription(), data.code()));
+      throw new RuntimeException(String.format("Food %s (%s) has no nutrient table codes", data.localDescription(), data.code()));
     else {
       String nutrientTableId = tableCode.get()._1;
       String nutrientTableRecordId = tableCode.get()._2;
 
       Map<Nutrient, Double> nutrients = handleNutrientMappingError(
           nutrientMappingService.javaNutrientsFor(nutrientTableId, nutrientTableRecordId, 100.0));
+      
+      double calPer100g = 0.0;
+      
+      if (nutrients.containsKey(EnergyKcal$.MODULE$))
+        calPer100g = nutrients.get(EnergyKcal$.MODULE$);
+      else
+        log.warn("Missing energy (kcal) nutrient record for " + foodCode);
 
-      return new FoodData(data.code(), data.readyMealOption(), data.sameAsBeforeOption(),
-          nutrients.get(EnergyKcal$.MODULE$), data.localDescription(),
-          toJavaPortionSizeMethods(data.portionSize(), resolveImageUrl), getFoodPrompts(foodCode, locale),
-          getBrandNames(foodCode, locale),
+      return new FoodData(data.code(), data.readyMealOption(), data.sameAsBeforeOption(), calPer100g, data.localDescription(),
+          toJavaPortionSizeMethods(data.portionSize(), resolveImageUrl), getFoodPrompts(foodCode, locale), getBrandNames(foodCode, locale),
           toJavaList(handleLookupError(foodData.getFoodAllCategories(foodCode)).toSeq()));
 
     }
@@ -489,7 +465,6 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 
   @Override
   public PortionSizeMethod getWeightPortionSizeMethod() {
-    return new PortionSizeMethod("weight", "weight", imageUrlBase + "/portion/weight.png", true,
-        new HashMap<String, String>());
+    return new PortionSizeMethod("weight", "weight", imageUrlBase + "/portion/weight.png", true, new HashMap<String, String>());
   }
 }
