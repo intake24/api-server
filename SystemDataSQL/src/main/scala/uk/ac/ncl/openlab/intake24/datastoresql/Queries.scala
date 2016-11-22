@@ -107,7 +107,7 @@ object Queries {
 
   val surveyFoodPortionSizeFieldsInsert = """INSERT INTO survey_submission_portion_size_fields VALUES (DEFAULT, {food_id}, {name}, {value})"""
 
-  val surveyFoodNutrientValuesInsert = """INSERT INTO survey_submission_nutrients VALUES (DEFAULT, {food_id}, {name}, {value})"""
+  val surveyFoodNutrientValuesInsert = """INSERT INTO survey_submission_nutrients VALUES (DEFAULT, {food_id}, {nutrient_type_id}, {value})"""
 
   val surveySubmissionsSelectByTime = """SELECT id, survey_id, user_id, start_time, end_time, log FROM survey_submissions WHERE survey_id={survey_id} AND start_time>{time_from} AND end_time<{time_to} ORDER BY end_time ASC"""
 
@@ -138,7 +138,7 @@ object Queries {
        |WHERE m.survey_submission_id = {survey_submission_id}::uuid""".stripMargin
 
   val surveySubmissionNutrientsSelect =
-    """|SELECT f.id as food_id, n.name as n_name, n.amount as n_amount
+    """|SELECT f.id as food_id, n.nutrient_type_id as n_type, n.amount as n_amount
        |FROM survey_submissions s
        |JOIN survey_submission_meals m
        |ON s.id = m.survey_submission_id

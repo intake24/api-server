@@ -385,7 +385,7 @@ class DataStoreSqlImpl @Inject() (@Named("intake24_system") dataSource: DataSour
     portion_size_method_id: String, reasonable_amount: Boolean, food_group_id: Long, food_group_english_description: String, food_group_local_description: Option[String],
     brand: String, nutrient_table_id: String, nutrient_table_code: String, cf_name: Option[String], cf_value: Option[String])
 
-  case class SubmissionNutrientRow(food_id: Long, n_name: String, n_amount: Double)
+  case class SubmissionNutrientRow(food_id: Long, n_type: Long, n_amount: Double)
 
   case class SubmissionPortionSizeDataRow(food_id: Long, name: String, value: String)
 
@@ -436,7 +436,7 @@ class DataStoreSqlImpl @Inject() (@Named("intake24_system") dataSource: DataSour
             val rows = mealRows(meal_id)
 
             val foods = foodRows.get(meal_id) match {
-              // match block prevents NoSuchElementException if the meal has no foods             
+              // match block prevents NoSuchElementException if the meal has no foods
               case Some(foods) => foods.keys.toSeq.sorted.map {
                 food_id =>
                   val rows = foods(food_id)
@@ -444,8 +444,8 @@ class DataStoreSqlImpl @Inject() (@Named("intake24_system") dataSource: DataSour
                   val customFields = rows.filter(r => r.cf_name.nonEmpty && r.cf_value.nonEmpty).map(r => (r.cf_name.get -> r.cf_value.get)).toMap
 
                   val nutrients = nutrientRows.get(food_id) match {
-                    case Some(rows) => rows.map(r => (r.n_name -> r.n_amount)).toMap
-                    case None => Map[String, Double]()
+                    case Some(rows) => rows.map(r => (r.n_type -> r.n_amount)).toMap
+                    case None => Map[Long, Double]()
                   }
 
                   val portionSizeFields = portionSizeData.get(food_id) match {
@@ -549,12 +549,10 @@ class DataStoreSqlImpl @Inject() (@Named("intake24_system") dataSource: DataSour
         if (items.isEmpty) ()
         else if (times == 0) throw new DataStoreException("Could not upsert popularity counters in a reasonable number of attempts")
         else {
-
           val updateParams = items.map(code => Seq[NamedParameter]('food_code -> code))
 
           val tryInsertItems = {
-            val updateResult =
-              BatchSql(Queries.popularityCounterIncrement, updateParams).execute()
+            val updateResult = BatchSql(Queries.popularityCounterIncrement, updateParams).execute()
 
             // Successfull updates will return 1 as number of rows affected
             // everything else indicates failure
@@ -563,13 +561,13 @@ class DataStoreSqlImpl @Inject() (@Named("intake24_system") dataSource: DataSour
 
           // Bad performance: 
           // Postgres will throw PSQLException on errors and stop batch execution in case of errors,
-          // so each individual item has to be processed using a single query 
-
+          // so each individual item has to be processed using a single query
+          
           val retryItems = {
             val insertResult = tryInsertItems.map(item => Try {
               SQL(Queries.popularityCounterInsert)
                 .on('food_code -> item)
-                .executeInsert(SqlParser.str("food_code").single)
+                .execute()
             })
 
             tryInsertItems.zip(insertResult).filter(_._2.isFailure).map(_._1)
@@ -682,5 +680,10 @@ class DataStoreSqlImpl @Inject() (@Named("intake24_system") dataSource: DataSour
         .executeQuery()
         .as(SqlParser.long("id").*)
         .nonEmpty
+  }
+
+  def getLocalNutrientTypes(locale_id: String): Seq[LocalNutrientType] = tryWithConnection {
+    implicit conn => ???
+      // SQL("""SELECT """)
   }
 }

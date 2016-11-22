@@ -70,9 +70,7 @@ class DataStoreSqlImplTest extends FunSuite with TestDB {
     map.toMap
   }
 
-  val randomNutrientNames = Seq.fill(10)(randomString)
-
-  def randomNutrients(): Map[String, Double] = randomNutrientNames.map(n => (n, Random.nextDouble() * 1000)).toMap
+  def randomNutrients(): Map[Long, Double] = Seq(1l,2l,3l,4l,5l).map(n => (n, Random.nextDouble() * 1000)).toMap
 
   def randomPortionSize() =
     new CompletedPortionSize(randomString(), randomCustomFields())

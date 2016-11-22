@@ -65,8 +65,10 @@ trait DataStoreScala {
   def getLastHelpRequestTime(survey: String, username: String): Option[Long]
 
   def setLastHelpRequestTime(survey: String, username: String, time: Long): Unit
-  
+
   def generateCompletionCode(survey: String, username: String, external_user_id: String): String
-  
+
   def validateCompletionCode(survey: String, external_user_id: String, code: String): Boolean
+
+  def getLocalNutrientTypes(locale_id: String): Seq[LocalNutrientType]
 }

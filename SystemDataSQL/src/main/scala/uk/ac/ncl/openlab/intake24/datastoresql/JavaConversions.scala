@@ -75,12 +75,12 @@ object JavaConversions {
 
   def toJavaNutritionMappedFood(food: NutritionMappedFood): JavaNutritionMappedFood =
     new JavaNutritionMappedFood(food.code, food.englishDescription, option2jopt(food.localDescription), food.nutrientTableID, food.nutrientTableCode, food.isReadyMeal, food.searchTerm, toJavaCompletedPortionSize(food.portionSize),
-      food.foodGroupCode, food.foodGroupEnglishDescription, option2jopt(food.foodGroupLocalDescription), food.reasonableAmount, food.brand, copyToJavaMap(food.nutrients, (d: Double) => new java.lang.Double(d)),
+      food.foodGroupCode, food.foodGroupEnglishDescription, option2jopt(food.foodGroupLocalDescription), food.reasonableAmount, food.brand, copyToJavaMap(food.nutrients.map { case (k,v) => new java.lang.Long(k) -> new java.lang.Double(v) }.toMap),
       copyToJavaMap(food.customData))
 
   def fromJavaNutritionMappedFood(food: JavaNutritionMappedFood): NutritionMappedFood =
     NutritionMappedFood(food.code, food.englishDescription, jopt2option(food.localDescription), food.nutrientTableID, food.nutrientTableCode, food.isReadyMeal, food.searchTerm, fromJavaCompletedPortionSize(food.portionSize),
-      food.foodGroupCode, food.foodGroupEnglishDescription, jopt2option(food.foodGroupLocalDescription), food.reasonableAmount, food.brand, food.nutrients.toMap.mapValues(Double2double), food.customData.toMap)
+      food.foodGroupCode, food.foodGroupEnglishDescription, jopt2option(food.foodGroupLocalDescription), food.reasonableAmount, food.brand, food.nutrients.toMap.map { case (k,v) => Long2long(k) -> Double2double(v) }, food.customData.toMap)
 
   def toJavaNutritionMappedMeal(meal: NutritionMappedMeal): JavaNutritionMappedMeal =
     new JavaNutritionMappedMeal(meal.name, copyToJavaList(meal.foods.map(toJavaNutritionMappedFood)), toJavaMealTime(meal.time), copyToJavaMap(meal.customData))

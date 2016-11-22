@@ -128,5 +128,12 @@ class DataStoreJavaAdapter @Inject() (scalaImpl: DataStoreScala) extends DataSto
   def getSurveyNames(): JList[String] = {
     copyToJavaList(scalaImpl.getSurveyNames())
   }
-  
+
+  def getLocalNutrientTypes(localeId: String): JList[net.scran24.datastore.LocalNutrientType] = {
+    copyToJavaList(scalaImpl.getLocalNutrientTypes(localeId).map {
+      t =>
+        new net.scran24.datastore.LocalNutrientType(t.nutrientId, t.localDescription, t.unit)
+    })
+  }
+
 }

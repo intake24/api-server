@@ -25,7 +25,7 @@ case class MealTime(hours: Int, minutes: Int)
 case class CompletedPortionSize(scriptName: String, data: Map[String, String])
 
 case class NutritionMappedFood(code: String, englishDescription: String, localDescription: Option[String], nutrientTableID: String, nutrientTableCode: String, isReadyMeal: Boolean, searchTerm: String, portionSize: CompletedPortionSize,
-  foodGroupCode: Int, foodGroupEnglishDescription: String, foodGroupLocalDescription: Option[String], reasonableAmount: Boolean, brand: String, nutrients: Map[String, Double], customData: Map[String, String])
+  foodGroupCode: Int, foodGroupEnglishDescription: String, foodGroupLocalDescription: Option[String], reasonableAmount: Boolean, brand: String, nutrients: Map[Long, Double], customData: Map[String, String])
 
 case class NutritionMappedMeal(name: String, foods: Seq[NutritionMappedFood], time: MealTime, customData: Map[String, String])
 
@@ -40,3 +40,5 @@ case class MissingFoodRecord(submittedAt: Long, surveyId: String, userName: Stri
 case class SurveyParameters(state: Int, startDate: Long, endDate: Long, schemeName: String, locale: String, allowGenUsers: Boolean, suspensionReason: String, surveyMonkeyUrl: Option[String])
 
 case class SupportStaffRecord(name: String, phoneNumber: Option[String], email: Option[String])
+
+case class LocalNutrientType(nutrientId: Long, localDescription: String, unit: String)
