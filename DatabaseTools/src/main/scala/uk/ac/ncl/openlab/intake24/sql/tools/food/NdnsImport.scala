@@ -36,9 +36,9 @@ object NdnsImport extends App with WarningMessage with DatabaseConnection {
 
   val nutrientTableService = new FoodDatabaseAdminImpl (dataSource)
 
-  nutrientTableService.deleteNutrientTable(ndnsTableCode)
+  // nutrientTableService.deleteNutrientTable(ndnsTableCode)
 
-  nutrientTableService.createNutrientTable(NutrientTable(ndnsTableCode, ndnsTableDescription))
+  // nutrientTableService.createNutrientTable(NutrientTable(ndnsTableCode, ndnsTableDescription))
 
   val table = CsvNutrientTableParser.parseTable(options.csvPath(), LegacyNutrientTables.ndnsCsvTableMapping)
 
