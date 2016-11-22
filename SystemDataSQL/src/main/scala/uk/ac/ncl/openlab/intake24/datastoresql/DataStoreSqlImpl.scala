@@ -549,12 +549,10 @@ class DataStoreSqlImpl @Inject() (@Named("intake24_system") dataSource: DataSour
         if (items.isEmpty) ()
         else if (times == 0) throw new DataStoreException("Could not upsert popularity counters in a reasonable number of attempts")
         else {
-
           val updateParams = items.map(code => Seq[NamedParameter]('food_code -> code))
 
           val tryInsertItems = {
-            val updateResult =
-              BatchSql(Queries.popularityCounterIncrement, updateParams).execute()
+            val updateResult = BatchSql(Queries.popularityCounterIncrement, updateParams).execute()
 
             // Successfull updates will return 1 as number of rows affected
             // everything else indicates failure
@@ -563,13 +561,13 @@ class DataStoreSqlImpl @Inject() (@Named("intake24_system") dataSource: DataSour
 
           // Bad performance: 
           // Postgres will throw PSQLException on errors and stop batch execution in case of errors,
-          // so each individual item has to be processed using a single query 
-
+          // so each individual item has to be processed using a single query
+          
           val retryItems = {
             val insertResult = tryInsertItems.map(item => Try {
               SQL(Queries.popularityCounterInsert)
                 .on('food_code -> item)
-                .executeInsert(SqlParser.str("food_code").single)
+                .execute()
             })
 
             tryInsertItems.zip(insertResult).filter(_._2.isFailure).map(_._1)

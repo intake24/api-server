@@ -17,6 +17,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.NutrientMappingError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
+import anorm.SqlParser
 
 @Singleton
 class NutrientMappingServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends NutrientMappingService with FoodDataSqlService {
@@ -37,14 +38,21 @@ class NutrientMappingServiceSqlImpl @Inject() (@Named("intake24_foods") val data
 
   def nutrientsFor(table_id: String, record_id: String, weight: Double): Either[NutrientMappingError, Map[Nutrient, Double]] = tryWithConnection {
     implicit conn =>
-      val rows = SQL("SELECT nutrient_type_id, units_per_100g FROM nutrient_table_records_nutrients WHERE nutrient_table_record_id={record_id} and nutrient_table_id={table_id}")
-        .on('record_id -> record_id, 'table_id -> table_id)
-        .as(Macro.namedParser[NutrientsRow].*)
+      withTransaction {
+        val validation = SQL("SELECT 1 FROM nutrient_table_records WHERE id={record_id} AND nutrient_table_id={table_id}")
+          .on('record_id -> record_id, 'table_id -> table_id)
+          .executeQuery().as(SqlParser.long(1).singleOpt).isDefined
 
-      if (rows.isEmpty)
-        Left(RecordNotFound(new RuntimeException(s"table_id: $table_id, record_id: $record_id")))
-      else
-        Right(rows.map(row => (Nutrient.for_id(row.nutrient_type_id).get -> (weight * row.units_per_100g / 100.0))).toMap)
+        if (!validation)
+          Left(RecordNotFound(new RuntimeException(s"table_id: $table_id, record_id: $record_id")))
+        else {
+          val rows = SQL("SELECT nutrient_type_id, units_per_100g FROM nutrient_table_records_nutrients WHERE nutrient_table_record_id={record_id} and nutrient_table_id={table_id}")
+            .on('record_id -> record_id, 'table_id -> table_id)
+            .as(Macro.namedParser[NutrientsRow].*)
+
+          Right(rows.map(row => (Nutrient.for_id(row.nutrient_type_id).get -> (weight * row.units_per_100g / 100.0))).toMap)
+        }
+      }
   }
 }
 
