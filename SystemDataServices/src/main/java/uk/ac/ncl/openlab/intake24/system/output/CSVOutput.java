@@ -207,8 +207,8 @@ public class CSVOutput {
               row.add(missingFoodLeftovers);
 
               for (LocalNutrientType t : localNutrientTypes)
-                if (food.nutrients.containsKey(t.nutrientId))
-                  row.add(String.format("%.2f", food.nutrients.get(t.nutrientId)));
+                if (food.nutrients.containsKey(t.nutrientTypeId))
+                  row.add(String.format("%.2f", food.nutrients.get(t.nutrientTypeId)));
                 else
                   row.add("N/A");
 

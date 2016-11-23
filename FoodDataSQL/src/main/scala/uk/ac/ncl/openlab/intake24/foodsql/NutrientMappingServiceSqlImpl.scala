@@ -20,7 +20,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
 import anorm.SqlParser
 
 @Singleton
-class NutrientMappingServiceSqlImpl @Inject() @Named("intake24_foods") (val dataSource: DataSource) extends NutrientMappingService with FoodDataSqlService {
+class NutrientMappingServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends NutrientMappingService with FoodDataSqlService {
 
   private case class NutrientDescriptionRow(id: Long, description: String, symbol: String)
 

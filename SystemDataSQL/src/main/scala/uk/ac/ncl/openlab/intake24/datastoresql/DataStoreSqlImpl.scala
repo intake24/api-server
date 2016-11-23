@@ -35,9 +35,10 @@ import com.google.inject.name.Named
 import javax.sql.DataSource
 import scala.util.Random
 import org.postgresql.util.PSQLException
+import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
 
 @Singleton
-class DataStoreSqlImpl @Inject() (@Named("intake24_system") dataSource: DataSource) extends DataStoreScala {
+class DataStoreSqlImpl @Inject() (@Named("intake24_system") dataSource: DataSource) extends DataStoreScala with SqlResourceLoader {
 
   val logger = LoggerFactory.getLogger(classOf[DataStoreSqlImpl])
 
@@ -681,9 +682,15 @@ class DataStoreSqlImpl @Inject() (@Named("intake24_system") dataSource: DataSour
         .as(SqlParser.long("id").*)
         .nonEmpty
   }
+  
+  private case class LocalNutrientTypeRow(nutrient_type_id: Long, description: String, symbol: String) {
+    def toLocalNutrientType = LocalNutrientType(nutrient_type_id, description, symbol)
+  }
+  
+  private lazy val localNutrientTypesQuery = sqlFromResource("get_local_nutrient_types.sql")
 
   def getLocalNutrientTypes(locale_id: String): Seq[LocalNutrientType] = tryWithConnection {
-    implicit conn => ???
-      // SQL("""SELECT """)
+    implicit conn => 
+      SQL(localNutrientTypesQuery).on('locale_id -> locale_id).executeQuery().as(Macro.namedParser[LocalNutrientTypeRow].*).map(_.toLocalNutrientType)
   }
 }

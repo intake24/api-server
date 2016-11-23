@@ -31,10 +31,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import net.scran24.datastore.shared.SurveyParameters;
-
 import org.workcraft.gwt.shared.client.Callback1;
 import org.workcraft.gwt.shared.client.Option;
+
+import net.scran24.datastore.shared.SurveyParameters;
 
 public interface DataStore {
 	public void initSurvey(String survey_id, String scheme_name, String locale, boolean allowGenUsers, Option<String> surveyMonkeyUrl) throws DataStoreException;

@@ -1,12 +1,12 @@
 package net.scran24.datastore;
 
 public class LocalNutrientType {
-  public final long nutrientId;
+  public final long nutrientTypeId;
   public final String localDescription;
   public final String unit;
 
-  public LocalNutrientType(long nutrientId, String localDescription, String unit) {
-    this.nutrientId = nutrientId;
+  public LocalNutrientType(long nutrientTypeId, String localDescription, String unit) {
+    this.nutrientTypeId = nutrientTypeId;
     this.localDescription = localDescription;
     this.unit = unit;
   }

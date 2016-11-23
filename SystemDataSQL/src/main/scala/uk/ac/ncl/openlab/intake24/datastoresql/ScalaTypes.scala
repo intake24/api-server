@@ -41,4 +41,4 @@ case class SurveyParameters(state: Int, startDate: Long, endDate: Long, schemeNa
 
 case class SupportStaffRecord(name: String, phoneNumber: Option[String], email: Option[String])
 
-case class LocalNutrientType(nutrientId: Long, localDescription: String, unit: String)
+case class LocalNutrientType(nutrientTypeId: Long, localDescription: String, unit: String)
