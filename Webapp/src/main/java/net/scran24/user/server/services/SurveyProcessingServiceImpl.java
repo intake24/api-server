@@ -29,6 +29,7 @@ package net.scran24.user.server.services;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map.Entry;
 
 import javax.servlet.ServletException;
 
@@ -45,6 +46,8 @@ import net.scran24.common.server.auth.ScranUserId;
 import net.scran24.datastore.DataStore;
 import net.scran24.datastore.DataStoreException;
 import net.scran24.datastore.MissingFoodRecord;
+import net.scran24.datastore.NutritionMappedFood;
+import net.scran24.datastore.NutritionMappedMeal;
 import net.scran24.datastore.NutritionMappedSurvey;
 import net.scran24.datastore.NutritionMappedSurveyRecord;
 import net.scran24.datastore.SecureUserRecord;
@@ -54,6 +57,7 @@ import net.scran24.user.shared.CompletedFood;
 import net.scran24.user.shared.CompletedMeal;
 import net.scran24.user.shared.CompletedMissingFood;
 import net.scran24.user.shared.CompletedSurvey;
+import net.scran24.user.shared.Meal;
 
 public class SurveyProcessingServiceImpl extends RemoteServiceServlet implements SurveyProcessingService {
 	private static final long serialVersionUID = -5525469181691523598L;
@@ -86,6 +90,16 @@ public class SurveyProcessingServiceImpl extends RemoteServiceServlet implements
 			
 			SurveyParameters surveyParameters = dataStore.getSurveyParameters(userId.survey);
 			NutritionMappedSurvey nutritionMappedSurvey = nutrientMapper.map(survey, surveyParameters.locale);
+			
+			for (NutritionMappedMeal m: nutritionMappedSurvey.meals){
+			  for (NutritionMappedFood f: m.foods) {
+			    System.out.println("Food name: " + f.englishDescription);
+			    for (Entry<Long, Double> e: f.nutrients.entrySet()) {
+			      System.out.print(String.format("%d: %.2f", e.getKey(), e.getValue()));
+			    }
+			  }
+			}
+			  
 
 			log.debug("Storing to database");
 			

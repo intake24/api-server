@@ -330,7 +330,7 @@ class DataStoreSqlImpl @Inject() (@Named("intake24_system") dataSource: DataSour
           val foodNutrientParams = foods.flatMap {
             case (food_id, food) =>
               food.nutrients.map {
-                case (name, value) => Seq[NamedParameter]('food_id -> food_id, 'name -> name, 'value -> value)
+                case (nutrientTypeId, value) => Seq[NamedParameter]('food_id -> food_id, 'nutrient_type_id -> nutrientTypeId, 'value -> value)
               }
           }
 
