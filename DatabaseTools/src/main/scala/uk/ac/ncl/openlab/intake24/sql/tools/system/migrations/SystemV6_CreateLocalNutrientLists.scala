@@ -52,10 +52,25 @@ object SystemV6_CreateLocalNutrientLists extends App with MigrationRunner {
         case (acc, (col, index)) => if (col.isEmpty) acc else (acc + (index + 1).toLong)
       }
 
-      val ukLocalTypes = inUKTable.toSeq.sortBy(id => descriptions(id.toInt - 1).toLowerCase())
-      val ptLocalTypes = (inUKTable ++ inPTTable).toSeq.sortBy(id => descriptions(id.toInt - 1).toLowerCase())
-      val nzLocalTypes = (inUKTable ++ inNZTable).toSeq.sortBy(id => descriptions(id.toInt - 1).toLowerCase())
-      val dkLocalTypes = (inUKTable ++ inDKTable).toSeq.sortBy(id => descriptions(id.toInt - 1).toLowerCase())
+      /*  Energy (Kcal)
+      Fat
+      Saturated Fat
+      Protein
+      Carbohydrate
+      Total Sugars
+      NMES
+      Alcohol
+      Fibre
+      Vitamin C
+      Calcium
+      Iron */
+
+      val coreNutrients = Seq(1l, 49l, 50l, 11l, 13l, 22l, 23l, 20l, 18l, 19l, 129l, 140l, 143l)
+
+      val ukLocalTypes = coreNutrients ++ (inUKTable.toSeq.sortBy(id => descriptions(id.toInt - 1).toLowerCase()).filterNot(coreNutrients.contains))
+      val ptLocalTypes = coreNutrients ++ ((inUKTable ++ inPTTable).toSeq.sortBy(id => descriptions(id.toInt - 1).toLowerCase()).filterNot(coreNutrients.contains))
+      val nzLocalTypes = coreNutrients ++ ((inUKTable ++ inNZTable).toSeq.sortBy(id => descriptions(id.toInt - 1).toLowerCase()).filterNot(coreNutrients.contains))
+      val dkLocalTypes = coreNutrients ++ ((inUKTable ++ inDKTable).toSeq.sortBy(id => descriptions(id.toInt - 1).toLowerCase()).filterNot(coreNutrients.contains))
 
       SQL("DELETE FROM local_nutrient_types").execute()
 
