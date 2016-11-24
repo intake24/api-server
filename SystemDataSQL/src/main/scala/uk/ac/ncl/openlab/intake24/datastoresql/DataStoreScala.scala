@@ -18,13 +18,13 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.datastoresql
 
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.SecureUserRecord
+
 trait DataStoreScala {
 
   def initSurvey(survey_id: String, scheme_name: String, locale: String, allowGenUsers: Boolean, surveyMonkeyUrl: Option[String]): Unit
   
   def getSurveyNames(): Seq[String]
-
-  def deleteUsers(survey_id: String, role: String): Unit
 
   def getUserData(survey_id: String, user_id: String): Map[String, String]
 

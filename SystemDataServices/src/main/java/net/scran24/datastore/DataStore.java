@@ -41,8 +41,6 @@ public interface DataStore {
 	
 	public List<String> getSurveyNames() throws DataStoreException;
 	
-	public void deleteUsers (String survey_id, String role) throws DataStoreException;
-	
 	public Map<String, String> getUserData (String survey_id, String user_id) throws DataStoreException;
 	
 	public void setUserData (String survey_id, String user_id, Map<String, String> userData) throws DataStoreException;

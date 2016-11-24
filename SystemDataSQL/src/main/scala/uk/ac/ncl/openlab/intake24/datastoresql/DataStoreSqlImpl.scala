@@ -35,11 +35,29 @@ import com.google.inject.name.Named
 import javax.sql.DataSource
 import scala.util.Random
 import org.postgresql.util.PSQLException
+import uk.ac.ncl.openlab.intake24.systemsql.admin.UserAdminImpl
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.SecureUserRecord
 
 @Singleton
 class DataStoreSqlImpl @Inject() (@Named("intake24_system") dataSource: DataSource) extends DataStoreScala {
-
+  
   val logger = LoggerFactory.getLogger(classOf[DataStoreSqlImpl])
+
+  val userAdminImpl = new UserAdminImpl(dataSource)
+
+  def setUserData(survey_id: String, user_id: String, userData: Map[String, String]) = userAdminImpl.updateCustomUserData(survey_id, user_id, userData).right.get
+
+  def getUserData(survey_id: String, user_id: String): Map[String, String] = userAdminImpl.getCustomUserData(survey_id, user_id).right.get
+
+  def saveUsers(survey_id: String, users: Seq[SecureUserRecord]) = userAdminImpl.createOrUpdateUsers(survey_id, users).right.get
+  
+  def addUser(survey_id: String, user: SecureUserRecord) = userAdminImpl.createUser(survey_id, user).right.get
+
+  def getUserRecord(survey_id: String, username: String): Option[SecureUserRecord] = userAdminImpl.getUserById(survey_id, username).right.toOption
+
+  def getUserRecords(survey_id: String, role: String): Seq[SecureUserRecord] = userAdminImpl.getUsersByRole(survey_id, role).right.get
+
+  def getUserRecords(survey_id: String): Seq[SecureUserRecord] = userAdminImpl.getAllUsersInSurvey(survey_id).right.get
 
   def tryWithConnection[T](block: Connection => T) = {
     val conn = dataSource.getConnection()
@@ -63,163 +81,6 @@ class DataStoreSqlImpl @Inject() (@Named("intake24_system") dataSource: DataSour
   def getSurveyNames() = tryWithConnection {
     implicit conn =>
       SQL("SELECT id FROM surveys WHERE id <> ''").executeQuery().as(SqlParser.str("id").*)
-  }
-
-  def deleteUsers(survey_id: String, role: String) = tryWithConnection {
-    implicit conn => SQL(Queries.usersDeleteByRole).on('role -> role, 'survey_id -> survey_id).execute()
-  }
-
-  private case class UserDataRow(name: String, value: String)
-
-  def getUserData(survey_id: String, user_id: String): Map[String, String] = tryWithConnection {
-    implicit conn =>
-      val parser = Macro.namedParser[UserDataRow]
-      val rows = SQL(Queries.userCustomFieldsSelectByUser)
-        .on('survey_id -> survey_id, 'user_id -> user_id)
-        .executeQuery().as(parser.*).map(row => (row.name, row.value)).toMap
-      rows
-  }
-
-  def setUserData(survey_id: String, user_id: String, userData: Map[String, String]) = tryWithConnection {
-    implicit conn =>
-
-      conn.setAutoCommit(false)
-      SQL(Queries.userCustomFieldsDelete).on('survey_id -> survey_id, 'user_id -> user_id).executeQuery()
-
-      val insertParams = userData.map {
-        case (name, value) => Seq[NamedParameter]('survey_id -> survey_id, 'user_id -> user_id, 'name -> name, 'value -> value)
-      }.toSeq
-
-      if (!insertParams.isEmpty)
-
-        try {
-          BatchSql(Queries.userCustomFieldsInsert, insertParams).execute()
-        } catch {
-          case e: java.sql.BatchUpdateException => throw e.getNextException
-        }
-
-      conn.commit()
-  }
-
-  def saveUsers(survey_id: String, users: Seq[SecureUserRecord]): Unit = tryWithConnection {
-    implicit conn =>
-      conn.setAutoCommit(false)
-      Queries.batchUserInsert(survey_id, users)
-      conn.commit()
-  }
-
-  def addUser(survey_id: String, userRecord: SecureUserRecord): Unit = tryWithConnection {
-    implicit conn =>
-      conn.setAutoCommit(false)
-      SQL(Queries.usersInsert)
-        .on(
-          'id -> userRecord.username,
-          'survey_id -> survey_id,
-          'password_hash -> userRecord.passwordHashBase64,
-          'password_salt -> userRecord.passwordSaltBase64,
-          'password_hasher -> userRecord.passwordHasher)
-        .execute()
-
-      try {
-        val roleParams = userRecord.roles.map(role => Seq[NamedParameter]('survey_id -> survey_id, 'user_id -> userRecord.username, 'role -> role)).toSeq
-
-        if (!roleParams.isEmpty)
-          BatchSql(Queries.userRolesInsert, roleParams).execute()
-
-        val permissionParams = userRecord.permissions.map(permission => Seq[NamedParameter]('survey_id -> survey_id, 'user_id -> userRecord.username, 'permission -> permission)).toSeq
-
-        if (!permissionParams.isEmpty)
-          BatchSql(Queries.userPermissionsInsert, permissionParams).execute()
-
-        val userCustomFieldParams = userRecord.customFields.toSeq.map {
-          case (name, value) => Seq[NamedParameter]('survey_id -> survey_id, 'user_id -> userRecord.username, 'name -> name, 'value -> value)
-        }
-
-        if (!userCustomFieldParams.isEmpty)
-          BatchSql(Queries.userCustomFieldsInsert, userCustomFieldParams).execute()
-      } catch {
-        case e: java.sql.BatchUpdateException => throw e.getNextException
-      }
-
-      conn.commit()
-  }
-
-  private case class ShortUserRecordRow(password_hash: String, password_salt: String, password_hasher: String)
-
-  def getUserRecord(survey_id: String, username: String): Option[SecureUserRecord] = tryWithConnection {
-    implicit conn =>
-      SQL(Queries.userSelect)
-        .on('survey_id -> survey_id, 'user_id -> username).executeQuery()
-        .as(Macro.namedParser[ShortUserRecordRow].singleOpt)
-        .map {
-          row =>
-            val roles = SQL(Queries.userRolesSelectByUser).on('survey_id -> survey_id, 'user_id -> username).as(SqlParser.str("role").*)
-            val permissions = SQL(Queries.userPermissionsSelectByUser).on('survey_id -> survey_id, 'user_id -> username).as(SqlParser.str("permission").*)
-            val custom_fields = SQL(Queries.userCustomFieldsSelectByUser).on('survey_id -> survey_id, 'user_id -> username).as((SqlParser.str("name") ~ SqlParser.str("permission")).*).map {
-              case name ~ value => (name, value)
-            }.toMap
-
-            SecureUserRecord(username, row.password_hash, row.password_salt, row.password_hasher, roles.toSet, permissions.toSet, custom_fields)
-        }
-  }
-
-  private case class UserRecordRow(survey_id: String, user_id: String, password_hash: String, password_salt: String, password_hasher: String)
-
-  private case class RoleRecordRow(survey_id: String, user_id: String, role: String)
-
-  private case class PermissionRecordRow(survey_id: String, user_id: String, permission: String)
-
-  private case class CustomFieldRecordRow(survey_id: String, user_id: String, name: String, value: String)
-
-  @tailrec
-  private def buildUserRecords(
-    userRows: List[UserRecordRow],
-    roleRows: List[RoleRecordRow],
-    permRows: List[PermissionRecordRow],
-    customFieldRows: List[CustomFieldRecordRow],
-    result: List[SecureUserRecord] = List()): List[SecureUserRecord] = userRows match {
-    case Nil => result.reverse
-    case curUserRow :: restOfUserRows =>
-      {
-        val (curUserRoleRows, restOfRoleRows) = roleRows.span(r => (r.survey_id == curUserRow.survey_id && r.user_id == curUserRow.user_id))
-        val (curUserPermRows, restOfPermRows) = permRows.span(r => (r.survey_id == curUserRow.survey_id && r.user_id == curUserRow.user_id))
-        val (curUserFieldRows, restOfFieldRows) = customFieldRows.span(r => (r.survey_id == curUserRow.survey_id && r.user_id == curUserRow.user_id))
-
-        val curUserRoles = curUserRoleRows.map(_.role)
-        val curUserPerms = curUserPermRows.map(_.permission)
-        val curUserFields = curUserFieldRows.map(f => (f.name, f.value)).toMap
-
-        val record = SecureUserRecord(curUserRow.user_id, curUserRow.password_hash, curUserRow.password_salt,
-          curUserRow.password_hasher, curUserRoles.toSet, curUserPerms.toSet, curUserFields)
-
-        buildUserRecords(restOfUserRows, restOfRoleRows, restOfPermRows, restOfFieldRows, record +: result)
-      }
-  }
-
-  def getUserRecords(survey_id: String, role: String): Seq[SecureUserRecord] = tryWithConnection {
-    implicit conn =>
-      val userRows = SQL(Queries.usersSelectByRole).on('survey_id -> survey_id, 'role -> role).executeQuery().as(Macro.namedParser[UserRecordRow].*)
-
-      val roleRows = SQL(Queries.userRolesSelectByRole).on('survey_id -> survey_id, 'role -> role).executeQuery().as(Macro.namedParser[RoleRecordRow].*)
-
-      val permRows = SQL(Queries.userPermissionsSelectByRole).on('survey_id -> survey_id, 'role -> role).executeQuery().as(Macro.namedParser[PermissionRecordRow].*)
-
-      val customFieldRows = SQL(Queries.userCustomFieldsSelectByRole).on('survey_id -> survey_id, 'role -> role).executeQuery().as(Macro.namedParser[CustomFieldRecordRow].*)
-
-      buildUserRecords(userRows, roleRows, permRows, customFieldRows)
-  }
-
-  def getUserRecords(survey_id: String): Seq[SecureUserRecord] = tryWithConnection {
-    implicit conn =>
-      val userRows = SQL(Queries.usersSelectBySurvey).on('survey_id -> survey_id).executeQuery().as(Macro.namedParser[UserRecordRow].*)
-
-      val roleRows = SQL(Queries.userRolesSelectBySurvey).on('survey_id -> survey_id).executeQuery().as(Macro.namedParser[RoleRecordRow].*)
-
-      val permRows = SQL(Queries.userPermissionsSelectBySurvey).on('survey_id -> survey_id).executeQuery().as(Macro.namedParser[PermissionRecordRow].*)
-
-      val customFieldRows = SQL(Queries.userCustomFieldsSelectBySurvey).on('survey_id -> survey_id).executeQuery().as(Macro.namedParser[CustomFieldRecordRow].*)
-
-      buildUserRecords(userRows, roleRows, permRows, customFieldRows)
   }
 
   def saveSurvey(survey_id: String, username: String, survey: NutritionMappedSurveyRecord): Unit = tryWithConnection {
