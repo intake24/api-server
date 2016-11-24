@@ -91,16 +91,6 @@ public class SurveyProcessingServiceImpl extends RemoteServiceServlet implements
 			SurveyParameters surveyParameters = dataStore.getSurveyParameters(userId.survey);
 			NutritionMappedSurvey nutritionMappedSurvey = nutrientMapper.map(survey, surveyParameters.locale);
 			
-			for (NutritionMappedMeal m: nutritionMappedSurvey.meals){
-			  for (NutritionMappedFood f: m.foods) {
-			    System.out.println("Food name: " + f.englishDescription);
-			    for (Entry<Long, Double> e: f.nutrients.entrySet()) {
-			      System.out.print(String.format("%d: %.2f", e.getKey(), e.getValue()));
-			    }
-			  }
-			}
-			  
-
 			log.debug("Storing to database");
 			
 			Option<SecureUserRecord> userRecord = dataStore.getUserRecord(userId.survey, userId.username);		

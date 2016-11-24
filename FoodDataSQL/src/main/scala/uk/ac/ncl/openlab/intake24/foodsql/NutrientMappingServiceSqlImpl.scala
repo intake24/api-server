@@ -48,8 +48,9 @@ class NutrientMappingServiceSqlImpl @Inject() (@Named("intake24_foods") val data
         val rows = SQL("SELECT nutrient_type_id, units_per_100g FROM nutrient_table_records_nutrients WHERE nutrient_table_record_id={record_id} and nutrient_table_id={table_id}")
           .on('record_id -> record_id, 'table_id -> table_id)
           .as(Macro.namedParser[NutrientsRow].*)
+
           val result = rows.map(row => (row.nutrient_type_id -> (weight * row.units_per_100g / 100.0))).toMap
-          println(s"Nutrients for $table_id/$record_id: ${result.toString()}")
+
         Right(result)
       }
   }
