@@ -99,19 +99,22 @@ class UserAdminImpl @Inject() (@Named("intake24_foods") val dataSource: DataSour
               'password_hasher -> record.passwordHasher)
         }
 
-        SQL("INSERT INTO users VALUES ({id}, {survey_id}, {password_hash}, {password_salt}, {password_hasher}) ON CONFLICT UPDATE").execute()
+        if (userParams.nonEmpty) {
+          BatchSql("INSERT INTO users VALUES ({id}, {survey_id}, {password_hash}, {password_salt}, {password_hasher}) ON CONFLICT ON CONSTRAINT users_id_pk DO UPDATE SET password_hash={password_hash},password_salt={password_salt},password_hasher={password_hasher}", userParams.head, userParams.tail: _*).execute()
 
-        for (
-          _ <- updateUserRolesQuery(surveyId, userRecords.foldLeft(Map[String, Set[String]]()) {
-            case (acc, record) => acc + (record.username -> record.roles)
-          }).right;
-          _ <- updateUserPermissionsQuery(surveyId, userRecords.foldLeft(Map[String, Set[String]]()) {
-            case (acc, record) => acc + (record.username -> record.permissions)
-          }).right;
-          _ <- updateUserCustomDataQuery(surveyId, userRecords.foldLeft(Map[String, Map[String, String]]()) {
-            case (acc, record) => acc + (record.username -> record.customFields)
-          }).right
-        ) yield ()
+          for (
+            _ <- updateUserRolesQuery(surveyId, userRecords.foldLeft(Map[String, Set[String]]()) {
+              case (acc, record) => acc + (record.username -> record.roles)
+            }).right;
+            _ <- updateUserPermissionsQuery(surveyId, userRecords.foldLeft(Map[String, Set[String]]()) {
+              case (acc, record) => acc + (record.username -> record.permissions)
+            }).right;
+            _ <- updateUserCustomDataQuery(surveyId, userRecords.foldLeft(Map[String, Map[String, String]]()) {
+              case (acc, record) => acc + (record.username -> record.customFields)
+            }).right
+          ) yield ()
+        } else
+          Right(())
       }
   }
 
@@ -144,7 +147,7 @@ class UserAdminImpl @Inject() (@Named("intake24_foods") val dataSource: DataSour
 
       withTransaction {
         val surveyExists = SQL("SELECT 1 FROM surveys WHERE id={survey_id}").on('survey_id -> surveyId).executeQuery().as(SqlParser.long(1).singleOpt).nonEmpty
-        val userExists = SQL("SELECT 1 FROM users WHERE id={user_id} AND survey_id={survey_id}").on('survey_id -> surveyId).executeQuery().as(SqlParser.long(1).singleOpt).nonEmpty
+        val userExists = SQL("SELECT 1 FROM users WHERE id={user_id} AND survey_id={survey_id}").on('user_id -> userId, 'survey_id -> surveyId).executeQuery().as(SqlParser.long(1).singleOpt).nonEmpty
 
         if (!surveyExists)
           Left(RecordNotFound(new RuntimeException(s"Survey $surveyId does not exist")))
@@ -164,7 +167,7 @@ class UserAdminImpl @Inject() (@Named("intake24_foods") val dataSource: DataSour
     implicit conn =>
       withTransaction {
         val surveyExists = SQL("SELECT 1 FROM surveys WHERE id={survey_id}").on('survey_id -> surveyId).executeQuery().as(SqlParser.long(1).singleOpt).nonEmpty
-        val userExists = SQL("SELECT 1 FROM users WHERE id={user_id} AND survey_id={survey_id}").on('survey_id -> surveyId).executeQuery().as(SqlParser.long(1).singleOpt).nonEmpty
+        val userExists = SQL("SELECT 1 FROM users WHERE id={user_id} AND survey_id={survey_id}").on('user_id -> userId, 'survey_id -> surveyId).executeQuery().as(SqlParser.long(1).singleOpt).nonEmpty
 
         if (!surveyExists)
           Left(ParentRecordNotFound(new RuntimeException(s"Survey $surveyId does not exist")))
