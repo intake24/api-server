@@ -56,12 +56,6 @@ public class UserInfoUpload extends Composite {
 		final FileUpload upload = new FileUpload();
 		upload.setName("file");
 		panel.add(upload);
-		
-		final HTMLPanel warning = new HTMLPanel("<p>WARNING: re-uploading respondent records will currently cause <em>all existing survey submissions to be deleted!</em></p><p>Please only use this feature at the beggining of the survey.</p><p>We are working to resolve this issue.</p>");
-		
-		warning.getElement().getStyle().setColor("#d00");
-		
-		panel.add(warning);
 
 		Button uploadButton = WidgetFactory.createButton("Upload", new ClickHandler() {
 			@Override
