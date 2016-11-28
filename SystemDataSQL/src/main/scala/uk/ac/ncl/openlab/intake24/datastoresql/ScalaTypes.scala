@@ -18,8 +18,6 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.datastoresql
 
-case class SecureUserRecord(username: String, passwordHashBase64: String, passwordSaltBase64: String, passwordHasher: String, roles: Set[String], permissions: Set[String], customFields: Map[String, String])
-
 case class MealTime(hours: Int, minutes: Int)
 
 case class CompletedPortionSize(scriptName: String, data: Map[String, String])

@@ -37,7 +37,7 @@ import javax.servlet.http.HttpServletResponse;
 import com.google.inject.Injector;
 
 import net.scran24.datastore.DataStore;
-import uk.ac.ncl.openlab.intake24.system.output.CSVOutput;
+import uk.ac.ncl.openlab.intake24.services.output.CSVOutput;
 
 public class DownloadSurveyDataService extends HttpServlet {
 	private static final long serialVersionUID = -68146683997014578L;

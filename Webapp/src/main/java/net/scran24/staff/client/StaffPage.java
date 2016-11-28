@@ -299,10 +299,10 @@ public class StaffPage implements EntryPoint {
 
 	private void updateUsers() {
 		content.clear();
-		content.add(new HTMLPanel("<h1>Update user information</h1>"));
+		content.add(new HTMLPanel("<h2>Upload participant accounts from CSV</h2>"));
 		content
 				.add(new HTMLPanel(
-						"<p>Note that the user data that you upload will <strong>overwrite</strong> the existing data.</p><p>If you would like to add new users, make sure that the .csv file you upload also contains records for all previously existing users.</p>"));
+						"<p><strong>Note:</strong> participant records from CSV files you upload using this page will be appended to the existing user list, which means that you can only add new accounts or update the passwords and custom fields for existing participants.</p><p>You <strong>cannot delete</strong> participant accounts from this page; if you need to delete existing participants please contact support.</p>"));
 
 		final FlowPanel messageDiv = new FlowPanel();
 
@@ -449,7 +449,7 @@ public class StaffPage implements EntryPoint {
 					}
 				});
 
-				final Anchor updateUsers = new Anchor("Update users");
+				final Anchor updateUsers = new Anchor("Create participant accounts");
 				updateUsers.addClickHandler(new ClickHandler() {
 					@Override
 					public void onClick(ClickEvent event) {

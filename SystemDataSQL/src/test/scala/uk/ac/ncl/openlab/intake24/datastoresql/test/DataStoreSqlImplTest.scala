@@ -36,11 +36,12 @@ import uk.ac.ncl.openlab.intake24.datastoresql.NutritionMappedSurveyRecord
 import uk.ac.ncl.openlab.intake24.datastoresql.MealTime
 import net.scran24.datastore.shared.SurveyState
 import uk.ac.ncl.openlab.intake24.datastoresql.SurveyParameters
-import uk.ac.ncl.openlab.intake24.datastoresql.SecureUserRecord
+
 import net.scran24.datastore.DataStoreException
 import uk.ac.ncl.openlab.intake24.datastoresql.NutritionMappedSurveyRecordWithId
 import java.sql.DriverManager
 import org.postgresql.ds.PGSimpleDataSource
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.SecureUserRecord
 
 class DataStoreSqlImplTest extends FunSuite with TestDB {
 

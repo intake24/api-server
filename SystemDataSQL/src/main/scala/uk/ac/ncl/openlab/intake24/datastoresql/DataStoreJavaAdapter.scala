@@ -55,9 +55,6 @@ class DataStoreJavaAdapter @Inject() (scalaImpl: DataStoreScala) extends DataSto
   def initSurvey(survey_id: String, scheme_name: String, locale: String, allowGenUsers: Boolean, surveyMonkeyUrl: JOpt[String]): Unit =
     scalaImpl.initSurvey(survey_id, scheme_name, locale, allowGenUsers, jopt2option(surveyMonkeyUrl))
 
-  def deleteUsers(survey_id: String, role: String): Unit =
-    scalaImpl.deleteUsers(overrideAdminSurveyId(survey_id), role)
-
   def getUserData(survey_id: String, user_id: String): JMap[String, String] = {
     copyToJavaMap(scalaImpl.getUserData(overrideAdminSurveyId(survey_id), user_id))
   }

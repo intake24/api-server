@@ -31,6 +31,7 @@ import net.scran24.datastore.{
 import scala.collection.JavaConversions._
 import net.scran24.datastore.shared.{ Time => JavaMealTime, CompletedPortionSize => JavaCompletedPortionSize, SurveyParameters => JavaSurveyParameters }
 import net.scran24.datastore.shared.SurveyState
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.SecureUserRecord
 
 // This code handles the conversion between Scala and Java datastore types.
 // It is required because automatic wrapping of Scala types with Java interfaces breaks 

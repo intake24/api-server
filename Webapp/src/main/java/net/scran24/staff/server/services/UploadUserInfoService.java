@@ -130,8 +130,6 @@ public class UploadUserInfoService extends HttpServlet {
 				List<UserRecord> userRecords = UserRecordCSV.fromCSV(file);
 
 				try {
-					dataStore.deleteUsers(surveyId, role);
-
 					Set<String> roles = new HashSet<String>();
 					roles.add(role);
 

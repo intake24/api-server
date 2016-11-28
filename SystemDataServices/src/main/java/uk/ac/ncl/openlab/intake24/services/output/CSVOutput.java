@@ -1,4 +1,4 @@
-package uk.ac.ncl.openlab.intake24.system.output;
+package uk.ac.ncl.openlab.intake24.services.output;
 
 import java.io.IOException;
 import java.io.OutputStream;
