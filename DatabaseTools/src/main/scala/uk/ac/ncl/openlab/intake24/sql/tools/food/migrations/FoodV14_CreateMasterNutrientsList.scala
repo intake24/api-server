@@ -5,13 +5,13 @@ import java.io.FileReader
 import anorm.{BatchSql, NamedParameter, SqlParser, ~, _}
 import au.com.bytecode.opencsv.CSVReader
 import org.rogach.scallop.ScallopConf
-import uk.ac.ncl.openlab.intake24.sql.tools.MigrationAppOptions
-import uk.ac.ncl.openlab.intake24.sql.tools.food.localisation.MigrationRunner
+import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConfigurationOptions, MigrationRunner}
+
 import scala.collection.JavaConverters._
 
 object FoodV14_CreateMasterNutrientsList extends App with MigrationRunner {
 
-  val options = new ScallopConf(args) with MigrationAppOptions {
+  val options = new ScallopConf(args) with DatabaseConfigurationOptions {
     val nutrientsList = opt[String](required = true)
   }
 

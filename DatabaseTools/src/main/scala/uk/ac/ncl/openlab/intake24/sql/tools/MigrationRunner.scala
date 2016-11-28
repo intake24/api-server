@@ -1,12 +1,12 @@
-package uk.ac.ncl.openlab.intake24.sql.tools.food.localisation
+package uk.ac.ncl.openlab.intake24.sql.tools
 
 import anorm.{SqlParser, _}
-import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConfigChooser, DatabaseConnection, MigrationAppOptions}
 
 trait MigrationRunner extends DatabaseConnection {
 
-  def runMigration(versionFrom: Long, versionTo: Long, options: MigrationAppOptions)(block: java.sql.Connection => Unit): Unit = {
-    val dataSource = getDataSource(DatabaseConfigChooser.chooseDatabaseConfiguration(options.dbConfigDir()))
+  def runMigration(versionFrom: Long, versionTo: Long, options: DatabaseConfigurationOptions)(block: java.sql.Connection => Unit): Unit = {
+    val dbConfig = chooseDatabaseConfiguration(options)
+    val dataSource = getDataSource(dbConfig)
     implicit val connection = dataSource.getConnection
 
     try {

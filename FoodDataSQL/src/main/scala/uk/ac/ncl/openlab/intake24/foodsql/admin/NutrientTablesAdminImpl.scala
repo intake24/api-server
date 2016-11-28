@@ -1,27 +1,25 @@
 package uk.ac.ncl.openlab.intake24.foodsql.admin
 
 import uk.ac.ncl.openlab.intake24.NutrientTable
-import anorm.SQL
-import anorm.Macro
-import anorm.sqlToSimple
-
+import anorm.{BatchSql, Macro, NamedParameter, SQL, sqlToSimple}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.NutrientTablesAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.NutrientTableRecord
-import anorm.NamedParameter
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import javax.sql.DataSource
+
 import com.google.inject.name.Named
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
 import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
 
 @Singleton
-class NutrientTablesAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends NutrientTablesAdminImpl
+class NutrientTablesAdminStandaloneImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends NutrientTablesAdminImpl
 
 trait NutrientTablesAdminImpl extends NutrientTablesAdminService with FoodDataSqlService {
+
   private case class NutrientTableDescRow(id: String, description: String) {
     def asNutrientTable = NutrientTable(id, description)
   }
@@ -76,39 +74,64 @@ trait NutrientTablesAdminImpl extends NutrientTablesAdminService with FoodDataSq
       else
         Right(())
   }
-  
+
   def deleteAllNutrientTables(): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
       SQL("DELETE FROM nutrient_tables").execute()
       Right(())
   }
 
+  private val nutrientsInsertQuery = "INSERT INTO nutrient_table_records_nutrients VALUES({record_id},{nutrient_table_id},{nutrient_type_id},{units_per_100g})"
+
   def createNutrientTableRecords(records: Seq[NutrientTableRecord]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
 
-      conn.setAutoCommit(false)
+      withTransaction {
+        val recordQuery = """INSERT INTO nutrient_table_records VALUES({id},{nutrient_table_id})"""
 
-      val recordQuery = """INSERT INTO nutrient_table_records VALUES({id},{nutrient_table_id})"""
+        val recordParams =
+          records.map(r => Seq[NamedParameter]('id -> r.record_id, 'nutrient_table_id -> r.table_id))
 
-      val recordParams =
-        records.map(r => Seq[NamedParameter]('id -> r.record_id, 'nutrient_table_id -> r.table_id))
+        val nutrientParams =
+          records.flatMap {
+            record =>
+              record.nutrients.map {
+                case (nutrientType, unitsPer100g) =>
+                  Seq[NamedParameter]('record_id -> record.record_id, 'nutrient_table_id -> record.table_id, 'nutrient_type_id -> nutrientType, 'units_per_100g -> unitsPer100g)
+              }
+          }
 
-      val nutrientsQuery = """INSERT INTO nutrient_table_records_nutrients VALUES({record_id},{nutrient_table_id},{nutrient_type_id},{units_per_100g})"""
+        batchSql(recordQuery, recordParams).execute()
+        batchSql(nutrientsInsertQuery, nutrientParams).execute()
 
-      val nutrientParams =
-        records.flatMap {
-          record =>
-            record.nutrients.map {
-              case (nutrientType, unitsPer100g) =>
-                Seq[NamedParameter]('record_id -> record.record_id, 'nutrient_table_id -> record.table_id, 'nutrient_type_id -> nutrientType, 'units_per_100g -> unitsPer100g)
-            }
+        Right(())
+      }
+  }
+
+  def updateNutrientTableRecords(records: Seq[NutrientTableRecord]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
+    implicit conn =>
+      withTransaction {
+        if (records.nonEmpty) {
+          val deleteParams = records.map {
+            record =>
+              Seq[NamedParameter]('table_id -> record.table_id, 'record_id -> record.record_id)
+          }
+
+          BatchSql("DELETE FROM nutrient_table_records_nutrients WHERE nutrient_table_id={table_id} AND nutrient_table_record_id={record_id}", deleteParams.head, deleteParams.tail: _*).execute()
+
+          val insertParams = records.flatMap {
+            record =>
+              record.nutrients.map {
+                case (nutrientType, unitsPer100g) =>
+                  Seq[NamedParameter]('record_id -> record.record_id, 'nutrient_table_id -> record.table_id, 'nutrient_type_id -> nutrientType, 'units_per_100g -> unitsPer100g)
+              }
+          }
+
+          BatchSql(nutrientsInsertQuery, insertParams.head, insertParams.tail: _*).execute()
+
         }
 
-      batchSql(recordQuery, recordParams).execute()
-      batchSql(nutrientsQuery, nutrientParams).execute()
-
-      conn.commit()
-
-      Right(())
+        Right(())
+      }
   }
 }

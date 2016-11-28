@@ -7,13 +7,13 @@ import org.rogach.scallop.ScallopConf
 
 import scala.collection.JavaConverters._
 
-object NZCsvMapping extends App {
+abstract class GenerateCsvMappingFromMasterList(rowOffset: Int) extends App {
 
   val options = new ScallopConf(args) {
     val nutrientsList = opt[String](required = true)
   }
 
-  private case class Row(index: Long, description: String, unit: String, ukCol: String)
+  private case class Row(index: Long, description: String, unit: String, col: String)
 
   options.verify()
 
@@ -27,16 +27,14 @@ object NZCsvMapping extends App {
 
   val nutrientNames = lines(0).tail.map(_.trim())
   val units = lines(1).tail.map(_.trim())
-  val nzColNames = lines(4).tail.map(_.trim())
+  val localColNames = lines(rowOffset).tail.map(_.trim())
 
-  private val rows = nutrientNames.zip(nzColNames).zip(units).zipWithIndex.map {
-    case (((desc, ukCol), unit), index) => Row(index + 1, desc, unit, ukCol)
+  private val rows = nutrientNames.zip(localColNames).zip(units).zipWithIndex.map {
+    case (((desc, col), unit), index) => Row(index + 1, desc, unit, col)
   }
 
-  rows.filterNot(_.ukCol.isEmpty).foreach {
+  rows.filterNot(_.col.isEmpty).foreach {
     row =>
-      println(s"""${row.index}l -> col("${row.ukCol}"),""")
+      println(s"""${row.index}l -> col("${row.col}"),""")
   }
-
-
 }

@@ -52,7 +52,10 @@ object CsvNutrientTableParser {
               acc + (nutrientId -> row(colNum - 1).toDouble)
           } catch {
             case e: Throwable => {
-              log.warn("Failed to read nutrient type " + nutrientId.toString + " in row " + rowIndex + ", assuming data N/A")
+              if (nutrientId == 1l)
+                log.error(s"Failed to read energy (kcal) in row $rowIndex! This is an essential nutrient column, please check the source table for errors.")
+              else
+                log.warn("Failed to read nutrient type " + nutrientId.toString + " in row " + rowIndex + ", assuming data N/A")
               acc
             }
           }
