@@ -78,9 +78,7 @@ public class NutrientMapper {
     // (in random order) will be used
 
     scala.Option<Tuple2<String, String>> tableCode = foodData.nutrientTableCodes().headOption();
-    
-    System.out.println("Mapping " + food.code);
-    
+
     if (tableCode.isEmpty())
       throw new RuntimeException(
           String.format("Food %s (%s) has no nutrient table codes", foodData.localDescription(), foodData.code()));
@@ -91,10 +89,6 @@ public class NutrientMapper {
       Map<Long, Double> nutrients = nutrientMappingService
         .javaNutrientsFor(nutrientTableId, nutrientTableRecordId, weight).right().get();
       
-      for (Entry<Long, Double> e: nutrients.entrySet()) {
-        System.out.println(String.format("Nurient %d = %.2f", e.getKey(), e.getValue()));
-      }
-
       final FoodGroupRecord foodGroup = adminDataService.getFoodGroup(foodData.groupCode(), locale).right().get();
 
       final boolean reasonableAmount = (weight <= foodData.reasonableAmount());
