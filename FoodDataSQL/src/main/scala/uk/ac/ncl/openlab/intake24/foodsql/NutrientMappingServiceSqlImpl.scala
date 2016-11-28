@@ -1,23 +1,23 @@
 package uk.ac.ncl.openlab.intake24.foodsql
 
+import scala.Left
+import scala.Right
+
 import com.google.inject.Inject
-import com.google.inject.name.Named
 import com.google.inject.Singleton
+import com.google.inject.name.Named
 
 import anorm.Macro
+import anorm.NamedParameter.symbol
 import anorm.SQL
+import anorm.SqlParser
 import anorm.sqlToSimple
 import javax.sql.DataSource
-
-import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientDescription
-import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService
-
-import org.postgresql.util.PSQLException
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.NutrientMappingError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
-import anorm.SqlParser
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
+import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientDescription
+import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService
 
 @Singleton
 class NutrientMappingServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends NutrientMappingService with FoodDataSqlService {
@@ -49,7 +49,9 @@ class NutrientMappingServiceSqlImpl @Inject() (@Named("intake24_foods") val data
           .on('record_id -> record_id, 'table_id -> table_id)
           .as(Macro.namedParser[NutrientsRow].*)
 
-        Right(rows.map(row => (row.nutrient_type_id -> (weight * row.units_per_100g / 100.0))).toMap)
+          val result = rows.map(row => (row.nutrient_type_id -> (weight * row.units_per_100g / 100.0))).toMap
+
+        Right(result)
       }
   }
 

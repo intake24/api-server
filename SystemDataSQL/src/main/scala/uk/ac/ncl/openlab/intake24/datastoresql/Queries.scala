@@ -25,61 +25,6 @@ import scala.collection.JavaConversions._
 
 object Queries {
 
-  val usersInsert = """INSERT INTO users VALUES ({id}, {survey_id}, {password_hash}, {password_salt}, {password_hasher})"""
-
-  val usersSelectBySurvey = """SELECT id as user_id, survey_id, password_hash, password_salt, password_hasher FROM users WHERE survey_id = {survey_id} ORDER BY (survey_id, id)"""
-
-  val usersSelectByRole =
-    """|SELECT users.survey_id as survey_id, users.id as user_id, password_hash, password_salt, password_hasher FROM users 
-       |JOIN user_roles 
-       |ON (users.survey_id = user_roles.survey_id AND users.id = user_roles.user_id) 
-       |WHERE (role = {role} AND users.survey_id = {survey_id})
-       |ORDER BY (users.survey_id, users.id)""".stripMargin
-
-  val userSelect = """SELECT password_hash, password_salt, password_hasher FROM users WHERE (survey_id={survey_id} AND id={user_id})"""
-
-  val usersDeleteByRole = """DELETE FROM users WHERE id IN (SELECT user_id FROM user_roles WHERE role = {role}) AND survey_id = {survey_id}"""
-
-  val userRolesInsert = """INSERT INTO user_roles VALUES (DEFAULT, {survey_id}, {user_id}, {role})"""
-
-  val userRolesSelectByUser = """SELECT role FROM user_roles WHERE (survey_id={survey_id} AND user_id={user_id})"""
-
-  val userRolesSelectBySurvey = """SELECT survey_id, user_id, role FROM user_roles WHERE survey_id = {survey_id} ORDER BY (survey_id, user_id)"""
-
-  val userRolesSelectByRole =
-    """|SELECT r2.survey_id, r2.user_id, r2.role FROM user_roles r1
-       |JOIN user_roles r2
-       |ON  (r1.survey_id = r2.survey_id AND r1.user_id = r2.user_id)
-       |WHERE (r1.role = {role} AND r1.survey_id = {survey_id})
-       |ORDER BY (r2.survey_id, r2.user_id)""".stripMargin
-
-  val userPermissionsInsert = """INSERT INTO user_permissions VALUES (DEFAULT, {survey_id}, {user_id}, {permission})"""
-
-  val userPermissionsSelectByUser = """SELECT permission FROM user_permissions WHERE (survey_id={survey_id} AND user_id={user_id})"""
-
-  val userPermissionsSelectBySurvey = """SELECT survey_id, user_id, permission FROM user_permissions WHERE survey_id = {survey_id} ORDER BY (survey_id, user_id)"""
-
-  val userPermissionsSelectByRole =
-    """|SELECT 
-       |r.survey_id as survey_id, r.user_id as user_id, permission 
-       |FROM user_roles r
-       |JOIN user_permissions p
-       |ON (r.survey_id = p.survey_id AND r.user_id = p.user_id)
-       |WHERE (role = {role} AND r.survey_id = {survey_id})
-       |ORDER BY (r.survey_id, r.user_id)""".stripMargin
-
-  val userCustomFieldsInsert = """INSERT INTO user_custom_fields VALUES (DEFAULT, {survey_id}, {user_id}, {name}, {value})"""
-
-  val userCustomFieldsSelectByUser = """SELECT name, value FROM user_custom_fields WHERE (user_id={user_id} AND survey_id={survey_id})"""
-
-  val userCustomFieldsSelectBySurvey = """SELECT survey_id, user_id, name, value FROM user_custom_fields WHERE survey_id = {survey_id} ORDER BY (survey_id, user_id)"""
-
-  val userCustomFieldsSelectByRole =
-    """|SELECT r.survey_id as survey_id, r.user_id as user_id, name, value 
-       |FROM user_roles r JOIN user_custom_fields f
-       |ON (r.survey_id = f.survey_id AND r.user_id = f.user_id)
-       |WHERE (role = 'staff' AND r.survey_id = 'demo')
-       |ORDER BY (r.survey_id, r.user_id)""".stripMargin
 
   val userCustomFieldsDelete = """DELETE from user_custom_fields WHERE survey_id = {survey_id} AND user_id = {user_id}"""
 
@@ -107,7 +52,7 @@ object Queries {
 
   val surveyFoodPortionSizeFieldsInsert = """INSERT INTO survey_submission_portion_size_fields VALUES (DEFAULT, {food_id}, {name}, {value})"""
 
-  val surveyFoodNutrientValuesInsert = """INSERT INTO survey_submission_nutrients VALUES (DEFAULT, {food_id}, {nutrient_type_id}, {value})"""
+  val surveyFoodNutrientValuesInsert = """INSERT INTO survey_submission_nutrients(id, food_id, nutrient_type_id, amount) VALUES (DEFAULT, {food_id}, {nutrient_type_id}, {value})"""
 
   val surveySubmissionsSelectByTime = """SELECT id, survey_id, user_id, start_time, end_time, log FROM survey_submissions WHERE survey_id={survey_id} AND start_time>{time_from} AND end_time<{time_to} ORDER BY end_time ASC"""
 
@@ -187,44 +132,4 @@ object Queries {
 
   val lastHelpRequestTimeSelect = """SELECT last_help_request_time FROM last_help_request_times WHERE survey_id = {survey_id} AND user_id = {user_id}"""
 
-  def batchUserInsert(survey_id: String, userRecords: Seq[SecureUserRecord])(implicit conn: Connection) = {
-    val userParams = userRecords.map {
-      userRecord =>
-        Seq[NamedParameter]('id -> userRecord.username, 'survey_id -> survey_id, 'password_hash -> userRecord.passwordHashBase64, 'password_salt -> userRecord.passwordSaltBase64,
-          'password_hasher -> userRecord.passwordHasher)
-    }
-
-    if (!userParams.isEmpty)
-      try {
-        BatchSql(Queries.usersInsert, userParams).execute()
-
-        val roleParams = userRecords.flatMap {
-          userRecord =>
-            userRecord.roles.map(role => Seq[NamedParameter]('survey_id -> survey_id, 'user_id -> userRecord.username, 'role -> role))
-        }
-
-        if (!roleParams.isEmpty)
-          BatchSql(Queries.userRolesInsert, roleParams).execute()
-
-        val permissionParams = userRecords.flatMap {
-          userRecord => userRecord.permissions.map(permission => Seq[NamedParameter]('survey_id -> survey_id, 'user_id -> userRecord.username, 'permission -> permission))
-        }
-
-        if (!permissionParams.isEmpty)
-          BatchSql(Queries.userPermissionsInsert, permissionParams).execute()
-
-        val userCustomFieldParams = userRecords.flatMap {
-          userRecord =>
-            userRecord.customFields.map {
-              case (name, value) => Seq[NamedParameter]('survey_id -> survey_id, 'user_id -> userRecord.username, 'name -> name, 'value -> value)
-            }
-        }
-
-        if (!userCustomFieldParams.isEmpty)
-          BatchSql(Queries.userCustomFieldsInsert, userCustomFieldParams).execute()
-
-      } catch {
-        case e: java.sql.BatchUpdateException => throw e.getNextException
-      }
-  }
 }
