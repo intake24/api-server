@@ -21,15 +21,17 @@ trait DatabaseOptions extends ScallopConf {
   def databaseConfig = DatabaseConfiguration(pgHost(), pgUseSsl(), pgDatabase(), pgUser(), pgPassword.get) 
 }
 
-trait MigrationAppOptions extends ScallopConf {
+trait DatabaseConfigurationOptions extends ScallopConf {
 
   val dbConfigDir = opt[String](required = true)
 }
 
 case class DatabaseConfiguration(host: String, useSsl: Boolean, database: String, user: String, password: Option[String])
 
-trait DatabaseConnection {  
-  
+trait DatabaseConnection {
+
+  def chooseDatabaseConfiguration(options: DatabaseConfigurationOptions) =DatabaseConfigChooser.chooseDatabaseConfiguration(options.dbConfigDir())
+
   def getDataSource(options: DatabaseOptions): DataSource = getDataSource(options.databaseConfig)
 
   def getDataSource(config: DatabaseConfiguration): DataSource = {
