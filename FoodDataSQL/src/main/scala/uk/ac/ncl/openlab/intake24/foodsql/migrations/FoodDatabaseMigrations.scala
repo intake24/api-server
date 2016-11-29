@@ -238,6 +238,51 @@ object FoodDatabaseMigrations {
       }
 
       override def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = Left(MigrationFailed(new Throwable("This migration cannot be unapplied")))
+    },
+
+    new Migration {
+      val versionFrom = 15l
+      val versionTo = 16l
+
+      val description = "Rename guide_image_weights to guide_image_objects"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("ALTER TABLE guide_image_weights RENAME TO guide_image_objects").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("ALTER TABLE guide_image_objects RENAME TO guide_image_weights").execute()
+        Right(())
+      }
+    },
+
+    new Migration {
+      val versionFrom = 16l
+      val versionTo = 17l
+
+      val description = "Add temporary nullable image_id and overlay_image_id columns to guide_images and guide_image_objects"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE guide_images ADD COLUMN image_id integer").execute()
+        SQL("ALTER TABLE guide_image_objects ADD COLUMN overlay_image_id integer").execute()
+
+        SQL("ALTER TABLE guide_images ADD CONSTRAINT guide_image_id_fk FOREIGN KEY(image_id) REFERENCES processed_images(id) ON UPDATE CASCADE ON DELETE RESTRICT").execute()
+        SQL("ALTER TABLE guide_image_objects ADD CONSTRAINT overlay_image_id_fk FOREIGN KEY(overlay_image_id) REFERENCES processed_images(id) ON UPDATE CASCADE ON DELETE RESTRICT").execute()
+
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("ALTER TABLE guide_images DROP COLUMN image_id").execute()
+        SQL("ALTER TABLE guide_image_objects DROP COLUMN overlay_image_id").execute()
+        SQL("ALTER TABLE guide_images DROP CONSTRAINT guide_image_id_fk").execute()
+        SQL("ALTER TABLE guide_image_objects DROP CONSTRAINT overlay_image_id_fk").execute()
+        Right(())
+      }
     }
 
   )

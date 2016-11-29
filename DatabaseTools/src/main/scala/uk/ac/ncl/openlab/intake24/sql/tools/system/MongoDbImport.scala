@@ -95,7 +95,8 @@ class MongoDbImporter(dbConn: Connection, mongoStore: MongoDbDataStore) {
     }
 
     if (!filteredUserRecords.isEmpty())
-      Queries.batchUserInsert(rename.getOrElse(survey_id), filteredUserRecords.map(fromJavaSecureUserRecord))
+      ???
+      //Queries.batchUserInsert(rename.getOrElse(survey_id), filteredUserRecords.map(fromJavaSecureUserRecord))
     else
       logger.info("Survey " + survey_id + " has no user records")
   }

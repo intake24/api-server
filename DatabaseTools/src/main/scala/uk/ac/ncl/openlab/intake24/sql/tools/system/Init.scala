@@ -20,35 +20,11 @@ package uk.ac.ncl.openlab.intake24.sql.tools.system
 
 import anorm._
 import org.rogach.scallop._
-import java.sql.DriverManager
-import scala.xml.XML
-import java.io.File
 import org.slf4j.LoggerFactory
-import scala.collection.mutable.ArrayBuffer
-import java.sql.Connection
-import scala.collection.JavaConversions._
-import java.sql.Timestamp
-
-import net.scran24.datastore.NutritionMappedSurveyRecord
-import scala.collection.mutable.Buffer
-import java.util.UUID
-import uk.ac.ncl.openlab.intake24.datastoresql.Queries
-import uk.ac.ncl.openlab.intake24.datastoresql.Util._
-import uk.ac.ncl.openlab.intake24.datastoresql.JavaConversions._
-import net.scran24.datastore.NutritionMappedSurveyRecordWithId
-import java.util.Properties
-import uk.ac.ncl.openlab.intake24.datastoresql.JavaConversions
-import java.io.BufferedReader
-import java.io.InputStreamReader
-
 import uk.ac.ncl.openlab.intake24.datastoresql.DataStoreSqlImpl
-import javax.sql.DataSource
-import uk.ac.ncl.openlab.intake24.datastoresql.SecureUserRecord
-import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseConnection
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.SecureUserRecord
 import uk.ac.ncl.openlab.intake24.sql.SqlFileUtil
-import uk.ac.ncl.openlab.intake24.sql.tools.WarningMessage
-import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseOptions
-import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseConfiguration
+import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConfiguration, DatabaseConnection, DatabaseOptions, WarningMessage}
 
 trait InitOptions extends ScallopConf {
   version("Intake24 SQL system database init tool 2.0.0-SNAPSHOT")
