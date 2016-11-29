@@ -34,7 +34,6 @@ import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import javax.inject.Singleton
 import com.mohiva.play.silhouette.api.util.PasswordInfo
 import uk.ac.ncl.openlab.intake24.datastoresql.DataStoreScala
-import uk.ac.ncl.openlab.intake24.datastoresql.SecureUserRecord
 
 @Singleton
 class AuthInfoServiceImpl @Inject() (dataStore: DataStoreScala) extends AuthInfoRepository {
