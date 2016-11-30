@@ -14,26 +14,26 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.GuideImageService
 import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
+import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
 
-trait GuideImageUserImpl extends GuideImageService with FoodDataSqlService {
+trait GuideImageUserImpl extends GuideImageService with FoodDataSqlService with SqlResourceLoader {
 
-  protected case class GuideResultRow(image_description: String, object_id: Int, object_description: String, weight: Double)
+  private case class GuideResultRow(base_image_path: String, selection_image_path: String,
+      image_description: String, object_id: Array[Long], object_description: Array[String], object_weight: Array[Double])
+      
+  private lazy val guideImageQuery = sqlFromResource("user/get_guide_image.sql")
 
   def getGuideImage(id: String): Either[LookupError, GuideImage] = tryWithConnection {
     implicit conn =>
-      val query =
-        """|SELECT guide_images.description as image_description, object_id, 
-           |       guide_image_weights.description as object_description, weight 
-           |FROM guide_images JOIN guide_image_weights ON guide_images.id = guide_image_id 
-           |WHERE guide_images.id = {id} ORDER BY guide_image_weights.object_id""".stripMargin
 
-      val result = SQL(query).on('id -> id).executeQuery().as(Macro.namedParser[GuideResultRow].*)
-
-      if (result.isEmpty)
-        Left(RecordNotFound(new RuntimeException(id)))
-      else {
+      val result = SQL(guideImageQuery).on('id -> id).executeQuery().as(Macro.namedParser[GuideResultRow].singleOpt)
+      
+      result match {
+        case None => Left(RecordNotFound(new RuntimeException(id)))
+        case Some(row) =>
         val weights = result.map(row => GuideImageWeightRecord(row.object_description, row.object_id, row.weight))
         Right(GuideImage(id, result.head.image_description, weights))
       }
+      
   }
 }
