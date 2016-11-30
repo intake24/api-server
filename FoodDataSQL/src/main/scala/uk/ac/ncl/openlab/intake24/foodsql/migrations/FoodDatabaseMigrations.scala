@@ -17,24 +17,26 @@ object FoodDatabaseMigrations {
 
       def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
 
-        SQL("""|CREATE TABLE source_images(
-               |  id serial NOT NULL,
-               |  path character varying(1024) NOT NULL, 
-               |  keywords character varying(512) NOT NULL, 
-               |  uploader character varying(256) NOT NULL, 
-               |  uploaded_at timestamp without time zone NOT NULL DEFAULT now(),
-               |  CONSTRAINT source_images_pk PRIMARY KEY(id)
-               |)""".stripMargin).execute()
+        SQL(
+          """|CREATE TABLE source_images(
+             |  id serial NOT NULL,
+             |  path character varying(1024) NOT NULL,
+             |  keywords character varying(512) NOT NULL,
+             |  uploader character varying(256) NOT NULL,
+             |  uploaded_at timestamp without time zone NOT NULL DEFAULT now(),
+             |  CONSTRAINT source_images_pk PRIMARY KEY(id)
+             |)""".stripMargin).execute()
 
-        SQL("""|CREATE TABLE processed_images(
-               |  id serial NOT NULL,
-               |  path character varying(1024) NOT NULL,
-               |  source_id integer NOT NULL,
-               |  purpose integer NOT NULL,
-               |  created_at timestamp without time zone NOT NULL DEFAULT now(),
-               |  CONSTRAINT processed_images_pk PRIMARY KEY(id),
-               |  CONSTRAINT processed_images_source_image_fk FOREIGN KEY(source_id) REFERENCES source_images(id) ON UPDATE CASCADE ON DELETE CASCADE               
-               |)""".stripMargin).execute()
+        SQL(
+          """|CREATE TABLE processed_images(
+             |  id serial NOT NULL,
+             |  path character varying(1024) NOT NULL,
+             |  source_id integer NOT NULL,
+             |  purpose integer NOT NULL,
+             |  created_at timestamp without time zone NOT NULL DEFAULT now(),
+             |  CONSTRAINT processed_images_pk PRIMARY KEY(id),
+             |  CONSTRAINT processed_images_source_image_fk FOREIGN KEY(source_id) REFERENCES source_images(id) ON UPDATE CASCADE ON DELETE CASCADE
+             |)""".stripMargin).execute()
 
         Right(())
       }
@@ -205,10 +207,11 @@ object FoodDatabaseMigrations {
       val description = "Move source_images.keywords to a separate table source_image_keywords"
 
       def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
-        SQL("""|CREATE TABLE source_image_keywords(
-               |  source_image_id integer NOT NULL,
-               |  keyword character varying(512) NOT NULL,
-               |  CONSTRAINT source_image_keywords_source_image_id_fk FOREIGN KEY(source_image_id) REFERENCES source_images(id) ON DELETE CASCADE ON UPDATE CASCADE)""".stripMargin).execute()
+        SQL(
+          """|CREATE TABLE source_image_keywords(
+             |  source_image_id integer NOT NULL,
+             |  keyword character varying(512) NOT NULL,
+             |  CONSTRAINT source_image_keywords_source_image_id_fk FOREIGN KEY(source_image_id) REFERENCES source_images(id) ON DELETE CASCADE ON UPDATE CASCADE)""".stripMargin).execute()
 
         SQL("CREATE INDEX source_image_keywords_index ON source_image_keywords(keyword varchar_pattern_ops)").execute()
 
@@ -262,32 +265,67 @@ object FoodDatabaseMigrations {
       val versionFrom = 16l
       val versionTo = 17l
 
-      val description = "Add temporary nullable image_id, selection_image_id and overlay_image_id columns to guide_images and guide_image_objects"
+      val description = "Create image_maps and image_map_objects"
 
       def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
 
-        SQL("ALTER TABLE guide_images ADD COLUMN image_id integer").execute()
-        SQL("ALTER TABLE guide_images ADD COLUMN selection_image_id integer").execute()
-        SQL("ALTER TABLE guide_image_objects ADD COLUMN overlay_image_id integer").execute()
+        SQL(
+          """|CREATE TABLE image_maps(
+             |  id serial NOT NULL PRIMARY KEY,
+             |  description character varying(512) NOT NULL,
+             |  base_image_id integer NOT NULL REFERENCES processed_images ON UPDATE CASCADE ON DELETE RESTRICT
+             |)""".stripMargin).execute()
 
-        SQL("ALTER TABLE guide_images ADD CONSTRAINT guide_image_id_fk FOREIGN KEY(image_id) REFERENCES processed_images(id) ON UPDATE CASCADE ON DELETE RESTRICT").execute()
-        SQL("ALTER TABLE guide_images ADD CONSTRAINT guide_selection_image_id_fk FOREIGN KEY(selection_image_id) REFERENCES processed_images(id) ON UPDATE CASCADE ON DELETE RESTRICT").execute()
-        SQL("ALTER TABLE guide_image_objects ADD CONSTRAINT overlay_image_id_fk FOREIGN KEY(overlay_image_id) REFERENCES processed_images(id) ON UPDATE CASCADE ON DELETE RESTRICT").execute()
+        SQL(
+          """|CREATE TABLE image_map_objects(
+             |  id integer NOT NULL,
+             |  image_map_id integer NOT NULL REFERENCES image_maps ON UPDATE CASCADE ON DELETE RESTRICT,
+             |  navigation_index integer NOT NULL,
+             |  outline_coordinates double precision[] NOT NULL,
+             |  overlay_image_id integer NOT NULL REFERENCES processed_images,
+             |  CONSTRAINT image_map_objects_pk PRIMARY KEY(id, image_map_id)
+             |)""".stripMargin).execute()
 
         Right(())
       }
 
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
-        SQL("ALTER TABLE guide_images DROP COLUMN image_id").execute()
-        SQL("ALTER TABLE guide_images DROP COLUMN selection_image_id").execute()
-        SQL("ALTER TABLE guide_image_objects DROP COLUMN overlay_image_id").execute()
+        SQL("DROP TABLE image_map_objects").execute()
+        SQL("DROP TABLE image_maps")
 
-        SQL("ALTER TABLE guide_images DROP CONSTRAINT guide_image_id_fk").execute()
-        SQL("ALTER TABLE guide_images DROP CONSTRAINT guide_selection_image_id_fk").execute()
-        SQL("ALTER TABLE guide_image_objects DROP CONSTRAINT overlay_image_id_fk").execute()
         Right(())
       }
+    },
+
+  new Migration {
+    val versionFrom = 17l
+    val versionTo = 18l
+
+    val description = "Add temporary nullable columns to guide_images and guide_image_objects"
+
+    def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+      SQL("ALTER TABLE guide_images ADD COLUMN image_map_id integer").execute()
+      SQL("ALTER TABLE guide_images ADD COLUMN selection_image_id integer").execute()
+      SQL("ALTER TABLE guide_image_objects ADD COLUMN image_map_id integer").execute()
+      SQL("ALTER TABLE guide_image_objects ADD COLUMN image_map_object_id integer").execute()
+
+      SQL("ALTER TABLE guide_images ADD CONSTRAINT guide_image_image_map_fk FOREIGN KEY(image_map_id) REFERENCES image_maps(id) ON UPDATE CASCADE ON DELETE RESTRICT").execute()
+      SQL("ALTER TABLE guide_images ADD CONSTRAINT guide_selection_image_id_fk FOREIGN KEY(selection_image_id) REFERENCES processed_images(id) ON UPDATE CASCADE ON DELETE RESTRICT").execute()
+      SQL("ALTER TABLE guide_image_objects ADD CONSTRAINT guide_image_object_fk FOREIGN KEY(image_map_object_id, image_map_id) REFERENCES image_map_objects(id, image_map_id) ON UPDATE CASCADE ON DELETE RESTRICT").execute()
+
+      Right(())
     }
+
+    def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+      SQL("ALTER TABLE guide_images DROP COLUMN image_map_id").execute()
+      SQL("ALTER TABLE guide_images DROP COLUMN selection_image_id").execute()
+      SQL("ALTER TABLE guide_image_objects DROP COLUMN image_map_id").execute()
+      SQL("ALTER TABLE guide_image_objects DROP COLUMN image_map_object_id").execute()
+
+      Right(())
+    }
+  }
 
   )
 }

@@ -14,9 +14,9 @@ import upickle.default._
 
 import scala.collection.mutable
 
-case class V17_RemappedGuideImage(id: String, url: String, sourcePath: String, mainImagePath: String, overlayPaths: Seq[(Long, String)])
+case class V18_RemappedGuideImage(id: String, url: String, sourcePath: String, mainImagePath: String, overlayPaths: Seq[(Long, String)])
 
-object FoodV17_Guide_Prepare extends App with WarningMessage with DatabaseConnection {
+object FoodV18_Guide_Prepare extends App with WarningMessage with DatabaseConnection {
 
   private case class GuideImageRow(id: String, base_image_url: String)
 
@@ -134,7 +134,7 @@ object FoodV17_Guide_Prepare extends App with WarningMessage with DatabaseConnec
 
     val remapped = rows.map {
       row =>
-        V17_RemappedGuideImage(row.id, row.base_image_url,
+        V18_RemappedGuideImage(row.id, row.base_image_url,
           copySource(row.id, options.sourceImageDir(), options.imageDir(), row.base_image_url, options.targetImageDir()),
           copyMain(options.imageDir(), options.targetImageDir(), row.id, row.base_image_url),
           copyOverlays(options.imageDir(), options.targetImageDir(), row.id, objectRows(row.id), Paths.get(options.dummyPngPath())))
