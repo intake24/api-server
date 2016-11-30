@@ -14,8 +14,6 @@ object FoodV17_Guide_Apply extends App with MigrationRunner with WarningMessage 
 
   private case class GuideImageRow(id: String, base_image_url: String)
 
-  private case class RemappedGuideImage(id: String, url: String, sourcePath: String, mainImagePath: String, overlayPaths: Seq[(Long, String)])
-
   private case class GuideObjectRow(guide_image_id: String, object_id: Long)
 
   trait Options extends ScallopConf with DatabaseConfigurationOptions {
@@ -30,16 +28,16 @@ object FoodV17_Guide_Apply extends App with MigrationRunner with WarningMessage 
   runMigration(17, 18, options) {
     implicit conn =>
 
-      val remapped = read[Seq[RemappedGuideImage]](Files.readAllLines(Paths.get(options.remappingFile())).asScala.mkString)
+      val remapped = read[Seq[V17_RemappedGuideImageWithThumbs]](Files.readAllLines(Paths.get(options.remappingFile())).asScala.mkString)
 
       val sourceParams = remapped.map {
         m =>
-          Seq[NamedParameter]('path -> m.sourcePath, 'uploader -> "admin")
+          Seq[NamedParameter]('path -> m.sourcePath, 'uploader -> "admin", 'thumbnail_path -> m.sourceThumbnailPath)
       }
 
       println("Creating source image records")
 
-      val keys = AnormUtil.batchKeys(BatchSql("INSERT INTO source_images VALUES (DEFAULT,{path},{uploader},DEFAULT)", sourceParams.head, sourceParams.tail: _*))
+      val keys = AnormUtil.batchKeys(BatchSql("INSERT INTO source_images VALUES (DEFAULT,{path},{uploader},DEFAULT, {thumbnail_path})", sourceParams.head, sourceParams.tail: _*))
 
       val processedMainParams = remapped.zip(keys).map {
         case (r, sourceKey) =>
@@ -50,14 +48,23 @@ object FoodV17_Guide_Apply extends App with MigrationRunner with WarningMessage 
 
       val processedMainKeys = AnormUtil.batchKeys(BatchSql("INSERT INTO processed_images VALUES(DEFAULT,{path},{source_id},{purpose},DEFAULT)", processedMainParams.head, processedMainParams.tail: _*))
 
-      val guideImageParams = remapped.zip(processedMainKeys).map {
-        case (r, imageId) =>
-          Seq[NamedParameter]('id -> r.id, 'url -> r.url, 'image_id -> imageId)
+      val processedSelectionParams = remapped.zip(keys).map {
+        case (r, sourceKey) =>
+          Seq[NamedParameter]('path -> r.selectionImagePath, 'source_id -> sourceKey, 'purpose -> ProcessedImagePurpose.toId(ProcessedImagePurpose.PortionSizeSelectionImage))
       }
 
-      println("Updating guide_images with base image ids")
+      println("Creating processed image records for selection images")
 
-      BatchSql("UPDATE guide_images SET image_id={image_id} WHERE id={id} AND base_image_url={url}", guideImageParams.head, guideImageParams.tail: _*).execute()
+      val processedSelectionKeys = AnormUtil.batchKeys(BatchSql("INSERT INTO processed_images VALUES(DEFAULT,{path},{source_id},{purpose},DEFAULT)", processedSelectionParams.head, processedSelectionParams.tail: _*))
+
+      val guideImageParams = remapped.zip(processedMainKeys).zip(processedSelectionKeys).map {
+        case ((r, mainImageId), selectionImageId) =>
+          Seq[NamedParameter]('id -> r.id, 'url -> r.url, 'image_id -> mainImageId, 'selection_image_id -> selectionImageId)
+      }
+
+      println("Updating guide_images with base and selection image ids")
+
+      BatchSql("UPDATE guide_images SET image_id={image_id},selection_image_id={selection_image_id} WHERE id={id} AND base_image_url={url}", guideImageParams.head, guideImageParams.tail: _*).execute()
 
       remapped.zip(keys).foreach {
         case (r, sourceKey) =>
