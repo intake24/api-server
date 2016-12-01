@@ -101,11 +101,7 @@ object FoodV18_Guide_Apply extends App with MigrationRunner with WarningMessage 
 
           println(s"Create image map objects for ${r.id}")
 
-
-
-
           BatchSql("INSERT INTO image_map_objects VALUES({id},{image_map_id},{navigation_index},{outline_coordinates}::double precision[],{overlay_image_id})", imageMapObjectParams.head, imageMapObjectParams.tail: _*).execute()
-
 
           val guideObjectParams = r.overlayPaths.map {
             case (objectId, _) =>

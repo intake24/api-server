@@ -105,6 +105,18 @@
 			<artifactId>commons-io</artifactId>
 			<version>2.5</version>
 		</dependency>
+
+		<dependency>
+			<groupId>org.apache.xmlgraphics</groupId>
+			<artifactId>batik-svg-dom</artifactId>
+			<version>1.8</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.xmlgraphics</groupId>
+			<artifactId>batik-util</artifactId>
+			<version>1.8</version>
+		</dependency>
 	</dependencies>
 
 	<build>
