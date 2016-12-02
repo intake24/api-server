@@ -66,7 +66,15 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
       configuration.getInt("intake24.images.processor.selectionScreen.width").get,
       configuration.getInt("intake24.images.processor.selectionScreen.height").get)
 
-    ImageProcessorSettings(source, selection, asServed)
+    val imageMaps = ImageMapSettings(
+      configuration.getInt("intake24.images.processor.imageMaps.baseImageWidth").get,
+      configuration.getDouble("intake24.images.processor.imageMaps.outlineStrokeWidth").get,
+      (configuration.getDouble("intake24.images.processor.imageMaps.outlineColor.r").get,
+        configuration.getDouble("intake24.images.processor.imageMaps.outlineColor.g").get,
+        configuration.getDouble("intake24.images.processor.imageMaps.outlineColor.b").get),
+      configuration.getDouble("intake24.images.processor.imageMaps.outlineBlurStrength").get)
+
+    ImageProcessorSettings(source, selection, asServed, imageMaps)
   }
 
   def configure() = {

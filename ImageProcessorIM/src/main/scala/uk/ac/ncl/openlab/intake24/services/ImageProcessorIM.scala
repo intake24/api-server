@@ -1,6 +1,10 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.images
 
-import java.nio.file.Path
+import java.awt.{BasicStroke, Color, RenderingHints}
+import java.awt.image.BufferedImage
+import java.nio.file.{Files, Path}
+import java.util.UUID
+import javax.imageio.ImageIO
 import javax.inject.{Inject, Singleton}
 
 import org.im4java.core.{ConvertCmd, IMOperation}
@@ -92,6 +96,63 @@ class ImageProcessorIM @Inject()(val settings: ImageProcessorSettings) extends I
       Right(())
 
     } catch {
+      case e: Throwable => Left(ImageProcessorError(e))
+    }
+  }
+
+  def generateImageMapOverlays(imageMap: AWTImageMap, directory: Path): Either[ImageProcessorError, Map[Int, Path]] = {
+    try {
+      val targetWidth = settings.imageMap.baseImageWidth
+      val targetHeight = (settings.imageMap.baseImageWidth / imageMap.aspect).toInt
+
+      val image = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_ARGB)
+      val g = image.createGraphics()
+      g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+      g.setStroke(new BasicStroke(settings.imageMap.overlayStrokeWidth.toFloat / targetWidth))
+
+      val color = new Color(settings.imageMap.overlayStrokeColor._1.toFloat,
+        settings.imageMap.overlayStrokeColor._2.toFloat,
+        settings.imageMap.overlayStrokeColor._3.toFloat)
+
+      g.setColor(color)
+
+      logger.debug(s"${color.getRed}, ${color.getGreen}, ${color.getBlue}")
+
+      val result = imageMap.outlines.map {
+        case (objectId, outline) =>
+          g.setBackground(new Color(0, 0, 0, 0))
+          g.clearRect(0, 0, image.getWidth, image.getHeight)
+
+          val currentTransform = g.getTransform()
+
+          g.scale(targetHeight, targetWidth)
+          g.draw(outline)
+
+          g.setTransform(currentTransform)
+
+          val unblurred = Files.createTempFile("intake24", ".png")
+
+          ImageIO.write(image, "png", unblurred.toFile())
+          val cmd = new ConvertCmd()
+          val op = new IMOperation()
+          op.addImage(unblurred.toString)
+          op.channel("RBGA")
+          op.blur(0.0, settings.imageMap.overlayBlurStrength)
+
+          val outputFile = directory.resolve(UUID.randomUUID().toString + ".png")
+          op.addImage(outputFile.toString())
+          cmd.setSearchPath("/usr/local/bin")
+          cmd.run(op)
+          //Files.delete(unblurred)
+          logger.debug(s"Unblurred path: ${unblurred.toString}")
+          logger.debug(s"Generated outline image for object $objectId: ${outputFile.toString}")
+
+          (objectId, outputFile)
+      }
+
+      Right(result)
+    }
+    catch {
       case e: Throwable => Left(ImageProcessorError(e))
     }
   }

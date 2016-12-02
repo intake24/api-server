@@ -5,16 +5,14 @@ import java.awt.Shape
 import java.awt.geom.AffineTransform
 import java.io.StringReader
 
-import org.apache.batik.anim.dom.{SAXSVGDocumentFactory, SVGOMDocument}
+import org.apache.batik.dom.svg.{SAXSVGDocumentFactory, SVGOMDocument}
 import org.apache.batik.parser.{AWTPathProducer, AWTTransformProducer}
 import org.apache.batik.util.XMLResourceDescriptor
 import org.slf4j.LoggerFactory
-import org.w3c.dom.{Element, Node, NodeList}
 import org.w3c.dom.svg.SVGSVGElement
+import org.w3c.dom.{Element, Node}
 
-case class AWTImageMap(navigation: Seq[Int], outlines: Map[Int, AWTOutline])
-
-case class AWTOutline(shape: Shape, transformToRootSpace: AffineTransform)
+case class AWTImageMap(navigation: Seq[Int], outlines: Map[Int, Shape], aspect: Double)
 
 class SVGImageMapParser {
 
@@ -34,9 +32,9 @@ class SVGImageMapParser {
 
   val logger = LoggerFactory.getLogger(classOf[SVGImageMapParser])
 
-  def getOutlines(scale: Double, doc: SVGOMDocument, idParser: String => Option[Int]): Map[Int, AWTOutline] = {
+  def getOutlines(scale: Double, doc: SVGOMDocument, idParser: String => Option[Int]): Map[Int, Shape] = {
 
-    def getOutlineFromPathElement(scale: Double, path: Element): AWTOutline = {
+    def getOutlineFromPathElement(scale: Double, path: Element): Shape = {
 
       def getTransformToRootSpace(node: Node, t: AffineTransform): AffineTransform = {
         if (node == null)
@@ -59,7 +57,12 @@ class SVGImageMapParser {
         }
       }
 
-      AWTOutline(AWTPathProducer.createShape(new StringReader(path.getAttribute("d")), 0), getTransformToRootSpace(path, new AffineTransform()))
+      val transform = getTransformToRootSpace(path, new AffineTransform())
+      transform.concatenate(AffineTransform.getScaleInstance(scale, scale))
+
+      val shape = AWTPathProducer.createShape(new StringReader(path.getAttribute("d")), 0)
+
+      transform.createTransformedShape(shape)
     }
 
     val pathElements = doc.getElementsByTagNameAsSeq("path")
@@ -100,21 +103,38 @@ class SVGImageMapParser {
     f.createDocument(uri).asInstanceOf[SVGOMDocument]
   }
 
-  def parseImageMap(svgPath: String, targetWidth: Int): AWTImageMap = {
+  def getSVGWidth(svgElement: SVGSVGElement) = {
+    if (svgElement.hasAttribute("viewBox"))
+      svgElement.getViewBox.getBaseVal.getWidth
+    else
+      svgElement.getWidth.getBaseVal.getValue
+  }
+
+  def getSVGHeight(svgElement: SVGSVGElement) = {
+    if (svgElement.hasAttribute("viewBox"))
+      svgElement.getViewBox.getBaseVal.getHeight
+    else
+      svgElement.getHeight.getBaseVal.getValue
+  }
+
+  def parseImageMap(svgPath: String): AWTImageMap = {
     logger.debug(s"Trying to parse image map from $svgPath")
 
     val svgDoc = parseSvg(svgPath)
 
-    val svgElem = svgDoc.getDocumentElement.asInstanceOf[SVGSVGElement]
-    val viewBox = svgElem.getViewBox
-    val scale = targetWidth / viewBox.getBaseVal.getWidth.toDouble
+    val svgElem = svgDoc.getRootElement
+
+    val (width, height) = (getSVGWidth(svgElem), getSVGHeight(svgElem))
+
+    val scale = 1.0 / width
+
+    val aspect = width / height
 
     val outlines = getOutlines(scale, svgDoc, s => if (s.matches("area_[0-9]+")) Some(s.substring(5).toInt) else None)
 
     val navigation = getNavigation(svgDoc).getOrElse(outlines.keySet.toSeq.sorted)
 
-    AWTImageMap(navigation, outlines)
-
+    AWTImageMap(navigation, outlines, aspect)
   }
 
 }

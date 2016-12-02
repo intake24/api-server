@@ -30,6 +30,8 @@ import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 
+import org.apache.batik.dom.svg.SAXSVGDocumentFactory;
+import org.apache.batik.dom.svg.SVGOMDocument;
 import org.apache.batik.parser.AWTPathProducer;
 import org.apache.batik.parser.AWTTransformProducer;
 import org.apache.batik.util.XMLResourceDescriptor;
@@ -46,9 +48,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
-import org.apache.batik.anim.dom.SVGOMDocument;
-import org.apache.batik.anim.dom.SAXSVGDocumentFactory;
 
 public class ImageCompiler {
 	public class Outline {
