@@ -1,13 +1,14 @@
 package uk.ac.ncl.openlab.intake24.sql.tools.food.migrations
 
-import java.nio.file.{Files, Paths}
+import java.nio.file.attribute.BasicFileAttributes
+import java.nio.file.{Files, Path, Paths}
+import java.util.function.BiPredicate
 
 import anorm.{AnormUtil, BatchSql, NamedParameter, SQL}
 import org.rogach.scallop.ScallopConf
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.ProcessedImagePurpose
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.{ProcessedImagePurpose, SVGImageMapParser}
 import uk.ac.ncl.openlab.intake24.sql.tools._
 import upickle.default._
-
 
 import scala.collection.JavaConverters._
 
@@ -17,10 +18,7 @@ object FoodV18_Guide_Apply extends App with MigrationRunner with WarningMessage 
 
   private case class GuideObjectRow(guide_image_id: String, object_id: Long)
 
-  private case class ImageMapArea(id: Int, coords: Seq[Double])
-
-  private case class ImageMapRecord(navigation: Seq[Seq[Int]], areas: Seq[ImageMapArea])
-
+  val svgParser = new SVGImageMapParser()
 
   trait Options extends ScallopConf with DatabaseConfigurationOptions {
 
@@ -32,10 +30,21 @@ object FoodV18_Guide_Apply extends App with MigrationRunner with WarningMessage 
 
   options.verify()
 
-  private def loadImageMap(id: String) = {
-    val path = s"${options.imageMapsDir()}/$id.imagemap"
+  private def getImageMapFromSVG(id: String) = {
+
+    println(s"Trying to locate source SVG for $id")
+
+    val fileName = s"$id.svg"
+
+    val predicate = new BiPredicate[Path, BasicFileAttributes] {
+      override def test(t: Path, u: BasicFileAttributes): Boolean = t.getFileName.toString == fileName
+    }
+
+    val svg = Files.find(Paths.get(options.imageMapsDir()), 10, predicate).findFirst().get()
+
+    val path = svg.toString
     println(s"Loading image map from $path")
-    read[ImageMapRecord](Files.readAllLines(Paths.get(path)).asScala.mkString)
+    svgParser.parseImageMap(path)
   }
 
   runMigration(18, 19, options) {
@@ -88,15 +97,13 @@ object FoodV18_Guide_Apply extends App with MigrationRunner with WarningMessage 
 
           val imageMapId = SQL("INSERT INTO image_maps VALUES(DEFAULT,{base_image_id})").on('base_image_id -> processedBaseImageId).executeInsert()
 
-          val imageMapRecord = loadImageMap(r.id)
+          val imageMap = getImageMapFromSVG(r.id)
 
-          val flatNav = imageMapRecord.navigation.flatten
-
-          val imageMapObjectParams = imageMapRecord.areas.map {
-            area =>
-              val navIndex = flatNav.indexOf(area.id)
-              val podgon = s"{${area.coords.mkString(",")}}"
-              Seq[NamedParameter]('id -> area.id.toLong, 'image_map_id -> imageMapId, 'navigation_index -> navIndex, 'outline_coordinates -> podgon, 'overlay_image_id -> processedOverlayIds(area.id))
+          val imageMapObjectParams = imageMap.outlines.keySet.toSeq.sorted.map {
+            case objectId =>
+              val navIndex = imageMap.navigation.indexOf(objectId)
+              val podgon = s"{${imageMap.getCoordsArray(objectId).mkString(",")}}"
+              Seq[NamedParameter]('id -> objectId.toLong, 'image_map_id -> imageMapId, 'navigation_index -> navIndex, 'outline_coordinates -> podgon, 'overlay_image_id -> processedOverlayIds(objectId))
           }
 
           println(s"Create image map objects for ${r.id}")

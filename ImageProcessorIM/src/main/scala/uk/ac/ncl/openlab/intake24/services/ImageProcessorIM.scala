@@ -132,22 +132,33 @@ class ImageProcessorIM @Inject()(val settings: ImageProcessorSettings) extends I
 
           val unblurred = Files.createTempFile("intake24", ".png")
 
+          // ImageMagick's blur filter is broken -- see http://www.imagemagick.org/Usage/bugs/blur_trans/
+          // The bug was fixed in 6.2.5 but got broken again in 6.8.something
+          // Still not fixed as of 6.9.6 :(
+
+          // Workaround from this thread (using 100% resize with Gaussian filter):
+          // http://www.imagemagick.org/discourse-server/viewtopic.php?f=3&t=24665&sid=4a6c39fd9ae46dc356d68a396a2f3ac9&start=15#p106183
+          // Slower than normal blur, but works correctly
+
           ImageIO.write(image, "png", unblurred.toFile())
+          val outputPath = directory.resolve(UUID.randomUUID().toString + ".png")
+
           val cmd = new ConvertCmd()
           val op = new IMOperation()
           op.addImage(unblurred.toString)
-          op.channel("RBGA")
-          op.blur(0.0, settings.imageMap.overlayBlurStrength)
 
-          val outputFile = directory.resolve(UUID.randomUUID().toString + ".png")
-          op.addImage(outputFile.toString())
-          cmd.setSearchPath("/usr/local/bin")
+          op.filter("Gaussian")
+          op.define(s"filter:sigma=${settings.imageMap.overlayBlurStrength}")
+          op.addRawArgs("-resize", "100%")
+          op.addImage(outputPath.toString)
+          cmd.setSearchPath("/usr/local/bin") // hack
           cmd.run(op)
-          //Files.delete(unblurred)
-          logger.debug(s"Unblurred path: ${unblurred.toString}")
-          logger.debug(s"Generated outline image for object $objectId: ${outputFile.toString}")
 
-          (objectId, outputFile)
+          Files.delete(unblurred)
+
+          logger.debug(s"Generated outline image for object $objectId: ${outputPath.toString}")
+
+          (objectId, outputPath)
       }
 
       Right(result)

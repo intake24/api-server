@@ -11,10 +11,11 @@ case class SourceImageSettings(thumbnailWidth: Int, thumbnailHeight: Int)
 
 case class ImageMapSettings(baseImageWidth: Int, overlayStrokeWidth: Double, overlayStrokeColor: (Double, Double, Double), overlayBlurStrength: Double)
 
-case class ImageProcessorSettings(source: SourceImageSettings, selection: SelectionImageSettings, asServed: AsServedImageSettings, imageMap: ImageMapSettings)
+case class ImageProcessorSettings(cmdSearchPath: Option[String], source: SourceImageSettings, selection: SelectionImageSettings, asServed: AsServedImageSettings, imageMap: ImageMapSettings)
 
 object ImageProcessorSettings {
   def testSettings() = ImageProcessorSettings(
+    Some("/usr/local/bin"),
     SourceImageSettings(768, 432),
     SelectionImageSettings(300, 200),
     AsServedImageSettings(654, 436, 80),

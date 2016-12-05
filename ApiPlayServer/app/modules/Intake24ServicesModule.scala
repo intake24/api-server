@@ -74,7 +74,9 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
         configuration.getDouble("intake24.images.processor.imageMaps.outlineColor.b").get),
       configuration.getDouble("intake24.images.processor.imageMaps.outlineBlurStrength").get)
 
-    ImageProcessorSettings(source, selection, asServed, imageMaps)
+    val commandSearchPath = configuration.getString("intake24.images.processor.commandSearchPath")
+
+    ImageProcessorSettings(commandSearchPath, source, selection, asServed, imageMaps)
   }
 
   def configure() = {

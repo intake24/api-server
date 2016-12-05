@@ -2,7 +2,7 @@ package uk.ac.ncl.openlab.intake24.services.fooddb.images
 
 
 import java.awt.Shape
-import java.awt.geom.AffineTransform
+import java.awt.geom.{AffineTransform, PathIterator}
 import java.io.StringReader
 
 import org.apache.batik.dom.svg.{SAXSVGDocumentFactory, SVGOMDocument}
@@ -12,7 +12,30 @@ import org.slf4j.LoggerFactory
 import org.w3c.dom.svg.SVGSVGElement
 import org.w3c.dom.{Element, Node}
 
-case class AWTImageMap(navigation: Seq[Int], outlines: Map[Int, Shape], aspect: Double)
+import scala.collection.mutable
+
+case class AWTImageMap(navigation: Seq[Int], outlines: Map[Int, Shape], aspect: Double) {
+  def getCoordsArray(objectId: Int): Seq[Double] = {
+    val i = outlines(objectId).getPathIterator(null, 0.005)
+
+    val result = mutable.Buffer[Double]()
+
+    while (!i.isDone) {
+      {
+        val coords = new Array[Float](6)
+        val segType = i.currentSegment(coords)
+        if (segType == PathIterator.SEG_MOVETO || segType == PathIterator.SEG_LINETO) {
+          result.append(coords(0))
+          result.append(coords(1))
+        }
+
+      }
+      i.next()
+    }
+
+    result
+  }
+}
 
 class SVGImageMapParser {
 
@@ -40,7 +63,6 @@ class SVGImageMapParser {
         if (node == null)
           t
         else {
-
           val nodeTransform =
             for (attrs <- Option(node.getAttributes);
                  transformNode <- Option(attrs.getNamedItem("transform"))) yield
@@ -48,19 +70,23 @@ class SVGImageMapParser {
 
           nodeTransform match {
             case Some(transform) => {
-              val concat = new AffineTransform(t)
-              concat.concatenate(transform)
-              getTransformToRootSpace(node.getParentNode, concat)
+              val tCopy = new AffineTransform(t)
+              // Normal transform concatenation order is LIFO, which makes sense going from parent to child,
+              // but since we are traversing the tree from child to parent we need to reverse it
+              tCopy.preConcatenate(transform)
+              getTransformToRootSpace(node.getParentNode, tCopy)
             }
             case None => getTransformToRootSpace(node.getParentNode, t)
           }
         }
       }
 
-      val transform = getTransformToRootSpace(path, new AffineTransform())
-      transform.concatenate(AffineTransform.getScaleInstance(scale, scale))
-
       val shape = AWTPathProducer.createShape(new StringReader(path.getAttribute("d")), 0)
+
+      val transform = getTransformToRootSpace(path, new AffineTransform())
+
+      // Scale needs to also be pre-concatenated so it is applied last
+      transform.preConcatenate(AffineTransform.getScaleInstance(scale, scale))
 
       transform.createTransformedShape(shape)
     }
