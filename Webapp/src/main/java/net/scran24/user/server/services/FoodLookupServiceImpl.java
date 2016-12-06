@@ -40,13 +40,15 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 import javax.servlet.ServletException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.workcraft.gwt.imagechooser.shared.ImageDef;
+import org.workcraft.gwt.imagemap.shared.ImageMapDefinition;
+import org.workcraft.gwt.imagemap.shared.ImageMapDefinition.Area;
+import org.workcraft.gwt.imagemap.shared.Polygon;
 import org.workcraft.gwt.shared.client.Function1;
 
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
@@ -65,6 +67,7 @@ import net.scran24.user.shared.lookup.AsServedDef;
 import net.scran24.user.shared.lookup.DrinkScaleDef;
 import net.scran24.user.shared.lookup.DrinkwareDef;
 import net.scran24.user.shared.lookup.GuideDef;
+import net.scran24.user.shared.lookup.GuideImageObject;
 import net.scran24.user.shared.lookup.LookupResult;
 import net.scran24.user.shared.lookup.PortionSizeMethod;
 import scala.Tuple2;
@@ -74,7 +77,6 @@ import scala.collection.Seq;
 import scala.util.Either;
 import uk.ac.ncl.openlab.intake24.AssociatedFood;
 import uk.ac.ncl.openlab.intake24.DrinkwareSet;
-import uk.ac.ncl.openlab.intake24.GuideImage;
 import uk.ac.ncl.openlab.intake24.UserCategoryContents;
 import uk.ac.ncl.openlab.intake24.UserFoodData;
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError;
@@ -84,8 +86,11 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.NutrientMappingError;
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageStorageService;
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDataSources;
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDatabaseService;
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.ImageMap;
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.ImageMapObject;
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.UserAsServedImage;
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.UserAsServedSet;
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.UserGuideImage;
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex;
 import uk.ac.ncl.openlab.intake24.services.foodindex.IndexLookupResult;
 import uk.ac.ncl.openlab.intake24.services.foodindex.MatchedCategory;
@@ -106,8 +111,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
   private NutrientMappingService nutrientMappingService;
 
   private String imageUrlBase;
-  private String thumbnailUrlBase;
-
+  
   private Function1<String, String> resolveImageUrl;
 
   private void crashIfDebugOptionSet(String name) {
@@ -133,8 +137,6 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
       nutrientMappingService = injector.getInstance(NutrientMappingService.class);
 
       imageUrlBase = getServletContext().getInitParameter("image-url-base");
-
-      thumbnailUrlBase = getServletContext().getInitParameter("thumbnail-url-base");
 
       resolveImageUrl = new Function1<String, String>() {
         @Override
@@ -356,23 +358,35 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 
     return result;
   }
+  
+  private ImageMapDefinition toJavaImageMap(ImageMap imageMap) {
+
+    Iterator<ImageMapObject> iterator = imageMap.objects().iterator();
+
+    ArrayList<Area> areas = new ArrayList<Area>();
+
+    while (iterator.hasNext()) {
+      ImageMapObject obj = iterator.next();
+      areas.add(new Area(new Polygon(obj.outline()), imageStorage.getUrl(obj.overlayPath()), obj.id()));
+    }
+    
+    return new ImageMapDefinition(imageStorage.getUrl(imageMap.baseImagePath()), areas.toArray(new Area[areas.size()]), new int[][] { imageMap.navigation() });
+  }
 
   @Override
   public GuideDef getGuideDef(String guideId, String locale) {
     crashIfDebugOptionSet("crash-on-get-guide-def");
 
-    GuideImage image = handleLookupError(foodData.getGuideImage(guideId));
+    UserGuideImage image = handleLookupError(foodData.getGuideImage(guideId));
 
-    Map<Integer, Double> weights = new TreeMap<Integer, Double>();
-
-    Iterator<uk.ac.ncl.openlab.intake24.GuideImageWeightRecord> iter = image.weights().iterator();
-
-    while (iter.hasNext()) {
-      uk.ac.ncl.openlab.intake24.GuideImageWeightRecord wr = iter.next();
-      weights.put(wr.objectId(), wr.weight());
+    Map<Integer, GuideImageObject> objMap = new HashMap<Integer, GuideImageObject>();
+    
+    for (Integer k: image.objectsAsJavaMap().keySet()) {
+      uk.ac.ncl.openlab.intake24.services.fooddb.user.GuideImageObject obj = image.objectsAsJavaMap().get(k);
+      objMap.put(k, new GuideImageObject(obj.description(), obj.weight()));
     }
 
-    return new GuideDef(image.description(), guideId, weights);
+    return new GuideDef(image.description(), toJavaImageMap(image.imageMap()), objMap);
   }
 
   @Override

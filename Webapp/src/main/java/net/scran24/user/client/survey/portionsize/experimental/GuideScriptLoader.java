@@ -27,43 +27,29 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 package net.scran24.user.client.survey.portionsize.experimental;
 
 import org.pcollections.client.PMap;
-import org.workcraft.gwt.imagemap.client.ImageMapServiceAsync;
-import org.workcraft.gwt.imagemap.shared.ImageMapDefinition;
 
-import com.google.gwt.i18n.client.LocaleInfo;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 
 import net.scran24.user.client.services.FoodLookupServiceAsync;
 import net.scran24.user.shared.lookup.GuideDef;
 
 public class GuideScriptLoader implements PortionSizeScriptLoader {
-	private final FoodLookupServiceAsync lookupService = FoodLookupServiceAsync.Util.getInstance();
-	private final ImageMapServiceAsync imageMapService = ImageMapServiceAsync.Util.getInstance();
+  private final FoodLookupServiceAsync lookupService = FoodLookupServiceAsync.Util.getInstance();
 
-	private final String currentLocale = "en_GB"; // LocaleInfo.getCurrentLocale().getLocaleName()
-	
-	@Override
-	public void loadResources(final PMap<String, String> data, final AsyncCallback<PortionSizeScript> onComplete) {
-		lookupService.getGuideDef(data.get("guide-image-id"), currentLocale, new AsyncCallback<GuideDef>() {
-			@Override
-			public void onFailure(Throwable caught) {
-				onComplete.onFailure(caught);
-			}
+  private final String currentLocale = "en_GB"; // LocaleInfo.getCurrentLocale().getLocaleName()
 
-			@Override
-			public void onSuccess(final GuideDef guideDef) {
-				imageMapService.getImageMap(guideDef.imageMapId, new AsyncCallback<ImageMapDefinition>() {
-					@Override
-					public void onFailure(Throwable caught) {
-						onComplete.onFailure(caught);
-					}
+  @Override
+  public void loadResources(final PMap<String, String> data, final AsyncCallback<PortionSizeScript> onComplete) {
+    lookupService.getGuideDef(data.get("guide-image-id"), currentLocale, new AsyncCallback<GuideDef>() {
+      @Override
+      public void onFailure(Throwable caught) {
+        onComplete.onFailure(caught);
+      }
 
-					@Override
-					public void onSuccess(ImageMapDefinition imageMapDef) {
-						onComplete.onSuccess(new GuideScript(guideDef, imageMapDef));
-					}
-				});
-			}
-		});
-	}
+      @Override
+      public void onSuccess(final GuideDef guideDef) {
+        onComplete.onSuccess(new GuideScript(guideDef));
+      }
+    });
+  }
 }

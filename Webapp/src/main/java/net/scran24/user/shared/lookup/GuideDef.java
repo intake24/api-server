@@ -12,20 +12,22 @@ package net.scran24.user.shared.lookup;
 
 import java.util.Map;
 
+import org.workcraft.gwt.imagemap.shared.ImageMapDefinition;
+
 import com.google.gwt.user.client.rpc.IsSerializable;
 
 public class GuideDef implements IsSerializable {
-	public String description;
-	public String imageMapId;
-	public Map<Integer, Double> weights;
-	
-	@Deprecated
-	public GuideDef() {
-	}
+  public String description;
+  public ImageMapDefinition imageMap;
+  public Map<Integer, GuideImageObject> objects;
 
-	public GuideDef(String description, String imageMapId, Map<Integer, Double> weights) {
-		this.description = description;
-		this.imageMapId = imageMapId;
-		this.weights = weights;
-	}
+  @Deprecated
+  public GuideDef() {
+  }
+
+  public GuideDef(String description, ImageMapDefinition imageMap, Map<Integer, GuideImageObject> objects) {
+    this.description = description;
+    this.imageMap = imageMap;
+    this.objects = objects;
+  }
 }
