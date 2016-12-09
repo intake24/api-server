@@ -28,6 +28,8 @@ package net.scran24.user.client.services;
 
 import java.util.List;
 
+import org.workcraft.gwt.imagemap.shared.ImageMapDefinition;
+
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 
@@ -39,35 +41,47 @@ import net.scran24.user.shared.lookup.GuideDef;
 import net.scran24.user.shared.lookup.LookupResult;
 import net.scran24.user.shared.lookup.PortionSizeMethod;
 
-public interface FoodLookupServiceAsync
-{
-    void split( java.lang.String description, String locale, AsyncCallback<java.util.List<java.lang.String>> callback );
-    void lookup( java.lang.String description, String locale, int maxResults, AsyncCallback<net.scran24.user.shared.lookup.LookupResult> callback );
-    void lookupInCategory(String description, String categoryCode, String locale, int maxResults, AsyncCallback<LookupResult> callback);
-    void getRootCategories(String locale, AsyncCallback<java.util.List<net.scran24.user.shared.CategoryHeader>> callback );
-    void browseCategory(String code, String locale, AsyncCallback<LookupResult> callback);
-    void getAsServedDef( java.lang.String asServedSet, String locale, AsyncCallback<AsServedDef> callback);
-    void getMultipleAsServedDefs(List<String> ids, String locale, AsyncCallback<List<AsServedDef>> callback);
-    void getGuideDef(String guideId, String locale, AsyncCallback<GuideDef> callback);
-    void getDrinkwareDef(String drinkwareId, String locale, AsyncCallback<DrinkwareDef> callback);
-	void getFoodPrompts(String foodCode, String locale, AsyncCallback<List<FoodPrompt>> callback);
-	void getFoodData(String foodCode, String locale, AsyncCallback<FoodData> callback);
-	void getWeightPortionSizeMethod(AsyncCallback<PortionSizeMethod> callback);
-		
-    public static final class Util 
-    { 
-        private static FoodLookupServiceAsync instance; 
+public interface FoodLookupServiceAsync {
+  void split(java.lang.String description, String locale, AsyncCallback<java.util.List<java.lang.String>> callback);
 
-        public static final FoodLookupServiceAsync getInstance()
-        {
-            if ( instance == null )
-            {
-                instance = (FoodLookupServiceAsync) GWT.create( FoodLookupService.class );
-            }
-            return instance;
-        }
+  void lookup(java.lang.String description, String locale, int maxResults, AsyncCallback<net.scran24.user.shared.lookup.LookupResult> callback);
 
-        private Util() { }
+  void lookupInCategory(String description, String categoryCode, String locale, int maxResults, AsyncCallback<LookupResult> callback);
+
+  void getRootCategories(String locale, AsyncCallback<java.util.List<net.scran24.user.shared.CategoryHeader>> callback);
+
+  void browseCategory(String code, String locale, AsyncCallback<LookupResult> callback);
+
+  void getAsServedDef(java.lang.String asServedSet, String locale, AsyncCallback<AsServedDef> callback);
+
+  void getMultipleAsServedDefs(List<String> ids, String locale, AsyncCallback<List<AsServedDef>> callback);
+
+  void getGuideDef(String guideId, String locale, AsyncCallback<GuideDef> callback);
+
+  void getDrinkwareDef(String drinkwareId, String locale, AsyncCallback<DrinkwareDef> callback);
+
+  void getFoodPrompts(String foodCode, String locale, AsyncCallback<List<FoodPrompt>> callback);
+
+  void getFoodData(String foodCode, String locale, AsyncCallback<FoodData> callback);
+
+  void getWeightPortionSizeMethod(AsyncCallback<PortionSizeMethod> callback);
+
+  void getImageMap(String id, AsyncCallback<ImageMapDefinition> callback);
+
+  void getImageMaps(List<String> ids, AsyncCallback<List<ImageMapDefinition>> asyncCallback);
+
+  public static final class Util {
+    private static FoodLookupServiceAsync instance;
+
+    public static final FoodLookupServiceAsync getInstance() {
+      if (instance == null) {
+        instance = (FoodLookupServiceAsync) GWT.create(FoodLookupService.class);
+      }
+      return instance;
     }
+
+    private Util() {
+    }
+  }
 
 }

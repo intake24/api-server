@@ -26,44 +26,41 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package net.scran24.user.client.survey.portionsize.experimental;
 
+import org.pcollections.client.PMap;
+import org.workcraft.gwt.imagemap.shared.ImageMapDefinition;
+
+import com.google.gwt.user.client.rpc.AsyncCallback;
+
 import net.scran24.user.client.services.FoodLookupServiceAsync;
 import net.scran24.user.shared.lookup.DrinkwareDef;
 
-import org.pcollections.client.PMap;
-import org.workcraft.gwt.imagemap.client.ImageMapServiceAsync;
-import org.workcraft.gwt.imagemap.shared.ImageMapDefinition;
-
-import com.google.gwt.i18n.client.LocaleInfo;
-import com.google.gwt.user.client.rpc.AsyncCallback;
-
 public class DrinkScaleScriptLoader implements PortionSizeScriptLoader {
-	private final FoodLookupServiceAsync lookupService = FoodLookupServiceAsync.Util.getInstance();
-	private final ImageMapServiceAsync imageMapService = ImageMapServiceAsync.Util.getInstance();
-	
-	private final String currentLocale = "en_GB";//LocaleInfo.getCurrentLocale().getLocaleName();
+  private final FoodLookupServiceAsync lookupService = FoodLookupServiceAsync.Util.getInstance();
 
-	@Override
-	public void loadResources(PMap<String, String> data, final AsyncCallback<PortionSizeScript> onComplete) {
-		lookupService.getDrinkwareDef(data.get("drinkware-id"), currentLocale, new AsyncCallback<DrinkwareDef>() {
-			@Override
-			public void onFailure(Throwable caught) {
-				onComplete.onFailure(caught);
-			}
+  private final String currentLocale = "en_GB";// LocaleInfo.getCurrentLocale().getLocaleName();
 
-			@Override
-			public void onSuccess(final DrinkwareDef drinkwareDef) {
-				imageMapService.getImageMap(drinkwareDef.guide_id, new AsyncCallback<ImageMapDefinition>() {
-					@Override
-					public void onFailure(Throwable caught) {
-						onComplete.onFailure(caught);
-					}
+  @Override
+  public void loadResources(PMap<String, String> data, final AsyncCallback<PortionSizeScript> onComplete) {
+    lookupService.getDrinkwareDef(data.get("drinkware-id"), currentLocale, new AsyncCallback<DrinkwareDef>() {
+      @Override
+      public void onFailure(Throwable caught) {
+        onComplete.onFailure(caught);
+      }
 
-					@Override
-					public void onSuccess(ImageMapDefinition imageMapDef) {
-						onComplete.onSuccess(new DrinkScaleScript(imageMapDef, drinkwareDef));
-					}
-				});
-			}
-		});
-	}
+      @Override
+      public void onSuccess(final DrinkwareDef drinkwareDef) {
+        lookupService.getImageMap(drinkwareDef.guide_id, new AsyncCallback<ImageMapDefinition>() {
+          @Override
+          public void onFailure(Throwable caught) {
+            onComplete.onFailure(caught);
+          }
+
+          @Override
+          public void onSuccess(ImageMapDefinition imageMapDef) {
+            onComplete.onSuccess(new DrinkScaleScript(imageMapDef, drinkwareDef));
+          }
+        });
+      }
+    });
+  }
 }

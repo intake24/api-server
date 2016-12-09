@@ -28,6 +28,8 @@ package net.scran24.user.client.services;
 
 import java.util.List;
 
+import org.workcraft.gwt.imagemap.shared.ImageMapDefinition;
+
 import net.scran24.user.shared.CategoryHeader;
 import net.scran24.user.shared.FoodData;
 import net.scran24.user.shared.FoodPrompt;
@@ -42,27 +44,31 @@ import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
 
 @RemoteServiceRelativePath("foodLookup")
 public interface FoodLookupService extends RemoteService {
-	List<String> split(String description, String locale);
+  List<String> split(String description, String locale);
 
-	LookupResult lookup(String description, String locale, int maxResults);
+  LookupResult lookup(String description, String locale, int maxResults);
 
-	LookupResult lookupInCategory(String description, String categoryCode, String locale, int maxResults);
+  LookupResult lookupInCategory(String description, String categoryCode, String locale, int maxResults);
 
-	List<CategoryHeader> getRootCategories(String locale);
+  List<CategoryHeader> getRootCategories(String locale);
 
-	LookupResult browseCategory(String code, String locale);
+  LookupResult browseCategory(String code, String locale);
 
-	FoodData getFoodData(String foodCode, String locale);
+  FoodData getFoodData(String foodCode, String locale);
 
-	AsServedDef getAsServedDef(String asServedSet, String locale);
+  AsServedDef getAsServedDef(String asServedSet, String locale);
 
-	List<AsServedDef> getMultipleAsServedDefs(List<String> ids, String locale);
+  List<AsServedDef> getMultipleAsServedDefs(List<String> ids, String locale);
 
-	GuideDef getGuideDef(String guideId, String locale);
+  GuideDef getGuideDef(String guideId, String locale);
 
-	DrinkwareDef getDrinkwareDef(String drinkwareId, String locale);
+  ImageMapDefinition getImageMap(String id);
+  
+  List<ImageMapDefinition> getImageMaps(List<String> ids);
 
-	List<FoodPrompt> getFoodPrompts(String foodCode, String locale);
-	
-	PortionSizeMethod getWeightPortionSizeMethod();
+  DrinkwareDef getDrinkwareDef(String drinkwareId, String locale);
+
+  List<FoodPrompt> getFoodPrompts(String foodCode, String locale);
+
+  PortionSizeMethod getWeightPortionSizeMethod();
 }

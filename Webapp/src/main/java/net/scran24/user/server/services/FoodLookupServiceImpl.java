@@ -111,7 +111,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
   private NutrientMappingService nutrientMappingService;
 
   private String imageUrlBase;
-  
+
   private Function1<String, String> resolveImageUrl;
 
   private void crashIfDebugOptionSet(String name) {
@@ -358,7 +358,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 
     return result;
   }
-  
+
   private ImageMapDefinition toJavaImageMap(ImageMap imageMap) {
 
     Iterator<ImageMapObject> iterator = imageMap.objects().iterator();
@@ -369,8 +369,10 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
       ImageMapObject obj = iterator.next();
       areas.add(new Area(new Polygon(obj.outline()), imageStorage.getUrl(obj.overlayPath()), obj.id()));
     }
-    
-    return new ImageMapDefinition(imageStorage.getUrl(imageMap.baseImagePath()), areas.toArray(new Area[areas.size()]), new int[][] { imageMap.navigation() });
+
+    return new ImageMapDefinition(imageStorage.getUrl(imageMap.baseImagePath()), areas.toArray(new Area[areas.size()]), new int[][] {
+      imageMap.navigation()
+    });
   }
 
   @Override
@@ -380,8 +382,8 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
     UserGuideImage image = handleLookupError(foodData.getGuideImage(guideId));
 
     Map<Integer, GuideImageObject> objMap = new HashMap<Integer, GuideImageObject>();
-    
-    for (Integer k: image.objectsAsJavaMap().keySet()) {
+
+    for (Integer k : image.objectsAsJavaMap().keySet()) {
       uk.ac.ncl.openlab.intake24.services.fooddb.user.GuideImageObject obj = image.objectsAsJavaMap().get(k);
       objMap.put(k, new GuideImageObject(obj.description(), obj.weight()));
     }
@@ -479,5 +481,14 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
   @Override
   public PortionSizeMethod getWeightPortionSizeMethod() {
     return new PortionSizeMethod("weight", "weight", imageUrlBase + "/portion/weight.png", true, new HashMap<String, String>());
+  }
+
+  @Override
+  public ImageMapDefinition getImageMap(String id) {
+    throw new RuntimeException("Not implemented");
+  }
+
+  public List<ImageMapDefinition> getImageMaps(List<String> ids) {
+    throw new RuntimeException("Not implemented");
   }
 }
