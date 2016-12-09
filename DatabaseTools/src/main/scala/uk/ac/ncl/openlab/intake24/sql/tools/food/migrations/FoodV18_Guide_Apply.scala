@@ -95,7 +95,7 @@ object FoodV18_Guide_Apply extends App with MigrationRunner with WarningMessage 
 
           println(s"Creating image map for ${r.id}")
 
-          val imageMapId = SQL("INSERT INTO image_maps VALUES(DEFAULT,{base_image_id})").on('base_image_id -> processedBaseImageId).executeInsert()
+          SQL("INSERT INTO image_maps VALUES({id},(SELECT description FROM guide_images WHERE id={id}),{base_image_id})").on('id -> r.id, 'base_image_id -> processedBaseImageId).execute()
 
           val imageMap = getImageMapFromSVG(r.id)
 
@@ -103,21 +103,25 @@ object FoodV18_Guide_Apply extends App with MigrationRunner with WarningMessage 
             case objectId =>
               val navIndex = imageMap.navigation.indexOf(objectId)
               val podgon = s"{${imageMap.getCoordsArray(objectId).mkString(",")}}"
-              Seq[NamedParameter]('id -> objectId.toLong, 'image_map_id -> imageMapId, 'navigation_index -> navIndex, 'outline_coordinates -> podgon, 'overlay_image_id -> processedOverlayIds(objectId))
+              Seq[NamedParameter]('id -> objectId.toLong, 'image_map_id -> r.id, 'navigation_index -> navIndex, 'outline_coordinates -> podgon, 'overlay_image_id -> processedOverlayIds(objectId))
           }
 
           println(s"Create image map objects for ${r.id}")
 
-          BatchSql("INSERT INTO image_map_objects VALUES({id},{image_map_id},{navigation_index},{outline_coordinates}::double precision[],{overlay_image_id})", imageMapObjectParams.head, imageMapObjectParams.tail: _*).execute()
+          BatchSql("INSERT INTO image_map_objects VALUES({id},{image_map_id},COALESCE((SELECT description FROM guide_image_objects WHERE guide_image_id={image_map_id} AND object_id={id}), 'No description'),{navigation_index},{outline_coordinates}::double precision[],{overlay_image_id})", imageMapObjectParams.head, imageMapObjectParams.tail: _*).execute()
 
           val guideObjectParams = r.overlayPaths.map {
             case (objectId, _) =>
-              Seq[NamedParameter]('image_map_id -> imageMapId, 'guide_image_id -> r.id, 'object_id -> objectId)
+              Seq[NamedParameter]('image_map_id -> r.id, 'guide_image_id -> r.id, 'object_id -> objectId)
           }
 
           println(s"Updating guide_image_objects image map and object ids")
 
           BatchSql("UPDATE guide_image_objects SET image_map_object_id=object_id, image_map_id={image_map_id} WHERE guide_image_id={guide_image_id} AND object_id={object_id}", guideObjectParams.head, guideObjectParams.tail: _*).execute()
+
+          println (s"Updating guide_images with image map and selection screen ids")
+
+          SQL("UPDATE guide_images SET image_map_id={image_map_id},selection_image_id={selection_image_id} WHERE id={guide_id}").on('guide_id -> r.id, 'image_map_id -> r.id, 'selection_image_id -> processedSelectionImageId).execute()
       }
   }
 }

@@ -271,7 +271,7 @@ object FoodDatabaseMigrations {
 
         SQL(
           """|CREATE TABLE image_maps(
-             |  id serial NOT NULL PRIMARY KEY,
+             |  id character varying(32) NOT NULL PRIMARY KEY,
              |  description character varying(512) NOT NULL,
              |  base_image_id integer NOT NULL REFERENCES processed_images ON UPDATE CASCADE ON DELETE RESTRICT
              |)""".stripMargin).execute()
@@ -279,7 +279,8 @@ object FoodDatabaseMigrations {
         SQL(
           """|CREATE TABLE image_map_objects(
              |  id integer NOT NULL,
-             |  image_map_id integer NOT NULL REFERENCES image_maps ON UPDATE CASCADE ON DELETE RESTRICT,
+             |  image_map_id character varying(32) NOT NULL REFERENCES image_maps ON UPDATE CASCADE ON DELETE RESTRICT,
+             |  description character varying(512) NOT NULL,
              |  navigation_index integer NOT NULL,
              |  outline_coordinates double precision[] NOT NULL,
              |  overlay_image_id integer NOT NULL REFERENCES processed_images,
@@ -297,35 +298,80 @@ object FoodDatabaseMigrations {
       }
     },
 
-  new Migration {
-    val versionFrom = 17l
-    val versionTo = 18l
+    new Migration {
+      val versionFrom = 17l
+      val versionTo = 18l
 
-    val description = "Add temporary nullable columns to guide_images and guide_image_objects"
+      val description = "Add temporary nullable columns to guide_images and guide_image_objects"
 
-    def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
 
-      SQL("ALTER TABLE guide_images ADD COLUMN image_map_id integer").execute()
-      SQL("ALTER TABLE guide_images ADD COLUMN selection_image_id integer").execute()
-      SQL("ALTER TABLE guide_image_objects ADD COLUMN image_map_id integer").execute()
-      SQL("ALTER TABLE guide_image_objects ADD COLUMN image_map_object_id integer").execute()
+        SQL("ALTER TABLE guide_images ADD COLUMN image_map_id character varying(32)").execute()
+        SQL("ALTER TABLE guide_images ADD COLUMN selection_image_id integer").execute()
+        SQL("ALTER TABLE guide_image_objects ADD COLUMN image_map_id character varying(32)").execute()
+        SQL("ALTER TABLE guide_image_objects ADD COLUMN image_map_object_id integer").execute()
 
-      SQL("ALTER TABLE guide_images ADD CONSTRAINT guide_image_image_map_fk FOREIGN KEY(image_map_id) REFERENCES image_maps(id) ON UPDATE CASCADE ON DELETE RESTRICT").execute()
-      SQL("ALTER TABLE guide_images ADD CONSTRAINT guide_selection_image_id_fk FOREIGN KEY(selection_image_id) REFERENCES processed_images(id) ON UPDATE CASCADE ON DELETE RESTRICT").execute()
-      SQL("ALTER TABLE guide_image_objects ADD CONSTRAINT guide_image_object_fk FOREIGN KEY(image_map_object_id, image_map_id) REFERENCES image_map_objects(id, image_map_id) ON UPDATE CASCADE ON DELETE RESTRICT").execute()
+        SQL("ALTER TABLE guide_images ADD CONSTRAINT guide_image_image_map_fk FOREIGN KEY(image_map_id) REFERENCES image_maps(id) ON UPDATE CASCADE ON DELETE RESTRICT").execute()
+        SQL("ALTER TABLE guide_images ADD CONSTRAINT guide_selection_image_id_fk FOREIGN KEY(selection_image_id) REFERENCES processed_images(id) ON UPDATE CASCADE ON DELETE RESTRICT").execute()
+        SQL("ALTER TABLE guide_image_objects ADD CONSTRAINT guide_image_object_fk FOREIGN KEY(image_map_object_id, image_map_id) REFERENCES image_map_objects(id, image_map_id) ON UPDATE CASCADE ON DELETE RESTRICT").execute()
 
-      Right(())
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("ALTER TABLE guide_images DROP COLUMN image_map_id").execute()
+        SQL("ALTER TABLE guide_images DROP COLUMN selection_image_id").execute()
+        SQL("ALTER TABLE guide_image_objects DROP COLUMN image_map_id").execute()
+        SQL("ALTER TABLE guide_image_objects DROP COLUMN image_map_object_id").execute()
+
+        Right(())
+      }
+    },
+
+    // 18 -> 19 FoodV18_Apply
+    new Migration {
+      val versionFrom = 19l
+      val versionTo = 20l
+
+      val description = "Make temporary nullable columns in guide_images and guide_image_objects not nullable"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE guide_images ALTER COLUMN image_map_id SET NOT NULL").execute()
+        SQL("ALTER TABLE guide_images ALTER COLUMN selection_image_id SET NOT NULL").execute()
+        SQL("ALTER TABLE guide_image_objects ALTER COLUMN image_map_id SET NOT NULL").execute()
+        SQL("ALTER TABLE guide_image_objects ALTER COLUMN image_map_object_id SET NOT NULL").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("ALTER TABLE guide_images ALTER COLUMN image_map_id DROP NOT NULL").execute()
+        SQL("ALTER TABLE guide_images ALTER COLUMN selection_image_id DROP NOT NULL").execute()
+        SQL("ALTER TABLE guide_image_objects ALTER COLUMN image_map_id DROP NOT NULL").execute()
+        SQL("ALTER TABLE guide_image_objects ALTER COLUMN image_map_object_id DROP NOT NULL").execute()
+
+        Right(())
+      }
+    },
+
+    new Migration {
+      val versionFrom = 20l
+      val versionTo = 21l
+
+      val description = "Drop base_image_url from guide_images and description from guide_image_objects"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE guide_images DROP COLUMN base_image_url").execute()
+        SQL("ALTER TABLE guide_image_objects DROP COLUMN description").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
     }
-
-    def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
-      SQL("ALTER TABLE guide_images DROP COLUMN image_map_id").execute()
-      SQL("ALTER TABLE guide_images DROP COLUMN selection_image_id").execute()
-      SQL("ALTER TABLE guide_image_objects DROP COLUMN image_map_id").execute()
-      SQL("ALTER TABLE guide_image_objects DROP COLUMN image_map_object_id").execute()
-
-      Right(())
-    }
-  }
-
   )
 }

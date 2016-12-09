@@ -31,7 +31,7 @@ class MigrationsImpl(val dataSource: DataSource) extends SqlDataService[SimpleDa
           logger.info(s"No migrations left. Database schema is now at version $version.")
           Right(())
         } else if (applicable.size > 1) {
-          Left(MigrationFailed(new RuntimeException("Found more than one migration from version $version. This is not allowed.")))
+          Left(MigrationFailed(new RuntimeException(s"Found more than one migration from version $version. This is not allowed.")))
         } else {
           val migration = applicable(0)
 

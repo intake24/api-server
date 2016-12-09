@@ -13,14 +13,15 @@ trait MigrationRunner extends DatabaseConnection with WarningMessage {
     implicit val connection = dataSource.getConnection
 
     try {
+      connection.setTransactionIsolation(java.sql.Connection.TRANSACTION_REPEATABLE_READ)
+      connection.setAutoCommit(false)
+
       val version = SQL("SELECT version FROM schema_version").executeQuery().as(SqlParser.long("version").single)
 
       if (version != versionFrom) {
         throw new RuntimeException(s"Wrong schema version: expected $versionFrom, got $version")
       } else {
 
-        connection.setTransactionIsolation(java.sql.Connection.TRANSACTION_REPEATABLE_READ)
-        connection.setAutoCommit(false)
 
         block(connection)
 
