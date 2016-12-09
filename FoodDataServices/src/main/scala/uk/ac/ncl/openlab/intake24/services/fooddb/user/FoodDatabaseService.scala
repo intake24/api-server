@@ -25,4 +25,5 @@ trait FoodDatabaseService
   with DrinkwareService
   with AssociatedFoodsService
   with BrandNamesService 
+  with ImageMapService
   with FoodDataService {}

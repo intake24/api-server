@@ -6,7 +6,7 @@ import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.google.inject.name.Named
 
-@Singleton   
+@Singleton
 class FoodDatabaseUserImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends FoodDatabaseService
   with AsServedImageUserImpl
   with GuideImageUserImpl
@@ -14,4 +14,5 @@ class FoodDatabaseUserImpl @Inject() (@Named("intake24_foods") val dataSource: D
   with AssociatedFoodsUserImpl
   with BrandNamesUserImpl  
   with FoodBrowsingUserImpl
-  with FoodDataUserImpl { }
+  with FoodDataUserImpl
+  with ImageMapUserImpl { }
