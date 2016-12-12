@@ -99,19 +99,6 @@ public class ImageMap extends Composite {
   public ImageMap(final ImageMapDefinition definition, final ResultHandler handler) {
     this.definition = definition;
 
-    GWT.log(definition.baseImageUrl);
-    for (Area a: definition.areas) {
-      StringBuilder sb = new StringBuilder();
-      for (Point p: a.shape.vertices) {
-        sb.append("[");
-        sb.append(p.x);
-        sb.append(",");
-        sb.append(p.y);
-        sb.append("], ");
-      }
-      GWT.log(sb.toString());
-    }
-
     imageDiv = new FlowPanel();
     imageDiv.addStyleName("imagemap-container");
 

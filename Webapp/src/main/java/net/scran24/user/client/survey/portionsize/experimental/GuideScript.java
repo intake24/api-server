@@ -67,7 +67,7 @@ public class GuideScript implements PortionSizeScript {
                 @Override
                 public PMap<String, String> apply(PMap<String, String> argument) {
                   PMap<String, String> a = f.apply(argument);
-                  return a.plus("objectWeight", Double.toString(guideDef.objects.get(Integer.parseInt(a.get("objectIndex"))).weight));
+                  return a.plus("objectWeight", Double.toString(guideDef.weights.get(Integer.parseInt(a.get("objectIndex")))));
                 }
               };
             }

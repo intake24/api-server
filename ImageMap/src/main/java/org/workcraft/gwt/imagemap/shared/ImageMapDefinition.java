@@ -10,6 +10,8 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package org.workcraft.gwt.imagemap.shared;
 
+import java.util.Arrays;
+
 import com.google.gwt.user.client.rpc.IsSerializable;
 
 public class ImageMapDefinition implements IsSerializable {
@@ -31,6 +33,13 @@ public class ImageMapDefinition implements IsSerializable {
       this.overlayUrl = overlayUrl;
       this.id = id;
     }
+
+    @Override
+    public String toString() {
+      return "Area [shape=" + shape + ", overlayUrl=" + overlayUrl + ", id=" + id + "]";
+    }
+    
+    
   }
 
   public String baseImageUrl;
@@ -50,4 +59,12 @@ public class ImageMapDefinition implements IsSerializable {
     this.areas = areas;
     this.navigation = navigation;
   }
+
+  @Override
+  public String toString() {
+    return "ImageMapDefinition [baseImageUrl=" + baseImageUrl + ", areas=" + Arrays.toString(areas) + ", navigation=" + Arrays.toString(navigation)
+        + "]";
+  }
+  
+  
 }

@@ -67,7 +67,6 @@ import net.scran24.user.shared.lookup.AsServedDef;
 import net.scran24.user.shared.lookup.DrinkScaleDef;
 import net.scran24.user.shared.lookup.DrinkwareDef;
 import net.scran24.user.shared.lookup.GuideDef;
-import net.scran24.user.shared.lookup.GuideImageObject;
 import net.scran24.user.shared.lookup.LookupResult;
 import net.scran24.user.shared.lookup.PortionSizeMethod;
 import scala.Tuple2;
@@ -86,11 +85,11 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.NutrientMappingError;
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageStorageService;
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDataSources;
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDatabaseService;
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.ImageMap;
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.ImageMapObject;
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.UserAsServedImage;
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.UserAsServedSet;
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.UserGuideImage;
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.UserImageMap;
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.UserImageMapObject;
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex;
 import uk.ac.ncl.openlab.intake24.services.foodindex.IndexLookupResult;
 import uk.ac.ncl.openlab.intake24.services.foodindex.MatchedCategory;
@@ -359,19 +358,23 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
     return result;
   }
 
-  private ImageMapDefinition toJavaImageMap(ImageMap imageMap) {
-
-    Iterator<ImageMapObject> iterator = imageMap.objects().iterator();
-
+  private ImageMapDefinition toJavaImageMap(UserImageMap imageMap) {
     ArrayList<Area> areas = new ArrayList<Area>();
 
+    int[] navigation = new int[imageMap.objects().size()];
+    
+    int counter = 0;
+    
+    Iterator<UserImageMapObject> iterator = imageMap.objects().iterator();
+
     while (iterator.hasNext()) {
-      ImageMapObject obj = iterator.next();
+      UserImageMapObject obj = iterator.next();
       areas.add(new Area(new Polygon(obj.outline()), imageStorage.getUrl(obj.overlayPath()), obj.id()));
+      navigation[counter++] = obj.id();
     }
 
     return new ImageMapDefinition(imageStorage.getUrl(imageMap.baseImagePath()), areas.toArray(new Area[areas.size()]), new int[][] {
-      imageMap.navigation()
+      navigation
     });
   }
 
@@ -379,16 +382,9 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
   public GuideDef getGuideDef(String guideId, String locale) {
     crashIfDebugOptionSet("crash-on-get-guide-def");
 
-    UserGuideImage image = handleLookupError(foodData.getGuideImage(guideId));
+    UserGuideImage guideImage = handleLookupError(foodData.getGuideImage(guideId));
 
-    Map<Integer, GuideImageObject> objMap = new HashMap<Integer, GuideImageObject>();
-
-    for (Integer k : image.objectsAsJavaMap().keySet()) {
-      uk.ac.ncl.openlab.intake24.services.fooddb.user.GuideImageObject obj = image.objectsAsJavaMap().get(k);
-      objMap.put(k, new GuideImageObject(obj.description(), obj.weight()));
-    }
-
-    return new GuideDef(image.description(), toJavaImageMap(image.imageMap()), objMap);
+    return new GuideDef(guideImage.description(), getImageMap(guideImage.imageMapId()), guideImage.weightsAsJavaMap());
   }
 
   @Override
@@ -485,10 +481,21 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 
   @Override
   public ImageMapDefinition getImageMap(String id) {
-    throw new RuntimeException("Not implemented");
+    return toJavaImageMap(handleLookupError(foodData.getImageMap(id)));
   }
 
   public List<ImageMapDefinition> getImageMaps(List<String> ids) {
-    throw new RuntimeException("Not implemented");
+
+    Seq<UserImageMap> imageMaps = handleLookupError(foodData.getImageMaps(JavaConversions.asScalaBuffer(ids).toList()));
+
+    ArrayList<ImageMapDefinition> result = new ArrayList<ImageMapDefinition>();
+
+    Iterator<UserImageMap> iterator = imageMaps.iterator();
+
+    while (iterator.hasNext()) {
+      result.add(toJavaImageMap(iterator.next()));
+    }
+
+    return result;
   }
 }

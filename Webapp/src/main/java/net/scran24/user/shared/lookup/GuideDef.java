@@ -19,15 +19,21 @@ import com.google.gwt.user.client.rpc.IsSerializable;
 public class GuideDef implements IsSerializable {
   public String description;
   public ImageMapDefinition imageMap;
-  public Map<Integer, GuideImageObject> objects;
+  public Map<Integer, Double> weights;
 
   @Deprecated
   public GuideDef() {
   }
 
-  public GuideDef(String description, ImageMapDefinition imageMap, Map<Integer, GuideImageObject> objects) {
+  public GuideDef(String description, ImageMapDefinition imageMap, Map<Integer, Double> weights) {
     this.description = description;
     this.imageMap = imageMap;
-    this.objects = objects;
+    this.weights = weights;
   }
+
+  @Override
+  public String toString() {
+    return "GuideDef [description=" + description + ", imageMap=" + imageMap + ", weights=" + weights + "]";
+  }
+
 }
