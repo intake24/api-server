@@ -68,6 +68,10 @@ class ImageAdminController @Inject() (service: ImageAdminService, databaseServic
     request => uploadImpl(Some(originalPath => ImageAdminService.getSourcePathForAsServed(setId, originalPath)), request)
   }
 
+  def uploadSourceImageForImageMap(id: String) = deadbolt.restrict(Roles.superuser) {
+    request => uploadImpl(Some(originalPath => ImageAdminService.getSourcePathForImageMap(id, originalPath)), request)
+  }
+
   private def toClientRecords(records: Seq[SourceImageRecord]): Seq[ClientSourceImageRecord] = records.map {
     record =>
       ClientSourceImageRecord(record.id, storageService.getUrl(record.path), storageService.getUrl(record.thumbnailPath), record.keywords, record.uploader, record.uploadedAt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))

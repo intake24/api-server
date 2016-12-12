@@ -48,6 +48,8 @@ object ImageAdminService {
 
   val asServedPathPrefix = "as_served"
 
+  val imageMapPathPrefix = "image_maps"
+
   def randomName(originalName: String) = {
     val extension = "." + FilenameUtils.getExtension(originalName).toLowerCase()
 
@@ -56,6 +58,9 @@ object ImageAdminService {
 
   def getSourcePathForAsServed(setId: String, originalName: String): String =
     s"$asServedPathPrefix/$setId/${randomName(originalName)}"
+
+  def getSourcePathForImageMap(id: String, originalName: String): String =
+    s"$imageMapPathPrefix/$id/${randomName(originalName)}"
 
   def ssiPrefixAsServed(setId: String): String =
     s"$asServedPathPrefix/$setId/selection"

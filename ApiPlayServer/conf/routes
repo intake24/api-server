@@ -88,6 +88,9 @@ POST           /admin/portion-size/as-served/new                             con
 POST           /admin/portion-size/as-served/new-from-source                 controllers.AsServedSetsAdminController.createAsServedSetFromSource()
 PUT            /admin/portion-size/as-served/:id                             controllers.AsServedSetsAdminController.updateAsServedSet(id: String)
 
+POST           /admin/portion-size/image-map/new                             controllers.ImageMapAdminController.createImageMap()
+POST           /admin/portion-size/image-map/new-from-source                 controllers.ImageMapAdminController.createImageMapFromSource()
+
 GET            /admin/portion-size/guide-image                               controllers.GuideImageAdminController.listGuideImages()
 GET            /admin/portion-size/guide-image/:id                           controllers.GuideImageAdminController.getGuideImage(id: String)
 
@@ -110,6 +113,7 @@ GET            /admin/nutrient-tables                                        con
 GET            /admin/images/source                                          controllers.ImageAdminController.listSourceImages(offset: Int, limit: Int, search: Option[String])
 POST           /admin/images/source/new                                      controllers.ImageAdminController.uploadSourceImage()
 POST           /admin/images/source/new-as-served                            controllers.ImageAdminController.uploadSourceImageForAsServed(setId: String)
+POST           /admin/images/source/new-image-map                            controllers.ImageAdminController.uploadSourceImageForImageMap(id: String)
 PATCH          /admin/images/source/:id                                      controllers.ImageAdminController.updateSourceImage(id: Int)
 DELETE         /admin/images/source/delete                                   controllers.ImageAdminController.deleteSourceImages()
 
