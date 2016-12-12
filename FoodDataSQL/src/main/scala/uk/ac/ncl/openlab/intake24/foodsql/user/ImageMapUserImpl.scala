@@ -11,17 +11,16 @@ import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.ImageMapService
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.UserGuideImage
-import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.UserImageMap
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.UserImageMapObject
+import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
 
 trait ImageMapUserImpl extends ImageMapService with FoodDataSqlService with SqlResourceLoader {
   private case class ResultRow(id: String, base_image_path: String, object_id: Long, description: String, outline: Array[Double], overlay_image_path: String)
 
   private lazy val imageMapObjectsQuery = sqlFromResource("user/get_image_map_objects.sql")
    
-  def getImageMaps(ids: Seq[String]): Either[LookupError, Map[String, UserImageMap]] = tryWithConnection {
+  def getImageMaps(ids: Seq[String]): Either[LookupError, Seq[UserImageMap]] = tryWithConnection {
     implicit conn =>
       val result = SQL(imageMapObjectsQuery).on('ids -> ids).as(Macro.namedParser[ResultRow].*).groupBy(_.id).map {
         case (id, rows) =>
@@ -30,10 +29,16 @@ trait ImageMapUserImpl extends ImageMapService with FoodDataSqlService with SqlR
           }
           id -> UserImageMap(rows.head.base_image_path, objects)
       }
-      
-      if (ids.exists(!result.contains(_)))
-        Left(RecordNotFound(new RuntimeException()))
+
+      val missing = ids.filterNot(result.contains(_))
+
+      if (missing.nonEmpty)
+        Left(RecordNotFound(new RuntimeException(s"Missing image maps: ${missing.mkString(", ")}")))
       else
-        Right(result)
+        Right(ids.map(result(_)))
+  }
+  
+  def getImageMap(id: String): Either[LookupError, UserImageMap] = getImageMaps(Seq(id)).right.map {
+    _.head
   }
 }

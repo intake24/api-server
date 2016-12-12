@@ -43,11 +43,8 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
     <module>gwt-slider-bar</module>
     <module>ClientShared</module>
     <module>SharedTypes</module>
-    <module>FoodDBTool</module>
-    <module>ImageCompiler</module>
     <module>SlidingScale</module>
     <module>SystemDataServices</module>
-    <module>SystemDataMongo</module>
 	<module>CommonSQL</module>
     <module>SystemDataSQL</module>
     <module>ImageMap</module>
@@ -55,7 +52,6 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
     <module>PhraseSearch</module>
     <module>FoodDataServices</module>
     <module>FoodDataSQL</module>
-    <module>FoodDataXML</module>
 	<module>ImageStorageLocal</module>
     <module>NutrientsCSV</module>
     <module>resty-gwt</module>

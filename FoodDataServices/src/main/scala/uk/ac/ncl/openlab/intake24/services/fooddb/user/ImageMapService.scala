@@ -9,5 +9,6 @@ case class UserImageMap(baseImagePath: String, objects: Seq[UserImageMapObject])
 
 trait ImageMapService {
 
-  def getImageMaps(id: Seq[String]): Either[LookupError, Map[String, UserImageMap]]
+  def getImageMap(id: String): Either[LookupError, UserImageMap]
+  def getImageMaps(id: Seq[String]): Either[LookupError, Seq[UserImageMap]]
 }
