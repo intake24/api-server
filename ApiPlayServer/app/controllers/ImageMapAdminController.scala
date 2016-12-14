@@ -21,128 +21,83 @@ package controllers
 import java.nio.file.Paths
 import javax.inject.Inject
 
-import parsers.Upickle._
+import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.{Controller, Result}
+import play.api.mvc.Controller
 import security.{DeadboltActionsAdapter, Roles}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
 import upickle.default._
 
 import scala.concurrent.Future
-import scalaz.Scalaz._
-
-import play.api.Logger
 
 class ImageMapAdminController @Inject()(
-                                             service: AsServedSetsAdminService,
-                                             imageDatabase: ImageDatabaseService,
-                                             imageAdmin: ImageAdminService,
-                                             imageStorage: ImageStorageService,
-                                             deadbolt: DeadboltActionsAdapter) extends Controller
+                                         imageMaps: ImageMapsAdminService,
+                                         imageDatabase: ImageDatabaseService,
+                                         imageAdmin: ImageAdminService,
+                                         imageStorage: ImageStorageService,
+                                         deadbolt: DeadboltActionsAdapter) extends Controller
   with ImageOrDatabaseServiceErrorHandler {
 
-  import ImageAdminService.{WrapDatabaseError, WrapImageServiceError}
+  import ImageAdminService.{WrapImageServiceError, WrapDatabaseError}
 
-  def resolveUrls(image: AsServedImageWithPaths): AsServedImageWithUrls =
+  private val svgParser = new SVGImageMapParser()
+
+  /* def resolveUrls(image: AsServedImageWithPaths): AsServedImageWithUrls =
     AsServedImageWithUrls(image.sourceId, imageStorage.getUrl(image.imagePath), imageStorage.getUrl(image.thumbnailPath), image.weight)
 
-  def resolveUrls(set: AsServedSetWithPaths): AsServedSetWithUrls = AsServedSetWithUrls(set.id, set.description, set.images.map(resolveUrls))
+  def resolveUrls(set: AsServedSetWithPaths): AsServedSetWithUrls = AsServedSetWithUrls(set.id, set.description, set.images.map(resolveUrls))*/
+
+  private case class NewImageMapRequest(id: String, description: String, objectDescriptions: Map[Int, String])
 
   def createImageMapFromSVG() = deadbolt.restrict(Roles.superuser)(parse.multipartFormData) {
     request =>
       Future {
-        if (!request.body.dataParts.contains("baseImage"))
-          BadRequest("""{"cause":"baseImage field missing"}""")
-        else if (!request.body.dataParts.contains("svgImageMap"))
-          BadRequest("""{"cause":"svgImageMap field missing"}""")
+        val baseImageOpt = request.body.files.find(_.key == "baseImage")
+        val svgImageMapOpt = request.body.files.find(_.key == "SVGImageMap")
+        val reqOpt = request.body.dataParts.get("request")
+
+        if (baseImageOpt.isEmpty)
+          BadRequest("""{"cause":"baseImage file is missing"}""")
+        else if (svgImageMapOpt.isEmpty)
+          BadRequest("""{"cause":"SVGImageMap file is missing"}""")
+        else if (reqOpt.isEmpty)
+          BadRequest("""{"cause":"request field is missing"}""")
         else {
+          val baseImage = baseImageOpt.get
+          val svgImageMap = svgImageMapOpt.get
+          val req = read[NewImageMapRequest](reqOpt.get.head)
+          val keywords = request.body.dataParts.get("keywords").getOrElse(Seq())
 
-        }
-      }
-  }
+          val svgImageMapPath = svgImageMap.ref.file.getPath
 
-  def createAsServedSet() = deadbolt.restrict(Roles.superuser)(parse.multipartFormData) {
-    request =>
-      Future {
+          Logger.debug(s"Parsing SVG image map from ${svgImageMapPath}")
 
-        if (!request.body.dataParts.contains("id"))
-          BadRequest("""{"cause":"id field missing"}""")
-        else if (!request.body.dataParts.contains("weight"))
-          BadRequest("""{"cause":"weight field missing"}""")
-        else if (request.body.dataParts("weight").exists {
-          w =>
-            try {
-              w.toDouble
-              false
-            } catch {
-              case e: NumberFormatException => true
+          val imageMap = svgParser.parseImageMap(svgImageMapPath)
+
+          imageMap.outlines.keySet.find(!req.objectDescriptions.contains(_)) match {
+            case Some(missingId) => BadRequest(s"""{"cause":"missing description for object $missingId"}""")
+            case None => {
+              val result = for (
+                baseImageSourceId <- imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForImageMap(req.id, baseImage.filename), Paths.get(baseImage.ref.file.getPath), keywords, request.subject.get.identifier).right;
+                processedBaseImageDescriptor <- imageAdmin.processForImageMapBase(req.id, baseImageSourceId).right;
+                overlayDescriptors <- imageAdmin.generateImageMapOverlays(req.id, baseImageSourceId, imageMap).right;
+                _ <- {
+
+                  val objects = imageMap.outlines.keySet.foldLeft(Map[Int, ImageMapObjectRecord]()) {
+                    case (acc, objectId) =>
+                      acc + (objectId -> ImageMapObjectRecord(req.objectDescriptions(objectId), imageMap.getCoordsArray(objectId).toArray, overlayDescriptors(objectId).id))
+                  }
+
+                  imageMaps.createImageMaps(Seq(NewImageMapRecord(req.id, req.description, processedBaseImageDescriptor.id, imageMap.navigation, objects)))
+                }.wrapped.right
+
+              ) yield ()
+
+              translateImageServiceAndDatabaseResult(result)
             }
-        })
-          BadRequest("""{"cause":"one of the weight fields is not a valid number"}""")
-        else if (!request.body.dataParts.contains("description"))
-          BadRequest("""{"cause":"description field missing"}""")
-        else {
-          val files = request.body.files
-
-          val weights = request.body.dataParts("weight").map(_.toDouble)
-
-          if (files.length != weights.length)
-            BadRequest("""{"cause":"the number of files must correspond to the number of weight values"}""")
-          else {
-            val records = files.zip(weights)
-
-            val uploaderName = request.subject.get.identifier.split('#')(0)
-            val keywords = request.body.dataParts.getOrElse("keywords", Seq())
-            val setId = request.body.dataParts("id").head
-            val description = request.body.dataParts("description").head
-
-            val result = for (
-              sourceIds <- records.map {
-                record => imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForAsServed(setId, record._1.filename), Paths.get(record._1.ref.file.getPath), keywords, uploaderName)
-              }.toList.sequenceU.right;
-              result <- createAsServedSetImpl(NewAsServedSet(setId, description, sourceIds.zip(weights).map { case (id, weight) => NewAsServedImage(id, weight) })).right)
-              yield result
-
-            translateImageServiceAndDatabaseResult(result)
           }
         }
-      }
-  }
-
-  private def cleanUpOldImages(set: AsServedSetRecord): Either[Nothing, Unit] = {
-    val images = List(set.selectionImageId) ++ set.images.map(_.mainImageId) ++ set.images.map(_.thumbnailId)
-
-    // It's OK to continue if image deletion failed, but still log it
-    imageAdmin.deleteProcessedImages(images) match {
-      case Right(()) => Right(())
-      case Left(e) =>
-        Logger.warn("Could not delete old as served images", e.exception)
-        Right(())
-    }
-  }
-
-  def updateAsServedSet(id: String) = deadbolt.restrict(Roles.superuser)(upickleRead[NewAsServedSet]) {
-    request =>
-      Future {
-        val update = request.body
-
-        val result = for (
-          oldSet <- service.getAsServedSetRecord(id).wrapped.right;
-          newDescriptors <- processImages(update.id, update.images.map(_.sourceImageId)).right;
-          _ <- {
-            val newImageRecords = newDescriptors._1.zip(update.images.map(_.weight)).map {
-              case (AsServedImageDescriptor(ImageDescriptor(mainImageId, _), ImageDescriptor(thumbnailId, _)), weight) =>
-                NewAsServedImageRecord(mainImageId, thumbnailId, weight)
-            }
-
-            service.updateAsServedSet(id, NewAsServedSetRecord(update.id, update.description, newDescriptors._2.id, newImageRecords)).wrapped.right
-          };
-          _ <- cleanUpOldImages(oldSet).right;
-          res <- service.getAsServedSetWithPaths(update.id).wrapped.right
-        ) yield res
-
-        translateImageServiceAndDatabaseResult(result)
       }
   }
 }

@@ -17,9 +17,17 @@ class ImageProcessorIM @Inject()(val settings: ImageProcessorSettings) extends I
 
   val logger = LoggerFactory.getLogger(classOf[ImageProcessorIM])
 
+  val convertCmd = {
+    val cmd = new ConvertCmd()
+
+    settings.cmdSearchPath.foreach(cmd.setSearchPath(_))
+
+    cmd
+  }
+
   override def processForSourceThumbnail(sourceImage: Path, thumbnail: Path): Either[ImageProcessorError, Unit] =
     try {
-      val cmd = new ConvertCmd()
+
       val op = new IMOperation()
 
       op.resize(settings.source.thumbnailWidth)
@@ -29,9 +37,9 @@ class ImageProcessorIM @Inject()(val settings: ImageProcessorSettings) extends I
       op.addImage(sourceImage.toString())
       op.addImage(thumbnail.toString())
 
-      logger.debug(s"Invoking ImageMagick for source image thumbnail: ${((cmd.getCommand.asScala) ++ (op.getCmdArgs.asScala)).mkString(" ")}")
+      logger.debug(s"Invoking ImageMagick for source image thumbnail: ${((convertCmd.getCommand.asScala) ++ (op.getCmdArgs.asScala)).mkString(" ")}")
 
-      cmd.run(op)
+      convertCmd.run(op)
 
       Right(())
 
@@ -41,7 +49,6 @@ class ImageProcessorIM @Inject()(val settings: ImageProcessorSettings) extends I
 
   def processForAsServed(sourceImage: Path, mainImageDest: Path, thumbnailDest: Path): Either[ImageProcessorError, Unit] = {
     try {
-      val cmd = new ConvertCmd()
       val op = new IMOperation()
 
       op.resize(settings.asServed.width)
@@ -51,9 +58,9 @@ class ImageProcessorIM @Inject()(val settings: ImageProcessorSettings) extends I
       op.addImage(sourceImage.toString())
       op.addImage(mainImageDest.toString())
 
-      logger.debug(s"Invoking ImageMagick for main image: ${((cmd.getCommand.asScala) ++ (op.getCmdArgs.asScala)).mkString(" ")}")
+      logger.debug(s"Invoking ImageMagick for main image: ${((convertCmd.getCommand.asScala) ++ (op.getCmdArgs.asScala)).mkString(" ")}")
 
-      cmd.run(op)
+      convertCmd.run(op)
 
       val op2 = new IMOperation()
       op2.resize((settings.asServed.thumbnailWidth / 0.7).toInt)
@@ -62,9 +69,9 @@ class ImageProcessorIM @Inject()(val settings: ImageProcessorSettings) extends I
       op2.addImage(sourceImage.toString())
       op2.addImage(thumbnailDest.toString())
 
-      logger.debug(s"Invoking ImageMagick for thumbnail: ${((cmd.getCommand.asScala) ++ (op2.getCmdArgs.asScala)).mkString(" ")}")
+      logger.debug(s"Invoking ImageMagick for thumbnail: ${((convertCmd.getCommand.asScala) ++ (op2.getCmdArgs.asScala)).mkString(" ")}")
 
-      cmd.run(op2)
+      convertCmd.run(op2)
 
       Right(())
 
@@ -73,13 +80,8 @@ class ImageProcessorIM @Inject()(val settings: ImageProcessorSettings) extends I
     }
   }
 
-  def processForGuideImageBase(sourceImage: Path, dest: Path): Either[ImageProcessorError, Unit] = ???
-
-  def processForGuideImageOverlays(sourceImage: Path, destDir: Path): Either[ImageProcessorError, Map[Int, Path]] = ???
-
   def processForSelectionScreen(sourceImage: Path, dest: Path): Either[ImageProcessorError, Unit] = {
     try {
-      val cmd = new ConvertCmd()
       val op = new IMOperation()
 
       op.resize(settings.selection.width)
@@ -89,12 +91,30 @@ class ImageProcessorIM @Inject()(val settings: ImageProcessorSettings) extends I
       op.addImage(sourceImage.toString())
       op.addImage(dest.toString())
 
-      logger.debug(s"Invoking ImageMagick for selection screen image: ${((cmd.getCommand.asScala) ++ (op.getCmdArgs.asScala)).mkString(" ")}")
+      logger.debug(s"Invoking ImageMagick for selection screen image: ${((convertCmd.getCommand.asScala) ++ (op.getCmdArgs.asScala)).mkString(" ")}")
 
-      cmd.run(op)
+      convertCmd.run(op)
 
       Right(())
 
+    } catch {
+      case e: Throwable => Left(ImageProcessorError(e))
+    }
+  }
+
+  def processForImageMapBase(sourceImage: Path, dest: Path): Either[ImageProcessorError, Unit] = {
+    try {
+      val op = new IMOperation()
+
+      op.resize(settings.imageMap.baseImageWidth)
+      op.background("white")
+      op.gravity("Center")
+      op.addImage(sourceImage.toString())
+      op.addImage(dest.toString())
+
+      logger.debug(s"Invoking ImageMagick for base image: ${((convertCmd.getCommand.asScala) ++ (op.getCmdArgs.asScala)).mkString(" ")}")
+
+      Right(())
     } catch {
       case e: Throwable => Left(ImageProcessorError(e))
     }
@@ -130,7 +150,7 @@ class ImageProcessorIM @Inject()(val settings: ImageProcessorSettings) extends I
 
           g.setTransform(currentTransform)
 
-          val unblurred = Files.createTempFile("intake24", ".png")
+          val unblurred = Files.createTempFile("intake24-overlay-", ".png")
 
           // ImageMagick's blur filter is broken -- see http://www.imagemagick.org/Usage/bugs/blur_trans/
           // The bug was fixed in 6.2.5 but got broken again in 6.8.something
@@ -143,7 +163,6 @@ class ImageProcessorIM @Inject()(val settings: ImageProcessorSettings) extends I
           ImageIO.write(image, "png", unblurred.toFile())
           val outputPath = directory.resolve(UUID.randomUUID().toString + ".png")
 
-          val cmd = new ConvertCmd()
           val op = new IMOperation()
           op.addImage(unblurred.toString)
 
@@ -151,8 +170,8 @@ class ImageProcessorIM @Inject()(val settings: ImageProcessorSettings) extends I
           op.define(s"filter:sigma=${settings.imageMap.overlayBlurStrength}")
           op.addRawArgs("-resize", "100%")
           op.addImage(outputPath.toString)
-          cmd.setSearchPath("/usr/local/bin") // hack
-          cmd.run(op)
+
+          convertCmd.run(op)
 
           Files.delete(unblurred)
 

@@ -23,24 +23,24 @@ object ProcessedImagePurpose {
 
   case object PortionSizeSelectionImage extends ProcessedImagePurpose
 
-  case object GuideMainImage extends ProcessedImagePurpose
+  case object ImageMapBaseImage extends ProcessedImagePurpose
 
-  case object GuideOverlay extends ProcessedImagePurpose
+  case object ImageMapOverlay extends ProcessedImagePurpose
 
   def toId(p: ProcessedImagePurpose) = p match {
     case AsServedMainImage => 1l
     case AsServedThumbnail => 2l
     case PortionSizeSelectionImage => 3l
-    case GuideMainImage => 4l
-    case GuideOverlay => 5l
+    case ImageMapBaseImage => 4l
+    case ImageMapOverlay => 5l
   }
 
   def fromId(id: Long) = id match {
     case 1l => AsServedMainImage
     case 2l => AsServedThumbnail
     case 3l => PortionSizeSelectionImage
-    case 4l => GuideMainImage
-    case 5l => GuideOverlay
+    case 4l => ImageMapBaseImage
+    case 5l => ImageMapOverlay
     case _ => throw new IllegalArgumentException(s"Unexpected processed image purpose value: $id")
   }
 }

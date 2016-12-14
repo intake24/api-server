@@ -2,7 +2,7 @@ package uk.ac.ncl.openlab.intake24.services.fooddb.images
 
 import java.io.{File, IOException}
 import java.nio.file.attribute.BasicFileAttributes
-import java.nio.file.{FileVisitResult, Files, Path, SimpleFileVisitor}
+import java.nio.file._
 import java.util.UUID
 import javax.inject.Inject
 
@@ -18,6 +18,8 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
   private val allowedFileTypes = Seq("image/jpeg", "image/png", "image/svg+xml")
 
   private val sourcePathPrefix = "source"
+
+  private val tempFilePrefix = "intake24-"
 
   private val logger = LoggerFactory.getLogger(classOf[ImageAdminServiceDefaultImpl])
 
@@ -84,7 +86,7 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
   withTempDir {
     tempDir =>
       val extension = getExtension(source.toString)
-      val thumbDst = Files.createTempFile(tempDir, "intake24", extension)
+      val thumbDst = Files.createTempFile(tempDir, tempFilePrefix, extension)
 
       for (
         _ <- {
@@ -134,9 +136,9 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
 
             val extension = getExtension(path)
 
-            val srcPath = Files.createTempFile(tempDir, "intake24", extension)
-            val dstMainPath = Files.createTempFile(tempDir, "intake24", extension)
-            val dstThumbnailPath = Files.createTempFile(tempDir, "intake24", extension)
+            val srcPath = Files.createTempFile(tempDir, tempFilePrefix, extension)
+            val dstMainPath = Files.createTempFile(tempDir, tempFilePrefix, extension)
+            val dstThumbnailPath = Files.createTempFile(tempDir, tempFilePrefix, extension)
 
             val randomName = UUID.randomUUID().toString() + extension
 
@@ -157,13 +159,50 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
     }
   }
 
+  private def processAndUploadImageMapBase(imageMapId: String, sourcePath: String): Either[ImageServiceOrDatabaseError, String] =
+    withTempDir {
+      tempDir =>
+        val extension = getExtension(sourcePath)
+
+        val srcPath = Files.createTempFile(tempDir, tempFilePrefix, extension)
+        val dstPath = Files.createTempFile(tempDir, tempFilePrefix, extension)
+
+        val randomName = UUID.randomUUID().toString() + extension
+
+        for (
+          _ <- storage.downloadImage(sourcePath, srcPath).wrapped.right;
+          _ <- imageProcessor.processForImageMapBase(srcPath, dstPath).wrapped.right;
+          actualPath <- storage.uploadImage(s"image_maps/$imageMapId/$randomName", dstPath).wrapped.right
+        ) yield actualPath
+    }
+
+  private def generateAndUploadImageMapOverlays(imageMapId: String, imageMap: AWTImageMap): Either[ImageServiceOrDatabaseError, Map[Int, String]] =
+    withTempDir {
+      tempDir =>
+
+        logger.debug(s"Generating overlays for image map $imageMapId")
+
+        def upload(remaining: Map[Int, Path], acc: Map[Int, String] = Map()): Either[ImageServiceOrDatabaseError, Map[Int, String]] = remaining.headOption match {
+          case Some((objectId, path)) =>
+            val extension = getExtension(path.toString)
+            val randomName = UUID.randomUUID().toString + extension
+            storage.uploadImage(s"image_maps/$imageMapId/overlays/$randomName", path) match {
+              case Left(e) => Left(ImageServiceErrorWrapper(e))
+              case Right(actualPath) => upload(remaining - objectId, acc + (objectId -> actualPath))
+            }
+          case None => Right(acc)
+        }
+
+        imageProcessor.generateImageMapOverlays(imageMap, tempDir).wrapped.right.flatMap(upload(_))
+    }
+
   private def processAndUploadSelectionScreenImage(pathPrefix: String, sourcePath: String): Either[ImageServiceOrDatabaseError, String] =
     withTempDir {
       tempDir =>
         val extension = getExtension(sourcePath)
 
-        val srcPath = Files.createTempFile(tempDir, "intake24", extension)
-        val dstPath = Files.createTempFile(tempDir, "intake24", extension)
+        val srcPath = Files.createTempFile(tempDir, tempFilePrefix, extension)
+        val dstPath = Files.createTempFile(tempDir, tempFilePrefix, extension)
 
         val randomName = UUID.randomUUID().toString() + extension
 
@@ -183,7 +222,7 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
   def processForAsServed(setId: String, sourceImageIds: Seq[Long]): Either[ImageServiceOrDatabaseError, Seq[AsServedImageDescriptor]] =
     for (
       sources <- {
-        logger.debug("Getting source image descriptors");
+        logger.debug("Getting source image descriptors")
         imageDatabase.getSourceImageRecords(sourceImageIds).wrapped.right
       };
       uploadedPaths <- {
@@ -209,13 +248,41 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
       }
     }
 
-  def processForGuideImageBase(sourceImageId: Long): Either[ImageServiceOrDatabaseError, ImageDescriptor] = {
-    ???
+  def processForImageMapBase(imageMapId: String, sourceImageId: Long): Either[ImageServiceOrDatabaseError, ImageDescriptor] = {
+    logger.debug(s"Processing base image for image map $imageMapId")
+    for (
+      source <- {
+        logger.debug("Getting source image descriptor")
+        imageDatabase.getSourceImageRecords(Seq(sourceImageId)).wrapped.right.map(_.head).right
+      };
+      uploadedPath <- {
+        logger.debug("Processing and uploading image")
+        processAndUploadImageMapBase(imageMapId, source.path).right
+      };
+      baseImageId <- {
+        val record = ProcessedImageRecord(uploadedPath, source.id, ProcessedImagePurpose.ImageMapBaseImage)
+        logger.debug(s"Creating processed image record for the image")
+        imageDatabase.createProcessedImageRecords(Seq(record)).wrapped.right.map(_.head).right
+      }
+    ) yield {
+      ImageDescriptor(baseImageId, uploadedPath)
+    }
   }
 
-  def processForGuideImageOverlays(sourceImageId: Long): Either[ImageServiceOrDatabaseError, Seq[ImageDescriptor]] = {
-    ???
-  }
+  def generateImageMapOverlays(imageMapId: String, sourceId: Long, imageMap: AWTImageMap): Either[ImageServiceOrDatabaseError, Map[Int, ImageDescriptor]] =
+    generateAndUploadImageMapOverlays(imageMapId, imageMap).right.flatMap {
+      overlays =>
+        val (objectIds, overlayPaths) = overlays.toSeq.unzip
+        val records = overlayPaths.map(path => ProcessedImageRecord(path, sourceId, ProcessedImagePurpose.ImageMapOverlay))
+
+        imageDatabase.createProcessedImageRecords(records).wrapped.right.map {
+          processedImageIds =>
+            val descriptors = processedImageIds.zip(overlayPaths).map {
+              case (id, path) => ImageDescriptor(id, path)
+            }
+            objectIds.zip(descriptors).toMap
+        }
+    }
 
   def processForSelectionScreen(pathPrefix: String, sourceImageId: Long): Either[ImageServiceOrDatabaseError, ImageDescriptor] =
     for (source <- imageDatabase.getSourceImageRecords(Seq(sourceImageId)).wrapped.right;

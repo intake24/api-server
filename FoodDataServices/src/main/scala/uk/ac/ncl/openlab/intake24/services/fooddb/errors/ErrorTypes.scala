@@ -92,7 +92,7 @@ case class RecordNotFound(exception: Throwable)
   with UpdateError
   with AnyError
 
-case class StillReferenced(exception: Throwable) extends DeleteError
+case class StillReferenced(exception: Throwable) extends DeleteError with UpdateError
 
 case class VersionConflict(exception: Throwable) extends UpdateError
 

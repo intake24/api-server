@@ -7,7 +7,6 @@ trait ImageProcessor {
   def processForSourceThumbnail(sourceImage: Path, thumbnail: Path): Either[ImageProcessorError, Unit]
   def processForAsServed(sourceImage: Path, mainImageDest: Path, thumbnailDest: Path): Either[ImageProcessorError, Unit] 
   def processForSelectionScreen(sourceImage: Path, dest: Path): Either[ImageProcessorError, Unit]
-  def processForGuideImageBase(sourceImage: Path, dest: Path): Either[ImageProcessorError, Unit]
-
+  def processForImageMapBase(sourceImage: Path, dest: Path): Either[ImageProcessorError, Unit]
   def generateImageMapOverlays(imageMap: AWTImageMap, directory: Path): Either[ImageProcessorError, Map[Int, Path]]
 }

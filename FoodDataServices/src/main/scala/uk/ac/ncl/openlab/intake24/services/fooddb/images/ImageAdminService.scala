@@ -25,15 +25,18 @@ case class ImageServiceErrorWrapper(error: ImageServiceError) extends ImageServi
 
 trait ImageAdminService {
   def uploadSourceImage(suggestedPath: String, source: Path, keywords: Seq[String], uploaderName: String): Either[ImageServiceOrDatabaseError, Long]
+
   def deleteSourceImages(ids: Seq[Long]): Either[ImageServiceOrDatabaseError, Unit]
 
   def deleteProcessedImages(ids: Seq[Long]): Either[ImageServiceOrDatabaseError, Unit]
 
   def processForAsServed(setId: String, sourceImageIds: Seq[Long]): Either[ImageServiceOrDatabaseError, Seq[AsServedImageDescriptor]]
+
   def processForSelectionScreen(pathPrefix: String, sourceImageId: Long): Either[ImageServiceOrDatabaseError, ImageDescriptor]
 
-  def processForGuideImageBase(sourceImageId: Long): Either[ImageServiceOrDatabaseError, ImageDescriptor]
-  def processForGuideImageOverlays(sourceImageId: Long): Either[ImageServiceOrDatabaseError, Seq[ImageDescriptor]]
+  def processForImageMapBase(imageMapId: String, sourceImageId: Long): Either[ImageServiceOrDatabaseError, ImageDescriptor]
+
+  def generateImageMapOverlays(imageMapId: String, sourceId: Long, imageMap: AWTImageMap): Either[ImageServiceOrDatabaseError, Map[Int, ImageDescriptor]]
 }
 
 object ImageAdminService {
