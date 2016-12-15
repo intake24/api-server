@@ -18,23 +18,20 @@ limitations under the License.
 
 package controllers
 
-import scala.concurrent.Future
-
 import javax.inject.Inject
+
+import parsers.UpickleUtil
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
-import security.DeadboltActionsAdapter
-import security.Roles
-import uk.ac.ncl.openlab.intake24.LocalCategoryRecordUpdate
-import uk.ac.ncl.openlab.intake24.MainCategoryRecordUpdate
-import uk.ac.ncl.openlab.intake24.NewMainCategoryRecord
+import security.{DeadboltActionsAdapter, Roles}
+import uk.ac.ncl.openlab.intake24.{LocalCategoryRecordUpdate, MainCategoryRecordUpdate, NewLocalCategoryRecord, NewMainCategoryRecord}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoriesAdminService
-import upickle.default.read
-import uk.ac.ncl.openlab.intake24.NewLocalCategoryRecord
-import parsers.Upickle._
+
+import scala.concurrent.Future
+
 
 class CategoriesAdminController @Inject() (service: CategoriesAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
-    with FoodDatabaseErrorHandler {
+    with FoodDatabaseErrorHandler with UpickleUtil {
 
   def getCategoryRecord(code: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
@@ -53,7 +50,7 @@ class CategoriesAdminController @Inject() (service: CategoriesAdminService, dead
     }
   }
 
-  def createMainCategoryRecord() = deadbolt.restrict(Roles.superuser)(upickleRead[NewMainCategoryRecord]) {
+  def createMainCategoryRecord() = deadbolt.restrict(Roles.superuser)(upickleBodyParser[NewMainCategoryRecord]) {
     request =>
       Future {
         translateDatabaseResult(service.createMainCategoryRecords(Seq(request.body)))
@@ -66,14 +63,14 @@ class CategoriesAdminController @Inject() (service: CategoriesAdminService, dead
     }
   }
 
-  def updateMainCategoryRecord(categoryCode: String) = deadbolt.restrict(Roles.superuser)(upickleRead[MainCategoryRecordUpdate]) {
+  def updateMainCategoryRecord(categoryCode: String) = deadbolt.restrict(Roles.superuser)(upickleBodyParser[MainCategoryRecordUpdate]) {
     request =>
       Future {
         translateDatabaseResult(service.updateMainCategoryRecord(categoryCode, request.body))
       }
   }
 
-  def updateLocalCategoryRecord(categoryCode: String, locale: String) = deadbolt.restrict(Roles.superuser)(upickleRead[LocalCategoryRecordUpdate]) {
+  def updateLocalCategoryRecord(categoryCode: String, locale: String) = deadbolt.restrict(Roles.superuser)(upickleBodyParser[LocalCategoryRecordUpdate]) {
     request =>
       Future {
         val req = request.body

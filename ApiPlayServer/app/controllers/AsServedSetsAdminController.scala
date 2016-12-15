@@ -21,7 +21,7 @@ package controllers
 import java.nio.file.Paths
 import javax.inject.Inject
 
-import parsers.Upickle._
+import parsers.UpickleUtil
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{Controller, Result}
 import security.{DeadboltActionsAdapter, Roles}
@@ -31,7 +31,6 @@ import upickle.default._
 
 import scala.concurrent.Future
 import scalaz.Scalaz._
-
 import play.api.Logger
 
 case class AsServedImageWithUrls(sourceId: Long, imageUrl: String, thumbnailUrl: String, weight: Double)
@@ -50,7 +49,7 @@ class AsServedSetsAdminController @Inject()(
                                              imageAdmin: ImageAdminService,
                                              imageStorage: ImageStorageService,
                                              deadbolt: DeadboltActionsAdapter) extends Controller
-  with ImageOrDatabaseServiceErrorHandler {
+  with ImageOrDatabaseServiceErrorHandler with UpickleUtil {
 
   import ImageAdminService.{WrapDatabaseError, WrapImageServiceError}
 
@@ -77,7 +76,7 @@ class AsServedSetsAdminController @Inject()(
     }
   }
 
-  def importAsServedSet() = deadbolt.restrict(Roles.superuser)(upickleRead[PortableAsServedSet]) {
+  def importAsServedSet() = deadbolt.restrict(Roles.superuser)(upickleBodyParser[PortableAsServedSet]) {
     request =>
       Future {
 
@@ -152,7 +151,7 @@ class AsServedSetsAdminController @Inject()(
       res <- service.getAsServedSetWithPaths(newSet.id).wrapped.right
     ) yield res
 
-  def createAsServedSetFromSource() = deadbolt.restrict(Roles.superuser)(upickleRead[NewAsServedSet]) {
+  def createAsServedSetFromSource() = deadbolt.restrict(Roles.superuser)(upickleBodyParser[NewAsServedSet]) {
     request =>
       Future {
         val newSet = request.body
@@ -224,7 +223,7 @@ class AsServedSetsAdminController @Inject()(
     }
   }
 
-  def updateAsServedSet(id: String) = deadbolt.restrict(Roles.superuser)(upickleRead[NewAsServedSet]) {
+  def updateAsServedSet(id: String) = deadbolt.restrict(Roles.superuser)(upickleBodyParser[NewAsServedSet]) {
     request =>
       Future {
         val update = request.body

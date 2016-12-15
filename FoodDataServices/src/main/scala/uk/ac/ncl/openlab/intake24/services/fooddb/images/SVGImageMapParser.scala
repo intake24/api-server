@@ -143,24 +143,27 @@ class SVGImageMapParser {
       svgElement.getHeight.getBaseVal.getValue
   }
 
-  def parseImageMap(svgPath: String): AWTImageMap = {
+  def parseImageMap(svgPath: String): Either[Throwable, AWTImageMap] = {
     logger.debug(s"Trying to parse image map from $svgPath")
 
-    val svgDoc = parseSvg(svgPath)
+    try {
+      val svgDoc = parseSvg(svgPath)
 
-    val svgElem = svgDoc.getRootElement
+      val svgElem = svgDoc.getRootElement
 
-    val (width, height) = (getSVGWidth(svgElem), getSVGHeight(svgElem))
+      val (width, height) = (getSVGWidth(svgElem), getSVGHeight(svgElem))
 
-    val scale = 1.0 / width
+      val scale = 1.0 / width
 
-    val aspect = width / height
+      val aspect = width / height
 
-    val outlines = getOutlines(scale, svgDoc, s => if (s.matches("area_[0-9]+")) Some(s.substring(5).toInt) else None)
+      val outlines = getOutlines(scale, svgDoc, s => if (s.matches("area_[0-9]+")) Some(s.substring(5).toInt) else None)
 
-    val navigation = getNavigation(svgDoc).getOrElse(outlines.keySet.toSeq.sorted)
+      val navigation = getNavigation(svgDoc).getOrElse(outlines.keySet.toSeq.sorted)
 
-    AWTImageMap(navigation, outlines, aspect)
+      Right(AWTImageMap(navigation, outlines, aspect))
+    } catch {
+      case e: Throwable => Left(e)
+    }
   }
-
 }

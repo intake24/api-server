@@ -18,36 +18,28 @@ limitations under the License.
 
 package controllers
 
-import scala.annotation.implicitNotFound
+import javax.inject.Inject
+
+import com.mohiva.play.silhouette.api.{Environment, LoginEvent}
+import com.mohiva.play.silhouette.api.util.Credentials
+import com.mohiva.play.silhouette.impl.exceptions.{IdentityNotFoundException, InvalidPasswordException}
+import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
+import parsers.UpickleUtil
+import play.api.http.ContentTypes
+import play.api.libs.json.Json
+import play.api.mvc.{Action, Controller}
+import security.{DatabaseAccessException, DatabaseFormatException, Intake24ApiEnv, Intake24Credentials}
+import upickle.default._
+import play.api.libs.concurrent.Execution.Implicits._
+
 import scala.concurrent.Future
 
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.api.LoginEvent
-import com.mohiva.play.silhouette.api.util.Credentials
-import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
-import com.mohiva.play.silhouette.impl.exceptions.InvalidPasswordException
-import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-
-import javax.inject.Inject
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.libs.json.Json
-import play.api.libs.json.Json.toJsFieldJsValueWrapper
-import play.api.mvc.Action
-import play.api.mvc.Controller
-import security.DatabaseAccessException
-import security.DatabaseFormatException
-import security.Intake24ApiEnv
-import security.Intake24Credentials
-import upickle.default._
-import play.api.http.ContentTypes
-import parsers.Upickle._
-
 class Auth @Inject() (silEnv: Environment[Intake24ApiEnv], credentialsProvider: CredentialsProvider)
-    extends Controller {
+    extends Controller with UpickleUtil {
 
   private case class AuthSuccess(token: String)
 
-  def signin = Action.async(upickleRead[Intake24Credentials]) {
+  def signin = Action.async(upickleBodyParser[Intake24Credentials]) {
     implicit request =>
 
       val credentials = request.body

@@ -106,6 +106,7 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     bind(classOf[GuideImageAdminService]).to(classOf[GuideImageAdminStandaloneImpl])
     bind(classOf[NutrientTablesAdminService]).to(classOf[NutrientTablesAdminStandaloneImpl])
     bind(classOf[QuickSearchService]).to(classOf[QuickSearchAdminStandaloneImpl])
+    bind(classOf[ImageMapsAdminService]).to(classOf[ImageMapsAdminStandaloneImpl])
 
     // Observable admin services for higher-level cached services
 

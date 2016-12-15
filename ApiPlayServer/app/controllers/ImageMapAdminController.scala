@@ -21,13 +21,14 @@ package controllers
 import java.nio.file.Paths
 import javax.inject.Inject
 
-import play.api.Logger
+import parsers.FormDataUtil
+import play.api.libs.Files.TemporaryFile
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.Controller
+import play.api.mvc.MultipartFormData.FilePart
+import play.api.mvc.{Controller, Result}
 import security.{DeadboltActionsAdapter, Roles}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
-import upickle.default._
 
 import scala.concurrent.Future
 
@@ -37,9 +38,9 @@ class ImageMapAdminController @Inject()(
                                          imageAdmin: ImageAdminService,
                                          imageStorage: ImageStorageService,
                                          deadbolt: DeadboltActionsAdapter) extends Controller
-  with ImageOrDatabaseServiceErrorHandler {
+  with ImageOrDatabaseServiceErrorHandler with FormDataUtil {
 
-  import ImageAdminService.{WrapImageServiceError, WrapDatabaseError}
+  import ImageAdminService.WrapDatabaseError
 
   private val svgParser = new SVGImageMapParser()
 
@@ -48,55 +49,51 @@ class ImageMapAdminController @Inject()(
 
   def resolveUrls(set: AsServedSetWithPaths): AsServedSetWithUrls = AsServedSetWithUrls(set.id, set.description, set.images.map(resolveUrls))*/
 
-  private case class NewImageMapRequest(id: String, description: String, objectDescriptions: Map[Int, String])
+  private case class NewImageMapRequest(id: String, description: String, objectDescriptions: Map[String, String])
+
+  private def validateParams(params: NewImageMapRequest, parsedImageMap: AWTImageMap): Either[Result, Unit] =
+    parsedImageMap.outlines.keySet.find(k => !params.objectDescriptions.contains(k.toString)) match {
+      case Some(missingId) => Left(BadRequest(s"""{"cause":"missing description for object $missingId"}"""))
+      case None => Right(())
+    }
+
+  private def createImageMap(baseImage: FilePart[TemporaryFile], keywords: Seq[String], params: NewImageMapRequest, imageMap: AWTImageMap, uploader: String): Either[Result, Unit] =
+    translateImageServiceAndDatabaseError(
+      for (
+        baseImageSourceId <- imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForImageMap(params.id, baseImage.filename), Paths.get(baseImage.ref.file.getPath), keywords, uploader).right;
+        processedBaseImageDescriptor <- imageAdmin.processForImageMapBase(params.id, baseImageSourceId).right;
+        overlayDescriptors <- imageAdmin.generateImageMapOverlays(params.id, baseImageSourceId, imageMap).right;
+        _ <- {
+
+          val objects = imageMap.outlines.keySet.foldLeft(Map[Int, ImageMapObjectRecord]()) {
+            case (acc, objectId) =>
+              acc + (objectId -> ImageMapObjectRecord(params.objectDescriptions(objectId.toString), imageMap.getCoordsArray(objectId).toArray, overlayDescriptors(objectId).id))
+          }
+
+          imageMaps.createImageMaps(Seq(NewImageMapRecord(params.id, params.description, processedBaseImageDescriptor.id, imageMap.navigation, objects)))
+        }.wrapped.right
+
+      ) yield ())
 
   def createImageMapFromSVG() = deadbolt.restrict(Roles.superuser)(parse.multipartFormData) {
     request =>
       Future {
-        val baseImageOpt = request.body.files.find(_.key == "baseImage")
-        val svgImageMapOpt = request.body.files.find(_.key == "SVGImageMap")
-        val reqOpt = request.body.dataParts.get("request")
+        val result = for (
+          baseImage <- getFile("baseImage", request.body).right;
+          svgImage <- getFile("svg", request.body).right;
+          sourceKeywords <- getOptionalMultipleData("baseImageKeywords", request.body).right;
+          params <- getParsedData[NewImageMapRequest]("imageMapParameters", request.body).right;
+          imageMap <- (svgParser.parseImageMap(svgImage.ref.file.getPath) match {
+            case Left(e) => Left(BadRequest(s"""{"cause":"Failed to parse the SVG image map: ${e.getClass.getName}: ${e.getMessage}"}"""))
+            case Right(m) => Right(m)
+          }).right;
+          _ <- validateParams(params, imageMap).right;
+          _ <- createImageMap(baseImage, sourceKeywords, params, imageMap, request.subject.get.identifier).right
+        ) yield ()
 
-        if (baseImageOpt.isEmpty)
-          BadRequest("""{"cause":"baseImage file is missing"}""")
-        else if (svgImageMapOpt.isEmpty)
-          BadRequest("""{"cause":"SVGImageMap file is missing"}""")
-        else if (reqOpt.isEmpty)
-          BadRequest("""{"cause":"request field is missing"}""")
-        else {
-          val baseImage = baseImageOpt.get
-          val svgImageMap = svgImageMapOpt.get
-          val req = read[NewImageMapRequest](reqOpt.get.head)
-          val keywords = request.body.dataParts.get("keywords").getOrElse(Seq())
-
-          val svgImageMapPath = svgImageMap.ref.file.getPath
-
-          Logger.debug(s"Parsing SVG image map from ${svgImageMapPath}")
-
-          val imageMap = svgParser.parseImageMap(svgImageMapPath)
-
-          imageMap.outlines.keySet.find(!req.objectDescriptions.contains(_)) match {
-            case Some(missingId) => BadRequest(s"""{"cause":"missing description for object $missingId"}""")
-            case None => {
-              val result = for (
-                baseImageSourceId <- imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForImageMap(req.id, baseImage.filename), Paths.get(baseImage.ref.file.getPath), keywords, request.subject.get.identifier).right;
-                processedBaseImageDescriptor <- imageAdmin.processForImageMapBase(req.id, baseImageSourceId).right;
-                overlayDescriptors <- imageAdmin.generateImageMapOverlays(req.id, baseImageSourceId, imageMap).right;
-                _ <- {
-
-                  val objects = imageMap.outlines.keySet.foldLeft(Map[Int, ImageMapObjectRecord]()) {
-                    case (acc, objectId) =>
-                      acc + (objectId -> ImageMapObjectRecord(req.objectDescriptions(objectId), imageMap.getCoordsArray(objectId).toArray, overlayDescriptors(objectId).id))
-                  }
-
-                  imageMaps.createImageMaps(Seq(NewImageMapRecord(req.id, req.description, processedBaseImageDescriptor.id, imageMap.navigation, objects)))
-                }.wrapped.right
-
-              ) yield ()
-
-              translateImageServiceAndDatabaseResult(result)
-            }
-          }
+        result match {
+          case Left(badResult) => badResult
+          case Right(()) => Ok
         }
       }
   }

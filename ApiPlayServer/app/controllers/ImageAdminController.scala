@@ -6,6 +6,7 @@ import javax.inject.Inject
 
 import be.objectify.deadbolt.scala.AuthenticatedRequest
 import org.slf4j.LoggerFactory
+import parsers.UpickleUtil
 import play.api.http.ContentTypes
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{AnyContent, Controller}
@@ -15,9 +16,10 @@ import upickle.default._
 
 import scala.concurrent.Future
 
-class ImageAdminController @Inject() (service: ImageAdminService, databaseService: ImageDatabaseService, storageService: ImageStorageService, deadbolt: DeadboltActionsAdapter)
+class ImageAdminController @Inject()(service: ImageAdminService, databaseService: ImageDatabaseService, storageService: ImageStorageService, deadbolt: DeadboltActionsAdapter)
   extends Controller
-    with ImageOrDatabaseServiceErrorHandler {
+    with ImageOrDatabaseServiceErrorHandler
+    with UpickleUtil {
 
   private val logger = LoggerFactory.getLogger(classOf[ImageAdminController])
 
@@ -25,7 +27,7 @@ class ImageAdminController @Inject() (service: ImageAdminService, databaseServic
 
   case class ClientSourceImageRecord(id: Long, fullSizeUrl: String, fixedSizeUrl: String, keywords: Seq[String], uploader: String, uploadedAt: String)
 
-  private def uploadImpl(pathFunc: Option[String => String], request: AuthenticatedRequest[AnyContent]) =  Future {
+  private def uploadImpl(pathFunc: Option[String => String], request: AuthenticatedRequest[AnyContent]) = Future {
     request.body.asMultipartFormData match {
       case Some(formData) => {
 
@@ -86,14 +88,14 @@ class ImageAdminController @Inject() (service: ImageAdminService, databaseServic
       }
   }
 
-  def updateSourceImage(id: Int) = deadbolt.restrict(Roles.superuser)(parsers.Upickle.upickleRead[SourceImageRecordUpdate]) {
+  def updateSourceImage(id: Int) = deadbolt.restrict(Roles.superuser)(upickleBodyParser[SourceImageRecordUpdate]) {
     request =>
       Future {
         translateDatabaseResult(databaseService.updateSourceImageRecord(id, request.body))
       }
   }
 
-  def deleteSourceImages() = deadbolt.restrict(Roles.superuser)(parsers.Upickle.upickleRead[Seq[Long]]) {
+  def deleteSourceImages() = deadbolt.restrict(Roles.superuser)(upickleBodyParser[Seq[Long]]) {
     request =>
       Future {
         translateImageServiceAndDatabaseResult(service.deleteSourceImages(request.body))

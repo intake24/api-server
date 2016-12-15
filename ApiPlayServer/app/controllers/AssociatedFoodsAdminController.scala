@@ -19,19 +19,19 @@ limitations under the License.
 package controllers
 
 import scala.concurrent.Future
-
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
 import security.Roles
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
 import security.DeadboltActionsAdapter
-
 import upickle.default._
 import uk.ac.ncl.openlab.intake24.AssociatedFood
 import javax.inject.Inject
-import parsers.Upickle._
+
+import parsers.UpickleUtil
+
 class AssociatedFoodsAdminController @Inject() (service: AssociatedFoodsAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
-    with FoodDatabaseErrorHandler {
+    with FoodDatabaseErrorHandler with UpickleUtil {
 
   def getAssociatedFoods(foodCode: String, locale: String) = deadbolt.restrict(Roles.superuser) {
     Future {
@@ -39,7 +39,7 @@ class AssociatedFoodsAdminController @Inject() (service: AssociatedFoodsAdminSer
     }
   }
 
-  def updateAssociatedFoods(foodCode: String, locale: String) = deadbolt.restrict(Roles.superuser)(upickleRead[Seq[AssociatedFood]]) {
+  def updateAssociatedFoods(foodCode: String, locale: String) = deadbolt.restrict(Roles.superuser)(upickleBodyParser[Seq[AssociatedFood]]) {
     request =>
       Future {
         translateDatabaseResult(service.updateAssociatedFoods(foodCode, request.body, locale))

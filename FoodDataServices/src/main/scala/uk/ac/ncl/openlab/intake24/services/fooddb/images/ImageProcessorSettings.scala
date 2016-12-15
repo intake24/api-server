@@ -9,7 +9,7 @@ case class SelectionImageSettings(width: Int, height: Int)
 
 case class SourceImageSettings(thumbnailWidth: Int, thumbnailHeight: Int)
 
-case class ImageMapSettings(baseImageWidth: Int, overlayStrokeWidth: Double, overlayStrokeColor: (Double, Double, Double), overlayBlurStrength: Double)
+case class ImageMapSettings(baseImageWidth: Int, outlineStrokeWidth: Double, outlineColor: (Double, Double, Double), outlineBlurStrength: Double)
 
 case class ImageProcessorSettings(cmdSearchPath: Option[String], source: SourceImageSettings, selection: SelectionImageSettings, asServed: AsServedImageSettings, imageMap: ImageMapSettings)
 

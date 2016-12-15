@@ -128,11 +128,11 @@ class ImageProcessorIM @Inject()(val settings: ImageProcessorSettings) extends I
       val image = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_ARGB)
       val g = image.createGraphics()
       g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-      g.setStroke(new BasicStroke(settings.imageMap.overlayStrokeWidth.toFloat / targetWidth))
+      g.setStroke(new BasicStroke(settings.imageMap.outlineStrokeWidth.toFloat / targetWidth))
 
-      val color = new Color(settings.imageMap.overlayStrokeColor._1.toFloat,
-        settings.imageMap.overlayStrokeColor._2.toFloat,
-        settings.imageMap.overlayStrokeColor._3.toFloat)
+      val color = new Color(settings.imageMap.outlineColor._1.toFloat,
+        settings.imageMap.outlineColor._2.toFloat,
+        settings.imageMap.outlineColor._3.toFloat)
 
       g.setColor(color)
 
@@ -167,7 +167,7 @@ class ImageProcessorIM @Inject()(val settings: ImageProcessorSettings) extends I
           op.addImage(unblurred.toString)
 
           op.filter("Gaussian")
-          op.define(s"filter:sigma=${settings.imageMap.overlayBlurStrength}")
+          op.define(s"filter:sigma=${settings.imageMap.outlineBlurStrength}")
           op.addRawArgs("-resize", "100%")
           op.addImage(outputPath.toString)
 
