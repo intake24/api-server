@@ -14,7 +14,7 @@ import scala.collection.JavaConverters._
 
 object FoodV18_Guide_Apply extends App with MigrationRunner with WarningMessage {
 
-  private case class GuideImageRow(id: String, base_image_url: String)
+ /* private case class GuideImageRow(id: String, base_image_url: String)
 
   private case class GuideObjectRow(guide_image_id: String, object_id: Long)
 
@@ -63,7 +63,7 @@ object FoodV18_Guide_Apply extends App with MigrationRunner with WarningMessage 
 
       val processedMainParams = remapped.zip(sourceImageIds).map {
         case (r, sourceKey) =>
-          Seq[NamedParameter]('path -> r.mainImagePath, 'source_id -> sourceKey, 'purpose -> ProcessedImagePurpose.toId(ProcessedImagePurpose.GuideMainImage))
+          Seq[NamedParameter]('path -> r.mainImagePath, 'source_id -> sourceKey, 'purpose -> ProcessedImagePurpose.toId(ProcessedImagePurpose.ImageMapBaseImage))
       }
 
       println("Creating processed image records for base images")
@@ -84,7 +84,7 @@ object FoodV18_Guide_Apply extends App with MigrationRunner with WarningMessage 
 
           val processedOverlayParams = r.overlayPaths.map {
             case (_, path) =>
-              Seq[NamedParameter]('path -> path, 'source_id -> sourceImageId, 'purpose -> ProcessedImagePurpose.toId(ProcessedImagePurpose.GuideOverlay))
+              Seq[NamedParameter]('path -> path, 'source_id -> sourceImageId, 'purpose -> ProcessedImagePurpose.toId(ProcessedImagePurpose.ImageMapOverlay))
           }
 
           println(s"Creating processed image records for overlays for ${r.id}")
@@ -123,5 +123,5 @@ object FoodV18_Guide_Apply extends App with MigrationRunner with WarningMessage 
 
           SQL("UPDATE guide_images SET image_map_id={image_map_id},selection_image_id={selection_image_id} WHERE id={guide_id}").on('guide_id -> r.id, 'image_map_id -> r.id, 'selection_image_id -> processedSelectionImageId).execute()
       }
-  }
+  }*/
 }

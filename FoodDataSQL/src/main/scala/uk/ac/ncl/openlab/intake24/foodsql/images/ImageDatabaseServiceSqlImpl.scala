@@ -47,7 +47,8 @@ class ImageDatabaseServiceSqlImpl @Inject()(@Named("intake24_foods") val dataSou
 
         val keywordsQuery = "INSERT INTO source_image_keywords VALUES ({id},{keyword})"
 
-        batchSql(keywordsQuery, keywordParams).execute()
+        if (keywordParams.nonEmpty)
+          batchSql(keywordsQuery, keywordParams).execute()
 
         Right(ids)
       }
