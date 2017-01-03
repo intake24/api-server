@@ -32,7 +32,6 @@ import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
 import uk.ac.ncl.openlab.intake24.CategoryHeader
 import uk.ac.ncl.openlab.intake24.FoodHeader
 import uk.ac.ncl.openlab.intake24.CategoryContents
-import uk.ac.ncl.openlab.intake24.api.Intake24Credentials
 import uk.ac.ncl.openlab.intake24.services.NewMainFoodRecord
 
 import uk.ac.ncl.openlab.intake24.services.NewCategory

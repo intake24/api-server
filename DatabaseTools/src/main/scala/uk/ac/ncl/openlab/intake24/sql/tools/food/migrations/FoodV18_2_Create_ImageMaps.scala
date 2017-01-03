@@ -76,6 +76,8 @@ object FoodV18_2_Create_ImageMaps extends App with MigrationRunner with WarningM
         imageMapId =>
           println (s"Processing $imageMapId")
           val imageMap = getImageMapFromSVG(imageMapId)
+
+
       }
   }
 }
