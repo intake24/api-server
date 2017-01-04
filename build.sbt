@@ -1,7 +1,7 @@
 /*
 This file is part of Intake24.
 
-Copyright 2015, 2016 Newcastle University.
+Copyright 2015, 2016, 2017 Newcastle University.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -57,9 +57,12 @@ lazy val imageStorageLocal = Project(id = "imageStorageLocal", base = file("Imag
 lazy val imageProcessorIM = Project(id = "imageProcessorIM", base = file("ImageProcessorIM")).dependsOn(foodDataServices).settings(commonSettings: _*)
 
 
-lazy val apiPlayServer = Project(id = "apiPlayServer", base = file("ApiPlayServer")).enablePlugins(PlayScala, SystemdPlugin).dependsOn(foodDataSql, systemDataSql, imageStorageLocal, imageProcessorIM).settings(commonSettings: _*)
+lazy val apiShared = Project(id = "apiShared", base = file("ApiShared")).dependsOn(foodDataServices, systemDataServices).settings(commonSettings: _*)
 
-lazy val apiClient = Project(id = "apiClient", base = file("ApiClient")).settings(commonSettings: _*)
+lazy val apiPlayServer = Project(id = "apiPlayServer", base = file("ApiPlayServer")).enablePlugins(PlayScala, SystemdPlugin).dependsOn(foodDataSql, systemDataSql, apiShared, imageStorageLocal, imageProcessorIM).settings(commonSettings: _*)
+
+lazy val apiClient = Project(id = "apiClient", base = file("ApiClient")).dependsOn(apiShared).settings(commonSettings: _*)
+
 
 lazy val siteTest = Project(id = "siteTest", base = file("SiteTest")).settings(commonSettings: _*)
 

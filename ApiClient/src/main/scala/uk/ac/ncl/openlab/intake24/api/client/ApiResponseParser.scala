@@ -8,13 +8,9 @@ trait ApiResponseParser {
 
   private case class ErrorDescription(cause: String, errorMessage: String)
 
-  def parseApiResponse[T](response: HttpResponse[String])(implicit reader: Reader[T]): Either[ApiError, T] = {
+  private def getResponseBody(response: HttpResponse[String]): Either[ApiError, String] = {
     if (response.code == 200) {
-      try {
-        Right(read[T](response.body))
-      } catch {
-        case e: Throwable => Left(ApiError.ResultParseFailed(e))
-      }
+      Right(response.body)
     } else {
       try {
         val desc = read[ErrorDescription](response.body)
@@ -24,5 +20,18 @@ trait ApiResponseParser {
       }
     }
   }
+
+  def parseApiResponseDiscardBody(response: HttpResponse[String]): Either[ApiError, Unit] = getResponseBody(response).right.map(_ => ())
+
+  def parseApiResponse[T](response: HttpResponse[String])(implicit reader: Reader[T]): Either[ApiError, T] =
+    getResponseBody(response) match {
+      case Right(body) =>
+        try {
+          Right(read[T](body))
+        } catch {
+          case e: Throwable => Left(ApiError.ResultParseFailed(e))
+        }
+      case Left(error) => Left(error)
+    }
 
 }

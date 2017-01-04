@@ -20,24 +20,23 @@ package controllers
 
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.api.{Environment, LoginEvent}
 import com.mohiva.play.silhouette.api.util.Credentials
+import com.mohiva.play.silhouette.api.{Environment, LoginEvent}
 import com.mohiva.play.silhouette.impl.exceptions.{IdentityNotFoundException, InvalidPasswordException}
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import parsers.UpickleUtil
 import play.api.http.ContentTypes
+import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
 import play.api.mvc.{Action, Controller}
-import security.{DatabaseAccessException, DatabaseFormatException, Intake24ApiEnv, Intake24Credentials}
+import security.{DatabaseAccessException, DatabaseFormatException, Intake24ApiEnv}
+import uk.ac.ncl.openlab.intake24.api.shared.{AuthToken, Credentials => Intake24Credentials}
 import upickle.default._
-import play.api.libs.concurrent.Execution.Implicits._
 
 import scala.concurrent.Future
 
 class Auth @Inject() (silEnv: Environment[Intake24ApiEnv], credentialsProvider: CredentialsProvider)
     extends Controller with UpickleUtil {
-
-  private case class AuthSuccess(token: String)
 
   def signin = Action.async(upickleBodyParser[Intake24Credentials]) {
     implicit request =>
@@ -56,7 +55,7 @@ class Auth @Inject() (silEnv: Environment[Intake24ApiEnv], credentialsProvider: 
 
                 silEnv.eventBus.publish(LoginEvent(user, request))
                 silEnv.authenticatorService.init(authenticator.copy(customClaims = Some(customClaims))).map { token =>
-                  Ok(write(AuthSuccess(token))).as(ContentTypes.JSON)
+                  Ok(write(AuthToken(token))).as(ContentTypes.JSON)
                 }
             }
             case None =>

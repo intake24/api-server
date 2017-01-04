@@ -1,36 +1,63 @@
 package uk.ac.ncl.openlab.intake24.sql.tools.food.migrations
 
-import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.{Files, Path, Paths}
+import java.nio.file.attribute.BasicFileAttributes
 import java.util.function.BiPredicate
 
-import anorm.{AnormUtil, BatchSql, Macro, NamedParameter, SQL}
+import org.apache.commons.io.FilenameUtils
 import org.rogach.scallop.ScallopConf
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.{AWTImageMap, ProcessedImagePurpose, SVGImageMapParser}
+import uk.ac.ncl.openlab.intake24.api.client.ApiError.{ErrorParseFailed, RequestFailed}
+import uk.ac.ncl.openlab.intake24.api.client.scalajhttp.{ImageMapAdminImpl, SigninImpl}
+import uk.ac.ncl.openlab.intake24.api.client.{ApiConfigChooser, ApiConfigurationOptions}
+import uk.ac.ncl.openlab.intake24.api.shared.{AuthToken, Credentials, NewImageMapRequest}
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.SVGImageMapParser
 import uk.ac.ncl.openlab.intake24.sql.tools._
 import upickle.default._
 
-import scala.collection.JavaConverters._
+import scala.concurrent.duration._
+import scala.concurrent.Await
 
 object FoodV18_2_Create_ImageMaps extends App with MigrationRunner with WarningMessage {
 
-  private case class GuideImageRow(id: String, base_image_url: String)
-
-  private case class GuideObjectRow(guide_image_id: String, object_id: Long)
-
   val svgParser = new SVGImageMapParser()
 
-  trait Options extends ScallopConf with DatabaseConfigurationOptions {
+  trait Options extends ScallopConf with ApiConfigurationOptions {
 
-    val imageMapsDir = opt[String](required = true, noshort = true)
-    val compiledImageMapsDir = opt[String](required = true, noshort = true)
+    val sourceImageDir = opt[String](required = true, noshort = true)
+    val imageDir = opt[String](required = true, noshort = true)
+    val svgDir = opt[String](required = true, noshort = true)
+    val descFile = opt[String](required = true, noshort = true)
   }
 
   val options = new ScallopConf(args) with Options
 
   options.verify()
 
-  private def getImageMapFromSVG(id: String): Either[Throwable, AWTImageMap] = {
+  private def findBaseImageSource(id: String): Path = {
+
+    println(s"Trying to locate source file for $id")
+
+    val fileName = s"$id.jpg"
+
+    val matcher = new BiPredicate[Path, BasicFileAttributes] {
+      def test(path: Path, attr: BasicFileAttributes) = path.getFileName().toString().equals(fileName)
+    }
+
+    val hiResSource = Files.find(Paths.get(options.sourceImageDir()), 20, matcher).findFirst()
+
+    if (hiResSource.isPresent())
+      hiResSource.get()
+    else {
+      println(s"No high-res source found for $id")
+      val lowResSource = Files.find(Paths.get(options.imageDir()), 20, matcher).findFirst()
+      if (lowResSource.isPresent())
+        lowResSource.get()
+      else
+        throw new RuntimeException(s"Unable to locate source image for $id")
+    }
+  }
+
+  private def findSVG(id: String): Path = {
 
     println(s"Trying to locate source SVG for $id")
 
@@ -40,44 +67,54 @@ object FoodV18_2_Create_ImageMaps extends App with MigrationRunner with WarningM
       override def test(t: Path, u: BasicFileAttributes): Boolean = t.getFileName.toString == fileName
     }
 
-    val svg = Files.find(Paths.get(options.imageMapsDir()), 10, predicate).findFirst().get()
+    val svgOption = Files.find(Paths.get(options.svgDir()), 10, predicate).findFirst()
 
-    val path = svg.toString
-    println(s"Loading image map from $path")
-
-    svgParser.parseImageMap(path)
+    if (svgOption.isPresent)
+      svgOption.get()
+    else
+      throw new RuntimeException(s"Unable to locate image map SVG for $id")
   }
 
-  private def getLegacyImageMapList(): Seq[String] = {
-    val predicate = new BiPredicate[Path, BasicFileAttributes] {
-      override def test(t: Path, u: BasicFileAttributes): Boolean = t.getFileName.toString.endsWith(".imagemap")
+
+  val apiConfig = ApiConfigChooser.chooseApiConfiguration(configDirPath = options.apiConfigDir())
+
+  val signinService = new SigninImpl(apiConfig.baseUrl)
+  val imageMapAdminService = new ImageMapAdminImpl(apiConfig.baseUrl)
+
+  println("Loading legacy image map descriptions")
+
+  val descriptions = read[FoodV18_2_Guide_Descriptions](scala.io.Source.fromFile(options.descFile()).getLines().mkString)
+
+  println("Signin in to the API server")
+
+  signinService.signin(Credentials("", apiConfig.userName, apiConfig.password)) match {
+    case Right(AuthToken(token)) => {
+
+      val names = descriptions.legacyImageMapList.sorted
+
+      names.foreach {
+        name =>
+          println()
+          println(s"=== Processing $name ===")
+
+          val baseImageSourcePath = findBaseImageSource(name)
+          val svgPath = findSVG(name)
+
+          println(s"Using ${baseImageSourcePath.toString} as base image source")
+          println(s"Using ${svgPath.toString} as SVG image map")
+
+          val request = NewImageMapRequest(name, "No description", descriptions.objectDescriptions(name).map(x => (x._1.toString, x._2)).toMap)
+
+          println("Sending API request to create the image map")
+
+          imageMapAdminService.createImageMap(token, baseImageSourcePath, svgPath, List(), request) match {
+            case Left(ErrorParseFailed(code, _)) => throw new RuntimeException(s"API request failed with HTTP error $code")
+            case Left(RequestFailed(code, cause, errorMessage)) => throw new RuntimeException(s"API request failed: $cause: $errorMessage")
+            case Right(()) => ()
+          }
+      }
     }
-
-    Files.find(Paths.get(options.compiledImageMapsDir()), 1, predicate).iterator().asScala.toSeq.map(_.getFileName.toString.replace(".imagemap", ""))
+    case Left(x) => throw new RuntimeException("Sign in failed: " + x.toString)
   }
 
-  private case class GuideImageObjectRow(guide_image_id: String, object_id: Int, description: String)
-
-  runMigration(18, 18, options) {
-    implicit conn =>
-
-      println("Loading legacy image map descriptions")
-
-      val objectDescriptions = SQL("SELECT guide_image_id, object_id, description FROM guide_image_objects").executeQuery().as(Macro.namedParser[GuideImageObjectRow].*).foldLeft(Map[(String, Int), String]()) {
-        (acc, row) =>
-          acc + ((row.guide_image_id, row.object_id) -> row.description)
-      }
-
-      println("Loading legacy image map names")
-
-      val imageMapIds = getLegacyImageMapList()
-
-      imageMapIds.foreach {
-        imageMapId =>
-          println (s"Processing $imageMapId")
-          val imageMap = getImageMapFromSVG(imageMapId)
-
-
-      }
-  }
 }

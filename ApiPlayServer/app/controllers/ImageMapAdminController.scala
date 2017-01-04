@@ -27,6 +27,7 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.MultipartFormData.FilePart
 import play.api.mvc.{Controller, Result}
 import security.{DeadboltActionsAdapter, Roles}
+import uk.ac.ncl.openlab.intake24.api.shared.NewImageMapRequest
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
 
@@ -49,7 +50,7 @@ class ImageMapAdminController @Inject()(
 
   def resolveUrls(set: AsServedSetWithPaths): AsServedSetWithUrls = AsServedSetWithUrls(set.id, set.description, set.images.map(resolveUrls))*/
 
-  private case class NewImageMapRequest(id: String, description: String, objectDescriptions: Map[String, String])
+
 
   private def validateParams(params: NewImageMapRequest, parsedImageMap: AWTImageMap): Either[Result, Unit] =
     parsedImageMap.outlines.keySet.find(k => !params.objectDescriptions.contains(k.toString)) match {

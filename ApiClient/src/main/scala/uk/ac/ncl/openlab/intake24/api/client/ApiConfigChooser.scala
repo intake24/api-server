@@ -4,16 +4,13 @@ import java.io.{BufferedReader, InputStreamReader}
 
 import upickle.default.read
 
-/**
-  * Created by nip13 on 03/01/2017.
-  */
 object ApiConfigChooser {
 
   val default = IndexedSeq("Development" -> "development-api-config.json", "Test" -> "test-api-config.json", "Production" -> "production-api-config.json")
 
   def getDevelopmentApiConfiguration(configDirRelativePath: String = "./api-config") = read[ApiConfiguration](scala.io.Source.fromFile(configDirRelativePath + "/" + "development-api-config.json").mkString)
 
-  def chooseApiConfiguration(message: String = "Please choose the API instance for this operation:", configDirRelativePath: String = "./api-config", options: IndexedSeq[(String, String)] = default): ApiConfiguration = {
+  def chooseApiConfiguration(message: String = "Please choose the API instance for this operation:", configDirPath: String = "./api-config", options: IndexedSeq[(String, String)] = default): ApiConfiguration = {
 
     println()
     println(message)
@@ -47,6 +44,6 @@ object ApiConfigChooser {
 
     println()
 
-    read[ApiConfiguration](scala.io.Source.fromFile(configDirRelativePath + "/" + options(choice.get)._2).mkString)
+    read[ApiConfiguration](scala.io.Source.fromFile(configDirPath + "/" + options(choice.get)._2).mkString)
   }
 }
