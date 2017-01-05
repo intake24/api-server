@@ -1,12 +1,11 @@
 package uk.ac.ncl.openlab.intake24.api.client
 
+import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 import upickle.default._
 
 import scalaj.http.HttpResponse
 
 trait ApiResponseParser {
-
-  private case class ErrorDescription(cause: String, errorMessage: String)
 
   private def getResponseBody(response: HttpResponse[String]): Either[ApiError, String] = {
     if (response.code == 200) {
@@ -14,7 +13,7 @@ trait ApiResponseParser {
     } else {
       try {
         val desc = read[ErrorDescription](response.body)
-        Left(ApiError.RequestFailed(response.code, desc.cause, desc.errorMessage))
+        Left(ApiError.RequestFailed(response.code, desc.errorCode, desc.errorMessage))
       } catch {
         case e: Throwable => Left(ApiError.ErrorParseFailed(response.code, e))
       }
@@ -33,5 +32,4 @@ trait ApiResponseParser {
         }
       case Left(error) => Left(error)
     }
-
 }

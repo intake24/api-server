@@ -27,9 +27,10 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.MultipartFormData.FilePart
 import play.api.mvc.{Controller, Result}
 import security.{DeadboltActionsAdapter, Roles}
-import uk.ac.ncl.openlab.intake24.api.shared.NewImageMapRequest
+import uk.ac.ncl.openlab.intake24.api.shared.{ErrorDescription, NewImageMapRequest}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
+import upickle.default._
 
 import scala.concurrent.Future
 
@@ -51,10 +52,9 @@ class ImageMapAdminController @Inject()(
   def resolveUrls(set: AsServedSetWithPaths): AsServedSetWithUrls = AsServedSetWithUrls(set.id, set.description, set.images.map(resolveUrls))*/
 
 
-
   private def validateParams(params: NewImageMapRequest, parsedImageMap: AWTImageMap): Either[Result, Unit] =
     parsedImageMap.outlines.keySet.find(k => !params.objectDescriptions.contains(k.toString)) match {
-      case Some(missingId) => Left(BadRequest(s"""{"cause":"missing description for object $missingId"}"""))
+      case Some(missingId) => Left(BadRequest(write(ErrorDescription("InvalidParameter", s"Missing description for object $missingId"))))
       case None => Right(())
     }
 
@@ -76,6 +76,13 @@ class ImageMapAdminController @Inject()(
 
       ) yield ())
 
+  def listImageMaps() = deadbolt.restrict(Roles.superuser) {
+    _ =>
+      Future {
+        translateDatabaseResult(imageMaps.listImageMaps())
+      }
+  }
+
   def createImageMapFromSVG() = deadbolt.restrict(Roles.superuser)(parse.multipartFormData) {
     request =>
       Future {
@@ -85,7 +92,7 @@ class ImageMapAdminController @Inject()(
           sourceKeywords <- getOptionalMultipleData("baseImageKeywords", request.body).right;
           params <- getParsedData[NewImageMapRequest]("imageMapParameters", request.body).right;
           imageMap <- (svgParser.parseImageMap(svgImage.ref.file.getPath) match {
-            case Left(e) => Left(BadRequest(s"""{"cause":"Failed to parse the SVG image map: ${e.getClass.getName}: ${e.getMessage}"}"""))
+            case Left(e) => Left(BadRequest(write(ErrorDescription("InvalidParameter", s"Failed to parse the SVG image map: ${e.getClass.getName}: ${e.getMessage}"))))
             case Right(m) => Right(m)
           }).right;
           _ <- validateParams(params, imageMap).right;

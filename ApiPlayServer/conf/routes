@@ -91,7 +91,8 @@ PUT            /admin/portion-size/as-served/:id                             con
 # POST           /admin/portion-size/image-map/new                             controllers.ImageMapAdminController.createImageMap()
 # POST           /admin/portion-size/image-map/new-from-source                 controllers.ImageMapAdminController.createImageMapFromSource()
 
-POST           /admin/portion-size/image-map/new-from-svg                      controllers.ImageMapAdminController.createImageMapFromSVG()
+GET            /admin/portion-size/image-map                                 controllers.ImageMapAdminController.listImageMaps()
+POST           /admin/portion-size/image-map/new-from-svg                    controllers.ImageMapAdminController.createImageMapFromSVG()
 
 GET            /admin/portion-size/guide-image                               controllers.GuideImageAdminController.listGuideImages()
 GET            /admin/portion-size/guide-image/:id                           controllers.GuideImageAdminController.getGuideImage(id: String)

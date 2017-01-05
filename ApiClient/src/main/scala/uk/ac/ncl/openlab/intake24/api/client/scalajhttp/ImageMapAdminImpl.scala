@@ -4,7 +4,7 @@ import java.nio.file.Path
 
 import uk.ac.ncl.openlab.intake24.api.client.{ApiError, ApiResponseParser, ImageMapAdminService}
 import uk.ac.ncl.openlab.intake24.api.shared.NewImageMapRequest
-
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.ImageMapHeader
 import upickle.default._
 
 class ImageMapAdminImpl(apiBaseUrl: String) extends ImageMapAdminService with ApiResponseParser with HttpRequestUtil {
@@ -17,5 +17,9 @@ class ImageMapAdminImpl(apiBaseUrl: String) extends ImageMapAdminService with Ap
       Seq(("baseImage", baseImage), ("svg", svgImage)))
 
     parseApiResponseDiscardBody(req.asString)
+  }
+
+  override def listImageMaps(authToken: String): Either[ApiError, Seq[ImageMapHeader]] = {
+    parseApiResponse[Seq[ImageMapHeader]](getSimpleHttpAuthGetRequest(s"$apiBaseUrl/admin/portion-size/image-map", authToken).asString)
   }
 }

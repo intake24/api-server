@@ -2,13 +2,13 @@ package uk.ac.ncl.openlab.intake24.foodsql.admin
 
 import javax.sql.DataSource
 
-import anorm.{BatchSql, NamedParameter, SQL}
+import anorm.{BatchSql, Macro, NamedParameter, SQL}
 import com.google.inject.name.Named
 import com.google.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.{CreateError, DuplicateCode, StillReferenced, UpdateError}
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors._
 import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
 
 @Singleton
@@ -25,6 +25,11 @@ trait ImageMapsAdminImpl extends ImageMapsAdminService with FoodDataSqlService w
         val outline = s"{${obj.outline.mkString(",")}}"
         Seq[NamedParameter]('id -> objectId.toLong, 'image_map_id -> imageMap.id, 'navigation_index -> navIndex, 'description -> obj.description, 'outline_coordinates -> outline, 'overlay_image_id -> obj.overlayImageId)
     }
+  }
+
+  override def listImageMaps(): Either[UnexpectedDatabaseError, Seq[ImageMapHeader]] = tryWithConnection {
+    implicit conn =>
+      Right(SQL("SELECT id, description FROM image_maps").executeQuery().as(Macro.namedParser[ImageMapHeader].*))
   }
 
   override def createImageMaps(imageMaps: Seq[NewImageMapRecord]): Either[CreateError, Unit] = tryWithConnection {

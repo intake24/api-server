@@ -10,11 +10,11 @@ case class NewImageMapRecord(id: String, description: String, baseImageId: Long,
 
 
 trait ImageMapsAdminService {
-  
-  // def listImageMaps(): Either[UnexpectedDatabaseError, Seq[ImageMapHeader]]
+
+  def listImageMaps(): Either[UnexpectedDatabaseError, Seq[ImageMapHeader]]
 
   def createImageMaps(maps: Seq[NewImageMapRecord]): Either[CreateError, Unit]
 
   def updateImageMap(id: String, update: NewImageMapRecord): Either[UpdateError, Unit]
-  
+
 }

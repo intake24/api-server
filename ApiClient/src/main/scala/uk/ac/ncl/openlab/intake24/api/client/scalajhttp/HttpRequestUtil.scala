@@ -7,6 +7,9 @@ import upickle.default._
 
 trait HttpRequestUtil {
 
+  def getSimpleHttpAuthGetRequest(url: String, authToken: String) =
+    Http(url).timeout(1000, 30000).method("GET").charset("utf-8").header("X-Auth-Token", authToken)
+
   def getHttpRequest[T](url: String, method: String, authToken: Option[String], body: T)(implicit writer: Writer[T]) = {
     val req = Http(url).timeout(1000, 30000).method(method).charset("utf-8").header("Content-Type", "application/json").postData(writer.write(body).toString)
     authToken match {

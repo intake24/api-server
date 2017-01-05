@@ -8,5 +8,5 @@ object ApiError {
 
   case class ErrorParseFailed(httpCode: Int, cause: Throwable) extends ApiError
 
-  case class RequestFailed(httpCode: Int, cause: String, errorMessage: String) extends ApiError
+  case class RequestFailed(httpCode: Int, errorCode: String, errorMessage: String) extends ApiError
 }
