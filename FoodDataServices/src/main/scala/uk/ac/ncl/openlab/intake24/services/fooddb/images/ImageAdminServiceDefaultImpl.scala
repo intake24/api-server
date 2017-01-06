@@ -1,8 +1,8 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.images
 
 import java.io.{File, IOException}
-import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file._
+import java.nio.file.attribute.BasicFileAttributes
 import java.util.UUID
 import javax.inject.Inject
 
@@ -13,7 +13,7 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
                                              val fileTypeAnalyzer: FileTypeAnalyzer)
   extends ImageAdminService {
 
-  import ImageAdminService.{WrapImageServiceError, WrapDatabaseError}
+  import ImageAdminService.{WrapDatabaseError, WrapImageServiceError}
 
   private val allowedFileTypes = Seq("image/jpeg", "image/png", "image/svg+xml")
 

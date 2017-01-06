@@ -114,6 +114,8 @@ class ImageProcessorIM @Inject()(val settings: ImageProcessorSettings) extends I
 
       logger.debug(s"Invoking ImageMagick for base image: ${((convertCmd.getCommand.asScala) ++ (op.getCmdArgs.asScala)).mkString(" ")}")
 
+      convertCmd.run(op)
+
       Right(())
     } catch {
       case e: Throwable => Left(ImageProcessorError(e))

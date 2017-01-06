@@ -19,9 +19,9 @@ object FoodV18_4_Update_Guide_Images extends App with MigrationRunner with Warni
     implicit conn =>
 
       SQL("UPDATE guide_images SET image_map_id=id").executeUpdate()
-      SQL("DELETE FROM guide_image_objects WHERE guide_image_id='Gcri' AND object_id > 6")
-      SQL("DELETE FROM guide_image_objects WHERE guide_image_id='Gyog' AND object_id > 12")
-      SQL("UPDATE guide_image_objects SET image_map_id=guide_image_id,image_map_object_id=object_id")
+      SQL("DELETE FROM guide_image_objects WHERE guide_image_id='Gcri' AND object_id > 6").execute()
+      SQL("DELETE FROM guide_image_objects WHERE guide_image_id='Gyog' AND object_id > 12").execute()
+      SQL("UPDATE guide_image_objects SET image_map_id=guide_image_id,image_map_object_id=object_id").executeUpdate()
 
   }
 }
