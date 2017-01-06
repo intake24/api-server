@@ -6,7 +6,7 @@ import java.util.function.BiPredicate
 
 import org.rogach.scallop.ScallopConf
 import uk.ac.ncl.openlab.intake24.api.client.ApiError.{ErrorParseFailed, RequestFailed}
-import uk.ac.ncl.openlab.intake24.api.client.scalajhttp.{ImageMapAdminImpl, SigninImpl}
+import uk.ac.ncl.openlab.intake24.api.client.scalajhttp.{ImageMapAdminClientImpl, SigninClientImpl}
 import uk.ac.ncl.openlab.intake24.api.client.{ApiConfigChooser, ApiConfigurationOptions}
 import uk.ac.ncl.openlab.intake24.api.shared.{AuthToken, Credentials, NewImageMapRequest}
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.SVGImageMapParser
@@ -14,8 +14,6 @@ import uk.ac.ncl.openlab.intake24.sql.tools._
 import upickle.default._
 
 object FoodV18_2_Create_ImageMaps extends App with MigrationRunner with WarningMessage {
-
-  val svgParser = new SVGImageMapParser()
 
   trait Options extends ScallopConf with ApiConfigurationOptions {
 
@@ -74,12 +72,12 @@ object FoodV18_2_Create_ImageMaps extends App with MigrationRunner with WarningM
 
   val apiConfig = ApiConfigChooser.chooseApiConfiguration(configDirPath = options.apiConfigDir())
 
-  val signinService = new SigninImpl(apiConfig.baseUrl)
-  val imageMapAdminService = new ImageMapAdminImpl(apiConfig.baseUrl)
+  val signinService = new SigninClientImpl(apiConfig.baseUrl)
+  val imageMapAdminService = new ImageMapAdminClientImpl(apiConfig.baseUrl)
 
   println("Loading legacy image map descriptions")
 
-  val descriptions = read[FoodV18_2_Guide_Descriptions](scala.io.Source.fromFile(options.descFile()).getLines().mkString)
+  val descriptions = read[FoodV18_Guide_Descriptions](scala.io.Source.fromFile(options.descFile()).getLines().mkString)
 
   println("Signin in to the API server")
 
@@ -122,8 +120,6 @@ object FoodV18_2_Create_ImageMaps extends App with MigrationRunner with WarningM
         + ("milkbowlD" -> Range(1, 7).map((_, "Milk level")))
         + ("milkbowlE" -> Range(1, 7).map((_, "Milk level")))
         + ("milkbowlF" -> Range(1, 7).map((_, "Milk level")))
-
-
         )
 
       names.foreach {

@@ -3,27 +3,27 @@ package uk.ac.ncl.openlab.intake24.foodsql.admin
 import uk.ac.ncl.openlab.intake24.GuideHeader
 import anorm._
 import uk.ac.ncl.openlab.intake24.foodsql.user.GuideImageUserImpl
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors.{DependentUpdateError, ParentRecordNotFound, RecordNotFound, UnexpectedDatabaseError}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.GuideImageAdminService
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.GuideImage
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import javax.sql.DataSource
+
 import com.google.inject.name.Named
 
 @Singleton
-class GuideImageAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends GuideImageAdminImpl
+class GuideImageAdminStandaloneImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends GuideImageAdminImpl
 
 trait GuideImageAdminImpl extends GuideImageAdminService with GuideImageUserImpl {
 
   private val logger = LoggerFactory.getLogger(classOf[GuideImageAdminImpl])
 
-  def listGuideImages(): Either[UnexpectedDatabaseError, Map[String, GuideHeader]] = tryWithConnection {
+  def listGuideImages(): Either[UnexpectedDatabaseError, Seq[GuideHeader]] = tryWithConnection {
     implicit conn =>
       val headers = SQL("""SELECT id, description from guide_images ORDER BY description ASC""").executeQuery().as(Macro.namedParser[GuideHeader].*)
-      
-      Right(headers.map(h => h.id -> h).toMap) 
+      Right(headers)
   }
 
   def deleteAllGuideImages(): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
@@ -31,6 +31,20 @@ trait GuideImageAdminImpl extends GuideImageAdminService with GuideImageUserImpl
       logger.debug("Deleting existing guide image definitions")
       SQL("DELETE FROM guide_images").execute()
       Right(())
+  }
+
+  def updateGuideSelectionImage(id: String, selectionImageId: Long) = tryWithConnection {
+    implicit conn =>
+      tryWithConstraintCheck[DependentUpdateError, Unit]("guide_selection_image_id_fk", e => ParentRecordNotFound(e)) {
+        val updatedCount = SQL("UPDATE guide_images SET selection_image_id={image_id} WHERE id={id}")
+          .on('id -> id, 'image_id -> selectionImageId)
+          .executeUpdate()
+
+        if (updatedCount == 1)
+          Right(())
+        else
+          Left(RecordNotFound(new RuntimeException("Guide image not found")))
+      }
   }
 
   def createGuideImages(guideImages: Seq[GuideImage]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {

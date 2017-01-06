@@ -12,9 +12,9 @@ import upickle.default.write
 
 import scala.collection.JavaConverters._
 
-case class FoodV18_2_Guide_Descriptions(legacyImageMapList: Seq[String], objectDescriptions: Map[String, Seq[(Int, String)]])
+case class FoodV18_Guide_Descriptions(legacyImageMapList: Seq[String], objectDescriptions: Map[String, Seq[(Int, String)]])
 
-object FoodV18_2_Dump_Guide_Descriptions extends App with MigrationRunner with WarningMessage {
+object FoodV18_1_Dump_Guide_Descriptions extends App with MigrationRunner with WarningMessage {
 
   trait Options extends ScallopConf with DatabaseConfigurationOptions {
     val compiledImageMapsDir = opt[String](required = true, noshort = true)
@@ -66,7 +66,7 @@ object FoodV18_2_Dump_Guide_Descriptions extends App with MigrationRunner with W
 
     val writer = Files.newBufferedWriter(Paths.get(options.descFile()), Charset.forName("utf-8"))
 
-    writer.write(write(FoodV18_2_Guide_Descriptions(imageMapIds, objectDescriptions)))
+    writer.write(write(FoodV18_Guide_Descriptions(imageMapIds, objectDescriptions)))
 
     writer.close()
 

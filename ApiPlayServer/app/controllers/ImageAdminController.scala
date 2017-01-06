@@ -101,4 +101,11 @@ class ImageAdminController @Inject()(service: ImageAdminService, databaseService
         translateImageServiceAndDatabaseResult(service.deleteSourceImages(request.body))
       }
   }
+
+  def processForSelectionScreen(pathPrefix: String, sourceId: Long) = deadbolt.restrict(Roles.superuser) {
+    _ =>
+      Future {
+        translateImageServiceAndDatabaseResult(service.processForSelectionScreen(pathPrefix, sourceId))
+      }
+  }
 }

@@ -92,10 +92,12 @@ PUT            /admin/portion-size/as-served/:id                             con
 # POST           /admin/portion-size/image-map/new-from-source                 controllers.ImageMapAdminController.createImageMapFromSource()
 
 GET            /admin/portion-size/image-map                                 controllers.ImageMapAdminController.listImageMaps()
+GET            /admin/portion-size/image-map/:id/base-image-source-id        controllers.ImageMapAdminController.getImageMapBaseImageSourceId(id)
 POST           /admin/portion-size/image-map/new-from-svg                    controllers.ImageMapAdminController.createImageMapFromSVG()
 
 GET            /admin/portion-size/guide-image                               controllers.GuideImageAdminController.listGuideImages()
 GET            /admin/portion-size/guide-image/:id                           controllers.GuideImageAdminController.getGuideImage(id: String)
+POST           /admin/portion-size/guide-image/selection-screen-image        controllers.GuideImageAdminController.updateGuideSelectionImage(id: String, selectionImageId: Long)
 
 GET            /admin/portion-size/drinkware                                 controllers.DrinkwareAdminController.listDrinkwareSets()
 GET            /admin/portion-size/drinkware/:id                             controllers.DrinkwareAdminController.getDrinkwareSet(id: String)
@@ -119,6 +121,8 @@ POST           /admin/images/source/new-as-served                            con
 POST           /admin/images/source/new-image-map                            controllers.ImageAdminController.uploadSourceImageForImageMap(id: String)
 PATCH          /admin/images/source/:id                                      controllers.ImageAdminController.updateSourceImage(id: Int)
 DELETE         /admin/images/source/delete                                   controllers.ImageAdminController.deleteSourceImages()
+
+POST           /admin/images/process-for-selection-screen                    controllers.ImageAdminController.processForSelectionScreen(pathPrefix: String, sourceImageId: Long)
 
 # POST    /admin/images/as-served               controllers.ImageAdminController.processForAsServed()
 

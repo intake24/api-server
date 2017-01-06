@@ -41,5 +41,12 @@ class GuideImageAdminController @Inject() (service: GuideImageAdminService, dead
     Future {
       translateDatabaseResult(service.getGuideImage(id))
     }
-  } 
+  }
+
+  def updateGuideSelectionImage(id: String, selectionImageId: Long) = deadbolt.restrict(Roles.superuser) {
+    Future {
+      translateDatabaseResult(service.updateGuideSelectionImage(id, selectionImageId))
+    }
+  }
+
 }

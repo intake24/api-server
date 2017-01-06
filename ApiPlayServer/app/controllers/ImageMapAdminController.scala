@@ -83,6 +83,13 @@ class ImageMapAdminController @Inject()(
       }
   }
 
+  def getImageMapBaseImageSourceId(id: String) = deadbolt.restrict(Roles.superuser) {
+    _ =>
+      Future {
+        translateDatabaseResult(imageMaps.getImageMapBaseImageSourceId(id))
+      }
+  }
+
   def createImageMapFromSVG() = deadbolt.restrict(Roles.superuser)(parse.multipartFormData) {
     request =>
       Future {

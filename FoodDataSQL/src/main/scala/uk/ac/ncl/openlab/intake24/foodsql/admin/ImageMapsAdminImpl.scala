@@ -2,7 +2,7 @@ package uk.ac.ncl.openlab.intake24.foodsql.admin
 
 import javax.sql.DataSource
 
-import anorm.{BatchSql, Macro, NamedParameter, SQL}
+import anorm.{BatchSql, Macro, NamedParameter, SQL, SqlParser}
 import com.google.inject.name.Named
 import com.google.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
@@ -30,6 +30,19 @@ trait ImageMapsAdminImpl extends ImageMapsAdminService with FoodDataSqlService w
   override def listImageMaps(): Either[UnexpectedDatabaseError, Seq[ImageMapHeader]] = tryWithConnection {
     implicit conn =>
       Right(SQL("SELECT id, description FROM image_maps").executeQuery().as(Macro.namedParser[ImageMapHeader].*))
+  }
+
+  override def getImageMapBaseImageSourceId(id: String): Either[LookupError, Long] = tryWithConnection {
+    implicit conn =>
+      val result = SQL("SELECT source_id FROM image_maps AS im JOIN processed_images AS pi ON im.base_image_id=pi.id where im.id={id}")
+        .on('id -> id)
+        .executeQuery()
+        .as(SqlParser.long("source_id").singleOpt)
+
+      result match {
+        case Some(id) => Right(id)
+        case None => Left(RecordNotFound(new RuntimeException()))
+      }
   }
 
   override def createImageMaps(imageMaps: Seq[NewImageMapRecord]): Either[CreateError, Unit] = tryWithConnection {
