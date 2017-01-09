@@ -147,7 +147,7 @@ class ImageProcessorIM @Inject()(val settings: ImageProcessorSettings) extends I
 
           val currentTransform = g.getTransform()
 
-          g.scale(targetHeight, targetWidth)
+          g.scale(targetWidth, targetWidth)
           g.draw(outline)
 
           g.setTransform(currentTransform)

@@ -97,6 +97,7 @@ POST           /admin/portion-size/image-map/new-from-svg                    con
 
 GET            /admin/portion-size/guide-image                               controllers.GuideImageAdminController.listGuideImages()
 GET            /admin/portion-size/guide-image/:id                           controllers.GuideImageAdminController.getGuideImage(id: String)
+POST           /admin/portion-size/guide-image/new                           controllers.GuideImageAdminController.createGuideImage()
 POST           /admin/portion-size/guide-image/selection-screen-image        controllers.GuideImageAdminController.updateGuideSelectionImage(id: String, selectionImageId: Long)
 
 GET            /admin/portion-size/drinkware                                 controllers.DrinkwareAdminController.listDrinkwareSets()

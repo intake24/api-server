@@ -28,9 +28,14 @@ object FoodV18_3_Create_Selection_Images extends App with MigrationRunner with W
     }
 
   def updateSelectionScreenImage(authToken: String, id: String) =
-    for (sourceId <- imageMapAdminService.getImageMapBaseImageSourceId(authToken, id).right;
-         selectionImageDescriptor <- imageAdminService.processForSelectionScreen(authToken, s"guide/$id/selection", sourceId).right;
-         _ <- guideImageAdminService.updateGuideSelectionImage(authToken, id, selectionImageDescriptor.id).right) yield ()
+    for (
+      _ <- {
+        println(s"Processing $id");
+        Right(())
+      }.right;
+      sourceId <- imageMapAdminService.getImageMapBaseImageSourceId(authToken, id).right;
+      selectionImageDescriptor <- imageAdminService.processForSelectionScreen(authToken, s"guide/$id/selection", sourceId).right;
+      _ <- guideImageAdminService.updateGuideSelectionImage(authToken, id, selectionImageDescriptor.id).right) yield ()
 
   val result = for (
     authToken <- signinService.signin(Credentials("", apiConfig.userName, apiConfig.password)).right;

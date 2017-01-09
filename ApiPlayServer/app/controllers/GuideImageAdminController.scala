@@ -18,35 +18,55 @@ limitations under the License.
 
 package controllers
 
-import be.objectify.deadbolt.scala.DeadboltActions
 import javax.inject.Inject
-import play.api.mvc.Action
-import play.api.mvc.Controller
-import security.Roles
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.GuideImageAdminService
-import security.DeadboltActionsAdapter
-import scala.concurrent.Future
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
-class GuideImageAdminController @Inject() (service: GuideImageAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
-    with FoodDatabaseErrorHandler {
-  
-   def listGuideImages() = deadbolt.restrict(Roles.superuser) {
+import parsers.UpickleUtil
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import play.api.mvc.Controller
+import security.{DeadboltActionsAdapter, Roles}
+import uk.ac.ncl.openlab.intake24.api.shared.NewGuideImageRequest
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{GuideImageAdminService, ImageMapsAdminService, NewGuideImageRecord}
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageAdminService
+
+import scala.concurrent.Future
+
+class GuideImageAdminController @Inject()(guideImageAdminService: GuideImageAdminService, imageMapsAdminService: ImageMapsAdminService, imageAdminService: ImageAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
+  with ImageOrDatabaseServiceErrorHandler with UpickleUtil {
+
+  import ImageAdminService.WrapDatabaseError
+
+  def listGuideImages() = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateDatabaseResult(service.listGuideImages())
+      translateDatabaseResult(guideImageAdminService.listGuideImages())
     }
   }
-   
-   def getGuideImage(id: String) = deadbolt.restrict(Roles.superuser) {
+
+  def getGuideImage(id: String) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateDatabaseResult(service.getGuideImage(id))
+      translateDatabaseResult(guideImageAdminService.getGuideImage(id))
     }
   }
 
   def updateGuideSelectionImage(id: String, selectionImageId: Long) = deadbolt.restrict(Roles.superuser) {
     Future {
-      translateDatabaseResult(service.updateGuideSelectionImage(id, selectionImageId))
+      translateDatabaseResult(guideImageAdminService.updateGuideSelectionImage(id, selectionImageId))
     }
   }
 
+  def createGuideImage() = deadbolt.restrict(Roles.superuser)(upickleBodyParser[NewGuideImageRequest]) {
+    request =>
+      Future {
+
+        val weights = request.body.objectWeights.map {
+          case (k, v) => (k.toLong, v)
+        }
+
+        val result = for (
+          sourceId <- imageMapsAdminService.getImageMapBaseImageSourceId(request.body.imageMapId).wrapped.right;
+          selectionImageDescriptor <- imageAdminService.processForSelectionScreen(s"guide/${request.body.id}/selection", sourceId).right;
+          _ <- guideImageAdminService.createGuideImages(Seq(NewGuideImageRecord(request.body.id, request.body.description, request.body.imageMapId, selectionImageDescriptor.id, weights))).wrapped.right) yield ()
+
+        translateImageServiceAndDatabaseResult(result)
+      }
+  }
 }

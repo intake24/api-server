@@ -1,17 +1,16 @@
 package uk.ac.ncl.openlab.intake24.foodsql.admin
 
-import uk.ac.ncl.openlab.intake24.GuideHeader
-import anorm._
-import uk.ac.ncl.openlab.intake24.foodsql.user.GuideImageUserImpl
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.{DependentUpdateError, ParentRecordNotFound, RecordNotFound, UnexpectedDatabaseError}
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.GuideImageAdminService
-import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.GuideImage
-import com.google.inject.Inject
-import com.google.inject.Singleton
 import javax.sql.DataSource
 
+import anorm._
+import com.google.inject.{Inject, Singleton}
 import com.google.inject.name.Named
+import org.postgresql.util.PSQLException
+import org.slf4j.LoggerFactory
+import uk.ac.ncl.openlab.intake24.GuideHeader
+import uk.ac.ncl.openlab.intake24.foodsql.user.GuideImageUserImpl
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{GuideImageAdminService, NewGuideImageRecord}
+import uk.ac.ncl.openlab.intake24.services.fooddb.errors._
 
 @Singleton
 class GuideImageAdminStandaloneImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends GuideImageAdminImpl
@@ -47,36 +46,43 @@ trait GuideImageAdminImpl extends GuideImageAdminService with GuideImageUserImpl
       }
   }
 
-  def createGuideImages(guideImages: Seq[GuideImage]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
+  def createGuideImages(guideImages: Seq[NewGuideImageRecord]): Either[DependentCreateError, Unit] = tryWithConnection {
     implicit conn =>
-
       if (!guideImages.isEmpty) {
-        conn.setAutoCommit(false)
-        logger.debug("Writing " + guideImages.size + " guide images to database")
+        withTransaction {
 
-        val guideImageParams = guideImages.map {
-          image => Seq[NamedParameter]('id -> image.id, 'description -> image.description, 'base_image_url -> (image.id + ".jpg"))
-        }.toSeq
+          val errors = Map[String, PSQLException => DependentCreateError](
+            "guide_image_object_fk" -> (e => ParentRecordNotFound(e)),
+            "guide_image_weights_guide_image_id_fk" -> (e => ParentRecordNotFound(e)))
 
-        batchSql("""INSERT INTO guide_images VALUES ({id},{description},{base_image_url})""", guideImageParams).execute()
+          tryWithConstraintsCheck[DependentCreateError, Unit](errors) {
+            logger.debug("Writing " + guideImages.size + " guide images to database")
 
-        val weightParams = guideImages.flatMap {
-          case image =>
-            image.weights.map {
-              weight =>
-                Seq[NamedParameter]('guide_image_id -> image.id, 'object_id -> weight.objectId, 'description -> weight.description, 'weight -> weight.weight)
+            val guideImageParams = guideImages.map {
+              image => Seq[NamedParameter]('id -> image.id, 'description -> image.description, 'image_map_id -> image.imageMapId, 'selection_image_id -> image.selectionImageId)
             }
-        }.toSeq
 
-        if (!weightParams.isEmpty) {
-          logger.debug("Writing " + weightParams.size + " guide image weight records to database")
-          batchSql("""INSERT INTO guide_image_weights VALUES (DEFAULT,{guide_image_id},{object_id},{description},{weight})""", weightParams).execute()
-        } else
-          logger.debug("Guide image file contains no object weight records")
+            batchSql("""INSERT INTO guide_images VALUES ({id},{description},{image_map_id},{selection_image_id})""", guideImageParams).execute()
 
-        conn.commit()
-        Right(())
-      } else {
+            val weightParams = guideImages.flatMap {
+              case image =>
+                image.objectWeights.map {
+                  case (objectId, weight) =>
+                    Seq[NamedParameter]('guide_image_id -> image.id, 'image_map_id -> image.imageMapId, 'object_id -> objectId, 'weight -> weight)
+                }
+            }
+
+            if (!weightParams.isEmpty) {
+              logger.debug("Writing " + weightParams.size + " guide image weight records to database")
+              batchSql("""INSERT INTO guide_image_objects(id, guide_image_id, image_map_id, image_map_object_id, weight) VALUES (DEFAULT,{guide_image_id},{image_map_id},{object_id},{weight})""", weightParams).execute()
+            } else
+              logger.debug("Guide image file contains no object weight records")
+
+            Right(())
+          }
+        }
+      }
+      else {
         logger.debug("createGuideImages request with empty guide image list")
         Right(())
       }

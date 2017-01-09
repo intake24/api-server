@@ -365,6 +365,7 @@ object FoodDatabaseMigrations {
 
         SQL("ALTER TABLE guide_images DROP COLUMN base_image_url").execute()
         SQL("ALTER TABLE guide_image_objects DROP COLUMN description").execute()
+        SQL("ALTER TABLE guide_image_objects DROP COLUMN object_id").execute()
 
         Right(())
       }

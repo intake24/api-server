@@ -41,7 +41,7 @@ trait ImageMapsAdminImpl extends ImageMapsAdminService with FoodDataSqlService w
 
       result match {
         case Some(id) => Right(id)
-        case None => Left(RecordNotFound(new RuntimeException()))
+        case None => Left(RecordNotFound(new RuntimeException(s"image map $id")))
       }
   }
 

@@ -170,12 +170,12 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
 
   def importImageMaps(imageMaps: Seq[ImageMapRecord]) = ???
 
-  def importGuideImages(guideImages: Seq[GuideImage]) = {
+  def importGuideImages(guideImages: Seq[GuideImage]) = ??? /*{
     checkError("Guide image import", for (
       _ <- adminService.deleteAllGuideImages().right;
       _ <- adminService.createGuideImages(guideImages).right
     ) yield ())
-  }
+  }*/
 
   def importDrinkwareSets(drinkwareSets: Seq[DrinkwareSet]) = {
     checkError("Drinkware sets import", for (

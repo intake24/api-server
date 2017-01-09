@@ -1,9 +1,9 @@
 package uk.ac.ncl.openlab.intake24.api.client.scalajhttp
 
-import uk.ac.ncl.openlab.intake24.GuideHeader
+import uk.ac.ncl.openlab.intake24.{GuideHeader}
 import uk.ac.ncl.openlab.intake24.api.client.{ApiError, ApiResponseParser, GuideImageAdminClient}
-
 import org.slf4j.LoggerFactory
+import uk.ac.ncl.openlab.intake24.api.shared.NewGuideImageRequest
 
 class GuideImageAdminClientImpl(apiBaseUrl: String) extends GuideImageAdminClient with ApiResponseParser with HttpRequestUtil {
 
@@ -26,5 +26,13 @@ class GuideImageAdminClientImpl(apiBaseUrl: String) extends GuideImageAdminClien
     logger.debug("Listing guide images")
     logger.debug(request.toString)
     parseApiResponse[Seq[GuideHeader]](request.asString)
+  }
+
+  def createGuideImage(authToken: String, image: NewGuideImageRequest): Either[ApiError, Unit] = {
+    val request = getAuthPostRequest(s"$apiBaseUrl/admin/portion-size/guide-image/new", authToken, image)
+
+    logger.debug(s"Creating guide image ${image.id}")
+
+    parseApiResponseDiscardBody(request.asString)
   }
 }
