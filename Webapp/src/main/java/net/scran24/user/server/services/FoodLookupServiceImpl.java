@@ -82,7 +82,6 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError;
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError;
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError;
 import uk.ac.ncl.openlab.intake24.services.fooddb.errors.NutrientMappingError;
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageStorageService;
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDataSources;
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDatabaseService;
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.UserAsServedImage;
@@ -103,13 +102,12 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 
   private DataStore dataStore;
   private FoodDatabaseService foodData;
-  private ImageStorageService imageStorage;
 
   private Map<String, FoodIndex> foodIndexes;
   private Map<String, Splitter> splitters;
   private NutrientMappingService nutrientMappingService;
 
-  private String imageUrlBase;
+  private String imageUrlPrefix;
 
   private Function1<String, String> resolveImageUrl;
 
@@ -126,7 +124,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
       Injector injector = (Injector) this.getServletContext().getAttribute("intake24.injector");
 
       dataStore = injector.getInstance(DataStore.class);
-      imageStorage = injector.getInstance(ImageStorageService.class);
+      
       foodData = injector.getInstance(FoodDatabaseService.class);
       foodIndexes = injector.getInstance(Key.get(new TypeLiteral<Map<String, FoodIndex>>() {
       }));
@@ -135,12 +133,12 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 
       nutrientMappingService = injector.getInstance(NutrientMappingService.class);
 
-      imageUrlBase = getServletContext().getInitParameter("image-url-base");
+      imageUrlPrefix = getServletContext().getInitParameter("image-url-prefix");
 
       resolveImageUrl = new Function1<String, String>() {
         @Override
         public String apply(String argument) {
-          return imageStorage.getUrl(argument);
+          return imageUrlPrefix + "/" + argument;
         }
       };
 
@@ -341,7 +339,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
       UserAsServedImage img = iter.next();
 
       images[i++] = new AsServedDef.ImageInfo(
-          new ImageDef(imageStorage.getUrl(img.mainImagePath()), imageStorage.getUrl(img.thumbnailPath()), labelForAsServed(img.weight())),
+          new ImageDef(resolveImageUrl.apply(img.mainImagePath()), resolveImageUrl.apply(img.thumbnailPath()), labelForAsServed(img.weight())),
           img.weight());
     }
 
@@ -369,11 +367,11 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 
     while (iterator.hasNext()) {
       UserImageMapObject obj = iterator.next();
-      areas.add(new Area(new Polygon(obj.outline()), imageStorage.getUrl(obj.overlayPath()), obj.id()));
+      areas.add(new Area(new Polygon(obj.outline()), resolveImageUrl.apply(obj.overlayPath()), obj.id()));
       navigation[counter++] = obj.id();
     }
 
-    return new ImageMapDefinition(imageStorage.getUrl(imageMap.baseImagePath()), areas.toArray(new Area[areas.size()]), new int[][] {
+    return new ImageMapDefinition(resolveImageUrl.apply(imageMap.baseImagePath()), areas.toArray(new Area[areas.size()]), new int[][] {
       navigation
     });
   }
@@ -400,7 +398,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
     while (iter.hasNext()) {
       uk.ac.ncl.openlab.intake24.DrinkScale def = iter.next();
 
-      scaleDefs.add(new DrinkScaleDef(def.choice_id(), imageUrlBase + "/" + def.baseImage(), imageUrlBase + "/" + def.overlayImage(), def.width(),
+      scaleDefs.add(new DrinkScaleDef(def.choice_id(), imageUrlPrefix + "/" + def.baseImage(), imageUrlPrefix + "/" + def.overlayImage(), def.width(),
           def.height(), def.emptyLevel(), def.fullLevel(), def.vf().asArray()));
     }
 
@@ -476,7 +474,7 @@ public class FoodLookupServiceImpl extends RemoteServiceServlet implements FoodL
 
   @Override
   public PortionSizeMethod getWeightPortionSizeMethod() {
-    return new PortionSizeMethod("weight", "weight", imageUrlBase + "/portion/weight.png", true, new HashMap<String, String>());
+    return new PortionSizeMethod("weight", "weight", imageUrlPrefix + "/portion/weight.png", true, new HashMap<String, String>());
   }
 
   @Override

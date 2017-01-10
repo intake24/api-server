@@ -134,12 +134,7 @@ public class SqlConfig extends AbstractModule {
 
 		return new HikariDataSource(cpConfig);
 	}
-	
-	@Provides
-	@Singleton
-	protected ImageStorageService imageStorageService() {
-		return new ImageStorageLocal(new LocalImageStorageSettings(webXmlConfig.get("image-storage-local-directory"), webXmlConfig.get("image-storage-local-url-prefix")));
-	}
+
 
 	@Override
 	protected void configure() {
