@@ -33,12 +33,16 @@ import org.workcraft.phrasesearch.PhraseIndex
 import org.workcraft.phrasesearch.PhraseIndexConstants
 import org.workcraft.phrasesearch.DefaultPhraseIndexConstants
 import org.workcraft.phrasesearch.Metaphone3Encoder
-import org.workcraft.phrasesearch.WordStemmer
+import org.workcraft.phrasesearch.WordOps
  
 class PhraseIndexTests extends FunSuite {
   val phrases1 = List (("Roast chicken", 1), ("Chicken roast", 2))
   
-  val identityStemmer = new WordStemmer { def stem(word: CaseInsensitiveString) = word } 
+  val identityStemmer = new WordOps {
+    def stem(word: CaseInsensitiveString) = word
+
+    def splitCompound(word: CaseInsensitiveString) = Seq(word)
+  }
   
   test ("dont crash on single word input") {
     val index = new PhraseIndex(phrases1, Seq(), Seq(), Some(Metaphone3Encoder()), identityStemmer, Seq())

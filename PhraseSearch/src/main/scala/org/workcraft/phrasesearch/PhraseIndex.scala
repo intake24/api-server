@@ -26,21 +26,28 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package org.workcraft.phrasesearch
 
-import scala.math._
-import org.tartarus.snowball.ext.EnglishStemmer
-
 sealed abstract class WordInterpretation {
   def image: CaseInsensitiveString
 }
 
 sealed trait CorrectionMethod
 
-object Phonetic extends CorrectionMethod { override def toString = "Phonetic" }
-object Lev1 extends CorrectionMethod { override def toString = "Levenshtein distance 1" }
-object Lev2 extends CorrectionMethod { override def toString = "Levenshtein distance 2" }
+object Phonetic extends CorrectionMethod {
+  override def toString = "Phonetic"
+}
+
+object Lev1 extends CorrectionMethod {
+  override def toString = "Levenshtein distance 1"
+}
+
+object Lev2 extends CorrectionMethod {
+  override def toString = "Levenshtein distance 2"
+}
 
 case class Exact(val image: CaseInsensitiveString) extends WordInterpretation
+
 case class AltSpelling(val image: CaseInsensitiveString, val method: CorrectionMethod) extends WordInterpretation
+
 case class Synonym(val image: CaseInsensitiveString) extends WordInterpretation
 
 case class InterpretedWord(asTyped: String, interpretations: IndexedSeq[WordInterpretation]) {
@@ -59,13 +66,14 @@ case class InterpretedWord(asTyped: String, interpretations: IndexedSeq[WordInte
         val (a, b) = interpretations.splitAt(altsp)
         InterpretedWord(asTyped, a ++ b.tail)
       } else
-        // must keep at least one interpretation
+      // must keep at least one interpretation
         throw new IllegalStateException("Cannot drop the only remaining word interpretation")
     }
   }
 }
 
 case class InterpretedPhrase(asTyped: String, words: IndexedSeq[InterpretedWord]) {
+
   import InterpretedPhrase._
 
   def generateCombinations(maxCombinations: Int) = {
@@ -108,16 +116,18 @@ case class PhraseMatch[T](index: Int, value: T, wordCount: Int, quality: Int, wo
 
 case class DictionaryPhrase(asTyped: String, words: Seq[CaseInsensitiveString])
 
-class PhraseIndex[T](phrases: Seq[(String, T)], indexFilter: Seq[CaseInsensitiveString], nonIndexedWords: Seq[CaseInsensitiveString], val phoneticEncoder: Option[PhoneticEncoder], val stemmer: WordStemmer, synsets: Seq[Set[CaseInsensitiveString]]) {
+class PhraseIndex[T](phrases: Seq[(String, T)], indexFilter: Seq[CaseInsensitiveString], nonIndexedWords: Seq[CaseInsensitiveString], val phoneticEncoder: Option[PhoneticEncoder], val stemmer: WordOps, synsets: Seq[Set[CaseInsensitiveString]]) {
 
   def mkWordList(phrase: String) =
-    // filter sequences of ignored character sequences and words such as 'e.g.' '/' '-' ',' 'and' 'with'  
+  // filter sequences of ignored character sequences and words such as 'e.g.' '/' '-' ',' 'and' 'with'
     indexFilter.foldLeft(phrase.toLowerCase()) { case (phrase, seq) => phrase.replaceAll(seq.lowerCase, " ") }
       // make a list of words
       .split("\\s+")
       // drop words that are too short
       .filter(_.length > 1)
       .map(CaseInsensitiveString(_))
+      // split compound words (e.g. for German and Nordic languages)
+      .flatMap(stemmer.splitCompound(_))
       .map(stemmer.stem(_))
       .filterNot(nonIndexedWords.contains(_))
       .toIndexedSeq
@@ -144,20 +154,20 @@ class PhraseIndex[T](phrases: Seq[(String, T)], indexFilter: Seq[CaseInsensitive
       }
   }
 
-  def orderViolations (order: List[Int]) = 
-      order.indices.map ( i => {
-        val (left, right) = order.splitAt(i)
-        val ref = right.head
-        left.count(_ > ref) + right.count (_ < ref)
-      }).foldLeft(0)(_+_)
-      
-  def distanceViolations(order: List[Int]) = 
-      order.zip(order.drop(1)).map( x => math.abs(x._1 - x._2) - 1).foldLeft(0)(_+_)
+  def orderViolations(order: List[Int]) =
+    order.indices.map(i => {
+      val (left, right) = order.splitAt(i)
+      val ref = right.head
+      left.count(_ > ref) + right.count(_ < ref)
+    }).foldLeft(0)(_ + _)
 
-  
+  def distanceViolations(order: List[Int]) =
+    order.zip(order.drop(1)).map(x => math.abs(x._1 - x._2) - 1).foldLeft(0)(_ + _)
+
+
   def matchQuality(order: List[Int], orderViolationCost: Int, distanceCost: Int) =
     orderViolations(order) * orderViolationCost + distanceViolations(order) * distanceCost
-  
+
 
   def findMatches(phrase: InterpretedPhrase, maxMatches: Int, maxCombinations: Int) = {
     def matchCombination(combination: List[Int]) = {
@@ -188,11 +198,11 @@ class PhraseIndex[T](phrases: Seq[(String, T)], indexFilter: Seq[CaseInsensitive
 
       wordMatches.groupBy(_.phrase_id).toList.map {
         case (phrase_id, words) =>
-          PhraseMatch(phrase_id, valueIndex(phrase_id), words.length, 
-              matchQuality(words.map(_.pos), 
-                  DefaultPhraseIndexConstants.orderCost,
-                  DefaultPhraseIndexConstants.distanceCost) + (phraseIndex(phrase_id).words.length - words.length) * DefaultPhraseIndexConstants.unmatchedWordCost, 
-                  words)
+          PhraseMatch(phrase_id, valueIndex(phrase_id), words.length,
+            matchQuality(words.map(_.pos),
+              DefaultPhraseIndexConstants.orderCost,
+              DefaultPhraseIndexConstants.distanceCost) + (phraseIndex(phrase_id).words.length - words.length) * DefaultPhraseIndexConstants.unmatchedWordCost,
+            words)
       }
     }
 
@@ -218,11 +228,11 @@ class PhraseIndex[T](phrases: Seq[(String, T)], indexFilter: Seq[CaseInsensitive
     InterpretedPhrase(phrase, mkWordList(phrase).take(DefaultPhraseIndexConstants.maxWordsPerPhrase).map(dictionary.interpretWord(_, DefaultPhraseIndexConstants.maxWordInterpretations, strategy)).filterNot(_.interpretations.isEmpty))
 
   def lookup(phrase: String, maxResults: Int): Seq[(T, Int)] = {
-    val stage1interpretation = interpretPhrase(phrase, MatchFewer) 
+    val stage1interpretation = interpretPhrase(phrase, MatchFewer)
     val stage1result = findMatches(stage1interpretation, maxResults, DefaultPhraseIndexConstants.maxPhraseCombinations).map(m => (m.value, m.quality))
     if (stage1result.size <= DefaultPhraseIndexConstants.maxMatchesForMatchMore) {
-      if (stage1interpretation.words.exists(_.interpretations.exists { case AltSpelling(_,_) => true; case _ => false }))
-      	findMatches(interpretPhrase(phrase, MatchMore), maxResults, DefaultPhraseIndexConstants.maxPhraseCombinations).map(m => (m.value, m.quality))
+      if (stage1interpretation.words.exists(_.interpretations.exists { case AltSpelling(_, _) => true; case _ => false }))
+        findMatches(interpretPhrase(phrase, MatchMore), maxResults, DefaultPhraseIndexConstants.maxPhraseCombinations).map(m => (m.value, m.quality))
       else stage1result
     }
     else stage1result

@@ -24,7 +24,7 @@ import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
 import uk.ac.ncl.openlab.intake24.services.foodindex.AbstractFoodIndex
 
 abstract class EnglishFoodIndex(foodData: FoodIndexDataService, locale: String)
-  extends AbstractFoodIndex(foodData, Some(Metaphone3Encoder()), EnglishStemmerPlingImpl(), EnglishFoodIndex.indexFilter,
+  extends AbstractFoodIndex(foodData, Some(Metaphone3Encoder()), EnglishWordOpsPlingImpl(), EnglishFoodIndex.indexFilter,
     EnglishFoodIndex.nonIndexedWords, EnglishFoodIndex.specialFoodNames, locale)
 
 object EnglishFoodIndex {

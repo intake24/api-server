@@ -24,19 +24,19 @@ import org.workcraft.phrasesearch.InterpretedPhrase
 import org.workcraft.phrasesearch.MatchFewer
 import org.workcraft.phrasesearch.PhoneticEncoder
 import org.workcraft.phrasesearch.PhraseIndex
-import org.workcraft.phrasesearch.WordStemmer
+import org.workcraft.phrasesearch.WordOps
 
 import uk.ac.ncl.openlab.intake24.UserFoodHeader
 
-abstract class AbstractFoodIndex (foodData: FoodIndexDataService, phoneticEncoder: Option[PhoneticEncoder], stemmer: WordStemmer, indexFilter: Seq[String], nonIndexedWords: Seq[String], localSpecialFoods: LocalSpecialFoodNames, locale: String) extends FoodIndex {
+abstract class AbstractFoodIndex (foodData: FoodIndexDataService, phoneticEncoder: Option[PhoneticEncoder], wordOps: WordOps, indexFilter: Seq[String], nonIndexedWords: Seq[String], localSpecialFoods: LocalSpecialFoodNames, locale: String) extends FoodIndex {
 
   val log = LoggerFactory.getLogger(classOf[AbstractFoodIndex])
 
   val ft0 = System.currentTimeMillis()
 
   val localSpecialFoodHeaders = Seq(UserFoodHeader(FoodIndex.specialFoodSalad, localSpecialFoods.buildMySaladLabel), UserFoodHeader(FoodIndex.specialFoodSandwich, localSpecialFoods.buildMySandwichLabel))
-  // FIXME: Error handling  
-  val indexableFoods = foodData.indexableFoods(locale).right.get ++ localSpecialFoodHeaders 
+  // FIXME: Error handling
+  val indexableFoods = foodData.indexableFoods(locale).right.get ++ localSpecialFoodHeaders
 
   log.debug(s"Indexable foods loaded in ${System.currentTimeMillis() - ft0} ms")
 
@@ -52,7 +52,7 @@ abstract class AbstractFoodIndex (foodData: FoodIndexDataService, phoneticEncode
   val it0 = System.currentTimeMillis()
 
   // FIXME: Error handling
-  val index = new PhraseIndex(indexEntries, indexFilter.map(CaseInsensitiveString(_)), nonIndexedWords.map(CaseInsensitiveString(_)), phoneticEncoder, stemmer, foodData.synsets(locale).right.get.map(_.map(CaseInsensitiveString(_))))
+  val index = new PhraseIndex(indexEntries, indexFilter.map(CaseInsensitiveString(_)), nonIndexedWords.map(CaseInsensitiveString(_)), phoneticEncoder, wordOps, foodData.synsets(locale).right.get.map(_.map(CaseInsensitiveString(_))))
 
   log.debug(s"Indexing complete in ${System.currentTimeMillis() - it0} ms")
 

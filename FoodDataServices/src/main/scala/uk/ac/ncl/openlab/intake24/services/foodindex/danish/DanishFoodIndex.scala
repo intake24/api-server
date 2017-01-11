@@ -18,13 +18,10 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.services.foodindex.danish
 
-import org.workcraft.phrasesearch.Metaphone3Encoder
-import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
-import uk.ac.ncl.openlab.intake24.services.foodindex.AbstractFoodIndex
-import uk.ac.ncl.openlab.intake24.services.foodindex.english.EnglishStemmerPlingImpl
+import uk.ac.ncl.openlab.intake24.services.foodindex.{AbstractFoodIndex, FoodIndexDataService}
 
 abstract class DanishFoodIndex(foodData: FoodIndexDataService, locale: String)
-  extends AbstractFoodIndex(foodData, None, EnglishStemmerPlingImpl(), DanishFoodIndex.indexFilter, 
+  extends AbstractFoodIndex(foodData, None, new DanishWordOpsImpl(), DanishFoodIndex.indexFilter,
     DanishFoodIndex.nonIndexedWords, DanishFoodIndex.specialFoodNames, locale)
 
 

@@ -33,7 +33,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.{FoodDataService, FoodDatabaseService}
 import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, FoodIndexDataService}
-import uk.ac.ncl.openlab.intake24.services.foodindex.english.{EnglishStemmerPlingImpl, EnglishWordStemmer, FoodIndexImpl_en_GB}
+import uk.ac.ncl.openlab.intake24.services.foodindex.english.{EnglishWordOpsPlingImpl, EnglishWordOps, FoodIndexImpl_en_GB}
 
 class Intake24ServicesModule(env: Environment, config: Configuration) extends AbstractModule {
   @Provides
@@ -84,7 +84,7 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
 
     // Utility services
 
-    bind(classOf[EnglishWordStemmer]).to(classOf[EnglishStemmerPlingImpl])
+    bind(classOf[EnglishWordOps]).to(classOf[EnglishWordOpsPlingImpl])
 
     // Basic admin services -- uncached
 

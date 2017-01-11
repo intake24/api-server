@@ -21,10 +21,10 @@ package uk.ac.ncl.openlab.intake24.services.foodindex.portuguese
 import org.workcraft.phrasesearch.Metaphone3Encoder
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
 import uk.ac.ncl.openlab.intake24.services.foodindex.AbstractFoodIndex
-import uk.ac.ncl.openlab.intake24.services.foodindex.english.EnglishStemmerPlingImpl
+import uk.ac.ncl.openlab.intake24.services.foodindex.english.EnglishWordOpsPlingImpl
 
 abstract class PortugueseFoodIndex(foodData: FoodIndexDataService, locale: String)
-  extends AbstractFoodIndex(foodData, None, new PortugueseStemmerImpl(), PortugueseFoodIndex.indexFilter, 
+  extends AbstractFoodIndex(foodData, None, new PortugueseWordOpsImpl(), PortugueseFoodIndex.indexFilter,
     PortugueseFoodIndex.nonIndexedWords, PortugueseFoodIndex.specialFoodNames, locale)
 
 
