@@ -26,107 +26,58 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package net.scran24.datastore;
 
+import org.workcraft.gwt.shared.client.Option;
+
 import java.util.Map;
 import java.util.Set;
 
-public class SecureUserRecord {	
-	final public String username;
-	final public String passwordHashBase64;
-	final public String passwordSaltBase64;
-	final public String passwordHasher;
-	final public Set<String> roles;
-	final public Set<String> permissions;
-	final public Map<String, String> customFields;
+public class SecureUserRecord {
+    final public String username;
+    final public String passwordHashBase64;
+    final public String passwordSaltBase64;
+    final public String passwordHasher;
 
-	public SecureUserRecord(String username, String passwordHashBase64, String passwordSaltBase64, Set<String> roles, Set<String> permissions,
-			Map<String, String> customFields) {
-		this(username, passwordHashBase64, passwordSaltBase64, "shiro-sha256", roles, permissions, customFields);
-	}
+    final public Option<String> name;
+    final public Option<String> email;
+    final public Option<String> phone;
 
-	public SecureUserRecord(String username, String passwordHashBase64, String passwordSaltBase64, String passwordHasher, Set<String> roles,
-			Set<String> permissions, Map<String, String> customFields) {
-		this.username = username;
-		this.passwordHashBase64 = passwordHashBase64;
-		this.passwordSaltBase64 = passwordSaltBase64;
-		this.passwordHasher = passwordHasher;
-		this.roles = roles;
-		this.permissions = permissions;
-		this.customFields = customFields;
-	}
-	
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((customFields == null) ? 0 : customFields.hashCode());
-		result = prime * result + ((passwordHashBase64 == null) ? 0 : passwordHashBase64.hashCode());
-		result = prime * result + ((passwordHasher == null) ? 0 : passwordHasher.hashCode());
-		result = prime * result + ((passwordSaltBase64 == null) ? 0 : passwordSaltBase64.hashCode());
-		result = prime * result + ((permissions == null) ? 0 : permissions.hashCode());
-		result = prime * result + ((roles == null) ? 0 : roles.hashCode());
-		result = prime * result + ((username == null) ? 0 : username.hashCode());
-		return result;
-	}
+    final public Set<String> roles;
+    final public Set<String> permissions;
+    final public Map<String, String> customFields;
 
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		SecureUserRecord other = (SecureUserRecord) obj;
-		
-		// System.err.println("Custom fields");
-		
-		if (customFields == null) {
-			if (other.customFields != null)
-				return false;
-		} else if (!customFields.equals(other.customFields))
-			return false;
-		
-		// System.err.println("Password");
-		
-		if (passwordHashBase64 == null) {
-			if (other.passwordHashBase64 != null)
-				return false;
-		} else if (!passwordHashBase64.equals(other.passwordHashBase64))
-			return false;
-		if (passwordHasher == null) {
-			if (other.passwordHasher != null)
-				return false;
-		} else if (!passwordHasher.equals(other.passwordHasher))
-			return false;
-		if (passwordSaltBase64 == null) {
-			if (other.passwordSaltBase64 != null)
-				return false;
-		} else if (!passwordSaltBase64.equals(other.passwordSaltBase64))
-			return false;
-		
-		// System.err.println("Permissions");
-		
-		if (permissions == null) {
-			if (other.permissions != null)
-				return false;
-		} else if (!permissions.equals(other.permissions))
-			return false;
-		
-		// System.err.println("Roles");
-		
-		if (roles == null) {
-			if (other.roles != null)
-				return false;
-		} else if (!roles.equals(other.roles))
-			return false;
-		
-		// System.err.println("Username");
-		
-		if (username == null) {
-			if (other.username != null)
-				return false;
-		} else if (!username.equals(other.username))
-			return false;
-		return true;
-	}
+    public SecureUserRecord(String username, String passwordHashBase64, String passwordSaltBase64,
+                            Option<String> name, Option<String> email, Option<String> phone,
+                            Set<String> roles, Set<String> permissions,
+                            Map<String, String> customFields) {
+        this(username, passwordHashBase64, passwordSaltBase64, "shiro-sha256", name, email, phone, roles, permissions, customFields);
+    }
+
+    public SecureUserRecord(String username, String passwordHashBase64, String passwordSaltBase64, String passwordHasher,
+                            Option<String> name, Option<String> email, Option<String> phone,
+                            Set<String> roles, Set<String> permissions, Map<String, String> customFields) {
+        this.username = username;
+        this.passwordHashBase64 = passwordHashBase64;
+        this.passwordSaltBase64 = passwordSaltBase64;
+        this.passwordHasher = passwordHasher;
+        this.name = name;
+        this.email = email;
+        this.phone = phone;
+        this.roles = roles;
+        this.permissions = permissions;
+        this.customFields = customFields;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((customFields == null) ? 0 : customFields.hashCode());
+        result = prime * result + ((passwordHashBase64 == null) ? 0 : passwordHashBase64.hashCode());
+        result = prime * result + ((passwordHasher == null) ? 0 : passwordHasher.hashCode());
+        result = prime * result + ((passwordSaltBase64 == null) ? 0 : passwordSaltBase64.hashCode());
+        result = prime * result + ((permissions == null) ? 0 : permissions.hashCode());
+        result = prime * result + ((roles == null) ? 0 : roles.hashCode());
+        result = prime * result + ((username == null) ? 0 : username.hashCode());
+        return result;
+    }
 }

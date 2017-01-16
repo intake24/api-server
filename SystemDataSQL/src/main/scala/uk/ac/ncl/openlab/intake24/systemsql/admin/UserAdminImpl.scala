@@ -23,7 +23,7 @@ import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
 import uk.ac.ncl.openlab.intake24.systemsql.SystemSqlService
 import uk.ac.ncl.openlab.intake24.services.systemdb.errors.UpdateError
 
-class UserAdminImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends UserAdminService with SystemSqlService with SqlResourceLoader {
+class UserAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends UserAdminService with SystemSqlService with SqlResourceLoader {
 
   private def updateUserRolesQuery(surveyId: String, roles: Map[String, Set[String]])(implicit connection: Connection): Either[ParentError, Unit] = {
     SQL("DELETE FROM user_roles WHERE survey_id={survey_id} AND user_id IN ({user_ids})")
@@ -96,11 +96,13 @@ class UserAdminImpl @Inject() (@Named("intake24_foods") val dataSource: DataSour
         val userParams = userRecords.map {
           record =>
             Seq[NamedParameter]('id -> record.username, 'survey_id -> surveyId, 'password_hash -> record.passwordHashBase64, 'password_salt -> record.passwordSaltBase64,
-              'password_hasher -> record.passwordHasher)
+              'password_hasher -> record.passwordHasher, 'name -> record.name, 'email -> record.email, 'phone -> record.phone)
         }
 
         if (userParams.nonEmpty) {
-          BatchSql("INSERT INTO users VALUES ({id}, {survey_id}, {password_hash}, {password_salt}, {password_hasher}) ON CONFLICT ON CONSTRAINT users_id_pk DO UPDATE SET password_hash={password_hash},password_salt={password_salt},password_hasher={password_hasher}", userParams.head, userParams.tail: _*).execute()
+          BatchSql("INSERT INTO users VALUES ({id}, {survey_id}, {password_hash}, {password_salt}, {password_hasher}, {name}, {email}, {phone}) " +
+            "ON CONFLICT ON CONSTRAINT users_id_pk DO UPDATE " +
+            "SET password_hash={password_hash},password_salt={password_salt},password_hasher={password_hasher},name={name},email={email},phone={phone}", userParams.head, userParams.tail: _*).execute()
 
           for (
             _ <- updateUserRolesQuery(surveyId, userRecords.foldLeft(Map[String, Set[String]]()) {
@@ -122,15 +124,17 @@ class UserAdminImpl @Inject() (@Named("intake24_foods") val dataSource: DataSour
     implicit conn =>
       withTransaction {
         tryWithConstraintCheck[DependentCreateError, Unit]("users_id_pk", e => DuplicateCode(new RuntimeException(s"User name ${userRecord.username} already exists for survey $surveyId"))) {
-          SQL("INSERT INTO users VALUES ({id}, {survey_id}, {password_hash}, {password_salt}, {password_hasher})")
+          SQL("INSERT INTO users VALUES ({id}, {survey_id}, {password_hash}, {password_salt}, {password_hasher}, {name}, {email}, {phone})")
             .on(
               'id -> userRecord.username,
               'survey_id -> surveyId,
               'password_hash -> userRecord.passwordHashBase64,
               'password_salt -> userRecord.passwordSaltBase64,
-              'password_hasher -> userRecord.passwordHasher)
+              'password_hasher -> userRecord.passwordHasher,
+              'name -> userRecord.name,
+              'email -> userRecord.email,
+              'phone -> userRecord.phone)
             .execute()
-
           for (
             _ <- updateUserRolesQuery(surveyId, Map(userRecord.username -> userRecord.roles)).right;
             _ <- updateUserPermissionsQuery(surveyId, Map(userRecord.username -> userRecord.permissions)).right;
@@ -179,28 +183,28 @@ class UserAdminImpl @Inject() (@Named("intake24_foods") val dataSource: DataSour
       }
   }
 
-  private case class ShortUserRecordRow(password_hash: String, password_salt: String, password_hasher: String)
+  private case class ShortUserRecordRow(password_hash: String, password_salt: String, password_hasher: String, name: Option[String], email: Option[String], phone: Option[String])
 
   def getUserById(surveyId: String, userId: String): Either[LookupError, SecureUserRecord] = tryWithConnection {
     implicit conn =>
       withTransaction {
-        SQL("SELECT password_hash, password_salt, password_hasher FROM users WHERE (survey_id={survey_id} AND id={user_id})")
+        SQL("SELECT password_hash, password_salt, password_hasher, name, email, phone FROM users WHERE (survey_id={survey_id} AND id={user_id})")
           .on('survey_id -> surveyId, 'user_id -> userId).executeQuery()
           .as(Macro.namedParser[ShortUserRecordRow].singleOpt) match {
-            case Some(row) =>
-              val roles = SQL("SELECT role FROM user_roles WHERE (survey_id={survey_id} AND user_id={user_id})").on('survey_id -> surveyId, 'user_id -> userId).as(SqlParser.str("role").*)
-              val permissions = SQL("SELECT permission FROM user_permissions WHERE (survey_id={survey_id} AND user_id={user_id})").on('survey_id -> surveyId, 'user_id -> userId).as(SqlParser.str("permission").*)
-              val custom_fields = SQL("SELECT name, value FROM user_custom_fields WHERE (user_id={user_id} AND survey_id={survey_id})").on('survey_id -> surveyId, 'user_id -> userId).as((SqlParser.str("name") ~ SqlParser.str("permission")).*).map {
-                case name ~ value => (name, value)
-              }.toMap
+          case Some(row) =>
+            val roles = SQL("SELECT role FROM user_roles WHERE (survey_id={survey_id} AND user_id={user_id})").on('survey_id -> surveyId, 'user_id -> userId).as(SqlParser.str("role").*)
+            val permissions = SQL("SELECT permission FROM user_permissions WHERE (survey_id={survey_id} AND user_id={user_id})").on('survey_id -> surveyId, 'user_id -> userId).as(SqlParser.str("permission").*)
+            val custom_fields = SQL("SELECT name, value FROM user_custom_fields WHERE (user_id={user_id} AND survey_id={survey_id})").on('survey_id -> surveyId, 'user_id -> userId).as((SqlParser.str("name") ~ SqlParser.str("permission")).*).map {
+              case name ~ value => (name, value)
+            }.toMap
 
-              Right(SecureUserRecord(userId, row.password_hash, row.password_salt, row.password_hasher, roles.toSet, permissions.toSet, custom_fields))
-            case None => Left(RecordNotFound(new RuntimeException(s"User $userId does not exist in survey $surveyId")))
-          }
+            Right(SecureUserRecord(userId, row.password_hash, row.password_salt, row.password_hasher, row.name, row.email, row.phone, roles.toSet, permissions.toSet, custom_fields))
+          case None => Left(RecordNotFound(new RuntimeException(s"User $userId does not exist in survey $surveyId")))
+        }
       }
   }
 
-  private case class UserRecordRow(survey_id: String, user_id: String, password_hash: String, password_salt: String, password_hasher: String)
+  private case class UserRecordRow(survey_id: String, user_id: String, password_hash: String, password_salt: String, password_hasher: String, name: Option[String], email: Option[String], phone: Option[String])
 
   private case class RoleRecordRow(survey_id: String, user_id: String, role: String)
 
@@ -210,27 +214,26 @@ class UserAdminImpl @Inject() (@Named("intake24_foods") val dataSource: DataSour
 
   @tailrec
   private def buildUserRecords(
-    userRows: List[UserRecordRow],
-    roleRows: List[RoleRecordRow],
-    permRows: List[PermissionRecordRow],
-    customFieldRows: List[CustomFieldRecordRow],
-    result: List[SecureUserRecord] = List()): List[SecureUserRecord] = userRows match {
+                                userRows: List[UserRecordRow],
+                                roleRows: List[RoleRecordRow],
+                                permRows: List[PermissionRecordRow],
+                                customFieldRows: List[CustomFieldRecordRow],
+                                result: List[SecureUserRecord] = List()): List[SecureUserRecord] = userRows match {
     case Nil => result.reverse
-    case curUserRow :: restOfUserRows =>
-      {
-        val (curUserRoleRows, restOfRoleRows) = roleRows.span(r => (r.survey_id == curUserRow.survey_id && r.user_id == curUserRow.user_id))
-        val (curUserPermRows, restOfPermRows) = permRows.span(r => (r.survey_id == curUserRow.survey_id && r.user_id == curUserRow.user_id))
-        val (curUserFieldRows, restOfFieldRows) = customFieldRows.span(r => (r.survey_id == curUserRow.survey_id && r.user_id == curUserRow.user_id))
+    case curUserRow :: restOfUserRows => {
+      val (curUserRoleRows, restOfRoleRows) = roleRows.span(r => (r.survey_id == curUserRow.survey_id && r.user_id == curUserRow.user_id))
+      val (curUserPermRows, restOfPermRows) = permRows.span(r => (r.survey_id == curUserRow.survey_id && r.user_id == curUserRow.user_id))
+      val (curUserFieldRows, restOfFieldRows) = customFieldRows.span(r => (r.survey_id == curUserRow.survey_id && r.user_id == curUserRow.user_id))
 
-        val curUserRoles = curUserRoleRows.map(_.role)
-        val curUserPerms = curUserPermRows.map(_.permission)
-        val curUserFields = curUserFieldRows.map(f => (f.name, f.value)).toMap
+      val curUserRoles = curUserRoleRows.map(_.role)
+      val curUserPerms = curUserPermRows.map(_.permission)
+      val curUserFields = curUserFieldRows.map(f => (f.name, f.value)).toMap
 
-        val record = SecureUserRecord(curUserRow.user_id, curUserRow.password_hash, curUserRow.password_salt,
-          curUserRow.password_hasher, curUserRoles.toSet, curUserPerms.toSet, curUserFields)
+      val record = SecureUserRecord(curUserRow.user_id, curUserRow.password_hash, curUserRow.password_salt,
+        curUserRow.password_hasher, curUserRow.name, curUserRow.email, curUserRow.phone, curUserRoles.toSet, curUserPerms.toSet, curUserFields)
 
-        buildUserRecords(restOfUserRows, restOfRoleRows, restOfPermRows, restOfFieldRows, record +: result)
-      }
+      buildUserRecords(restOfUserRows, restOfRoleRows, restOfPermRows, restOfFieldRows, record +: result)
+    }
   }
 
   lazy val getUsersByRoleQuery = sqlFromResource("admin/get_users_by_role.sql")

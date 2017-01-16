@@ -35,7 +35,7 @@ case class NutritionMappedSurveyRecordWithId(id: String, survey: NutritionMapped
 
 case class MissingFoodRecord(submittedAt: Long, surveyId: String, userName: String, name: String, brand: String, description: String, portionSize: String, leftovers: String)
 
-case class SurveyParameters(state: Int, startDate: Long, endDate: Long, schemeName: String, locale: String, allowGenUsers: Boolean, suspensionReason: String, surveyMonkeyUrl: Option[String])
+case class SurveyParameters(state: Int, startDate: Long, endDate: Long, schemeName: String, locale: String, allowGenUsers: Boolean, supportEmail: String, suspensionReason: String, surveyMonkeyUrl: Option[String])
 
 case class SupportStaffRecord(name: String, phoneNumber: Option[String], email: Option[String])
 

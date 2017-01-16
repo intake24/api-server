@@ -1,11 +1,10 @@
 package uk.ac.ncl.openlab.intake24.datastoresql.migrations
 
-import org.slf4j.Logger
 import java.sql.Connection
 
 import anorm.{BatchSql, NamedParameter, SQL, SqlParser}
-import uk.ac.ncl.openlab.intake24.sql.migrations.Migration
-import uk.ac.ncl.openlab.intake24.sql.migrations.MigrationFailed
+import org.slf4j.Logger
+import uk.ac.ncl.openlab.intake24.sql.migrations.{Migration, MigrationFailed}
 
 object SystemDatabaseMigrations {
 
@@ -20,10 +19,10 @@ object SystemDatabaseMigrations {
 
         SQL(
           """|CREATE TABLE nutrient_units(
-            |id integer NOT NULL,
-            |description character varying(512) COLLATE pg_catalog."default" NOT NULL,
-            |symbol character varying(32) COLLATE pg_catalog."default" NOT NULL,
-            |CONSTRAINT nutrient_units_pk PRIMARY KEY (id))""".stripMargin).execute()
+             |id integer NOT NULL,
+             |description character varying(512) COLLATE pg_catalog."default" NOT NULL,
+             |symbol character varying(32) COLLATE pg_catalog."default" NOT NULL,
+             |CONSTRAINT nutrient_units_pk PRIMARY KEY (id))""".stripMargin).execute()
 
         val unitParams = Seq(
           Seq[NamedParameter]('id -> 1, 'description -> "Gram", 'symbol -> "g"),
@@ -36,10 +35,10 @@ object SystemDatabaseMigrations {
 
         SQL(
           """|CREATE TABLE nutrient_types(id integer NOT NULL,
-            |description character varying(512) NOT NULL,
-            |unit_id integer NOT NULL,
-            |CONSTRAINT nutrient_types_pk PRIMARY KEY (id),
-            |CONSTRAINT nutrient_types_nutrient_unit_fk FOREIGN KEY (unit_id) REFERENCES public.nutrient_units (id) ON UPDATE CASCADE ON DELETE CASCADE)""".stripMargin).execute()
+             |description character varying(512) NOT NULL,
+             |unit_id integer NOT NULL,
+             |CONSTRAINT nutrient_types_pk PRIMARY KEY (id),
+             |CONSTRAINT nutrient_types_nutrient_unit_fk FOREIGN KEY (unit_id) REFERENCES public.nutrient_units (id) ON UPDATE CASCADE ON DELETE CASCADE)""".stripMargin).execute()
 
         Right(())
       }
@@ -95,7 +94,7 @@ object SystemDatabaseMigrations {
         SQL("ALTER TABLE survey_submission_nutrients ADD COLUMN nutrient_type_id integer").execute()
         SQL("ALTER TABLE survey_submission_nutrients ADD CONSTRAINT ssn_nutrient_type_id_fk FOREIGN KEY(nutrient_type_id) REFERENCES nutrient_types(id)").execute()
 
-        BatchSql("UPDATE survey_submission_nutrients SET nutrient_type_id={type_id} WHERE name={legacy_name}", mapping.head, mapping.tail:_*).execute()
+        BatchSql("UPDATE survey_submission_nutrients SET nutrient_type_id={type_id} WHERE name={legacy_name}", mapping.head, mapping.tail: _*).execute()
 
         val missingIds = SQL("SELECT name FROM survey_submission_nutrients WHERE nutrient_type_id IS NULL").executeQuery().as(SqlParser.str("name").*)
 
@@ -112,7 +111,7 @@ object SystemDatabaseMigrations {
 
         SQL("ALTER TABLE survey_submission_nutrients ADD COLUMN name character varying(64)").execute()
 
-        BatchSql("UPDATE survey_submission_nutrients SET name={legacy_name} WHERE nutrient_type_id={type_id}", mapping.head, mapping.tail:_*).execute()
+        BatchSql("UPDATE survey_submission_nutrients SET name={legacy_name} WHERE nutrient_type_id={type_id}", mapping.head, mapping.tail: _*).execute()
 
         SQL("ALTER TABLE survey_submission_nutrients ALTER COLUMN name SET NOT NULL").execute()
 
@@ -195,7 +194,54 @@ object SystemDatabaseMigrations {
 
         Right(())
       }
+    },
+    // 6 -> 7 see SystemV5_CreateLocalNutrientLists
+
+    new Migration {
+      val versionFrom = 7l
+      val versionTo = 8l
+
+      val description = "Add optional name, e-mail and phone fields to users"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE users ADD COLUMN name character varying(512)").execute()
+        SQL("ALTER TABLE users ADD COLUMN email character varying(512)").execute()
+        SQL("ALTER TABLE users ADD COLUMN phone character varying(32)").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE users DROP COLUMN name").execute()
+        SQL("ALTER TABLE users DROP COLUMN email").execute()
+        SQL("ALTER TABLE users DROP COLUMN phone").execute()
+
+        Right(())
+      }
+    },
+
+    new Migration {
+      val versionFrom = 8l
+      val versionTo = 9l
+
+      val description = "Add support_email to surveys"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE surveys ADD COLUMN support_email character varying(512) NOT NULL DEFAULT 'support@intake24.co.uk'").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE users DROP COLUMN support_email").execute()
+
+        Right(())
+      }
     }
-  // 6 -> 7 see SystemV5_CreateLocalNutrientLists
+
   )
 }

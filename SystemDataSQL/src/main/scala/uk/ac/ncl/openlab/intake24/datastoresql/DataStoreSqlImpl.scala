@@ -354,14 +354,14 @@ class DataStoreSqlImpl @Inject() (@Named("intake24_system") dataSource: DataSour
         }
   }
 
-  case class SurveyParameterRow(state: Int, start_date: LocalDateTime, end_date: LocalDateTime, scheme_id: String, locale: String, allow_gen_users: Boolean, suspension_reason: Option[String], survey_monkey_url: Option[String])
+  case class SurveyParameterRow(state: Int, start_date: LocalDateTime, end_date: LocalDateTime, scheme_id: String, locale: String, allow_gen_users: Boolean, suspension_reason: Option[String], survey_monkey_url: Option[String], support_email: String)
 
   def getSurveyParameters(survey_id: String): SurveyParameters = tryWithConnection {
     implicit conn =>
       val row = SQL(Queries.surveysSelect).on('survey_id -> survey_id).executeQuery().as(Macro.namedParser[SurveyParameterRow].single)
 
       SurveyParameters(row.state, Timestamp.valueOf(row.start_date).getTime, Timestamp.valueOf(row.end_date).getTime,
-        row.scheme_id, row.locale, row.allow_gen_users, row.suspension_reason.getOrElse(""), row.survey_monkey_url)
+        row.scheme_id, row.locale, row.allow_gen_users, row.support_email, row.suspension_reason.getOrElse(""), row.survey_monkey_url)
   }
 
   def setSurveyParameters(survey_id: String, newParameters: SurveyParameters): Unit = tryWithConnection {
@@ -373,6 +373,7 @@ class DataStoreSqlImpl @Inject() (@Named("intake24_system") dataSource: DataSour
           'scheme_id -> newParameters.schemeName,
           'locale -> newParameters.locale,
           'allow_gen_users -> newParameters.allowGenUsers,
+          'support_email -> newParameters.supportEmail,
           'suspension_reason -> newParameters.suspensionReason,
           'survey_monkey_url -> newParameters.surveyMonkeyUrl,
           'survey_id -> survey_id)

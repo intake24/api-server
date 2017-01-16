@@ -19,17 +19,17 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.datastoresql
 
 import net.scran24.datastore.{
-  SecureUserRecord => JavaSecureUserRecord,
-  NutritionMappedFood => JavaNutritionMappedFood,
-  NutritionMappedMeal => JavaNutritionMappedMeal,
-  NutritionMappedSurvey => JavaNutritionMappedSurvey,
-  NutritionMappedSurveyRecord => JavaNutritionMappedSurveyRecord,
-  NutritionMappedSurveyRecordWithId => JavaNutritionMappedSurveyRecordWithId,
-  MissingFoodRecord => JavaMissingFoodRecord,
-  SupportStaffRecord => JavaSupportStaffRecord
+SecureUserRecord => JavaSecureUserRecord,
+NutritionMappedFood => JavaNutritionMappedFood,
+NutritionMappedMeal => JavaNutritionMappedMeal,
+NutritionMappedSurvey => JavaNutritionMappedSurvey,
+NutritionMappedSurveyRecord => JavaNutritionMappedSurveyRecord,
+NutritionMappedSurveyRecordWithId => JavaNutritionMappedSurveyRecordWithId,
+MissingFoodRecord => JavaMissingFoodRecord,
+SupportStaffRecord => JavaSupportStaffRecord
 }
 import scala.collection.JavaConversions._
-import net.scran24.datastore.shared.{ Time => JavaMealTime, CompletedPortionSize => JavaCompletedPortionSize, SurveyParameters => JavaSurveyParameters }
+import net.scran24.datastore.shared.{Time => JavaMealTime, CompletedPortionSize => JavaCompletedPortionSize, SurveyParameters => JavaSurveyParameters}
 import net.scran24.datastore.shared.SurveyState
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.SecureUserRecord
 
@@ -43,7 +43,7 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.admin.SecureUserRecord
 object JavaConversions {
 
   def jopt2option[T](option: org.workcraft.gwt.shared.client.Option[T]) = if (option.isEmpty()) None else Some(option.getOrDie)
-  
+
   def option2jopt[T](option: Option[T]) = option match {
     case Some(value) => org.workcraft.gwt.shared.client.Option.some(value)
     case None => org.workcraft.gwt.shared.client.Option.none[T]()
@@ -58,11 +58,14 @@ object JavaConversions {
   def copyToJavaList[T](seq: Seq[T]): java.util.List[T] = new java.util.ArrayList[T](seq)
 
   def toJavaSecureUserRecord(record: SecureUserRecord): JavaSecureUserRecord =
-    new JavaSecureUserRecord(record.username, record.passwordHashBase64, record.passwordSaltBase64, record.passwordHasher, copyToJavaSet(record.roles),
-      copyToJavaSet(record.permissions), copyToJavaMap(record.customFields))
+    new JavaSecureUserRecord(record.username, record.passwordHashBase64, record.passwordSaltBase64, record.passwordHasher,
+      option2jopt(record.name), option2jopt(record.email), option2jopt(record.phone),
+      copyToJavaSet(record.roles), copyToJavaSet(record.permissions), copyToJavaMap(record.customFields))
 
   def fromJavaSecureUserRecord(record: JavaSecureUserRecord): SecureUserRecord =
-    SecureUserRecord(record.username, record.passwordHashBase64, record.passwordSaltBase64, record.passwordHasher, record.roles.toSet, record.permissions.toSet, record.customFields.toMap)
+    SecureUserRecord(record.username, record.passwordHashBase64, record.passwordSaltBase64, record.passwordHasher,
+      jopt2option(record.name), jopt2option(record.email), jopt2option(record.phone),
+      record.roles.toSet, record.permissions.toSet, record.customFields.toMap)
 
   def toJavaMealTime(time: MealTime): JavaMealTime = new JavaMealTime(time.hours, time.minutes)
 
@@ -76,12 +79,12 @@ object JavaConversions {
 
   def toJavaNutritionMappedFood(food: NutritionMappedFood): JavaNutritionMappedFood =
     new JavaNutritionMappedFood(food.code, food.englishDescription, option2jopt(food.localDescription), food.nutrientTableID, food.nutrientTableCode, food.isReadyMeal, food.searchTerm, toJavaCompletedPortionSize(food.portionSize),
-      food.foodGroupCode, food.foodGroupEnglishDescription, option2jopt(food.foodGroupLocalDescription), food.reasonableAmount, food.brand, copyToJavaMap(food.nutrients.map { case (k,v) => new java.lang.Long(k) -> new java.lang.Double(v) }.toMap),
+      food.foodGroupCode, food.foodGroupEnglishDescription, option2jopt(food.foodGroupLocalDescription), food.reasonableAmount, food.brand, copyToJavaMap(food.nutrients.map { case (k, v) => new java.lang.Long(k) -> new java.lang.Double(v) }.toMap),
       copyToJavaMap(food.customData))
 
   def fromJavaNutritionMappedFood(food: JavaNutritionMappedFood): NutritionMappedFood =
     NutritionMappedFood(food.code, food.englishDescription, jopt2option(food.localDescription), food.nutrientTableID, food.nutrientTableCode, food.isReadyMeal, food.searchTerm, fromJavaCompletedPortionSize(food.portionSize),
-      food.foodGroupCode, food.foodGroupEnglishDescription, jopt2option(food.foodGroupLocalDescription), food.reasonableAmount, food.brand, food.nutrients.toMap.map { case (k,v) => Long2long(k) -> Double2double(v) }, food.customData.toMap)
+      food.foodGroupCode, food.foodGroupEnglishDescription, jopt2option(food.foodGroupLocalDescription), food.reasonableAmount, food.brand, food.nutrients.toMap.map { case (k, v) => Long2long(k) -> Double2double(v) }, food.customData.toMap)
 
   def toJavaNutritionMappedMeal(meal: NutritionMappedMeal): JavaNutritionMappedMeal =
     new JavaNutritionMappedMeal(meal.name, copyToJavaList(meal.foods.map(toJavaNutritionMappedFood)), toJavaMealTime(meal.time), copyToJavaMap(meal.customData))
@@ -96,7 +99,7 @@ object JavaConversions {
   def fromJavaNutritionMappedSurvey(survey: JavaNutritionMappedSurvey): NutritionMappedSurvey =
     NutritionMappedSurvey(survey.startTime, survey.endTime, survey.meals.toSeq.map(fromJavaNutritionMappedMeal), survey.log.toSeq, survey.userName,
       survey.customData.toMap)
-      
+
   def toJavaNutritionMappedSurveyRecord(record: NutritionMappedSurveyRecord): JavaNutritionMappedSurveyRecord =
     new JavaNutritionMappedSurveyRecord(toJavaNutritionMappedSurvey(record.survey), copyToJavaMap(record.userCustomFields))
 
@@ -116,16 +119,17 @@ object JavaConversions {
     MissingFoodRecord(record.submittedAt, record.surveyId, record.userName, record.name, record.brand, record.description, record.portionSize, record.leftovers)
 
   def toJavaSurveyParameters(params: SurveyParameters): JavaSurveyParameters =
-    new JavaSurveyParameters(SurveyState.values()(params.state), params.startDate, params.endDate, params.schemeName, params.locale, params.allowGenUsers, params.suspensionReason,
-      option2jopt(params.surveyMonkeyUrl))
+    new JavaSurveyParameters(SurveyState.values()(params.state), params.startDate, params.endDate, params.schemeName, params.locale, params.allowGenUsers,
+      params.supportEmail, params.suspensionReason, option2jopt(params.surveyMonkeyUrl))
 
   def fromJavaSurveyParameters(params: JavaSurveyParameters): SurveyParameters =
-    SurveyParameters(params.state.ordinal(), params.startDate, params.endDate, params.schemeName, params.locale, params.allowGenUsers, params.suspensionReason, jopt2option(params.surveyMonkeyUrl))
-    
+    SurveyParameters(params.state.ordinal(), params.startDate, params.endDate, params.schemeName, params.locale, params.allowGenUsers, params.supportEmail,
+      params.suspensionReason, jopt2option(params.surveyMonkeyUrl))
+
   def toJavaSupportStaffRecord(record: SupportStaffRecord): JavaSupportStaffRecord =
     new JavaSupportStaffRecord(record.name, option2jopt(record.phoneNumber), option2jopt(record.email))
-  
-  def fromJavaSupportStaffRecord(record: JavaSupportStaffRecord): SupportStaffRecord = 
+
+  def fromJavaSupportStaffRecord(record: JavaSupportStaffRecord): SupportStaffRecord =
     SupportStaffRecord(record.name, jopt2option(record.phoneNumber), jopt2option(record.email))
-  
+
 }

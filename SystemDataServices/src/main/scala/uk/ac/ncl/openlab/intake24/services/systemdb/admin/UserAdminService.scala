@@ -1,14 +1,10 @@
 package uk.ac.ncl.openlab.intake24.services.systemdb.admin
 
-import uk.ac.ncl.openlab.intake24.services.systemdb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.services.systemdb.errors.UnexpectedDatabaseError
-import uk.ac.ncl.openlab.intake24.services.systemdb.errors.CreateError
-import uk.ac.ncl.openlab.intake24.services.systemdb.errors.UpdateError
-import uk.ac.ncl.openlab.intake24.services.systemdb.errors.ParentError
-import uk.ac.ncl.openlab.intake24.services.systemdb.errors.DependentUpdateError
-import uk.ac.ncl.openlab.intake24.services.systemdb.errors.DependentCreateError
+import uk.ac.ncl.openlab.intake24.services.systemdb.errors.{DependentCreateError, DependentUpdateError, LookupError, ParentError}
 
-case class SecureUserRecord(username: String, passwordHashBase64: String, passwordSaltBase64: String, passwordHasher: String, roles: Set[String], permissions: Set[String], customFields: Map[String, String])
+case class SecureUserRecord(username: String, passwordHashBase64: String, passwordSaltBase64: String, passwordHasher: String,
+                            name: Option[String], email: Option[String], phone: Option[String],
+                            roles: Set[String], permissions: Set[String], customFields: Map[String, String])
 
 trait UserAdminService {
 

@@ -28,13 +28,13 @@ object Queries {
 
   val userCustomFieldsDelete = """DELETE from user_custom_fields WHERE survey_id = {survey_id} AND user_id = {user_id}"""
 
-  val surveysInsert = """INSERT INTO surveys VALUES ({id}, {state}, {start_date}, {end_date}, {scheme_id}, {locale}, {allow_gen_users}, {suspension_reason}, {survey_monkey_url})"""
+  val surveysInsert = """INSERT INTO surveys VALUES ({id}, {state}, {start_date}, {end_date}, {scheme_id}, {locale}, {allow_gen_users}, {suspension_reason}, {survey_monkey_url}, {support_email})"""
 
-  val surveysInsertInit = """INSERT INTO surveys VALUES ({id}, 0, DEFAULT, DEFAULT, {scheme_id}, {locale}, {allow_gen_users}, '', {survey_monkey_url})"""
+  val surveysInsertInit = """INSERT INTO surveys VALUES ({id}, 0, DEFAULT, DEFAULT, {scheme_id}, {locale}, {allow_gen_users}, '', {survey_monkey_url}. {support_email})"""
 
   val surveysSelect = """SELECT state, start_date, end_date, scheme_id, locale, allow_gen_users, suspension_reason, survey_monkey_url FROM surveys WHERE id = {survey_id}"""
 
-  val surveysUpdate = """UPDATE surveys SET state={state}, start_date={start_date}, end_date={end_date}, scheme_id={scheme_id}, locale={locale}, allow_gen_users={allow_gen_users}, suspension_reason={suspension_reason}, survey_monkey_url={survey_monkey_url} WHERE id = {survey_id}"""
+  val surveysUpdate = """UPDATE surveys SET state={state}, start_date={start_date}, end_date={end_date}, scheme_id={scheme_id}, locale={locale}, allow_gen_users={allow_gen_users}, support_email={support_email}, suspension_reason={suspension_reason}, survey_monkey_url={survey_monkey_url} WHERE id = {survey_id}"""
 
   val surveySubmissionsInsert = """INSERT INTO survey_submissions VALUES ({id}::uuid, {survey_id}, {user_id}, {start_time}, {end_time}, {log})"""
 

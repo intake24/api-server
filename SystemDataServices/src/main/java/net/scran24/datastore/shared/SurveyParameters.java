@@ -30,43 +30,45 @@ import com.google.gwt.user.client.rpc.IsSerializable;
 import org.workcraft.gwt.shared.client.Option;
 
 public class SurveyParameters implements IsSerializable {
-  public SurveyState state;
-  public long startDate;
-  public long endDate;
-  public boolean allowGenUsers;
-  public Option<String> surveyMonkeyUrl;
-  public String schemeName;
-  public String locale;
-  public String suspensionReason;
+    public SurveyState state;
+    public long startDate;
+    public long endDate;
+    public boolean allowGenUsers;
+    public String supportEmail;
+    public Option<String> surveyMonkeyUrl;
+    public String schemeName;
+    public String locale;
+    public String suspensionReason;
 
-  @Deprecated
-  public SurveyParameters() {
-  }
+    @Deprecated
+    public SurveyParameters() {
+    }
 
-  public SurveyParameters(SurveyState state, long startDate, long endDate, String schemeName, String locale,
-      boolean allowGenUsers, String suspensionReason, Option<String> surveyMonkeyUrl) {
-    this.state = state;
-    this.startDate = startDate;
-    this.endDate = endDate;
-    this.schemeName = schemeName;
-    this.locale = locale;
-    this.allowGenUsers = allowGenUsers;
-    this.suspensionReason = suspensionReason;
-    this.surveyMonkeyUrl = surveyMonkeyUrl;
-  }
+    public SurveyParameters(SurveyState state, long startDate, long endDate, String schemeName, String locale,
+                            boolean allowGenUsers, String supportEmail, String suspensionReason, Option<String> surveyMonkeyUrl) {
+        this.state = state;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.schemeName = schemeName;
+        this.locale = locale;
+        this.allowGenUsers = allowGenUsers;
+        this.supportEmail = supportEmail;
+        this.suspensionReason = suspensionReason;
+        this.surveyMonkeyUrl = surveyMonkeyUrl;
+    }
 
-  public SurveyParameters withState(SurveyState state) {
-    return new SurveyParameters(state, this.startDate, this.endDate, this.schemeName, this.locale, this.allowGenUsers,
-        this.suspensionReason, surveyMonkeyUrl);
-  }
+    public SurveyParameters withState(SurveyState state) {
+        return new SurveyParameters(state, this.startDate, this.endDate, this.schemeName, this.locale, this.allowGenUsers,
+                this.supportEmail, this.suspensionReason, surveyMonkeyUrl);
+    }
 
-  public SurveyParameters withDates(long startDate, long endDate) {
-    return new SurveyParameters(this.state, startDate, endDate, this.schemeName, this.locale, this.allowGenUsers,
-        this.suspensionReason, surveyMonkeyUrl);
-  }
+    public SurveyParameters withDates(long startDate, long endDate) {
+        return new SurveyParameters(this.state, startDate, endDate, this.schemeName, this.locale, this.allowGenUsers,
+                this.supportEmail, this.suspensionReason, surveyMonkeyUrl);
+    }
 
-  public SurveyParameters withSuspensionReason(String reason) {
-    return new SurveyParameters(this.state, this.startDate, this.endDate, this.schemeName, this.locale,
-        this.allowGenUsers, this.suspensionReason, surveyMonkeyUrl);
-  }
+    public SurveyParameters withSuspensionReason(String reason) {
+        return new SurveyParameters(this.state, this.startDate, this.endDate, this.schemeName, this.locale,
+                this.allowGenUsers, this.supportEmail, this.suspensionReason, surveyMonkeyUrl);
+    }
 }

@@ -1,7 +1,7 @@
 /*
 This file is part of Intake24.
 
-Copyright 2015, 2016 Newcastle University.
+Copyright 2015, 2016, 2017 Newcastle University.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package controllers.system
 
 import javax.inject.Inject
 
@@ -30,13 +30,13 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
 import play.api.mvc.{Action, Controller}
 import security.{DatabaseAccessException, DatabaseFormatException, Intake24ApiEnv}
-import uk.ac.ncl.openlab.intake24.api.shared.{AuthToken, Credentials => Intake24Credentials}
+import uk.ac.ncl.openlab.intake24.api.shared.{AuthToken, ErrorDescription, Credentials => Intake24Credentials}
 import upickle.default._
 
 import scala.concurrent.Future
 
-class Auth @Inject() (silEnv: Environment[Intake24ApiEnv], credentialsProvider: CredentialsProvider)
-    extends Controller with UpickleUtil {
+class SigninController @Inject()(silEnv: Environment[Intake24ApiEnv], credentialsProvider: CredentialsProvider)
+  extends Controller with UpickleUtil {
 
   def signin = Action.async(upickleBodyParser[Intake24Credentials]) {
     implicit request =>
@@ -64,8 +64,8 @@ class Auth @Inject() (silEnv: Environment[Intake24ApiEnv], credentialsProvider: 
       }.recover {
         case e: IdentityNotFoundException => Unauthorized
         case e: InvalidPasswordException => Unauthorized
-        case e: DatabaseFormatException => InternalServerError(Json.obj("error" -> "databaseFormatException", "debugMessage" -> e.toString()))
-        case e: DatabaseAccessException => InternalServerError(Json.obj("error" -> "databaseAccessException", "debugMessage" -> e.toString()))
+        case e: DatabaseFormatException => InternalServerError(write(ErrorDescription("DatabaseFormatException", e.toString())))
+        case e: DatabaseAccessException => InternalServerError(write(ErrorDescription("DatabaseAccessException", e.toString())))
       }
   }
 }

@@ -146,9 +146,9 @@ class DataStoreSqlImplTest extends FunSuite with TestDB {
     assert(params2.surveyMonkeyUrl === Some("test_url"))
   }
 
-  val user1 = new SecureUserRecord("user1", "blah", "blah", "blah", Set("role1", "role2"), Set("permission1", "permission2"), Map[String, String]())
-  val user2 = new SecureUserRecord("user2", "blah", "blah", "blah", Set("role3", "role4"), Set("permission3", "permission4"), Map[String, String]())
-  val user3 = new SecureUserRecord("user3", "blah", "blah", "blah", Set("role1", "role3"), Set("permission1", "permission3"), Map[String, String]())
+  val user1 = new SecureUserRecord("user1", "blah", "blah", "blah", None, None, None, Set("role1", "role2"), Set("permission1", "permission2"), Map[String, String]())
+  val user2 = new SecureUserRecord("user2", "blah", "blah", "blah", None, None, None, Set("role3", "role4"), Set("permission3", "permission4"), Map[String, String]())
+  val user3 = new SecureUserRecord("user3", "blah", "blah", "blah", None, None, None, Set("role1", "role3"), Set("permission1", "permission3"), Map[String, String]())
 
   test("Attempt to add user to an unknown survey (throws an exception)") {
     val exception = intercept[DataStoreException] {
