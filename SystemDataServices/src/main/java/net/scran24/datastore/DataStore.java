@@ -111,5 +111,5 @@ public interface DataStore {
 
   public boolean validateCompletionCode(String survey, String externalUserName, String code) throws DataStoreException;
 
-  public String getSurveySupportEmail(String surveyId);
+  public String getSurveySupportEmail(String surveyId) throws DataStoreException;
 }

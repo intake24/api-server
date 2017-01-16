@@ -190,7 +190,7 @@ public class MongoDbDataStore extends MongoDbConstants implements DataStore {
                     locale = "en_GB"; // use default for old records
 
                 return new SurveyParameters(state, (Long) stateObj.get(FIELD_START_DATE), (Long) stateObj.get(FIELD_END_DATE),
-                        (String) stateObj.get(FIELD_SCHEME_NAME), locale, (Boolean) stateObj.get(FIELD_ALLOW_GEN_USERS),
+                        (String) stateObj.get(FIELD_SCHEME_NAME), locale, (Boolean) stateObj.get(FIELD_ALLOW_GEN_USERS), "support@intake24.co.uk",
                         (String) stateObj.get(FIELD_SUSPENSION_REASON), surveyMonkeyUrl);
 
             }
@@ -407,7 +407,7 @@ public class MongoDbDataStore extends MongoDbConstants implements DataStore {
     }
 
     @Override
-    public void initSurvey(String survey_id, String scheme_name, String locale, boolean allowGenUsers, Option<String> surveyMonkeyUrl)
+    public void initSurvey(String survey_id, String scheme_name, String locale, boolean allowGenUsers, Option<String> surveyMonkeyUrl, String supportEmail)
             throws DataStoreException {
         final String usersColName = USERS_COL_PREFIX + survey_id;
         final String surveysCollectionName = SURVEYS_COL_PREFIX + survey_id;
@@ -419,7 +419,7 @@ public class MongoDbDataStore extends MongoDbConstants implements DataStore {
         db.createCollection(usersColName, new BasicDBObject("capped", false));
         db.createCollection(surveysCollectionName, new BasicDBObject("capped", false));
 
-        setSurveyParameters(survey_id, new SurveyParameters(SurveyState.NOT_INITIALISED, 0, 0, scheme_name, locale, allowGenUsers, "",
+        setSurveyParameters(survey_id, new SurveyParameters(SurveyState.NOT_INITIALISED, 0, 0, scheme_name, locale, allowGenUsers, supportEmail, "",
                 surveyMonkeyUrl));
     }
 
@@ -486,6 +486,11 @@ public class MongoDbDataStore extends MongoDbConstants implements DataStore {
     }
 
     @Override
+    public List<SupportUserRecord> getSupportUserRecords(String surveyId) throws DataStoreException {
+        return null;
+    }
+
+    @Override
     public void saveMissingFoods(List<MissingFoodRecord> missingFoods) throws DataStoreException {
         DBCollection col = getMissingFoodsCollection();
 
@@ -506,32 +511,6 @@ public class MongoDbDataStore extends MongoDbConstants implements DataStore {
             for (DBObject o : cursor) {
                 processMissingFood.call(deserialiser.deserializeMissingFood(o));
             }
-        } catch (MongoException e) {
-            throw new DataStoreException(e);
-        } finally {
-            cursor.close();
-        }
-    }
-
-    @Override
-    public List<SupportStaffRecord> getSupportStaffRecords() throws DataStoreException {
-        DBCollection col = getSupportStaffCollection();
-
-        DBCursor cursor = col.find();
-
-        ArrayList<SupportStaffRecord> result = new ArrayList<SupportStaffRecord>();
-
-        try {
-            for (DBObject o : cursor) {
-
-                String name = (String) o.get("name");
-                Option<String> phoneNumber = Option.fromNullable((String) o.get("phoneNumber"));
-                Option<String> email = Option.fromNullable((String) o.get("email"));
-
-                result.add(new SupportStaffRecord(name, phoneNumber, email));
-            }
-
-            return result;
         } catch (MongoException e) {
             throw new DataStoreException(e);
         } finally {
@@ -621,6 +600,11 @@ public class MongoDbDataStore extends MongoDbConstants implements DataStore {
     @Override
     public boolean validateCompletionCode(String survey, String externalUserName, String code) throws DataStoreException {
         throw new DataStoreException("Not supported by this backend");
+    }
+
+    @Override
+    public String getSurveySupportEmail(String surveyId) throws DataStoreException {
+        throw new DataStoreException("Operation not implemented");
     }
 
     @Override

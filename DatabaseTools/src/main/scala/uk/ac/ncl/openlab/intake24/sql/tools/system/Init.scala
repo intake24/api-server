@@ -77,7 +77,7 @@ object Init extends DatabaseConnection with SqlFileUtil {
       logger.info("Creating the default admin user")
 
       // admin/intake24
-      sqlDataStore.addUser("", SecureUserRecord("admin", "7klnEraBssvRBTnFR5FbIJ/5Qjqgf8w3/7Rs4gBoFBY=", "hUkIQLASWraVS4JDPOr8tA==", "shiro-sha256", Set("superuser", "admin"), Set(), Map()))
+      sqlDataStore.addUser("", SecureUserRecord("admin", "7klnEraBssvRBTnFR5FbIJ/5Qjqgf8w3/7Rs4gBoFBY=", "hUkIQLASWraVS4JDPOr8tA==", "shiro-sha256", Some("Intake24 Super User"), Some("support@intake24.co.uk"), None, Set("superuser", "admin"), Set(), Map()))
     }
   }
 }
