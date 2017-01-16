@@ -15,6 +15,9 @@ import org.workcraft.gwt.shared.client.Option;
 import com.google.gwt.user.client.rpc.RemoteService;
 
 public interface LoginService extends RemoteService {
-	UserInfo login(String surveyId, String username, String password) throws LoginServiceException;
-	Option<UserInfo> getUserInfo();
+  UserInfo login(String surveyId, String username, String password) throws LoginServiceException;
+
+  String getSurveySupportEmail(String surveyId);
+
+  Option<UserInfo> getUserInfo();
 }

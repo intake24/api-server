@@ -30,7 +30,7 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
   <modelVersion>4.0.0</modelVersion>
   <groupId>uk.ac.ncl.openlab.intake24</groupId>
   <artifactId>intake24</artifactId>
-  <version>2.9.0-SNAPSHOT</version>
+  <version>2.10.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <properties>

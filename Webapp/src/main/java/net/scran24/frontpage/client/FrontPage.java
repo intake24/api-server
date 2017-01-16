@@ -1,7 +1,7 @@
 /*
 This file is part of Intake24.
 
-Copyright 2015, 2016 Newcastle University.
+Copyright 2015, 2016, 2017 Newcastle University.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -52,115 +52,115 @@ import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.RootPanel;
 
 public class FrontPage implements EntryPoint {
-	private GenUserServiceAsync genUserService = GenUserServiceAsync.Util.getInstance();
-	private LoginServiceAsync loginService = LoginServiceAsync.Util.getInstance();
-	private CommonMessages commonMessages = CommonMessages.Util.getInstance();
+  private GenUserServiceAsync genUserService = GenUserServiceAsync.Util.getInstance();
+  private LoginServiceAsync loginService = LoginServiceAsync.Util.getInstance();
+  private CommonMessages commonMessages = CommonMessages.Util.getInstance();
 
-	private native void initComplete() /*-{
+  private native void initComplete() /*-{
 		if (typeof $wnd.intake24_initComplete == 'function')
 			$wnd.intake24_initComplete();
-	}-*/;
-	
-	private void replaceHeader() {
-		// A hack to support old generated login HTML files
+  }-*/;
 
-		RootPanel headerPanel = RootPanel.get("login-header");
-		headerPanel.getElement().removeAllChildren();
-		headerPanel.add(new HTMLPanel("h1", commonMessages.loginForm_welcome()));
-	}
+  private void replaceHeader() {
+    // A hack to support old generated login HTML files
 
-	public void onModuleLoad() {
-		if (Location.getParameter("genUser") != null) {
-			genUserService.autoCreateUser(EmbeddedData.surveyId(), new AsyncCallback<UserRecord>() {
-				@Override
-				public void onSuccess(final UserRecord userRecord) {
-					loginService.login(EmbeddedData.surveyId(), userRecord.username, userRecord.password, new AsyncCallback<UserInfo>() {
-						@Override
-						public void onSuccess(UserInfo arg0) {
-							RootPanel.get("loading").getElement().removeFromParent();
+    RootPanel headerPanel = RootPanel.get("login-header");
+    headerPanel.getElement().removeAllChildren();
+    headerPanel.add(new HTMLPanel("h1", commonMessages.loginForm_welcome()));
+  }
 
-							final String url = Location.createUrlBuilder().removeParameter("genUser").buildString();
+  public void onModuleLoad() {
+    if (Location.getParameter("genUser") != null) {
+      genUserService.autoCreateUser(EmbeddedData.surveyId(), new AsyncCallback<UserRecord>() {
+        @Override
+        public void onSuccess(final UserRecord userRecord) {
+          loginService.login(EmbeddedData.surveyId(), userRecord.username, userRecord.password, new AsyncCallback<UserInfo>() {
+            @Override
+            public void onSuccess(UserInfo arg0) {
+              RootPanel.get("loading").getElement().removeFromParent();
 
-							FlowPanel userInfo = new FlowPanel();
-							userInfo.addStyleName("intake24-user-info-panel");
+              final String url = Location.createUrlBuilder().removeParameter("genUser").buildString();
 
-							userInfo.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(commonMessages.genUserWelcome())));
-							userInfo.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(commonMessages.genUserSaveInfo())));
+              FlowPanel userInfo = new FlowPanel();
+              userInfo.addStyleName("intake24-user-info-panel");
 
-							String surveyUrl = Location.getProtocol() + "//" + Location.getHost() + Location.getPath().replace("/login/", "/");
+              userInfo.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(commonMessages.genUserWelcome())));
+              userInfo.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(commonMessages.genUserSaveInfo())));
 
-							Grid userInfoTable = new Grid(2, 2);
-							userInfoTable.addStyleName("intake24-user-info-table");
+              String surveyUrl = Location.getProtocol() + "//" + Location.getHost() + Location.getPath().replace("/login/", "/");
 
-							userInfoTable.setWidget(0, 0, new Label(commonMessages.loginForm_userNameLabel()));
-							userInfoTable.setWidget(0, 1, new Label(userRecord.username));
-							userInfoTable.setWidget(1, 0, new Label(commonMessages.loginForm_passwordLabel()));
-							userInfoTable.setWidget(1, 1, new Label(userRecord.password));
+              Grid userInfoTable = new Grid(2, 2);
+              userInfoTable.addStyleName("intake24-user-info-table");
 
-							userInfo.add(userInfoTable);
+              userInfoTable.setWidget(0, 0, new Label(commonMessages.loginForm_userNameLabel()));
+              userInfoTable.setWidget(0, 1, new Label(userRecord.username));
+              userInfoTable.setWidget(1, 0, new Label(commonMessages.loginForm_passwordLabel()));
+              userInfoTable.setWidget(1, 1, new Label(userRecord.password));
 
-							userInfo.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(commonMessages.genUserSurveyLink())));
+              userInfo.add(userInfoTable);
 
-							FlowPanel urlDiv = new FlowPanel();
-							urlDiv.add(new Anchor(surveyUrl, surveyUrl));
-							userInfo.add(urlDiv);
+              userInfo.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(commonMessages.genUserSurveyLink())));
 
-							userInfo.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(commonMessages.genUserOneSitting())));
+              FlowPanel urlDiv = new FlowPanel();
+              urlDiv.add(new Anchor(surveyUrl, surveyUrl));
+              userInfo.add(urlDiv);
 
-							Button cont = WidgetFactory.createGreenButton(commonMessages.genUserContinue(), new ClickHandler() {
-								@Override
-								public void onClick(ClickEvent event) {
-									Location.replace(url);
-								}
-							});
+              userInfo.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(commonMessages.genUserOneSitting())));
 
-							userInfo.add(WidgetFactory.createButtonsPanel(cont));
+              Button cont = WidgetFactory.createGreenButton(commonMessages.genUserContinue(), new ClickHandler() {
+                @Override
+                public void onClick(ClickEvent event) {
+                  Location.replace(url);
+                }
+              });
 
-							replaceHeader();
+              userInfo.add(WidgetFactory.createButtonsPanel(cont));
 
-							RootPanel.get("loginForm").add(userInfo);
-						}
+              replaceHeader();
 
-						@Override
-						public void onFailure(Throwable arg0) {
-							RootPanel.get("loading").getElement().removeFromParent();
+              RootPanel.get("loginForm").add(userInfo);
+            }
 
-							FlowPanel errorPanel = new FlowPanel();
-							errorPanel.addStyleName("intake24-error-panel");
+            @Override
+            public void onFailure(Throwable arg0) {
+              RootPanel.get("loading").getElement().removeFromParent();
 
-							errorPanel.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(commonMessages.serverError())));
+              FlowPanel errorPanel = new FlowPanel();
+              errorPanel.addStyleName("intake24-error-panel");
 
-							RootPanel.get("loginForm").add(errorPanel);
-						}
-					});
-				}
+              errorPanel.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(commonMessages.serverError())));
 
-				@Override
-				public void onFailure(Throwable arg0) {
-					RootPanel.get("loading").getElement().removeFromParent();
+              RootPanel.get("loginForm").add(errorPanel);
+            }
+          });
+        }
 
-					FlowPanel errorPanel = new FlowPanel();
-					errorPanel.addStyleName("intake24-error-panel");
+        @Override
+        public void onFailure(Throwable arg0) {
+          RootPanel.get("loading").getElement().removeFromParent();
 
-					errorPanel.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(commonMessages.serverError())));
+          FlowPanel errorPanel = new FlowPanel();
+          errorPanel.addStyleName("intake24-error-panel");
 
-					RootPanel.get("loginForm").add(errorPanel);
-				}
-			});
-		} else {
-			RootPanel.get("loading").getElement().removeFromParent();
-			
-			LoginForm login = new LoginForm(new Callback1<UserInfo>() {
-				@Override
-				public void call(UserInfo info) {
-					Location.reload();
-				}
-			}, SafeHtmlUtils.fromSafeConstant(commonMessages.loginForm_logInToContinue()));
+          errorPanel.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(commonMessages.serverError())));
 
-			replaceHeader();
-			RootPanel.get("loginForm").add(login);
-		}
+          RootPanel.get("loginForm").add(errorPanel);
+        }
+      });
+    } else {
+      RootPanel.get("loading").getElement().removeFromParent();
 
-		initComplete();
-	}
+      LoginForm login = new LoginForm(new Callback1<UserInfo>() {
+        @Override
+        public void call(UserInfo info) {
+          Location.reload();
+        }
+      }, SafeHtmlUtils.fromSafeConstant(commonMessages.loginForm_logInToContinue()));
+
+      replaceHeader();
+      RootPanel.get("loginForm").add(login);
+    }
+
+    initComplete();
+  }
 }

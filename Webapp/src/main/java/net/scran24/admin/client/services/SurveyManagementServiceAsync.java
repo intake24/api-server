@@ -33,25 +33,23 @@ import org.workcraft.gwt.shared.client.Option;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 
-public interface SurveyManagementServiceAsync
-{
-    public static final class Util 
-    { 
-        private static SurveyManagementServiceAsync instance;
+public interface SurveyManagementServiceAsync {
+  public static final class Util {
+    private static SurveyManagementServiceAsync instance;
 
-        public static final SurveyManagementServiceAsync getInstance()
-        {
-            if ( instance == null )
-            {
-                instance = (SurveyManagementServiceAsync) GWT.create( SurveyManagementService.class );
-            }
-            return instance;
-        }
-
-        private Util() {}
+    public static final SurveyManagementServiceAsync getInstance() {
+      if (instance == null) {
+        instance = (SurveyManagementServiceAsync) GWT.create(SurveyManagementService.class);
+      }
+      return instance;
     }
 
-	void createSurvey(String id, String scheme_id, String locale, boolean allowGenUsers, Option<String> surveyMonkeyUrl, AsyncCallback<Option<String>> callback);
+    private Util() {
+    }
+  }
 
-	void listSurveys(AsyncCallback<List<String>> callback);
+  void createSurvey(String id, String scheme_id, String locale, boolean allowGenUsers, Option<String> surveyMonkeyUrl, String supportEmail,
+      AsyncCallback<Option<String>> callback);
+
+  void listSurveys(AsyncCallback<List<String>> callback);
 }

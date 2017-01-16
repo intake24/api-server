@@ -57,7 +57,7 @@ import com.twilio.sdk.resource.instance.Account;
 import net.scran24.common.server.auth.ScranUserId;
 import net.scran24.datastore.DataStore;
 import net.scran24.datastore.DataStoreException;
-import net.scran24.datastore.SupportStaffRecord;
+import net.scran24.datastore.SupportUserRecord;
 import net.scran24.user.client.services.HelpService;
 import net.scran24.user.client.services.HelpServiceException;
 
@@ -89,8 +89,7 @@ public class HelpServiceImpl extends RemoteServiceServlet implements HelpService
 
   @Override
   public void init() throws ServletException {
-    Injector injector = (Injector) this.getServletContext()
-      .getAttribute("intake24.injector");
+    Injector injector = (Injector) this.getServletContext().getAttribute("intake24.injector");
 
     dataStore = injector.getInstance(DataStore.class);
 
@@ -122,8 +121,7 @@ public class HelpServiceImpl extends RemoteServiceServlet implements HelpService
       List<NameValuePair> params = new ArrayList<NameValuePair>();
       params.add(new BasicNameValuePair("To", to));
       params.add(new BasicNameValuePair("From", fromPhoneNumber));
-      params.add(
-          new BasicNameValuePair("Body", "Please call " + name + " on " + number + " (survey id: " + surveyId + ")"));
+      params.add(new BasicNameValuePair("Body", "(Intake24) Please call " + name + " on " + number + " (survey id: " + surveyId + ")"));
       try {
         messageFactory.create(params);
       } catch (TwilioRestException e) {
@@ -189,12 +187,12 @@ public class HelpServiceImpl extends RemoteServiceServlet implements HelpService
 
           dataStore.setLastHelpRequestTime(userId.survey, userId.username, System.currentTimeMillis());
 
-          List<SupportStaffRecord> supportStaff = dataStore.getSupportStaffRecords();
+          List<SupportUserRecord> supportStaff = dataStore.getSupportUserRecords(userId.survey);
 
           final ArrayList<String> sendToAddresses = new ArrayList<String>();
           final ArrayList<String> sendToNumbers = new ArrayList<String>();
 
-          for (SupportStaffRecord staff : supportStaff) {
+          for (final SupportUserRecord staff : supportStaff) {
             staff.email.accept(new Option.SideEffectVisitor<String>() {
               @Override
               public void visitSome(String item) {
@@ -209,7 +207,8 @@ public class HelpServiceImpl extends RemoteServiceServlet implements HelpService
             staff.phoneNumber.accept(new Option.SideEffectVisitor<String>() {
               @Override
               public void visitSome(String item) {
-                sendToNumbers.add(item);
+                if (staff.smsNotificationsEnabled)
+                  sendToNumbers.add(item);
               }
 
               @Override
@@ -241,8 +240,8 @@ public class HelpServiceImpl extends RemoteServiceServlet implements HelpService
   }
 
   @Override
-  public void reportUncaughtException(String strongName, List<String> classNames, List<String> messages,
-      List<StackTraceElement[]> stackTraces, String surveyState) {
+  public void reportUncaughtException(String strongName, List<String> classNames, List<String> messages, List<StackTraceElement[]> stackTraces,
+      String surveyState) {
     Subject subject = SecurityUtils.getSubject();
     ScranUserId userId = (ScranUserId) subject.getPrincipal();
 
@@ -300,8 +299,7 @@ public class HelpServiceImpl extends RemoteServiceServlet implements HelpService
 
       try {
         email.setFrom("no-reply@intake24.co.uk", "Intake24");
-        email
-          .setSubject(String.format("Client exception (%s/%s): %s", userId.survey, userId.username, messages.get(0)));
+        email.setSubject(String.format("Client exception (%s/%s): %s", userId.survey, userId.username, messages.get(0)));
 
         email.setMsg(sb.toString());
 

@@ -1,7 +1,7 @@
 /*
 This file is part of Intake24.
 
-Copyright 2015, 2016 Newcastle University.
+Copyright 2015, 2016, 2017 Newcastle University.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
 
 @RemoteServiceRelativePath("surveyManagement")
 public interface SurveyManagementService extends RemoteService {
-	public Option<String> createSurvey(String id, String scheme_id, String locale, boolean allowGenUsers, Option<String> surveyMonkeyUrl);
-	public List<String> listSurveys();
+  Option<String> createSurvey(String id, String scheme_id, String locale, boolean allowGenUsers, Option<String> surveyMonkeyUrl, String supportEmail);
+
+  public List<String> listSurveys();
 }

@@ -32,100 +32,104 @@ import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
 
 public class SurveyManagement extends Composite {
-	final private SurveyManagementServiceAsync service = SurveyManagementServiceAsync.Util.getInstance();
+  final private SurveyManagementServiceAsync service = SurveyManagementServiceAsync.Util.getInstance();
 
-	private FlowPanel surveyControls;
+  private FlowPanel surveyControls;
 
-	private void setControlsFor(String id) {
-		surveyControls.clear();
+  private void setControlsFor(String id) {
+    surveyControls.clear();
 
-		final HTMLPanel idLabel = new HTMLPanel("<h2>" + SafeHtmlUtils.htmlEscape(id) + "</h2>");
-		final HTMLPanel staffUploadLabel = new HTMLPanel("<h3>Upload staff accounts</h3>");
-		final FlowPanel messageDiv = new FlowPanel();
-		messageDiv.getElement().addClassName("scran24-admin-survey-id-message");
+    final HTMLPanel idLabel = new HTMLPanel("<h2>" + SafeHtmlUtils.htmlEscape(id) + "</h2>");
+    final HTMLPanel staffUploadLabel = new HTMLPanel("<h3>Upload staff accounts</h3>");
+    final FlowPanel messageDiv = new FlowPanel();
+    messageDiv.getElement().addClassName("scran24-admin-survey-id-message");
 
-		List<String> permissions = Arrays
-				.asList(new String[] { "downloadData:" + id, "readSurveys:" + id, "uploadUserInfo:" + id, "surveyControl:" + id });
+    List<String> permissions = Arrays.asList(new String[] {
+      "downloadData:" + id,
+      "readSurveys:" + id,
+      "uploadUserInfo:" + id,
+      "surveyControl:" + id
+    });
 
-		final UserInfoUpload staffUpload = new UserInfoUpload(id, "staff", permissions, new Callback1<Option<String>>() {
-			@Override
-			public void call(Option<String> res) {
-				res.accept(new Option.SideEffectVisitor<String>() {
-					@Override
-					public void visitSome(String error) {
-						messageDiv.clear();
-						messageDiv.getElement().getStyle().setColor("#d00");
-						messageDiv.add(new HTMLPanel(SafeHtmlUtils.fromString(error)));
-					}
+    final UserInfoUpload staffUpload = new UserInfoUpload(id, "staff", permissions, new Callback1<Option<String>>() {
+      @Override
+      public void call(Option<String> res) {
+        res.accept(new Option.SideEffectVisitor<String>() {
+          @Override
+          public void visitSome(String error) {
+            messageDiv.clear();
+            messageDiv.getElement().getStyle().setColor("#d00");
+            messageDiv.add(new HTMLPanel(SafeHtmlUtils.fromString(error)));
+          }
 
-					@Override
-					public void visitNone() {
-						messageDiv.clear();
-						messageDiv.getElement().getStyle().setColor("#0d0");
-						messageDiv.add(new HTMLPanel(SafeHtmlUtils.fromString("Staff accounts uploaded successfully")));
-					}
-				});
-			}
-		});
+          @Override
+          public void visitNone() {
+            messageDiv.clear();
+            messageDiv.getElement().getStyle().setColor("#0d0");
+            messageDiv.add(new HTMLPanel(SafeHtmlUtils.fromString("Staff accounts uploaded successfully")));
+          }
+        });
+      }
+    });
 
-		surveyControls.add(idLabel);
-		surveyControls.add(staffUploadLabel);
-		surveyControls.add(messageDiv);
-		surveyControls.add(staffUpload);
+    surveyControls.add(idLabel);
+    surveyControls.add(staffUploadLabel);
+    surveyControls.add(messageDiv);
+    surveyControls.add(staffUpload);
 
-	}
+  }
 
-	public SurveyManagement() {
-		final FlowPanel contents = new FlowPanel();
+  public SurveyManagement() {
+    final FlowPanel contents = new FlowPanel();
 
-		contents.add(new LoadingPanel("Loading surveys..."));
+    contents.add(new LoadingPanel("Loading surveys..."));
 
-		service.listSurveys(new AsyncCallback<List<String>>() {
-			@Override
-			public void onFailure(Throwable arg0) {
-				contents.clear();
-				contents.add(new Label("Server error - please check server logs"));
-			}
+    service.listSurveys(new AsyncCallback<List<String>>() {
+      @Override
+      public void onFailure(Throwable arg0) {
+        contents.clear();
+        contents.add(new Label("Server error - please check server logs"));
+      }
 
-			@Override
-			public void onSuccess(List<String> surveys) {
-				contents.clear();
+      @Override
+      public void onSuccess(List<String> surveys) {
+        contents.clear();
 
-				if (surveys.isEmpty()) {
-					contents.add(new HTMLPanel("<h2>No surveys to manage.</h2>"));
-				} else {
+        if (surveys.isEmpty()) {
+          contents.add(new HTMLPanel("<h2>No surveys to manage.</h2>"));
+        } else {
 
-					Collections.sort(surveys);
+          Collections.sort(surveys);
 
-					FlowPanel surveySelector = new FlowPanel();
+          FlowPanel surveySelector = new FlowPanel();
 
-					final ListBox surveyIdList = new ListBox(false);
+          final ListBox surveyIdList = new ListBox(false);
 
-					for (String id : surveys)
-						surveyIdList.addItem(id);
+          for (String id : surveys)
+            surveyIdList.addItem(id);
 
-					surveySelector.add(new Label("Select survey: "));
-					surveySelector.add(surveyIdList);
+          surveySelector.add(new Label("Select survey: "));
+          surveySelector.add(surveyIdList);
 
-					contents.add(surveySelector);
+          contents.add(surveySelector);
 
-					surveyControls = new FlowPanel();
+          surveyControls = new FlowPanel();
 
-					contents.add(surveyControls);
+          contents.add(surveyControls);
 
-					surveyIdList.addChangeHandler(new ChangeHandler() {
-						@Override
-						public void onChange(ChangeEvent arg0) {
-							setControlsFor(surveyIdList.getItemText(surveyIdList.getSelectedIndex()));
-						}
-					});
+          surveyIdList.addChangeHandler(new ChangeHandler() {
+            @Override
+            public void onChange(ChangeEvent arg0) {
+              setControlsFor(surveyIdList.getItemText(surveyIdList.getSelectedIndex()));
+            }
+          });
 
-					surveyIdList.setSelectedIndex(0);
-					setControlsFor(surveyIdList.getItemText(surveyIdList.getSelectedIndex()));
-				}
-			}
-		});
+          surveyIdList.setSelectedIndex(0);
+          setControlsFor(surveyIdList.getItemText(surveyIdList.getSelectedIndex()));
+        }
+      }
+    });
 
-		initWidget(contents);
-	}
+    initWidget(contents);
+  }
 }

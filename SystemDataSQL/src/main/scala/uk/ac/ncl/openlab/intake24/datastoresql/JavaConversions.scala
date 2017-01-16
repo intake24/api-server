@@ -26,7 +26,7 @@ NutritionMappedSurvey => JavaNutritionMappedSurvey,
 NutritionMappedSurveyRecord => JavaNutritionMappedSurveyRecord,
 NutritionMappedSurveyRecordWithId => JavaNutritionMappedSurveyRecordWithId,
 MissingFoodRecord => JavaMissingFoodRecord,
-SupportStaffRecord => JavaSupportStaffRecord
+SupportUserRecord => JavaSupportUserRecord
 }
 import scala.collection.JavaConversions._
 import net.scran24.datastore.shared.{Time => JavaMealTime, CompletedPortionSize => JavaCompletedPortionSize, SurveyParameters => JavaSurveyParameters}
@@ -126,10 +126,10 @@ object JavaConversions {
     SurveyParameters(params.state.ordinal(), params.startDate, params.endDate, params.schemeName, params.locale, params.allowGenUsers, params.supportEmail,
       params.suspensionReason, jopt2option(params.surveyMonkeyUrl))
 
-  def toJavaSupportStaffRecord(record: SupportStaffRecord): JavaSupportStaffRecord =
-    new JavaSupportStaffRecord(record.name, option2jopt(record.phoneNumber), option2jopt(record.email))
+  def toJavaSupportUserRecord(record: SupportUserRecord): JavaSupportUserRecord =
+    new JavaSupportUserRecord(record.surveyId, record.userName, option2jopt(record.realName), option2jopt(record.email), option2jopt(record.phoneNumber), record.smsEnabled)
 
-  def fromJavaSupportStaffRecord(record: JavaSupportStaffRecord): SupportStaffRecord =
-    SupportStaffRecord(record.name, jopt2option(record.phoneNumber), jopt2option(record.email))
+  def fromJavaSupportUserRecord(record: JavaSupportUserRecord): SupportUserRecord =
+    SupportUserRecord(record.surveyId, record.userId, jopt2option(record.realName), jopt2option(record.email), jopt2option(record.phoneNumber), record.smsNotificationsEnabled)
 
 }

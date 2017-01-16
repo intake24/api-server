@@ -1,7 +1,7 @@
 /*
 This file is part of Intake24.
 
-Copyright 2015, 2016 Newcastle University.
+Copyright 2015, 2016, 2017 Newcastle University.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -50,123 +50,136 @@ import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
 
 public class LoginForm extends Composite {
-	final private static LoginServiceAsync loginService = LoginServiceAsync.Util.getInstance();
-	final private static CommonMessages messages = CommonMessages.Util.getInstance();
-	
-	final private TextBox userText;
-	final private PasswordTextBox passText;
-	final private Callback1<UserInfo> onSuccess;
-	final private FlowPanel errorMessage;
-	private Button loginButton;
+  final private static LoginServiceAsync loginService = LoginServiceAsync.Util.getInstance();
+  final private static CommonMessages messages = CommonMessages.Util.getInstance();
 
-	private void doLogin() {
-		loginButton.setEnabled(false);
-		
-		errorMessage.clear();
-		errorMessage.add(new LoadingWidget());
-		
-		loginService.login(EmbeddedData.surveyId(), userText.getText(), passText.getText(), new AsyncCallback<UserInfo>() {
-			@Override
-			public void onSuccess(UserInfo result) {
-						onSuccess.call(result);
-			}
+  final private TextBox userText;
+  final private PasswordTextBox passText;
+  final private Callback1<UserInfo> onSuccess;
+  final private FlowPanel errorMessage;
+  private Button loginButton;
 
-			@Override
-			public void onFailure(Throwable caught) {
-				errorMessage.clear();
-				if (caught instanceof CredentialsException)
-					errorMessage.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(messages.loginForm_passwordNotRecognised())));
-				else
-					errorMessage.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(messages.loginForm_serviceException())));
-				
-				loginButton.setEnabled(true);
-			}
-		});
-	}
+  private void doLogin(final String supportEmail) {
+    loginService.login(EmbeddedData.surveyId(), userText.getText(), passText.getText(), new AsyncCallback<UserInfo>() {
+      @Override
+      public void onSuccess(UserInfo result) {
+        onSuccess.call(result);
+      }
 
-	public LoginForm(final Callback1<UserInfo> onSuccess, SafeHtml prompt) {
-		this.onSuccess = onSuccess;
-		Grid g = new Grid(2, 2);
+      @Override
+      public void onFailure(Throwable caught) {
+        errorMessage.clear();
+        if (caught instanceof CredentialsException)
+          errorMessage.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(messages.loginForm_passwordNotRecognised(supportEmail))));
+        else
+          errorMessage.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(messages.loginForm_serviceException(supportEmail))));
+        loginButton.setEnabled(true);
+      }
+    });
 
-		g.setCellPadding(5);
-		Label userLabel = new Label(messages.loginForm_userNameLabel());
-		Label passLabel = new Label(messages.loginForm_passwordLabel());
+  }
 
-		this.userText = new TextBox();
-		this.passText = new PasswordTextBox();
+  private void initLogin() {
+    loginButton.setEnabled(false);
 
-		g.setWidget(0, 0, userLabel);
-		g.setWidget(1, 0, passLabel);
-		g.setWidget(0, 1, userText);
-		g.setWidget(1, 1, passText);
+    errorMessage.clear();
+    errorMessage.add(new LoadingWidget());
 
-		VerticalPanel contents = new VerticalPanel();
-		contents.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
+    loginService.getSurveySupportEmail(EmbeddedData.surveyId(), new AsyncCallback<String>() {
+      @Override
+      public void onFailure(Throwable caught) {
+        // Use fallback address
+        doLogin("support@intake24.co.uk");
+      }
 
-		FlowPanel linkPanel = new FlowPanel();		
-		
-		linkPanel.add(WidgetFactory.createTutorialVideoLink());
-		
-		HTMLPanel pp = new HTMLPanel(prompt);		
-		contents.add(pp);
-		HTMLPanel divider = new HTMLPanel(messages.loginForm_logInSeparator());
-		divider.getElement().addClassName("intake24-login-form-divider");
-		contents.add(divider);
-		contents.add(linkPanel);
-		contents.add(g);
+      @Override
+      public void onSuccess(final String supportEmail) {
+        doLogin(supportEmail);
+      }
+    });
+  }
 
-		errorMessage = new FlowPanel();
-		contents.add(errorMessage);
+  public LoginForm(final Callback1<UserInfo> onSuccess, SafeHtml prompt) {
+    this.onSuccess = onSuccess;
+    Grid g = new Grid(2, 2);
 
-		loginButton = WidgetFactory.createButton(messages.loginForm_logInButtonLabel(), new ClickHandler() {
-			@Override
-			public void onClick(ClickEvent event) {
-				doLogin();
-			}
-		});
+    g.setCellPadding(5);
+    Label userLabel = new Label(messages.loginForm_userNameLabel());
+    Label passLabel = new Label(messages.loginForm_passwordLabel());
 
-		loginButton.getElement().setId("intake24-login-button");
-								
-		
-		
-		passText.addKeyPressHandler(new KeyPressHandler() {
-			@Override
-			public void onKeyPress(KeyPressEvent event) {
-				if (event.getNativeEvent().getKeyCode() == KeyCodes.KEY_ENTER)
-					doLogin();
-			}
-		});
-		
-		userText.addKeyPressHandler(new KeyPressHandler() {
-			@Override
-			public void onKeyPress(KeyPressEvent event) {
-				if (event.getNativeEvent().getKeyCode() == KeyCodes.KEY_ENTER)
-					doLogin();
-			}
-		});
+    this.userText = new TextBox();
+    this.passText = new PasswordTextBox();
 
-		contents.add(WidgetFactory.createButtonsPanel(loginButton));
-		contents.addStyleName("intake24-login-form");
+    g.setWidget(0, 0, userLabel);
+    g.setWidget(1, 0, passLabel);
+    g.setWidget(0, 1, userText);
+    g.setWidget(1, 1, passText);
 
-		initWidget(contents);
-	}
+    VerticalPanel contents = new VerticalPanel();
+    contents.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
 
-	public static void showPopup(final Callback1<UserInfo> onSuccess) {
-		final OverlayDiv div = new OverlayDiv();
+    FlowPanel linkPanel = new FlowPanel();
 
-		LoginForm dialog = new LoginForm(new Callback1<UserInfo>() {
-			@Override
-			public void call(UserInfo info) {
-				CurrentUser.setUserInfo(info);
-				div.setVisible(false);
-				onSuccess.call(info);
-			}
-		}, SafeHtmlUtils.fromSafeConstant(messages.loginForm_sessionExpired()));
+    linkPanel.add(WidgetFactory.createTutorialVideoLink());
 
-		dialog.addStyleName("intake24-login-popup");
+    HTMLPanel pp = new HTMLPanel(prompt);
+    contents.add(pp);
+    HTMLPanel divider = new HTMLPanel(messages.loginForm_logInSeparator());
+    divider.getElement().addClassName("intake24-login-form-divider");
+    contents.add(divider);
+    contents.add(linkPanel);
+    contents.add(g);
 
-		div.setContents(dialog);
-		div.setVisible(true);
-	}
-	
+    errorMessage = new FlowPanel();
+    contents.add(errorMessage);
+
+    loginButton = WidgetFactory.createButton(messages.loginForm_logInButtonLabel(), new ClickHandler() {
+      @Override
+      public void onClick(ClickEvent event) {
+        initLogin();
+      }
+    });
+
+    loginButton.getElement().setId("intake24-login-button");
+
+    passText.addKeyPressHandler(new KeyPressHandler() {
+      @Override
+      public void onKeyPress(KeyPressEvent event) {
+        if (event.getNativeEvent().getKeyCode() == KeyCodes.KEY_ENTER)
+          initLogin();
+      }
+    });
+
+    userText.addKeyPressHandler(new KeyPressHandler() {
+      @Override
+      public void onKeyPress(KeyPressEvent event) {
+        if (event.getNativeEvent().getKeyCode() == KeyCodes.KEY_ENTER)
+          initLogin();
+      }
+    });
+
+    contents.add(WidgetFactory.createButtonsPanel(loginButton));
+    contents.addStyleName("intake24-login-form");
+
+    initWidget(contents);
+  }
+
+  public static void showPopup(final Callback1<UserInfo> onSuccess) {
+    final OverlayDiv div = new OverlayDiv();
+
+    LoginForm dialog = new LoginForm(new Callback1<UserInfo>() {
+      @Override
+      public void call(UserInfo info) {
+        CurrentUser.setUserInfo(info);
+        div.setVisible(false);
+        onSuccess.call(info);
+      }
+    }, SafeHtmlUtils.fromSafeConstant(messages.loginForm_sessionExpired()));
+
+    dialog.addStyleName("intake24-login-popup");
+
+    div.setContents(dialog);
+    div.setVisible(true);
+  }
+
 }

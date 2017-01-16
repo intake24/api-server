@@ -22,7 +22,7 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.admin.SecureUserRecord
 
 trait DataStoreScala {
 
-  def initSurvey(survey_id: String, scheme_name: String, locale: String, allowGenUsers: Boolean, surveyMonkeyUrl: Option[String]): Unit
+  def initSurvey(survey_id: String, scheme_name: String, locale: String, allowGenUsers: Boolean, surveyMonkeyUrl: Option[String], supportEmail: String): Unit
   
   def getSurveyNames(): Seq[String]
 
@@ -60,7 +60,7 @@ trait DataStoreScala {
 
   def getGlobalValue(name: String): Option[String]
 
-  def getSupportStaffRecords(): Seq[SupportStaffRecord]
+  def getSupportUserRecords(surveyId: String): Seq[SupportUserRecord]
 
   def getLastHelpRequestTime(survey: String, username: String): Option[Long]
 
@@ -71,4 +71,6 @@ trait DataStoreScala {
   def validateCompletionCode(survey: String, external_user_id: String, code: String): Boolean
 
   def getLocalNutrientTypes(locale_id: String): Seq[LocalNutrientType]
+  
+  def getSurveySupportEmail(surveyId: String): String
 }

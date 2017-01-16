@@ -37,104 +37,105 @@ import java.util.List;
 
 import javax.servlet.ServletException;
 
-import net.scran24.admin.client.services.SurveyManagementService;
-import net.scran24.datastore.DataStore;
-import net.scran24.datastore.DataStoreException;
-
 import org.apache.commons.io.IOUtils;
 import org.workcraft.gwt.shared.client.Option;
 
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 import com.google.inject.Injector;
 
+import net.scran24.admin.client.services.SurveyManagementService;
+import net.scran24.datastore.DataStore;
+import net.scran24.datastore.DataStoreException;
+
 public class SurveyManagementServiceImpl extends RemoteServiceServlet implements SurveyManagementService {
-	private static final long serialVersionUID = -878109524841664825L;
-	private DataStore dataStore;
-	
-	public void copyTemplate (String srcPath, File dstFile, String surveyId, String locale) throws IOException {
-		InputStream pageTemplate = getServletContext().getResourceAsStream(srcPath);
-		String page = IOUtils.toString(pageTemplate).replace("$AUTH_REALM$",surveyId).replace("$LOCALE$", locale);
-		dstFile.createNewFile();
-		OutputStream pageOut = new FileOutputStream(dstFile);
-		IOUtils.write(page, pageOut);
-		pageTemplate.close();
-		pageOut.close();
-	}
-	
-	@Override
-	public void init() throws ServletException {
-		try {
-			Injector injector = (Injector) this.getServletContext().getAttribute("intake24.injector");
-			dataStore = injector.getInstance(DataStore.class);		
-		} catch (Throwable e) {
-			throw new ServletException(e);
-		}
-	}
-	
-	@Override
-	public Option<String> createSurvey(String id, String scheme_id, String locale, boolean allowGenUsers, Option<String> surveyMonkeyUrl) {
-		Option<String> idError = checkId(id);
-		
-		if (idError.isEmpty()) {
+  private static final long serialVersionUID = -878109524841664825L;
+  private DataStore dataStore;
 
-			try {		
-				dataStore.initSurvey(id, scheme_id, locale, allowGenUsers, surveyMonkeyUrl);
-				
-				File baseDir = new File (new File(getServletContext().getRealPath("/surveys")), id);
-				File loginDir = new File(baseDir, "login");
-				File staffDir = new File(baseDir, "staff");
-			
-				boolean dirs_ok = true;
-				
-				dirs_ok &= baseDir.mkdir();
-				dirs_ok &= loginDir.mkdir();
-				dirs_ok &= staffDir.mkdir();
-				
-				if (!dirs_ok)
-					throw new IOException("Failed to create survey directories (" + baseDir.getAbsolutePath() + ")");
-			
-				File userPageFile = new File(baseDir, "index.html");
-				File loginPageFile = new File(loginDir, "index.html");
-				File staffPageFile = new File(staffDir, "index.html");
-				
-				copyTemplate("/WEB-INF/userPageTemplate.html", userPageFile, id, locale);
-				copyTemplate("/WEB-INF/loginPageTemplate.html", loginPageFile, id, locale);
-				copyTemplate("/WEB-INF/staffPageTemplate.html", staffPageFile, id, locale);
+  public void copyTemplate(String srcPath, File dstFile, String surveyId, String locale) throws IOException {
+    InputStream pageTemplate = getServletContext().getResourceAsStream(srcPath);
+    String page = IOUtils.toString(pageTemplate).replace("$AUTH_REALM$", surveyId).replace("$LOCALE$", locale);
+    dstFile.createNewFile();
+    OutputStream pageOut = new FileOutputStream(dstFile);
+    IOUtils.write(page, pageOut);
+    pageTemplate.close();
+    pageOut.close();
+  }
 
-				return Option.none();
-			} catch (IOException e) {
-				e.printStackTrace();
-				return Option.some(e.getMessage());
-			} catch (DataStoreException e) {
-				e.printStackTrace();
-				return Option.some(e.getMessage());
-			}
-		} else
-			return idError;
-	}
+  @Override
+  public void init() throws ServletException {
+    try {
+      Injector injector = (Injector) this.getServletContext().getAttribute("intake24.injector");
+      dataStore = injector.getInstance(DataStore.class);
+    } catch (Throwable e) {
+      throw new ServletException(e);
+    }
+  }
 
-	private Option<String> checkId(String id) {
-		if (id.equals("admin"))
-			return Option.some("\"admin\" is a reserved ID and cannot be used for surveys");
-		if (!id.matches("[A-Za-z0-9_]+"))
-			return Option.some("Survey ID must be a single non-empty word (no spaces), containing only alphanumeric symbols or underscores");
-		else {
-			File dir = new File (new File(getServletContext().getRealPath("/surveys")), id);
-			if (dir.exists())
-				return Option.some ("Survey with this ID already exists");
-			else
-				return Option.none();
-		}
-	}
+  @Override
+  public Option<String> createSurvey(String id, String scheme_id, String locale, boolean allowGenUsers, Option<String> surveyMonkeyUrl,
+      String supportEmail) {
+    Option<String> idError = checkId(id);
 
-	@Override
-	public List<String> listSurveys() {
-		File dir = new File(getServletContext().getRealPath("/surveys"));
-		return Arrays.asList(dir.list(new FilenameFilter() {
-			@Override
-			public boolean accept(File f, String n) {
-				return f.isDirectory();
-			}
-		}));
-	}
+    if (idError.isEmpty()) {
+
+      try {
+        dataStore.initSurvey(id, scheme_id, locale, allowGenUsers, surveyMonkeyUrl, supportEmail);
+
+        File baseDir = new File(new File(getServletContext().getRealPath("/surveys")), id);
+        File loginDir = new File(baseDir, "login");
+        File staffDir = new File(baseDir, "staff");
+
+        boolean dirs_ok = true;
+
+        dirs_ok &= baseDir.mkdir();
+        dirs_ok &= loginDir.mkdir();
+        dirs_ok &= staffDir.mkdir();
+
+        if (!dirs_ok)
+          throw new IOException("Failed to create survey directories (" + baseDir.getAbsolutePath() + ")");
+
+        File userPageFile = new File(baseDir, "index.html");
+        File loginPageFile = new File(loginDir, "index.html");
+        File staffPageFile = new File(staffDir, "index.html");
+
+        copyTemplate("/WEB-INF/userPageTemplate.html", userPageFile, id, locale);
+        copyTemplate("/WEB-INF/loginPageTemplate.html", loginPageFile, id, locale);
+        copyTemplate("/WEB-INF/staffPageTemplate.html", staffPageFile, id, locale);
+
+        return Option.none();
+      } catch (IOException e) {
+        e.printStackTrace();
+        return Option.some(e.getMessage());
+      } catch (DataStoreException e) {
+        e.printStackTrace();
+        return Option.some(e.getMessage());
+      }
+    } else
+      return idError;
+  }
+
+  private Option<String> checkId(String id) {
+    if (id.equals("admin"))
+      return Option.some("\"admin\" is a reserved ID and cannot be used for surveys");
+    if (!id.matches("[A-Za-z0-9_]+"))
+      return Option.some("Survey ID must be a single non-empty word (no spaces), containing only alphanumeric symbols or underscores");
+    else {
+      File dir = new File(new File(getServletContext().getRealPath("/surveys")), id);
+      if (dir.exists())
+        return Option.some("Survey with this ID already exists");
+      else
+        return Option.none();
+    }
+  }
+
+  @Override
+  public List<String> listSurveys() {
+    File dir = new File(getServletContext().getRealPath("/surveys"));
+    return Arrays.asList(dir.list(new FilenameFilter() {
+      @Override
+      public boolean accept(File f, String n) {
+        return f.isDirectory();
+      }
+    }));
+  }
 }

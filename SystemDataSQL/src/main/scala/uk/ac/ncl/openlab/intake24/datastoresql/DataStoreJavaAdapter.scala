@@ -31,7 +31,7 @@ import net.scran24.datastore.{
   NutritionMappedSurveyRecord => JavaNutritionMappedSurveyRecord,
   NutritionMappedSurveyRecordWithId => JavaNutritionMappedSurveyRecordWithId,
   MissingFoodRecord => JavaMissingFoodRecord,
-  SupportStaffRecord => JavaSupportStaffRecord
+  SupportUserRecord => JavaSupportUserRecord
 }
 import net.scran24.datastore.shared.{ Time => JavaMealTime, CompletedPortionSize => JavaCompletedPortionSize, SurveyParameters => JavaSurveyParameters }
 import net.scran24.datastore.shared.SurveyState
@@ -52,8 +52,8 @@ class DataStoreJavaAdapter @Inject() (scalaImpl: DataStoreScala) extends DataSto
     case other => other
   }
 
-  def initSurvey(survey_id: String, scheme_name: String, locale: String, allowGenUsers: Boolean, surveyMonkeyUrl: JOpt[String]): Unit =
-    scalaImpl.initSurvey(survey_id, scheme_name, locale, allowGenUsers, jopt2option(surveyMonkeyUrl))
+  def initSurvey(survey_id: String, scheme_name: String, locale: String, allowGenUsers: Boolean, surveyMonkeyUrl: JOpt[String], supportEmail: String): Unit =
+    scalaImpl.initSurvey(survey_id, scheme_name, locale, allowGenUsers, jopt2option(surveyMonkeyUrl), supportEmail)
 
   def getUserData(survey_id: String, user_id: String): JMap[String, String] = {
     copyToJavaMap(scalaImpl.getUserData(overrideAdminSurveyId(survey_id), user_id))
@@ -107,8 +107,8 @@ class DataStoreJavaAdapter @Inject() (scalaImpl: DataStoreScala) extends DataSto
   def getGlobalValue(name: String): JOpt[String] =
     option2jopt(scalaImpl.getGlobalValue(name))
 
-  def getSupportStaffRecords(): JList[JavaSupportStaffRecord] =
-    copyToJavaList(scalaImpl.getSupportStaffRecords().map(toJavaSupportStaffRecord))
+  def getSupportUserRecords(surveyId: String): JList[JavaSupportUserRecord] =
+    copyToJavaList(scalaImpl.getSupportUserRecords(surveyId).map(toJavaSupportUserRecord))
 
   def getLastHelpRequestTime(survey: String, username: String): JOpt[java.lang.Long] =
     option2jopt(scalaImpl.getLastHelpRequestTime(survey, username).map(new java.lang.Long(_)))
@@ -131,6 +131,10 @@ class DataStoreJavaAdapter @Inject() (scalaImpl: DataStoreScala) extends DataSto
       t =>
         new net.scran24.datastore.LocalNutrientType(t.nutrientTypeId, t.localDescription, t.unit)
     })
+  }
+
+  def getSurveySupportEmail(surveyId: String): String = {
+    scalaImpl.getSurveySupportEmail(surveyId: String)
   }
 
 }

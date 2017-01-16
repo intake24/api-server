@@ -1,7 +1,7 @@
 /*
 This file is part of Intake24.
 
-Copyright 2015, 2016 Newcastle University.
+Copyright 2015, 2016, 2017 Newcastle University.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -61,93 +61,94 @@ import org.apache.shiro.util.ByteSource;
 import com.google.inject.Injector;
 
 public class UploadUserInfoService extends HttpServlet {
-	private static final long serialVersionUID = 6859630591301166393L;
-	private DataStore dataStore;
+  private static final long serialVersionUID = 6859630591301166393L;
+  private DataStore dataStore;
 
-	@Override
-	public void init() throws ServletException {
-		Injector injector = (Injector) this.getServletContext().getAttribute("intake24.injector");
-		dataStore = injector.getInstance(DataStore.class);
-	}
+  @Override
+  public void init() throws ServletException {
+    Injector injector = (Injector) this.getServletContext().getAttribute("intake24.injector");
+    dataStore = injector.getInstance(DataStore.class);
+  }
 
-	private List<SecureUserRecord> mapToSecureUserRecords(List<UserRecord> userRecords, Set<String> roles, Set<String> permissions) {
-		List<SecureUserRecord> result = new ArrayList<SecureUserRecord>();
+  private List<SecureUserRecord> mapToSecureUserRecords(List<UserRecord> userRecords, Set<String> roles, Set<String> permissions) {
+    List<SecureUserRecord> result = new ArrayList<SecureUserRecord>();
 
-		RandomNumberGenerator rng = new SecureRandomNumberGenerator();
+    RandomNumberGenerator rng = new SecureRandomNumberGenerator();
 
-		for (UserRecord r : userRecords) {
-			ByteSource salt = rng.nextBytes();
+    for (UserRecord r : userRecords) {
+      ByteSource salt = rng.nextBytes();
 
-			String passwordHashBase64 = new Sha256Hash(r.password, salt, 1024).toBase64();
-			String passwordSaltBase64 = salt.toBase64();
+      String passwordHashBase64 = new Sha256Hash(r.password, salt, 1024).toBase64();
+      String passwordSaltBase64 = salt.toBase64();
 
-			result.add(new SecureUserRecord(r.username, passwordHashBase64, passwordSaltBase64, roles, permissions, r.customFields));
-		}
+      result
+        .add(new SecureUserRecord(r.username, passwordHashBase64, passwordSaltBase64, r.name, r.email, r.phone, roles, permissions, r.customFields));
+    }
 
-		return result;
-	}
+    return result;
+  }
 
-	@Override
-	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-		resp.setContentType("text/html");
-		ServletOutputStream outputStream = resp.getOutputStream();
-		PrintWriter writer = new PrintWriter(outputStream);
+  @Override
+  protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    resp.setContentType("text/html");
+    ServletOutputStream outputStream = resp.getOutputStream();
+    PrintWriter writer = new PrintWriter(outputStream);
 
-		if (!ServletFileUpload.isMultipartContent(req)) {
-			resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-		} else {
-			DiskFileItemFactory factory = new DiskFileItemFactory();
-			ServletContext servletContext = this.getServletConfig().getServletContext();
-			File repository = (File) servletContext.getAttribute("javax.servlet.context.tempdir");
-			factory.setRepository(repository);
+    if (!ServletFileUpload.isMultipartContent(req)) {
+      resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+    } else {
+      DiskFileItemFactory factory = new DiskFileItemFactory();
+      ServletContext servletContext = this.getServletConfig().getServletContext();
+      File repository = (File) servletContext.getAttribute("javax.servlet.context.tempdir");
+      factory.setRepository(repository);
 
-			ServletFileUpload upload = new ServletFileUpload(factory);
+      ServletFileUpload upload = new ServletFileUpload(factory);
 
-			try {
-				List<FileItem> items = upload.parseRequest(req);
+      try {
+        List<FileItem> items = upload.parseRequest(req);
 
-				InputStream file = null;
-				String role = null;
-				Set<String> permissions = new HashSet<String>();
-				String surveyId = req.getParameter("surveyId");
+        InputStream file = null;
+        String role = null;
+        Set<String> permissions = new HashSet<String>();
+        String surveyId = req.getParameter("surveyId");
 
-				for (FileItem i : items) {
-					if (i.getFieldName().equals("file"))
-						file = i.getInputStream();
-					else if (i.getFieldName().equals("role"))
-						role = i.getString();
-					else if (i.getFieldName().equals("permission"))
-						permissions.add(i.getString());
-				}
+        for (FileItem i : items) {
+          if (i.getFieldName().equals("file"))
+            file = i.getInputStream();
+          else if (i.getFieldName().equals("role"))
+            role = i.getString();
+          else if (i.getFieldName().equals("permission"))
+            permissions.add(i.getString());
+        }
 
-				if (file == null)
-					throw new ServletException("file field not specified");
-				if (role == null)
-					throw new ServletException("role field not specified");
-				if (surveyId == null)
-					throw new ServletException("surveyId field not specified");
+        if (file == null)
+          throw new ServletException("file field not specified");
+        if (role == null)
+          throw new ServletException("role field not specified");
+        if (surveyId == null)
+          throw new ServletException("surveyId field not specified");
 
-				List<UserRecord> userRecords = UserRecordCSV.fromCSV(file);
+        List<UserRecord> userRecords = UserRecordCSV.fromCSV(file);
 
-				try {
-					Set<String> roles = new HashSet<String>();
-					roles.add(role);
+        try {
+          Set<String> roles = new HashSet<String>();
+          roles.add(role);
 
-					dataStore.saveUsers(surveyId, mapToSecureUserRecords(userRecords, roles, permissions));
-					writer.print("OK");
-				} catch (DataStoreException e) {
-					writer.print("ERR:" + e.getMessage());
-				} catch (DuplicateKeyException e) {
-					writer.print("ERR:" + e.getMessage());
-				}
+          dataStore.saveUsers(surveyId, mapToSecureUserRecords(userRecords, roles, permissions));
+          writer.print("OK");
+        } catch (DataStoreException e) {
+          writer.print("ERR:" + e.getMessage());
+        } catch (DuplicateKeyException e) {
+          writer.print("ERR:" + e.getMessage());
+        }
 
-			} catch (FileUploadException e) {
-				writer.print("ERR:" + e.getMessage());
-			} catch (IOException e) {
-				writer.print("ERR:" + e.getMessage());
-			}
-		}
+      } catch (FileUploadException e) {
+        writer.print("ERR:" + e.getMessage());
+      } catch (IOException e) {
+        writer.print("ERR:" + e.getMessage());
+      }
+    }
 
-		writer.close();
-	}
+    writer.close();
+  }
 }

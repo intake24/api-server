@@ -104,7 +104,7 @@ class DataStoreSqlImplTest extends FunSuite with TestDB {
       randomCustomFields())
 
   test("Create a survey") {
-    service.initSurvey("test1", "test_scheme", "en_GB", true, Some("Test URL"))
+    service.initSurvey("test1", "test_scheme", "en_GB", true, Some("Test URL"), "ha@ha.ha")
   }
 
   test("Verify initial parameters") {
@@ -118,7 +118,7 @@ class DataStoreSqlImplTest extends FunSuite with TestDB {
   }
 
   test("Create another survey") {
-    service.initSurvey("test2", "test_scheme", "en_GB", true, None)
+    service.initSurvey("test2", "test_scheme", "en_GB", true, None, "ha@ha.ha")
   }
 
   test("Verify initial parameters for the other survey") {
@@ -134,7 +134,7 @@ class DataStoreSqlImplTest extends FunSuite with TestDB {
   test("Change survey parameters") {
     service.setSurveyParameters("test2", new SurveyParameters(SurveyState.ACTIVE.ordinal(),
       Timestamp.valueOf(LocalDateTime.of(2015, 8, 1, 0, 0)).getTime,
-      Timestamp.valueOf(LocalDateTime.of(2015, 10, 30, 15, 30)).getTime, "test_scheme_2", "en_GB", false, "just4fun", Some("test_url")))
+      Timestamp.valueOf(LocalDateTime.of(2015, 10, 30, 15, 30)).getTime, "test_scheme_2", "en_GB", false, "test@test.com", "just4fun", Some("test_url")))
   }
 
   test("Verify changed survey parameters") {

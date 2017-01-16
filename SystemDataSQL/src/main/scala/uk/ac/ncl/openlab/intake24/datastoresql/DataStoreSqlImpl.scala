@@ -41,7 +41,7 @@ import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
 
 @Singleton
 class DataStoreSqlImpl @Inject() (@Named("intake24_system") dataSource: DataSource) extends DataStoreScala with SqlResourceLoader {
-  
+
   val logger = LoggerFactory.getLogger(classOf[DataStoreSqlImpl])
 
   val userAdminImpl = new UserAdminImpl(dataSource)
@@ -51,7 +51,7 @@ class DataStoreSqlImpl @Inject() (@Named("intake24_system") dataSource: DataSour
   def getUserData(survey_id: String, user_id: String): Map[String, String] = userAdminImpl.getCustomUserData(survey_id, user_id).right.get
 
   def saveUsers(survey_id: String, users: Seq[SecureUserRecord]) = userAdminImpl.createOrUpdateUsers(survey_id, users).right.get
-  
+
   def addUser(survey_id: String, user: SecureUserRecord) = userAdminImpl.createUser(survey_id, user).right.get
 
   def getUserRecord(survey_id: String, username: String): Option[SecureUserRecord] = userAdminImpl.getUserById(survey_id, username).right.toOption
@@ -72,10 +72,11 @@ class DataStoreSqlImpl @Inject() (@Named("intake24_system") dataSource: DataSour
     }
   }
 
-  def initSurvey(survey_id: String, scheme_name: String, locale: String, allowGenUsers: Boolean, surveyMonkeyUrl: Option[String]) = tryWithConnection {
+  def initSurvey(survey_id: String, scheme_name: String, locale: String, allowGenUsers: Boolean, surveyMonkeyUrl: Option[String], supportEmail: String) = tryWithConnection {
     implicit conn =>
       SQL(Queries.surveysInsertInit)
-        .on('id -> survey_id, 'scheme_id -> scheme_name, 'locale -> locale, 'allow_gen_users -> allowGenUsers, 'survey_monkey_url -> surveyMonkeyUrl)
+        .on('id -> survey_id, 'scheme_id -> scheme_name, 'locale -> locale, 'allow_gen_users -> allowGenUsers, 'survey_monkey_url -> surveyMonkeyUrl,
+           'support_email -> supportEmail)
         .execute()
   }
 
@@ -425,7 +426,7 @@ class DataStoreSqlImpl @Inject() (@Named("intake24_system") dataSource: DataSour
           // Bad performance: 
           // Postgres will throw PSQLException on errors and stop batch execution in case of errors,
           // so each individual item has to be processed using a single query
-          
+
           val retryItems = {
             val insertResult = tryInsertItems.map(item => Try {
               SQL(Queries.popularityCounterInsert)
@@ -476,16 +477,17 @@ class DataStoreSqlImpl @Inject() (@Named("intake24_system") dataSource: DataSour
         .as(SqlParser.str("value").singleOpt)
   }
 
-  private case class SupportStaffRow(name: String, phone: Option[String], email: Option[String])
+  private case class SupportUserRow(user_survey_id: String, user_id: String, name: Option[String], email: Option[String],  phone: Option[String], sms_notifications: Boolean)
 
-  def getSupportStaffRecords(): Seq[SupportStaffRecord] = tryWithConnection {
+  def getSupportUserRecords(surveyId: String): Seq[SupportUserRecord] = tryWithConnection {
     implicit conn =>
-      SQL(Queries.supportStaffSelectAll)
+      SQL("SELECT sss.user_survey_id, sss.user_id, name, email, phone, sms_notifications FROM survey_support_staff AS sss JOIN users AS u ON sss.user_survey_id = u.survey_id AND sss.user_id = u.id WHERE sss.survey_id={surveyId}")
+      .on('surveyId -> surveyId)
         .executeQuery()
-        .as(Macro.namedParser[SupportStaffRow].*)
+        .as(Macro.namedParser[SupportUserRow].*)
         .map {
           row =>
-            SupportStaffRecord(row.name, row.phone, row.email)
+            SupportUserRecord(row.user_survey_id, row.user_id, row.name, row.email, row.phone, row.sms_notifications)
         }
   }
 
@@ -544,15 +546,24 @@ class DataStoreSqlImpl @Inject() (@Named("intake24_system") dataSource: DataSour
         .as(SqlParser.long("id").*)
         .nonEmpty
   }
-  
+
   private case class LocalNutrientTypeRow(nutrient_type_id: Long, description: String, symbol: String) {
     def toLocalNutrientType = LocalNutrientType(nutrient_type_id, description, symbol)
   }
-  
+
   private lazy val localNutrientTypesQuery = sqlFromResource("get_local_nutrient_types.sql")
 
   def getLocalNutrientTypes(locale_id: String): Seq[LocalNutrientType] = tryWithConnection {
-    implicit conn => 
+    implicit conn =>
       SQL(localNutrientTypesQuery).on('locale_id -> locale_id).executeQuery().as(Macro.namedParser[LocalNutrientTypeRow].*).map(_.toLocalNutrientType)
+  }
+
+  def getSurveySupportEmail(surveyId: String): String = tryWithConnection {
+    implicit conn =>
+      // FIXME support for legacy "admin" survey
+      if (surveyId.isEmpty() || surveyId == "admin")
+        "support@intake24.co.uk"
+      else
+        SQL("SELECT support_email FROM surveys WHERE id={id}").on('id -> surveyId).executeQuery().as(SqlParser.str("support_email").single)
   }
 }

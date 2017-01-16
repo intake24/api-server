@@ -38,152 +38,152 @@ import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
 
 public class CallbackRequestForm extends Composite {
-	private final static CommonMessages messages = CommonMessages.Util.getInstance();
-	private final static HelpServiceAsync helpService = HelpServiceAsync.Util.getInstance();
-	
-	final private TextBox nameTextBox;
-	final private TextBox phoneNumberTextBox;
+  private final static CommonMessages messages = CommonMessages.Util.getInstance();
+  private final static HelpServiceAsync helpService = HelpServiceAsync.Util.getInstance();
 
-	final private FlowPanel errorMessage;
-	final private Button requestCallbackButton;
-	final private Button hideFormButton;
+  final private TextBox nameTextBox;
+  final private TextBox phoneNumberTextBox;
 
-	private void doRequest() {
-		requestCallbackButton.setEnabled(false);
-		
-		errorMessage.clear();
-		
-		if (nameTextBox.getText().isEmpty() || phoneNumberTextBox.getText().isEmpty()) {
-			errorMessage.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(messages.callbackRequestForm_fieldsEmpty())));
-			errorMessage.getElement().addClassName("intake24-login-error-message");
-			requestCallbackButton.setEnabled(true);
-			return;
-		}
-		
-		if (CurrentUser.userInfo.surveyId.equals("demo")) {
-			errorMessage.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(messages.callbackRequestForm_disabledForDemo())));
-			errorMessage.getElement().addClassName("intake24-login-error-message");
-			requestCallbackButton.setEnabled(true);
-			return;			
-		}
-		
-		errorMessage.add(new LoadingWidget());
-				
-		helpService.requestCall(nameTextBox.getText(), phoneNumberTextBox.getText(), new AsyncCallback<Boolean>() {
+  final private FlowPanel errorMessage;
+  final private Button requestCallbackButton;
+  final private Button hideFormButton;
 
-			@Override
-			public void onFailure(Throwable caught) {
-				errorMessage.clear();
-				errorMessage.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(messages.serverError())));
-				errorMessage.getElement().addClassName("intake24-login-error-message");
-				requestCallbackButton.setEnabled(true);
-			}
+  private void doRequest() {
+    requestCallbackButton.setEnabled(false);
 
-			@Override
-			public void onSuccess(Boolean result) {
-				if (result) {
-					errorMessage.clear();
-					errorMessage.getElement().addClassName("intake24-login-success-message");
-					errorMessage.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(messages.callbackRequestForm_success())));
-					
-					GoogleAnalytics.trackHelpCallbackAccepted();
-				} else {
-					errorMessage.clear();
-					errorMessage.getElement().addClassName("intake24-login-error-message");
-					errorMessage.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(messages.callbackRequestForm_tooSoon())));
-					
-					GoogleAnalytics.trackHelpCallbackRejected();
-				}
-			}
-			
-		});		
-	}
+    errorMessage.clear();
 
-	public CallbackRequestForm(final Callback onComplete) {
-		Grid g = new Grid(2, 2);
+    if (nameTextBox.getText().isEmpty() || phoneNumberTextBox.getText().isEmpty()) {
+      errorMessage.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(messages.callbackRequestForm_fieldsEmpty())));
+      errorMessage.getElement().addClassName("intake24-login-error-message");
+      requestCallbackButton.setEnabled(true);
+      return;
+    }
 
-		g.setCellPadding(5);
-		Label nameLabel = new Label(messages.callbackRequestForm_nameLabel());
-		Label phoneNumberLabel = new Label(messages.callbackRequestForm_phoneNumberLabel());
+    if (CurrentUser.userInfo.surveyId.equals("demo")) {
+      errorMessage.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(messages.callbackRequestForm_disabledForDemo("support@intake24.co.uk"))));
+      errorMessage.getElement().addClassName("intake24-login-error-message");
+      requestCallbackButton.setEnabled(true);
+      return;
+    }
 
-		this.nameTextBox = new TextBox();
-		this.phoneNumberTextBox = new TextBox();
+    errorMessage.add(new LoadingWidget());
 
-		g.setWidget(0, 0, nameLabel);
-		g.setWidget(1, 0, phoneNumberLabel);
-		g.setWidget(0, 1, nameTextBox);
-		g.setWidget(1, 1, phoneNumberTextBox);
+    helpService.requestCall(nameTextBox.getText(), phoneNumberTextBox.getText(), new AsyncCallback<Boolean>() {
 
-		VerticalPanel p = new VerticalPanel();
-		p.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
-		
-		FlowPanel videoLinkDiv = new FlowPanel();
-		videoLinkDiv.add(WidgetFactory.createTutorialVideoLink());
-		
-		p.add(new HTMLPanel(messages.callbackRequestForm_watchWalkthrough()));
-		p.add(videoLinkDiv);
+      @Override
+      public void onFailure(Throwable caught) {
+        errorMessage.clear();
+        errorMessage.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(messages.serverError())));
+        errorMessage.getElement().addClassName("intake24-login-error-message");
+        requestCallbackButton.setEnabled(true);
+      }
 
-		HTMLPanel pp = new HTMLPanel(SafeHtmlUtils.fromSafeConstant(messages.callbackRequestForm_promptText()));
-		pp.getElement().addClassName("intake24-login-prompt-text");
-		p.add(pp);
-		p.add(g);
+      @Override
+      public void onSuccess(Boolean result) {
+        if (result) {
+          errorMessage.clear();
+          errorMessage.getElement().addClassName("intake24-login-success-message");
+          errorMessage.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(messages.callbackRequestForm_success())));
 
-		errorMessage = new FlowPanel();
-		p.add(errorMessage);
+          GoogleAnalytics.trackHelpCallbackAccepted();
+        } else {
+          errorMessage.clear();
+          errorMessage.getElement().addClassName("intake24-login-error-message");
+          errorMessage.add(new HTMLPanel(SafeHtmlUtils.fromSafeConstant(messages.callbackRequestForm_tooSoon())));
 
-		requestCallbackButton = WidgetFactory.createButton(messages.callbackRequestForm_requestCallbackButtonLabel(), new ClickHandler() {
-			@Override
-			public void onClick(ClickEvent event) {
-				doRequest();
-			}
-		});
-		
-		hideFormButton = WidgetFactory.createButton(messages.callbackRequestForm_hideButtonLabel(), new ClickHandler() {
-			@Override
-			public void onClick(ClickEvent event) {
-				onComplete.call();				
-			}
-		});
+          GoogleAnalytics.trackHelpCallbackRejected();
+        }
+      }
 
-		requestCallbackButton.getElement().setId("intake24-login-button");
-		
-		nameTextBox.addKeyPressHandler(new KeyPressHandler() {
-			@Override
-			public void onKeyPress(KeyPressEvent event) {
-				if (event.getNativeEvent().getKeyCode() == KeyCodes.KEY_ENTER)
-					doRequest();
-			}
-		});
-		
-		phoneNumberTextBox.addKeyPressHandler(new KeyPressHandler() {
-			@Override
-			public void onKeyPress(KeyPressEvent event) {
-				if (event.getNativeEvent().getKeyCode() == KeyCodes.KEY_ENTER)
-					doRequest();
-			}
-		});
+    });
+  }
 
-		p.add(WidgetFactory.createButtonsPanel(requestCallbackButton, hideFormButton));
-		p.addStyleName("intake24-login-form");
+  public CallbackRequestForm(final Callback onComplete) {
+    Grid g = new Grid(2, 2);
 
-		initWidget(p);
-	}
+    g.setCellPadding(5);
+    Label nameLabel = new Label(messages.callbackRequestForm_nameLabel());
+    Label phoneNumberLabel = new Label(messages.callbackRequestForm_phoneNumberLabel());
 
-	public static void showPopup() {
-		final OverlayDiv div = new OverlayDiv();
+    this.nameTextBox = new TextBox();
+    this.phoneNumberTextBox = new TextBox();
 
-		CallbackRequestForm dialog = new CallbackRequestForm(new Callback() {
+    g.setWidget(0, 0, nameLabel);
+    g.setWidget(1, 0, phoneNumberLabel);
+    g.setWidget(0, 1, nameTextBox);
+    g.setWidget(1, 1, phoneNumberTextBox);
 
-			@Override
-			public void call() {
-				div.setVisible(false);
-			}
-		});
-		
-		dialog.addStyleName("intake24-login-popup");
+    VerticalPanel p = new VerticalPanel();
+    p.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
 
-		div.setContents(dialog);
-		div.setVisible(true);
-	}
-	
+    FlowPanel videoLinkDiv = new FlowPanel();
+    videoLinkDiv.add(WidgetFactory.createTutorialVideoLink());
+
+    p.add(new HTMLPanel(messages.callbackRequestForm_watchWalkthrough()));
+    p.add(videoLinkDiv);
+
+    HTMLPanel pp = new HTMLPanel(SafeHtmlUtils.fromSafeConstant(messages.callbackRequestForm_promptText()));
+    pp.getElement().addClassName("intake24-login-prompt-text");
+    p.add(pp);
+    p.add(g);
+
+    errorMessage = new FlowPanel();
+    p.add(errorMessage);
+
+    requestCallbackButton = WidgetFactory.createButton(messages.callbackRequestForm_requestCallbackButtonLabel(), new ClickHandler() {
+      @Override
+      public void onClick(ClickEvent event) {
+        doRequest();
+      }
+    });
+
+    hideFormButton = WidgetFactory.createButton(messages.callbackRequestForm_hideButtonLabel(), new ClickHandler() {
+      @Override
+      public void onClick(ClickEvent event) {
+        onComplete.call();
+      }
+    });
+
+    requestCallbackButton.getElement().setId("intake24-login-button");
+
+    nameTextBox.addKeyPressHandler(new KeyPressHandler() {
+      @Override
+      public void onKeyPress(KeyPressEvent event) {
+        if (event.getNativeEvent().getKeyCode() == KeyCodes.KEY_ENTER)
+          doRequest();
+      }
+    });
+
+    phoneNumberTextBox.addKeyPressHandler(new KeyPressHandler() {
+      @Override
+      public void onKeyPress(KeyPressEvent event) {
+        if (event.getNativeEvent().getKeyCode() == KeyCodes.KEY_ENTER)
+          doRequest();
+      }
+    });
+
+    p.add(WidgetFactory.createButtonsPanel(requestCallbackButton, hideFormButton));
+    p.addStyleName("intake24-login-form");
+
+    initWidget(p);
+  }
+
+  public static void showPopup() {
+    final OverlayDiv div = new OverlayDiv();
+
+    CallbackRequestForm dialog = new CallbackRequestForm(new Callback() {
+
+      @Override
+      public void call() {
+        div.setVisible(false);
+      }
+    });
+
+    dialog.addStyleName("intake24-login-popup");
+
+    div.setContents(dialog);
+    div.setVisible(true);
+  }
+
 }

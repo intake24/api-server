@@ -17,32 +17,35 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.rpc.ServiceDefTarget;
 
 public interface LoginServiceAsync {
-	/**
-	 * Requests the details of the currently logged-in user. 
-	 * The user must be logged in before calling this.
-	 */
-	void getUserInfo(AsyncCallback<org.workcraft.gwt.shared.client.Option<UserInfo>> callback);
-	
-	/**
-	 * Logs a user in.
-	 * @param surveyId
-	 * id of the survey, or special id "admin" for administration users
-	 */
-	void login(String surveyId, String username, String password, AsyncCallback<UserInfo> callback);
+  /**
+   * Requests the details of the currently logged-in user. The user must be
+   * logged in before calling this.
+   */
+  void getUserInfo(AsyncCallback<org.workcraft.gwt.shared.client.Option<UserInfo>> callback);
 
-	public static final class Util {
-		private static LoginServiceAsync instance;
+  /**
+   * Logs a user in.
+   * 
+   * @param surveyId
+   *          id of the survey, or special id "admin" for administration users
+   */
+  void login(String surveyId, String username, String password, AsyncCallback<UserInfo> callback);
 
-		public static final LoginServiceAsync getInstance() {
-			if (instance == null) {
-				instance = (LoginServiceAsync) GWT.create(LoginService.class);
-				ServiceDefTarget target = (ServiceDefTarget) instance;
-				target.setServiceEntryPoint(GWT.getModuleBaseURL() + "../common/login");
-			}
-			return instance;
-		}
+  public static final class Util {
+    private static LoginServiceAsync instance;
 
-		private Util() {
-		}
-	}
+    public static final LoginServiceAsync getInstance() {
+      if (instance == null) {
+        instance = (LoginServiceAsync) GWT.create(LoginService.class);
+        ServiceDefTarget target = (ServiceDefTarget) instance;
+        target.setServiceEntryPoint(GWT.getModuleBaseURL() + "../common/login");
+      }
+      return instance;
+    }
+
+    private Util() {
+    }
+  }
+
+  void getSurveySupportEmail(String surveyId, AsyncCallback<String> callback);
 }
