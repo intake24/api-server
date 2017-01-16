@@ -177,6 +177,10 @@ public class LoginServiceImpl extends RemoteServiceServlet implements LoginServi
 
   @Override
   public String getSurveySupportEmail(String surveyId) {
-    return dataStore.getSurveySupportEmail(surveyId);
+    try {
+      return dataStore.getSurveySupportEmail(surveyId);
+    } catch (DataStoreException e) {
+      throw new RuntimeException(e);
+    }
   }
 }
