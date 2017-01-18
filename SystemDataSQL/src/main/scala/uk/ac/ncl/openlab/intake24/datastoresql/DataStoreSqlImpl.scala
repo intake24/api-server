@@ -76,7 +76,7 @@ class DataStoreSqlImpl @Inject() (@Named("intake24_system") dataSource: DataSour
     implicit conn =>
       SQL(Queries.surveysInsertInit)
         .on('id -> survey_id, 'scheme_id -> scheme_name, 'locale -> locale, 'allow_gen_users -> allowGenUsers, 'survey_monkey_url -> surveyMonkeyUrl,
-           'support_email -> supportEmail)
+          'support_email -> supportEmail)
         .execute()
   }
 
@@ -477,18 +477,28 @@ class DataStoreSqlImpl @Inject() (@Named("intake24_system") dataSource: DataSour
         .as(SqlParser.str("value").singleOpt)
   }
 
-  private case class SupportUserRow(user_survey_id: String, user_id: String, name: Option[String], email: Option[String],  phone: Option[String], sms_notifications: Boolean)
+  private case class SupportUserRow(user_survey_id: String, user_id: String, name: Option[String], email: Option[String], phone: Option[String], sms_notifications: Boolean)
 
   def getSupportUserRecords(surveyId: String): Seq[SupportUserRecord] = tryWithConnection {
     implicit conn =>
-      SQL("SELECT sss.user_survey_id, sss.user_id, name, email, phone, sms_notifications FROM survey_support_staff AS sss JOIN users AS u ON sss.user_survey_id = u.survey_id AND sss.user_id = u.id WHERE sss.survey_id={surveyId}")
-      .on('surveyId -> surveyId)
+      val surveyRecords = SQL("SELECT sss.user_survey_id, sss.user_id, name, email, phone, sms_notifications FROM survey_support_staff AS sss JOIN users AS u ON sss.user_survey_id = u.survey_id AND sss.user_id = u.id WHERE sss.survey_id={surveyId}")
+        .on('surveyId -> surveyId)
         .executeQuery()
         .as(Macro.namedParser[SupportUserRow].*)
         .map {
           row =>
             SupportUserRecord(row.user_survey_id, row.user_id, row.name, row.email, row.phone, row.sms_notifications)
         }
+
+      if (surveyRecords.isEmpty) {
+        SQL("SELECT gss.user_survey_id, gss.user_id, name, email, phone, sms_notifications FROM global_support_staff AS gss JOIN users AS u ON gss.user_survey_id = u.survey_id AND gss.user_id = u.id")
+          .executeQuery()
+          .as(Macro.namedParser[SupportUserRow].*)
+          .map {
+            row =>
+              SupportUserRecord(row.user_survey_id, row.user_id, row.name, row.email, row.phone, row.sms_notifications)
+          }
+      } else surveyRecords
   }
 
   case class LastHelpRequestTimeRow(last_help_request_time: LocalDateTime)
