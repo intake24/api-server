@@ -33,7 +33,7 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 	<groupId>org.workcraft.gwt</groupId>
 	<artifactId>slidingscale</artifactId>
 	<packaging>jar</packaging>
-	<version>2.10.0-SNAPSHOT</version>
+	<version>2.11.0-SNAPSHOT</version>
 	<name>Sliding scale widget</name>
 
 	<properties>
@@ -66,13 +66,13 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 		<dependency>
 			<groupId>com.kiouri.sliderbar</groupId>
 			<artifactId>sliderbar</artifactId>
-			<version>2.10.0-SNAPSHOT</version>
+			<version>2.11.0-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.workcraft.gwt</groupId>
 			<artifactId>shared</artifactId>
-			<version>2.10.0-SNAPSHOT</version>
+			<version>2.11.0-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 
