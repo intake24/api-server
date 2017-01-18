@@ -194,7 +194,7 @@ class UserAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSourc
           case Some(row) =>
             val roles = SQL("SELECT role FROM user_roles WHERE (survey_id={survey_id} AND user_id={user_id})").on('survey_id -> surveyId, 'user_id -> userId).as(SqlParser.str("role").*)
             val permissions = SQL("SELECT permission FROM user_permissions WHERE (survey_id={survey_id} AND user_id={user_id})").on('survey_id -> surveyId, 'user_id -> userId).as(SqlParser.str("permission").*)
-            val custom_fields = SQL("SELECT name, value FROM user_custom_fields WHERE (user_id={user_id} AND survey_id={survey_id})").on('survey_id -> surveyId, 'user_id -> userId).as((SqlParser.str("name") ~ SqlParser.str("permission")).*).map {
+            val custom_fields = SQL("SELECT name, value FROM user_custom_fields WHERE (user_id={user_id} AND survey_id={survey_id})").on('survey_id -> surveyId, 'user_id -> userId).as((SqlParser.str("name") ~ SqlParser.str("value")).*).map {
               case name ~ value => (name, value)
             }.toMap
 
