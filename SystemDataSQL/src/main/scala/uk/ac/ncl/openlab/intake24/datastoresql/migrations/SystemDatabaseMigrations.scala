@@ -251,15 +251,16 @@ object SystemDatabaseMigrations {
 
       def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
 
-        SQL("""|CREATE TABLE survey_support_staff(
-               |    survey_id character varying(64) NOT NULL,
-               |    user_survey_id character varying(64) NOT NULL,
-               |    user_id character varying(256) NOT NULL,
-               |    sms_notifications boolean NOT NULL DEFAULT true,
-               |    CONSTRAINT survey_support_staff_pk PRIMARY KEY (survey_id, user_survey_id, user_id),
-               |    CONSTRAINT survey_support_staff_survey_id_fk FOREIGN KEY(survey_id) REFERENCES surveys(id) ON DELETE CASCADE ON UPDATE CASCADE,
-               |    CONSTRAINT survey_support_staff_user_id_fk FOREIGN KEY(user_survey_id, user_id) REFERENCES users(survey_id, id) ON DELETE CASCADE ON UPDATE CASCADE
-               |)""".stripMargin).execute()
+        SQL(
+          """|CREATE TABLE survey_support_staff(
+             |    survey_id character varying(64) NOT NULL,
+             |    user_survey_id character varying(64) NOT NULL,
+             |    user_id character varying(256) NOT NULL,
+             |    sms_notifications boolean NOT NULL DEFAULT true,
+             |    CONSTRAINT survey_support_staff_pk PRIMARY KEY (survey_id, user_survey_id, user_id),
+             |    CONSTRAINT survey_support_staff_survey_id_fk FOREIGN KEY(survey_id) REFERENCES surveys(id) ON DELETE CASCADE ON UPDATE CASCADE,
+             |    CONSTRAINT survey_support_staff_user_id_fk FOREIGN KEY(user_survey_id, user_id) REFERENCES users(survey_id, id) ON DELETE CASCADE ON UPDATE CASCADE
+             |)""".stripMargin).execute()
 
         Right(())
       }
@@ -270,6 +271,35 @@ object SystemDatabaseMigrations {
 
         Right(())
       }
+    },
+
+    new Migration {
+      val versionFrom = 10l
+      val versionTo = 11l
+
+      val description = "Drop support_staff and create global_support_staff instead"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("DROP TABLE support_staff").execute()
+
+        SQL(
+          """|CREATE TABLE global_support_staff(
+             |    user_survey_id character varying(64) NOT NULL,
+             |    user_id character varying(256) NOT NULL,
+             |    sms_notifications boolean NOT NULL DEFAULT true,
+             |    CONSTRAINT global_support_staff_pk PRIMARY KEY (user_survey_id, user_id),
+             |    CONSTRAINT global_support_staff_user_id_fk FOREIGN KEY(user_survey_id, user_id) REFERENCES users(survey_id, id) ON DELETE CASCADE ON UPDATE CASCADE
+             |)""".stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
     }
+
+
   )
 }
