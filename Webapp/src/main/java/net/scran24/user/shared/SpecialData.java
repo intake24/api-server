@@ -32,4 +32,5 @@ public class SpecialData {
   public static final String FOOD_CODE_MISSING = "$MIS";
   public static final String FOOD_CODE_MILK_IN_HOT_DRINK = "MHDK";
   public static final String CATEGORY_CODE_RECIPE_INGREDIENTS = "RECP";
+  public static final String CATEGORY_BREAD_TOP_LEVEL = "BRED";
 }

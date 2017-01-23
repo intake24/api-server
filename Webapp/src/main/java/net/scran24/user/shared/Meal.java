@@ -186,6 +186,14 @@ public class Meal {
 		this.customData = customData;
 	}
 
+	public Option<FoodEntry> getFoodById(final UUID id) {
+	 int index = foodIndex(id);
+	 if (index == -1)
+	   return Option.none();
+	 else
+	   return Option.some(foods.get(index));
+	}
+	
 	public int foodIndex(final UUID id) {
 		return foodIndex(this.foods, id);
 	}
