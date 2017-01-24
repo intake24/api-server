@@ -49,6 +49,7 @@ import org.workcraft.gwt.shared.client.Pair;
 
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.i18n.client.NumberFormat;
 import com.google.gwt.safehtml.shared.SafeHtml;
 import com.google.gwt.safehtml.shared.SafeHtmlUtils;
 import com.google.gwt.user.client.ui.Button;
@@ -70,28 +71,42 @@ public class BreadLinkedFoodAmountPrompt implements Prompt<Pair<FoodEntry, Meal>
 			.plus(new ShepherdTour.Step("skipButton", "#intake24-time-question-skip-button", helpMessages.timeQuestion_deleteMealButtonTitle(), helpMessages.timeQuestion_deleteMealButtonDescription()))
 			.plus(new ShepherdTour.Step("confirmButton", "#intake24-time-question-confirm-button", helpMessages.timeQuestion_confirmButtonTitle(), helpMessages.timeQuestion_confirmButtonDescription(), "top right", "bottom right"));*/
 	
-	private final Pair<FoodEntry, Meal> pair;
-  private final int foodIndex;
+	private final Meal meal;
+	private final int foodIndex;
+  private final int mainFoodIndex;
+  private final double quantity;
 	
-	public BreadLinkedFoodAmountPrompt (Pair<FoodEntry, Meal> meal, int foodIndex, double quantity) {
+	public BreadLinkedFoodAmountPrompt (Meal meal, int foodIndex, int mainFoodIndex, double quantity) {
 		this.meal = meal;
+		this.foodIndex = foodIndex;
+		this.mainFoodIndex = mainFoodIndex;
+		this.quantity = quantity;
 	}
 	
 	@Override
 	public SurveyStageInterface getInterface(Callback1<MealOperation> onComplete, Callback1<Function1<Pair<FoodEntry, Meal>, Pair<FoodEntry, Meal>>> updateIntermediateState) {
 		FlowPanel content = new FlowPanel();
 		
-    final EncodedFood food = (EncodedFood) pair.left;
-    final FoodPrompt prompt = food.enabledPrompts.get(promptIndex);
-
-    final FlowPanel content = new FlowPanel();
+		final EncodedFood food = meal.foods.get(foodIndex).asEncoded();
+		final EncodedFood mainFood = meal.foods.get(mainFoodIndex).asEncoded();
+		
+		final String foodDescription = SafeHtmlUtils.htmlEscape(food.description().toLowerCase());
+		final String mainFoodDescription = SafeHtmlUtils.htmlEscape(mainFood.description().toLowerCase());
+		
+		final String quantityStr = NumberFormat.getDecimalFormat().format(quantity);
+		
+		FlowPanel promptPanel = WidgetFactory.createPromptPanel(SafeHtmlUtils.fromSafeConstant(messages.breadLinkedFood_promptText(foodDescription, mainFoodDescription, quantityStr)),
+		    ShepherdTour.createTourButton(null, BreadLinkedFoodAmountPrompt.class.getSimpleName()));
+		
+    final EncodedFood food = meal.left.asEncoded();
+    
     PromptUtil.addBackLink(content);
     final Panel promptPanel = WidgetFactory.createPromptPanel(
         SafeHtmlUtils.fromSafeConstant("<p>" + SafeHtmlUtils.htmlEscape(prompt.text) + "</p>"),
         WidgetFactory.createHelpButton(new ClickHandler() {
           @Override
           public void onClick(ClickEvent arg0) {
-            String promptType = AssociatedFoodPrompt.class.getSimpleName();
+            String promptType = BreadLinkedFoodAmountPrompt.class.getSimpleName();
             GoogleAnalytics.trackHelpButtonClicked(promptType);
             ShepherdTour.startTour(getShepherdTourSteps(), promptType);
           }
