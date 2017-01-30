@@ -627,5 +627,9 @@ public interface PromptMessages extends Messages {
 	public String weightTypeIn_continueLabel();
 
   public String breadLinkedFood_promptText(String foodDescription, String mainFoodDescription, String quantity);
+  
+  public String breadLinkedFood_allButtonLabel();
+  
+  public String breadLinkedFood_someButtonLabel();
 
 }

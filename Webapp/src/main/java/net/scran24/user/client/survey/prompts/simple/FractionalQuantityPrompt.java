@@ -34,6 +34,7 @@ import net.scran24.user.client.ShepherdTour;
 import net.scran24.user.client.survey.flat.SimplePrompt;
 import net.scran24.user.client.survey.prompts.messages.HelpMessages;
 import net.scran24.user.client.survey.prompts.messages.PromptMessages;
+import net.scran24.user.client.survey.prompts.widgets.QuantityCounter;
 
 import org.pcollections.client.PVector;
 import org.pcollections.client.TreePVector;
@@ -80,6 +81,7 @@ public class FractionalQuantityPrompt implements SimplePrompt<Double> {
 		final FlowPanel amountPanel = new FlowPanel();
 		amountPanel.addStyleName("intake24-quantity-prompt-counter-container");
 
+		/*
 		ArrayList<Pair<String, Double>> wholeLabels = new ArrayList<Pair<String, Double>>();
 
 		NumberFormat nf = NumberFormat.getDecimalFormat(); 
@@ -108,11 +110,16 @@ public class FractionalQuantityPrompt implements SimplePrompt<Double> {
 		label.addStyleName("intake24-quantity-prompt-whole-label");
 		amountPanel.add(label);
 		amountPanel.add(fracCount);
+		*/
+		
+		final QuantityCounter counter = new QuantityCounter(0.25, 30, 1.0);
+		amountPanel.add(counter);
+
 
 		Button cont = WidgetFactory.createGreenButton(buttonLabel, new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
-				onComplete.call(wholeCount.getValue() + fracCount.getValue());
+				onComplete.call(counter.getValue());
 			}
 		});
 
@@ -121,7 +128,7 @@ public class FractionalQuantityPrompt implements SimplePrompt<Double> {
 		content.add(amountPanel);
 		content.add(WidgetFactory.createButtonsPanel(cont));
 
-		ShepherdTour.makeShepherdTarget(promptPanel, wholeCount, fracCount, label, cont);
+		ShepherdTour.makeShepherdTarget(promptPanel, counter.wholeCounter, counter.fractionalCounter, counter.wholeLabel, cont);
 
 		return content;
 	}

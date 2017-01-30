@@ -32,78 +32,88 @@ import java.util.Map;
 import com.google.gwt.user.client.rpc.IsSerializable;
 
 public class CompletedPortionSize implements IsSerializable {
-	public String scriptName;
-	public Map<String, String> data;
+  public String scriptName;
+  public Map<String, String> data;
 
-	@Deprecated
-	public CompletedPortionSize() {
-	}
+  @Deprecated
+  public CompletedPortionSize() {
+  }
 
-	public CompletedPortionSize(String scriptName, Map<String, String> data) {
-		this.scriptName = scriptName;
-		
-		// this is to ensure that the data is stored internally as a standard HashMap
-		// (it could have come in as a PMap) to prevent serialization exceptions
-		this.data = new HashMap<String, String>();
-		this.data.putAll(data);
-	}
+  public CompletedPortionSize(String scriptName, Map<String, String> data) {
+    this.scriptName = scriptName;
 
-	public double servingWeight() {
-		return Double.parseDouble(data.get("servingWeight"));
-	}
+    // this is to ensure that the data is stored internally as a standard
+    // HashMap
+    // (it could have come in as a PMap) to prevent serialization exceptions
+    this.data = new HashMap<String, String>();
+    this.data.putAll(data);
+  }
 
-	public double leftoversWeight() {
-		return Double.parseDouble(data.get("leftoversWeight"));
-	}
-	
-	public static CompletedPortionSize ignore(String reason) {
-		Map<String, String> data = new HashMap<String, String>();
-		
-		data.put("reason", reason);
-		data.put("servingWeight", "0.0");
-		data.put("leftoversWeight", "0.0");
-		
-		return new CompletedPortionSize("ignored", data);
-	}
+  public double servingWeight() {
+    return Double.parseDouble(data.get("servingWeight"));
+  }
 
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((data == null) ? 0 : data.hashCode());
-		result = prime * result + ((scriptName == null) ? 0 : scriptName.hashCode());
-		return result;
-	}
+  public double leftoversWeight() {
+    return Double.parseDouble(data.get("leftoversWeight"));
+  }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		CompletedPortionSize other = (CompletedPortionSize) obj;
-		
-		// System.out.println("CPS begin");
-		
-		if (data == null) {
-			if (other.data != null)
-				return false;
-		} else if (!data.equals(other.data))
-			return false;
-		
-		// System.out.println("CPS data ok");
-		
-		if (scriptName == null) {
-			if (other.scriptName != null)
-				return false;
-		} else if (!scriptName.equals(other.scriptName))
-			return false;
-		
-		// System.out.println("CPS script OK");
-		
-		return true;
-	}
-	
+  public CompletedPortionSize multiply(double x) {
+    HashMap<String, String> newData = new HashMap<String, String>(data);
+    
+    newData.put("servingWeight", Double.toString(servingWeight() * x));
+    newData.put("leftoversWeight", Double.toString(leftoversWeight() * x));
+    
+    return new CompletedPortionSize(scriptName, newData);
+  }
+
+  public static CompletedPortionSize ignore(String reason) {
+    Map<String, String> data = new HashMap<String, String>();
+
+    data.put("reason", reason);
+    data.put("servingWeight", "0.0");
+    data.put("leftoversWeight", "0.0");
+
+    return new CompletedPortionSize("ignored", data);
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((data == null) ? 0 : data.hashCode());
+    result = prime * result + ((scriptName == null) ? 0 : scriptName.hashCode());
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj)
+      return true;
+    if (obj == null)
+      return false;
+    if (getClass() != obj.getClass())
+      return false;
+    CompletedPortionSize other = (CompletedPortionSize) obj;
+
+    // System.out.println("CPS begin");
+
+    if (data == null) {
+      if (other.data != null)
+        return false;
+    } else if (!data.equals(other.data))
+      return false;
+
+    // System.out.println("CPS data ok");
+
+    if (scriptName == null) {
+      if (other.scriptName != null)
+        return false;
+    } else if (!scriptName.equals(other.scriptName))
+      return false;
+
+    // System.out.println("CPS script OK");
+
+    return true;
+  }
+
 }

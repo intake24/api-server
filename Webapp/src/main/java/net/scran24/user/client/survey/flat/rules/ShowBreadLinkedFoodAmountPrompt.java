@@ -44,11 +44,15 @@ import net.scran24.user.shared.FoodEntry;
 import net.scran24.user.shared.Meal;
 import net.scran24.user.shared.MissingFood;
 import net.scran24.user.shared.RawFood;
+import net.scran24.user.shared.SpecialData;
 import net.scran24.user.shared.TemplateFood;
 import net.scran24.user.shared.UUID;
 import net.scran24.user.shared.WithPriority;
 
 public class ShowBreadLinkedFoodAmountPrompt implements PromptRule<Pair<FoodEntry, Meal>, MealOperation> {
+
+  final public static String FLAG_BREAD_LINKED_FOOD_AMOUNT_SHOWN = "bread-linked-food-amount-shown";
+
   @Override
   public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> apply(final Pair<FoodEntry, Meal> data, SelectionMode selectionType,
       final PSet<String> surveyFlags) {
@@ -66,59 +70,68 @@ public class ShowBreadLinkedFoodAmountPrompt implements PromptRule<Pair<FoodEntr
       // 3) Parent food portion size estimation method is "guide-image" and the
       // "quantity" data field is > 1
       @Override
-      public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> visitEncoded(EncodedFood food) {
-        return food.link.linkedTo.accept(new Option.Visitor<UUID, Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>>>() {
-          @Override
-          public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> visitSome(UUID parentId) {
-            FoodEntry mainFood = data.right.getFoodById(parentId).getOrDie("Parent food not found in the meal");
-            final int mainFoodIndex = data.right.foodIndex(parentId);
-            final int foodIndex = data.right.foodIndex(parentId);
+      public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> visitEncoded(final EncodedFood food) {
+        if (!food.isPortionSizeComplete())
+          return Option.none();
+        else
+          return food.link.linkedTo.accept(new Option.Visitor<UUID, Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>>>() {
+            @Override
+            public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> visitSome(UUID parentId) {
+              FoodEntry mainFood = data.right.getFoodById(parentId).getOrDie("Parent food not found in the meal");
+              final int mainFoodIndex = data.right.foodIndex(parentId);
+              final int foodIndex = data.right.foodIndex(food.link.id);
 
-            if (mainFood.isEncoded()) {
-              EncodedFood encodedMainFood = mainFood.asEncoded();
+              if (mainFood.isEncoded()) {
+                EncodedFood encodedMainFood = mainFood.asEncoded();
 
-              return encodedMainFood.portionSize
-                .accept(new Option.Visitor<Either<PortionSize, CompletedPortionSize>, Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>>>() {
-                  @Override
-                  public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> visitSome(final Either<PortionSize, CompletedPortionSize> portionSize) {
-                    return portionSize
-                      .accept(new Either.Visitor<PortionSize, CompletedPortionSize, Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>>>() {
-                        @Override
-                        public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> visitRight(CompletedPortionSize completedPortionSize) {
+                if (encodedMainFood.isInCategory(SpecialData.CATEGORY_BREAD_TOP_LEVEL) && !food.flags.contains(FLAG_BREAD_LINKED_FOOD_AMOUNT_SHOWN)) {
 
-                          if (completedPortionSize.scriptName.equals("guide-image")) {
-                            double quantity = Double.parseDouble(completedPortionSize.data.get("quantity"));
-                            if (quantity > 1.0)
-                              return Option
-                                .<Prompt<Pair<FoodEntry, Meal>, MealOperation>>some(new BreadLinkedFoodAmountPrompt(data.right, foodIndex, mainFoodIndex, quantity));
-                            else
+                  return encodedMainFood.portionSize
+                    .accept(new Option.Visitor<Either<PortionSize, CompletedPortionSize>, Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>>>() {
+                      @Override
+                      public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> visitSome(
+                          final Either<PortionSize, CompletedPortionSize> portionSize) {
+                        return portionSize
+                          .accept(new Either.Visitor<PortionSize, CompletedPortionSize, Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>>>() {
+                            @Override
+                            public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> visitRight(CompletedPortionSize completedPortionSize) {
+
+                              if (completedPortionSize.scriptName.equals("guide-image")) {
+                                double quantity = Double.parseDouble(completedPortionSize.data.get("quantity"));
+                                if (quantity > 1.0)
+                                  return Option.<Prompt<Pair<FoodEntry, Meal>, MealOperation>>some(
+                                      new BreadLinkedFoodAmountPrompt(data.right, foodIndex, mainFoodIndex, quantity));
+                                else
+                                  return Option.none();
+                              } else {
+                                return Option.none();
+                              }
+                            }
+
+                            @Override
+                            public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> visitLeft(PortionSize value) {
                               return Option.none();
-                          } else {
-                            return Option.none();
-                          }
-                        }
+                            }
+                          });
+                      }
 
-                        @Override
-                        public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> visitLeft(PortionSize value) {
-                          return Option.none();
-                        }
-                      });
-                  }
+                      @Override
+                      public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> visitNone() {
+                        return Option.none();
+                      }
+                    });
+                } else {
+                  return Option.none();
+                }
+              } else
+                return Option.none();
+            }
 
-                  @Override
-                  public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> visitNone() {
-                    return Option.none();
-                  }
-                });
-            } else
+            @Override
+            public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> visitNone() {
               return Option.none();
-          }
-
-          @Override
-          public Option<Prompt<Pair<FoodEntry, Meal>, MealOperation>> visitNone() {
-            return Option.none();
-          }
-        });
+            }
+          });
       }
 
       @Override

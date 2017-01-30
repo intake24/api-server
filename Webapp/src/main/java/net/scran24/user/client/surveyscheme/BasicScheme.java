@@ -82,6 +82,7 @@ import net.scran24.user.client.survey.flat.rules.SelectRawFood;
 import net.scran24.user.client.survey.flat.rules.SelectUnconfirmedMeal;
 import net.scran24.user.client.survey.flat.rules.ShowAssociatedFoodPrompt;
 import net.scran24.user.client.survey.flat.rules.ShowBrandNamePrompt;
+import net.scran24.user.client.survey.flat.rules.ShowBreadLinkedFoodAmountPrompt;
 import net.scran24.user.client.survey.flat.rules.ShowCompoundFoodPrompt;
 import net.scran24.user.client.survey.flat.rules.ShowDrinkReminderPrompt;
 import net.scran24.user.client.survey.flat.rules.ShowEditIngredientsPrompt;
@@ -171,6 +172,7 @@ public abstract class BasicScheme implements SurveyScheme {
           .plus(ShowTemplateRecipeSavePrompt.withPriority(1, recipeManager))
           .plus(ShowCompoundFoodPrompt.withPriority(0, locale))
           .plus(ShowAssociatedFoodPrompt.withPriority(0, locale))
+          .plus(ShowBreadLinkedFoodAmountPrompt.withPriority(0))
 
         ,
         // global prompts

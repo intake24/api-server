@@ -34,16 +34,21 @@ import net.scran24.user.client.ShepherdTour;
 import net.scran24.user.client.survey.SurveyStageInterface;
 import net.scran24.user.client.survey.flat.Prompt;
 import net.scran24.user.client.survey.flat.PromptUtil;
+import net.scran24.user.client.survey.flat.rules.ShowBreadLinkedFoodAmountPrompt;
+import net.scran24.user.client.survey.portionsize.experimental.PortionSize;
 import net.scran24.user.client.survey.prompts.messages.HelpMessages;
 import net.scran24.user.client.survey.prompts.messages.PromptMessages;
+import net.scran24.user.client.survey.prompts.widgets.QuantityCounter;
 import net.scran24.user.shared.EncodedFood;
 import net.scran24.user.shared.FoodEntry;
 import net.scran24.user.shared.FoodPrompt;
 import net.scran24.user.shared.Meal;
+import uk.ac.ncl.openlab.intake24.datastoresql.CompletedPortionSize;
 
 import org.pcollections.client.PVector;
 import org.pcollections.client.TreePVector;
 import org.workcraft.gwt.shared.client.Callback1;
+import org.workcraft.gwt.shared.client.Either;
 import org.workcraft.gwt.shared.client.Function1;
 import org.workcraft.gwt.shared.client.Pair;
 
@@ -61,63 +66,121 @@ import com.google.gwt.user.client.ui.Panel;
 import static net.scran24.common.client.LocaleUtil.*;
 
 public class BreadLinkedFoodAmountPrompt implements Prompt<Pair<FoodEntry, Meal>, MealOperation> {
-	private static final PromptMessages messages = PromptMessages.Util.getInstance();
-	private static final HelpMessages helpMessages = HelpMessages.Util.getInstance();
-	
-/*	private final static PVector<ShepherdTour.Step> tour = TreePVector
-			.<ShepherdTour.Step> empty()
-			.plus(new ShepherdTour.Step("hours", "#intake24-time-question-hours", helpMessages.timeQuestion_hoursTitle(), helpMessages.timeQuestion_hoursDescription()))
-			.plus(new ShepherdTour.Step("minutes", "#intake24-time-question-minutes", helpMessages.timeQuestion_minutesTitle(), helpMessages.timeQuestion_minutesDescription()))
-			.plus(new ShepherdTour.Step("skipButton", "#intake24-time-question-skip-button", helpMessages.timeQuestion_deleteMealButtonTitle(), helpMessages.timeQuestion_deleteMealButtonDescription()))
-			.plus(new ShepherdTour.Step("confirmButton", "#intake24-time-question-confirm-button", helpMessages.timeQuestion_confirmButtonTitle(), helpMessages.timeQuestion_confirmButtonDescription(), "top right", "bottom right"));*/
-	
-	private final Meal meal;
-	private final int foodIndex;
+  private static final PromptMessages messages = PromptMessages.Util.getInstance();
+  private static final HelpMessages helpMessages = HelpMessages.Util.getInstance();
+
+  private final static PVector<ShepherdTour.Step> collapsedTour = TreePVector.<ShepherdTour.Step>empty()
+    .plus(new ShepherdTour.Step("hours", "#intake24-all-button", helpMessages.timeQuestion_hoursTitle(),
+        helpMessages.timeQuestion_hoursDescription()))
+    .plus(new ShepherdTour.Step("minutes", "#intake24-specify-button", helpMessages.timeQuestion_minutesTitle(),
+        helpMessages.timeQuestion_minutesDescription()))
+    .plus(new ShepherdTour.Step("skipButton", "#intake24-time-question-skip-button", helpMessages.timeQuestion_deleteMealButtonTitle(),
+        helpMessages.timeQuestion_deleteMealButtonDescription()))
+    .plus(new ShepherdTour.Step("confirmButton", "#intake24-time-question-confirm-button", helpMessages.timeQuestion_confirmButtonTitle(),
+        helpMessages.timeQuestion_confirmButtonDescription(), "top right", "bottom right"));
+  
+  private final static PVector<ShepherdTour.Step> fullTour = TreePVector.<ShepherdTour.Step>empty()
+      .plus(new ShepherdTour.Step("hours", "#intake24-time-question-hours", helpMessages.timeQuestion_hoursTitle(),
+          helpMessages.timeQuestion_hoursDescription()))
+      .plus(new ShepherdTour.Step("minutes", "#intake24-time-question-minutes", helpMessages.timeQuestion_minutesTitle(),
+          helpMessages.timeQuestion_minutesDescription()))
+      .plus(new ShepherdTour.Step("skipButton", "#intake24-time-question-skip-button", helpMessages.timeQuestion_deleteMealButtonTitle(),
+          helpMessages.timeQuestion_deleteMealButtonDescription()))
+      .plus(new ShepherdTour.Step("confirmButton", "#intake24-time-question-confirm-button", helpMessages.timeQuestion_confirmButtonTitle(),
+          helpMessages.timeQuestion_confirmButtonDescription(), "top right", "bottom right"));
+  
+
+  private final Meal meal;
+  private final int foodIndex;
   private final int mainFoodIndex;
   private final double quantity;
-	
-	public BreadLinkedFoodAmountPrompt (Meal meal, int foodIndex, int mainFoodIndex, double quantity) {
-		this.meal = meal;
-		this.foodIndex = foodIndex;
-		this.mainFoodIndex = mainFoodIndex;
-		this.quantity = quantity;
-	}
-	
-	@Override
-	public SurveyStageInterface getInterface(Callback1<MealOperation> onComplete, Callback1<Function1<Pair<FoodEntry, Meal>, Pair<FoodEntry, Meal>>> updateIntermediateState) {
-		FlowPanel content = new FlowPanel();
-		
-		final EncodedFood food = meal.foods.get(foodIndex).asEncoded();
-		final EncodedFood mainFood = meal.foods.get(mainFoodIndex).asEncoded();
-		
-		final String foodDescription = SafeHtmlUtils.htmlEscape(food.description().toLowerCase());
-		final String mainFoodDescription = SafeHtmlUtils.htmlEscape(mainFood.description().toLowerCase());
-		
-		final String quantityStr = NumberFormat.getDecimalFormat().format(quantity);
-		
-		FlowPanel promptPanel = WidgetFactory.createPromptPanel(SafeHtmlUtils.fromSafeConstant(messages.breadLinkedFood_promptText(foodDescription, mainFoodDescription, quantityStr)),
-		    ShepherdTour.createTourButton(null, BreadLinkedFoodAmountPrompt.class.getSimpleName()));
-		
-    final EncodedFood food = meal.left.asEncoded();
-    
+
+  public BreadLinkedFoodAmountPrompt(Meal meal, int foodIndex, int mainFoodIndex, double quantity) {
+    this.meal = meal;
+    this.foodIndex = foodIndex;
+    this.mainFoodIndex = mainFoodIndex;
+    this.quantity = quantity;
+  }
+
+  @Override
+  public SurveyStageInterface getInterface(final Callback1<MealOperation> onComplete,
+      Callback1<Function1<Pair<FoodEntry, Meal>, Pair<FoodEntry, Meal>>> updateIntermediateState) {
+    FlowPanel content = new FlowPanel();
+
+    final EncodedFood food = meal.foods.get(foodIndex).asEncoded();
+    final EncodedFood mainFood = meal.foods.get(mainFoodIndex).asEncoded();
+
+    final String foodDescription = SafeHtmlUtils.htmlEscape(food.description().toLowerCase());
+    final String mainFoodDescription = SafeHtmlUtils.htmlEscape(mainFood.description().toLowerCase());
+
+    final String quantityStr = NumberFormat.getDecimalFormat().format(quantity);
+
+    FlowPanel promptPanel = WidgetFactory.createPromptPanel(
+        SafeHtmlUtils.fromSafeConstant(messages.breadLinkedFood_promptText(foodDescription, mainFoodDescription, quantityStr)),
+        ShepherdTour.createTourButton(null, BreadLinkedFoodAmountPrompt.class.getSimpleName()));
+
     PromptUtil.addBackLink(content);
-    final Panel promptPanel = WidgetFactory.createPromptPanel(
-        SafeHtmlUtils.fromSafeConstant("<p>" + SafeHtmlUtils.htmlEscape(prompt.text) + "</p>"),
-        WidgetFactory.createHelpButton(new ClickHandler() {
+    content.add(promptPanel);
+
+    final FlowPanel quantityPanel = new FlowPanel();
+    quantityPanel.setVisible(false);
+
+    Button allButton = WidgetFactory.createButton(messages.breadLinkedFood_allButtonLabel(), new ClickHandler() {
+      @Override
+      public void onClick(ClickEvent event) {
+        onComplete.call(MealOperation.updateFood(foodIndex, new Function1<FoodEntry, FoodEntry>() {
           @Override
-          public void onClick(ClickEvent arg0) {
-            String promptType = BreadLinkedFoodAmountPrompt.class.getSimpleName();
-            GoogleAnalytics.trackHelpButtonClicked(promptType);
-            ShepherdTour.startTour(getShepherdTourSteps(), promptType);
+          public FoodEntry apply(FoodEntry argument) {
+            EncodedFood f = argument.asEncoded();
+            return f.withPortionSize(PortionSize.complete(f.completedPortionSize().multiply(quantity)))
+              .withFlag(ShowBreadLinkedFoodAmountPrompt.FLAG_BREAD_LINKED_FOOD_AMOUNT_SHOWN);
           }
         }));
-    content.add(promptPanel);
-		
-		return new SurveyStageInterface.Aligned(content, HasHorizontalAlignment.ALIGN_LEFT, HasVerticalAlignment.ALIGN_TOP, SurveyStageInterface.DEFAULT_OPTIONS);
-	}
-	
-	@Override
-	public String toString() {
-		return "Confirm meal prompt";
-	}
+      }
+    });
+    
+    allButton.getElement().setId("intake24-all-button");
+
+    Button specifyButton = WidgetFactory.createButton(messages.breadLinkedFood_someButtonLabel(), new ClickHandler() {
+      @Override
+      public void onClick(ClickEvent event) {
+        quantityPanel.setVisible(true);
+      }
+    });
+    
+    specifyButton.getElement().setId("intake24-specify-button");
+
+    content.add(WidgetFactory.createButtonsPanel(allButton, specifyButton));
+
+    final QuantityCounter counter = new QuantityCounter(0.25, quantity, Math.max(1.0, quantity));
+
+    Button confirmQuantityButton = WidgetFactory.createGreenButton(messages.quantity_continueButtonLabel(), new ClickHandler() {
+      @Override
+      public void onClick(ClickEvent event) {
+        onComplete.call(MealOperation.updateFood(foodIndex, new Function1<FoodEntry, FoodEntry>() {
+          @Override
+          public FoodEntry apply(FoodEntry argument) {
+            EncodedFood f = argument.asEncoded();
+            return f.withPortionSize(PortionSize.complete(f.completedPortionSize().multiply(counter.getValue())))
+              .withFlag(ShowBreadLinkedFoodAmountPrompt.FLAG_BREAD_LINKED_FOOD_AMOUNT_SHOWN);
+          }
+        }));
+      }
+    });
+
+    confirmQuantityButton.getElement().setId("intake24-quantity-prompt-continue-button");
+
+    quantityPanel.add(counter);
+    quantityPanel.add(confirmQuantityButton);
+
+    content.add(quantityPanel);
+
+    return new SurveyStageInterface.Aligned(content, HasHorizontalAlignment.ALIGN_LEFT, HasVerticalAlignment.ALIGN_TOP,
+        SurveyStageInterface.DEFAULT_OPTIONS);
+  }
+
+  @Override
+  public String toString() {
+    return "Confirm meal prompt";
+  }
 }
