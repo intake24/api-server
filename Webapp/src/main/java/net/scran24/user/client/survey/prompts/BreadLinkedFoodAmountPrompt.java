@@ -60,17 +60,9 @@ public class BreadLinkedFoodAmountPrompt implements Prompt<Pair<FoodEntry, Meal>
   private static final PromptMessages messages = PromptMessages.Util.getInstance();
   private static final HelpMessages helpMessages = HelpMessages.Util.getInstance();
 
-  private final static PVector<ShepherdTour.Step> collapsedTour = TreePVector.<ShepherdTour.Step>empty()
+  private final static PVector<ShepherdTour.Step> shepherdTour = TreePVector.<ShepherdTour.Step>empty()
     .plus(new ShepherdTour.Step("hours", "#intake24-all-button", messages.breadLinkedFood_allButtonLabel(),
         helpMessages.breadLinkedFood_allButtonDescription()))
-    .plus(new ShepherdTour.Step("minutes", "#intake24-some-button", messages.breadLinkedFood_someButtonLabel(),
-        helpMessages.breadLinkedFood_someButtonDescription()));
-
-  private final static PVector<ShepherdTour.Step> fullTour = TreePVector.<ShepherdTour.Step>empty()
-    .plus(new ShepherdTour.Step("hours", "#intake24-all-button", messages.breadLinkedFood_allButtonLabel(),
-        helpMessages.breadLinkedFood_allButtonDescription()))
-    .plus(new ShepherdTour.Step("minutes", "#intake24-some-button", messages.breadLinkedFood_someButtonLabel(),
-        helpMessages.breadLinkedFood_someButtonDescription()))
     .plus(new ShepherdTour.Step("wholeCounter", "#intake24-quantity-prompt-whole-counter", helpMessages.quantity_wholeCounterTitle(),
         helpMessages.quantity_wholeCounterDescription()))
     .plus(new ShepherdTour.Step("fracCounter", "#intake24-quantity-prompt-frac-counter", helpMessages.quantity_fractionCounterTitle(),
@@ -104,21 +96,10 @@ public class BreadLinkedFoodAmountPrompt implements Prompt<Pair<FoodEntry, Meal>
     final String quantityStr = NumberFormat.getDecimalFormat().format(quantity);
 
     final FlowPanel quantityPanel = new FlowPanel();
-    quantityPanel.setVisible(false);
 
     FlowPanel promptPanel = WidgetFactory.createPromptPanel(
         SafeHtmlUtils.fromSafeConstant(messages.breadLinkedFood_promptText(foodDescription, mainFoodDescription, quantityStr)),
-        WidgetFactory.createHelpButton(new ClickHandler() {
-          @Override
-          public void onClick(ClickEvent event) {
-            String promptType = BreadLinkedFoodAmountPrompt.class.getSimpleName();
-            GoogleAnalytics.trackHelpButtonClicked(promptType);
-            if (quantityPanel.isVisible())
-              ShepherdTour.startTour(fullTour, promptType);
-            else
-              ShepherdTour.startTour(collapsedTour, promptType);
-          }
-        }));
+        ShepherdTour.createTourButton(shepherdTour, BreadLinkedFoodAmountPrompt.class.getSimpleName()));
 
     PromptUtil.addBackLink(content);
     content.add(promptPanel);
@@ -141,17 +122,7 @@ public class BreadLinkedFoodAmountPrompt implements Prompt<Pair<FoodEntry, Meal>
     allButton.getElement().setId("intake24-all-button");
     ShepherdTour.makeShepherdTarget(allButton);
 
-    Button someButton = WidgetFactory.createButton(messages.breadLinkedFood_someButtonLabel(), new ClickHandler() {
-      @Override
-      public void onClick(ClickEvent event) {
-        quantityPanel.setVisible(true);
-      }
-    });
-
-    someButton.getElement().setId("intake24-some-button");
-    ShepherdTour.makeShepherdTarget(someButton);
-
-    content.add(WidgetFactory.createButtonsPanel(allButton, someButton));
+    content.add(WidgetFactory.createButtonsPanel(allButton));
 
     final QuantityCounter counter = new QuantityCounter(0.25, quantity, Math.max(1.0, quantity));
 
