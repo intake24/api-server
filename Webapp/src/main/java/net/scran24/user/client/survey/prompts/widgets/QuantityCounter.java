@@ -59,7 +59,7 @@ public class QuantityCounter extends Composite {
     
     int startWholeIndex = (int)Math.floor(init);
 
-    double frac = min - Math.floor(init);
+    double frac = init - Math.floor(init);
     int startFractionalIndex = 0;
 
     if (frac < 0.25) 

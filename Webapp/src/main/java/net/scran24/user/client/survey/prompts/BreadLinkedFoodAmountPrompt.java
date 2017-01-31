@@ -26,10 +26,23 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package net.scran24.user.client.survey.prompts;
 
+import org.pcollections.client.PVector;
+import org.pcollections.client.TreePVector;
+import org.workcraft.gwt.shared.client.Callback1;
+import org.workcraft.gwt.shared.client.Function1;
+import org.workcraft.gwt.shared.client.Pair;
+
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.i18n.client.NumberFormat;
+import com.google.gwt.safehtml.shared.SafeHtmlUtils;
+import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.FlowPanel;
+import com.google.gwt.user.client.ui.HasHorizontalAlignment;
+import com.google.gwt.user.client.ui.HasVerticalAlignment;
+
 import net.scran24.common.client.GoogleAnalytics;
 import net.scran24.common.client.WidgetFactory;
-import net.scran24.datastore.shared.Time;
-
 import net.scran24.user.client.ShepherdTour;
 import net.scran24.user.client.survey.SurveyStageInterface;
 import net.scran24.user.client.survey.flat.Prompt;
@@ -41,54 +54,29 @@ import net.scran24.user.client.survey.prompts.messages.PromptMessages;
 import net.scran24.user.client.survey.prompts.widgets.QuantityCounter;
 import net.scran24.user.shared.EncodedFood;
 import net.scran24.user.shared.FoodEntry;
-import net.scran24.user.shared.FoodPrompt;
 import net.scran24.user.shared.Meal;
-import uk.ac.ncl.openlab.intake24.datastoresql.CompletedPortionSize;
-
-import org.pcollections.client.PVector;
-import org.pcollections.client.TreePVector;
-import org.workcraft.gwt.shared.client.Callback1;
-import org.workcraft.gwt.shared.client.Either;
-import org.workcraft.gwt.shared.client.Function1;
-import org.workcraft.gwt.shared.client.Pair;
-
-import com.google.gwt.event.dom.client.ClickEvent;
-import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.i18n.client.NumberFormat;
-import com.google.gwt.safehtml.shared.SafeHtml;
-import com.google.gwt.safehtml.shared.SafeHtmlUtils;
-import com.google.gwt.user.client.ui.Button;
-import com.google.gwt.user.client.ui.FlowPanel;
-import com.google.gwt.user.client.ui.HasHorizontalAlignment;
-import com.google.gwt.user.client.ui.HasVerticalAlignment;
-import com.google.gwt.user.client.ui.Panel;
-
-import static net.scran24.common.client.LocaleUtil.*;
 
 public class BreadLinkedFoodAmountPrompt implements Prompt<Pair<FoodEntry, Meal>, MealOperation> {
   private static final PromptMessages messages = PromptMessages.Util.getInstance();
   private static final HelpMessages helpMessages = HelpMessages.Util.getInstance();
 
   private final static PVector<ShepherdTour.Step> collapsedTour = TreePVector.<ShepherdTour.Step>empty()
-    .plus(new ShepherdTour.Step("hours", "#intake24-all-button", helpMessages.timeQuestion_hoursTitle(),
-        helpMessages.timeQuestion_hoursDescription()))
-    .plus(new ShepherdTour.Step("minutes", "#intake24-specify-button", helpMessages.timeQuestion_minutesTitle(),
-        helpMessages.timeQuestion_minutesDescription()))
-    .plus(new ShepherdTour.Step("skipButton", "#intake24-time-question-skip-button", helpMessages.timeQuestion_deleteMealButtonTitle(),
-        helpMessages.timeQuestion_deleteMealButtonDescription()))
-    .plus(new ShepherdTour.Step("confirmButton", "#intake24-time-question-confirm-button", helpMessages.timeQuestion_confirmButtonTitle(),
-        helpMessages.timeQuestion_confirmButtonDescription(), "top right", "bottom right"));
-  
+    .plus(new ShepherdTour.Step("hours", "#intake24-all-button", messages.breadLinkedFood_allButtonLabel(),
+        helpMessages.breadLinkedFood_allButtonDescription()))
+    .plus(new ShepherdTour.Step("minutes", "#intake24-some-button", messages.breadLinkedFood_someButtonLabel(),
+        helpMessages.breadLinkedFood_someButtonDescription()));
+
   private final static PVector<ShepherdTour.Step> fullTour = TreePVector.<ShepherdTour.Step>empty()
-      .plus(new ShepherdTour.Step("hours", "#intake24-time-question-hours", helpMessages.timeQuestion_hoursTitle(),
-          helpMessages.timeQuestion_hoursDescription()))
-      .plus(new ShepherdTour.Step("minutes", "#intake24-time-question-minutes", helpMessages.timeQuestion_minutesTitle(),
-          helpMessages.timeQuestion_minutesDescription()))
-      .plus(new ShepherdTour.Step("skipButton", "#intake24-time-question-skip-button", helpMessages.timeQuestion_deleteMealButtonTitle(),
-          helpMessages.timeQuestion_deleteMealButtonDescription()))
-      .plus(new ShepherdTour.Step("confirmButton", "#intake24-time-question-confirm-button", helpMessages.timeQuestion_confirmButtonTitle(),
-          helpMessages.timeQuestion_confirmButtonDescription(), "top right", "bottom right"));
-  
+    .plus(new ShepherdTour.Step("hours", "#intake24-all-button", messages.breadLinkedFood_allButtonLabel(),
+        helpMessages.breadLinkedFood_allButtonDescription()))
+    .plus(new ShepherdTour.Step("minutes", "#intake24-some-button", messages.breadLinkedFood_someButtonLabel(),
+        helpMessages.breadLinkedFood_someButtonDescription()))
+    .plus(new ShepherdTour.Step("wholeCounter", "#intake24-quantity-prompt-whole-counter", helpMessages.quantity_wholeCounterTitle(),
+        helpMessages.quantity_wholeCounterDescription()))
+    .plus(new ShepherdTour.Step("fracCounter", "#intake24-quantity-prompt-frac-counter", helpMessages.quantity_fractionCounterTitle(),
+        helpMessages.quantity_fractionCounterDescription()))
+    .plus(new ShepherdTour.Step("continueButton", "#intake24-quantity-prompt-continue-button", helpMessages.quantity_continueButtonTitle(),
+        helpMessages.quantity_continueButtonDescription()));
 
   private final Meal meal;
   private final int foodIndex;
@@ -115,15 +103,26 @@ public class BreadLinkedFoodAmountPrompt implements Prompt<Pair<FoodEntry, Meal>
 
     final String quantityStr = NumberFormat.getDecimalFormat().format(quantity);
 
+    final FlowPanel quantityPanel = new FlowPanel();
+    quantityPanel.setVisible(false);
+
     FlowPanel promptPanel = WidgetFactory.createPromptPanel(
         SafeHtmlUtils.fromSafeConstant(messages.breadLinkedFood_promptText(foodDescription, mainFoodDescription, quantityStr)),
-        ShepherdTour.createTourButton(null, BreadLinkedFoodAmountPrompt.class.getSimpleName()));
+        WidgetFactory.createHelpButton(new ClickHandler() {
+          @Override
+          public void onClick(ClickEvent event) {
+            String promptType = BreadLinkedFoodAmountPrompt.class.getSimpleName();
+            GoogleAnalytics.trackHelpButtonClicked(promptType);
+            if (quantityPanel.isVisible())
+              ShepherdTour.startTour(fullTour, promptType);
+            else
+              ShepherdTour.startTour(collapsedTour, promptType);
+          }
+        }));
 
     PromptUtil.addBackLink(content);
     content.add(promptPanel);
-
-    final FlowPanel quantityPanel = new FlowPanel();
-    quantityPanel.setVisible(false);
+    ShepherdTour.makeShepherdTarget(promptPanel);
 
     Button allButton = WidgetFactory.createButton(messages.breadLinkedFood_allButtonLabel(), new ClickHandler() {
       @Override
@@ -138,21 +137,27 @@ public class BreadLinkedFoodAmountPrompt implements Prompt<Pair<FoodEntry, Meal>
         }));
       }
     });
-    
-    allButton.getElement().setId("intake24-all-button");
 
-    Button specifyButton = WidgetFactory.createButton(messages.breadLinkedFood_someButtonLabel(), new ClickHandler() {
+    allButton.getElement().setId("intake24-all-button");
+    ShepherdTour.makeShepherdTarget(allButton);
+
+    Button someButton = WidgetFactory.createButton(messages.breadLinkedFood_someButtonLabel(), new ClickHandler() {
       @Override
       public void onClick(ClickEvent event) {
         quantityPanel.setVisible(true);
       }
     });
-    
-    specifyButton.getElement().setId("intake24-specify-button");
 
-    content.add(WidgetFactory.createButtonsPanel(allButton, specifyButton));
+    someButton.getElement().setId("intake24-some-button");
+    ShepherdTour.makeShepherdTarget(someButton);
+
+    content.add(WidgetFactory.createButtonsPanel(allButton, someButton));
 
     final QuantityCounter counter = new QuantityCounter(0.25, quantity, Math.max(1.0, quantity));
+
+    ShepherdTour.makeShepherdTarget(counter.fractionalCounter);
+    ShepherdTour.makeShepherdTarget(counter.wholeLabel);
+    ShepherdTour.makeShepherdTarget(counter.wholeCounter);
 
     Button confirmQuantityButton = WidgetFactory.createGreenButton(messages.quantity_continueButtonLabel(), new ClickHandler() {
       @Override
@@ -172,6 +177,8 @@ public class BreadLinkedFoodAmountPrompt implements Prompt<Pair<FoodEntry, Meal>
 
     quantityPanel.add(counter);
     quantityPanel.add(confirmQuantityButton);
+
+    ShepherdTour.makeShepherdTarget(confirmQuantityButton);
 
     content.add(quantityPanel);
 

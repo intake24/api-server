@@ -26,110 +26,70 @@ http://www.nationalarchives.gov.uk/doc/open-government-licence/
 
 package net.scran24.user.client.survey.prompts.simple;
 
-import java.util.ArrayList;
-
-import net.scran24.common.client.WidgetFactory;
-import net.scran24.common.client.widgets.LabelledCounter;
-import net.scran24.user.client.ShepherdTour;
-import net.scran24.user.client.survey.flat.SimplePrompt;
-import net.scran24.user.client.survey.prompts.messages.HelpMessages;
-import net.scran24.user.client.survey.prompts.messages.PromptMessages;
-import net.scran24.user.client.survey.prompts.widgets.QuantityCounter;
-
 import org.pcollections.client.PVector;
 import org.pcollections.client.TreePVector;
 import org.workcraft.gwt.shared.client.Callback1;
-import org.workcraft.gwt.shared.client.Pair;
 
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.i18n.client.NumberFormat;
 import com.google.gwt.safehtml.shared.SafeHtml;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.FlowPanel;
-import com.google.gwt.user.client.ui.Label;
+
+import net.scran24.common.client.WidgetFactory;
+import net.scran24.user.client.ShepherdTour;
+import net.scran24.user.client.survey.flat.SimplePrompt;
+import net.scran24.user.client.survey.prompts.messages.HelpMessages;
+import net.scran24.user.client.survey.prompts.widgets.QuantityCounter;
 
 public class FractionalQuantityPrompt implements SimplePrompt<Double> {
-	private static final PromptMessages messages = PromptMessages.Util.getInstance();
-	private static final HelpMessages helpMessages = HelpMessages.Util.getInstance();
+  private static final HelpMessages helpMessages = HelpMessages.Util.getInstance();
 
-	private final static PVector<ShepherdTour.Step> tour = TreePVector
-			.<ShepherdTour.Step> empty()
-			.plus(new ShepherdTour.Step("wholeCounter", "#intake24-quantity-prompt-whole-counter", helpMessages.quantity_wholeCounterTitle(),
-					helpMessages.quantity_wholeCounterDescription()))
-			.plus(new ShepherdTour.Step("fracCounter", "#intake24-quantity-prompt-frac-counter", helpMessages.quantity_fractionCounterTitle(),
-					helpMessages.quantity_fractionCounterDescription()))
-			.plus(new ShepherdTour.Step("continueButton", "#intake24-quantity-prompt-continue-button", helpMessages.quantity_continueButtonTitle(),
-					helpMessages.quantity_continueButtonDescription()));
+  private final static PVector<ShepherdTour.Step> tour = TreePVector.<ShepherdTour.Step>empty()
+    .plus(new ShepherdTour.Step("wholeCounter", "#intake24-quantity-prompt-whole-counter", helpMessages.quantity_wholeCounterTitle(),
+        helpMessages.quantity_wholeCounterDescription()))
+    .plus(new ShepherdTour.Step("fracCounter", "#intake24-quantity-prompt-frac-counter", helpMessages.quantity_fractionCounterTitle(),
+        helpMessages.quantity_fractionCounterDescription()))
+    .plus(new ShepherdTour.Step("continueButton", "#intake24-quantity-prompt-continue-button", helpMessages.quantity_continueButtonTitle(),
+        helpMessages.quantity_continueButtonDescription()));
 
-	final private SafeHtml promptText;
-	final private String buttonLabel;
+  final private SafeHtml promptText;
+  final private String buttonLabel;
 
-	public FractionalQuantityPrompt(SafeHtml promptText, String buttonLabel) {
-		this.promptText = promptText;
-		this.buttonLabel = buttonLabel;
-	}
+  public FractionalQuantityPrompt(SafeHtml promptText, String buttonLabel) {
+    this.promptText = promptText;
+    this.buttonLabel = buttonLabel;
+  }
 
-	@Override
-	public FlowPanel getInterface(final Callback1<Double> onComplete) {
-		final FlowPanel content = new FlowPanel();
-		content.addStyleName("intake24-quantity-prompt");
+  @Override
+  public FlowPanel getInterface(final Callback1<Double> onComplete) {
+    final FlowPanel content = new FlowPanel();
+    content.addStyleName("intake24-quantity-prompt");
 
-		FlowPanel promptPanel = WidgetFactory.createPromptPanel(promptText, ShepherdTour.createTourButton(tour, FractionalQuantityPrompt.class.getSimpleName()));
-		content.add(promptPanel);
+    FlowPanel promptPanel = WidgetFactory.createPromptPanel(promptText,
+        ShepherdTour.createTourButton(tour, FractionalQuantityPrompt.class.getSimpleName()));
+    content.add(promptPanel);
 
-		final FlowPanel amountPanel = new FlowPanel();
-		amountPanel.addStyleName("intake24-quantity-prompt-counter-container");
+    final FlowPanel amountPanel = new FlowPanel();
+    amountPanel.addStyleName("intake24-quantity-prompt-counter-container");
 
-		/*
-		ArrayList<Pair<String, Double>> wholeLabels = new ArrayList<Pair<String, Double>>();
+    final QuantityCounter counter = new QuantityCounter(0.25, 30, 1.0);
+    amountPanel.add(counter);
 
-		NumberFormat nf = NumberFormat.getDecimalFormat(); 
-		
-		for (int i = 0; i < 31; i++) {
-			wholeLabels.add(Pair.create(nf.format(i), (double) i));
-		}
+    Button cont = WidgetFactory.createGreenButton(buttonLabel, new ClickHandler() {
+      @Override
+      public void onClick(ClickEvent event) {
+        onComplete.call(counter.getValue());
+      }
+    });
 
-		ArrayList<Pair<String, Double>> fracLabels = new ArrayList<Pair<String, Double>>();
+    cont.getElement().setId("intake24-quantity-prompt-continue-button");
 
-		fracLabels.add(Pair.create(messages.quantity_noFraction(), 0.0));
-		fracLabels.add(Pair.create(messages.quantity_oneFourth(), 0.25));
-		fracLabels.add(Pair.create(messages.quantity_oneHalf(), 0.5));
-		fracLabels.add(Pair.create(messages.quantity_threeFourths(), 0.75));
+    content.add(amountPanel);
+    content.add(WidgetFactory.createButtonsPanel(cont));
 
-		final LabelledCounter wholeCount = new LabelledCounter(wholeLabels, 1);
-		wholeCount.addStyleName("intake24-quantity-prompt-whole-counter");
-		wholeCount.getElement().setId("intake24-quantity-prompt-whole-counter");
+    ShepherdTour.makeShepherdTarget(promptPanel, counter.wholeCounter, counter.fractionalCounter, counter.wholeLabel, cont);
 
-		final LabelledCounter fracCount = new LabelledCounter(fracLabels, 0);
-		fracCount.addStyleName("intake24-quantity-prompt-frac-counter");
-		fracCount.getElement().setId("intake24-quantity-prompt-frac-counter");
-
-		amountPanel.add(wholeCount);
-		Label label = new Label(messages.quantity_wholeItemsLabel());
-		label.addStyleName("intake24-quantity-prompt-whole-label");
-		amountPanel.add(label);
-		amountPanel.add(fracCount);
-		*/
-		
-		final QuantityCounter counter = new QuantityCounter(0.25, 30, 1.0);
-		amountPanel.add(counter);
-
-
-		Button cont = WidgetFactory.createGreenButton(buttonLabel, new ClickHandler() {
-			@Override
-			public void onClick(ClickEvent event) {
-				onComplete.call(counter.getValue());
-			}
-		});
-
-		cont.getElement().setId("intake24-quantity-prompt-continue-button");
-
-		content.add(amountPanel);
-		content.add(WidgetFactory.createButtonsPanel(cont));
-
-		ShepherdTour.makeShepherdTarget(promptPanel, counter.wholeCounter, counter.fractionalCounter, counter.wholeLabel, cont);
-
-		return content;
-	}
+    return content;
+  }
 }
