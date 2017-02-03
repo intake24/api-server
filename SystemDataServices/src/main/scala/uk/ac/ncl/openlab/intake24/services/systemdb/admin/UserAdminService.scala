@@ -6,6 +6,8 @@ case class SecureUserRecord(username: String, passwordHashBase64: String, passwo
                             name: Option[String], email: Option[String], phone: Option[String],
                             roles: Set[String], permissions: Set[String], customFields: Map[String, String])
 
+case class UserRef(surveyId: String, userId: String)
+
 trait UserAdminService {
 
   def getCustomUserData(surveyId: String, userId: String): Either[LookupError, Map[String, String]]
@@ -21,4 +23,8 @@ trait UserAdminService {
   def getUserById(surveyId: String, name: String): Either[LookupError, SecureUserRecord]
 
   def getUsersByRole(surveyId: String, role: String): Either[LookupError, Seq[SecureUserRecord]]
+
+/*  def updateGlobalSupportUsers(supportUsers: Seq[UserRef]): Either[ParentError, Unit]
+
+  def updateSupportUsersForSurvey(surveyId: String, supportUsers: Seq[UserRef]): Either[ParentError, Unit] */
 }

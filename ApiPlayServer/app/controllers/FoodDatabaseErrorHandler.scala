@@ -28,6 +28,7 @@ trait FoodDatabaseErrorHandler extends Results {
     }
 
   def translateDatabaseResult[T](result: Either[AnyError, T])(implicit writer: Writer[T]) = result match {
+    case Right(()) => Ok
     case Right(result) => Ok(write(result)).as(ContentTypes.JSON)
     case Left(error) => translateDatabaseError(error)
   }

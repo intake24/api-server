@@ -2,6 +2,7 @@ package parsers
 
 import play.api.mvc.{BodyParser, BodyParsers, Result, Results}
 import play.api.http.ContentTypes
+import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 
 import scala.concurrent.Future
 import upickle.default._
@@ -13,15 +14,13 @@ trait UpickleUtil {
 
   import BodyParsers.parse._
 
-  private case class ErrorBody(error: String, message: String)
-
   def parseJson[T](json: String)(implicit reader: Reader[T]): Either[Result, T] = {
     try {
       Right(read[T](json))
     } catch {
-      case Invalid.Data(_, msg) => Left(Results.BadRequest(write(ErrorBody("json_exception", msg))))
-      case Invalid.Json(msg, _) => Left(Results.BadRequest(write(ErrorBody("json_exception", msg))))
-      case e: Throwable => Left(Results.BadRequest(write(ErrorBody("json_exception", s"${e.getClass.getName}: ${e.getMessage}"))))
+      case Invalid.Data(_, msg) => Left(Results.BadRequest(write(ErrorDescription("InvalidJson", msg))))
+      case Invalid.Json(msg, _) => Left(Results.BadRequest(write(ErrorDescription("InvalidJson", msg))))
+      case e: Throwable => Left(Results.BadRequest(write(ErrorDescription("InvalidJson", s"${e.getClass.getName}: ${e.getMessage}"))))
     }
   }
 

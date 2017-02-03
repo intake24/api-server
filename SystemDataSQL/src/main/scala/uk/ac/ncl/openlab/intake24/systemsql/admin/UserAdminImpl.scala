@@ -23,7 +23,7 @@ import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
 import uk.ac.ncl.openlab.intake24.systemsql.SystemSqlService
 import uk.ac.ncl.openlab.intake24.services.systemdb.errors.UpdateError
 
-class UserAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends UserAdminService with SystemSqlService with SqlResourceLoader {
+class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends UserAdminService with SystemSqlService with SqlResourceLoader {
 
   private def updateUserRolesQuery(surveyId: String, roles: Map[String, Set[String]])(implicit connection: Connection): Either[ParentError, Unit] = {
     SQL("DELETE FROM user_roles WHERE survey_id={survey_id} AND user_id IN ({user_ids})")

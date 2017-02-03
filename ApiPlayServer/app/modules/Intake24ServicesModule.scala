@@ -33,7 +33,9 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.{FoodDataService, FoodDatabaseService}
 import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, FoodIndexDataService}
-import uk.ac.ncl.openlab.intake24.services.foodindex.english.{EnglishWordOpsPlingImpl, EnglishWordOps, FoodIndexImpl_en_GB}
+import uk.ac.ncl.openlab.intake24.services.foodindex.english.{EnglishWordOps, EnglishWordOpsPlingImpl, FoodIndexImpl_en_GB}
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.UserAdminService
+import uk.ac.ncl.openlab.intake24.systemsql.admin.UserAdminImpl
 
 class Intake24ServicesModule(env: Environment, config: Configuration) extends AbstractModule {
   @Provides
@@ -96,6 +98,8 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     bind(classOf[FoodsAdminService]).to(classOf[ObservableFoodsAdminServiceImpl])
     bind(classOf[LocalesAdminService]).to(classOf[ObservableLocalesAdminServiceImpl])
 
+    bind(classOf[UserAdminService]).to(classOf[UserAdminImpl])
+
     // User facing services
 
     bind(classOf[AsServedSetsAdminService]).to(classOf[AsServedSetsAdminStandaloneImpl])
@@ -131,6 +135,7 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
 
     bind(classOf[FoodDatabaseService]).to(classOf[FoodDatabaseUserImpl])
     bind(classOf[FoodDataService]).to(classOf[FoodDataUserStandaloneImpl])
+
 
   }
 }

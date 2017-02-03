@@ -4,7 +4,7 @@
 
 # SHARED CONTROLLERS #
 
-POST           /signin                                                       controllers.Auth.signin
+POST           /signin                                                       controllers.system.SigninController.signin
 
 GET            /index/lookup/:locale/:term                                   controllers.FoodIndexController.lookup(locale, term)
 
@@ -129,3 +129,12 @@ POST           /admin/images/process-for-selection-screen                    con
 
 # GET     /index/synsets/:locale                controllers.FoodIndexController.synsets(locale: String)
 # GET     /index/split-list/:locale             controllers.FoodIndexController.splitList(locale: String)
+
+
+
+# User management
+
+POST           /admin/users/create-or-update                                 controllers.system.UserAdminController.createOrUpdateUsers()
+
+POST           /admin/update-global-support-users                            controllers.system.SurveyAdminController.updateGlobalSupportUsers()
+# POST           /admin/surveys/:surveyId/support-users/update                 controllers.system.SurveyAdminController.updateSurveySupportUsers(surveyId: String)

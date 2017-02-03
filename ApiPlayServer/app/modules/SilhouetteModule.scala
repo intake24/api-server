@@ -18,36 +18,21 @@ limitations under the License.
 
 package modules
 
-import com.google.inject.AbstractModule
-import com.google.inject.Provides
-import com.mohiva.play.silhouette.api.services.AuthenticatorService
-import com.mohiva.play.silhouette.impl.authenticators.JWTAuthenticator
-import com.mohiva.play.silhouette.api.EventBus
-import com.mohiva.play.silhouette.api.Environment
-import models.User
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import com.mohiva.play.silhouette.api.services.IdentityService
-import security.IdentityServiceImpl
-import net.codingwell.scalaguice.ScalaModule
-import com.mohiva.play.silhouette.api.util.IDGenerator
-import com.mohiva.play.silhouette.impl.util.SecureRandomIDGenerator
-import com.mohiva.play.silhouette.api.util.PasswordHasher
-
-import com.mohiva.play.silhouette.api.util.FingerprintGenerator
-import com.mohiva.play.silhouette.impl.util.DefaultFingerprintGenerator
-import play.api.Configuration
-import com.mohiva.play.silhouette.api.util.Clock
-import com.mohiva.play.silhouette.impl.authenticators.JWTAuthenticatorSettings
-import com.mohiva.play.silhouette.impl.authenticators.JWTAuthenticatorService
-import scala.concurrent.duration._
-import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import security.AuthInfoServiceImpl
-import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import security.ShiroPasswordHasher
-import security.Intake24ApiEnv
-import com.mohiva.play.silhouette.api.util.RequestPart
+import com.google.inject.{AbstractModule, Provides, Singleton}
+import com.mohiva.play.silhouette.api.{Environment, EventBus}
 import com.mohiva.play.silhouette.api.crypto.Base64AuthenticatorEncoder
-import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
+import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
+import com.mohiva.play.silhouette.api.services.{AuthenticatorService, IdentityService}
+import com.mohiva.play.silhouette.api.util._
+import com.mohiva.play.silhouette.impl.authenticators.{JWTAuthenticator, JWTAuthenticatorService, JWTAuthenticatorSettings}
+import com.mohiva.play.silhouette.impl.util.{DefaultFingerprintGenerator, SecureRandomIDGenerator}
+import models.User
+import net.codingwell.scalaguice.ScalaModule
+import play.api.Configuration
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import security.{AuthInfoServiceImpl, IdentityServiceImpl, Intake24ApiEnv, ShiroPasswordHasher}
+
+import scala.concurrent.duration._
 
 
 class SilhouetteModule extends AbstractModule with ScalaModule {
@@ -96,19 +81,11 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
       new JWTAuthenticatorService(settings, None, new Base64AuthenticatorEncoder(), idGenerator, clock)    
   }
 
-  /**
-   * Provides the credentials provider.
-   *
-   * @param authInfoRepository The auth info repository implementation.
-   * @param passwordHasher The default password hasher implementation.
-   * @return The credentials provider.
-   */
   @Provides
-  def provideCredentialsProvider(
-    authInfoRepository: AuthInfoRepository): CredentialsProvider = {
+  @Singleton
+  def providePasswordHasherRegistry() = {
+    val shiroHasher = new ShiroPasswordHasher()
 
-    val shiroHasher = new ShiroPasswordHasher
-    
-    new CredentialsProvider(authInfoRepository, PasswordHasherRegistry(shiroHasher, Seq()))
+    PasswordHasherRegistry(shiroHasher, Seq())
   }
 }
