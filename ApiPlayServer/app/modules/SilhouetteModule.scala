@@ -27,7 +27,7 @@ import com.mohiva.play.silhouette.api.services.{AuthenticatorService, IdentitySe
 import com.mohiva.play.silhouette.api.util._
 import com.mohiva.play.silhouette.impl.authenticators.{JWTAuthenticator, JWTAuthenticatorService, JWTAuthenticatorSettings}
 import com.mohiva.play.silhouette.impl.util.{DefaultFingerprintGenerator, SecureRandomIDGenerator}
-import models.User
+import models.Intake24User
 import net.codingwell.scalaguice.ScalaModule
 import play.api.Configuration
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
@@ -39,7 +39,7 @@ import scala.concurrent.duration._
 class SilhouetteModule extends AbstractModule with ScalaModule {
 
   def configure() {
-    bind[IdentityService[User]].to[IdentityServiceImpl]
+    bind[IdentityService[Intake24User]].to[IdentityServiceImpl]
     bind[IDGenerator].toInstance(new SecureRandomIDGenerator())
     bind[FingerprintGenerator].toInstance(new DefaultFingerprintGenerator(false))
     bind[Clock].toInstance(Clock())
@@ -54,7 +54,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   @Provides
   @Singleton
   @Named("refresh")
-  def provideRefreshEnvironment(identityService: IdentityService[User],
+  def provideRefreshEnvironment(identityService: IdentityService[Intake24User],
                                 @Named("refresh") authenticatorService: AuthenticatorService[JWTAuthenticator],
                                 eventBus: EventBus): Environment[Intake24ApiEnv] = {
     Environment[Intake24ApiEnv](
@@ -76,7 +76,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
       fieldName = "X-Auth-Token",
       issuerClaim = "intake24",
       requestParts = Some(Seq(RequestPart.Headers)),
-      authenticatorIdleTimeout = None,
+      authenticatorIdleTimeout = Some(10.seconds),
       authenticatorExpiry = configuration.getInt("intake24.security.refreshTokenExpiryDays").getOrElse(1825).days,
       sharedSecret = configuration.getString("play.crypto.secret").get)
 
@@ -105,7 +105,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   @Provides
   @Singleton
   @Named("access")
-  def provideAccessEnvironment(identityService: IdentityService[User],
+  def provideAccessEnvironment(identityService: IdentityService[Intake24User],
                                @Named("access") authenticatorService: AuthenticatorService[JWTAuthenticator],
                                eventBus: EventBus): Environment[Intake24ApiEnv] = {
     Environment[Intake24ApiEnv](

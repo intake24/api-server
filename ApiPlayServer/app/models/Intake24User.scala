@@ -18,14 +18,6 @@ limitations under the License.
 
 package models
 
-import be.objectify.deadbolt.scala.models.Subject
 import com.mohiva.play.silhouette.api.Identity
 
-case class User(id: String, securityInfo: SecurityInfo) extends Identity with Subject {
-
-  def identifier = id
-
-  def permissions = securityInfo.permissions.map(SecurityPermission).toList
-
-  def roles = securityInfo.roles.map(SecurityRole).toList
-}
+case class Intake24User(id: String, securityInfo: SecurityInfo) extends Identity

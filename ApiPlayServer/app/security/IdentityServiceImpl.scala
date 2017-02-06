@@ -22,23 +22,23 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
-import _root_.models.{SecurityInfo, User}
+import _root_.models.{SecurityInfo, Intake24User}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
 import uk.ac.ncl.openlab.intake24.datastoresql.DataStoreScala
 
 import scala.concurrent.Future
 
-class IdentityServiceImpl @Inject()(val dataStore: DataStoreScala) extends IdentityService[User] {
+class IdentityServiceImpl @Inject()(val dataStore: DataStoreScala) extends IdentityService[Intake24User] {
 
   implicit val securityInfoFormat = Json.format[SecurityInfo]
 
-  def retrieve(loginInfo: LoginInfo): Future[Option[User]] = Future {
+  def retrieve(loginInfo: LoginInfo): Future[Option[Intake24User]] = Future {
     val intake24key = Intake24UserKey.fromString(loginInfo.providerKey)
 
     dataStore.getUserRecord(intake24key.surveyName, intake24key.userName).map {
       record =>
-        User(record.username, SecurityInfo(record.roles, record.permissions))
+        Intake24User(record.username, SecurityInfo(record.roles, record.permissions))
     }
   }
 

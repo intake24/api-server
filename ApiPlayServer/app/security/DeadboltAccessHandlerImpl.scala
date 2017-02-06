@@ -36,7 +36,7 @@ class DeadboltAccessHandlerImpl(val env: Environment[Intake24ApiEnv]) extends De
   override def getSubject[A](request: AuthenticatedRequest[A]): Future[Option[Subject]] = {
     env.authenticatorService.retrieve(request).map {
       jwtAuth =>
-        parseToken(jwtAuth) match {
+        getSubjectFromJWT(jwtAuth) match {
           case Some(AccessToken(userInfo)) => Some(userInfo)
           case _ => None
         }

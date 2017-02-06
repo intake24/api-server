@@ -36,7 +36,7 @@ class DeadboltRefreshHandlerImpl(val env: Environment[Intake24ApiEnv]) extends D
   override def getSubject[A](request: AuthenticatedRequest[A]): Future[Option[Subject]] = {
     env.authenticatorService.retrieve(request).map {
       jwtAuth =>
-        parseToken(jwtAuth) match {
+        getSubjectFromJWT(jwtAuth) match {
           case Some(RefreshToken(userInfo)) => Some(userInfo)
           case _ => None
         }

@@ -1,28 +1,21 @@
 package security
 
 import com.mohiva.play.silhouette.impl.authenticators.JWTAuthenticator
-import models.{SecurityInfo, User}
-
-
-trait AuthToken
-
-case class RefreshToken(userInfo: User) extends AuthToken
-
-case class AccessToken(userInfo: User) extends AuthToken
+import models._
 
 trait JWTHandlerUtil {
 
-  def parseToken(jwtAuthenticator: Option[JWTAuthenticator]): Option[AuthToken] =
+  def getSubjectFromJWT(jwtAuthenticator: Option[JWTAuthenticator]): Option[Intake24Subject] =
     jwtAuthenticator.flatMap {
       jwt =>
         (jwt.isValid, jwt.customClaims) match {
           case (true, Some(claims)) =>
             (claims \ "i24t").asOpt[String] match {
-              case Some("refresh") => Some(RefreshToken(User(jwt.loginInfo.providerKey, SecurityInfo(Set(), Set()))))
+              case Some("refresh") => Some(RefreshSubject(jwt.loginInfo.providerKey, jwt))
               case Some("access") =>
-                for (roles <- (claims \ "i24r").asOpt[Set[String]];
-                     permissions <- (claims \ "i24p").asOpt[Set[String]]
-                ) yield AccessToken(User(jwt.loginInfo.providerKey, SecurityInfo(roles, permissions)))
+                for (roles <- (claims \ "i24r").asOpt[List[String]];
+                     permissions <- (claims \ "i24p").asOpt[List[String]]
+                ) yield AccessSubject(jwt.loginInfo.providerKey, roles, permissions, jwt)
               case _ => None
             }
           case _ => None
