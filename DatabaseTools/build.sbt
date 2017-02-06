@@ -20,6 +20,13 @@ name := "database-tools"
 
 description := "Intake24 database tools"
 
+assemblyMergeStrategy in assembly <<= (assemblyMergeStrategy in assembly) { (old) => {
+  case PathList("org", "w3c", "dom", xs@_*) => MergeStrategy.first
+  case PathList("javax", "xml", xs@_*) => MergeStrategy.first
+  case x => old(x)
+}}
+
+
 libraryDependencies ++= Seq(
   "com.google.gwt" % "gwt-user" % "2.7.0" % "provided",
   "org.slf4j" % "slf4j-api" % "1.7.21",
