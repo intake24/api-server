@@ -18,6 +18,7 @@ limitations under the License.
 
 package modules
 
+import com.google.inject.name.Named
 import com.google.inject.{AbstractModule, Provides, Singleton}
 import com.mohiva.play.silhouette.api.{Environment, EventBus}
 import com.mohiva.play.silhouette.api.crypto.Base64AuthenticatorEncoder
@@ -43,18 +44,19 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     bind[FingerprintGenerator].toInstance(new DefaultFingerprintGenerator(false))
     bind[Clock].toInstance(Clock())
     bind[AuthInfoRepository].to[AuthInfoServiceImpl]
-    
+
+
     /* bind[CacheLayer].to[PlayCacheLayer]
     bind[EventBus].toInstance(EventBus())
     */
   }
 
   @Provides
-  def provideEnvironment(
-    identityService: IdentityService[User],
-    authenticatorService: AuthenticatorService[JWTAuthenticator],
-    eventBus: EventBus): Environment[Intake24ApiEnv] = {
-
+  @Singleton
+  @Named("refresh")
+  def provideRefreshEnvironment(identityService: IdentityService[User],
+                                @Named("refresh") authenticatorService: AuthenticatorService[JWTAuthenticator],
+                                eventBus: EventBus): Environment[Intake24ApiEnv] = {
     Environment[Intake24ApiEnv](
       identityService,
       authenticatorService,
@@ -64,22 +66,56 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   }
 
   @Provides
-  def provideAuthenticatorService(
-    fingerprintGenerator: FingerprintGenerator,
-    idGenerator: IDGenerator,
-    configuration: Configuration,
-    clock: Clock): AuthenticatorService[JWTAuthenticator] = {
+  @Singleton
+  @Named("refresh")
+  def provideRefreshAuthenticatorService(fingerprintGenerator: FingerprintGenerator,
+                                         idGenerator: IDGenerator,
+                                         configuration: Configuration,
+                                         clock: Clock): AuthenticatorService[JWTAuthenticator] = {
+    val settings = JWTAuthenticatorSettings(
+      fieldName = "X-Auth-Token",
+      issuerClaim = "intake24",
+      requestParts = Some(Seq(RequestPart.Headers)),
+      authenticatorIdleTimeout = None,
+      authenticatorExpiry = configuration.getInt("intake24.security.refreshTokenExpiryDays").getOrElse(1825).days,
+      sharedSecret = configuration.getString("play.crypto.secret").get)
+
+    new JWTAuthenticatorService(settings, None, new Base64AuthenticatorEncoder(), idGenerator, clock)
+  }
+
+  @Provides
+  @Singleton
+  @Named("access")
+  def provideAccessAuthenticatorService(fingerprintGenerator: FingerprintGenerator,
+                                        idGenerator: IDGenerator,
+                                        configuration: Configuration,
+                                        clock: Clock): AuthenticatorService[JWTAuthenticator] = {
 
     val settings = JWTAuthenticatorSettings(
       fieldName = "X-Auth-Token",
       issuerClaim = "intake24",
-      requestParts = Some(Seq(RequestPart.Headers)),      
+      requestParts = Some(Seq(RequestPart.Headers)),
       authenticatorIdleTimeout = None,
-      authenticatorExpiry = configuration.getInt("intake24.security.tokenExpiryMinutes").getOrElse(30).days,
+      authenticatorExpiry = configuration.getInt("intake24.security.accessTokenExpiryMinutes").getOrElse(10).minutes,
       sharedSecret = configuration.getString("play.crypto.secret").get)
-    
-      new JWTAuthenticatorService(settings, None, new Base64AuthenticatorEncoder(), idGenerator, clock)    
+
+    new JWTAuthenticatorService(settings, None, new Base64AuthenticatorEncoder(), idGenerator, clock)
   }
+
+  @Provides
+  @Singleton
+  @Named("access")
+  def provideAccessEnvironment(identityService: IdentityService[User],
+                               @Named("access") authenticatorService: AuthenticatorService[JWTAuthenticator],
+                               eventBus: EventBus): Environment[Intake24ApiEnv] = {
+    Environment[Intake24ApiEnv](
+      identityService,
+      authenticatorService,
+      Seq(),
+      eventBus
+    )
+  }
+
 
   @Provides
   @Singleton

@@ -31,13 +31,13 @@ import upickle.default._
 class QuickSearchController @Inject() (service: QuickSearchService, deadbolt: DeadboltActionsAdapter) extends Controller
     with FoodDatabaseErrorHandler {
 
-  def searchFoods(searchTerm: String, locale: String) = deadbolt.restrict(Roles.superuser) {
+  def searchFoods(searchTerm: String, locale: String) = deadbolt.restrictAccess(Roles.superuser) {
     Future {
       translateDatabaseResult(service.searchFoods(searchTerm, locale))
     }
   }
 
-  def searchCategories(searchTerm: String, locale: String) = deadbolt.restrict(Roles.superuser) {
+  def searchCategories(searchTerm: String, locale: String) = deadbolt.restrictAccess(Roles.superuser) {
     Future {
       translateDatabaseResult(service.searchCategories(searchTerm, locale))
     }

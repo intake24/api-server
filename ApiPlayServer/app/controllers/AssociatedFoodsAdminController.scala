@@ -33,13 +33,13 @@ import parsers.UpickleUtil
 class AssociatedFoodsAdminController @Inject() (service: AssociatedFoodsAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
     with FoodDatabaseErrorHandler with UpickleUtil {
 
-  def getAssociatedFoods(foodCode: String, locale: String) = deadbolt.restrict(Roles.superuser) {
+  def getAssociatedFoods(foodCode: String, locale: String) = deadbolt.restrictAccess(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getAssociatedFoods(foodCode, locale))
     }
   }
 
-  def updateAssociatedFoods(foodCode: String, locale: String) = deadbolt.restrict(Roles.superuser)(upickleBodyParser[Seq[AssociatedFood]]) {
+  def updateAssociatedFoods(foodCode: String, locale: String) = deadbolt.restrictAccess(Roles.superuser)(upickleBodyParser[Seq[AssociatedFood]]) {
     request =>
       Future {
         translateDatabaseResult(service.updateAssociatedFoods(foodCode, request.body, locale))

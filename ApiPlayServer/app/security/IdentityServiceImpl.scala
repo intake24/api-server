@@ -18,19 +18,18 @@ limitations under the License.
 
 package security
 
-import com.mohiva.play.silhouette.api.services.IdentityService
-import com.mohiva.play.silhouette.api.LoginInfo
-import scala.concurrent.Future
-import _root_.models.User
 import javax.inject.Inject
-import play.api.libs.json.Json
-import play.api.libs.json.JsObject
+
+import com.mohiva.play.silhouette.api.LoginInfo
+import com.mohiva.play.silhouette.api.services.IdentityService
+import _root_.models.{SecurityInfo, User}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.Logger
-import models.SecurityInfo
+import play.api.libs.json.Json
 import uk.ac.ncl.openlab.intake24.datastoresql.DataStoreScala
 
-class IdentityServiceImpl @Inject() (val dataStore: DataStoreScala) extends IdentityService[User] {
+import scala.concurrent.Future
+
+class IdentityServiceImpl @Inject()(val dataStore: DataStoreScala) extends IdentityService[User] {
 
   implicit val securityInfoFormat = Json.format[SecurityInfo]
 

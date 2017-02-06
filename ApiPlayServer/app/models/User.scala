@@ -18,17 +18,14 @@ limitations under the License.
 
 package models
 
-import com.mohiva.play.silhouette.api.Identity
-import com.mohiva.play.silhouette.api.LoginInfo
-
-import play.libs.Scala
 import be.objectify.deadbolt.scala.models.Subject
+import com.mohiva.play.silhouette.api.Identity
 
-case class User(id: String, securityInfo: SecurityInfo) extends Identity with Subject {    
-  
+case class User(id: String, securityInfo: SecurityInfo) extends Identity with Subject {
+
   def identifier = id
 
   def permissions = securityInfo.permissions.map(SecurityPermission).toList
-  
+
   def roles = securityInfo.roles.map(SecurityRole).toList
 }

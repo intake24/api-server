@@ -37,7 +37,7 @@ case class CreateOrUpdateUsersRequest(surveyId: String, userRecords: Seq[UserRec
 class UserAdminController @Inject()(service: UserAdminService, passwordHasherRegistry: PasswordHasherRegistry, deadbolt: DeadboltActionsAdapter) extends Controller
   with SystemDatabaseErrorHandler with UpickleUtil {
 
-  def createOrUpdateUsers() = deadbolt.restrict(Roles.superuser)(upickleBodyParser[CreateOrUpdateUsersRequest]) {
+  def createOrUpdateUsers() = deadbolt.restrictAccess(Roles.superuser)(upickleBodyParser[CreateOrUpdateUsersRequest]) {
     request =>
       Future {
         val hasher = passwordHasherRegistry.current

@@ -18,27 +18,28 @@ limitations under the License.
 
 package security
 
-import be.objectify.deadbolt.scala.cache.HandlerCache
-import be.objectify.deadbolt.scala.DeadboltHandler
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.impl.authenticators.JWTAuthenticator
-import models.User
-import javax.inject.Inject
-import javax.inject.Singleton
-import be.objectify.deadbolt.scala.HandlerKey
+import javax.inject.{Inject, Singleton}
 
-case object DefaultHandler extends HandlerKey
+import be.objectify.deadbolt.scala.{DeadboltHandler, HandlerKey}
+import be.objectify.deadbolt.scala.cache.HandlerCache
+import com.google.inject.name.Named
+import com.mohiva.play.silhouette.api.Environment
+
+case object RefreshHandler extends HandlerKey
+
+case object AccessHandler extends HandlerKey
 
 @Singleton
-class DeadboltHandlerCacheImpl @Inject() (env: Environment[Intake24ApiEnv]) extends HandlerCache {
-    val defaultHandler: DeadboltHandler = new DeadboltHandlerImpl(env)
+class DeadboltHandlerCacheImpl @Inject()(@Named("refresh") refreshEnv: Environment[Intake24ApiEnv], @Named("access") accessEnv: Environment[Intake24ApiEnv]) extends HandlerCache {
+  val refreshHandler: DeadboltHandler = new DeadboltRefreshHandlerImpl(refreshEnv)
+  val accessHandler: DeadboltHandler = new DeadboltAccessHandlerImpl(accessEnv)
 
-    // HandlerKeys is an user-defined object, containing instances of a case class that extends HandlerKey  
-    val handlers: Map[Any, DeadboltHandler] = Map(DefaultHandler -> defaultHandler)
+  // HandlerKeys is an user-defined object, containing instances of a case class that extends HandlerKey
+  val handlers: Map[Any, DeadboltHandler] = Map(AccessHandler -> accessHandler, RefreshHandler -> refreshHandler)
 
-    // Get the default handler.
-    override def apply(): DeadboltHandler = defaultHandler
+  // Get the default handler.
+  override def apply(): DeadboltHandler = accessHandler
 
-    // Get a named handler
-    override def apply(handlerKey: HandlerKey): DeadboltHandler = handlers(handlerKey)
+  // Get a named handler
+  override def apply(handlerKey: HandlerKey): DeadboltHandler = handlers(handlerKey)
 }

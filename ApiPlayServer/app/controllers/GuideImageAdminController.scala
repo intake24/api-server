@@ -35,25 +35,25 @@ class GuideImageAdminController @Inject()(guideImageAdminService: GuideImageAdmi
 
   import ImageAdminService.WrapDatabaseError
 
-  def listGuideImages() = deadbolt.restrict(Roles.superuser) {
+  def listGuideImages() = deadbolt.restrictAccess(Roles.superuser) {
     Future {
       translateDatabaseResult(guideImageAdminService.listGuideImages())
     }
   }
 
-  def getGuideImage(id: String) = deadbolt.restrict(Roles.superuser) {
+  def getGuideImage(id: String) = deadbolt.restrictAccess(Roles.superuser) {
     Future {
       translateDatabaseResult(guideImageAdminService.getGuideImage(id))
     }
   }
 
-  def updateGuideSelectionImage(id: String, selectionImageId: Long) = deadbolt.restrict(Roles.superuser) {
+  def updateGuideSelectionImage(id: String, selectionImageId: Long) = deadbolt.restrictAccess(Roles.superuser) {
     Future {
       translateDatabaseResult(guideImageAdminService.updateGuideSelectionImage(id, selectionImageId))
     }
   }
 
-  def createGuideImage() = deadbolt.restrict(Roles.superuser)(upickleBodyParser[NewGuideImageRequest]) {
+  def createGuideImage() = deadbolt.restrictAccess(Roles.superuser)(upickleBodyParser[NewGuideImageRequest]) {
     request =>
       Future {
 

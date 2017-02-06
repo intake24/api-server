@@ -37,7 +37,7 @@ case class SupportUsersUpdateRequest(users: Seq[UserRef])
 class SurveyAdminController @Inject()(service: UserAdminService, passwordHasherRegistry: PasswordHasherRegistry, deadbolt: DeadboltActionsAdapter) extends Controller
   with SystemDatabaseErrorHandler with UpickleUtil {
 
-  def updateGlobalSupportUsers() = deadbolt.restrict(Roles.superuser)(upickleBodyParser[SupportUsersUpdateRequest]) {
+  def updateGlobalSupportUsers() = deadbolt.restrictAccess(Roles.superuser)(upickleBodyParser[SupportUsersUpdateRequest]) {
     request =>
       Future {
         ???

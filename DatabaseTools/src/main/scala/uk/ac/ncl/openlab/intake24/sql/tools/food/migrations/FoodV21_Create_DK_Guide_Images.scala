@@ -118,15 +118,15 @@ object FoodV21_Create_DK_Guide_Images extends App with MigrationRunner with Warn
 
   val result = for (
     authToken <- signinClient.signin(Credentials("", apiConfig.userName, apiConfig.password)).right;
-    existingImageMaps <- imageMapAdminClient.listImageMaps(authToken.token).right;
-    existingGuideImages <- guideImageAdminClient.listGuideImages(authToken.token).right;
+    existingImageMaps <- imageMapAdminClient.listImageMaps(authToken.refreshToken).right;
+    existingGuideImages <- guideImageAdminClient.listGuideImages(authToken.refreshToken).right;
 
     _ <- sequence(imageMapParams.filterNot(params => existingImageMaps.exists(_.id == params.request.id)).map {
       params =>
-        imageMapAdminClient.createImageMap(authToken.token, Paths.get(options.baseDir() + "/" + params.baseImagePath),
+        imageMapAdminClient.createImageMap(authToken.refreshToken, Paths.get(options.baseDir() + "/" + params.baseImagePath),
           Paths.get(options.baseDir() + "/" + params.svgPath), params.keywords, params.request)
     }).right;
-    _ <- sequence(guideImageRequests.filterNot(req => existingGuideImages.exists(_.id == req.id)).map(guideImageAdminClient.createGuideImage(authToken.token, _))).right)
+    _ <- sequence(guideImageRequests.filterNot(req => existingGuideImages.exists(_.id == req.id)).map(guideImageAdminClient.createGuideImage(authToken.refreshToken, _))).right)
     yield ()
 
   checkApiError(result)

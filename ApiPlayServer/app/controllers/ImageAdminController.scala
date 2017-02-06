@@ -62,15 +62,15 @@ class ImageAdminController @Inject()(service: ImageAdminService, databaseService
     }
   }
 
-  def uploadSourceImage() = deadbolt.restrict(Roles.superuser) {
+  def uploadSourceImage() = deadbolt.restrictAccess(Roles.superuser) {
     request => uploadImpl(None, request)
   }
 
-  def uploadSourceImageForAsServed(setId: String) = deadbolt.restrict(Roles.superuser) {
+  def uploadSourceImageForAsServed(setId: String) = deadbolt.restrictAccess(Roles.superuser) {
     request => uploadImpl(Some(originalPath => ImageAdminService.getSourcePathForAsServed(setId, originalPath)), request)
   }
 
-  def uploadSourceImageForImageMap(id: String) = deadbolt.restrict(Roles.superuser) {
+  def uploadSourceImageForImageMap(id: String) = deadbolt.restrictAccess(Roles.superuser) {
     request => uploadImpl(Some(originalPath => ImageAdminService.getSourcePathForImageMap(id, originalPath)), request)
   }
 
@@ -79,7 +79,7 @@ class ImageAdminController @Inject()(service: ImageAdminService, databaseService
       ClientSourceImageRecord(record.id, storageService.getUrl(record.path), storageService.getUrl(record.thumbnailPath), record.keywords, record.uploader, record.uploadedAt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
   }
 
-  def listSourceImages(offset: Int, limit: Int, searchTerm: Option[String]) = deadbolt.restrict(Roles.superuser) {
+  def listSourceImages(offset: Int, limit: Int, searchTerm: Option[String]) = deadbolt.restrictAccess(Roles.superuser) {
     request =>
       Future {
         val resolvedRecords = databaseService.listSourceImageRecords(offset, Math.max(Math.min(limit, 100), 0), searchTerm).right.map(toClientRecords)
@@ -88,21 +88,21 @@ class ImageAdminController @Inject()(service: ImageAdminService, databaseService
       }
   }
 
-  def updateSourceImage(id: Int) = deadbolt.restrict(Roles.superuser)(upickleBodyParser[SourceImageRecordUpdate]) {
+  def updateSourceImage(id: Int) = deadbolt.restrictAccess(Roles.superuser)(upickleBodyParser[SourceImageRecordUpdate]) {
     request =>
       Future {
         translateDatabaseResult(databaseService.updateSourceImageRecord(id, request.body))
       }
   }
 
-  def deleteSourceImages() = deadbolt.restrict(Roles.superuser)(upickleBodyParser[Seq[Long]]) {
+  def deleteSourceImages() = deadbolt.restrictAccess(Roles.superuser)(upickleBodyParser[Seq[Long]]) {
     request =>
       Future {
         translateImageServiceAndDatabaseResult(service.deleteSourceImages(request.body))
       }
   }
 
-  def processForSelectionScreen(pathPrefix: String, sourceId: Long) = deadbolt.restrict(Roles.superuser) {
+  def processForSelectionScreen(pathPrefix: String, sourceId: Long) = deadbolt.restrictAccess(Roles.superuser) {
     _ =>
       Future {
         translateImageServiceAndDatabaseResult(service.processForSelectionScreen(pathPrefix, sourceId))
