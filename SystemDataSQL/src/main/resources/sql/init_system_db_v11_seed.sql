@@ -1,9 +1,9 @@
---
--- PostgreSQL database dump
---
 
--- Dumped from database version 9.5.4
--- Dumped by pg_dump version 9.5.4
+
+
+
+
+
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -15,9 +15,9 @@ SET row_security = off;
 
 SET search_path = public, pg_catalog;
 
---
--- Data for Name: locales; Type: TABLE DATA; Schema: public; Owner: postgres
---
+
+
+
 
 INSERT INTO locales VALUES ('en_GB', 'English (United Kingdom)', 'English (United Kingdom)', 'en_GB', 'en', 'gb', NULL);
 INSERT INTO locales VALUES ('da_DK', 'Danish (Denmark)', 'Dansk (Danmark)', 'da', 'da', 'dk', 'en_GB');
@@ -25,9 +25,9 @@ INSERT INTO locales VALUES ('pt_PT', 'Portuguese (Portugal)', 'Português (Portu
 INSERT INTO locales VALUES ('en_NZ', 'English (New Zealand)', 'English (New Zealand)', 'en_NZ', 'en', 'nz', 'en_GB');
 
 
---
--- Data for Name: nutrient_units; Type: TABLE DATA; Schema: public; Owner: postgres
---
+
+
+
 
 INSERT INTO nutrient_units VALUES (1, 'Gram', 'g');
 INSERT INTO nutrient_units VALUES (2, 'Milligram', 'mg');
@@ -36,9 +36,9 @@ INSERT INTO nutrient_units VALUES (4, 'Kilocalorie', 'kcal');
 INSERT INTO nutrient_units VALUES (5, 'Kilojoule', 'kJ');
 
 
---
--- Data for Name: nutrient_types; Type: TABLE DATA; Schema: public; Owner: postgres
---
+
+
+
 
 INSERT INTO nutrient_types VALUES (1, 'Energy (kcal)', 4);
 INSERT INTO nutrient_types VALUES (2, 'Energy (kJ)', 5);
@@ -269,14 +269,14 @@ INSERT INTO nutrient_types VALUES (226, 'Proline', 1);
 INSERT INTO nutrient_types VALUES (227, 'Serin', 1);
 
 
---
--- Data for Name: schema_version; Type: TABLE DATA; Schema: public; Owner: postgres
---
+
+
+
 
 INSERT INTO schema_version VALUES (11);
 
 
---
--- PostgreSQL database dump complete
---
+
+
+
 

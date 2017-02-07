@@ -55,9 +55,9 @@ object Init extends DatabaseConnection with SqlFileUtil {
 
     implicit val connection = ds.getConnection
 
-    val initDbStatements = separateSqlStatements(stripComments(scala.io.Source.fromInputStream(getClass.getResourceAsStream("/sql/init_foods_db_v11.sql"), "utf-8").mkString))
+    val initDbStatements = separateSqlStatements(stripComments(scala.io.Source.fromInputStream(getClass.getResourceAsStream("/sql/init_system_db_v11.sql"), "utf-8").mkString))
 
-    val seedDbStatements = separateSqlStatements(stripComments(scala.io.Source.fromInputStream(getClass.getResourceAsStream("/sql/init_foods_db_v11_seed.sql"), "utf-8").mkString))
+    val seedDbStatements = separateSqlStatements(stripComments(scala.io.Source.fromInputStream(getClass.getResourceAsStream("/sql/init_system_db_v11_seed.sql"), "utf-8").mkString))
 
     logger.info("Dropping all tables and sequences")
 
