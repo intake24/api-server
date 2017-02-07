@@ -18,37 +18,16 @@ limitations under the License.
 
 package security
 
+import be.objectify.deadbolt.scala.AuthenticatedRequest
 import be.objectify.deadbolt.scala.models.Subject
-import be.objectify.deadbolt.scala.{AuthenticatedRequest, DeadboltHandler, DynamicResourceHandler}
 import com.mohiva.play.silhouette.api.Environment
-import play.api.mvc.{Request, Result, Results}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-
-class DeadboltAccessHandlerImpl(val env: Environment[Intake24ApiEnv]) extends DeadboltHandler with JWTHandlerUtil {
-
-  def beforeAuthCheck[A](request: Request[A]) = Future(None)
-
-  override def getDynamicResourceHandler[A](request: Request[A]): Future[Option[DynamicResourceHandler]] = Future(None)
+class DeadboltAccessHandlerImpl(val env: Environment[Intake24ApiEnv]) extends AbstractDeadboltHandler {
 
   override def getSubject[A](request: AuthenticatedRequest[A]): Future[Option[Subject]] = {
-    env.authenticatorService.retrieve(request).map {
-      jwtAuth =>
-        getSubjectFromJWT(jwtAuth) match {
-          case Some(AccessToken(userInfo)) => Some(userInfo)
-          case _ => None
-        }
-    }
+    env.authenticatorService.retrieve(request).map(getAccessSubjectFromJWT)
   }
-
-  def onAuthFailure[A](request: AuthenticatedRequest[A]): Future[Result] =
-    getSubject(request).map {
-      subj =>
-        if (subj.isDefined)
-          Results.Forbidden
-        else
-          Results.Unauthorized.withHeaders(("WWW-Authenticate", "X-Auth-Token"))
-    }
 }
