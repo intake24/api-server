@@ -25,6 +25,7 @@ import uk.ac.ncl.openlab.intake24.datastoresql.DataStoreSqlImpl
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.SecureUserRecord
 import uk.ac.ncl.openlab.intake24.sql.SqlFileUtil
 import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConfiguration, DatabaseConnection, DatabaseOptions, WarningMessage}
+import uk.ac.ncl.openlab.intake24.systemsql.admin.UserAdminImpl
 
 trait InitOptions extends ScallopConf {
   version("Intake24 SQL system database init tool 2.0.0-SNAPSHOT")
@@ -80,12 +81,14 @@ object Init extends DatabaseConnection with SqlFileUtil {
     connection.close()
 
     if (createAdmin) {
-      val sqlDataStore = new DataStoreSqlImpl(ds)
+      val userAdminService = new UserAdminImpl(ds)
 
       logger.info("Creating the default admin user")
 
-      // admin/intake24
-      sqlDataStore.addUser("", SecureUserRecord("admin", "7klnEraBssvRBTnFR5FbIJ/5Qjqgf8w3/7Rs4gBoFBY=", "hUkIQLASWraVS4JDPOr8tA==", "shiro-sha256", Some("Intake24 Super User"), Some("support@intake24.co.uk"), None, Set("superuser", "admin"), Set(), Map()))
+      userAdminService.createUser("", SecureUserRecord("admin", "7klnEraBssvRBTnFR5FbIJ/5Qjqgf8w3/7Rs4gBoFBY=", "hUkIQLASWraVS4JDPOr8tA==", "shiro-sha256", Some("Intake24 Super User"), Some("support@intake24.co.uk"), None, Set("superuser", "admin"), Set(), Map())) match {
+        case Left(e) => e.exception.printStackTrace()
+        case _ => Right(())
+      }
     }
   }
 }
