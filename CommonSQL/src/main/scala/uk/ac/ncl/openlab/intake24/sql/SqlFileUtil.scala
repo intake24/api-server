@@ -4,7 +4,7 @@ trait SqlFileUtil {
 
   def separateSqlStatements(sql: String) =
     // Regex matches on semicolons that neither precede nor follow other semicolons
-    sql.split("(?<!;);(?!;)").map(_.trim.replace(";;", ";")).filterNot(_.isEmpty)
+    sql.split("(?<!;);(?!;)").map(_.trim.replace(";;", ";")).filterNot(s => s.isEmpty || s.startsWith("--"))
 
   def stripComments(s: String) = """(?m)/\*(\*(?!/)|[^*])*\*/""".r.replaceAllIn(s, "")
 
