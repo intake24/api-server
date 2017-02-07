@@ -38,4 +38,5 @@ Webapp/www-test
 Webapp/war
 
 ApiPlayServer/conf/production.conf
+ApiPlayServer/conf/application.conf
 
