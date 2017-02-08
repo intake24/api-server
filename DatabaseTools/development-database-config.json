@@ -1,0 +1,7 @@
+{
+  "host" : "localhost",
+  "database" : "intake24_system_development",
+  "user" : "postgres",
+  "password" : ["123456"],
+  "useSsl" : false
+}
