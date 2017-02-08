@@ -10,19 +10,19 @@ case class UserRef(surveyId: String, userId: String)
 
 trait UserAdminService {
 
-  def getCustomUserData(surveyId: String, userId: String): Either[LookupError, Map[String, String]]
+  def getCustomUserData(surveyId: Option[String], userId: String): Either[LookupError, Map[String, String]]
 
-  def updateCustomUserData(surveyId: String, userId: String, userData: Map[String, String]): Either[ParentError, Unit]
+  def updateCustomUserData(surveyId: Option[String], userId: String, userData: Map[String, String]): Either[ParentError, Unit]
 
-  def createOrUpdateUsers(surveyId: String, userRecords: Seq[SecureUserRecord]): Either[DependentUpdateError, Unit]
+  def createOrUpdateUsers(surveyId: Option[String], userRecords: Seq[SecureUserRecord]): Either[DependentUpdateError, Unit]
 
-  def createUser(surveyId: String, userRecord: SecureUserRecord): Either[DependentCreateError, Unit]
+  def createUser(surveyId: Option[String], userRecord: SecureUserRecord): Either[DependentCreateError, Unit]
 
   def getAllUsersInSurvey(surveyId: String): Either[LookupError, Seq[SecureUserRecord]]
 
-  def getUserById(surveyId: String, name: String): Either[LookupError, SecureUserRecord]
+  def getUserById(surveyId: Option[String], name: String): Either[LookupError, SecureUserRecord]
 
-  def getUsersByRole(surveyId: String, role: String): Either[LookupError, Seq[SecureUserRecord]]
+  def getUsersByRole(surveyId: Option[String], role: String): Either[LookupError, Seq[SecureUserRecord]]
 
 /*  def updateGlobalSupportUsers(supportUsers: Seq[UserRef]): Either[ParentError, Unit]
 

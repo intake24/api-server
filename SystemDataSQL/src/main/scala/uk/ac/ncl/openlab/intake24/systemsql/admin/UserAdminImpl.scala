@@ -25,16 +25,16 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.errors.UpdateError
 
 class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends UserAdminService with SystemSqlService with SqlResourceLoader {
 
-  private def updateUserRolesQuery(surveyId: String, roles: Map[String, Set[String]])(implicit connection: Connection): Either[ParentError, Unit] = {
+  private def updateUserRolesQuery(surveyId: Option[String], roles: Map[String, Set[String]])(implicit connection: Connection): Either[ParentError, Unit] = {
     SQL("DELETE FROM user_roles WHERE survey_id={survey_id} AND user_id IN ({user_ids})")
-      .on('survey_id -> surveyId, 'user_ids -> roles.keySet.toSeq)
+      .on('survey_id -> surveyId.getOrElse(""), 'user_ids -> roles.keySet.toSeq)
       .execute()
 
     val roleParams = roles.toSeq.flatMap {
       case (userName, roles) =>
         roles.map {
           role =>
-            Seq[NamedParameter]('survey_id -> surveyId, 'user_id -> userName, 'role -> role)
+            Seq[NamedParameter]('survey_id -> surveyId.getOrElse(""), 'user_id -> userName, 'role -> role)
         }
     }
 
@@ -47,16 +47,16 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       Right(())
   }
 
-  private def updateUserPermissionsQuery(surveyId: String, permissions: Map[String, Set[String]])(implicit connection: Connection): Either[ParentError, Unit] = {
+  private def updateUserPermissionsQuery(surveyId: Option[String], permissions: Map[String, Set[String]])(implicit connection: Connection): Either[ParentError, Unit] = {
     SQL("DELETE FROM user_permissions WHERE survey_id={survey_id} AND user_id IN ({user_ids})")
-      .on('survey_id -> surveyId, 'user_ids -> permissions.keySet.toSeq)
+      .on('survey_id -> surveyId.getOrElse(""), 'user_ids -> permissions.keySet.toSeq)
       .execute()
 
     val permissionParams = permissions.toSeq.flatMap {
       case (userName, permissions) =>
         permissions.map {
           permission =>
-            Seq[NamedParameter]('survey_id -> surveyId, 'user_id -> userName, 'permission -> permission)
+            Seq[NamedParameter]('survey_id -> surveyId.getOrElse(""), 'user_id -> userName, 'permission -> permission)
         }
     }
 
@@ -69,15 +69,15 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       Right(())
   }
 
-  private def updateUserCustomDataQuery(surveyId: String, customData: Map[String, Map[String, String]])(implicit connection: Connection): Either[ParentError, Unit] = {
+  private def updateUserCustomDataQuery(surveyId: Option[String], customData: Map[String, Map[String, String]])(implicit connection: Connection): Either[ParentError, Unit] = {
     SQL("DELETE FROM user_custom_fields WHERE survey_id={survey_id} AND user_id IN ({user_ids})")
-      .on('survey_id -> surveyId, 'user_ids -> customData.keySet.toSeq)
+      .on('survey_id -> surveyId.getOrElse(""), 'user_ids -> customData.keySet.toSeq)
       .execute()
 
     val userCustomFieldParams = customData.toSeq.flatMap {
       case (userName, data) =>
         data.map {
-          case (name, value) => Seq[NamedParameter]('survey_id -> surveyId, 'user_id -> userName, 'name -> name, 'value -> value)
+          case (name, value) => Seq[NamedParameter]('survey_id -> surveyId.getOrElse(""), 'user_id -> userName, 'name -> name, 'value -> value)
         }
     }
 
@@ -90,12 +90,12 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       Right(())
   }
 
-  def createOrUpdateUsers(surveyId: String, userRecords: Seq[SecureUserRecord]): Either[DependentUpdateError, Unit] = tryWithConnection {
+  def createOrUpdateUsers(surveyId: Option[String], userRecords: Seq[SecureUserRecord]): Either[DependentUpdateError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
         val userParams = userRecords.map {
           record =>
-            Seq[NamedParameter]('id -> record.username, 'survey_id -> surveyId, 'password_hash -> record.passwordHashBase64, 'password_salt -> record.passwordSaltBase64,
+            Seq[NamedParameter]('id -> record.username, 'survey_id -> surveyId.getOrElse(""), 'password_hash -> record.passwordHashBase64, 'password_salt -> record.passwordSaltBase64,
               'password_hasher -> record.passwordHasher, 'name -> record.name, 'email -> record.email, 'phone -> record.phone)
         }
 
@@ -120,14 +120,14 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       }
   }
 
-  def createUser(surveyId: String, userRecord: SecureUserRecord): Either[DependentCreateError, Unit] = tryWithConnection {
+  def createUser(surveyId: Option[String], userRecord: SecureUserRecord): Either[DependentCreateError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
         tryWithConstraintCheck[DependentCreateError, Unit]("users_id_pk", e => DuplicateCode(new RuntimeException(s"User name ${userRecord.username} already exists for survey $surveyId"))) {
           SQL("INSERT INTO users VALUES ({id}, {survey_id}, {password_hash}, {password_salt}, {password_hasher}, {name}, {email}, {phone})")
             .on(
               'id -> userRecord.username,
-              'survey_id -> surveyId,
+              'survey_id -> surveyId.getOrElse(""),
               'password_hash -> userRecord.passwordHashBase64,
               'password_salt -> userRecord.passwordSaltBase64,
               'password_hasher -> userRecord.passwordHasher,
@@ -146,12 +146,12 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
 
   private case class UserDataRow(name: String, value: String)
 
-  def getCustomUserData(surveyId: String, userId: String): Either[LookupError, Map[String, String]] = tryWithConnection {
+  def getCustomUserData(surveyId: Option[String], userId: String): Either[LookupError, Map[String, String]] = tryWithConnection {
     implicit conn =>
 
       withTransaction {
-        val surveyExists = SQL("SELECT 1 FROM surveys WHERE id={survey_id}").on('survey_id -> surveyId).executeQuery().as(SqlParser.long(1).singleOpt).nonEmpty
-        val userExists = SQL("SELECT 1 FROM users WHERE id={user_id} AND survey_id={survey_id}").on('user_id -> userId, 'survey_id -> surveyId).executeQuery().as(SqlParser.long(1).singleOpt).nonEmpty
+        val surveyExists = SQL("SELECT 1 FROM surveys WHERE id={survey_id}").on('survey_id -> surveyId.getOrElse("")).executeQuery().as(SqlParser.long(1).singleOpt).nonEmpty
+        val userExists = SQL("SELECT 1 FROM users WHERE id={user_id} AND survey_id={survey_id}").on('user_id -> userId, 'survey_id -> surveyId.getOrElse("")).executeQuery().as(SqlParser.long(1).singleOpt).nonEmpty
 
         if (!surveyExists)
           Left(RecordNotFound(new RuntimeException(s"Survey $surveyId does not exist")))
@@ -160,18 +160,18 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
         else {
 
           val result = SQL("SELECT name, value FROM user_custom_fields WHERE (user_id={user_id} AND survey_id={survey_id})")
-            .on('survey_id -> surveyId, 'user_id -> userId)
+            .on('survey_id -> surveyId.getOrElse(""), 'user_id -> userId)
             .executeQuery().as(Macro.namedParser[UserDataRow].*).map(row => (row.name, row.value)).toMap
           Right(result)
         }
       }
   }
 
-  def updateCustomUserData(surveyId: String, userId: String, data: Map[String, String]): Either[ParentError, Unit] = tryWithConnection {
+  def updateCustomUserData(surveyId: Option[String], userId: String, data: Map[String, String]): Either[ParentError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
-        val surveyExists = SQL("SELECT 1 FROM surveys WHERE id={survey_id}").on('survey_id -> surveyId).executeQuery().as(SqlParser.long(1).singleOpt).nonEmpty
-        val userExists = SQL("SELECT 1 FROM users WHERE id={user_id} AND survey_id={survey_id}").on('user_id -> userId, 'survey_id -> surveyId).executeQuery().as(SqlParser.long(1).singleOpt).nonEmpty
+        val surveyExists = SQL("SELECT 1 FROM surveys WHERE id={survey_id}").on('survey_id -> surveyId.getOrElse("")).executeQuery().as(SqlParser.long(1).singleOpt).nonEmpty
+        val userExists = SQL("SELECT 1 FROM users WHERE id={user_id} AND survey_id={survey_id}").on('user_id -> userId, 'survey_id -> surveyId.getOrElse("")).executeQuery().as(SqlParser.long(1).singleOpt).nonEmpty
 
         if (!surveyExists)
           Left(ParentRecordNotFound(new RuntimeException(s"Survey $surveyId does not exist")))
@@ -185,11 +185,11 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
 
   private case class ShortUserRecordRow(password_hash: String, password_salt: String, password_hasher: String, name: Option[String], email: Option[String], phone: Option[String])
 
-  def getUserById(surveyId: String, userId: String): Either[LookupError, SecureUserRecord] = tryWithConnection {
+  def getUserById(surveyId: Option[String], userId: String): Either[LookupError, SecureUserRecord] = tryWithConnection {
     implicit conn =>
       withTransaction {
         SQL("SELECT password_hash, password_salt, password_hasher, name, email, phone FROM users WHERE (survey_id={survey_id} AND id={user_id})")
-          .on('survey_id -> surveyId, 'user_id -> userId).executeQuery()
+          .on('survey_id -> surveyId.getOrElse(""), 'user_id -> userId).executeQuery()
           .as(Macro.namedParser[ShortUserRecordRow].singleOpt) match {
           case Some(row) =>
             val roles = SQL("SELECT role FROM user_roles WHERE (survey_id={survey_id} AND user_id={user_id})").on('survey_id -> surveyId, 'user_id -> userId).as(SqlParser.str("role").*)
@@ -244,20 +244,20 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
 
   lazy val getCustomFieldsByRole = sqlFromResource("admin/get_custom_fields_by_role.sql")
 
-  def getUsersByRole(surveyId: String, role: String): Either[LookupError, Seq[SecureUserRecord]] = tryWithConnection {
+  def getUsersByRole(surveyId: Option[String], role: String): Either[LookupError, Seq[SecureUserRecord]] = tryWithConnection {
     implicit conn =>
       withTransaction {
         val surveyExists = SQL("SELECT 1 FROM surveys WHERE id={survey_id}").on('survey_id -> surveyId).executeQuery().as(SqlParser.long(1).singleOpt).nonEmpty
 
         if (surveyExists) {
 
-          val userRows = SQL(getUsersByRoleQuery).on('survey_id -> surveyId, 'role -> role).executeQuery().as(Macro.namedParser[UserRecordRow].*)
+          val userRows = SQL(getUsersByRoleQuery).on('survey_id -> surveyId.getOrElse(""), 'role -> role).executeQuery().as(Macro.namedParser[UserRecordRow].*)
 
-          val roleRows = SQL(getRolesByRoleQuery).on('survey_id -> surveyId, 'role -> role).executeQuery().as(Macro.namedParser[RoleRecordRow].*)
+          val roleRows = SQL(getRolesByRoleQuery).on('survey_id -> surveyId.getOrElse(""), 'role -> role).executeQuery().as(Macro.namedParser[RoleRecordRow].*)
 
-          val permRows = SQL(getPermissionsByRoleQuery).on('survey_id -> surveyId, 'role -> role).executeQuery().as(Macro.namedParser[PermissionRecordRow].*)
+          val permRows = SQL(getPermissionsByRoleQuery).on('survey_id -> surveyId.getOrElse(""), 'role -> role).executeQuery().as(Macro.namedParser[PermissionRecordRow].*)
 
-          val customFieldRows = SQL(getCustomFieldsByRole).on('survey_id -> surveyId, 'role -> role).executeQuery().as(Macro.namedParser[CustomFieldRecordRow].*)
+          val customFieldRows = SQL(getCustomFieldsByRole).on('survey_id -> surveyId.getOrElse(""), 'role -> role).executeQuery().as(Macro.namedParser[CustomFieldRecordRow].*)
 
           Right(buildUserRecords(userRows, roleRows, permRows, customFieldRows))
         } else
@@ -265,19 +265,19 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       }
   }
 
-  def getAllUsersInSurvey(surveyId: String): Either[LookupError, Seq[SecureUserRecord]] = tryWithConnection {
+  def getAllUsersInSurvey(surveyId: Option[String]): Either[LookupError, Seq[SecureUserRecord]] = tryWithConnection {
     implicit conn =>
       withTransaction {
-        val surveyExists = SQL("SELECT 1 FROM surveys WHERE id={survey_id}").on('survey_id -> surveyId).executeQuery().as(SqlParser.long(1).singleOpt).nonEmpty
+        val surveyExists = SQL("SELECT 1 FROM surveys WHERE id={survey_id}").on('survey_id -> surveyId.getOrElse("")).executeQuery().as(SqlParser.long(1).singleOpt).nonEmpty
 
         if (surveyExists) {
-          val userRows = SQL("SELECT id as user_id, survey_id, password_hash, password_salt, password_hasher FROM users WHERE survey_id = {survey_id} ORDER BY (survey_id, id)").on('surveyId -> surveyId).executeQuery().as(Macro.namedParser[UserRecordRow].*)
+          val userRows = SQL("SELECT id as user_id, survey_id, password_hash, password_salt, password_hasher FROM users WHERE survey_id = {survey_id} ORDER BY (survey_id, id)").on('surveyId -> surveyId.getOrElse("")).executeQuery().as(Macro.namedParser[UserRecordRow].*)
 
-          val roleRows = SQL("SELECT survey_id, user_id, role FROM user_roles WHERE survey_id = {survey_id} ORDER BY (survey_id, user_id)").on('survey_id -> surveyId).executeQuery().as(Macro.namedParser[RoleRecordRow].*)
+          val roleRows = SQL("SELECT survey_id, user_id, role FROM user_roles WHERE survey_id = {survey_id} ORDER BY (survey_id, user_id)").on('survey_id -> surveyId.getOrElse("")).executeQuery().as(Macro.namedParser[RoleRecordRow].*)
 
-          val permRows = SQL("SELECT survey_id, user_id, permission FROM user_permissions WHERE survey_id = {survey_id} ORDER BY (survey_id, user_id)").on('survey_id -> surveyId).executeQuery().as(Macro.namedParser[PermissionRecordRow].*)
+          val permRows = SQL("SELECT survey_id, user_id, permission FROM user_permissions WHERE survey_id = {survey_id} ORDER BY (survey_id, user_id)").on('survey_id -> surveyId.getOrElse("")).executeQuery().as(Macro.namedParser[PermissionRecordRow].*)
 
-          val customFieldRows = SQL("SELECT survey_id, user_id, name, value FROM user_custom_fields WHERE survey_id = {survey_id} ORDER BY (survey_id, user_id)").on('survey_id -> surveyId).executeQuery().as(Macro.namedParser[CustomFieldRecordRow].*)
+          val customFieldRows = SQL("SELECT survey_id, user_id, name, value FROM user_custom_fields WHERE survey_id = {survey_id} ORDER BY (survey_id, user_id)").on('survey_id -> surveyId.getOrElse("")).executeQuery().as(Macro.namedParser[CustomFieldRecordRow].*)
 
           Right(buildUserRecords(userRows, roleRows, permRows, customFieldRows))
         } else
