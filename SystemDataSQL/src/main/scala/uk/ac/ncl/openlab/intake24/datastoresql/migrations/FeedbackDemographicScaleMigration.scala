@@ -59,7 +59,7 @@ object FeedbackDemographicScaleMigration extends Migration {
          |    sentiment sentiment_enum NOT NULL DEFAULT 'neutral',
          |    range numrange NOT NULL,
          |    CONSTRAINT demographic_scale_sector_demographic_scale_fk FOREIGN KEY(demographic_scale_id)
-         |        REFERENCES demographic_scale(id),
+         |        REFERENCES demographic_scale(id) ON UPDATE CASCADE ON DELETE CASCADE,
          |    CONSTRAINT demographic_scale_sector_no_overlap EXCLUDE USING gist (demographic_scale_id WITH =, range WITH &&)
          |);
          |
@@ -75,12 +75,12 @@ object FeedbackDemographicScaleMigration extends Migration {
   def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
 
     val sqlQuery =
-      """|DROP EXTENSION btree_gist;
-         |DROP TABLE demographic_scale_sector;
+      """|DROP TABLE demographic_scale_sector;
          |DROP TABLE demographic_scale;
          |DROP TABLE level_of_physical_activity;
          |DROP TYPE sentiment_enum;
          |DROP TYPE sex_enum;
+         |DROP EXTENSION btree_gist;
       """.stripMargin
 
     SQL(sqlQuery).execute()
