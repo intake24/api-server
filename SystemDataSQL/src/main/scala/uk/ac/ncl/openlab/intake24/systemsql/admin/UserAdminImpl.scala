@@ -265,19 +265,19 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       }
   }
 
-  def getAllUsersInSurvey(surveyId: Option[String]): Either[LookupError, Seq[SecureUserRecord]] = tryWithConnection {
+  def getAllUsersInSurvey(surveyId: String): Either[LookupError, Seq[SecureUserRecord]] = tryWithConnection {
     implicit conn =>
       withTransaction {
-        val surveyExists = SQL("SELECT 1 FROM surveys WHERE id={survey_id}").on('survey_id -> surveyId.getOrElse("")).executeQuery().as(SqlParser.long(1).singleOpt).nonEmpty
+        val surveyExists = SQL("SELECT 1 FROM surveys WHERE id={survey_id}").on('survey_id -> surveyId).executeQuery().as(SqlParser.long(1).singleOpt).nonEmpty
 
         if (surveyExists) {
-          val userRows = SQL("SELECT id as user_id, survey_id, password_hash, password_salt, password_hasher FROM users WHERE survey_id = {survey_id} ORDER BY (survey_id, id)").on('surveyId -> surveyId.getOrElse("")).executeQuery().as(Macro.namedParser[UserRecordRow].*)
+          val userRows = SQL("SELECT id as user_id, survey_id, password_hash, password_salt, password_hasher FROM users WHERE survey_id = {survey_id} ORDER BY (survey_id, id)").on('surveyId -> surveyId).executeQuery().as(Macro.namedParser[UserRecordRow].*)
 
-          val roleRows = SQL("SELECT survey_id, user_id, role FROM user_roles WHERE survey_id = {survey_id} ORDER BY (survey_id, user_id)").on('survey_id -> surveyId.getOrElse("")).executeQuery().as(Macro.namedParser[RoleRecordRow].*)
+          val roleRows = SQL("SELECT survey_id, user_id, role FROM user_roles WHERE survey_id = {survey_id} ORDER BY (survey_id, user_id)").on('survey_id -> surveyId).executeQuery().as(Macro.namedParser[RoleRecordRow].*)
 
-          val permRows = SQL("SELECT survey_id, user_id, permission FROM user_permissions WHERE survey_id = {survey_id} ORDER BY (survey_id, user_id)").on('survey_id -> surveyId.getOrElse("")).executeQuery().as(Macro.namedParser[PermissionRecordRow].*)
+          val permRows = SQL("SELECT survey_id, user_id, permission FROM user_permissions WHERE survey_id = {survey_id} ORDER BY (survey_id, user_id)").on('survey_id -> surveyId).executeQuery().as(Macro.namedParser[PermissionRecordRow].*)
 
-          val customFieldRows = SQL("SELECT survey_id, user_id, name, value FROM user_custom_fields WHERE survey_id = {survey_id} ORDER BY (survey_id, user_id)").on('survey_id -> surveyId.getOrElse("")).executeQuery().as(Macro.namedParser[CustomFieldRecordRow].*)
+          val customFieldRows = SQL("SELECT survey_id, user_id, name, value FROM user_custom_fields WHERE survey_id = {survey_id} ORDER BY (survey_id, user_id)").on('survey_id -> surveyId).executeQuery().as(Macro.namedParser[CustomFieldRecordRow].*)
 
           Right(buildUserRecords(userRows, roleRows, permRows, customFieldRows))
         } else

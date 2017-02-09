@@ -35,22 +35,14 @@ import upickle.default._
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
 
-case class UserRecord(userName: String, password: String, name: Option[String], email: Option[String], phone: Option[String], customFields: Map[String, String], roles: Set[String], permissions: Set[String])
+case class UserRecordWithPermissions(userName: String, password: String, name: Option[String], email: Option[String], phone: Option[String], customFields: Map[String, String], roles: Set[String], permissions: Set[String])
 
-case class CreateOrUpdateGlobalUsersRequest(userRecords: Seq[UserRecord])
+case class CreateOrUpdateGlobalUsersRequest(userRecords: Seq[UserRecordWithPermissions])
 
-case class ShortUserRecord(userName: String, password: String, name: Option[String], email: Option[String], phone: Option[String], customFields: Map[String, String])
+case class UserRecord(userName: String, password: String, name: Option[String], email: Option[String], phone: Option[String], customFields: Map[String, String])
 
 class UserAdminController @Inject()(service: UserAdminService, passwordHasherRegistry: PasswordHasherRegistry, deadbolt: DeadboltActionsAdapter) extends Controller
   with SystemDatabaseErrorHandler with UpickleUtil {
-
-  private def jopt2option[T](option: org.workcraft.gwt.shared.client.Option[T]) = if (option.isEmpty()) None else Some(option.getOrDie)
-
-  private def fromJavaUserRecords(records: java.util.List[net.scran24.datastore.shared.UserRecord]): Seq[ShortUserRecord] =
-    records.asScala.toList.map {
-      record =>
-        ShortUserRecord(record.username, record.password, jopt2option(record.name), jopt2option(record.email), jopt2option(record.phone), record.customFields.asScala.toMap)
-    }
 
   def createOrUpdateGlobalUsers() = deadbolt.restrictAccess(Roles.superuser)(upickleBodyParser[CreateOrUpdateGlobalUsersRequest]) {
     request =>
@@ -66,6 +58,8 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
         translateDatabaseResult(service.createOrUpdateUsers(None, secureUserRecords))
       }
   }
+
+
 
   /*def uploadUsersCSV() = deadbolt.restrictAccess(Roles.superuser)(BodyParsers.parse.multipartFormData) {
     request =>

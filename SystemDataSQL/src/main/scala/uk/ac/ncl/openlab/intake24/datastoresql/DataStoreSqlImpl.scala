@@ -46,17 +46,17 @@ class DataStoreSqlImpl @Inject() (@Named("intake24_system") dataSource: DataSour
 
   val userAdminImpl = new UserAdminImpl(dataSource)
 
-  def setUserData(survey_id: String, user_id: String, userData: Map[String, String]) = userAdminImpl.updateCustomUserData(survey_id, user_id, userData).right.get
+  def setUserData(survey_id: String, user_id: String, userData: Map[String, String]) = userAdminImpl.updateCustomUserData(Some(survey_id), user_id, userData).right.get
 
-  def getUserData(survey_id: String, user_id: String): Map[String, String] = userAdminImpl.getCustomUserData(survey_id, user_id).right.get
+  def getUserData(survey_id: String, user_id: String): Map[String, String] = userAdminImpl.getCustomUserData(Some(survey_id), user_id).right.get
 
-  def saveUsers(survey_id: String, users: Seq[SecureUserRecord]) = userAdminImpl.createOrUpdateUsers(survey_id, users).right.get
+  def saveUsers(survey_id: String, users: Seq[SecureUserRecord]) = userAdminImpl.createOrUpdateUsers(Some(survey_id), users).right.get
 
-  def addUser(survey_id: String, user: SecureUserRecord) = userAdminImpl.createUser(survey_id, user).right.get
+  def addUser(survey_id: String, user: SecureUserRecord) = userAdminImpl.createUser(Some(survey_id), user).right.get
 
-  def getUserRecord(survey_id: String, username: String): Option[SecureUserRecord] = userAdminImpl.getUserById(survey_id, username).right.toOption
+  def getUserRecord(survey_id: String, username: String): Option[SecureUserRecord] = userAdminImpl.getUserById(Some(survey_id), username).right.toOption
 
-  def getUserRecords(survey_id: String, role: String): Seq[SecureUserRecord] = userAdminImpl.getUsersByRole(survey_id, role).right.get
+  def getUserRecords(survey_id: String, role: String): Seq[SecureUserRecord] = userAdminImpl.getUsersByRole(Some(survey_id), role).right.get
 
   def getUserRecords(survey_id: String): Seq[SecureUserRecord] = userAdminImpl.getAllUsersInSurvey(survey_id).right.get
 
