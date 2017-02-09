@@ -1,4 +1,4 @@
-package uk.ac.ncl.openlab.intake24.datastoresql.migrations
+package uk.ac.ncl.openlab.intake24.foodsql.migrations
 
 import java.sql.Connection
 
@@ -11,8 +11,8 @@ import uk.ac.ncl.openlab.intake24.sql.migrations.{Migration, MigrationFailed}
   */
 object FeedbackDemographicScaleMigration extends Migration {
 
-  val versionFrom = 11l
-  val versionTo = 12l
+  val versionFrom = 21l
+  val versionTo = 22l
 
   val description = "Create demographic_scale and demographic_scale_sector for giving participants feedback on their survey"
 

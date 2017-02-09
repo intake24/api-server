@@ -298,9 +298,7 @@ object SystemDatabaseMigrations {
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         ???
       }
-    },
-
-    FeedbackDemographicScaleMigration
+    }
 
 
   )
