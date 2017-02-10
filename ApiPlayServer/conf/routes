@@ -137,8 +137,8 @@ POST           /admin/images/process-for-selection-screen                    con
 
 POST           /admin/users/create-or-update                                 controllers.system.UserAdminController.createOrUpdateGlobalUsers()
 
-# POST           /admin/users/:survey_id/staff/create-or-update                controllers.system.UserAdminController.createOrUpdateSurveyStaff(survey_id: String)
-# POST           /admin/users/:survey_id/staff/upload-csv                      controllers.system.UserAdminController.uploadSurveyStaffCSV(survey_id: String)
+POST           /admin/users/:surveyId/staff/create-or-update                controllers.system.UserAdminController.createOrUpdateSurveyStaff(surveyId: String)
+POST           /admin/users/:surveyId/staff/upload-csv                      controllers.system.UserAdminController.uploadSurveyStaffCSV(surveyId: String)
 # POST           /admin/users/:survey_id/respondents/create-or-update          controllers.system.UserAdminController.createOrUpdateSurveyRespondents(survey_id: String)
 # POST           /admin/users/:survey_id/respondents/upload-csv                controllers.system.UserAdminController.uploadSurveyRespondentsCSV(survey_id: String)
 

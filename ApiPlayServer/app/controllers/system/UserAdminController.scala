@@ -26,7 +26,7 @@ import net.scran24.datastore.UserRecordCSV
 import parsers.UpickleUtil
 import play.api.http.ContentTypes
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.{BodyParsers, Controller}
+import play.api.mvc.{BodyParsers, Controller, Result}
 import security.{DeadboltActionsAdapter, Roles}
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{SecureUserRecord, UserAdminService}
@@ -39,55 +39,73 @@ case class UserRecordWithPermissions(userName: String, password: String, name: O
 
 case class CreateOrUpdateGlobalUsersRequest(userRecords: Seq[UserRecordWithPermissions])
 
+case class CreateOrUpdateUsersRequest(userRecords: Seq[UserRecord])
+
 case class UserRecord(userName: String, password: String, name: Option[String], email: Option[String], phone: Option[String], customFields: Map[String, String])
 
 class UserAdminController @Inject()(service: UserAdminService, passwordHasherRegistry: PasswordHasherRegistry, deadbolt: DeadboltActionsAdapter) extends Controller
   with SystemDatabaseErrorHandler with UpickleUtil {
 
+  private def doCreateOrUpdate(surveyId: Option[String], userRecords: Seq[UserRecordWithPermissions]): Result = {
+    val hasher = passwordHasherRegistry.current
+
+    val secureUserRecords = userRecords.map {
+      record =>
+        val passwordInfo = hasher.hash(record.password)
+        SecureUserRecord(record.userName, passwordInfo.password, passwordInfo.salt.get, passwordInfo.hasher, record.name, record.email, record.phone, record.roles, record.permissions, record.customFields)
+    }
+
+    translateDatabaseResult(service.createOrUpdateUsers(None, secureUserRecords))
+
+  }
+
   def createOrUpdateGlobalUsers() = deadbolt.restrictAccess(Roles.superuser)(upickleBodyParser[CreateOrUpdateGlobalUsersRequest]) {
     request =>
       Future {
-        val hasher = passwordHasherRegistry.current
-
-        val secureUserRecords = request.body.userRecords.map {
-          record =>
-            val passwordInfo = hasher.hash(record.password)
-            SecureUserRecord(record.userName, passwordInfo.password, passwordInfo.salt.get, passwordInfo.hasher, record.name, record.email, record.phone, record.roles, record.permissions, record.customFields)
-        }
-
-        translateDatabaseResult(service.createOrUpdateUsers(None, secureUserRecords))
+        doCreateOrUpdate(None, request.body.userRecords)
       }
   }
 
-
-
-  /*def uploadUsersCSV() = deadbolt.restrictAccess(Roles.superuser)(BodyParsers.parse.multipartFormData) {
+  def uploadSurveyStaffCSV(surveyId: String) = deadbolt.restrictAccess(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.multipartFormData) {
     request =>
       Future {
         val formData = request.body
 
         if (formData.files.length != 1)
-          BadRequest(write(ErrorDescription("BadRequest", s"Expected exactly one file attachment, got ${
-            formData.files.length
-          }"))).as(ContentTypes.JSON)
+          BadRequest(write(ErrorDescription("BadRequest", s"Expected exactly one file attachment, got ${formData.files.length}"))).as(ContentTypes.JSON)
         else {
-          val csvFile = formData.files(0).ref.file
-
-          val is = new FileInputStream(csvFile)
-
-          try {
-            UserRecordCSV.fromCSV(is)
-          } catch {
-            case e: Throwable => BadRequest(write(ErrorDescription("CsvParseError", s"Failed to parse user records: ${
-              e.getClass.getSimpleName
-            }: ${
-              e.getMessage
-            }")))
-          } finally {
-            is.close()
+          UserRecordsCSVParser.parseFile(formData.files(0).ref.file) match {
+            case Right(records) =>
+              val recordsWithPermissions = records.map {
+                record =>
+                  UserRecordWithPermissions(record.userName, record.password, record.name, record.email, record.phone, record.customFields, Set(Roles.surveyStaff(surveyId)), Set())
+              }
+              doCreateOrUpdate(Some(surveyId), recordsWithPermissions)
+            case Left(error) =>
+              BadRequest(write(ErrorDescription("InvalidCSV", error)))
           }
-
-
         }
-      }*/
+      }
   }
+
+  def createOrUpdateSurveyStaff(surveyId: String) = deadbolt.restrictAccess(Roles.superuser, Roles.surveyStaff(surveyId))(upickleBodyParser[CreateOrUpdateUsersRequest]) {
+    request =>
+      Future {
+        doCreateOrUpdate(Some(surveyId), request.body.userRecords.map {
+          record =>
+            UserRecordWithPermissions(record.userName, record.password, record.name, record.email, record.phone, record.customFields, Set(Roles.surveyStaff(surveyId)), Set())
+        })
+      }
+  }
+
+  def createOrUpdateSurveyRespondents(surveyId: String) = deadbolt.restrictAccess(Roles.superuser, Roles.surveyStaff(surveyId))(upickleBodyParser[CreateOrUpdateUsersRequest]) {
+    request =>
+      Future {
+        doCreateOrUpdate(Some(surveyId), request.body.userRecords.map {
+          record =>
+            UserRecordWithPermissions(record.userName, record.password, record.name, record.email, record.phone, record.customFields, Set(Roles.surveyRespondent(surveyId)), Set())
+        })
+      }
+  }
+}
+
