@@ -18,30 +18,20 @@ limitations under the License.
 
 package controllers.system
 
-import java.io.FileInputStream
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
-import net.scran24.datastore.UserRecordCSV
 import parsers.UpickleUtil
 import play.api.http.ContentTypes
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller, Result}
 import security.{DeadboltActionsAdapter, Roles}
-import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
+import uk.ac.ncl.openlab.intake24.api.shared._
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{SecureUserRecord, UserAdminService}
 import upickle.default._
 
-import scala.collection.JavaConverters._
 import scala.concurrent.Future
 
-case class UserRecordWithPermissions(userName: String, password: String, name: Option[String], email: Option[String], phone: Option[String], customFields: Map[String, String], roles: Set[String], permissions: Set[String])
-
-case class CreateOrUpdateGlobalUsersRequest(userRecords: Seq[UserRecordWithPermissions])
-
-case class CreateOrUpdateUsersRequest(userRecords: Seq[UserRecord])
-
-case class UserRecord(userName: String, password: String, name: Option[String], email: Option[String], phone: Option[String], customFields: Map[String, String])
 
 class UserAdminController @Inject()(service: UserAdminService, passwordHasherRegistry: PasswordHasherRegistry, deadbolt: DeadboltActionsAdapter) extends Controller
   with SystemDatabaseErrorHandler with UpickleUtil {
@@ -55,9 +45,10 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
         SecureUserRecord(record.userName, passwordInfo.password, passwordInfo.salt.get, passwordInfo.hasher, record.name, record.email, record.phone, record.roles, record.permissions, record.customFields)
     }
 
-    translateDatabaseResult(service.createOrUpdateUsers(None, secureUserRecords))
-
+    translateDatabaseResult(service.createOrUpdateUsers(surveyId, secureUserRecords))
   }
+
+  private def doDeleteUsers(surveyId: Option[String], userNames: Seq[String]): Result = translateDatabaseResult(service.deleteUsers(surveyId, userNames))
 
   def createOrUpdateGlobalUsers() = deadbolt.restrictAccess(Roles.superuser)(upickleBodyParser[CreateOrUpdateGlobalUsersRequest]) {
     request =>
@@ -107,5 +98,18 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
         })
       }
   }
-}
 
+  def deleteGlobalUsers() = deadbolt.restrictAccess(Roles.superuser)(upickleBodyParser[DeleteUsersRequest]) {
+    request =>
+      Future {
+        doDeleteUsers(None, request.body.userNames)
+      }
+  }
+
+  def listGlobalUsers(offset: Int, limit: Int) = deadbolt.restrictAccess(Roles.superuser)(BodyParsers.parse.empty) {
+    _ =>
+      Future {
+        translateDatabaseResult(service.listUsers(None, offset, limit))
+      }
+  }
+}

@@ -12,11 +12,11 @@ class ImageMapAdminClientImpl(apiBaseUrl: String) extends ImageMapAdminClient wi
 
   val logger = LoggerFactory.getLogger(classOf[ImageMapAdminClientImpl])
 
-  def createImageMap(authToken: String, baseImage: Path, svgImage: Path, sourceKeywords: Seq[String], params: NewImageMapRequest): Either[ApiError, Unit] = {
+  def createImageMap(accessToken: String, baseImage: Path, svgImage: Path, sourceKeywords: Seq[String], params: NewImageMapRequest): Either[ApiError, Unit] = {
 
     val paramsJson = write(params).toString
 
-    val req = getAuthFormPostRequest(s"$apiBaseUrl/admin/portion-size/image-map/new-from-svg", authToken, Seq(("imageMapParameters", paramsJson)),
+    val req = getAuthPostRequestForm(s"$apiBaseUrl/admin/portion-size/image-map/new-from-svg", accessToken, Seq(("imageMapParameters", paramsJson)),
       Seq(("baseImage", baseImage), ("svg", svgImage)))
 
     logger.debug(s"Creating image map ${params.id}")
@@ -25,11 +25,11 @@ class ImageMapAdminClientImpl(apiBaseUrl: String) extends ImageMapAdminClient wi
     parseApiResponseDiscardBody(req.asString)
   }
 
-  def getImageMapBaseImageSourceId(authToken: String, id: String): Either[ApiError, Long] = {
-    parseApiResponse[Long](getSimpleHttpAuthGetRequest(s"$apiBaseUrl/admin/portion-size/image-map/$id/base-image-source-id", authToken).asString)
+  def getImageMapBaseImageSourceId(accessToken: String, id: String): Either[ApiError, Long] = {
+    parseApiResponse[Long](getAuthGetRequestNoBody(s"$apiBaseUrl/admin/portion-size/image-map/$id/base-image-source-id", accessToken).asString)
   }
 
-  override def listImageMaps(authToken: String): Either[ApiError, Seq[ImageMapHeader]] = {
-    parseApiResponse[Seq[ImageMapHeader]](getSimpleHttpAuthGetRequest(s"$apiBaseUrl/admin/portion-size/image-map", authToken).asString)
+  override def listImageMaps(accessToken: String): Either[ApiError, Seq[ImageMapHeader]] = {
+    parseApiResponse[Seq[ImageMapHeader]](getAuthGetRequestNoBody(s"$apiBaseUrl/admin/portion-size/image-map", accessToken).asString)
   }
 }

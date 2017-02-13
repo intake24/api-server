@@ -5,23 +5,15 @@ import java.sql.Connection
 import scala.Left
 import scala.Right
 import scala.annotation.tailrec
-
 import anorm._
 import javax.inject.Inject
 import javax.inject.Named
 import javax.sql.DataSource
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.SecureUserRecord
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.UserAdminService
-import uk.ac.ncl.openlab.intake24.services.systemdb.errors.DependentCreateError
-import uk.ac.ncl.openlab.intake24.services.systemdb.errors.DependentUpdateError
-import uk.ac.ncl.openlab.intake24.services.systemdb.errors.DuplicateCode
-import uk.ac.ncl.openlab.intake24.services.systemdb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.services.systemdb.errors.ParentError
-import uk.ac.ncl.openlab.intake24.services.systemdb.errors.ParentRecordNotFound
-import uk.ac.ncl.openlab.intake24.services.systemdb.errors.RecordNotFound
+
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{SecureUserRecord, UserAdminService, PublicUserRecord}
+import uk.ac.ncl.openlab.intake24.services.systemdb.errors._
 import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
 import uk.ac.ncl.openlab.intake24.systemsql.SystemSqlService
-import uk.ac.ncl.openlab.intake24.services.systemdb.errors.UpdateError
 
 class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends UserAdminService with SystemSqlService with SqlResourceLoader {
 
@@ -95,7 +87,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       withTransaction {
         val userParams = userRecords.map {
           record =>
-            Seq[NamedParameter]('id -> record.username, 'survey_id -> surveyId.getOrElse(""), 'password_hash -> record.passwordHashBase64, 'password_salt -> record.passwordSaltBase64,
+            Seq[NamedParameter]('id -> record.userName, 'survey_id -> surveyId.getOrElse(""), 'password_hash -> record.passwordHashBase64, 'password_salt -> record.passwordSaltBase64,
               'password_hasher -> record.passwordHasher, 'name -> record.name, 'email -> record.email, 'phone -> record.phone)
         }
 
@@ -106,13 +98,13 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
 
           for (
             _ <- updateUserRolesQuery(surveyId, userRecords.foldLeft(Map[String, Set[String]]()) {
-              case (acc, record) => acc + (record.username -> record.roles)
+              case (acc, record) => acc + (record.userName -> record.roles)
             }).right;
             _ <- updateUserPermissionsQuery(surveyId, userRecords.foldLeft(Map[String, Set[String]]()) {
-              case (acc, record) => acc + (record.username -> record.permissions)
+              case (acc, record) => acc + (record.userName -> record.permissions)
             }).right;
             _ <- updateUserCustomDataQuery(surveyId, userRecords.foldLeft(Map[String, Map[String, String]]()) {
-              case (acc, record) => acc + (record.username -> record.customFields)
+              case (acc, record) => acc + (record.userName -> record.customFields)
             }).right
           ) yield ()
         } else
@@ -123,10 +115,10 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
   def createUser(surveyId: Option[String], userRecord: SecureUserRecord): Either[DependentCreateError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
-        tryWithConstraintCheck[DependentCreateError, Unit]("users_id_pk", e => DuplicateCode(new RuntimeException(s"User name ${userRecord.username} already exists for survey $surveyId"))) {
+        tryWithConstraintCheck[DependentCreateError, Unit]("users_id_pk", e => DuplicateCode(new RuntimeException(s"User name ${userRecord.userName} already exists for survey $surveyId"))) {
           SQL("INSERT INTO users VALUES ({id}, {survey_id}, {password_hash}, {password_salt}, {password_hasher}, {name}, {email}, {phone})")
             .on(
-              'id -> userRecord.username,
+              'id -> userRecord.userName,
               'survey_id -> surveyId.getOrElse(""),
               'password_hash -> userRecord.passwordHashBase64,
               'password_salt -> userRecord.passwordSaltBase64,
@@ -136,9 +128,9 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
               'phone -> userRecord.phone)
             .execute()
           for (
-            _ <- updateUserRolesQuery(surveyId, Map(userRecord.username -> userRecord.roles)).right;
-            _ <- updateUserPermissionsQuery(surveyId, Map(userRecord.username -> userRecord.permissions)).right;
-            _ <- updateUserCustomDataQuery(surveyId, Map(userRecord.username -> userRecord.customFields)).right
+            _ <- updateUserRolesQuery(surveyId, Map(userRecord.userName -> userRecord.roles)).right;
+            _ <- updateUserPermissionsQuery(surveyId, Map(userRecord.userName -> userRecord.permissions)).right;
+            _ <- updateUserCustomDataQuery(surveyId, Map(userRecord.userName -> userRecord.customFields)).right
           ) yield ()
         }
       }
@@ -212,6 +204,8 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
 
   private case class CustomFieldRecordRow(survey_id: String, user_id: String, name: String, value: String)
 
+  private case class PublicUserRecordRow(user_id: String, name: Option[String], email: Option[String], phone: Option[String], customFields: Array[String], roles: Array[String], permissions: Array[String])
+
   @tailrec
   private def buildUserRecords(
                                 userRows: List[UserRecordRow],
@@ -283,5 +277,39 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
         } else
           Left(RecordNotFound(new RuntimeException(s"Survey $surveyId does not exist")))
       }
+  }
+
+  lazy val listUsersQuery = sqlFromResource("admin/list_users.sql")
+
+  def listUsers(surveyId: Option[String], offset: Int, limit: Int): Either[LookupError, Seq[PublicUserRecord]] = tryWithConnection {
+    implicit conn =>
+      withTransaction {
+        val surveyExists = surveyId match {
+          case Some(id) => SQL("SELECT 1 FROM surveys WHERE id={survey_id}").on('survey_id -> surveyId).executeQuery().as(SqlParser.long(1).singleOpt).nonEmpty
+          case None => true
+        }
+
+        if (surveyExists) {
+          val records = SQL(listUsersQuery).on('surveyId -> surveyId.getOrElse(""), 'offset -> offset, 'limit -> limit).executeQuery().as(Macro.namedParser[PublicUserRecordRow].*).map {
+            row =>
+
+              val customFields = row.customFields.grouped(2).foldLeft(Map[String, String]()) {
+                case (result, Array(name, value)) => result + (name -> value)
+              }
+
+              PublicUserRecord(row.user_id, row.name, row.email, row.phone, customFields, row.roles.toSet, row.permissions.toSet)
+          }
+
+          Right(records)
+        } else
+          Left(RecordNotFound(new RuntimeException(s"Survey $surveyId does not exist")))
+      }
+  }
+
+  def deleteUsers(surveyId: Option[String], userNames: Seq[String]): Either[DeleteError, Unit] = tryWithConnection {
+    implicit conn =>
+      SQL("DELETE FROM users WHERE survey_id={survey_id} AND id IN({user_names})").on('survey_id -> surveyId.getOrElse(""), 'user_names -> userNames).execute()
+
+      Right(())
   }
 }

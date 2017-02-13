@@ -38,7 +38,7 @@ class IdentityServiceImpl @Inject()(val dataStore: DataStoreScala) extends Ident
 
     dataStore.getUserRecord(intake24key.surveyName, intake24key.userName).map {
       record =>
-        Intake24User(record.username, SecurityInfo(record.roles, record.permissions))
+        Intake24User(record.userName, SecurityInfo(record.roles, record.permissions))
     }
   }
 

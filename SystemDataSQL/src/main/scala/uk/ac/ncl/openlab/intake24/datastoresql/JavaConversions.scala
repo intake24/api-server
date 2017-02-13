@@ -58,7 +58,7 @@ object JavaConversions {
   def copyToJavaList[T](seq: Seq[T]): java.util.List[T] = new java.util.ArrayList[T](seq)
 
   def toJavaSecureUserRecord(record: SecureUserRecord): JavaSecureUserRecord =
-    new JavaSecureUserRecord(record.username, record.passwordHashBase64, record.passwordSaltBase64, record.passwordHasher,
+    new JavaSecureUserRecord(record.userName, record.passwordHashBase64, record.passwordSaltBase64, record.passwordHasher,
       option2jopt(record.name), option2jopt(record.email), option2jopt(record.phone),
       copyToJavaSet(record.roles), copyToJavaSet(record.permissions), copyToJavaMap(record.customFields))
 

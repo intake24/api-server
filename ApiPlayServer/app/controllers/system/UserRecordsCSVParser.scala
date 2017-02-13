@@ -3,6 +3,7 @@ package controllers.system
 import java.io.{File, FileReader}
 
 import au.com.bytecode.opencsv.CSVReader
+import uk.ac.ncl.openlab.intake24.api.shared.UserRecord
 
 import scala.collection.JavaConverters._
 
@@ -118,12 +119,13 @@ object UserRecordsCSVParser {
       val header = reader.readNext()
       val rows = reader.readAll().asScala
 
-      if (rows.size < 1) Left("File is empty or in incorrect format")
+      if (rows.size < 1)
+        Left("File is empty or in incorrect format")
       else
         for (
           headerFormat <- parseHeader(header).right;
           records <- parseRows(headerFormat, rows).right;
-          _ <- validateUniqueness(records).right;
+          _ <- validateUniqueness(records).right
         ) yield records
     } catch {
       case e: Throwable => Left(s"""${e.getClass.getSimpleName}: ${e.getMessage}""")

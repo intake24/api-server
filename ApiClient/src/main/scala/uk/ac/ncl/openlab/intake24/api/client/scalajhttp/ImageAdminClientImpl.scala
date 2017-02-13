@@ -7,8 +7,8 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageDescriptor
 class ImageAdminClientImpl(apiBaseUrl: String) extends ImageAdminClient with ApiResponseParser with HttpRequestUtil {
   val logger = LoggerFactory.getLogger(classOf[ImageAdminClientImpl])
 
-  override def processForSelectionScreen(authToken: String, pathPrefix: String, sourceImageId: Long): Either[ApiError, ImageDescriptor] = {
-    val request = getSimpleHttpAuthPostRequest(s"$apiBaseUrl/admin/images/process-for-selection-screen", authToken)
+  override def processForSelectionScreen(accessToken: String, pathPrefix: String, sourceImageId: Long): Either[ApiError, ImageDescriptor] = {
+    val request = getAuthPostRequestNoBody(s"$apiBaseUrl/admin/images/process-for-selection-screen", accessToken)
       .param("pathPrefix", pathPrefix)
       .param("sourceImageId", sourceImageId.toString)
 

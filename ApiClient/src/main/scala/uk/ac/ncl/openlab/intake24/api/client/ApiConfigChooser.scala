@@ -42,6 +42,8 @@ object ApiConfigChooser {
         println (s"Please enter a number (1 to ${options.size}) or press Control+C to abort.")
     }
 
+    val start: Option[Int] = Some(1)
+
     println()
 
     read[ApiConfiguration](scala.io.Source.fromFile(configDirPath + "/" + options(choice.get)._2).mkString)

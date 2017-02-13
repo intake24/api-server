@@ -9,9 +9,9 @@ class GuideImageAdminClientImpl(apiBaseUrl: String) extends GuideImageAdminClien
 
   val logger = LoggerFactory.getLogger(classOf[GuideImageAdminClientImpl])
 
-  def updateGuideSelectionImage(authToken: String, id: String, selectionImageId: Long): Either[ApiError, Unit] = {
+  def updateGuideSelectionImage(accessToken: String, id: String, selectionImageId: Long): Either[ApiError, Unit] = {
 
-    val request = getSimpleHttpAuthPostRequest(s"$apiBaseUrl/admin/portion-size/guide-image/selection-screen-image", authToken)
+    val request = getAuthPostRequestNoBody(s"$apiBaseUrl/admin/portion-size/guide-image/selection-screen-image", accessToken)
       .param("id", id)
       .param("selectionImageId", selectionImageId.toString)
 
@@ -21,15 +21,15 @@ class GuideImageAdminClientImpl(apiBaseUrl: String) extends GuideImageAdminClien
     parseApiResponseDiscardBody(request.asString)
   }
 
-  def listGuideImages(authToken: String): Either[ApiError, Seq[GuideHeader]] = {
-    val request = getSimpleHttpAuthGetRequest(s"$apiBaseUrl/admin/portion-size/guide-image", authToken)
+  def listGuideImages(accessToken: String): Either[ApiError, Seq[GuideHeader]] = {
+    val request = getAuthGetRequestNoBody(s"$apiBaseUrl/admin/portion-size/guide-image", accessToken)
     logger.debug("Listing guide images")
     logger.debug(request.toString)
     parseApiResponse[Seq[GuideHeader]](request.asString)
   }
 
-  def createGuideImage(authToken: String, image: NewGuideImageRequest): Either[ApiError, Unit] = {
-    val request = getAuthPostRequest(s"$apiBaseUrl/admin/portion-size/guide-image/new", authToken, image)
+  def createGuideImage(accessToken: String, image: NewGuideImageRequest): Either[ApiError, Unit] = {
+    val request = getAuthPostRequest(s"$apiBaseUrl/admin/portion-size/guide-image/new", accessToken, image)
 
     logger.debug(s"Creating guide image ${image.id}")
 
