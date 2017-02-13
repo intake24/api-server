@@ -37,7 +37,7 @@ object FeedbackDemographicScaleMigration extends Migration {
          |    height numrange,
          |    weight numrange,
          |    sex sex_enum,
-         |    physical_activity_level_id integer NOT NULL,
+         |    physical_activity_level_id integer,
          |    nutrient_type_id integer NOT NULL,
          |    CONSTRAINT demographic_group_nutrient_type_fk FOREIGN KEY(physical_activity_level_id)
          |        REFERENCES level_of_physical_activity(id),

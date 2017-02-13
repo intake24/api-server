@@ -26,10 +26,12 @@ import play.api.db.Database
 import play.db.NamedDatabase
 import uk.ac.ncl.openlab.intake24.datastoresql.{DataStoreScala, DataStoreSqlImpl}
 import uk.ac.ncl.openlab.intake24.foodsql.admin._
+import uk.ac.ncl.openlab.intake24.foodsql.demographicGroups._
 import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl
 import uk.ac.ncl.openlab.intake24.foodsql.images.ImageDatabaseServiceSqlImpl
 import uk.ac.ncl.openlab.intake24.foodsql.user.{FoodDataUserStandaloneImpl, FoodDatabaseUserImpl}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
+import uk.ac.ncl.openlab.intake24.services.fooddb.demographicgroups._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.{FoodDataService, FoodDatabaseService}
 import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, FoodIndexDataService}
@@ -135,6 +137,10 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
 
     bind(classOf[FoodDatabaseService]).to(classOf[FoodDatabaseUserImpl])
     bind(classOf[FoodDataService]).to(classOf[FoodDataUserStandaloneImpl])
+
+
+    // Demographic service
+    bind(classOf[DemographicGroupsService]).to(classOf[DemographicGroupsServiceImpl])
 
 
   }

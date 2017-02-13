@@ -132,10 +132,12 @@ POST           /admin/images/process-for-selection-screen                    con
 # GET     /index/split-list/:locale             controllers.FoodIndexController.splitList(locale: String)
 
 
-
 # User management
 
 POST           /admin/users/create-or-update                                 controllers.system.UserAdminController.createOrUpdateUsers()
 
 POST           /admin/update-global-support-users                            controllers.system.SurveyAdminController.updateGlobalSupportUsers()
 # POST           /admin/surveys/:surveyId/support-users/update                 controllers.system.SurveyAdminController.updateSurveySupportUsers(surveyId: String)
+
+# Demographic groups
+GET            /admin/demographic-groups                                     controllers.DemographicGroupsController.list()
