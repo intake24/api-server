@@ -139,10 +139,18 @@ GET            /admin/users                                                  con
 POST           /admin/users/create-or-update                                 controllers.system.UserAdminController.createOrUpdateGlobalUsers()
 DELETE         /admin/users/delete                                           controllers.system.UserAdminController.deleteGlobalUsers()
 
+GET            /admin/users/:surveyId/staff                                  controllers.system.UserAdminController.listSurveyStaffUsers(surveyId: String, offset: Int, limit: Int)
+GET            /admin/users/:surveyId/respondents                            controllers.system.UserAdminController.listSurveyRespondentUsers(surveyId: String, offset: Int, limit: Int)
 POST           /admin/users/:surveyId/staff/create-or-update                 controllers.system.UserAdminController.createOrUpdateSurveyStaff(surveyId: String)
 POST           /admin/users/:surveyId/staff/upload-csv                       controllers.system.UserAdminController.uploadSurveyStaffCSV(surveyId: String)
-# POST           /admin/users/:survey_id/respondents/create-or-update          controllers.system.UserAdminController.createOrUpdateSurveyRespondents(survey_id: String)
-# POST           /admin/users/:survey_id/respondents/upload-csv                controllers.system.UserAdminController.uploadSurveyRespondentsCSV(survey_id: String)
+POST           /admin/users/:survey_id/respondents/create-or-update          controllers.system.UserAdminController.createOrUpdateSurveyRespondents(survey_id: String)
+POST           /admin/users/:survey_id/respondents/upload-csv                controllers.system.UserAdminController.uploadSurveyRespondentsCSV(survey_id: String)
+DELETE         /admin/users/:surveyId/delete                                 controllers.system.UserAdminController.deleteSurveyUsers(surveyId)
 
-POST           /admin/update-global-support-users                            controllers.system.SurveyAdminController.updateGlobalSupportUsers()
+# Survey management
+
+POST           /admin/surveys/new                                            controllers.system.SurveyAdminController.createSurvey()
+DELETE         /admin/surveys/:surveyId/delete                               controllers.system.SurveyAdminController.deleteSurvey(surveyId)
+
+# POST           /admin/update-global-support-users                            controllers.system.SurveyAdminController.updateGlobalSupportUsers()
 # POST           /admin/surveys/:surveyId/support-users/update                 controllers.system.SurveyAdminController.updateSurveySupportUsers(surveyId: String)

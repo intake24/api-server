@@ -6,7 +6,11 @@ case class SecureUserRecord(userName: String, passwordHashBase64: String, passwo
                             name: Option[String], email: Option[String], phone: Option[String],
                             roles: Set[String], permissions: Set[String], customFields: Map[String, String])
 
-case class PublicUserRecord(userName: String, name: Option[String], email: Option[String], phone: Option[String], customFields: Map[String, String], roles: Set[String], permissions: Set[String])
+case class PublicUserRecord(userName: String, name: Option[String], email: Option[String], phone: Option[String], customFields: Map[String, String])
+
+case class PublicUserRecordWithPermissions(userName: String, name: Option[String], email: Option[String], phone: Option[String], customFields: Map[String, String], roles: Set[String], permissions: Set[String]) {
+  def withoutPermissions = PublicUserRecord(userName, name, email, phone, customFields)
+}
 
 trait UserAdminService {
 
@@ -18,17 +22,22 @@ trait UserAdminService {
 
   def createUser(surveyId: Option[String], userRecord: SecureUserRecord): Either[DependentCreateError, Unit]
 
-  def listUsers(surveyId: Option[String], offset: Int, limit: Int): Either[LookupError, Seq[PublicUserRecord]]
+  def listUsers(surveyId: Option[String], offset: Int, limit: Int): Either[LookupError, Seq[PublicUserRecordWithPermissions]]
 
+  def listUsersByRole(surveyId: Option[String], role: String, offset: Int, limit: Int): Either[LookupError, Seq[PublicUserRecord]]
+
+  @deprecated
   def getAllUsersInSurvey(surveyId: String): Either[LookupError, Seq[SecureUserRecord]]
 
+  @deprecated
   def getUserById(surveyId: Option[String], name: String): Either[LookupError, SecureUserRecord]
 
+  @deprecated
   def getUsersByRole(surveyId: Option[String], role: String): Either[LookupError, Seq[SecureUserRecord]]
 
   def deleteUsers(surveyId: Option[String], userNames: Seq[String]): Either[DeleteError, Unit]
 
-/*  def updateGlobalSupportUsers(supportUsers: Seq[UserRef]): Either[ParentError, Unit]
+  /*  def updateGlobalSupportUsers(supportUsers: Seq[UserRef]): Either[ParentError, Unit]
 
-  def updateSupportUsersForSurvey(surveyId: String, supportUsers: Seq[UserRef]): Either[ParentError, Unit] */
+    def updateSupportUsersForSurvey(surveyId: String, supportUsers: Seq[UserRef]): Either[ParentError, Unit] */
 }

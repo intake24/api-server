@@ -34,8 +34,8 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.images._
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.{FoodDataService, FoodDatabaseService}
 import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, FoodIndexDataService}
 import uk.ac.ncl.openlab.intake24.services.foodindex.english.{EnglishWordOps, EnglishWordOpsPlingImpl, FoodIndexImpl_en_GB}
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.UserAdminService
-import uk.ac.ncl.openlab.intake24.systemsql.admin.UserAdminImpl
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{SurveyAdminService, UserAdminService}
+import uk.ac.ncl.openlab.intake24.systemsql.admin.{SurveyAdminImpl, UserAdminImpl}
 
 class Intake24ServicesModule(env: Environment, config: Configuration) extends AbstractModule {
   @Provides
@@ -99,6 +99,7 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     bind(classOf[LocalesAdminService]).to(classOf[ObservableLocalesAdminServiceImpl])
 
     bind(classOf[UserAdminService]).to(classOf[UserAdminImpl])
+    bind(classOf[SurveyAdminService]).to(classOf[SurveyAdminImpl])
 
     // User facing services
 

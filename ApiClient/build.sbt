@@ -25,5 +25,6 @@ libraryDependencies ++= Seq(
   "org.rogach" %% "scallop" % "2.0.5",
   "commons-io" % "commons-io" % "2.5",
   "org.scalaj" %% "scalaj-http" % "2.3.0",
-  "org.scalatest" %% "scalatest" % "3.0.1" % "test"
+  "org.scalatest" %% "scalatest" % "3.0.1" % "test",
+  "com.opencsv" % "opencsv" % "3.9"
 )

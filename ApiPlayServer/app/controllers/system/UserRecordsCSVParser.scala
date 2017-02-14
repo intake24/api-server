@@ -16,6 +16,8 @@ object UserRecordsCSVParser {
   val EMAIL_HEADER_ALT = "e-mail"
   val PHONE_HEADER = "phone"
 
+  val fixedColumnNames = Seq(USER_NAME_HEADER, PASSWORD_HEADER, NAME_HEADER, EMAIL_HEADER_ALT, EMAIL_HEADER, PHONE_HEADER)
+
   private case class HeaderFormat(userNameIndex: Int, passwordIndex: Int, nameIndex: Option[Int], emailIndex: Option[Int], phoneIndex: Option[Int], customFields: Seq[(String, Int)])
 
   private def toOption(index: Int) = if (index == -1) None else Some(index)
@@ -44,7 +46,7 @@ object UserRecordsCSVParser {
         val emailIndex = toOption(lowerCase.indexWhere(s => s == EMAIL_HEADER || s == EMAIL_HEADER_ALT))
         val phoneIndex = toOption(lowerCase.indexWhere(_ == PHONE_HEADER))
 
-        val customFields = header.zipWithIndex.drop(2).filter(s => s != NAME_HEADER && s != EMAIL_HEADER && s != EMAIL_HEADER_ALT && s != PHONE_HEADER)
+        val customFields = header.zipWithIndex.filter(s => !fixedColumnNames.contains(s._1.toLowerCase))
 
         Right(HeaderFormat(userNameIndex, passwordIndex, nameIndex, emailIndex, phoneIndex, customFields))
       }
@@ -53,8 +55,13 @@ object UserRecordsCSVParser {
 
   private def safeGet(row: Array[String], index: Option[Int]) = index.flatMap {
     index =>
-      if (index < row.length)
-        Some(row(index))
+      if (index < row.length) {
+        val colValue = row(index).trim
+        if (colValue.nonEmpty)
+          Some(colValue)
+        else
+          None
+      }
       else
         None
   }

@@ -23,8 +23,9 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import parsers.UpickleUtil
 import play.api.http.ContentTypes
+import play.api.libs.Files
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.{BodyParsers, Controller, Result}
+import play.api.mvc.{BodyParsers, Controller, MultipartFormData, Result}
 import security.{DeadboltActionsAdapter, Roles}
 import uk.ac.ncl.openlab.intake24.api.shared._
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{SecureUserRecord, UserAdminService}
@@ -57,28 +58,6 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
       }
   }
 
-  def uploadSurveyStaffCSV(surveyId: String) = deadbolt.restrictAccess(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.multipartFormData) {
-    request =>
-      Future {
-        val formData = request.body
-
-        if (formData.files.length != 1)
-          BadRequest(write(ErrorDescription("BadRequest", s"Expected exactly one file attachment, got ${formData.files.length}"))).as(ContentTypes.JSON)
-        else {
-          UserRecordsCSVParser.parseFile(formData.files(0).ref.file) match {
-            case Right(records) =>
-              val recordsWithPermissions = records.map {
-                record =>
-                  UserRecordWithPermissions(record.userName, record.password, record.name, record.email, record.phone, record.customFields, Set(Roles.surveyStaff(surveyId)), Set())
-              }
-              doCreateOrUpdate(Some(surveyId), recordsWithPermissions)
-            case Left(error) =>
-              BadRequest(write(ErrorDescription("InvalidCSV", error)))
-          }
-        }
-      }
-  }
-
   def createOrUpdateSurveyStaff(surveyId: String) = deadbolt.restrictAccess(Roles.superuser, Roles.surveyStaff(surveyId))(upickleBodyParser[CreateOrUpdateUsersRequest]) {
     request =>
       Future {
@@ -89,6 +68,23 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
       }
   }
 
+  private def uploadCSV(formData: MultipartFormData[Files.TemporaryFile], surveyId: String, roles: Set[String], permissions: Set[String]): Result = {
+    if (formData.files.length != 1)
+      BadRequest(write(ErrorDescription("BadRequest", s"Expected exactly one file attachment, got ${formData.files.length}"))).as(ContentTypes.JSON)
+    else {
+      UserRecordsCSVParser.parseFile(formData.files(0).ref.file) match {
+        case Right(records) =>
+          val recordsWithPermissions = records.map {
+            record =>
+              UserRecordWithPermissions(record.userName, record.password, record.name, record.email, record.phone, record.customFields, roles, permissions)
+          }
+          doCreateOrUpdate(Some(surveyId), recordsWithPermissions)
+        case Left(error) =>
+          BadRequest(write(ErrorDescription("InvalidCSV", error)))
+      }
+    }
+  }
+
   def createOrUpdateSurveyRespondents(surveyId: String) = deadbolt.restrictAccess(Roles.superuser, Roles.surveyStaff(surveyId))(upickleBodyParser[CreateOrUpdateUsersRequest]) {
     request =>
       Future {
@@ -96,6 +92,20 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
           record =>
             UserRecordWithPermissions(record.userName, record.password, record.name, record.email, record.phone, record.customFields, Set(Roles.surveyRespondent(surveyId)), Set())
         })
+      }
+  }
+
+  def uploadSurveyRespondentsCSV(surveyId: String) = deadbolt.restrictAccess(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.multipartFormData) {
+    request =>
+      Future {
+        uploadCSV(request.body, surveyId, Set(Roles.surveyRespondent(surveyId)), Set())
+      }
+  }
+
+  def uploadSurveyStaffCSV(surveyId: String) = deadbolt.restrictAccess(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.multipartFormData) {
+    request =>
+      Future {
+        uploadCSV(request.body, surveyId, Set(Roles.surveyStaff(surveyId)), Set())
       }
   }
 
@@ -110,6 +120,27 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
     _ =>
       Future {
         translateDatabaseResult(service.listUsers(None, offset, limit))
+      }
+  }
+
+  def listSurveyStaffUsers(surveyId: String, offset: Int, limit: Int) = deadbolt.restrictAccess(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
+    _ =>
+      Future {
+        translateDatabaseResult(service.listUsersByRole(Some(surveyId), Roles.surveyStaff(surveyId), offset, limit))
+      }
+  }
+
+  def listSurveyRespondentUsers(surveyId: String, offset: Int, limit: Int) = deadbolt.restrictAccess(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
+    _ =>
+      Future {
+        translateDatabaseResult(service.listUsersByRole(Some(surveyId), Roles.surveyRespondent(surveyId), offset, limit))
+      }
+  }
+
+  def deleteSurveyUsers(surveyId: String) = deadbolt.restrictAccess(Roles.superuser, Roles.surveyStaff(surveyId))(upickleBodyParser[DeleteUsersRequest]) {
+    request =>
+      Future {
+        doDeleteUsers(Some(surveyId), request.body.userNames)
       }
   }
 }

@@ -23,25 +23,30 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import parsers.UpickleUtil
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.Controller
+import play.api.mvc.{BodyParsers, Controller}
 import security.{DeadboltActionsAdapter, Roles}
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{SecureUserRecord, UserAdminService}
+import uk.ac.ncl.openlab.intake24.api.shared.CreateSurveyRequest
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.SurveyAdminService
 import upickle.default._
 
 import scala.concurrent.Future
 
-case class UserRef(surveyId: String, id: String)
 
-case class SupportUsersUpdateRequest(users: Seq[UserRef])
-
-class SurveyAdminController @Inject()(service: UserAdminService, passwordHasherRegistry: PasswordHasherRegistry, deadbolt: DeadboltActionsAdapter) extends Controller
+class SurveyAdminController @Inject()(service: SurveyAdminService, passwordHasherRegistry: PasswordHasherRegistry, deadbolt: DeadboltActionsAdapter) extends Controller
   with SystemDatabaseErrorHandler with UpickleUtil {
 
-  def updateGlobalSupportUsers() = deadbolt.restrictAccess(Roles.superuser)(upickleBodyParser[SupportUsersUpdateRequest]) {
+  def createSurvey() = deadbolt.restrictAccess(Roles.superuser)(upickleBodyParser[CreateSurveyRequest]) {
     request =>
       Future {
-        ???
-        // translateDatabaseResult(service.createOrUpdateUsers(request.body.surveyId, secureUserRecords))
+        val body = request.body
+        translateDatabaseResult(service.createSurvey(body.surveyId, body.schemeId, body.localeId, body.allowGeneratedUsers, body.externalFollowUpUrl, body.supportEmail))
+      }
+  }
+
+  def deleteSurvey(surveyId: String) = deadbolt.restrictAccess(Roles.superuser)(BodyParsers.parse.empty) {
+    _ =>
+      Future {
+        translateDatabaseResult(service.deleteSurvey(surveyId))
       }
   }
 }

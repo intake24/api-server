@@ -8,7 +8,7 @@ import uk.ac.ncl.openlab.intake24.api.shared.Credentials
 
 trait ApiTestSuite extends FunSuite {
 
-  def ensureSuccessful[T](result: Either[ApiError, T]): T =
+  def assertSuccessful[T](result: Either[ApiError, T]): T =
     result match {
       case Left(ResultParseFailed(cause: Throwable)) => fail(cause)
 
@@ -19,21 +19,17 @@ trait ApiTestSuite extends FunSuite {
       case Right(res) => res
     }
 
+  def assertForbidden(result: Either[ApiError, Unit]) =
+    result match {
+      case Right(_) => fail("Expected response to be 403 Forbidden, but it was successful")
+      case Left(RequestFailed(403, _, _)) => ()
+      case Left(RequestFailed(httpCode, _, _)) => fail(s"Expected request to be 403 Forbidden, but got $httpCode instead")
+      case Left(ResultParseFailed(cause: Throwable)) => fail(cause)
+      case Left(ErrorParseFailed(httpCode, cause)) => fail(s"Could not parse error for code $httpCode", cause)
+    }
+
   val apiBaseUrl = "http://localhost:9000"
 
   val signinClient = new SigninClientImpl(apiBaseUrl)
 
-  var refreshToken: String = null
-  var accessToken: String = null
-
-  test("Sign in with credentials and get the refresh token") {
-    val result = ensureSuccessful(signinClient.signin(Credentials("", "admin", "intake24")))
-    refreshToken = result.refreshToken
-  }
-
-  test("Get an access token") {
-    val result = ensureSuccessful(signinClient.refresh(refreshToken))
-    refreshToken = result.refreshToken
-    accessToken = result.accessToken
-  }
 }

@@ -10,7 +10,7 @@ import javax.inject.Inject
 import javax.inject.Named
 import javax.sql.DataSource
 
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{SecureUserRecord, UserAdminService, PublicUserRecord}
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{PublicUserRecord, PublicUserRecordWithPermissions, SecureUserRecord, UserAdminService}
 import uk.ac.ncl.openlab.intake24.services.systemdb.errors._
 import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
 import uk.ac.ncl.openlab.intake24.systemsql.SystemSqlService
@@ -204,7 +204,9 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
 
   private case class CustomFieldRecordRow(survey_id: String, user_id: String, name: String, value: String)
 
-  private case class PublicUserRecordRow(user_id: String, name: Option[String], email: Option[String], phone: Option[String], customFields: Array[String], roles: Array[String], permissions: Array[String])
+  private case class PublicUserRecordWithPermissionsRow(user_id: String, name: Option[String], email: Option[String], phone: Option[String], custom_fields: Array[Array[String]], roles: Array[String], permissions: Array[String])
+
+  private case class PublicUserRecordRow(user_id: String, name: Option[String], email: Option[String], phone: Option[String], custom_fields: Array[Array[String]])
 
   @tailrec
   private def buildUserRecords(
@@ -281,7 +283,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
 
   lazy val listUsersQuery = sqlFromResource("admin/list_users.sql")
 
-  def listUsers(surveyId: Option[String], offset: Int, limit: Int): Either[LookupError, Seq[PublicUserRecord]] = tryWithConnection {
+  def listUsers(surveyId: Option[String], offset: Int, limit: Int): Either[LookupError, Seq[PublicUserRecordWithPermissions]] = tryWithConnection {
     implicit conn =>
       withTransaction {
         val surveyExists = surveyId match {
@@ -290,14 +292,42 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
         }
 
         if (surveyExists) {
-          val records = SQL(listUsersQuery).on('surveyId -> surveyId.getOrElse(""), 'offset -> offset, 'limit -> limit).executeQuery().as(Macro.namedParser[PublicUserRecordRow].*).map {
+          val records = SQL(listUsersQuery).on('survey_id -> surveyId.getOrElse(""), 'offset -> offset, 'limit -> limit).executeQuery().as(Macro.namedParser[PublicUserRecordWithPermissionsRow].*).map {
             row =>
 
-              val customFields = row.customFields.grouped(2).foldLeft(Map[String, String]()) {
+              val customFields = row.custom_fields.foldLeft(Map[String, String]()) {
                 case (result, Array(name, value)) => result + (name -> value)
               }
 
-              PublicUserRecord(row.user_id, row.name, row.email, row.phone, customFields, row.roles.toSet, row.permissions.toSet)
+              PublicUserRecordWithPermissions(row.user_id, row.name, row.email, row.phone, customFields, row.roles.toSet, row.permissions.toSet)
+          }
+
+          Right(records)
+        } else
+          Left(RecordNotFound(new RuntimeException(s"Survey $surveyId does not exist")))
+      }
+  }
+
+  lazy val listUsersByRoleQuery = sqlFromResource("admin/list_users_by_role.sql")
+
+
+  def listUsersByRole(surveyId: Option[String], role: String, offset: Int, limit: Int): Either[LookupError, Seq[PublicUserRecord]] = tryWithConnection {
+    implicit conn =>
+      withTransaction {
+        val surveyExists = surveyId match {
+          case Some(id) => SQL("SELECT 1 FROM surveys WHERE id={survey_id}").on('survey_id -> surveyId).executeQuery().as(SqlParser.long(1).singleOpt).nonEmpty
+          case None => true
+        }
+
+        if (surveyExists) {
+          val records = SQL(listUsersByRoleQuery).on('survey_id -> surveyId.getOrElse(""), 'role -> role, 'offset -> offset, 'limit -> limit).executeQuery().as(Macro.namedParser[PublicUserRecordRow].*).map {
+            row =>
+
+              val customFields = row.custom_fields.foldLeft(Map[String, String]()) {
+                case (result, Array(name, value)) => result + (name -> value)
+              }
+
+              PublicUserRecord(row.user_id, row.name, row.email, row.phone, customFields)
           }
 
           Right(records)
