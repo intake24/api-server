@@ -4,7 +4,7 @@ import javax.inject.{Inject, Named}
 import javax.sql.DataSource
 
 import anorm._
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{SecureUserRecord, SurveyAdminService}
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, SecureUserRecord, SurveyAdminService}
 import uk.ac.ncl.openlab.intake24.services.systemdb.errors._
 import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
 import uk.ac.ncl.openlab.intake24.systemsql.SystemSqlService

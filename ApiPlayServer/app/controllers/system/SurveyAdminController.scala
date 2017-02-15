@@ -20,7 +20,6 @@ package controllers.system
 
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import parsers.UpickleUtil
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller}
@@ -32,7 +31,7 @@ import upickle.default._
 import scala.concurrent.Future
 
 
-class SurveyAdminController @Inject()(service: SurveyAdminService, passwordHasherRegistry: PasswordHasherRegistry, deadbolt: DeadboltActionsAdapter) extends Controller
+class SurveyAdminController @Inject()(service: SurveyAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
   with SystemDatabaseErrorHandler with UpickleUtil {
 
   def createSurvey() = deadbolt.restrictAccess(Roles.superuser)(upickleBodyParser[CreateSurveyRequest]) {

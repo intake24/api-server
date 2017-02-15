@@ -1,18 +1,27 @@
 package parsers
 
+import java.time.{Instant, LocalDateTime}
+import java.time.format.DateTimeFormatter
+
 import play.api.mvc.{BodyParser, BodyParsers, Result, Results}
 import play.api.http.ContentTypes
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 
 import scala.concurrent.Future
 import upickle.default._
-import upickle.Invalid
+import upickle.{Invalid, Js}
+import upickle.Js.Value
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 trait UpickleUtil {
 
   import BodyParsers.parse._
+
+  protected implicit val dateWriter = Writer[Instant] {
+    case t => Js.Str(DateTimeFormatter.ISO_INSTANT.format(t))
+  }
+
 
   def parseJson[T](json: String)(implicit reader: Reader[T]): Either[Result, T] = {
     try {

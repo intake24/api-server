@@ -12,7 +12,16 @@ trait SystemDatabaseErrorHandler extends Results {
   private val logger = LoggerFactory.getLogger(classOf[SystemDatabaseErrorHandler])
 
   private def handleDatabaseError(e: Throwable): Result = {
+
+    def logCause(e: Throwable): Unit =
+      if (e != null) {
+        logger.error("Caused by", e)
+        logCause(e.getCause)
+      }
+
     logger.error("DatabaseError", e)
+    logCause(e.getCause)
+
     InternalServerError(write(ErrorDescription("DatabaseError", "Unexpected database error: " + e.getMessage()))).as(ContentTypes.JSON)
   }
 
