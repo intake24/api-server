@@ -141,3 +141,11 @@ POST           /admin/update-global-support-users                            con
 
 # Demographic groups
 GET            /admin/demographic-groups                                     controllers.DemographicGroupsController.list()
+POST           /admin/demographic-groups                                     controllers.DemographicGroupsController.createDemographicGroup()
+PATCH          /admin/demographic-groups/:id                                 controllers.DemographicGroupsController.patchDemographicGroup(id: Int)
+GET            /admin/demographic-groups/:id                                 controllers.DemographicGroupsController.getDemographicGroup(id: Int)
+DELETE         /admin/demographic-groups/:id                                 controllers.DemographicGroupsController.deleteDemographicGroup(id: Int)
+
+POST           /admin/demographic-groups/:id/scale-sectors                   controllers.DemographicGroupsController.createDemographicGroupScaleSector(id: Int)
+PATCH          /admin/demographic-group-scale-sectors/:id                    controllers.DemographicGroupsController.patchDemographicGroupScaleSector(id: Int)
+DELETE         /admin/demographic-group-scale-sectors/:id                    controllers.DemographicGroupsController.deleteDemographicGroupScaleSector(id: Int)
