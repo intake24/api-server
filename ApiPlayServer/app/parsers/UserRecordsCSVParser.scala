@@ -1,4 +1,4 @@
-package controllers.system
+package parsers
 
 import java.io.{File, FileReader}
 

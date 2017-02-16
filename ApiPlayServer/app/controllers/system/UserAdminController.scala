@@ -21,7 +21,7 @@ package controllers.system
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
-import parsers.UpickleUtil
+import parsers.{UpickleUtil, UserRecordsCSVParser}
 import play.api.http.ContentTypes
 import play.api.libs.Files
 import play.api.libs.concurrent.Execution.Implicits.defaultContext

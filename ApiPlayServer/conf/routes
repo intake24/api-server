@@ -158,5 +158,5 @@ DELETE         /admin/surveys/:surveyId/delete                               con
 # Data export
 
 GET            /admin/surveys/:surveyId/submissions                          controllers.system.DataExportController.getSurveySubmissions(surveyId, dateFrom: String, dateTo: String, offset: Int, limit: Int)
-# GET            /admin/surveys/:surveyId/submissions/csv                      controllers.system.DataExportController.getSurveySubmissionsAsCSV(surveyId, dateFrom: Long, dateTo: Long, offset: Int, limit: Int)
+GET            /admin/surveys/:surveyId/submissions/csv                      controllers.system.DataExportController.getSurveySubmissionsAsCSV(surveyId, dateFrom: Long, dateTo: Long, offset: Int, limit: Int)
 # GET            /admin/surveys/:surveyId/submissions/xlsx                     controllers.system.DataExportController.getSurveySubmissionsAsXLSX(surveyId, dateFrom: Long, dateTo: Long, offset: Int, limit: Int)
