@@ -115,6 +115,9 @@ GET            /user/portion-size/as-served/:id                              con
 
 GET            /admin/nutrient-tables                                        controllers.NutrientTablesAdminController.listNutrientTables()
 
+# Nutrient types
+GET            /admin/nutrient-types                                         controllers.NutrientTypesController.list()
+
 # Source image management
 
 GET            /admin/images/source                                          controllers.ImageAdminController.listSourceImages(offset: Int, limit: Int, search: Option[String])
