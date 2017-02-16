@@ -6,7 +6,7 @@ import javax.inject.{Inject, Named}
 import javax.sql.DataSource
 
 import anorm._
-import uk.ac.ncl.openlab.intake24.errors.UnexpectedDatabaseError
+import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound}
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.DataExportService
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 import uk.ac.ncl.openlab.intake24.surveydata._
@@ -37,50 +37,57 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
       case (acc, cf) => acc + (cf(0) -> cf(1))
     }
 
-  def getSurveySubmissions(surveyId: String, dateFrom: Instant, dateTo: Instant, offset: Int, limit: Int): Either[UnexpectedDatabaseError, Seq[NutrientMappedSubmission]] = tryWithConnection {
+  def getSurveySubmissions(surveyId: String, dateFrom: Instant, dateTo: Instant, offset: Int, limit: Int): Either[LookupError, Seq[NutrientMappedSubmission]] = tryWithConnection {
     implicit conn =>
       withTransaction {
-        val submissionRows = SQL(getSurveySubmissionsSql)
-          .on('survey_id -> surveyId, 'time_from -> dateFrom, 'time_to -> dateTo, 'offset -> offset, 'limit -> limit)
-          .executeQuery()
-          .as(Macro.namedParser[SubmissionRow].*)
 
-        val submissionIds = submissionRows.map(_.id)
+        val surveyExists = SQL("SELECT 1 FROM surveys WHERE id={survey_id}").on('survey_id -> surveyId).executeQuery().as(SqlParser.long(1).singleOpt).isDefined
 
-        val submissionIdsSeqParam = SeqParameter(submissionIds, post = "::uuid")
+        if (surveyExists) {
 
-        if (submissionIds.isEmpty)
-          Right(Seq())
-        else {
-          val mealRows = SQL(getSurveySubmissionMealsSql).on('submission_ids -> submissionIdsSeqParam).executeQuery().as(Macro.namedParser[MealRow].*).groupBy(_.submission_id)
+          val submissionRows = SQL(getSurveySubmissionsSql)
+            .on('survey_id -> surveyId, 'time_from -> dateFrom, 'time_to -> dateTo, 'offset -> offset, 'limit -> limit)
+            .executeQuery()
+            .as(Macro.namedParser[SubmissionRow].*)
 
-          val foodRows = SQL(getSurveySubmissionFoodsSql).on('submission_ids -> submissionIdsSeqParam).executeQuery().as(Macro.namedParser[FoodRow].*).groupBy(_.meal_id)
+          val submissionIds = submissionRows.map(_.id)
 
-          val nutrientRows = SQL(getSurveySubmissionNutrientsSql).on('submission_ids -> submissionIdsSeqParam).executeQuery().as(Macro.namedParser[NutrientRow].*).groupBy(_.food_id)
+          val submissionIdsSeqParam = SeqParameter(submissionIds, post = "::uuid")
 
-          val submissions = submissionRows.map {
-            submissionRow =>
-              val meals = mealRows.getOrElse(submissionRow.id, Seq()).map {
-                mealRow =>
-                  val foods = foodRows.getOrElse(mealRow.meal_id, Seq()).map {
-                    foodRow =>
-                      val nutrients = nutrientRows.getOrElse(foodRow.food_id, Seq()).map {
-                        nutrientRow =>
-                          (nutrientRow.n_type.toInt, nutrientRow.n_amount)
-                      }.toMap
+          if (submissionIds.isEmpty)
+            Right(Seq())
+          else {
+            val mealRows = SQL(getSurveySubmissionMealsSql).on('submission_ids -> submissionIdsSeqParam).executeQuery().as(Macro.namedParser[MealRow].*).groupBy(_.submission_id)
 
-                      NutrientMappedFood(foodRow.code, foodRow.english_description, foodRow.local_description, foodRow.search_term, foodRow.nutrient_table_id, foodRow.nutrient_table_code, foodRow.ready_meal,
-                        CompletedPortionSize(foodRow.portion_size_method_id, customFieldsAsMap(foodRow.portion_size_data)), foodRow.reasonable_amount,
-                        foodRow.food_group_id, foodRow.brand, nutrients, customFieldsAsMap(foodRow.custom_fields))
-                  }
-                  NutrientMappedMeal(mealRow.name, MealTime(mealRow.hours, mealRow.minutes), customFieldsAsMap(mealRow.custom_fields), foods)
-              }
-              NutrientMappedSubmission(submissionRow.id, submissionRow.user_id, customFieldsAsMap(submissionRow.user_custom_fields), customFieldsAsMap(submissionRow.submission_custom_fields),
-                submissionRow.start_time, submissionRow.end_time, meals)
+            val foodRows = SQL(getSurveySubmissionFoodsSql).on('submission_ids -> submissionIdsSeqParam).executeQuery().as(Macro.namedParser[FoodRow].*).groupBy(_.meal_id)
+
+            val nutrientRows = SQL(getSurveySubmissionNutrientsSql).on('submission_ids -> submissionIdsSeqParam).executeQuery().as(Macro.namedParser[NutrientRow].*).groupBy(_.food_id)
+
+            val submissions = submissionRows.map {
+              submissionRow =>
+                val meals = mealRows.getOrElse(submissionRow.id, Seq()).map {
+                  mealRow =>
+                    val foods = foodRows.getOrElse(mealRow.meal_id, Seq()).map {
+                      foodRow =>
+                        val nutrients = nutrientRows.getOrElse(foodRow.food_id, Seq()).map {
+                          nutrientRow =>
+                            (nutrientRow.n_type.toInt, nutrientRow.n_amount)
+                        }.toMap
+
+                        NutrientMappedFood(foodRow.code, foodRow.english_description, foodRow.local_description, foodRow.search_term, foodRow.nutrient_table_id, foodRow.nutrient_table_code, foodRow.ready_meal,
+                          CompletedPortionSize(foodRow.portion_size_method_id, customFieldsAsMap(foodRow.portion_size_data)), foodRow.reasonable_amount,
+                          foodRow.food_group_id, foodRow.brand, nutrients, customFieldsAsMap(foodRow.custom_fields))
+                    }
+                    NutrientMappedMeal(mealRow.name, MealTime(mealRow.hours, mealRow.minutes), customFieldsAsMap(mealRow.custom_fields), foods)
+                }
+                NutrientMappedSubmission(submissionRow.id, submissionRow.user_id, customFieldsAsMap(submissionRow.user_custom_fields), customFieldsAsMap(submissionRow.submission_custom_fields),
+                  submissionRow.start_time, submissionRow.end_time, meals)
+            }
+
+            Right(submissions)
           }
-
-          Right(submissions)
-        }
+        } else
+          Left(RecordNotFound(new RuntimeException(s"Survey $surveyId does not exist")))
       }
   }
 }

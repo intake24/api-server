@@ -18,12 +18,12 @@ limitations under the License.
 
 package controllers.system
 
-import java.time.Instant
-import java.time.format.DateTimeParseException
+import java.time.{Clock, Instant, LocalDateTime, ZoneId}
+import java.time.format.{DateTimeFormatter, DateTimeParseException}
 import javax.inject.Inject
 
 import controllers.DatabaseErrorHandler
-import parsers.UpickleUtil
+import parsers.{SurveyCSVExporter, UpickleUtil}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller}
 import security.{DeadboltActionsAdapter, Roles}
@@ -62,9 +62,7 @@ class DataExportController @Inject()(service: DataExportService, surveyAdminServ
           val parsedFrom = Instant.parse(dateFrom)
           val parsedTo = Instant.parse(dateTo)
 
-          ???
-
-          /*val data = for (params <- surveyAdminService.getSurveyParameters(surveyId).right;
+          val data = for (params <- surveyAdminService.getSurveyParameters(surveyId).right;
                           localNutrients <- surveyAdminService.getLocalNutrientTypes(params.localeId).right;
                           dataScheme <- surveyAdminService.getCustomDataScheme(params.schemeId).right;
                           foodGroups <- foodGroupsAdminService.listFoodGroups(params.localeId).right;
@@ -74,12 +72,12 @@ class DataExportController @Inject()(service: DataExportService, surveyAdminServ
             case Right((localNutrients, dataScheme, foodGroups, submissions)) =>
               SurveyCSVExporter.exportSurveySubmissions(dataScheme, foodGroups, localNutrients, submissions) match {
                 case Right(csvFile) =>
-                  val dateStamp = DateTimeFormatter.ISO_LOCAL_DATE.format(Clock.systemUTC().instant()).replace(":", "-").replace("T", "-")
-                  Ok.sendFile(csvFile, fileName = _ => s"intake24-$surveyId-$dateStamp.csv", onClose = () => csvFile.delete())
+                  val dateStamp = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.ofInstant(Clock.systemUTC().instant(), ZoneId.systemDefault).withNano(0)).replace(":", "-").replace("T", "-")
+                  Ok.sendFile(csvFile, fileName = _ => s"intake24-$surveyId-data-$dateStamp.csv", onClose = () => csvFile.delete())
                 case Left(exportError) => InternalServerError(write(ErrorDescription("ExportError", exportError)))
               }
             case Left(databaseError) => translateDatabaseError(databaseError)
-          }*/
+          }
 
 
         } catch {
