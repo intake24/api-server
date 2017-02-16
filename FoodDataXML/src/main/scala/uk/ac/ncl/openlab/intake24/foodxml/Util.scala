@@ -18,17 +18,12 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodxml
 
-import scala.xml.Node
-import scala.xml.PrettyPrinter
-import java.io.PrintWriter
-import java.io.File
-import uk.ac.ncl.openlab.intake24.CategoryV1
-import uk.ac.ncl.openlab.intake24.FoodOld
-import uk.ac.ncl.openlab.intake24.IndexEntryOld
-import uk.ac.ncl.openlab.intake24.UserCategoryHeader
-import uk.ac.ncl.openlab.intake24.UserFoodHeader
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
+import java.io.{File, PrintWriter}
+
+import uk.ac.ncl.openlab.intake24._
+import uk.ac.ncl.openlab.intake24.errors.{LocaleError, UndefinedLocale}
+
+import scala.xml.{Node, PrettyPrinter}
 
 object Util {
 
@@ -49,6 +44,7 @@ object Util {
         case ec: CategoryV1 => ec.copy(children = mapRec(ec.children))
       }
     }
+
     rootCats.mapValues(ec => ec.copy(children = mapRec(ec.children)))
   }
 

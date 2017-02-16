@@ -1,6 +1,6 @@
 package uk.ac.ncl.openlab.intake24.api.client
 
-trait ApiError
+sealed trait ApiError
 
 object ApiError {
 

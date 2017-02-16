@@ -18,37 +18,32 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodsql.foodindex
 
-import org.slf4j.LoggerFactory
-import com.google.inject.Inject
-import com.google.inject.Singleton
-import com.google.inject.name.Named
-import anorm.NamedParameter.symbol
-import anorm.sqlToSimple
 import javax.sql.DataSource
-import uk.ac.ncl.openlab.intake24.UserCategoryHeader
-import uk.ac.ncl.openlab.intake24.UserFoodHeader
 
+import anorm.NamedParameter.symbol
+import anorm.{Macro, SQL, sqlToSimple}
+import com.google.inject.{Inject, Singleton}
+import com.google.inject.name.Named
+import org.slf4j.LoggerFactory
+import uk.ac.ncl.openlab.intake24.{UserCategoryHeader, UserFoodHeader}
+import uk.ac.ncl.openlab.intake24.errors.LocaleError
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
-import anorm.Macro
-import anorm.SQL
-import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
-import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
+import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
 
 @Singleton
-class FoodIndexDataImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends FoodDataSqlService 
+class FoodIndexDataImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends SqlDataService
   with SqlResourceLoader with FoodIndexDataService with FoodIndexDataSharedImpl {
 
   private val logger = LoggerFactory.getLogger(classOf[FoodIndexDataImpl])
-    
+
   private val indexableFoodsQuery = sqlFromResource("foodindex/indexable_foods.sql")
-  
+
   def indexableFoods(locale: String): Either[LocaleError, Seq[UserFoodHeader]] = tryWithConnection {
     implicit conn =>
       Right(SQL(indexableFoodsQuery).on('locale_id -> locale).executeQuery().as(Macro.indexedParser[UserFoodHeader].*))
   }
-  
+
   private val indexableCategoriesQuery = sqlFromResource("foodindex/indexable_categories.sql")
 
   def indexableCategories(locale: String): Either[LocaleError, Seq[UserCategoryHeader]] = tryWithConnection {

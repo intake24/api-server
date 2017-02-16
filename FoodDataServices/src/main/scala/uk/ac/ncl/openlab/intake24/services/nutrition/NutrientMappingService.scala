@@ -18,8 +18,7 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.services.nutrition
 
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.NutrientMappingError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
+import uk.ac.ncl.openlab.intake24.errors.{NutrientMappingError, UnexpectedDatabaseError}
 
 case class NutrientDescription(nutrientId: Long, description: String, unit: String)
 

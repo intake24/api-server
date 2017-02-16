@@ -1,26 +1,7 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.admin
 
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
-
-import uk.ac.ncl.openlab.intake24.CategoryRecord
-import uk.ac.ncl.openlab.intake24.MainCategoryRecord
-import uk.ac.ncl.openlab.intake24.LocalCategoryRecord
-import uk.ac.ncl.openlab.intake24.NewCategory
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentError
-import uk.ac.ncl.openlab.intake24.MainCategoryRecordUpdate
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentUpdateError
-import uk.ac.ncl.openlab.intake24.LocalCategoryRecordUpdate
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentUpdateError
-import uk.ac.ncl.openlab.intake24.NewLocalCategoryRecord
-import uk.ac.ncl.openlab.intake24.NewMainCategoryRecord
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentCreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalCreateError
+import uk.ac.ncl.openlab.intake24._
+import uk.ac.ncl.openlab.intake24.errors._
 
 trait CategoriesAdminService {
   def getCategoryRecord(code: String, locale: String): Either[LocalLookupError, CategoryRecord]

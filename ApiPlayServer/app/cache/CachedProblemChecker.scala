@@ -1,38 +1,18 @@
 package cache
 
-import play.api.mvc.Controller
-import play.api.libs.json.Json
-import play.api.mvc.Action
-
-import play.api.libs.json.JsError
-import scala.concurrent.Future
-import upickle.default._
-import com.oracle.webservices.internal.api.message.ContentType
-import play.api.http.ContentTypes
 import javax.inject.Inject
-import be.objectify.deadbolt.scala.DeadboltActions
+
+import models.{CategoryProblem, FoodProblem, RecursiveCategoryProblems}
+import modules.ProblemCheckerService
+import org.slf4j.LoggerFactory
+import play.api.cache.CacheApi
+import uk.ac.ncl.openlab.intake24._
+import uk.ac.ncl.openlab.intake24.errors.LocalLookupError
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodBrowsingAdminService
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDataService
+import uk.ac.ncl.openlab.intake24.services.util.Timing
 
 import scala.collection.mutable.Buffer
-import uk.ac.ncl.openlab.intake24.CategoryHeader
-import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.services.util.Timing
-import play.api.cache.CacheApi
-import models.FoodProblem
-import models.CategoryProblem
-import models.RecursiveCategoryProblems
-import modules.ProblemCheckerService
-import uk.ac.ncl.openlab.intake24.foodsql.user.FoodDatabaseUserImpl
-import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDataService
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodBrowsingAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
-import uk.ac.ncl.openlab.intake24.MainCategoryRecordUpdate
-import uk.ac.ncl.openlab.intake24.LocalCategoryRecordUpdate
-import uk.ac.ncl.openlab.intake24.NewLocalCategoryRecord
-import uk.ac.ncl.openlab.intake24.NewMainCategoryRecord
 
 case class CachedProblemChecker @Inject() (
   categories: ObservableCategoriesAdminService,

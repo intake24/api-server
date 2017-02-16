@@ -1,23 +1,7 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.admin
 
-import uk.ac.ncl.openlab.intake24.MainFoodRecord
-import uk.ac.ncl.openlab.intake24.FoodRecord
-import uk.ac.ncl.openlab.intake24.LocalFoodRecord
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.NewMainFoodRecord
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentCreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentCreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
-import uk.ac.ncl.openlab.intake24.LocalFoodRecordUpdate
-import uk.ac.ncl.openlab.intake24.NewLocalFoodRecord
-import uk.ac.ncl.openlab.intake24.MainFoodRecordUpdate
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentUpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentUpdateError
+import uk.ac.ncl.openlab.intake24._
+import uk.ac.ncl.openlab.intake24.errors._
 
 trait FoodsAdminService {
   def getFoodRecord(code: String, locale: String): Either[LocalLookupError, FoodRecord]

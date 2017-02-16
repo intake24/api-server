@@ -20,6 +20,7 @@ package controllers.system
 
 import javax.inject.Inject
 
+import controllers.DatabaseErrorHandler
 import parsers.UpickleUtil
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller}
@@ -32,7 +33,7 @@ import scala.concurrent.Future
 
 
 class SurveyAdminController @Inject()(service: SurveyAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
-  with SystemDatabaseErrorHandler with UpickleUtil {
+  with DatabaseErrorHandler with UpickleUtil {
 
   def createSurvey() = deadbolt.restrictAccess(Roles.superuser)(upickleBodyParser[CreateSurveyRequest]) {
     request =>

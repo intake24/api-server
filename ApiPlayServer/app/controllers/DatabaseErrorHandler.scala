@@ -4,15 +4,24 @@ import org.slf4j.LoggerFactory
 import play.api.http.ContentTypes
 import play.api.mvc.{Result, Results}
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors._
+import uk.ac.ncl.openlab.intake24.errors._
 import upickle.default._
 
-trait FoodDatabaseErrorHandler extends Results {
+trait DatabaseErrorHandler extends Results {
 
-  private val logger = LoggerFactory.getLogger(classOf[FoodDatabaseErrorHandler])
+  private val logger = LoggerFactory.getLogger(classOf[DatabaseErrorHandler])
 
   private def handleDatabaseError(e: Throwable): Result = {
+
+    def logCause(e: Throwable): Unit =
+      if (e != null) {
+        logger.error("Caused by", e)
+        logCause(e.getCause)
+      }
+
     logger.error("DatabaseError", e)
+    logCause(e.getCause)
+
     InternalServerError(write(ErrorDescription("DatabaseError", "Unexpected database error: " + e.getMessage()))).as(ContentTypes.JSON)
   }
 
@@ -24,7 +33,7 @@ trait FoodDatabaseErrorHandler extends Results {
     case UndefinedLocale(_) => BadRequest(write(ErrorDescription("UndefinedLocale", "Locale is not defined, check the locale code"))).as(ContentTypes.JSON)
     case ParentRecordNotFound(e) => BadRequest(write(ErrorDescription("ParentRecordNotFound", "An object referenced by this object does not exist: " + e.getMessage))).as(ContentTypes.JSON)
     case IllegalParent(_) => BadRequest(write(ErrorDescription("IllegalParent", "The object references an illegal parent object"))).as(ContentTypes.JSON)
-    case ConstraintViolation(name, _) => BadRequest(write(ErrorDescription("ConstraintViolation", s"Constraint $name not met")))
+    case ConstraintViolation(name, _) => BadRequest(write(ErrorDescription("ConstraintViolation", s"Database constraint not met: $name")))
     case UnexpectedDatabaseError(exception) => handleDatabaseError(exception)
   }
 

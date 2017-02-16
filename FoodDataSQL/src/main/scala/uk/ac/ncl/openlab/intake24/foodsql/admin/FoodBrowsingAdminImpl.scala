@@ -1,29 +1,18 @@
 package uk.ac.ncl.openlab.intake24.foodsql.admin
 
-import scala.Right
-
-import org.slf4j.LoggerFactory
-
-import com.google.inject.Inject
-import com.google.inject.Singleton
-import com.google.inject.name.Named
-
-import anorm.Macro
-import anorm.NamedParameter.symbol
-import anorm.SQL
-import anorm.sqlToSimple
 import javax.sql.DataSource
-import uk.ac.ncl.openlab.intake24.CategoryContents
-import uk.ac.ncl.openlab.intake24.CategoryHeader
-import uk.ac.ncl.openlab.intake24.FoodHeader
+
+import anorm.NamedParameter.symbol
+import anorm.{Macro, SQL, sqlToSimple}
+import com.google.inject.{Inject, Singleton}
+import com.google.inject.name.Named
+import org.slf4j.LoggerFactory
+import uk.ac.ncl.openlab.intake24.errors.{LocalLookupError, LocaleError, LookupError}
+import uk.ac.ncl.openlab.intake24.{CategoryContents, CategoryHeader, FoodHeader}
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
 import uk.ac.ncl.openlab.intake24.foodsql.modular.FoodBrowsingAdminQueries
 import uk.ac.ncl.openlab.intake24.foodsql.shared.SuperCategoriesQueries
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodBrowsingAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoryDescendantsCodes
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{CategoryDescendantsCodes, FoodBrowsingAdminService}
 
 @Singleton
 class FoodBrowsingAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends FoodBrowsingAdminImpl

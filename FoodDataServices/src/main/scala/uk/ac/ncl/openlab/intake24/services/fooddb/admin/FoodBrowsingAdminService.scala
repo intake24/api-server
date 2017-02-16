@@ -1,15 +1,7 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.admin
 
-import uk.ac.ncl.openlab.intake24.FoodHeader
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.FoodRecord
-import uk.ac.ncl.openlab.intake24.CategoryHeader
-import uk.ac.ncl.openlab.intake24.CategoryContents
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
+import uk.ac.ncl.openlab.intake24.errors.{LocalLookupError, LocaleError, LookupError}
+import uk.ac.ncl.openlab.intake24.{CategoryContents, CategoryHeader, FoodHeader}
 
 case class CategoryDescendantsCodes(foods: Set[String], subcategories: Set[String])
 

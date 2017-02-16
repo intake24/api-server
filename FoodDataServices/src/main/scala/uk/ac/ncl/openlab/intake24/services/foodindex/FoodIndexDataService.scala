@@ -18,14 +18,15 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.services.foodindex
 
-import uk.ac.ncl.openlab.intake24.SplitList
-import uk.ac.ncl.openlab.intake24.UserCategoryHeader
-import uk.ac.ncl.openlab.intake24.UserFoodHeader
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
+import uk.ac.ncl.openlab.intake24.{SplitList, UserCategoryHeader, UserFoodHeader}
+import uk.ac.ncl.openlab.intake24.errors.LocaleError
 
 trait FoodIndexDataService {
   def indexableCategories(locale: String): Either[LocaleError, Seq[UserCategoryHeader]]
+
   def indexableFoods(locale: String): Either[LocaleError, Seq[UserFoodHeader]]
+
   def synsets(locale: String): Either[LocaleError, Seq[Set[String]]]
+
   def splitList(locale: String): Either[LocaleError, SplitList]
 }

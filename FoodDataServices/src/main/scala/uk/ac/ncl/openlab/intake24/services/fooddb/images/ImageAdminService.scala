@@ -4,7 +4,7 @@ import java.nio.file.Path
 import java.util.UUID
 
 import org.apache.commons.io.FilenameUtils
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.AnyError
+import uk.ac.ncl.openlab.intake24.errors.AnyError
 
 case class ImageDescriptor(id: Long, path: String)
 

@@ -1,6 +1,6 @@
 package uk.ac.ncl.openlab.intake24.sql.tools
 
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.AnyError
+import uk.ac.ncl.openlab.intake24.errors.AnyError
 
 trait ErrorHandler {
 

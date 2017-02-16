@@ -1,22 +1,16 @@
 package uk.ac.ncl.openlab.intake24.foodsql.user
 
-import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
-import uk.ac.ncl.openlab.intake24.PortionSizeMethod
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
-import anorm.Macro
-import anorm.SQL
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.SourceLocale
 import java.sql.Connection
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.SourceRecord
-import uk.ac.ncl.openlab.intake24.foodsql.shared.FoodPortionSizeShared
-import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
-import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.foodsql.SimpleValidation
-import uk.ac.ncl.openlab.intake24.sql.SqlDataService
-import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
-import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
 
-trait InheritedPortionSizeMethodsImpl extends FoodPortionSizeShared with FoodDataSqlService with SimpleValidation with SqlResourceLoader {
+import anorm.{Macro, SQL}
+import uk.ac.ncl.openlab.intake24.PortionSizeMethod
+import uk.ac.ncl.openlab.intake24.errors.LocalLookupError
+import uk.ac.ncl.openlab.intake24.foodsql.SimpleValidation
+import uk.ac.ncl.openlab.intake24.foodsql.shared.FoodPortionSizeShared
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.{SourceLocale, SourceRecord}
+import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
+
+trait InheritedPortionSizeMethodsImpl extends FoodPortionSizeShared with SqlDataService with SimpleValidation with SqlResourceLoader {
 
   private case class RecursivePsmResultRow(id: Long, category_code: String, method: String, description: String, image_url: String, use_for_recipes: Boolean, param_name: Option[String], param_value: Option[String])
 

@@ -3,12 +3,12 @@ package cache
 import com.google.inject.Inject
 import modules.BasicImpl
 import play.api.cache.CacheApi
-import uk.ac.ncl.openlab.intake24.{AssociatedFood, AssociatedFoodWithHeader}
+import uk.ac.ncl.openlab.intake24.errors.{LocalLookupError, LocaleOrParentError, UnexpectedDatabaseError}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.{LocalLookupError, LocaleOrParentError, UnexpectedDatabaseError}
+import uk.ac.ncl.openlab.intake24.{AssociatedFood, AssociatedFoodWithHeader}
 
-case class CachedAssociatedFoodsAdminService @Inject() (@BasicImpl service: AssociatedFoodsAdminService, cache: CacheApi)
-    extends AssociatedFoodsAdminService
+case class CachedAssociatedFoodsAdminService @Inject()(@BasicImpl service: AssociatedFoodsAdminService, cache: CacheApi)
+  extends AssociatedFoodsAdminService
     with CacheResult {
 
   var knownCacheKeys = Set[String]()
@@ -16,7 +16,7 @@ case class CachedAssociatedFoodsAdminService @Inject() (@BasicImpl service: Asso
   def associatedFoodsWithHeadersCacheKey(foodCode: String, locale: String) = s"CachedAssociatedFoodsAdminService.associatedFoodsWithHeaders.$locale.$foodCode"
 
   def getAssociatedFoods(foodCode: String, locale: String): Either[LocalLookupError, Seq[AssociatedFood]] = service.getAssociatedFoods(foodCode, locale)
-  
+
   def getAssociatedFoodsWithHeaders(foodCode: String, locale: String): Either[LocalLookupError, Seq[AssociatedFoodWithHeader]] =
     cachePositiveResult(associatedFoodsWithHeadersCacheKey(foodCode, locale)) {
       service.getAssociatedFoodsWithHeaders(foodCode, locale)

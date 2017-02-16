@@ -1,23 +1,19 @@
 package uk.ac.ncl.openlab.intake24.foodsql.admin
 
-import uk.ac.ncl.openlab.intake24.FoodHeader
-import uk.ac.ncl.openlab.intake24.CategoryHeader
+import javax.sql.DataSource
 
 import anorm._
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.QuickSearchService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
-
-import com.google.inject.Inject
-import com.google.inject.Singleton
-import javax.sql.DataSource
+import com.google.inject.{Inject, Singleton}
 import com.google.inject.name.Named
-import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
-import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
+import uk.ac.ncl.openlab.intake24.{CategoryHeader, FoodHeader}
+import uk.ac.ncl.openlab.intake24.errors.UnexpectedDatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.QuickSearchService
+import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
 @Singleton
 class QuickSearchAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends QuickSearchAdminImpl
 
-trait QuickSearchAdminImpl extends QuickSearchService with FoodDataSqlService with HeaderRows with SqlResourceLoader {
+trait QuickSearchAdminImpl extends QuickSearchService with SqlDataService with HeaderRows with SqlResourceLoader {
   
   private lazy val foodsQuickSearchQuery = sqlFromResource("admin/foods_quick_search.sql")
   

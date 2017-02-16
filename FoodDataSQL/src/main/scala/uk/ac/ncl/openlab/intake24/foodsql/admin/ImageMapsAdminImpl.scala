@@ -6,15 +6,14 @@ import anorm.{BatchSql, Macro, NamedParameter, SQL, SqlParser}
 import com.google.inject.name.Named
 import com.google.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
+import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors._
-import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
+import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
 @Singleton
 class ImageMapsAdminStandaloneImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends ImageMapsAdminImpl
 
-trait ImageMapsAdminImpl extends ImageMapsAdminService with FoodDataSqlService with SqlResourceLoader {
+trait ImageMapsAdminImpl extends ImageMapsAdminService with SqlDataService with SqlResourceLoader {
 
   private val logger = LoggerFactory.getLogger(classOf[ImageMapsAdminImpl])
 

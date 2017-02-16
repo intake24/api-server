@@ -5,7 +5,7 @@ import play.api.mvc.Result
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.{DatabaseErrorWrapper, ImageServiceErrorWrapper, ImageServiceOrDatabaseError}
 import upickle.default._
 
-trait ImageOrDatabaseServiceErrorHandler extends FoodDatabaseErrorHandler with ImageServiceErrorHandler {
+trait ImageOrDatabaseServiceErrorHandler extends DatabaseErrorHandler with ImageServiceErrorHandler {
 
   def translateImageServiceAndDatabaseError[T](result: Either[ImageServiceOrDatabaseError, T]): Either[Result, T] = result match {
     case Right(result) => Right(result)

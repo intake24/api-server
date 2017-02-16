@@ -18,19 +18,10 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.nutrientsndns
 
-import scala.Left
-import scala.Right
-
+import com.google.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
-
-import com.google.inject.Inject
-import com.google.inject.Singleton
-
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.NutrientMappingError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.TableNotFound
-import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientDescription
-import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService
+import uk.ac.ncl.openlab.intake24.errors.{NutrientMappingError, RecordNotFound, TableNotFound}
+import uk.ac.ncl.openlab.intake24.services.nutrition.{NutrientDescription, NutrientMappingService}
 
 @Singleton
 case class LegacyNutrientMappingServiceImpl @Inject() (tables: Map[String, NutrientTable]) extends NutrientMappingService {

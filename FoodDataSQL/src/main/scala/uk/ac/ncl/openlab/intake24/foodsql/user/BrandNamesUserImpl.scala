@@ -1,20 +1,13 @@
 package uk.ac.ncl.openlab.intake24.foodsql.user
 
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.BrandNamesService
-
 import anorm._
-import anorm.SqlParser.str
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
-import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
-import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
-import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
-import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
+import uk.ac.ncl.openlab.intake24.errors.LocalLookupError
+import uk.ac.ncl.openlab.intake24.foodsql.{FirstRowValidation, FirstRowValidationClause}
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.BrandNamesService
+import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
 
-trait BrandNamesUserImpl extends BrandNamesService with FoodDataSqlService with FirstRowValidation with SqlResourceLoader {
+trait BrandNamesUserImpl extends BrandNamesService with SqlDataService with FirstRowValidation with SqlResourceLoader {
 
   private lazy val getBrandNamesQuery = sqlFromResource("user/get_brand_names_frv.sql")
 

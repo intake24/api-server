@@ -1,24 +1,19 @@
 package uk.ac.ncl.openlab.intake24.foodsql.admin
 
-import uk.ac.ncl.openlab.intake24.NutrientTable
-import anorm.{BatchSql, Macro, NamedParameter, SQL, sqlToSimple}
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.NutrientTablesAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
-import uk.ac.ncl.openlab.intake24.NutrientTableRecord
-import com.google.inject.Inject
-import com.google.inject.Singleton
 import javax.sql.DataSource
 
+import anorm.{BatchSql, Macro, NamedParameter, SQL, sqlToSimple}
 import com.google.inject.name.Named
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
-import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
+import com.google.inject.{Inject, Singleton}
+import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound, UnexpectedDatabaseError}
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.NutrientTablesAdminService
+import uk.ac.ncl.openlab.intake24.sql.SqlDataService
+import uk.ac.ncl.openlab.intake24.{NutrientTable, NutrientTableRecord}
 
 @Singleton
 class NutrientTablesAdminStandaloneImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends NutrientTablesAdminImpl
 
-trait NutrientTablesAdminImpl extends NutrientTablesAdminService with FoodDataSqlService {
+trait NutrientTablesAdminImpl extends NutrientTablesAdminService with SqlDataService {
 
   private case class NutrientTableDescRow(id: String, description: String) {
     def asNutrientTable = NutrientTable(id, description)

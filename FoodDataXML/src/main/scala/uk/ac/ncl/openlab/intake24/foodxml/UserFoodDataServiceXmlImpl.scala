@@ -18,25 +18,11 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodxml
 
+import com.google.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
-import com.google.inject.Inject
-import com.google.inject.Singleton
-import uk.ac.ncl.openlab.intake24.AsServedSetV1
-import uk.ac.ncl.openlab.intake24.DrinkwareSet
-import uk.ac.ncl.openlab.intake24.GuideImage
-import uk.ac.ncl.openlab.intake24.InheritableAttributes
-import uk.ac.ncl.openlab.intake24.UserCategoryContents
-import uk.ac.ncl.openlab.intake24.UserCategoryHeader
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.UserFoodData
-import uk.ac.ncl.openlab.intake24.UserFoodHeader
-import uk.ac.ncl.openlab.intake24.AssociatedFood
+import uk.ac.ncl.openlab.intake24._
+import uk.ac.ncl.openlab.intake24.errors.{LocaleError, LookupError, RecordNotFound}
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.{FoodDatabaseService, UserAsServedImage, UserAsServedSet, UserImageMap}
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
 
 @Singleton
 class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDatabaseService {

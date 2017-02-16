@@ -5,7 +5,7 @@ import modules.BasicImpl
 import play.api.cache.CacheApi
 import uk.ac.ncl.openlab.intake24._
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{CategoriesAdminService, LocalesAdminService}
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors._
+import uk.ac.ncl.openlab.intake24.errors._
 
 case class CachedCategoriesAdminService @Inject() (@BasicImpl service: CategoriesAdminService, localeService: LocalesAdminService, cache: CacheApi)
     extends CategoriesAdminService

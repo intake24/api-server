@@ -18,22 +18,10 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodsql.test
 
-import scala.Left
-import scala.Right
-
 import org.scalatest.FunSuite
-
-import com.google.inject.Inject
-import com.google.inject.Singleton
-
-import anorm.SQL
-import anorm.sqlToSimple
-import uk.ac.ncl.openlab.intake24.UserCategoryContents
-import uk.ac.ncl.openlab.intake24.UserCategoryHeader
-import uk.ac.ncl.openlab.intake24.UserFoodData
-import uk.ac.ncl.openlab.intake24.UserFoodHeader
+import uk.ac.ncl.openlab.intake24.errors.RecordNotFound
+import uk.ac.ncl.openlab.intake24.{UserCategoryContents, UserCategoryHeader, UserFoodData, UserFoodHeader}
 import uk.ac.ncl.openlab.intake24.foodsql.user.FoodDatabaseUserImpl
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
 
 class UserFoodDataServiceSqlImplTest extends FunSuite with TestFoodDatabase {
 

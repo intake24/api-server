@@ -1,56 +1,29 @@
 package uk.ac.ncl.openlab.intake24.foodsql.admin
 
 import java.util.UUID
-
-import scala.Left
-import scala.Right
-
-import org.slf4j.LoggerFactory
-
-import com.google.inject.Inject
-import com.google.inject.Singleton
-import com.google.inject.name.Named
-
-import anorm.Macro
-import anorm.NamedParameter.symbol
-import anorm.SQL
-import anorm.SqlParser
-import anorm.sqlToSimple
 import javax.sql.DataSource
-import uk.ac.ncl.openlab.intake24.CategoryRecord
-import uk.ac.ncl.openlab.intake24.InheritableAttributes
-import uk.ac.ncl.openlab.intake24.LocalCategoryRecord
-import uk.ac.ncl.openlab.intake24.LocalCategoryRecordUpdate
-import uk.ac.ncl.openlab.intake24.MainCategoryRecord
-import uk.ac.ncl.openlab.intake24.MainCategoryRecordUpdate
-import uk.ac.ncl.openlab.intake24.NewCategory
-import uk.ac.ncl.openlab.intake24.NewLocalCategoryRecord
+
+import anorm.{Macro, SQL, SqlParser, sqlToSimple}
+import com.google.inject.{Inject, Singleton}
+import com.google.inject.name.Named
+import org.slf4j.LoggerFactory
+import uk.ac.ncl.openlab.intake24._
+import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.foodsql.SimpleValidation
-import uk.ac.ncl.openlab.intake24.foodsql.modular.CategoriesAdminQueries
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoriesAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentUpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentUpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
-import uk.ac.ncl.openlab.intake24.foodsql.modular.FoodBrowsingAdminQueries
-import uk.ac.ncl.openlab.intake24.NewMainCategoryRecord
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentCreateError
+import uk.ac.ncl.openlab.intake24.foodsql.modular.{CategoriesAdminQueries, FoodBrowsingAdminQueries}
 import uk.ac.ncl.openlab.intake24.foodsql.shared.SuperCategoriesQueries
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalCreateError
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoriesAdminService
+import uk.ac.ncl.openlab.intake24.sql.SqlDataService
 
 @Singleton
-class CategoriesAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends CategoriesAdminImpl
+class CategoriesAdminStandaloneImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends CategoriesAdminImpl
 
 trait CategoriesAdminImpl extends CategoriesAdminService
-    with SimpleValidation
-    with CategoriesAdminQueries
-    with FoodBrowsingAdminQueries
-    with SuperCategoriesQueries {
+  with SqlDataService
+  with SimpleValidation
+  with CategoriesAdminQueries
+  with FoodBrowsingAdminQueries
+  with SuperCategoriesQueries {
 
   private val logger = LoggerFactory.getLogger(classOf[CategoriesAdminImpl])
 
@@ -62,7 +35,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService
   def isCategoryCodeAvailable(code: String): Either[UnexpectedDatabaseError, Boolean] = isCategoryCode(code).right.map(!_)
 
   case class CategoryResultRow(version: UUID, local_version: Option[UUID], code: String, description: String, local_description: Option[String], is_hidden: Boolean, same_as_before_option: Option[Boolean],
-    ready_meal_option: Option[Boolean], reasonable_amount: Option[Int])
+                               ready_meal_option: Option[Boolean], reasonable_amount: Option[Int])
 
   private lazy val categoryRecordQuery = sqlFromResource("admin/get_category_record_frv.sql")
 
@@ -108,6 +81,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService
         ) yield ()
       }
   }
+
   def addFoodsToCategories(categoryFoods: Map[String, Seq[String]]): Either[ParentError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
@@ -191,7 +165,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService
       if (rowsAffected == 1)
         Right(())
       else
-        // TODO: Could be food or category, needs better validation
+      // TODO: Could be food or category, needs better validation
         Left(RecordNotFound(new RuntimeException(categoryCode)))
   }
 
@@ -204,7 +178,7 @@ trait CategoriesAdminImpl extends CategoriesAdminService
       if (rowsAffected == 1)
         Right(())
       else
-        // TODO: Could be food or category, needs better validation
+      // TODO: Could be food or category, needs better validation
         Left(RecordNotFound(new RuntimeException(s"categoryCode: $categoryCode, subcategoryCode: $subcategoryCode")))
   }
 }

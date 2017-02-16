@@ -1,27 +1,15 @@
 package uk.ac.ncl.openlab.intake24.foodsql.user
 
-import scala.Right
-
-import anorm.Macro
 import anorm.NamedParameter.symbol
-import anorm.SQL
-import anorm.sqlToSimple
-import uk.ac.ncl.openlab.intake24.UserCategoryContents
-import uk.ac.ncl.openlab.intake24.UserCategoryHeader
-import uk.ac.ncl.openlab.intake24.UserFoodHeader
-import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
-import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodBrowsingService
-
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
+import anorm.{Macro, SQL, sqlToSimple}
+import uk.ac.ncl.openlab.intake24.errors.{LocalLookupError, LocaleError, LookupError}
 import uk.ac.ncl.openlab.intake24.foodsql.shared.SuperCategoriesQueries
-import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
-import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
+import uk.ac.ncl.openlab.intake24.foodsql.{FirstRowValidation, FirstRowValidationClause}
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodBrowsingService
+import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
+import uk.ac.ncl.openlab.intake24.{UserCategoryContents, UserCategoryHeader, UserFoodHeader}
 
-trait FoodBrowsingUserImpl extends FoodBrowsingService with FoodDataSqlService with SqlResourceLoader with FirstRowValidation with SuperCategoriesQueries {
+trait FoodBrowsingUserImpl extends FoodBrowsingService with SqlDataService with SqlResourceLoader with FirstRowValidation with SuperCategoriesQueries {
 
   private lazy val rootCategoriesQuery = sqlFromResource("user/root_categories.sql")
 
@@ -70,7 +58,7 @@ trait FoodBrowsingUserImpl extends FoodBrowsingService with FoodDataSqlService w
   }
 
   def getCategoryContents(code: String, locale: String): Either[LocalLookupError, UserCategoryContents] = tryWithConnection {
-    implicit conn =>      
+    implicit conn =>
       for (
         foods <- categoryFoodContentsImpl(code, locale).right;
         subcategories <- categorySubcategoryContentsImpl(code, locale).right

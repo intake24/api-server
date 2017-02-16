@@ -1,29 +1,10 @@
 package cache
 
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoriesAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
-import uk.ac.ncl.openlab.intake24.CategoryRecord
-import uk.ac.ncl.openlab.intake24.NewCategory
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
-import uk.ac.ncl.openlab.intake24.LocalCategoryRecord
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
-import uk.ac.ncl.openlab.intake24.MainCategoryRecord
-import com.google.inject.Inject
-import com.google.inject.Singleton
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.NewLocalCategoryRecord
-import uk.ac.ncl.openlab.intake24.MainCategoryRecordUpdate
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentUpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentUpdateError
-import uk.ac.ncl.openlab.intake24.LocalCategoryRecordUpdate
-import uk.ac.ncl.openlab.intake24.NewMainCategoryRecord
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentCreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalCreateError
+import com.google.inject.{Inject, Singleton}
 import modules.BasicImpl
+import uk.ac.ncl.openlab.intake24._
+import uk.ac.ncl.openlab.intake24.errors._
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoriesAdminService
 
 /*
  *   def getCategoryRecord(code: String, locale: String): Either[LocalLookupError, CategoryRecord]
@@ -43,13 +24,17 @@ import modules.BasicImpl
  */
 trait CategoriesAdminObserver {
   def onCategoryToBeDeleted(code: String): Unit
+
   def onCategoryDeleted(code: String): Unit
+
   def onAllCategoriesDeleted(): Unit
 
   def onMainCategoryRecordCreated(record: NewMainCategoryRecord): Unit
+
   def onLocalCategoryRecordCreated(code: String, record: NewLocalCategoryRecord, locale: String): Unit
 
   def onMainCategoryRecordUpdated(code: String, record: MainCategoryRecordUpdate): Unit
+
   def onLocalCategoryRecordUpdated(code: String, record: LocalCategoryRecordUpdate, locale: String): Unit
 }
 
@@ -58,7 +43,7 @@ trait ObservableCategoriesAdminService extends CategoriesAdminService {
 }
 
 @Singleton
-class ObservableCategoriesAdminServiceImpl @Inject() (@BasicImpl service: CategoriesAdminService) extends ObservableCategoriesAdminService {
+class ObservableCategoriesAdminServiceImpl @Inject()(@BasicImpl service: CategoriesAdminService) extends ObservableCategoriesAdminService {
 
   private var observers = List[CategoriesAdminObserver]()
 
@@ -67,6 +52,7 @@ class ObservableCategoriesAdminServiceImpl @Inject() (@BasicImpl service: Catego
   def getCategoryRecord(code: String, locale: String): Either[LocalLookupError, CategoryRecord] = service.getCategoryRecord(code, locale)
 
   def isCategoryCodeAvailable(code: String): Either[UnexpectedDatabaseError, Boolean] = service.isCategoryCodeAvailable(code)
+
   def isCategoryCode(code: String): Either[UnexpectedDatabaseError, Boolean] = service.isCategoryCode(code)
 
   def createMainCategoryRecords(records: Seq[NewMainCategoryRecord]): Either[DependentCreateError, Unit] = service.createMainCategoryRecords(records).right.map {

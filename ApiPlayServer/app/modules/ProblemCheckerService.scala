@@ -1,9 +1,7 @@
 package modules
 
-import models.FoodProblem
-import models.CategoryProblem
-import models.RecursiveCategoryProblems
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
+import models.{CategoryProblem, FoodProblem, RecursiveCategoryProblems}
+import uk.ac.ncl.openlab.intake24.errors.LocalLookupError
 
 trait ProblemCheckerService {
   def getFoodProblems(code: String, locale: String): Either[LocalLookupError, Seq[FoodProblem]]

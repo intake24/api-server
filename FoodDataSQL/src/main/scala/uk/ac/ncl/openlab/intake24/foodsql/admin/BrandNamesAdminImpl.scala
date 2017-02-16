@@ -1,31 +1,21 @@
 package uk.ac.ncl.openlab.intake24.foodsql.admin
 
-import scala.Right
+import javax.sql.DataSource
 
-import org.slf4j.LoggerFactory
-
+import anorm.{SQL, sqlToSimple}
 import com.google.inject.Inject
 import com.google.inject.name.Named
-
-import anorm.NamedParameter
-import anorm.NamedParameter.symbol
-import anorm.SQL
-import anorm.sqlToSimple
-import javax.sql.DataSource
+import org.slf4j.LoggerFactory
+import uk.ac.ncl.openlab.intake24.errors.{LocaleError, LocaleOrParentError}
 import uk.ac.ncl.openlab.intake24.foodsql.SimpleValidation
 import uk.ac.ncl.openlab.intake24.foodsql.modular.BrandNamesAdminQueries
 import uk.ac.ncl.openlab.intake24.foodsql.user.BrandNamesUserImpl
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.BrandNamesAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentCreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentRecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleOrParentError
+import uk.ac.ncl.openlab.intake24.sql.SqlDataService
 
-class BrandNamesAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends BrandNamesAdminImpl
+class BrandNamesAdminStandaloneImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends BrandNamesAdminImpl
 
-trait BrandNamesAdminImpl extends BrandNamesAdminService with BrandNamesUserImpl with BrandNamesAdminQueries with SimpleValidation {
+trait BrandNamesAdminImpl extends BrandNamesAdminService with BrandNamesUserImpl with BrandNamesAdminQueries with SqlDataService with SimpleValidation {
   private val logger = LoggerFactory.getLogger(classOf[BrandNamesAdminImpl])
 
   def deleteAllBrandNames(locale: String): Either[LocaleError, Unit] = tryWithConnection {
@@ -40,11 +30,11 @@ trait BrandNamesAdminImpl extends BrandNamesAdminService with BrandNamesUserImpl
         }
       }
   }
-  
+
   def createBrandNames(brandNames: Map[String, Seq[String]], locale: String): Either[LocaleOrParentError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
-      createBrandNamesQuery(brandNames, locale)
+        createBrandNamesQuery(brandNames, locale)
       }
   }
 }

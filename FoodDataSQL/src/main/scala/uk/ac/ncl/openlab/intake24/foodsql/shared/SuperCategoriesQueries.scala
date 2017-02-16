@@ -1,18 +1,11 @@
 package uk.ac.ncl.openlab.intake24.foodsql.shared
 
-import scala.Right
-
-import anorm.Macro
 import anorm.NamedParameter.symbol
-import anorm.SQL
-import anorm.SqlParser
-import anorm.sqlToSimple
+import anorm.{Macro, SQL, SqlParser, sqlToSimple}
 import uk.ac.ncl.openlab.intake24.CategoryHeader
-import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
-import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
+import uk.ac.ncl.openlab.intake24.errors.{LocalLookupError, LookupError}
+import uk.ac.ncl.openlab.intake24.foodsql.{FirstRowValidation, FirstRowValidationClause}
 import uk.ac.ncl.openlab.intake24.foodsql.admin.HeaderRows
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
 import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
 
 trait SuperCategoriesQueries extends FirstRowValidation with HeaderRows with SqlResourceLoader {

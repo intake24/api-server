@@ -18,35 +18,21 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodsql.admin
 
-import scala.Left
-import scala.Right
-
-import com.google.inject.Inject
-import com.google.inject.Singleton
-import com.google.inject.name.Named
-
-import anorm.Macro
-import anorm.NamedParameter.symbol
-import anorm.SQL
-import anorm.sqlToSimple
 import javax.sql.DataSource
-import uk.ac.ncl.openlab.intake24.Locale
 
+import anorm.NamedParameter.symbol
+import anorm.{Macro, SQL, sqlToSimple}
+import com.google.inject.name.Named
+import com.google.inject.{Inject, Singleton}
+import uk.ac.ncl.openlab.intake24.Locale
+import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.LocalesAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DuplicateCode
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
-import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
+import uk.ac.ncl.openlab.intake24.sql.SqlDataService
 
 @Singleton
-class LocalesAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends LocalesAdminImpl
+class LocalesAdminStandaloneImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends LocalesAdminImpl
 
-trait LocalesAdminImpl extends LocalesAdminService with FoodDataSqlService {
+trait LocalesAdminImpl extends LocalesAdminService with SqlDataService {
 
   private case class LocaleRow(id: String, english_name: String, local_name: String, respondent_language_id: String, admin_language_id: String, country_flag_code: String, prototype_locale_id: Option[String]) {
     def mkLocale = Locale(id, english_name, local_name, respondent_language_id, admin_language_id, country_flag_code, prototype_locale_id)
@@ -107,9 +93,9 @@ trait LocalesAdminImpl extends LocalesAdminService with FoodDataSqlService {
   }
 
   /**
-   * Is translation for descriptions, associated food prompts etc. strictly required for this locale
-   * (false if it can be inherited from the prototype locale)
-   */
+    * Is translation for descriptions, associated food prompts etc. strictly required for this locale
+    * (false if it can be inherited from the prototype locale)
+    */
   def isTranslationRequired(id: String): Either[LookupError, Boolean] =
     getLocale(id).right.flatMap {
       currentLocale =>
@@ -121,5 +107,4 @@ trait LocalesAdminImpl extends LocalesAdminService with FoodDataSqlService {
           case None => Right(true)
         }
     }
-
 }

@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.GuideHeader
 import uk.ac.ncl.openlab.intake24.foodsql.user.GuideImageUserImpl
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{GuideImageAdminService, NewGuideImageRecord}
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors._
+import uk.ac.ncl.openlab.intake24.errors._
 
 @Singleton
 class GuideImageAdminStandaloneImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends GuideImageAdminImpl

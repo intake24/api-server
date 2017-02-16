@@ -21,6 +21,7 @@ package controllers.system
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
+import controllers.DatabaseErrorHandler
 import parsers.{UpickleUtil, UserRecordsCSVParser}
 import play.api.http.ContentTypes
 import play.api.libs.Files
@@ -35,7 +36,7 @@ import scala.concurrent.Future
 
 
 class UserAdminController @Inject()(service: UserAdminService, passwordHasherRegistry: PasswordHasherRegistry, deadbolt: DeadboltActionsAdapter) extends Controller
-  with SystemDatabaseErrorHandler with UpickleUtil {
+  with DatabaseErrorHandler with UpickleUtil {
 
   private def doCreateOrUpdate(surveyId: Option[String], userRecords: Seq[UserRecordWithPermissions]): Result = {
     val hasher = passwordHasherRegistry.current

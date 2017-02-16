@@ -1,18 +1,12 @@
 package uk.ac.ncl.openlab.intake24.foodsql.modular
 
-import scala.Right
-
 import anorm.NamedParameter.symbol
-import anorm.SQL
-import anorm.SqlParser
-import anorm.sqlToSimple
-import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
-import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
-import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
-import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
+import anorm.{SQL, SqlParser, sqlToSimple}
+import uk.ac.ncl.openlab.intake24.errors.LocalLookupError
+import uk.ac.ncl.openlab.intake24.foodsql.{FirstRowValidation, FirstRowValidationClause}
+import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
-trait BrandNamesUserQueries extends FoodDataSqlService with FirstRowValidation with SqlResourceLoader {
+trait BrandNamesUserQueries extends SqlDataService with FirstRowValidation with SqlResourceLoader {
 
   private lazy val getBrandNamesQuery = sqlFromResource("user/get_brand_names_frv.sql")
 

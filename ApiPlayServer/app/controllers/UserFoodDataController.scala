@@ -61,7 +61,7 @@ case class UserAsServedImageWithUrls(mainImageUrl: String, thumbnailUrl: String,
 
 case class UserAsServedSetWithUrls(selectionImageUrl: String, images: Seq[UserAsServedImageWithUrls])
 
-class UserFoodDataController @Inject() (service: FoodDatabaseService, deadbolt: DeadboltActionsAdapter, imageStorageService: ImageStorageService) extends Controller with FoodDatabaseErrorHandler {
+class UserFoodDataController @Inject() (service: FoodDatabaseService, deadbolt: DeadboltActionsAdapter, imageStorageService: ImageStorageService) extends Controller with DatabaseErrorHandler {
 
   def getCategoryContents(code: String, locale: String) = deadbolt.restrictAccess(Roles.superuser) {
     Future {

@@ -1,8 +1,8 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.admin
 
+import uk.ac.ncl.openlab.intake24.GuideHeader
+import uk.ac.ncl.openlab.intake24.errors.{DependentCreateError, DependentUpdateError, UnexpectedDatabaseError}
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.GuideImageService
-import uk.ac.ncl.openlab.intake24.{GuideHeader}
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.{DependentCreateError, DependentUpdateError, LookupError, UnexpectedDatabaseError}
 
 case class NewGuideImageRecord(id: String, description: String, imageMapId: String, selectionImageId: Long, objectWeights: Map[Long, Double])
 

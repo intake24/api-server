@@ -1,19 +1,17 @@
 package uk.ac.ncl.openlab.intake24.systemsql.admin
 
-import java.sql.Timestamp
-import java.time.{Instant, LocalDateTime}
+import java.time.Instant
 import java.util.UUID
 import javax.inject.{Inject, Named}
 import javax.sql.DataSource
 
 import anorm._
+import uk.ac.ncl.openlab.intake24.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.DataExportService
-import uk.ac.ncl.openlab.intake24.services.systemdb.errors._
-import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
+import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 import uk.ac.ncl.openlab.intake24.surveydata._
-import uk.ac.ncl.openlab.intake24.systemsql.SystemSqlService
 
-class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends DataExportService with SystemSqlService with SqlResourceLoader {
+class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends DataExportService with SqlDataService with SqlResourceLoader {
 
   lazy val getSurveySubmissionsSql = sqlFromResource("admin/get_survey_submissions.sql")
 

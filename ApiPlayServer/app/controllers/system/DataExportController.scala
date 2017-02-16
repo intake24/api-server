@@ -18,12 +18,12 @@ limitations under the License.
 
 package controllers.system
 
-import java.sql.Timestamp
-import java.time.{Clock, Instant, LocalDateTime}
-import java.time.format.{DateTimeFormatter, DateTimeParseException}
+import java.time.Instant
+import java.time.format.DateTimeParseException
 import javax.inject.Inject
 
-import parsers.{SurveyCSVExporter, UpickleUtil}
+import controllers.DatabaseErrorHandler
+import parsers.UpickleUtil
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller}
 import security.{DeadboltActionsAdapter, Roles}
@@ -36,7 +36,7 @@ import scala.concurrent.Future
 
 
 class DataExportController @Inject()(service: DataExportService, surveyAdminService: SurveyAdminService, foodGroupsAdminService: FoodGroupsAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
-  with SystemDatabaseErrorHandler with UpickleUtil {
+  with DatabaseErrorHandler with UpickleUtil {
 
 
   def getSurveySubmissions(surveyId: String, dateFrom: String, dateTo: String, offset: Int, limit: Int) = deadbolt.restrictAccess(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {

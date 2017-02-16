@@ -18,20 +18,20 @@ limitations under the License.
 
 package controllers
 
-import scala.concurrent.Future
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.Controller
-import security.Roles
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
-import security.DeadboltActionsAdapter
-import upickle.default._
-import uk.ac.ncl.openlab.intake24.AssociatedFood
 import javax.inject.Inject
 
 import parsers.UpickleUtil
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import play.api.mvc.Controller
+import security.{DeadboltActionsAdapter, Roles}
+import uk.ac.ncl.openlab.intake24.AssociatedFood
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
+import upickle.default._
 
-class AssociatedFoodsAdminController @Inject() (service: AssociatedFoodsAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
-    with FoodDatabaseErrorHandler with UpickleUtil {
+import scala.concurrent.Future
+
+class AssociatedFoodsAdminController @Inject()(service: AssociatedFoodsAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
+  with DatabaseErrorHandler with UpickleUtil {
 
   def getAssociatedFoods(foodCode: String, locale: String) = deadbolt.restrictAccess(Roles.superuser) {
     Future {

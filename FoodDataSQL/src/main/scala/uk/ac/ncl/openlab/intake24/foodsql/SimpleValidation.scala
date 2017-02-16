@@ -1,15 +1,9 @@
 package uk.ac.ncl.openlab.intake24.foodsql
 
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
-import anorm.SQL
-import anorm.Macro
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
-import anorm.SqlParser
 import java.sql.Connection
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
+
+import anorm.{Macro, SQL, SqlParser}
+import uk.ac.ncl.openlab.intake24.errors._
 
 trait SimpleValidation {
 
@@ -68,5 +62,4 @@ trait SimpleValidation {
       }
     }
   }
-
 }

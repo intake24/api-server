@@ -1,24 +1,12 @@
 package uk.ac.ncl.openlab.intake24.foodsql.user
 
-import scala.Left
-import scala.Right
-
-import anorm.Macro
 import anorm.NamedParameter.symbol
-import anorm.SQL
-import anorm.SqlParser
-import anorm.sqlToSimple
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.AsServedImageService
-import uk.ac.ncl.openlab.intake24.sql.SqlDataService
-import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
-import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.UserAsServedImage
-import uk.ac.ncl.openlab.intake24.AsServedImageV1
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.UserAsServedSet
+import anorm.{Macro, SQL, sqlToSimple}
+import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound}
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.{AsServedImageService, UserAsServedImage, UserAsServedSet}
+import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
-trait AsServedImageUserImpl extends AsServedImageService with FoodDataSqlService with SqlResourceLoader {
+trait AsServedImageUserImpl extends AsServedImageService with SqlDataService with SqlResourceLoader {
 
   private case class AsServedImageRow(image_path: String, thumbnail_path: String, weight: Double)
 

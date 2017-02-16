@@ -28,7 +28,7 @@ import upickle.default._
 import security.Roles
 import scala.concurrent.Future
 
-class LocalesAdminController @Inject() (service: LocalesAdminService, deadbolt: DeadboltActionsAdapter) extends Controller with FoodDatabaseErrorHandler {
+class LocalesAdminController @Inject() (service: LocalesAdminService, deadbolt: DeadboltActionsAdapter) extends Controller with DatabaseErrorHandler {
   
   def listLocales() = deadbolt.restrictAccess(Roles.superuser) {
     Future {

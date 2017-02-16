@@ -1,28 +1,26 @@
 package uk.ac.ncl.openlab.intake24.sql.migrations
 
 import javax.sql.DataSource
-import anorm.SQL
-import anorm.SqlParser
-import java.util.UUID
+
+import anorm.{SQL, SqlParser}
 import org.slf4j.LoggerFactory
-import scala.Right
+import uk.ac.ncl.openlab.intake24.errors.AnyError
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
-import org.postgresql.util.PSQLException
 
 sealed trait MigrationError
 
 case class MigrationFailed(e: Throwable) extends MigrationError
 
-case class SimpleDatabaseError(e: Throwable) extends MigrationError
+case class DatabaseError(e: AnyError) extends MigrationError
 
-class MigrationsImpl(val dataSource: DataSource) extends SqlDataService[SimpleDatabaseError] {
+class MigrationsImpl(val dataSource: DataSource) extends SqlDataService {
 
   private val logger = LoggerFactory.getLogger(classOf[MigrationsImpl])
 
   private def getCurrentVersion()(implicit conn: java.sql.Connection): Long =
     SQL("SELECT version FROM schema_version").executeQuery().as(SqlParser.long("version").single)
 
-  def applyMigrations(migrations: Seq[Migration]): Either[MigrationError, Unit] = tryWithConnection {
+  def applyMigrations(migrations: Seq[Migration]): Either[MigrationError, Unit] = tryWithConnectionWrapErrors[MigrationError, Unit](DatabaseError(_)) {
     implicit conn =>
 
       def migrateFrom(version: Long): Either[MigrationError, Unit] = {
@@ -57,6 +55,4 @@ class MigrationsImpl(val dataSource: DataSource) extends SqlDataService[SimpleDa
 
       migrateFrom(version)
   }
-
-  def defaultDatabaseError(e: PSQLException) = SimpleDatabaseError(e)
 }

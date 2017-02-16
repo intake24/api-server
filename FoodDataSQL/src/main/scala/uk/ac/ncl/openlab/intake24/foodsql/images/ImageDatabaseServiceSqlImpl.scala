@@ -7,12 +7,11 @@ import javax.sql.DataSource
 import anorm.NamedParameter.symbol
 import anorm.{AnormUtil, Macro, NamedParameter, SQL, sqlToSimple}
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors._
+import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
-import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
+import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
-class ImageDatabaseServiceSqlImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends ImageDatabaseService with FoodDataSqlService with SqlResourceLoader {
+class ImageDatabaseServiceSqlImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends ImageDatabaseService with SqlDataService with SqlResourceLoader {
 
   private val logger = LoggerFactory.getLogger(classOf[ImageDatabaseServiceSqlImpl])
 

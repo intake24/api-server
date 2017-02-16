@@ -1,26 +1,20 @@
 package uk.ac.ncl.openlab.intake24.foodsql.admin
 
-import scala.Right
+import javax.sql.DataSource
 
+import anorm.{NamedParameter, SQL, sqlToSimple}
+import com.google.inject.Inject
+import com.google.inject.name.Named
 import org.slf4j.LoggerFactory
-
-import anorm.SQL
-
-import anorm.sqlToSimple
 import uk.ac.ncl.openlab.intake24.SplitList
-
+import uk.ac.ncl.openlab.intake24.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataSharedImpl
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodIndexDataAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
-import anorm.NamedParameter
-import com.google.inject.Inject
-import javax.sql.DataSource
-import com.google.inject.name.Named
-import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
+import uk.ac.ncl.openlab.intake24.sql.SqlDataService
 
-class FoodIndexDataAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends FoodIndexDataAdminImpl
+class FoodIndexDataAdminStandaloneImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends FoodIndexDataAdminImpl
 
-trait FoodIndexDataAdminImpl extends FoodIndexDataAdminService with FoodDataSqlService with FoodIndexDataSharedImpl {
+trait FoodIndexDataAdminImpl extends FoodIndexDataAdminService with SqlDataService with FoodIndexDataSharedImpl {
 
   private val logger = LoggerFactory.getLogger(classOf[FoodIndexDataAdminImpl])
 
@@ -64,7 +58,7 @@ trait FoodIndexDataAdminImpl extends FoodIndexDataAdminService with FoodDataSqlS
 
       Right(())
   }
-  
+
   def createSplitList(splitList: SplitList, locale: String): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
       conn.setAutoCommit(false)

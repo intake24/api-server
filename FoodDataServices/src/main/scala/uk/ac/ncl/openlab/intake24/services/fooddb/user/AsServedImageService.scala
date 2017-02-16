@@ -1,7 +1,6 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.user
 
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.AsServedImageV1
+import uk.ac.ncl.openlab.intake24.errors.LookupError
 
 case class UserAsServedSet(selectionImagePath: String, images: Seq[UserAsServedImage])
 

@@ -1,66 +1,21 @@
 package uk.ac.ncl.openlab.intake24.foodsql.modular
 
+import java.sql.BatchUpdateException
 import java.util.UUID
 
-import uk.ac.ncl.openlab.intake24.CategoryRecord
-import anorm._
-import uk.ac.ncl.openlab.intake24.MainCategoryRecord
-import uk.ac.ncl.openlab.intake24.InheritableAttributes
-import uk.ac.ncl.openlab.intake24.LocalCategoryRecord
-import org.postgresql.util.PSQLException
-
 import anorm.NamedParameter.symbol
-import scala.Left
-import scala.Right
-
-import org.postgresql.util.PSQLException
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
-import uk.ac.ncl.openlab.intake24.PortionSizeMethod
-
-import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
-
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.VersionConflict
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
-import uk.ac.ncl.openlab.intake24.NewCategory
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DuplicateCode
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoriesAdminService
-import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
-import org.slf4j.LoggerFactory
-import java.sql.BatchUpdateException
-import scala.collection.mutable.ArrayBuffer
-
-import uk.ac.ncl.openlab.intake24.foodsql.shared.FoodPortionSizeShared
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
-import uk.ac.ncl.openlab.intake24.foodsql.SimpleValidation
-import com.google.inject.Inject
-import javax.sql.DataSource
-import com.google.inject.name.Named
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentRecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentUpdateError
-import uk.ac.ncl.openlab.intake24.MainCategoryRecordUpdate
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentUpdateError
-import uk.ac.ncl.openlab.intake24.NewLocalCategoryRecord
-
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.IllegalParent
-import uk.ac.ncl.openlab.intake24.LocalCategoryRecordUpdate
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentCreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalCreateError
+import anorm._
 import org.apache.commons.lang3.StringUtils
-import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
-import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
+import org.postgresql.util.PSQLException
+import org.slf4j.LoggerFactory
+import uk.ac.ncl.openlab.intake24._
+import uk.ac.ncl.openlab.intake24.errors._
+import uk.ac.ncl.openlab.intake24.foodsql.shared.FoodPortionSizeShared
+import uk.ac.ncl.openlab.intake24.foodsql.{FirstRowValidation, FirstRowValidationClause}
+import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
 trait CategoriesAdminQueries
-    extends FoodDataSqlService
+  extends SqlDataService
     with SqlResourceLoader
     with FoodPortionSizeShared
     with FirstRowValidation {
@@ -76,7 +31,7 @@ trait CategoriesAdminQueries
   }
 
   private case class CategoryResultRow(version: UUID, local_version: Option[UUID], code: String, description: String, local_description: Option[String], is_hidden: Boolean, same_as_before_option: Option[Boolean],
-    ready_meal_option: Option[Boolean], reasonable_amount: Option[Int])
+                                       ready_meal_option: Option[Boolean], reasonable_amount: Option[Int])
 
   protected def updateCategoryAttributesQuery(categoryCode: String, attributes: InheritableAttributes)(implicit conn: java.sql.Connection): Either[UpdateError, Unit] = {
     try {
@@ -295,8 +250,8 @@ trait CategoriesAdminQueries
         val localCategoryParams =
           localCategoryRecordsSeq.map {
             case (code, local) =>
-              Seq[NamedParameter]('category_code -> code, 'locale_id -> locale, 'local_description -> local.localDescription, 
-                  'simple_local_description -> local.localDescription.map(StringUtils.stripAccents(_)), 'version -> Some(UUID.randomUUID()))
+              Seq[NamedParameter]('category_code -> code, 'locale_id -> locale, 'local_description -> local.localDescription,
+                'simple_local_description -> local.localDescription.map(StringUtils.stripAccents(_)), 'version -> Some(UUID.randomUUID()))
           }
 
         batchSql(categoriesInsertLocalQuery, localCategoryParams).execute()

@@ -5,7 +5,7 @@ import parsers.UpickleUtil
 import play.mvc.Controller
 import security.{DeadboltActionsAdapter, Roles}
 import uk.ac.ncl.openlab.intake24.services.fooddb.demographicgroups._
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors._
+import uk.ac.ncl.openlab.intake24.errors._
 import upickle.Js
 
 import scala.collection.immutable.NumericRange

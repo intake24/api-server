@@ -1,14 +1,14 @@
 package uk.ac.ncl.openlab.intake24.foodsql.foodindex
 
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
-import uk.ac.ncl.openlab.intake24.SplitList
-import anorm.Macro
 import anorm.SqlParser.str
-import anorm._
-import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
+import anorm.{Macro, _}
+import uk.ac.ncl.openlab.intake24.SplitList
+import uk.ac.ncl.openlab.intake24.errors.UnexpectedDatabaseError
+import uk.ac.ncl.openlab.intake24.sql.SqlDataService
 
 
-trait FoodIndexDataSharedImpl extends FoodDataSqlService {
+trait FoodIndexDataSharedImpl extends SqlDataService {
+
   private case class SplitListRow(first_word: String, words: String)
 
   def splitList(locale: String): Either[UnexpectedDatabaseError, SplitList] = tryWithConnection {
@@ -17,8 +17,8 @@ trait FoodIndexDataSharedImpl extends FoodDataSqlService {
         .on('locale -> locale)
         .executeQuery()
         .as(str("words").singleOpt).map {
-          words => words.split("\\s+").toSeq
-        }.getOrElse(Seq())
+        words => words.split("\\s+").toSeq
+      }.getOrElse(Seq())
 
       val splitList = SQL("""SELECT first_word, words FROM split_list WHERE locale_id={locale}""")
         .on('locale -> locale)

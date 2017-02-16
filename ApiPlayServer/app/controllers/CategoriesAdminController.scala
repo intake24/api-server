@@ -31,7 +31,7 @@ import scala.concurrent.Future
 
 
 class CategoriesAdminController @Inject() (service: CategoriesAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
-    with FoodDatabaseErrorHandler with UpickleUtil {
+    with DatabaseErrorHandler with UpickleUtil {
 
   def getCategoryRecord(code: String, locale: String) = deadbolt.restrictAccess(Roles.superuser) {
     Future {

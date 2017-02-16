@@ -1,21 +1,17 @@
 package uk.ac.ncl.openlab.intake24.systemsql.admin
 
 import java.sql.Connection
-
-import scala.Left
-import scala.Right
-import scala.annotation.tailrec
-import anorm._
-import javax.inject.Inject
-import javax.inject.Named
+import javax.inject.{Inject, Named}
 import javax.sql.DataSource
 
+import anorm._
+import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{PublicUserRecord, PublicUserRecordWithPermissions, SecureUserRecord, UserAdminService}
-import uk.ac.ncl.openlab.intake24.services.systemdb.errors._
-import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
-import uk.ac.ncl.openlab.intake24.systemsql.SystemSqlService
+import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
-class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends UserAdminService with SystemSqlService with SqlResourceLoader {
+import scala.annotation.tailrec
+
+class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends UserAdminService with SqlDataService with SqlResourceLoader {
 
   private def updateUserRolesQuery(surveyId: Option[String], roles: Map[String, Set[String]])(implicit connection: Connection): Either[ParentError, Unit] = {
     SQL("DELETE FROM user_roles WHERE survey_id={survey_id} AND user_id IN ({user_ids})")

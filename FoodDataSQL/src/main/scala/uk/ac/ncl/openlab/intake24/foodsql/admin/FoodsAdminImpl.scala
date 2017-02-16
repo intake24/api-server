@@ -1,63 +1,17 @@
 package uk.ac.ncl.openlab.intake24.foodsql.admin
 
 import java.util.UUID
-
-import scala.Left
-import scala.Right
-
-import org.postgresql.util.PSQLException
-import org.slf4j.LoggerFactory
-
-import anorm.Macro
-import anorm.NamedParameter
-import anorm.NamedParameter.symbol
-import anorm.SQL
-import anorm.SqlParser
-import anorm.sqlToSimple
-import uk.ac.ncl.openlab.intake24.FoodRecord
-import uk.ac.ncl.openlab.intake24.InheritableAttributes
-import uk.ac.ncl.openlab.intake24.LocalFoodRecord
-import uk.ac.ncl.openlab.intake24.MainFoodRecord
-import uk.ac.ncl.openlab.intake24.NewMainFoodRecord
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DuplicateCode
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.VersionConflict
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
-import uk.ac.ncl.openlab.intake24.PortionSizeMethod
-import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
-
-import uk.ac.ncl.openlab.intake24.foodsql.shared.FoodPortionSizeShared
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentCreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentRecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
-import com.google.inject.Inject
-import com.google.inject.Singleton
 import javax.sql.DataSource
+
+import anorm.NamedParameter.symbol
+import anorm.{Macro, NamedParameter, SQL, SqlParser, sqlToSimple}
+import com.google.inject.{Inject, Singleton}
 import com.google.inject.name.Named
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordType
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.BrandNamesAdminService
-import uk.ac.ncl.openlab.intake24.NewLocalFoodRecord
-import uk.ac.ncl.openlab.intake24.MainFoodRecordUpdate
-import uk.ac.ncl.openlab.intake24.LocalFoodRecordUpdate
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentCreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentUpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentUpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentError
-import uk.ac.ncl.openlab.intake24.foodsql.modular.FoodsAdminQueries
-import uk.ac.ncl.openlab.intake24.foodsql.modular.BrandNamesAdminQueries
-import uk.ac.ncl.openlab.intake24.foodsql.modular.FoodBrowsingAdminQueries
-import uk.ac.ncl.openlab.intake24.foodsql.modular.AssociatedFoodsAdminQueries
-import uk.ac.ncl.openlab.intake24.foodsql.modular.CategoriesAdminQueries
-import uk.ac.ncl.openlab.intake24.foodsql.modular.BrandNamesUserQueries
+import org.slf4j.LoggerFactory
+import uk.ac.ncl.openlab.intake24._
+import uk.ac.ncl.openlab.intake24.errors._
+import uk.ac.ncl.openlab.intake24.foodsql.modular._
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
 
 @Singleton
 class FoodsAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends FoodsAdminImpl

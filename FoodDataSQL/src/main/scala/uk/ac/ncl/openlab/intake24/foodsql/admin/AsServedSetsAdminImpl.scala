@@ -3,19 +3,18 @@ package uk.ac.ncl.openlab.intake24.foodsql.admin
 import javax.sql.DataSource
 
 import anorm._
-import com.google.inject.{Inject, Singleton}
 import com.google.inject.name.Named
+import com.google.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.AsServedHeader
-import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
+import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors._
-import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
+import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
 @Singleton
-class AsServedSetsAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends AsServedSetsAdminImpl
+class AsServedSetsAdminStandaloneImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends AsServedSetsAdminImpl
 
-trait AsServedSetsAdminImpl extends AsServedSetsAdminService with FoodDataSqlService with SqlResourceLoader {
+trait AsServedSetsAdminImpl extends AsServedSetsAdminService with SqlDataService with SqlResourceLoader {
 
   private val logger = LoggerFactory.getLogger(classOf[AsServedSetsAdminImpl])
 

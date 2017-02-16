@@ -28,7 +28,7 @@ import security.Roles
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 
 class FoodGroupsAdminController @Inject() (service: FoodGroupsAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
-    with FoodDatabaseErrorHandler {
+    with DatabaseErrorHandler {
   
   def listFoodGroups(locale: String) = deadbolt.restrictAccess(Roles.superuser) {
      Future {

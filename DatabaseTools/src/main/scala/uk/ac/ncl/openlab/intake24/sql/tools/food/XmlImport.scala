@@ -18,44 +18,18 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.sql.tools.food
 
-import anorm._
-import upickle.default._
-import scala.xml.XML
 import java.io.File
-import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.foodxml.FoodGroupDef
-import uk.ac.ncl.openlab.intake24.foodxml.FoodDef
-import uk.ac.ncl.openlab.intake24.foodxml.GuideImageDef
-import uk.ac.ncl.openlab.intake24.foodxml.BrandDef
-import uk.ac.ncl.openlab.intake24.foodxml.DrinkwareDef
-import uk.ac.ncl.openlab.intake24.foodxml.PromptDef
-import uk.ac.ncl.openlab.intake24.foodxml.CategoryDef
-import uk.ac.ncl.openlab.intake24.foodxml.AsServedDef
+
 import org.rogach.scallop.ScallopConf
+import org.slf4j.LoggerFactory
+import uk.ac.ncl.openlab.intake24._
 import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
-import uk.ac.ncl.openlab.intake24.FoodGroupLocal
-import uk.ac.ncl.openlab.intake24.NewMainFoodRecord
+import uk.ac.ncl.openlab.intake24.foodxml._
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
-import uk.ac.ncl.openlab.intake24.AssociatedFood
-import uk.ac.ncl.openlab.intake24.SplitList
-import uk.ac.ncl.openlab.intake24.NewLocalFoodRecord
-import uk.ac.ncl.openlab.intake24.foodxml.XmlFoodRecord
-import uk.ac.ncl.openlab.intake24.FoodGroupMain
-import uk.ac.ncl.openlab.intake24.foodxml.XmlCategoryRecord
-import uk.ac.ncl.openlab.intake24.AsServedSetV1
-import uk.ac.ncl.openlab.intake24.GuideImage
-import uk.ac.ncl.openlab.intake24.DrinkwareSet
-import uk.ac.ncl.openlab.intake24.NewLocalCategoryRecord
-import uk.ac.ncl.openlab.intake24.NewMainCategoryRecord
-import uk.ac.ncl.openlab.intake24.Locale
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentRecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.IllegalParent
-import scala.Left
-import scala.Right
-import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseConnection
-import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseOptions
-import uk.ac.ncl.openlab.intake24.sql.tools.WarningMessage
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
+import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConnection, DatabaseOptions, WarningMessage}
+import upickle.default._
+
+import scala.xml.XML
 
 class XmlImporter(adminService: FoodDatabaseAdminService) {
 
@@ -64,9 +38,6 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
   val defaultLocale = "en_GB"
 
   private def checkError[E, T](op: String, result: Either[E, T]) = result match {
-    case Left(ParentRecordNotFound(e)) => logger.error(s"$op failed", e)
-    case Left(IllegalParent(e)) => logger.error(s"$op failed", e)
-    case Left(UnexpectedDatabaseError(e)) => logger.error(s"$op failed", e)
     case Left(e) => logger.error(s"$op failed ${e.toString()}")
     case _ => logger.info(s"$op successful")
   }

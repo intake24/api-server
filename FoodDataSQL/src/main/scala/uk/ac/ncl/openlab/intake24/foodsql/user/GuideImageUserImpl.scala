@@ -1,20 +1,13 @@
 package uk.ac.ncl.openlab.intake24.foodsql.user
 
-import scala.Left
-import scala.Right
-
-import anorm.Macro
 import anorm.NamedParameter.symbol
-import anorm.SQL
-import anorm.sqlToSimple
-import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.GuideImageService
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.UserGuideImage
-import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
+import anorm.{Macro, SQL, sqlToSimple}
+import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound}
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.{GuideImageService, UserGuideImage}
+import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
-trait GuideImageUserImpl extends GuideImageService with FoodDataSqlService with SqlResourceLoader {
+trait GuideImageUserImpl extends GuideImageService with SqlDataService with SqlResourceLoader {
+
   private case class GuideResultRow(description: String, image_map_id: String, object_id: Array[Long], object_weight: Array[Double])
 
   private lazy val guideImageQuery = sqlFromResource("user/get_guide_image.sql")

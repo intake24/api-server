@@ -28,7 +28,7 @@ import security.Roles
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodBrowsingAdminService
 
 class FoodBrowsingAdminController @Inject() (service: FoodBrowsingAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
-    with FoodDatabaseErrorHandler {
+    with DatabaseErrorHandler {
 
   def getUncategorisedFoods(locale: String) = deadbolt.restrictAccess(Roles.superuser) {
     Future {

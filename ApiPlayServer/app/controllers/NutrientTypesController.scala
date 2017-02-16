@@ -15,7 +15,7 @@ import scala.concurrent.Future
   */
 class NutrientTypesController @Inject()(nutrientService: NutrientMappingService,
                                         deadbolt: DeadboltActionsAdapter)
-  extends Controller with FoodDatabaseErrorHandler{
+  extends Controller with DatabaseErrorHandler{
 
   def list() = deadbolt.restrictAccess(Roles.superuser) {
     Future {

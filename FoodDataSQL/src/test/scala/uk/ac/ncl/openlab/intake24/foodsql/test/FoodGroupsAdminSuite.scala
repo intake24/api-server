@@ -1,22 +1,9 @@
 package uk.ac.ncl.openlab.intake24.foodsql.test
 
-import org.scalatest.FunSuite
-
-import org.scalatest.DoNotDiscover
-import uk.ac.ncl.openlab.intake24.AsServedImageV1
-import uk.ac.ncl.openlab.intake24.AsServedSetV1
-
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DuplicateCode
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.{BeforeAndAfterAll, DoNotDiscover, FunSuite}
+import uk.ac.ncl.openlab.intake24.errors.{DuplicateCode, UndefinedLocale}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
-import uk.ac.ncl.openlab.intake24.Locale
-import uk.ac.ncl.openlab.intake24.FoodGroupMain
-import uk.ac.ncl.openlab.intake24.FoodGroupLocal
-import uk.ac.ncl.openlab.intake24.FoodGroupRecord
-import uk.ac.ncl.openlab.intake24.LocalFoodRecord
+import uk.ac.ncl.openlab.intake24.{FoodGroupLocal, FoodGroupRecord}
 
 @DoNotDiscover
 class FoodGroupsAdminSuite(service: FoodDatabaseAdminService) extends FunSuite with BeforeAndAfterAll with RandomData with FixedData {

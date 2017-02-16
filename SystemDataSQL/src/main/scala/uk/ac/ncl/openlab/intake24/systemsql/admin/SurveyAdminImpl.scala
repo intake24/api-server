@@ -5,13 +5,11 @@ import javax.inject.{Inject, Named}
 import javax.sql.DataSource
 
 import anorm._
-import uk.ac.ncl.openlab.intake24.datastoresql.LocalNutrientType
+import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
-import uk.ac.ncl.openlab.intake24.services.systemdb.errors._
-import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
-import uk.ac.ncl.openlab.intake24.systemsql.SystemSqlService
+import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
-class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends SurveyAdminService with SystemSqlService with SqlResourceLoader {
+class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends SurveyAdminService with SqlDataService with SqlResourceLoader {
 
   def createSurvey(surveyId: String, parameters: NewSurveyParameters): Either[CreateError, Unit] = tryWithConnection {
     implicit conn =>

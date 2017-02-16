@@ -2,50 +2,23 @@ package uk.ac.ncl.openlab.intake24.foodsql.modular
 
 import java.util.UUID
 
-import scala.Left
-import scala.Right
-
+import anorm.NamedParameter.symbol
+import anorm.{AnormUtil, Macro, NamedParameter, SQL, SqlParser, sqlToSimple}
+import org.apache.commons.lang3.StringUtils
 import org.postgresql.util.PSQLException
 import org.slf4j.LoggerFactory
-
-import anorm.Macro
-import anorm.NamedParameter
-import anorm.NamedParameter.symbol
-import anorm.SQL
-import anorm.sqlToSimple
-import uk.ac.ncl.openlab.intake24.InheritableAttributes
-import uk.ac.ncl.openlab.intake24.LocalFoodRecordUpdate
-import uk.ac.ncl.openlab.intake24.MainFoodRecordUpdate
-import uk.ac.ncl.openlab.intake24.NewMainFoodRecord
-
-import uk.ac.ncl.openlab.intake24.NewLocalFoodRecord
-import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
-import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
+import uk.ac.ncl.openlab.intake24._
+import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.foodsql.shared.FoodPortionSizeShared
+import uk.ac.ncl.openlab.intake24.foodsql.{FirstRowValidation, FirstRowValidationClause}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentCreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DuplicateCode
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentUpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentRecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.VersionConflict
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
-import anorm.SqlParser
-import org.apache.commons.lang3.StringUtils
-import anorm.AnormUtil
-import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
-import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
+import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
 trait FoodsAdminQueries extends FoodsAdminService
-    with FoodDataSqlService
-    with SqlResourceLoader
-    with FirstRowValidation
-    with FoodPortionSizeShared {
+  with SqlDataService
+  with SqlResourceLoader
+  with FirstRowValidation
+  with FoodPortionSizeShared {
 
   private val logger = LoggerFactory.getLogger(classOf[FoodsAdminQueries])
 
@@ -54,7 +27,7 @@ trait FoodsAdminQueries extends FoodsAdminService
   private val foodRowParser = Macro.namedParser[FoodRow]
 
   private case class FoodResultRow(version: UUID, code: String, description: String, local_description: Option[String], do_not_use: Option[Boolean], food_group_id: Long,
-    same_as_before_option: Option[Boolean], ready_meal_option: Option[Boolean], reasonable_amount: Option[Int], local_version: Option[UUID])
+                                   same_as_before_option: Option[Boolean], ready_meal_option: Option[Boolean], reasonable_amount: Option[Int], local_version: Option[UUID])
 
   private case class NutrientTableRow(nutrient_table_id: String, nutrient_table_record_id: String)
 
@@ -134,6 +107,7 @@ trait FoodsAdminQueries extends FoodsAdminService
       (map, food) => map + (food.code -> food.parentCategories)
     }
   }
+
   private val foodLocalInsertQuery = "INSERT INTO foods_local VALUES({food_code}, {locale_id}, {local_description}, {simple_local_description}, {do_not_use}, {version}::uuid)"
 
   private val foodNutrientMappingInsertQuery = "INSERT INTO foods_nutrient_mapping VALUES ({food_code}, {locale_id}, {nutrient_table_id}, {nutrient_table_code})"
@@ -152,7 +126,7 @@ trait FoodsAdminQueries extends FoodsAdminService
       val foodLocalParams = localFoodRecordsSeq.map {
         case (code, local) =>
           Seq[NamedParameter]('food_code -> code, 'locale_id -> locale, 'local_description -> local.localDescription.map(d => truncateDescription(d, code)),
-              'simple_local_description -> local.localDescription.map(d => StringUtils.stripAccents(truncateDescription(d, code))),
+            'simple_local_description -> local.localDescription.map(d => StringUtils.stripAccents(truncateDescription(d, code))),
             'do_not_use -> local.doNotUse, 'version -> UUID.randomUUID())
       }.toSeq
 
@@ -272,8 +246,8 @@ trait FoodsAdminQueries extends FoodsAdminService
         case Some(version) => {
 
           val rowsAffected = SQL("UPDATE foods_local SET version = {new_version}::uuid, local_description = {local_description}, simple_local_description = {simple_local_description}, do_not_use = {do_not_use} WHERE food_code = {food_code} AND locale_id = {locale_id} AND version = {base_version}::uuid")
-            .on('food_code -> foodCode, 'locale_id -> locale, 'base_version -> foodLocal.baseVersion, 'new_version -> UUID.randomUUID(),                
-                'local_description -> foodLocal.localDescription, 'simple_local_description -> foodLocal.localDescription.map(d => StringUtils.stripAccents(d)), 'do_not_use -> foodLocal.doNotUse)
+            .on('food_code -> foodCode, 'locale_id -> locale, 'base_version -> foodLocal.baseVersion, 'new_version -> UUID.randomUUID(),
+              'local_description -> foodLocal.localDescription, 'simple_local_description -> foodLocal.localDescription.map(d => StringUtils.stripAccents(d)), 'do_not_use -> foodLocal.doNotUse)
             .executeUpdate()
 
           if (rowsAffected == 1) {
@@ -285,7 +259,7 @@ trait FoodsAdminQueries extends FoodsAdminService
           try {
             SQL(foodLocalInsertQuery)
               .on('food_code -> foodCode, 'locale_id -> locale, 'local_description -> foodLocal.localDescription, 'simple_local_description -> foodLocal.localDescription.map(d => StringUtils.stripAccents(d)),
-                  'do_not_use -> foodLocal.doNotUse, 'version -> UUID.randomUUID())
+                'do_not_use -> foodLocal.doNotUse, 'version -> UUID.randomUUID())
               .execute()
 
             Right(())

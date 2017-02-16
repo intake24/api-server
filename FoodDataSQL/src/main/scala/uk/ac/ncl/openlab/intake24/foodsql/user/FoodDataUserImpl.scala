@@ -18,51 +18,28 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodsql.user
 
-import java.sql.Connection
-
-import scala.Left
-import scala.Right
-
-import anorm.Macro
-import anorm.NamedParameter.symbol
-import anorm.SQL
-import anorm.SqlParser
-import anorm.sqlToSimple
-import uk.ac.ncl.openlab.intake24.PortionSizeMethod
-import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
-import uk.ac.ncl.openlab.intake24.UserFoodData
-
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.InheritableAttributeSources
-
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
-import uk.ac.ncl.openlab.intake24.foodsql.shared.FoodPortionSizeShared
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
-import uk.ac.ncl.openlab.intake24.InheritableAttributes
-import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
-import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDataService
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.SourceRecord
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.SourceLocale
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDataSources
-import com.google.inject.name.Named
 import javax.inject.Inject
 import javax.sql.DataSource
-import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
-import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
 
-class FoodDataUserStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends FoodDataUserImpl
+import anorm.NamedParameter.symbol
+import anorm.{Macro, SQL, SqlParser, sqlToSimple}
+import com.google.inject.name.Named
+import org.slf4j.LoggerFactory
+import uk.ac.ncl.openlab.intake24.UserFoodData
+import uk.ac.ncl.openlab.intake24.errors.{LocalLookupError, LocaleError, LookupError, UndefinedLocale}
+import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.{FoodDataService, FoodDataSources, SourceLocale}
+import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
+
+class FoodDataUserStandaloneImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends FoodDataUserImpl
 
 trait FoodDataUserImpl extends FoodDataService
-    with FoodDataSqlService
-    with SqlResourceLoader
-    with FirstRowValidation
-    with InheritedAttributesImpl
-    with InheritedPortionSizeMethodsImpl
-    with InheritedNutrientTableCodesImpl {
+  with SqlDataService
+  with SqlResourceLoader
+  with FirstRowValidation
+  with InheritedAttributesImpl
+  with InheritedPortionSizeMethodsImpl
+  with InheritedNutrientTableCodesImpl {
 
   val logger = LoggerFactory.getLogger(classOf[FoodDataUserImpl])
 
@@ -72,9 +49,9 @@ trait FoodDataUserImpl extends FoodDataService
     SQL("""SELECT prototype_locale_id FROM locales WHERE id = {locale_id}""")
       .on('locale_id -> locale).executeQuery()
       .as(SqlParser.str("prototype_locale_id").?.singleOpt) match {
-        case Some(record) => Right(record)
-        case None => Left(UndefinedLocale(new RuntimeException(s"Locale $locale undefined")))
-      }
+      case Some(record) => Right(record)
+      case None => Left(UndefinedLocale(new RuntimeException(s"Locale $locale undefined")))
+    }
   }
 
   // Get food data with resolved attribute/portion size method inheritance

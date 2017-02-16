@@ -1,26 +1,21 @@
 package uk.ac.ncl.openlab.intake24.foodsql.admin
 
-import uk.ac.ncl.openlab.intake24.DrinkwareHeader
-import anorm.SQL
-import anorm.Macro
-import anorm.sqlToSimple
-import uk.ac.ncl.openlab.intake24.foodsql.user.DrinkwareUserImpl
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.DrinkwareAdminService
-import uk.ac.ncl.openlab.intake24.DrinkwareSet
-import org.slf4j.LoggerFactory
-import anorm.NamedParameter
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DuplicateCode
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
-import com.google.inject.Inject
-import com.google.inject.Singleton
-import com.google.inject.name.Named
 import javax.sql.DataSource
 
-@Singleton
-class DrinkwareAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends DrinkwareAdminImpl
+import anorm._
+import com.google.inject.name.Named
+import com.google.inject.{Inject, Singleton}
+import org.slf4j.LoggerFactory
+import uk.ac.ncl.openlab.intake24.errors.{CreateError, DuplicateCode, UnexpectedDatabaseError}
+import uk.ac.ncl.openlab.intake24.foodsql.user.DrinkwareUserImpl
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.DrinkwareAdminService
+import uk.ac.ncl.openlab.intake24.sql.SqlDataService
+import uk.ac.ncl.openlab.intake24.{DrinkwareHeader, DrinkwareSet}
 
-trait DrinkwareAdminImpl extends DrinkwareAdminService with DrinkwareUserImpl {
+@Singleton
+class DrinkwareAdminStandaloneImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends DrinkwareAdminImpl
+
+trait DrinkwareAdminImpl extends DrinkwareAdminService with SqlDataService with DrinkwareUserImpl {
 
   private val logger = LoggerFactory.getLogger(classOf[DrinkwareAdminImpl])
 

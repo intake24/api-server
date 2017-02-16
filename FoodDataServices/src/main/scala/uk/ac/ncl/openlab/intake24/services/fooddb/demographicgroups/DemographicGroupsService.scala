@@ -1,6 +1,6 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.demographicgroups
 
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors._
+import uk.ac.ncl.openlab.intake24.errors._
 
 import scala.collection.immutable.NumericRange
 

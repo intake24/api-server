@@ -2,7 +2,7 @@ package uk.ac.ncl.openlab.intake24.sql.tools.system
 
 import org.rogach.scallop.ScallopConf
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.sql.migrations.{MigrationFailed, MigrationsImpl, SimpleDatabaseError}
+import uk.ac.ncl.openlab.intake24.sql.migrations.{DatabaseError, MigrationFailed, MigrationsImpl}
 import uk.ac.ncl.openlab.intake24.sql.tools._
 
 object MigrateSystemDatabase extends App with DatabaseConnection with WarningMessage {
@@ -25,7 +25,7 @@ object MigrateSystemDatabase extends App with DatabaseConnection with WarningMes
 
   migrations.applyMigrations(uk.ac.ncl.openlab.intake24.datastoresql.migrations.SystemDatabaseMigrations.activeMigrations) match {
     case Left(MigrationFailed(e)) => throw e
-    case Left(SimpleDatabaseError(e)) => throw e
+    case Left(DatabaseError(e)) => throw e.exception
     case Right(()) => {}
   }
 }

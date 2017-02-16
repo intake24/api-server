@@ -1,24 +1,16 @@
 package uk.ac.ncl.openlab.intake24.sql
 
 import java.sql.Connection
-
-import scala.Left
-
-import org.postgresql.util.PSQLException
-
 import javax.sql.DataSource
 
-import anorm.ResultSetParser
-import anorm.SqlQueryResult
-import anorm.NamedParameter
-import anorm.BatchSql
+import anorm.{BatchSql, NamedParameter}
+import org.postgresql.util.PSQLException
+import uk.ac.ncl.openlab.intake24.errors.{AnyError, UnexpectedDatabaseError}
 
-trait SqlDataService[DBErrorT] {
+trait SqlDataService {
   val dataSource: DataSource
 
-  def defaultDatabaseError(e: PSQLException): DBErrorT
-
-  /**
+    /**
    * Anorm's BatchSql with Seq[Seq[NamedParameter]] is deprecated due to the requirement
    * that there must be at least one set of parameters. The new apply method signature
    * essentially accepts a non-empty list, but it is difficult to pass the result of a map
@@ -87,7 +79,7 @@ trait SqlDataService[DBErrorT] {
     }
   }
 
-  def tryWithConnection[E >: DBErrorT, T](block: Connection => Either[E, T]): Either[E, T] = {
+  def tryWithConnection[E >: UnexpectedDatabaseError, T](block: Connection => Either[E, T]): Either[E, T] = {
     val conn = dataSource.getConnection()
     try {
       block(conn)
@@ -96,8 +88,27 @@ trait SqlDataService[DBErrorT] {
         if (!conn.getAutoCommit())
           conn.rollback()
         e match {
-          case batchException: java.sql.BatchUpdateException => Left(defaultDatabaseError(batchException.getNextException.asInstanceOf[PSQLException]))
-          case sqlException: PSQLException => Left(defaultDatabaseError(sqlException))
+          case batchException: java.sql.BatchUpdateException => Left(UnexpectedDatabaseError(batchException.getNextException.asInstanceOf[PSQLException]))
+          case sqlException: PSQLException => Left(UnexpectedDatabaseError(sqlException))
+          case _ => throw e
+        }
+      }
+    } finally {
+      conn.close()
+    }
+  }
+
+  def tryWithConnectionWrapErrors[E, T](wrap: AnyError => E)(block: Connection => Either[E, T]): Either[E, T] = {
+    val conn = dataSource.getConnection()
+    try {
+      block(conn)
+    } catch {
+      case e: Throwable => {
+        if (!conn.getAutoCommit())
+          conn.rollback()
+        e match {
+          case batchException: java.sql.BatchUpdateException => Left(wrap(UnexpectedDatabaseError(batchException.getNextException.asInstanceOf[PSQLException])))
+          case sqlException: PSQLException => Left(wrap(UnexpectedDatabaseError(sqlException)))
           case _ => throw e
         }
       }

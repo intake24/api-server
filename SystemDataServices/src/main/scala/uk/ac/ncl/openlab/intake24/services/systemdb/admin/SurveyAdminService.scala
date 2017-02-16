@@ -2,7 +2,7 @@ package uk.ac.ncl.openlab.intake24.services.systemdb.admin
 
 import java.time.Instant
 
-import uk.ac.ncl.openlab.intake24.services.systemdb.errors._
+import uk.ac.ncl.openlab.intake24.errors.{CreateError, DeleteError, LookupError}
 
 sealed abstract class SurveyState(code: Long)
 

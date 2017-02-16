@@ -1,34 +1,9 @@
 package uk.ac.ncl.openlab.intake24.foodsql.test
 
-import org.scalatest.FunSuite
-
-import org.scalatest.DoNotDiscover
-import uk.ac.ncl.openlab.intake24.AsServedImageV1
-import uk.ac.ncl.openlab.intake24.AsServedSetV1
-
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DuplicateCode
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
-import org.scalatest.BeforeAndAfterAll
-import uk.ac.ncl.openlab.intake24.AssociatedFood
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
-import uk.ac.ncl.openlab.intake24.FoodGroupRecord
-import uk.ac.ncl.openlab.intake24.NewMainFoodRecord
-import uk.ac.ncl.openlab.intake24.InheritableAttributes
-import uk.ac.ncl.openlab.intake24.FoodGroupMain
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
-import uk.ac.ncl.openlab.intake24.NewCategory
-import uk.ac.ncl.openlab.intake24.AssociatedFoodWithHeader
-import uk.ac.ncl.openlab.intake24.FoodHeader
-import uk.ac.ncl.openlab.intake24.CategoryHeader
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentRecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.DrinkwareService
+import org.scalatest.{DoNotDiscover, FunSuite}
+import uk.ac.ncl.openlab.intake24.errors.{DuplicateCode, RecordNotFound}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.DrinkwareAdminService
-import uk.ac.ncl.openlab.intake24.DrinkwareSet
-import uk.ac.ncl.openlab.intake24.VolumeFunction
-import uk.ac.ncl.openlab.intake24.DrinkScale
-import uk.ac.ncl.openlab.intake24.DrinkwareHeader
+import uk.ac.ncl.openlab.intake24.{DrinkScale, DrinkwareHeader, DrinkwareSet, VolumeFunction}
 
 @DoNotDiscover
 class DrinkwareAdminSuite(service: DrinkwareAdminService) extends FunSuite {

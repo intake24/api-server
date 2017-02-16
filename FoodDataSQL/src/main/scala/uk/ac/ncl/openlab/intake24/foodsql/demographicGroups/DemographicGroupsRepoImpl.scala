@@ -2,16 +2,13 @@ package uk.ac.ncl.openlab.intake24.foodsql.demographicGroups
 
 import javax.sql.DataSource
 
-import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors._
-import uk.ac.ncl.openlab.intake24.services.fooddb.demographicgroups._
 import anorm._
 import com.google.inject.name.Named
 import com.google.inject.{Inject, Singleton}
 import org.postgresql.util.PSQLException
-
-import scala.collection.immutable.Stream.Empty
-import scala.util.Failure
+import uk.ac.ncl.openlab.intake24.errors._
+import uk.ac.ncl.openlab.intake24.services.fooddb.demographicgroups._
+import uk.ac.ncl.openlab.intake24.sql.SqlDataService
 
 /**
   * Created by Tim Osadchiy on 09/02/2017.
@@ -19,7 +16,7 @@ import scala.util.Failure
 
 @Singleton
 class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource)
-  extends DemographicGroupsService with FoodDataSqlService {
+  extends DemographicGroupsService with SqlDataService {
 
   val constraintErrorsPartialFn = PartialFunction[String, PSQLException => ConstraintError] {
     constraintName => (e: PSQLException) => ConstraintViolation(constraintName, e)

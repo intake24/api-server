@@ -1,40 +1,24 @@
 package cache
 
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DeleteError
-import uk.ac.ncl.openlab.intake24.CategoryRecord
-import uk.ac.ncl.openlab.intake24.NewCategory
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.CreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UpdateError
-import uk.ac.ncl.openlab.intake24.LocalCategoryRecord
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalUpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UnexpectedDatabaseError
-import uk.ac.ncl.openlab.intake24.MainCategoryRecord
-import com.google.inject.Inject
-import com.google.inject.Singleton
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
-import uk.ac.ncl.openlab.intake24.MainFoodRecord
-import uk.ac.ncl.openlab.intake24.FoodRecord
-import uk.ac.ncl.openlab.intake24.NewMainFoodRecord
-import uk.ac.ncl.openlab.intake24.LocalFoodRecord
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentCreateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentCreateError
-import uk.ac.ncl.openlab.intake24.NewLocalFoodRecord
-import uk.ac.ncl.openlab.intake24.MainFoodRecordUpdate
-import uk.ac.ncl.openlab.intake24.LocalFoodRecordUpdate
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DependentUpdateError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalDependentUpdateError
-import com.google.inject.matcher.Matchers.AnnotatedWith
-
+import com.google.inject.{Inject, Singleton}
 import modules.BasicImpl
+import uk.ac.ncl.openlab.intake24._
+import uk.ac.ncl.openlab.intake24.errors._
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
 
 trait FoodsAdminObserver {
   def onMainFoodRecordUpdated(code: String): Unit
+
   def onLocalFoodRecordCreated(code: String, locale: String): Unit
+
   def onLocalFoodRecordUpdated(code: String, locale: String): Unit
+
   def onFoodToBeDeleted(code: String): Unit
+
   def onFoodDeleted(code: String): Unit
+
   def onFoodCreated(code: String): Unit
+
   def onAllFoodsDeleted(): Unit
 }
 
@@ -43,7 +27,7 @@ trait ObservableFoodsAdminService extends FoodsAdminService {
 }
 
 @Singleton
-class ObservableFoodsAdminServiceImpl @Inject() (@BasicImpl service: FoodsAdminService) extends ObservableFoodsAdminService {
+class ObservableFoodsAdminServiceImpl @Inject()(@BasicImpl service: FoodsAdminService) extends ObservableFoodsAdminService {
 
   private var observers = List[FoodsAdminObserver]()
 
@@ -54,6 +38,7 @@ class ObservableFoodsAdminServiceImpl @Inject() (@BasicImpl service: FoodsAdminS
   def getFoodRecord(code: String, locale: String): Either[LocalLookupError, FoodRecord] = service.getFoodRecord(code, locale)
 
   def isFoodCodeAvailable(code: String): Either[UnexpectedDatabaseError, Boolean] = service.isFoodCodeAvailable(code)
+
   def isFoodCode(code: String): Either[UnexpectedDatabaseError, Boolean] = service.isFoodCode(code)
 
   def createFood(newFood: NewMainFoodRecord): Either[DependentCreateError, Unit] = service.createFood(newFood).right.map {

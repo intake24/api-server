@@ -1,28 +1,9 @@
 package uk.ac.ncl.openlab.intake24.foodsql.test
 
-import org.scalatest.FunSuite
-
-import org.scalatest.DoNotDiscover
-import uk.ac.ncl.openlab.intake24.AsServedImageV1
-import uk.ac.ncl.openlab.intake24.AsServedSetV1
-
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DuplicateCode
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
-import org.scalatest.BeforeAndAfterAll
-import uk.ac.ncl.openlab.intake24.AssociatedFood
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
-import uk.ac.ncl.openlab.intake24.FoodGroupRecord
-import uk.ac.ncl.openlab.intake24.NewMainFoodRecord
-import uk.ac.ncl.openlab.intake24.InheritableAttributes
-import uk.ac.ncl.openlab.intake24.FoodGroupMain
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
-import uk.ac.ncl.openlab.intake24.NewCategory
+import org.scalatest.{BeforeAndAfterAll, DoNotDiscover, FunSuite}
 import uk.ac.ncl.openlab.intake24.AssociatedFoodWithHeader
-import uk.ac.ncl.openlab.intake24.FoodHeader
-import uk.ac.ncl.openlab.intake24.CategoryHeader
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentRecordNotFound
+import uk.ac.ncl.openlab.intake24.errors.{ParentRecordNotFound, RecordNotFound, UndefinedLocale}
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
 
 @DoNotDiscover
 class AssociatedFoodsAdminSuite(service: FoodDatabaseAdminService) extends FunSuite with BeforeAndAfterAll with FixedData with RandomData {
@@ -49,7 +30,7 @@ class AssociatedFoodsAdminSuite(service: FoodDatabaseAdminService) extends FunSu
     assert(service.createFoodGroups(foodGroups) === Right(()))
     assert(service.createFoods(referenceFoods) === Right(()))
     assert(service.createFoods(testFoods) === Right(()))
-   // assert(service.createCategories(referenceCategories) === Right(()))
+    // assert(service.createCategories(referenceCategories) === Right(()))
   }
 
   override def afterAll() = {

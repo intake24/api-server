@@ -1,6 +1,6 @@
 package uk.ac.ncl.openlab.intake24.services.systemdb.admin
 
-import uk.ac.ncl.openlab.intake24.services.systemdb.errors._
+import uk.ac.ncl.openlab.intake24.errors._
 
 case class SecureUserRecord(userName: String, passwordHashBase64: String, passwordSaltBase64: String, passwordHasher: String,
                             name: Option[String], email: Option[String], phone: Option[String],

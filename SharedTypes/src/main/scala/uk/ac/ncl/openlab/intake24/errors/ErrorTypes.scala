@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package uk.ac.ncl.openlab.intake24.services.fooddb.errors
+package uk.ac.ncl.openlab.intake24.errors
 
 sealed trait AnyError {
   val exception: Throwable
@@ -87,8 +87,6 @@ sealed trait ConstraintError extends AnyError with UpdateError {
 
 case class UndefinedLocale(exception: Throwable) extends LocaleError
 
-sealed trait RecordType
-
 case class RecordNotFound(exception: Throwable)
   extends LookupError
   with NutrientMappingError
@@ -106,9 +104,9 @@ case class ParentRecordNotFound(exception: Throwable) extends ParentError
 
 case class IllegalParent(exception: Throwable) extends ParentError
 
-case class TableNotFound(exception: Throwable) extends NutrientMappingError
-
 case class ConstraintViolation(name: String, exception: Throwable) extends ConstraintError
+
+case class TableNotFound(exception: Throwable) extends NutrientMappingError
 
 case class UnexpectedDatabaseError(exception: Throwable)
   extends LocaleError

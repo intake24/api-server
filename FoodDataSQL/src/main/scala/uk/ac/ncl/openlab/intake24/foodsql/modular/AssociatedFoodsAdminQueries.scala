@@ -1,34 +1,21 @@
 package uk.ac.ncl.openlab.intake24.foodsql.modular
 
-import scala.Left
-import scala.Right
-import anorm.Macro
 import anorm.NamedParameter.symbol
-import anorm.SQL
-import anorm.sqlToSimple
-import uk.ac.ncl.openlab.intake24.AssociatedFood
-import uk.ac.ncl.openlab.intake24.AssociatedFoodWithHeader
-import uk.ac.ncl.openlab.intake24.CategoryHeader
-import uk.ac.ncl.openlab.intake24.FoodHeader
-import anorm.NamedParameter
-
-import org.slf4j.LoggerFactory
-
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentRecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocaleOrParentError
+import anorm.{Macro, NamedParameter, SQL, sqlToSimple}
 import org.postgresql.util.PSQLException
-import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
-import uk.ac.ncl.openlab.intake24.foodsql.FoodDataSqlService
+import org.slf4j.LoggerFactory
+import uk.ac.ncl.openlab.intake24.errors.{LocaleOrParentError, ParentRecordNotFound, UndefinedLocale}
+import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
+import uk.ac.ncl.openlab.intake24.{AssociatedFood, AssociatedFoodWithHeader, CategoryHeader, FoodHeader}
 
-trait AssociatedFoodsAdminQueries extends FoodDataSqlService with SqlResourceLoader {
+trait AssociatedFoodsAdminQueries extends SqlDataService with SqlResourceLoader {
 
   private val logger = LoggerFactory.getLogger(classOf[AssociatedFoodsAdminQueries])
 
   private case class AssociatedFoodPromptsRow(
-    associated_food_code: Option[String], food_english_description: Option[String], food_local_description: Option[String], food_do_not_use: Option[Boolean],
-    associated_category_code: Option[String], category_english_description: Option[String], category_local_description: Option[String], category_is_hidden: Option[Boolean],
-    text: Option[String], link_as_main: Option[Boolean], generic_name: Option[String])
+                                               associated_food_code: Option[String], food_english_description: Option[String], food_local_description: Option[String], food_do_not_use: Option[Boolean],
+                                               associated_category_code: Option[String], category_english_description: Option[String], category_local_description: Option[String], category_is_hidden: Option[Boolean],
+                                               text: Option[String], link_as_main: Option[Boolean], generic_name: Option[String])
 
   private lazy val getAssociatedFoodsQuery = sqlFromResource("admin/get_associated_foods.sql")
 

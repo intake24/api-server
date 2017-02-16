@@ -1,14 +1,9 @@
 package uk.ac.ncl.openlab.intake24.foodsql.user
 
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.InheritableAttributeSource
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.InheritableAttributeSources
-
+import anorm.{Macro, SQL}
+import uk.ac.ncl.openlab.intake24.errors.LookupError
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LookupError
-import anorm.SQL
-import anorm.Macro
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.LocalLookupError
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.{InheritableAttributeSource, InheritableAttributeSources}
 import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
 
 trait InheritedAttributesImpl extends SqlResourceLoader with FirstRowValidation {
@@ -27,9 +22,9 @@ trait InheritedAttributesImpl extends SqlResourceLoader with FirstRowValidation 
   }
 
   private case class InheritableAttributeTemp(
-      sameAsBeforeOption: Option[(Boolean, InheritableAttributeSource)],
-      readyMealOption: Option[(Boolean, InheritableAttributeSource)],
-      reasonableAmount: Option[(Int, InheritableAttributeSource)]) {
+                                               sameAsBeforeOption: Option[(Boolean, InheritableAttributeSource)],
+                                               readyMealOption: Option[(Boolean, InheritableAttributeSource)],
+                                               reasonableAmount: Option[(Int, InheritableAttributeSource)]) {
     def finalise = ResolvedInheritableAttributes(sameAsBeforeOption.get._1, readyMealOption.get._1, reasonableAmount.get._1,
       InheritableAttributeSources(sameAsBeforeOption.get._2, readyMealOption.get._2, reasonableAmount.get._2))
   }

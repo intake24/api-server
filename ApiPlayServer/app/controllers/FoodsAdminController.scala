@@ -31,7 +31,7 @@ import upickle.default._
 import scala.concurrent.Future
 
 class FoodsAdminController @Inject() (service: FoodsAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
-    with FoodDatabaseErrorHandler with UpickleUtil {
+    with DatabaseErrorHandler with UpickleUtil {
 
   def getFoodRecord(code: String, locale: String) = deadbolt.restrictAccess(Roles.superuser) {
     Future {

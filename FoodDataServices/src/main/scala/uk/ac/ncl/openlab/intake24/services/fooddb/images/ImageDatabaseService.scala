@@ -3,7 +3,7 @@ package uk.ac.ncl.openlab.intake24.services.fooddb.images
 
 import java.time.LocalDateTime
 
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.{DeleteError, LookupError, UnexpectedDatabaseError, UpdateError}
+import uk.ac.ncl.openlab.intake24.errors.{DeleteError, LookupError, UnexpectedDatabaseError}
 
 case class SourceImageRecord(id: Long, path: String, thumbnailPath: String, keywords: Seq[String], uploader: String, uploadedAt: LocalDateTime)
 

@@ -30,7 +30,7 @@ lazy val phraseSearch = Project(id = "phrasesearch", base = file ("PhraseSearch"
 lazy val gwtShared = Project(id = "gwtShared", base = file("ClientShared")).settings(commonSettings: _*)
 
 
-lazy val commonSql = Project(id = "commonSql", base = file("CommonSQL")).settings(commonSettings: _*)
+lazy val commonSql = Project(id = "commonSql", base = file("CommonSQL")).settings(commonSettings: _*).dependsOn(sharedTypes)
 
 
 lazy val systemDataServices = Project(id = "systemDataServices", base = file("SystemDataServices")).dependsOn(gwtShared, sharedTypes).settings(commonSettings: _*)
