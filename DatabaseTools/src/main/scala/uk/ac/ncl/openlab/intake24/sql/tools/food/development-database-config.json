@@ -1,7 +1,0 @@
-{
-  "host" : "localhost",
-  "database" : "intake24_foods_development",
-  "user" : "postgres",
-  "password" : ["123456"],
-  "useSsl" : false
-}
