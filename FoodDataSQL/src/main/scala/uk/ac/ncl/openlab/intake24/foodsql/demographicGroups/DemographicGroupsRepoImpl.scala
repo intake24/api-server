@@ -122,7 +122,7 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
         unpackOptionalRange[Double](record.weight)._2,
         record.sex,
         record.physicalLevelId,
-        record.nutrientLevelId
+        record.nutrientTypeId
       )
     }
 
@@ -165,7 +165,7 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
         'height -> height_str,
         'sex -> record.sex,
         'physical_activity_level_id -> record.physicalLevelId,
-        'nutrient_type_id -> record.nutrientLevelId)
+        'nutrient_type_id -> record.nutrientTypeId)
     }
 
     def getSqlUpdateFromRecord(id: Int, record: DemographicGroupRecordIn): SimpleSql[Row] = {
@@ -201,7 +201,7 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
         'height -> height_str,
         'sex -> record.sex,
         'physical_activity_level_id -> record.physicalLevelId,
-        'nutrient_type_id -> record.nutrientLevelId)
+        'nutrient_type_id -> record.nutrientTypeId)
     }
 
     def getSqlGet(id: Int): SimpleSql[Row] = {
@@ -449,6 +449,16 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
     implicit conn =>
       DemographicGroupsScaleSectorDbQueryRow.getSqlDelete(id).execute()
       Right()
+  }
+
+  override def getDemographicScaleSectorSentimentTypes(): Seq[String] = {
+    Seq("highly_negative",
+      "negative",
+      "warning",
+      "neutral",
+      "positive",
+      "highly_positive"
+    )
   }
 
 }

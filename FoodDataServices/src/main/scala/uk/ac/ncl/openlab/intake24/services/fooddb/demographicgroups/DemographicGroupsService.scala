@@ -30,7 +30,7 @@ case class DemographicGroupRecordOut(id: Long,
                                      height: Option[DoubleRange],
                                      weight: Option[DoubleRange],
                                      physicalLevelId: Option[Long],
-                                     nutrientLevelId: Long,
+                                     nutrientTypeId: Long,
                                      scaleSectors: Seq[DemographicScaleSectorOut]
                                     )
 
@@ -39,7 +39,7 @@ case class DemographicGroupRecordIn(sex: Option[String],
                                     height: Option[DoubleRange],
                                     weight: Option[DoubleRange],
                                     physicalLevelId: Option[Long],
-                                    nutrientLevelId: Long
+                                    nutrientTypeId: Long
                                    )
 
 trait DemographicGroupsService {
@@ -59,5 +59,7 @@ trait DemographicGroupsService {
   def patchDemographicScaleSector(id: Int, demographicRecord: DemographicScaleSectorIn): Either[UpdateError, DemographicScaleSectorOut]
 
   def deleteDemographicScaleSector(id: Int): Either[UnexpectedDatabaseError, Unit]
+
+  def getDemographicScaleSectorSentimentTypes(): Seq[String]
 
 }
