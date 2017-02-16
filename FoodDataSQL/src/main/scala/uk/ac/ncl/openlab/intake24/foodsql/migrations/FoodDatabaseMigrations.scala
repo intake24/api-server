@@ -373,6 +373,9 @@ object FoodDatabaseMigrations {
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         ???
       }
-    }
+    },
+
+    FeedbackDemographicScaleMigration
+
   )
 }

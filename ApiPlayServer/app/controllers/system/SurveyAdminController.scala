@@ -25,7 +25,7 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller}
 import security.{DeadboltActionsAdapter, Roles}
 import uk.ac.ncl.openlab.intake24.api.shared.CreateSurveyRequest
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.SurveyAdminService
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{NewSurveyParameters, SurveyAdminService}
 import upickle.default._
 
 import scala.concurrent.Future
@@ -38,7 +38,7 @@ class SurveyAdminController @Inject()(service: SurveyAdminService, deadbolt: Dea
     request =>
       Future {
         val body = request.body
-        translateDatabaseResult(service.createSurvey(body.surveyId, body.schemeId, body.localeId, body.allowGeneratedUsers, body.externalFollowUpUrl, body.supportEmail))
+        translateDatabaseResult(service.createSurvey(body.surveyId, NewSurveyParameters(body.schemeId, body.localeId, body.allowGeneratedUsers, body.externalFollowUpUrl, body.supportEmail)))
       }
   }
 

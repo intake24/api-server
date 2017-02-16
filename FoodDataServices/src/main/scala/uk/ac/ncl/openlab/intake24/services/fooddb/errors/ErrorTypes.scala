@@ -81,6 +81,10 @@ sealed trait NutrientMappingError {
   val exception: Throwable
 }
 
+sealed trait ConstraintError extends AnyError with UpdateError {
+  val exception: Throwable
+}
+
 case class UndefinedLocale(exception: Throwable) extends LocaleError
 
 sealed trait RecordType
@@ -104,6 +108,8 @@ case class IllegalParent(exception: Throwable) extends ParentError
 
 case class TableNotFound(exception: Throwable) extends NutrientMappingError
 
+case class ConstraintViolation(name: String, exception: Throwable) extends ConstraintError
+
 case class UnexpectedDatabaseError(exception: Throwable)
   extends LocaleError
   with LookupError
@@ -112,4 +118,5 @@ case class UnexpectedDatabaseError(exception: Throwable)
   with CreateError
   with NutrientMappingError
   with ParentError
+  with ConstraintError
   with AnyError

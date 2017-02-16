@@ -69,7 +69,7 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
                       val nutrients = nutrientRows.getOrElse(foodRow.food_id, Seq()).map {
                         nutrientRow =>
                           (nutrientRow.n_type.toInt, nutrientRow.n_amount)
-                      }
+                      }.toMap
 
                       NutrientMappedFood(foodRow.code, foodRow.english_description, foodRow.local_description, foodRow.search_term, foodRow.nutrient_table_id, foodRow.nutrient_table_code, foodRow.ready_meal,
                         CompletedPortionSize(foodRow.portion_size_method_id, customFieldsAsMap(foodRow.portion_size_data)), foodRow.reasonable_amount,

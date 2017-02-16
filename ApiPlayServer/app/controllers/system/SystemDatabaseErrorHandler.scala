@@ -7,7 +7,8 @@ import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 import uk.ac.ncl.openlab.intake24.services.systemdb.errors._
 import upickle.default._
 
-trait SystemDatabaseErrorHandler extends Results {
+trait
+SystemDatabaseErrorHandler extends Results {
 
   private val logger = LoggerFactory.getLogger(classOf[SystemDatabaseErrorHandler])
 

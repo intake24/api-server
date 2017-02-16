@@ -115,6 +115,9 @@ GET            /user/portion-size/as-served/:id                              con
 
 GET            /admin/nutrient-tables                                        controllers.NutrientTablesAdminController.listNutrientTables()
 
+# Nutrient types
+GET            /admin/nutrient-types                                         controllers.NutrientTypesController.list()
+
 # Source image management
 
 GET            /admin/images/source                                          controllers.ImageAdminController.listSourceImages(offset: Int, limit: Int, search: Option[String])
@@ -130,7 +133,6 @@ POST           /admin/images/process-for-selection-screen                    con
 
 # GET     /index/synsets/:locale                controllers.FoodIndexController.synsets(locale: String)
 # GET     /index/split-list/:locale             controllers.FoodIndexController.splitList(locale: String)
-
 
 
 # User management
@@ -158,5 +160,17 @@ DELETE         /admin/surveys/:surveyId/delete                               con
 # Data export
 
 GET            /admin/surveys/:surveyId/submissions                          controllers.system.DataExportController.getSurveySubmissions(surveyId, dateFrom: String, dateTo: String, offset: Int, limit: Int)
-GET            /admin/surveys/:surveyId/submissions/csv                      controllers.system.DataExportController.getSurveySubmissionsAsCSV(surveyId, dateFrom: Long, dateTo: Long, offset: Int, limit: Int)
+GET            /admin/surveys/:surveyId/submissions/csv                      controllers.system.DataExportController.getSurveySubmissionsAsCSV(surveyId, dateFrom: String, dateTo: String, offset: Int, limit: Int)
 # GET            /admin/surveys/:surveyId/submissions/xlsx                     controllers.system.DataExportController.getSurveySubmissionsAsXLSX(surveyId, dateFrom: Long, dateTo: Long, offset: Int, limit: Int)
+
+# Demographic groups
+
+GET            /admin/demographic-groups                                     controllers.DemographicGroupsController.list()
+POST           /admin/demographic-groups                                     controllers.DemographicGroupsController.createDemographicGroup()
+PATCH          /admin/demographic-groups/:id                                 controllers.DemographicGroupsController.patchDemographicGroup(id: Int)
+GET            /admin/demographic-groups/:id                                 controllers.DemographicGroupsController.getDemographicGroup(id: Int)
+DELETE         /admin/demographic-groups/:id                                 controllers.DemographicGroupsController.deleteDemographicGroup(id: Int)
+
+POST           /admin/demographic-groups/:id/scale-sectors                   controllers.DemographicGroupsController.createDemographicGroupScaleSector(id: Int)
+PATCH          /admin/demographic-group-scale-sectors/:id                    controllers.DemographicGroupsController.patchDemographicGroupScaleSector(id: Int)
+DELETE         /admin/demographic-group-scale-sectors/:id                    controllers.DemographicGroupsController.deleteDemographicGroupScaleSector(id: Int)

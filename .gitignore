@@ -40,3 +40,4 @@ Webapp/war
 ApiPlayServer/conf/production.conf
 ApiPlayServer/conf/application.conf
 
+/DatabaseTools/migrateConfig.json
