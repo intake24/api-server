@@ -76,7 +76,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
       fieldName = "X-Auth-Token",
       issuerClaim = "intake24",
       requestParts = Some(Seq(RequestPart.Headers)),
-      authenticatorIdleTimeout = Some(configuration.getInt("intake24.security.refreshTokenIdleExpiryDays").getOrElse(30).days),
+      authenticatorIdleTimeout = None,
       authenticatorExpiry = configuration.getInt("intake24.security.refreshTokenExpiryDays").getOrElse(1825).days,
       sharedSecret = configuration.getString("play.crypto.secret").get)
 

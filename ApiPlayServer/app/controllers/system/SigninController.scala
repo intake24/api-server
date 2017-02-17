@@ -82,15 +82,21 @@ class SigninController @Inject()(@Named("refresh") refreshEnv: Environment[Intak
             case Some(user) => accessEnv.authenticatorService.create(loginInfo).flatMap {
               accessToken =>
                 val customClaims = Json.obj("i24t" -> "access", "i24r" -> user.securityInfo.roles, "i24p" -> user.securityInfo.permissions)
+                /*
+                // This code is for idle expiration of refresh tokens, disabled for simplicity
 
                 val updatedRefreshToken = refreshEnv.authenticatorService.touch(refreshToken) match {
                   case Left(x) => x
                   case Right(x) => x
                 }
 
-                for (accessTokenValue <- accessEnv.authenticatorService.init(accessToken.copy(customClaims = Some(customClaims)));
+                for (accessTokenValue <- accessEnv.authenticatorService.init(accessToken.copy(customClaims = Some(customClaims)))));
                      refreshTokenValue <- refreshEnv.authenticatorService.init(updatedRefreshToken))
-                  yield (Ok(write(RefreshResult(refreshTokenValue, accessTokenValue))).as(ContentTypes.JSON))
+                 */
+
+                accessEnv.authenticatorService.init(accessToken.copy(customClaims = Some(customClaims))).map {
+                  serialisedAccessToken => (Ok(write(RefreshResult(serialisedAccessToken))).as(ContentTypes.JSON))
+                }
 
             }
             case None =>

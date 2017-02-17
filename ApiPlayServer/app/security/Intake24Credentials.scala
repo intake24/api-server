@@ -39,11 +39,13 @@ object Intake24UserKey {
 }
 
 object Intake24CredentialsUtil {
-  implicit def asSimpleCredentials(credentials: Intake24Credentials) = Credentials(Intake24UserKey(credentials.username, credentials.survey_id).toString(), credentials.password)
+  implicit def asSimpleCredentials(credentials: Intake24Credentials) = Credentials(Intake24UserKey(credentials.username, credentials.survey_id.getOrElse("")).toString(), credentials.password)
   
   implicit def fromSimpleCredentials(credentials: Credentials) = {
     val key = Intake24UserKey.fromString(credentials.identifier)
-    Intake24Credentials(key.userName, key.surveyName, credentials.password)
+    val surveyId = if (key.surveyName.isEmpty) None else Some(key.surveyName)
+
+    Intake24Credentials(surveyId, key.userName, credentials.password)
   } 
   
   implicit val jsonFormat = Json.format[Intake24Credentials]  
