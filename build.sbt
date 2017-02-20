@@ -70,7 +70,8 @@ lazy val apiDocs = scalatex.ScalatexReadme(
   projectId = "apiDocs",
   wd = file(""),
   url = "",
-  source = "ApiDocs"
+  source = "ApiDocs",
+  autoResources = List("apidocs-styles.css")
 ).settings(
   scalaVersion := "2.11.8",
   libraryDependencies ++= Seq (

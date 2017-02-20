@@ -1,6 +1,7 @@
 @import Main._
 @import apidocs.IntroExamples
 @import apidocs.SigninExamples
+@import apidocs.UserManagementExamples
 
 @sect{Intake24 JSON API}
 
@@ -121,3 +122,367 @@
       @p The token should be sent in the @hl.asciidoc{X-Auth-Token} header.
       @p The @hl.asciidoc{HTTP 401 Unauthorized} response must be expected for any API request. To correctly handle this response, the application must request a new access token
          and retry the request.
+
+  @sect{User management}
+
+    @sect{CSV file format for user records}
+      @p
+        The CSV file format for user records is as follows:
+      @p
+        @{
+          table(tr(th("User name"), th("Password"), th("Name"), th("E-mail"), th("Phone"), th("Custom field 1"), th("...")),
+                tr(td("user1"), td("P455w0rd"), td("John Smith"), td("john@smith.com"), td(""), td("Custom value 1"), td("...")),
+                tr(td("user2"), td("P455w0rd"), td("Jack Black"), td("jack@black.com"), td("+44123123123"), td("Custom value 1"), td("...")),
+                tr(td("..."), td("..."), td("..."), td("..."), td("..."), td("..."), td("...")))
+        }
+      @p
+        The first two columns of the header (first row) are mandatory and must be @b{"User name"} and @b{"Password"}, in that order. Other columns order is not fixed.
+      @p
+        The system will accept the following optional standard column names:
+        @ul
+          @li
+            @b{"Name"} for the user's real name
+          @li
+            @b{"E-mail"} OR @b{"Email"} for the user's e-mail address
+          @li
+            @b{"Phone"} for the user's phone number
+      @p
+        If one of these columns is missing, or if some individual cells in one of the optional columns are blank, then the corresponding fields
+        in the user records will be empty.
+      @p
+        All other column names will be treated as custom data fields and will go to the user's custom fields map.
+
+    @sect{List global user accounts}
+      To get a list of system-wide user accounts, that is accounts that are not associated with a particular survey,
+        @p
+          @b{GET} @hl.asciidoc{/admin/users?offset=<offset>&limit=<limit>}
+        @p
+          where
+          @ul
+            @li
+              @b{offset} is the number of records to skip.
+            @li
+              @b{limit} is the number of records to return, starting at @b{offset}. There is a hard limit of 1000 records that can be returned at once.
+        @sect{Response}
+          @ul
+            @li
+              @p @hl.asciidoc{HTTP 200 OK}
+              @p The body is a JSON array of global user record objects:
+              @p
+                @hl.js{@UserManagementExamples.globalUserRecord}
+              @p
+                 where
+                  @ul
+                    @li
+                      @b{userName} is the user ID required to sign in,
+                    @li
+                      @b{name} is the optional real name of the user (see @sect.ref{Optional type}),
+                    @li
+                      @b{email} is the optional e-mail address,
+                    @li
+                      @b{phone} is the optional phone number (used for SMS notifications),
+                    @li
+                      @b{customFields} is an object containing custom data about this user (the set of available custom fields depends on the survey),
+                    @li
+                      @b{roles} is the set of general roles for this user,
+                    @li
+                      @b{permissions} is the set of fine-grained permissions for this user.
+            @li
+              @p @hl.asciidoc{HTTP 401 Unauthorized}: the access token is missing, invalid, or has expired. Get a new token and try again.
+            @li
+              @p @hl.asciidoc{HTTP 403 Forbidden}: the access token is valid, but you don't have the right to perform this operation.
+    @sect{Create/update global user accounts}
+      To create or update system-wide user accounts,
+      @p
+        @b{POST} @hl.asciidoc{/admin/users/create-or-update}
+      @p
+        with a body consisting of a JSON object with a single field, @b{userRecords}, containing an array of user record objects:
+        @p
+          @hl.js{@UserManagementExamples.globalUserUpdate}
+        @p
+           where
+            @ul
+              @li
+                @b{userName} is the user ID required to sign in,
+              @li
+                @b{password} is the user's password required to sign in,
+              @li
+                @b{name} is the optional real name of the user (see @sect.ref{Optional type}),
+              @li
+                @b{email} is the optional e-mail address,
+              @li
+                @b{phone} is the optional phone number (used for SMS notifications),
+              @li
+                @b{customFields} is an object containing custom data about this user (the set of available custom fields depends on the survey),
+              @li
+                @b{roles} is the set of general roles for this user,
+              @li
+                @b{permissions} is the set of fine-grained permissions for this user.
+
+        @p
+          @b{Note:} if there is already a user record matching one of the specified user names, the record will be updated. Otherwise, a new record will be created.
+        @sect{Response}
+          @ul
+            @li
+              @p @hl.asciidoc{HTTP 200 OK}: the users have been successfully updated.
+            @li
+              @p @hl.asciidoc{HTTP 401 Unauthorized}: the access token is missing, invalid, or has expired. Get a new token and try again.
+            @li
+              @p @hl.asciidoc{HTTP 403 Forbidden}: the access token is valid, but you don't have the right to perform this operation.
+
+    @sect{Delete global users}
+      To delete one or more system-wide users,
+      @p
+        @b{DELETE} @hl.asciidoc{/admin/users/delete}
+      @p
+        with a body consisting of a JSON object with a single field, @b{userNames}, containing an array of user names to delete:
+      @p
+        @hl.js{@UserManagementExamples.globalUserDelete}
+      @p
+        @b{Note:} users names that don't match any existing user records will be ignored.
+      @sect{Response}
+        @ul
+          @li
+            @p @hl.asciidoc{HTTP 200 OK}: the users have been successfully deleted (or ignored if not found).
+          @li
+            @p @hl.asciidoc{HTTP 401 Unauthorized}: the access token is missing, invalid, or has expired. Get a new token and try again.
+          @li
+            @p @hl.asciidoc{HTTP 403 Forbidden}: the access token is valid, but you don't have the right to perform this operation.
+
+    @sect{List survey staff accounts}
+      To get a list of staff user accounts for a survey,
+        @p
+          @b{GET} @hl.asciidoc{/admin/users/<survey id>/staff?offset=<offset>&limit=<limit>}
+        @p
+          where
+          @ul
+            @li
+              @b{survey id} is the ID of the survey,
+            @li
+              @b{offset} is the number of records to skip,
+            @li
+              @b{limit} is the number of records to return, starting at @b{offset}. There is a hard limit of 1000 records that can be returned at once.
+        @sect{Response}
+          @ul
+            @li
+              @p @hl.asciidoc{HTTP 200 OK}
+              @p The body is a JSON array of survey user record objects:
+              @p
+                @hl.js{@UserManagementExamples.surveyUserRecord}
+              @p
+                 where
+                  @ul
+                    @li
+                      @b{userName} is the user ID required to sign in,
+                    @li
+                      @b{name} is the optional real name of the user (see @sect.ref{Optional type}),
+                    @li
+                      @b{email} is the optional e-mail address,
+                    @li
+                      @b{phone} is the optional phone number (used for SMS notifications),
+                    @li
+                      @b{customFields} is an object containing custom data about this user (the set of available custom fields depends on the survey),
+            @li
+              @p @hl.asciidoc{HTTP 401 Unauthorized}: the access token is missing, invalid, or has expired. Get a new token and try again.
+            @li
+              @p @hl.asciidoc{HTTP 403 Forbidden}: the access token is valid, but you don't have the right to perform this operation.
+            @li
+              @p @hl.asciidoc{HTTP 404 Not Found}: the survey ID is invalid.
+
+    @sect{Create/update survey staff accounts}
+      To create or update staff accounts for a survey,
+        @p
+          @b{POST} @hl.asciidoc{/admin/users/<survey id>/staff/create-or-update}
+        @p
+          where
+          @ul
+            @li
+              @b{survey id} is the ID of the survey
+        @p
+          with a body consisting of a JSON object with a single field, @b{userRecords}, containing an array of user record objects:
+          @p
+            @hl.js{@UserManagementExamples.surveyUserUpdate}
+          @p
+             where
+              @ul
+                @li
+                  @b{userName} is the user ID required to sign in,
+                @li
+                  @b{password} is the user's password required to sign in,
+                @li
+                  @b{name} is the optional real name of the user (see @sect.ref{Optional type}),
+                @li
+                  @b{email} is the optional e-mail address,
+                @li
+                  @b{phone} is the optional phone number (used for SMS notifications),
+                @li
+                  @b{customFields} is an object containing custom data about this user (the set of available custom fields depends on the survey),
+
+        @p
+          @b{Note:} if there is already a user record matching one of the specified user names, the record will be updated. Otherwise, a new record will be created.
+        @sect{Response}
+          @ul
+            @li
+              @p @hl.asciidoc{HTTP 200 OK}: the users have been successfully updated.
+            @li
+              @p @hl.asciidoc{HTTP 401 Unauthorized}: the access token is missing, invalid, or has expired. Get a new token and try again.
+            @li
+              @p @hl.asciidoc{HTTP 403 Forbidden}: the access token is valid, but you don't have the right to perform this operation.
+            @li
+              @p @hl.asciidoc{HTTP 404 Not Found}: the survey ID is invalid.
+    @sect{Upload survey staff accounts using CSV}
+      To create or update staff accounts for a survey using a CSV file,
+      @p
+        @b{POST} @hl.asciidoc{/admin/users/<survey id>/staff/upload-csv}
+      @p
+        where
+        @ul
+          @li
+            @b{survey id} is the ID of the survey
+      @p
+        with a @b{multipart/form-data} body with a file attachment in the CSV format (see @sect.ref{CSV file format for user records}). The name of the file and the name of the form field are ignored.
+      @sect{Response}
+        @ul
+          @li
+            @p @hl.asciidoc{HTTP 200 OK}: the users have been successfully updated.
+          @li
+            @p @hl.asciidoc{HTTP 401 Unauthorized}: the access token is missing, invalid, or has expired. Get a new token and try again.
+          @li
+            @p @hl.asciidoc{HTTP 403 Forbidden}: the access token is valid, but you don't have the right to perform this operation.
+          @li
+            @p @hl.asciidoc{HTTP 400 Bad Request}: the file format is incorrect.
+          @li
+            @p @hl.asciidoc{HTTP 404 Not Found}: the survey ID is invalid.
+
+    @sect{List survey respondents}
+     To get a list of respondent user accounts for a survey,
+        @p
+          @b{GET} @hl.asciidoc{/admin/users/<survey id>/respondents?offset=<offset>&limit=<limit>}
+        @p
+          where
+          @ul
+            @li
+              @b{survey id} is the ID of the survey,
+            @li
+              @b{offset} is the number of records to skip,
+            @li
+              @b{limit} is the number of records to return, starting at @b{offset}. There is a hard limit of 1000 records that can be returned at once.
+        @sect{Response}
+          @ul
+            @li
+              @p @hl.asciidoc{HTTP 200 OK}
+              @p The body is a JSON array of survey user record objects:
+              @p
+                @hl.js{@UserManagementExamples.surveyUserRecord}
+              @p
+                 where
+                  @ul
+                    @li
+                      @b{userName} is the user ID required to sign in,
+                    @li
+                      @b{name} is the optional real name of the user (see @sect.ref{Optional type}),
+                    @li
+                      @b{email} is the optional e-mail address,
+                    @li
+                      @b{phone} is the optional phone number (used for SMS notifications),
+                    @li
+                      @b{customFields} is an object containing custom data about this user (the set of available custom fields depends on the survey),
+            @li
+              @p @hl.asciidoc{HTTP 401 Unauthorized}: the access token is missing, invalid, or has expired. Get a new token and try again.
+            @li
+              @p @hl.asciidoc{HTTP 403 Forbidden}: the access token is valid, but you don't have the right to perform this operation.
+            @li
+              @p @hl.asciidoc{HTTP 404 Not Found}: the survey ID is invalid.
+
+    @sect{Create/update survey respondent accounts}
+          To create or update respondent accounts for a survey,
+            @p
+              @b{POST} @hl.asciidoc{/admin/users/<survey id>/respondents/create-or-update}
+            @p
+              where
+              @ul
+                @li
+                  @b{survey id} is the ID of the survey
+            @p
+              with a body consisting of a JSON object with a single field, @b{userRecords}, containing an array of user record objects:
+              @p
+                @hl.js{@UserManagementExamples.surveyUserUpdate}
+              @p
+                 where
+                  @ul
+                    @li
+                      @b{userName} is the user ID required to sign in,
+                    @li
+                      @b{password} is the user's password required to sign in,
+                    @li
+                      @b{name} is the optional real name of the user (see @sect.ref{Optional type}),
+                    @li
+                      @b{email} is the optional e-mail address,
+                    @li
+                      @b{phone} is the optional phone number (used for SMS notifications),
+                    @li
+                      @b{customFields} is an object containing custom data about this user (the set of available custom fields depends on the survey),
+
+            @p
+              @b{Note:} if there is already a user record matching one of the specified user names, the record will be updated. Otherwise, a new record will be created.
+            @sect{Response}
+              @ul
+                @li
+                  @p @hl.asciidoc{HTTP 200 OK}: the users have been successfully updated.
+                @li
+                  @p @hl.asciidoc{HTTP 401 Unauthorized}: the access token is missing, invalid, or has expired. Get a new token and try again.
+                @li
+                  @p @hl.asciidoc{HTTP 403 Forbidden}: the access token is valid, but you don't have the right to perform this operation.
+                @li
+                  @p @hl.asciidoc{HTTP 404 Not Found}: the survey ID is invalid.
+
+
+    @sect{Upload survey respondent accounts using CSV}
+     To create or update respondent accounts for a survey using a CSV file,
+      @p
+        @b{POST} @hl.asciidoc{/admin/users/<survey id>/respondents/upload-csv}
+      @p
+        where
+        @ul
+          @li
+            @b{survey id} is the ID of the survey
+      @p
+        with a @b{multipart/form-data} body with a file attachment in the CSV format (see @sect.ref{CSV file format for user records}). The name of the file and the name of the form field are ignored.
+      @sect{Response}
+        @ul
+          @li
+            @p @hl.asciidoc{HTTP 200 OK}: the users have been successfully updated.
+          @li
+            @p @hl.asciidoc{HTTP 401 Unauthorized}: the access token is missing, invalid, or has expired. Get a new token and try again.
+          @li
+            @p @hl.asciidoc{HTTP 403 Forbidden}: the access token is valid, but you don't have the right to perform this operation.
+          @li
+            @p @hl.asciidoc{HTTP 400 Bad Request}: the file format is incorrect.
+          @li
+            @p @hl.asciidoc{HTTP 404 Not Found}: the survey ID is invalid.
+
+    @sect{Delete survey user accounts}
+     To delete one or more system-wide users,
+      @p
+        @b{DELETE} @hl.asciidoc{/admin/users/<survey id>/delete}
+      @p
+        where
+        @ul
+          @li
+            @b{survey id} is the ID of the survey
+      @p
+        with a body consisting of a JSON object with a single field, @b{userNames}, containing an array of user names to delete:
+      @p
+        @hl.js{@UserManagementExamples.globalUserDelete}
+      @p
+        @b{Note:} users names that don't match any existing user records will be ignored.
+      @sect{Response}
+        @ul
+          @li
+            @p @hl.asciidoc{HTTP 200 OK}: the users have been successfully deleted (or ignored if not found).
+          @li
+            @p @hl.asciidoc{HTTP 401 Unauthorized}: the access token is missing, invalid, or has expired. Get a new token and try again.
+          @li
+            @p @hl.asciidoc{HTTP 403 Forbidden}: the access token is valid, but you don't have the right to perform this operation.
+          @li
+            @p @hl.asciidoc{HTTP 404 Not Found}: the survey ID is invalid.
