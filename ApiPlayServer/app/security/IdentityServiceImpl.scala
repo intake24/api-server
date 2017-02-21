@@ -36,7 +36,7 @@ class IdentityServiceImpl @Inject()(val dataStore: DataStoreScala) extends Ident
   def retrieve(loginInfo: LoginInfo): Future[Option[Intake24User]] = Future {
     val intake24key = Intake24UserKey.fromString(loginInfo.providerKey)
 
-    dataStore.getUserRecord(intake24key.surveyName, intake24key.userName).map {
+    dataStore.getUserRecord(intake24key.surveyId.getOrElse(""), intake24key.userName).map {
       record =>
         Intake24User(record.userName, SecurityInfo(record.roles, record.permissions))
     }

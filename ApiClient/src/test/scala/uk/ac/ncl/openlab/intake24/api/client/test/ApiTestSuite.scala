@@ -1,5 +1,7 @@
 package uk.ac.ncl.openlab.intake24.api.client.test
 
+import java.io.BufferedWriter
+
 import org.scalatest.FunSuite
 import uk.ac.ncl.openlab.intake24.api.client.ApiError
 import uk.ac.ncl.openlab.intake24.api.client.ApiError.{ErrorParseFailed, RequestFailed, ResultParseFailed}
@@ -28,7 +30,7 @@ trait ApiTestSuite extends FunSuite {
       case Left(ErrorParseFailed(httpCode, cause)) => fail(s"Could not parse error for code $httpCode", cause)
     }
 
-  val apiBaseUrl = "http://localhost:9000"
+  val apiBaseUrl = System.getProperty("apiBaseUrl", "http://localhost:9000")
 
   val signinClient = new SigninClientImpl(apiBaseUrl)
 

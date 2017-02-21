@@ -46,7 +46,7 @@ class SigninController @Inject()(@Named("refresh") refreshEnv: Environment[Intak
 
       val credentials = request.body
 
-      val authResult = credentialsProvider.authenticate(Credentials(credentials.username + "#" + credentials.survey_id, credentials.password))
+      val authResult = credentialsProvider.authenticate(Credentials(Intake24UserKey(credentials.survey_id, credentials.username).toString, credentials.password))
 
       authResult.flatMap {
         loginInfo =>
