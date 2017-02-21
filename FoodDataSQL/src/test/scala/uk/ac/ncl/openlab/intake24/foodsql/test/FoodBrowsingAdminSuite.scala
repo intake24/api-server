@@ -6,9 +6,6 @@ import org.scalatest.DoNotDiscover
 import uk.ac.ncl.openlab.intake24.AsServedImageV1
 import uk.ac.ncl.openlab.intake24.AsServedSetV1
 
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.RecordNotFound
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.DuplicateCode
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.UndefinedLocale
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
 import org.scalatest.BeforeAndAfterAll
 import uk.ac.ncl.openlab.intake24.AssociatedFood
@@ -22,7 +19,7 @@ import uk.ac.ncl.openlab.intake24.NewCategory
 import uk.ac.ncl.openlab.intake24.AssociatedFoodWithHeader
 import uk.ac.ncl.openlab.intake24.FoodHeader
 import uk.ac.ncl.openlab.intake24.CategoryHeader
-import uk.ac.ncl.openlab.intake24.services.fooddb.errors.ParentRecordNotFound
+
 import uk.ac.ncl.openlab.intake24.LocalCategoryRecord
 import java.util.UUID
 import uk.ac.ncl.openlab.intake24.MainCategoryRecord
