@@ -2,11 +2,15 @@
 @import apidocs.IntroExamples
 @import apidocs.SigninExamples
 @import apidocs.UserManagementExamples
+@import apidocs.DataExportExamples
 
 @sect{Intake24 JSON API}
 
   @p
-    @i{Version 2.11.0}
+    @i{Version 2.12.0}
+
+  @p
+    @i{Food database API documentation is temporarily unavailable because it is out of date}
 
   @p
     Intake24 (@a("https://intake24.co.uk", href := "https://intake24.co.uk")) is a self-completed computerised dietary recall system 
@@ -87,7 +91,7 @@
           where
         @ul
           @li
-            @b{survey_id} is the optional survey identifier for the user that you are signing in as (user names are unique w.r.t individual surveys, but not system-wide).
+            @b{survey_id} is the optional survey_identifier for the user that you are signing in as (user names are unique w.r.t individual surveys, but not system-wide).
             This field should contain an empty value if the user you would like to sign in as is a system-wide user, such as an administrator (see @sect.ref{Optional type}).
           @li
             @b{username} is the unique user ID
@@ -252,12 +256,12 @@
     @sect{List survey staff accounts}
       To get a list of staff user accounts for a survey,
         @p
-          @b{GET} @hl.asciidoc{/admin/users/<survey id>/staff?offset=<offset>&limit=<limit>}
+          @b{GET} @hl.asciidoc{/admin/users/<survey_id>/staff?offset=<offset>&limit=<limit>}
         @p
           where
           @ul
             @li
-              @b{survey id} is the ID of the survey,
+              @b{survey_id} is the survey identifier,
             @li
               @b{offset} is the number of records to skip,
             @li
@@ -287,17 +291,17 @@
             @li
               @p @hl.asciidoc{HTTP 403 Forbidden}: the access token is valid, but you don't have the right to perform this operation.
             @li
-              @p @hl.asciidoc{HTTP 404 Not Found}: the survey ID is invalid.
+              @p @hl.asciidoc{HTTP 404 Not Found}: the survey identifier is invalid.
 
     @sect{Create/update survey staff accounts}
       To create or update staff accounts for a survey,
         @p
-          @b{POST} @hl.asciidoc{/admin/users/<survey id>/staff/create-or-update}
+          @b{POST} @hl.asciidoc{/admin/users/<survey_id>/staff/create-or-update}
         @p
           where
           @ul
             @li
-              @b{survey id} is the ID of the survey
+              @b{survey_id} is the survey identifier
         @p
           with a body consisting of a JSON object with a single field, @b{userRecords}, containing an array of user record objects:
           @p
@@ -329,16 +333,16 @@
             @li
               @p @hl.asciidoc{HTTP 403 Forbidden}: the access token is valid, but you don't have the right to perform this operation.
             @li
-              @p @hl.asciidoc{HTTP 404 Not Found}: the survey ID is invalid.
+              @p @hl.asciidoc{HTTP 404 Not Found}: the survey identifier is invalid.
     @sect{Upload survey staff accounts using CSV}
       To create or update staff accounts for a survey using a CSV file,
       @p
-        @b{POST} @hl.asciidoc{/admin/users/<survey id>/staff/upload-csv}
+        @b{POST} @hl.asciidoc{/admin/users/<survey_id>/staff/upload-csv}
       @p
         where
         @ul
           @li
-            @b{survey id} is the ID of the survey
+            @b{survey_id} is the survey identifier
       @p
         with a @b{multipart/form-data} body with a file attachment in the CSV format (see @sect.ref{CSV file format for user records}). The name of the file and the name of the form field are ignored.
       @sect{Response}
@@ -352,17 +356,17 @@
           @li
             @p @hl.asciidoc{HTTP 400 Bad Request}: the file format is incorrect.
           @li
-            @p @hl.asciidoc{HTTP 404 Not Found}: the survey ID is invalid.
+            @p @hl.asciidoc{HTTP 404 Not Found}: the survey identifier is invalid.
 
     @sect{List survey respondents}
      To get a list of respondent user accounts for a survey,
         @p
-          @b{GET} @hl.asciidoc{/admin/users/<survey id>/respondents?offset=<offset>&limit=<limit>}
+          @b{GET} @hl.asciidoc{/admin/users/<survey_id>/respondents?offset=<offset>&limit=<limit>}
         @p
           where
           @ul
             @li
-              @b{survey id} is the ID of the survey,
+              @b{survey_id} is the survey identifier,
             @li
               @b{offset} is the number of records to skip,
             @li
@@ -392,17 +396,17 @@
             @li
               @p @hl.asciidoc{HTTP 403 Forbidden}: the access token is valid, but you don't have the right to perform this operation.
             @li
-              @p @hl.asciidoc{HTTP 404 Not Found}: the survey ID is invalid.
+              @p @hl.asciidoc{HTTP 404 Not Found}: the survey identifier is invalid.
 
     @sect{Create/update survey respondent accounts}
           To create or update respondent accounts for a survey,
             @p
-              @b{POST} @hl.asciidoc{/admin/users/<survey id>/respondents/create-or-update}
+              @b{POST} @hl.asciidoc{/admin/users/<survey_id>/respondents/create-or-update}
             @p
               where
               @ul
                 @li
-                  @b{survey id} is the ID of the survey
+                  @b{survey_id} is the survey identifier
             @p
               with a body consisting of a JSON object with a single field, @b{userRecords}, containing an array of user record objects:
               @p
@@ -434,18 +438,18 @@
                 @li
                   @p @hl.asciidoc{HTTP 403 Forbidden}: the access token is valid, but you don't have the right to perform this operation.
                 @li
-                  @p @hl.asciidoc{HTTP 404 Not Found}: the survey ID is invalid.
+                  @p @hl.asciidoc{HTTP 404 Not Found}: the survey identifier is invalid.
 
 
     @sect{Upload survey respondent accounts using CSV}
      To create or update respondent accounts for a survey using a CSV file,
       @p
-        @b{POST} @hl.asciidoc{/admin/users/<survey id>/respondents/upload-csv}
+        @b{POST} @hl.asciidoc{/admin/users/<survey_id>/respondents/upload-csv}
       @p
         where
         @ul
           @li
-            @b{survey id} is the ID of the survey
+            @b{survey_id} is the survey identifier
       @p
         with a @b{multipart/form-data} body with a file attachment in the CSV format (see @sect.ref{CSV file format for user records}). The name of the file and the name of the form field are ignored.
       @sect{Response}
@@ -459,17 +463,17 @@
           @li
             @p @hl.asciidoc{HTTP 400 Bad Request}: the file format is incorrect.
           @li
-            @p @hl.asciidoc{HTTP 404 Not Found}: the survey ID is invalid.
+            @p @hl.asciidoc{HTTP 404 Not Found}: the survey identifier is invalid.
 
     @sect{Delete survey user accounts}
      To delete one or more system-wide users,
       @p
-        @b{DELETE} @hl.asciidoc{/admin/users/<survey id>/delete}
+        @b{DELETE} @hl.asciidoc{/admin/users/<survey_id>/delete}
       @p
         where
         @ul
           @li
-            @b{survey id} is the ID of the survey
+            @b{survey_id} is the survey identifier.
       @p
         with a body consisting of a JSON object with a single field, @b{userNames}, containing an array of user names to delete:
       @p
@@ -485,4 +489,137 @@
           @li
             @p @hl.asciidoc{HTTP 403 Forbidden}: the access token is valid, but you don't have the right to perform this operation.
           @li
-            @p @hl.asciidoc{HTTP 404 Not Found}: the survey ID is invalid.
+            @p @hl.asciidoc{HTTP 404 Not Found}: the survey identifier is invalid.
+
+  @sect{Data export}
+    @sect{Download survey submissions}
+      @p
+        To get the survey submissions as JSON,
+      @p
+        @b{GET}
+      @p
+        @hl.asciidoc{/admin/surveys/<survey_id>/submissions?dateFrom=<date_from>&dateTo=<date_to>&offset=<offset>&limit=<limit>}
+      @p
+        where
+        @ul
+          @li
+            @b{survey_id} is the survey identifier,
+          @li
+            @b{date_from} is the timestamp for the beginning of time period to download submissions for,
+          @li
+            @b{date_to} is the timestamp for the end of time period to download submissions for,
+          @li
+            @b{offset} is the number of records to skip (in the specified time period),
+          @li
+            @b{limit} is the number of records to return (in the specified time period), starting at @b{offset}. There is a hard limit of 1000 records that can be returned at once.
+        @p
+          @b{Note:} dates are expected in the @a("ISO 8601 format", href:="https://en.wikipedia.org/wiki/ISO_8601"), e.g. @b{"2017-02-10T11:49:12Z"}.
+      @sect{Response}
+        @ul
+          @li
+            @p @hl.asciidoc{HTTP 200 OK}
+            @p
+            The body is a JSON array of survey submission objects:
+            @p
+              @hl.js{@DataExportExamples.surveySubmissions}
+            @p
+               where
+                @ul
+                  @li
+                    @b{id} is the unique identifier of the submission,
+                  @li
+                    @b{userName} is the identifier of the respondent that made the submission,
+                  @li
+                    @b{userCustomData} is an object with custom data fields for the user that made the submission (for custom survey schemes, empty for standard scheme),
+                  @li
+                    @b{surveyCustomData} is an object with custom data fields for the submission (for custom survey schemes, empty for standard scheme),
+                  @li
+                    @b{startTime} is the time when the respondent has started filling out the survey (in @a("ISO 8601 format", href:="https://en.wikipedia.org/wiki/ISO_8601")),
+                  @li
+                    @b{endTime} is the time when the respondent has submitted the survey (in @a("ISO 8601 format", href:="https://en.wikipedia.org/wiki/ISO_8601")),
+                  @li
+                    @b{meals} is an array of objects describing the meals in this submission, where
+                    @ul
+                      @li
+                        @b{name} is the name of the meal as specified by the respondent,
+                      @li
+                        @b{time} is the time of the meal as specified by the respondent, represented as an object with two fields, @b{hours} and @b{minutes},
+                      @li
+                        @b{customData} is an object with custom data fields for this meal (for custom survey schemes, empty for standard scheme),
+                      @li
+                        @b{foods} is an array of objects describing the foods in this meal, where
+                        @ul
+                          @li
+                            @b{code} is the Intake24 food code,
+                          @li
+                            @b{englishDescription} is the English description of this food (from the food database record),
+                          @li
+                            @b{localDescription} is the local description of the food in the survey's locale, if available (see @sect.ref{Optional type}),
+                          @li
+                            @b{searchTerm} is the description of this food as originally typed by the respondent before the database lookup,
+                          @li
+                            @b{nutrientTableId} is the identifier of the food composition table that is the source of nutritional composition information for this food,
+                          @li
+                            @b{nutrientTableCode} is the identifier of the record in the food composition table that this food is mapped to,
+                          @li
+                            @b{isReadyMeal} is a boolean value specifying if the respondent has marked this food as a ready meal,
+                          @li
+                            @b{portionSize} is the result of the portion size estimation, where
+                            @ul
+                              @li
+                                @b{method} is the identifier of the portion size estimation method used for this food,
+                              @li
+                                @b{data} is an object with the data fields specific to the portion size estimation method,
+                                however two fields are always present: @b{servingWeight} and @b{leftoversWeight} that correspond
+                                to the weight of the original serving and the weight of the leftovers as determined by this
+                                portion size estimation methods. The weights are always in grams (or milliliters for liquids)
+                                and are given by strings containing floating point numbers in decimal format.
+                          @li
+                            @b{reasonableAmount} is a boolean value that is the result of the "reasonable amount" check, a simple check that tests if the food
+                            amount is realistic (specified per food in the database),
+                          @li
+                            @b{foodGroupId} is the identifier of the food group this food belongs to,
+                          @li
+                            @b{brand} is the brand of this food, if known, or a blank string,
+                          @li
+                            @b{nutrients} is an array containing nutritional information, where each element is a two-element array where the first element is
+                            the identifier of the nutrient type and the second element is the weight or volume (units are dependent on the nutrient type).
+                          @li
+                            @b{customData} is is an object with custom data fields for this food (for custom survey schemes, empty for standard scheme).
+          @li
+            @p @hl.asciidoc{HTTP 401 Unauthorized}: the access token is missing, invalid, or has expired. Get a new token and try again.
+          @li
+            @p @hl.asciidoc{HTTP 403 Forbidden}: the access token is valid, but you don't have the right to perform this operation.
+          @li
+            @p @hl.asciidoc{HTTP 400 Bad Request}: request parameters missing or invalid.
+          @li
+            @p @hl.asciidoc{HTTP 404 Not Found}: the survey identifier is invalid.
+    @sect{Download survey submissions (CSV)}
+      @p
+        To download survey submissions as a CSV spreadsheet,
+      @p
+        @b{GET} 
+      @p
+        @hl.asciidoc{/admin/surveys/<survey_id>/submissions/csv?dateFrom=<date_from>&dateTo=<date_to>}
+       where
+        @ul
+          @li
+            @b{survey_id} is the survey identifier,
+          @li
+            @b{date_from} is the timestamp for the beginning of time period to download submissions for,
+          @li
+            @b{date_to} is the timestamp for the end of time period to download submissions for.
+        @p
+          @b{Note:} dates are expected in the @a("ISO 8601 format", href:="https://en.wikipedia.org/wiki/ISO_8601"), e.g. @b{"2017-02-10T11:49:12Z"}.
+      @sect{Response}
+        @ul
+          @li
+            @p @hl.asciidoc{HTTP 200 OK}: the body is the output spreadsheet in CSV format.
+          @li
+            @p @hl.asciidoc{HTTP 401 Unauthorized}: the access token is missing, invalid, or has expired. Get a new token and try again.
+          @li
+            @p @hl.asciidoc{HTTP 403 Forbidden}: the access token is valid, but you don't have the right to perform this operation.
+          @li
+            @p @hl.asciidoc{HTTP 400 Bad Request}: request parameters missing or invalid.
+          @li
+            @p @hl.asciidoc{HTTP 404 Not Found}: the survey identifier is invalid.
