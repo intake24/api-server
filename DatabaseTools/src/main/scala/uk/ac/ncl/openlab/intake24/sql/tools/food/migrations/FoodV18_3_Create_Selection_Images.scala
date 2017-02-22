@@ -38,7 +38,7 @@ object FoodV18_3_Create_Selection_Images extends App with MigrationRunner with W
       _ <- guideImageAdminService.updateGuideSelectionImage(authToken, id, selectionImageDescriptor.id).right) yield ()
 
   val result = for (
-    authToken <- signinService.signin(Credentials("", apiConfig.userName, apiConfig.password)).right;
+    authToken <- signinService.signin(Credentials(None, apiConfig.userName, apiConfig.password)).right;
     guideHeaders <- guideImageAdminService.listGuideImages(authToken.refreshToken).right;
     result <- sequence(guideHeaders.map {
       header =>
