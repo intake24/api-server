@@ -1,0 +1,13 @@
+table, th, td {
+    border: 1px dotted whitesmoke;
+    border-collapse: collapse;
+}
+
+th {
+    font-weight: bold;
+}
+
+th, td {
+    padding: 5px;
+    text-align: left;
+}

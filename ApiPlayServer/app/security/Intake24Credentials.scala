@@ -22,8 +22,8 @@ import play.api.libs.json.Json
 import com.mohiva.play.silhouette.api.util.Credentials
 import uk.ac.ncl.openlab.intake24.api.shared.{ Credentials => Intake24Credentials }
 
-case class Intake24UserKey(userName: String, surveyName: String) {
-  override def toString = userName + Intake24UserKey.separatorChar + surveyName
+case class Intake24UserKey(surveyId: Option[String], userName: String) {
+  override def toString = surveyId.map(_ + Intake24UserKey.separatorChar).getOrElse("") + userName
 }
 
 object Intake24UserKey {  
@@ -32,18 +32,19 @@ object Intake24UserKey {
   def fromString(s: String) = {
     val separatorIndex = s.lastIndexOf(separatorChar)
     if (separatorIndex == -1)
-      Intake24UserKey(s, "")
+      Intake24UserKey(None, s)
     else
-      Intake24UserKey(s.substring(0, separatorIndex), s.substring(separatorIndex + 1))
+      Intake24UserKey(Some(s.substring(0, separatorIndex)), s.substring(separatorIndex + 1))
   } 
 }
 
 object Intake24CredentialsUtil {
-  implicit def asSimpleCredentials(credentials: Intake24Credentials) = Credentials(Intake24UserKey(credentials.username, credentials.survey_id).toString(), credentials.password)
+  implicit def asSimpleCredentials(credentials: Intake24Credentials) = Credentials(Intake24UserKey(credentials.survey_id, credentials.username).toString(), credentials.password)
   
   implicit def fromSimpleCredentials(credentials: Credentials) = {
     val key = Intake24UserKey.fromString(credentials.identifier)
-    Intake24Credentials(key.userName, key.surveyName, credentials.password)
+
+    Intake24Credentials(key.surveyId, key.userName, credentials.password)
   } 
   
   implicit val jsonFormat = Json.format[Intake24Credentials]  

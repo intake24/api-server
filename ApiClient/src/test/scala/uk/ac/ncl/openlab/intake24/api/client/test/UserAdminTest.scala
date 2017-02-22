@@ -27,7 +27,7 @@ class UserAdminTest extends ApiTestSuite with RandomData with BeforeAndAfterAll 
   var adminAccessToken: String = null
 
   override def beforeAll(): Unit = {
-    val adminRefreshToken = assertSuccessful(signinClient.signin(Credentials("", "admin", "intake24"))).refreshToken
+    val adminRefreshToken = assertSuccessful(signinClient.signin(Credentials(None, "admin", "intake24"))).refreshToken
     adminAccessToken = assertSuccessful(signinClient.refresh(adminRefreshToken)).accessToken
 
     assertSuccessful(surveyAdminClient.createSurvey(adminAccessToken, CreateSurveyRequest(testSurveyId, "default", "enGB", false, None, "blah@blah.com")))
@@ -183,7 +183,7 @@ class UserAdminTest extends ApiTestSuite with RandomData with BeforeAndAfterAll 
 
   test("Create and sign in as survey staff") {
     assertSuccessful(userAdminClient.createOrUpdateSurveyStaff(adminAccessToken, testSurveyId, CreateOrUpdateUsersRequest(Seq(staffTestUserRecord))))
-    val refreshToken = assertSuccessful(signinClient.signin(Credentials(testSurveyId, staffTestUserRecord.userName, staffTestUserRecord.password))).refreshToken
+    val refreshToken = assertSuccessful(signinClient.signin(Credentials(Some(testSurveyId), staffTestUserRecord.userName, staffTestUserRecord.password))).refreshToken
     staffUserAccessToken = assertSuccessful(signinClient.refresh(refreshToken)).accessToken
   }
 

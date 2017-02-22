@@ -54,7 +54,7 @@ class DataExportController @Inject()(service: DataExportService, surveyAdminServ
       }
   }
 
-  def getSurveySubmissionsAsCSV(surveyId: String, dateFrom: String, dateTo: String, offset: Int, limit: Int) = deadbolt.restrictAccess(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
+  def getSurveySubmissionsAsCSV(surveyId: String, dateFrom: String, dateTo: String) = deadbolt.restrictAccess(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
     _ =>
       Future {
 
@@ -66,7 +66,7 @@ class DataExportController @Inject()(service: DataExportService, surveyAdminServ
                           localNutrients <- surveyAdminService.getLocalNutrientTypes(params.localeId).right;
                           dataScheme <- surveyAdminService.getCustomDataScheme(params.schemeId).right;
                           foodGroups <- foodGroupsAdminService.listFoodGroups(params.localeId).right;
-                          submissions <- service.getSurveySubmissions(surveyId, parsedFrom, parsedTo, offset, limit).right) yield ((localNutrients, dataScheme, foodGroups, submissions))
+                          submissions <- service.getSurveySubmissions(surveyId, parsedFrom, parsedTo, 0, Integer.MAX_VALUE).right) yield ((localNutrients, dataScheme, foodGroups, submissions))
 
           data match {
             case Right((localNutrients, dataScheme, foodGroups, submissions)) =>

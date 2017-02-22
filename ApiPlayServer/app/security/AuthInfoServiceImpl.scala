@@ -44,7 +44,7 @@ class AuthInfoServiceImpl @Inject() (dataStore: DataStoreScala) extends AuthInfo
 
     val intake24key = Intake24UserKey.fromString(loginInfo.providerKey)
 
-    dataStore.getUserRecord(intake24key.surveyName, intake24key.userName).map {
+    dataStore.getUserRecord(intake24key.surveyId.getOrElse(""), intake24key.userName).map {
       record =>
         PasswordInfo(record.passwordHasher, record.passwordHashBase64, Some(record.passwordSaltBase64)).asInstanceOf[T]
     }

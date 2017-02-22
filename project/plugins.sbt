@@ -18,7 +18,7 @@ limitations under the License.
 
 addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.5.9")
 
-addSbtPlugin("com.lihaoyi" % "scalatex-sbt-plugin" % "0.3.3")
+addSbtPlugin("com.lihaoyi" % "scalatex-sbt-plugin" % "0.3.7")
 
 addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.8.2")
 

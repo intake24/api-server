@@ -66,15 +66,16 @@ lazy val apiClient = Project(id = "apiClient", base = file("ApiClient")).depends
 
 lazy val siteTest = Project(id = "siteTest", base = file("SiteTest")).settings(commonSettings: _*)
 
-/* lazy val apiDocs = scalatex.ScalatexReadme(
-  projectId = "ApiDocs",
+lazy val apiDocs = scalatex.ScalatexReadme(
+  projectId = "apiDocs",
   wd = file(""),
   url = "",
-  source = "ApiDocs"
+  source = "ApiDocs",
+  autoResources = List("apidocs-styles.css")
 ).settings(
   scalaVersion := "2.11.8",
   libraryDependencies ++= Seq (
-    "com.lihaoyi" %% "upickle" % "0.4.1",
+    "com.lihaoyi" %% "upickle" % "0.4.3",
     "com.google.code.gson" % "gson" % "2.3.1" // for JSON pretty-printing
   )
-).dependsOn(sharedTypes, foodDataServices) */
+).dependsOn(apiPlayServer)
