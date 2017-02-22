@@ -3,7 +3,7 @@ package uk.ac.ncl.openlab.intake24.sql
 import java.sql.Connection
 import javax.sql.DataSource
 
-import anorm.{BatchSql, NamedParameter}
+import anorm.{AnormException, BatchSql, NamedParameter}
 import org.postgresql.util.PSQLException
 import uk.ac.ncl.openlab.intake24.errors.{AnyError, UnexpectedDatabaseError}
 
@@ -90,6 +90,7 @@ trait SqlDataService {
         e match {
           case batchException: java.sql.BatchUpdateException => Left(UnexpectedDatabaseError(batchException.getNextException.asInstanceOf[PSQLException]))
           case sqlException: PSQLException => Left(UnexpectedDatabaseError(sqlException))
+          case anormException: AnormException => Left(UnexpectedDatabaseError(anormException))
           case _ => throw e
         }
       }

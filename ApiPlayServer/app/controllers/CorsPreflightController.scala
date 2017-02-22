@@ -26,7 +26,7 @@ class CorsPreflightController extends Controller {
     Ok.withHeaders(
     "Access-Control-Allow-Origin" -> "*",
     "Allow" -> "*",
-    "Access-Control-Allow-Methods" -> "POST, GET, PUT, DELETE, OPTIONS",
+    "Access-Control-Allow-Methods" -> "POST, PATCH, GET, PUT, DELETE, OPTIONS",
     "Access-Control-Allow-Headers" -> "Origin, X-Requested-With, Content-Type, Accept, Referer, User-Agent, X-HTTP-Method-Override, X-Auth-Token"
     )
   }  

@@ -2,11 +2,9 @@ package uk.ac.ncl.openlab.intake24.services.fooddb.demographicgroups
 
 import uk.ac.ncl.openlab.intake24.errors._
 
-import scala.collection.immutable.NumericRange
-
-abstract class NumRange[T] {
-  val start: T
-  val end: T
+abstract class NumRange[Numeric] {
+  val start: Numeric
+  val end: Numeric
 }
 
 case class DoubleRange(override val start: Double, override val end: Double) extends NumRange[Double]

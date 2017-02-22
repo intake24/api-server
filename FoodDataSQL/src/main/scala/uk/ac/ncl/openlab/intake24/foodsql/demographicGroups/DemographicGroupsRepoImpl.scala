@@ -23,7 +23,14 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
   }
 
   private def unpackOptionalRangeToQuery[T](range: Option[NumRange[T]]): Option[String] = {
-    range.map(r => s"[${r.start}, ${r.end})")
+    range match {
+      case None =>
+        Option.empty[String]
+      case Some(null) =>
+        Option.empty[String]
+      case Some(r) =>
+        range.map(r => s"[${r.start}, ${r.end})")
+    }
   }
 
   private case class DemographicGroupWithScaleDbQueryRow(id: Long,
