@@ -52,7 +52,7 @@ trait DemographicGroupsService {
 
   def deleteDemographicGroup(id: Int): Either[UnexpectedDatabaseError, Unit]
 
-  def createDemographicScaleSector(demographicGroupId: Int, demographicRecord: DemographicScaleSectorIn): Either[ConstraintError, DemographicScaleSectorOut]
+  def createDemographicScaleSector(demographicGroupId: Int, demographicRecord: DemographicScaleSectorIn): Either[UpdateError, DemographicScaleSectorOut]
 
   def patchDemographicScaleSector(id: Int, demographicRecord: DemographicScaleSectorIn): Either[UpdateError, DemographicScaleSectorOut]
 
