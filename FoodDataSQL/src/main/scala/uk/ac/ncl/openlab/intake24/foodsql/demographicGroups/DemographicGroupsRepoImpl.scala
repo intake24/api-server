@@ -9,6 +9,7 @@ import org.postgresql.util.PSQLException
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.fooddb.demographicgroups._
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
+import org.owasp.html.{PolicyFactory, Sanitizers}
 
 /**
   * Created by Tim Osadchiy on 09/02/2017.
@@ -20,6 +21,11 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
 
   val constraintErrorsPartialFn = PartialFunction[String, PSQLException => ConstraintError] {
     constraintName => (e: PSQLException) => ConstraintViolation(constraintName, e)
+  }
+
+  private def sanitiseHtml(html: String): String = {
+    val policy: PolicyFactory = Sanitizers.FORMATTING.and(Sanitizers.BLOCKS).and(Sanitizers.LINKS)
+    policy.sanitize(html)
   }
 
   private def unpackOptionalRangeToQuery[T](range: Option[NumRange[T]]): Option[String] = {
@@ -289,8 +295,8 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
 
       SQL(query).on(
         'demographic_group_id -> demographicGroupId,
-        'name -> record.name,
-        'description -> record.description,
+        'name -> sanitiseHtml(record.name),
+        'description -> (for (d <- record.description) yield sanitiseHtml(d)),
         'sentiment -> record.sentiment,
         'range -> s"[${record.range.start}, ${record.range.end})"
       )
@@ -316,8 +322,8 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
 
       SQL(query).on(
         'id -> id,
-        'name -> record.name,
-        'description -> record.description,
+        'name -> sanitiseHtml(record.name),
+        'description -> (for (d <- record.description) yield sanitiseHtml(d)),
         'sentiment -> record.sentiment,
         'range -> s"[${record.range.start}, ${record.range.end})"
       )
@@ -427,11 +433,11 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
 
   override def createDemographicScaleSector(demographicGroupId: Int,
                                             sectorRecord: DemographicScaleSectorIn):
-  Either[UpdateError, DemographicScaleSectorOut] = tryWithConnection {
+  Either[ConstraintError, DemographicScaleSectorOut] = tryWithConnection {
 
     implicit conn =>
 
-      tryWithConstraintsCheck[UpdateError, DemographicScaleSectorOut](constraintErrorsPartialFn) {
+      tryWithConstraintsCheck[ConstraintError, DemographicScaleSectorOut](constraintErrorsPartialFn) {
         val rows = DemographicGroupsScaleSectorDbQueryRow.getSqlInsertFromRecord(demographicGroupId,
           sectorRecord).executeQuery().as(Macro.namedParser[DemographicGroupsScaleSectorDbQueryRow].single)
         Right(rows.toRecord())
@@ -440,13 +446,17 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
 
   override def patchDemographicScaleSector(id: Int, sectorRecord: DemographicScaleSectorIn): Either[UpdateError, DemographicScaleSectorOut] = tryWithConnection {
     implicit conn =>
+
       tryWithConstraintsCheck[UpdateError, DemographicScaleSectorOut](constraintErrorsPartialFn) {
-        tryWithConstraintsCheck[ConstraintError, DemographicScaleSectorOut](constraintErrorsPartialFn) {
-          val rows = DemographicGroupsScaleSectorDbQueryRow.getSqlUpdateFromRecord(id, sectorRecord).executeQuery()
-            .as(Macro.namedParser[DemographicGroupsScaleSectorDbQueryRow].single)
-          Right(rows.toRecord())
+        DemographicGroupsScaleSectorDbQueryRow.getSqlUpdateFromRecord(id, sectorRecord).executeQuery()
+          .as(Macro.namedParser[DemographicGroupsScaleSectorDbQueryRow].singleOpt) match {
+          case None =>
+            Left(RecordNotFound(new RuntimeException(s"Demographic group set $id not found")))
+          case Some(result) =>
+            Right(result.toRecord())
         }
       }
+
   }
 
   override def deleteDemographicScaleSector(id: Int): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
