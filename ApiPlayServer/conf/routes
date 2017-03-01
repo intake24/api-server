@@ -147,12 +147,14 @@ POST           /admin/users/:surveyId/staff/create-or-update                 con
 POST           /admin/users/:surveyId/staff/upload-csv                       controllers.system.UserAdminController.uploadSurveyStaffCSV(surveyId: String)
 POST           /admin/users/:survey_id/respondents/create-or-update          controllers.system.UserAdminController.createOrUpdateSurveyRespondents(survey_id: String)
 POST           /admin/users/:survey_id/respondents/upload-csv                controllers.system.UserAdminController.uploadSurveyRespondentsCSV(survey_id: String)
-DELETE         /admin/users/:surveyId/delete                                 controllers.system.UserAdminController.deleteSurveyUsers(surveyId)
+DELETE         /admin/users/:surveyId/delete                                 controllers.system.UserAdminController.deleteSurveyUsers(surveyId: String)
 
 # Survey management
 
 POST           /admin/surveys/new                                            controllers.system.SurveyAdminController.createSurvey()
 DELETE         /admin/surveys/:surveyId/delete                               controllers.system.SurveyAdminController.deleteSurvey(surveyId)
+
+GET            /user/surveys/:surveyId/public-parameters                     controllers.system.user.SurveyController.getPublicSurveyParameters(surveyId: String)
 
 # POST           /admin/update-global-support-users                            controllers.system.SurveyAdminController.updateGlobalSupportUsers()
 # POST           /admin/surveys/:surveyId/support-users/update                 controllers.system.SurveyAdminController.updateSurveySupportUsers(surveyId: String)
