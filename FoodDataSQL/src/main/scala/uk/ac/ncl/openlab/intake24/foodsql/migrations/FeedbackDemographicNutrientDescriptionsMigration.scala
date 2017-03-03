@@ -20,12 +20,24 @@ object FeedbackDemographicNutrientDescriptionsMigration extends Migration{
 
     val sqlQuery =
       """
-        |CREATE TABLE nutrient_demographic_rules_descriptions (
-        |     id serial PRIMARY KEY,
-        |     nutrient_type_id integer NOT NULL UNIQUE,
-        |     description character varying(1000),
-        |     CONSTRAINT nutrient_types_id_fk FOREIGN KEY (nutrient_type_id) REFERENCES nutrient_types(id)
+        |CREATE TYPE nutrient_rule_type_enum
+        |AS ENUM ('percentage_of_energy', 'energy_divided_by_bmr', 'range');
+        |
+        |CREATE TABLE nutrient_type_in_kcal (
+        |   id serial PRIMARY KEY,
+        |   nutrient_type_id integer NOT NULL UNIQUE,
+        |   kcal_per_unit numeric(10,3) NOT NULL,
+        |   CONSTRAINT nutrient_type_fk FOREIGN KEY(nutrient_type_id)
+        |   REFERENCES nutrient_types(id)
         |);
+        |
+        |ALTER TABLE demographic_group
+        |ADD COLUMN nutrient_rule_type nutrient_rule_type_enum DEFAULT 'range';
+        |
+        |UPDATE demographic_group SET nutrient_rule_type = 'range';
+        |
+        |ALTER TABLE demographic_group
+        |ALTER COLUMN nutrient_rule_type SET NOT NULL;
       """.stripMargin
 
     SQL(sqlQuery).execute()
@@ -38,7 +50,9 @@ object FeedbackDemographicNutrientDescriptionsMigration extends Migration{
 
     val sqlQuery =
       """
-        |DROP TABLE nutrient_demographic_rules_descriptions;
+        |ALTER TABLE demographic_group DROP COLUMN nutrient_rule_type;
+        |DROP TABLE nutrient_type_in_kcal;
+        |DROP TYPE nutrient_rule_type_enum;
       """.stripMargin
 
     SQL(sqlQuery).execute()
