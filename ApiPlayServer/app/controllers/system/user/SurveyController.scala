@@ -22,10 +22,13 @@ import javax.inject.Inject
 
 import controllers.DatabaseErrorHandler
 import parsers.UpickleUtil
-import play.api.mvc.{Action, Controller}
-import security.DeadboltActionsAdapter
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import play.api.mvc.{Action, BodyParsers, Controller}
+import security.{DeadboltActionsAdapter, Roles}
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.SurveyService
 import upickle.default._
+
+import scala.concurrent.Future
 
 
 class SurveyController @Inject()(service: SurveyService, deadbolt: DeadboltActionsAdapter) extends Controller
@@ -33,5 +36,12 @@ class SurveyController @Inject()(service: SurveyService, deadbolt: DeadboltActio
 
   def getPublicSurveyParameters(surveyId: String) = Action {
     translateDatabaseResult(service.getPublicSurveyParameters(surveyId))
+  }
+
+  def getSurveyParameters(surveyId: String) = deadbolt.restrictAccess(Roles.superuser, Roles.surveyStaff(surveyId), Roles.surveyRespondent(surveyId))(BodyParsers.parse.empty) {
+    _ =>
+      Future {
+        translateDatabaseResult(service.getSurveyParameters(surveyId))
+      }
   }
 }
