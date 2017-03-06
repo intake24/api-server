@@ -147,20 +147,22 @@ POST           /admin/users/:surveyId/staff/create-or-update                 con
 POST           /admin/users/:surveyId/staff/upload-csv                       controllers.system.UserAdminController.uploadSurveyStaffCSV(surveyId: String)
 POST           /admin/users/:survey_id/respondents/create-or-update          controllers.system.UserAdminController.createOrUpdateSurveyRespondents(survey_id: String)
 POST           /admin/users/:survey_id/respondents/upload-csv                controllers.system.UserAdminController.uploadSurveyRespondentsCSV(survey_id: String)
-DELETE         /admin/users/:surveyId/delete                                 controllers.system.UserAdminController.deleteSurveyUsers(surveyId)
+DELETE         /admin/users/:surveyId/delete                                 controllers.system.UserAdminController.deleteSurveyUsers(surveyId: String)
 
 # Survey management
 
 POST           /admin/surveys/new                                            controllers.system.SurveyAdminController.createSurvey()
 DELETE         /admin/surveys/:surveyId/delete                               controllers.system.SurveyAdminController.deleteSurvey(surveyId)
 
+GET            /user/surveys/:surveyId/public-parameters                     controllers.system.user.SurveyController.getPublicSurveyParameters(surveyId: String)
+GET            /user/surveys/:surveyId/parameters                            controllers.system.user.SurveyController.getSurveyParameters(surveyId: String)
+
 # POST           /admin/update-global-support-users                            controllers.system.SurveyAdminController.updateGlobalSupportUsers()
 # POST           /admin/surveys/:surveyId/support-users/update                 controllers.system.SurveyAdminController.updateSurveySupportUsers(surveyId: String)
 
-# Data export
+GET            /user/surveys/:surveyId/my-submissions                        controllers.system.DataExportController.getMySurveySubmissions(surveyId)
 
 GET            /admin/surveys/:surveyId/submissions                          controllers.system.DataExportController.getSurveySubmissions(surveyId, dateFrom: String, dateTo: String, offset: Int, limit: Int)
-GET            /admin/surveys/:surveyId/mySubmissions                        controllers.system.DataExportController.getMySurveySubmission(surveyId)
 GET            /admin/surveys/:surveyId/submissions/csv                      controllers.system.DataExportController.getSurveySubmissionsAsCSV(surveyId, dateFrom: String, dateTo: String)
 # GET            /admin/surveys/:surveyId/submissions/xlsx                     controllers.system.DataExportController.getSurveySubmissionsAsXLSX(surveyId, dateFrom: Long, dateTo: Long, offset: Int, limit: Int)
 

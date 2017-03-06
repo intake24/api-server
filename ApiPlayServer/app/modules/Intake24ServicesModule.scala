@@ -39,7 +39,9 @@ import uk.ac.ncl.openlab.intake24.services.foodindex.english.{EnglishWordOps, En
 import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, FoodIndexDataService}
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, SurveyAdminService, UserAdminService}
+import uk.ac.ncl.openlab.intake24.services.systemdb.user.SurveyService
 import uk.ac.ncl.openlab.intake24.systemsql.admin.{DataExportImpl, SurveyAdminImpl, UserAdminImpl}
+import uk.ac.ncl.openlab.intake24.systemsql.user.SurveyServiceImpl
 
 
 class Intake24ServicesModule(env: Environment, config: Configuration) extends AbstractModule {
@@ -119,6 +121,8 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     bind(classOf[QuickSearchService]).to(classOf[QuickSearchAdminStandaloneImpl])
     bind(classOf[ImageMapsAdminService]).to(classOf[ImageMapsAdminStandaloneImpl])
     bind(classOf[NutrientMappingService]).to(classOf[NutrientMappingServiceSqlImpl])
+
+    bind(classOf[SurveyService]).to(classOf[SurveyServiceImpl])
 
     // Observable admin services for higher-level cached services
 

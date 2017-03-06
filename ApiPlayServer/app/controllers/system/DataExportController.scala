@@ -38,7 +38,6 @@ import scala.concurrent.Future
 class DataExportController @Inject()(service: DataExportService, surveyAdminService: SurveyAdminService, foodGroupsAdminService: FoodGroupsAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
   with DatabaseErrorHandler with UpickleUtil {
 
-
   def getSurveySubmissions(surveyId: String, dateFrom: String, dateTo: String, offset: Int, limit: Int) = deadbolt.restrictAccess(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
     _ =>
       Future {
@@ -54,14 +53,14 @@ class DataExportController @Inject()(service: DataExportService, surveyAdminServ
       }
   }
 
-  def getMySurveySubmission(surveyId: String) = deadbolt.restrictAccess(Roles.survey_respondent)(BodyParsers.parse.empty) {
+  def getMySurveySubmissions(surveyId: String) = deadbolt.restrictAccess(Roles.surveyRespondent(surveyId))(BodyParsers.parse.empty) {
     request =>
       Future {
 
         val respondentId = Intake24UserKey.fromString(request.subject.get.identifier).userName
 
         try {
-          translateDatabaseResult(service.getSurveySubmissions(surveyId, None, None, 0, Int.MaxValue, None))
+          translateDatabaseResult(service.getSurveySubmissions(surveyId, None, None, 0, Int.MaxValue, Some(respondentId)))
         } catch {
           case e: DateTimeParseException => BadRequest(write(ErrorDescription("DateFormat", "Failed to parse date parameter. Expected a UTC date in ISO 8601 format, e.g. '2017-02-15T16:40:30Z'.")))
         }
@@ -98,6 +97,5 @@ class DataExportController @Inject()(service: DataExportService, surveyAdminServ
           case e: DateTimeParseException => BadRequest(write(ErrorDescription("DateFormat", "Failed to parse date parameter. Expected a UTC date in ISO 8601 format, e.g. '2017-02-15T16:40:30Z'.")))
         }
       }
-
   }
 }
