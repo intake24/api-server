@@ -81,7 +81,7 @@ object FoodV18_2_Create_ImageMaps extends App with MigrationRunner with WarningM
 
   println("Signin in to the API server")
 
-  signinService.signin(Credentials("", apiConfig.userName, apiConfig.password)) match {
+  signinService.signin(Credentials(None, apiConfig.userName, apiConfig.password)) match {
     case Right(SigninResult(token)) => {
 
       val names = descriptions.legacyImageMapList.sorted

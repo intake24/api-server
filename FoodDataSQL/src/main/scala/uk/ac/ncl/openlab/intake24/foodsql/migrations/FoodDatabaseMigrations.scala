@@ -375,7 +375,10 @@ object FoodDatabaseMigrations {
       }
     },
 
-    FeedbackDemographicScaleMigration
+    FeedbackDemographicScaleMigration,
+    FeedbackDemographicScaleRangeNotEmpty,
+    FeedbackDemographicNutrientDescriptionsMigration,
+    FeedbackDemographicConstraintsFixMigration
 
   )
 }

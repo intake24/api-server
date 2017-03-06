@@ -117,7 +117,7 @@ object FoodV21_Create_DK_Guide_Images extends App with MigrationRunner with Warn
   )
 
   val result = for (
-    authToken <- signinClient.signin(Credentials("", apiConfig.userName, apiConfig.password)).right;
+    authToken <- signinClient.signin(Credentials(None, apiConfig.userName, apiConfig.password)).right;
     existingImageMaps <- imageMapAdminClient.listImageMaps(authToken.refreshToken).right;
     existingGuideImages <- guideImageAdminClient.listGuideImages(authToken.refreshToken).right;
 

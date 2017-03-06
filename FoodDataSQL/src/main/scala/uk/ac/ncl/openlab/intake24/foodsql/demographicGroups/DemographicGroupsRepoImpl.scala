@@ -9,6 +9,7 @@ import org.postgresql.util.PSQLException
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.fooddb.demographicgroups._
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
+import org.owasp.html.{PolicyFactory, Sanitizers}
 
 /**
   * Created by Tim Osadchiy on 09/02/2017.
@@ -22,8 +23,20 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
     constraintName => (e: PSQLException) => ConstraintViolation(constraintName, e)
   }
 
+  private def sanitiseHtml(html: String): String = {
+    val policy: PolicyFactory = Sanitizers.FORMATTING.and(Sanitizers.BLOCKS).and(Sanitizers.LINKS)
+    policy.sanitize(html)
+  }
+
   private def unpackOptionalRangeToQuery[T](range: Option[NumRange[T]]): Option[String] = {
-    range.map(r => s"[${r.start}, ${r.end})")
+    range match {
+      case None =>
+        Option.empty[String]
+      case Some(null) =>
+        Option.empty[String]
+      case Some(r) =>
+        range.map(r => s"[${r.start}, ${r.end})")
+    }
   }
 
   private case class DemographicGroupWithScaleDbQueryRow(id: Long,
@@ -36,6 +49,8 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
                                                          sex: Option[String],
                                                          physical_activity_level_id: Option[Long],
                                                          nutrient_type_id: Long,
+                                                         nutrient_rule_type: String,
+                                                         nutrient_type_kcal_per_unit: Option[Double],
                                                          sector_id: Option[Long],
                                                          sector_start: Option[Double],
                                                          sector_end: Option[Double],
@@ -52,6 +67,8 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
       for (start <- this.weight_start; end <- this.weight_end) yield DoubleRange(start, end),
       this.physical_activity_level_id,
       this.nutrient_type_id,
+      this.nutrient_rule_type,
+      this.nutrient_type_kcal_per_unit,
       scaleSectors
     )
 
@@ -81,7 +98,9 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
                                                 height_end: Option[Double],
                                                 sex: Option[String],
                                                 physical_activity_level_id: Option[Long],
-                                                nutrient_type_id: Long
+                                                nutrient_type_id: Long,
+                                                nutrient_rule_type: String,
+                                                nutrient_type_kcal_per_unit: Option[Double]
                                                ) {
 
     def toDemographicGroupRecord() = new DemographicGroupRecordOut(
@@ -92,6 +111,8 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
       for (start <- this.weight_start; end <- this.weight_end) yield DoubleRange(start, end),
       this.physical_activity_level_id,
       this.nutrient_type_id,
+      this.nutrient_rule_type,
+      this.nutrient_type_kcal_per_unit,
       Seq()
     )
 
@@ -119,7 +140,9 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
         unpackOptionalRange[Double](record.weight)._2,
         record.sex,
         record.physicalLevelId,
-        record.nutrientTypeId
+        record.nutrientTypeId,
+        record.nutrientRuleType,
+        record.nutrientTypeKCalPerUnit
       )
     }
 
@@ -128,41 +151,85 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
       val height_str = unpackOptionalRangeToQuery[Double](record.height)
       val weight_str = unpackOptionalRangeToQuery[Double](record.weight)
 
-      val query =
+      val dgInsertQuery =
         """
-          |INSERT INTO demographic_group
-          |       (
-          |        age,
-          |        weight,
-          |        height,
-          |        sex,
-          |        physical_activity_level_id,
-          |        nutrient_type_id
-          |       )
+          |INSERT INTO demographic_group (
+          |         age,
+          |         weight,
+          |         height,
+          |         sex,
+          |         physical_activity_level_id,
+          |         nutrient_type_id,
+          |         nutrient_rule_type )
           |VALUES ( {age}::int4range,
           |         {weight}::numrange,
           |         {height}::numrange,
           |         {sex}::sex_enum,
           |         {physical_activity_level_id},
-          |         {nutrient_type_id}
-          |) RETURNING id,
-          |            lower(age) as age_start,
-          |            upper(age) as age_end,
-          |            lower(weight) as weight_start,
-          |            upper(weight) as weight_end,
-          |            lower(height) as height_start,
-          |            upper(height) as height_end,
-          |            sex,
-          |            physical_activity_level_id,
-          |            nutrient_type_id
+          |         {nutrient_type_id},
+          |         {nutrient_rule_type}::nutrient_rule_type_enum)
+          |RETURNING id,
+          |          lower(age) as age_start,
+          |          upper(age) as age_end,
+          |          lower(weight) as weight_start,
+          |          upper(weight) as weight_end,
+          |          lower(height) as height_start,
+          |          upper(height) as height_end,
+          |          sex,
+          |          physical_activity_level_id,
+          |          nutrient_type_id,
+          |          nutrient_rule_type,
+          |          Null as nutrient_type_kcal_per_unit
           |""".stripMargin
 
-      SQL(query).on('age -> age_str,
-        'weight -> weight_str,
-        'height -> height_str,
-        'sex -> record.sex,
-        'physical_activity_level_id -> record.physicalLevelId,
-        'nutrient_type_id -> record.nutrientTypeId)
+      record.nutrientTypeKCalPerUnit match {
+        case Some(v) =>
+          val bigQuery =
+            s"""
+               |WITH dg_ins AS (
+               |   ${dgInsertQuery}
+               |), kcal_ins AS (
+               |   INSERT INTO nutrient_type_in_kcal (nutrient_type_id, kcal_per_unit)
+               |   VALUES ({nutrient_type_id}, {nutrient_type_kcal_per_unit})
+               |   ON CONFLICT (nutrient_type_id) DO UPDATE
+               |   SET kcal_per_unit = {nutrient_type_kcal_per_unit}
+               |   RETURNING id, nutrient_type_id, kcal_per_unit
+               |)
+               |SELECT dg_ins.id,
+               |       dg_ins.age_start,
+               |       dg_ins.age_end,
+               |       dg_ins.weight_start,
+               |       dg_ins.weight_end,
+               |       dg_ins.height_start,
+               |       dg_ins.height_end,
+               |       dg_ins.sex,
+               |       dg_ins.physical_activity_level_id,
+               |       dg_ins.nutrient_type_id,
+               |       dg_ins.nutrient_rule_type,
+               |       kcal_ins.kcal_per_unit as nutrient_type_kcal_per_unit
+               |FROM dg_ins
+               |JOIN kcal_ins
+               |ON kcal_ins.nutrient_type_id = dg_ins.nutrient_type_id;
+            """.stripMargin
+          SQL(bigQuery).on(
+            'age -> age_str,
+            'weight -> weight_str,
+            'height -> height_str,
+            'sex -> record.sex,
+            'physical_activity_level_id -> record.physicalLevelId,
+            'nutrient_type_id -> record.nutrientTypeId,
+            'nutrient_rule_type -> record.nutrientRuleType,
+            'nutrient_type_kcal_per_unit -> v)
+        case None =>
+          SQL(dgInsertQuery).on(
+            'age -> age_str,
+            'weight -> weight_str,
+            'height -> height_str,
+            'sex -> record.sex,
+            'physical_activity_level_id -> record.physicalLevelId,
+            'nutrient_type_id -> record.nutrientTypeId,
+            'nutrient_rule_type -> record.nutrientRuleType)
+      }
     }
 
     def getSqlUpdateFromRecord(id: Int, record: DemographicGroupRecordIn): SimpleSql[Row] = {
@@ -170,7 +237,7 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
       val height_str = unpackOptionalRangeToQuery[Double](record.height)
       val weight_str = unpackOptionalRangeToQuery[Double](record.weight)
 
-      val query =
+      val dgUpdateQuery =
         """
           |UPDATE demographic_group
           |SET age = {age}::int4range,
@@ -178,7 +245,8 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
           |    height = {height}::numrange,
           |    sex = {sex}::sex_enum,
           |    physical_activity_level_id = {physical_activity_level_id},
-          |    nutrient_type_id = {nutrient_type_id}
+          |    nutrient_type_id = {nutrient_type_id},
+          |    nutrient_rule_type = {nutrient_rule_type}::nutrient_rule_type_enum
           |WHERE id = {id}
           |RETURNING id,
           |          lower(age) as age_start,
@@ -189,16 +257,62 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
           |          upper(height) as height_end,
           |          sex,
           |          physical_activity_level_id,
-          |          nutrient_type_id
+          |          nutrient_type_id,
+          |          nutrient_rule_type,
+          |          Null as nutrient_type_kcal_per_unit
+          |
           |""".stripMargin
 
-      SQL(query).on('id -> id,
-        'age -> age_str,
-        'weight -> weight_str,
-        'height -> height_str,
-        'sex -> record.sex,
-        'physical_activity_level_id -> record.physicalLevelId,
-        'nutrient_type_id -> record.nutrientTypeId)
+      record.nutrientTypeKCalPerUnit match {
+        case Some(v) =>
+          val bigQuery =
+            s"""
+               |WITH dg_update AS (
+               |   ${dgUpdateQuery}
+               |), kcal_update AS (
+               |   INSERT INTO nutrient_type_in_kcal (nutrient_type_id, kcal_per_unit)
+               |   VALUES ({nutrient_type_id}, {nutrient_type_kcal_per_unit})
+               |   ON CONFLICT (nutrient_type_id) DO UPDATE
+               |   SET kcal_per_unit = {nutrient_type_kcal_per_unit}
+               |   RETURNING id, nutrient_type_id, kcal_per_unit
+               |)
+               |SELECT dg_update.id,
+               |       dg_update.age_start,
+               |       dg_update.age_end,
+               |       dg_update.weight_start,
+               |       dg_update.weight_end,
+               |       dg_update.height_start,
+               |       dg_update.height_end,
+               |       dg_update.sex,
+               |       dg_update.physical_activity_level_id,
+               |       dg_update.nutrient_type_id,
+               |       dg_update.nutrient_rule_type,
+               |       kcal_update.kcal_per_unit as nutrient_type_kcal_per_unit
+               |FROM dg_update
+               |JOIN kcal_update
+               |ON kcal_update.nutrient_type_id = dg_update.nutrient_type_id;
+            """.stripMargin
+          SQL(bigQuery).on(
+            'id -> id,
+            'age -> age_str,
+            'weight -> weight_str,
+            'height -> height_str,
+            'sex -> record.sex,
+            'physical_activity_level_id -> record.physicalLevelId,
+            'nutrient_type_id -> record.nutrientTypeId,
+            'nutrient_rule_type -> record.nutrientRuleType,
+            'nutrient_type_kcal_per_unit -> v)
+        case None =>
+          SQL(dgUpdateQuery).on(
+            'id -> id,
+            'age -> age_str,
+            'weight -> weight_str,
+            'height -> height_str,
+            'sex -> record.sex,
+            'physical_activity_level_id -> record.physicalLevelId,
+            'nutrient_type_id -> record.nutrientTypeId,
+            'nutrient_rule_type -> record.nutrientRuleType)
+      }
     }
 
     def getSqlGet(id: Int): SimpleSql[Row] = {
@@ -214,6 +328,8 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
           |       dg.sex,
           |       dg.physical_activity_level_id,
           |       dg.nutrient_type_id,
+          |       dg.nutrient_rule_type,
+          |       nt_kcal.kcal_per_unit as nutrient_type_kcal_per_unit,
           |       dgs.id AS sector_id,
           |       lower(dgs.range) as sector_start,
           |       upper(dgs.range) as sector_end,
@@ -221,6 +337,7 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
           |       dgs.name as sector_name,
           |       dgs.description as sector_description
           |FROM demographic_group AS dg
+          |LEFT JOIN nutrient_type_in_kcal AS nt_kcal ON nt_kcal.nutrient_type_id = dg.nutrient_type_id
           |LEFT JOIN demographic_group_scale_sector AS dgs ON dgs.demographic_group_id = dg.id
           |WHERE dg.id = {id};
         """.stripMargin
@@ -231,8 +348,7 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
     def getSqlDelete(id: Int): SimpleSql[Row] = {
       val query =
         """
-          |DELETE
-          |FROM demographic_group
+          |DELETE FROM demographic_group
           |WHERE id = {id};
         """.stripMargin
 
@@ -282,8 +398,8 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
 
       SQL(query).on(
         'demographic_group_id -> demographicGroupId,
-        'name -> record.name,
-        'description -> record.description,
+        'name -> sanitiseHtml(record.name),
+        'description -> (for (d <- record.description) yield sanitiseHtml(d)),
         'sentiment -> record.sentiment,
         'range -> s"[${record.range.start}, ${record.range.end})"
       )
@@ -309,8 +425,8 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
 
       SQL(query).on(
         'id -> id,
-        'name -> record.name,
-        'description -> record.description,
+        'name -> sanitiseHtml(record.name),
+        'description -> (for (d <- record.description) yield sanitiseHtml(d)),
         'sentiment -> record.sentiment,
         'range -> s"[${record.range.start}, ${record.range.end})"
       )
@@ -343,6 +459,8 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
           |       dg.sex,
           |       dg.physical_activity_level_id,
           |       dg.nutrient_type_id,
+          |       dg.nutrient_rule_type,
+          |       nt_kcal.kcal_per_unit as nutrient_type_kcal_per_unit,
           |       dgs.id AS sector_id,
           |       lower(dgs.range) as sector_start,
           |       upper(dgs.range) as sector_end,
@@ -350,6 +468,7 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
           |       dgs.name as sector_name,
           |       dgs.description as sector_description
           |FROM demographic_group AS dg
+          LEFT JOIN nutrient_type_in_kcal AS nt_kcal ON nt_kcal.nutrient_type_id = dg.nutrient_type_id
           |LEFT JOIN demographic_group_scale_sector AS dgs ON dgs.demographic_group_id = dg.id;
         """.stripMargin
 
@@ -371,10 +490,15 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
   def createDemographicGroup(demographicRecord: DemographicGroupRecordIn): Either[ConstraintError, DemographicGroupRecordOut] = tryWithConnection {
     implicit conn =>
 
-      tryWithConstraintsCheck[ConstraintError, DemographicGroupRecordOut](constraintErrorsPartialFn) {
-        val rows = DemographicGroupDbQueryRow.getSqlInsertFromRecord(demographicRecord).executeQuery()
-          .as(Macro.namedParser[DemographicGroupDbQueryRow].single)
-        Right(rows.toDemographicGroupRecord())
+      DemographicGroupRecord.isValid(demographicRecord) match {
+        case Left(e) =>
+          Left(e)
+        case _ =>
+          tryWithConstraintsCheck[ConstraintError, DemographicGroupRecordOut](constraintErrorsPartialFn) {
+            val rows = DemographicGroupDbQueryRow.getSqlInsertFromRecord(demographicRecord).executeQuery()
+              .as(Macro.namedParser[DemographicGroupDbQueryRow].single)
+            Right(rows.toDemographicGroupRecord())
+          }
       }
 
   }
@@ -382,14 +506,19 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
   override def patchDemographicGroup(id: Int, demographicRecord: DemographicGroupRecordIn): Either[UpdateError, DemographicGroupRecordOut] = tryWithConnection {
     implicit conn =>
 
-      tryWithConstraintsCheck[UpdateError, DemographicGroupRecordOut](constraintErrorsPartialFn) {
-        DemographicGroupDbQueryRow.getSqlUpdateFromRecord(id, demographicRecord).executeQuery()
-          .as(Macro.namedParser[DemographicGroupDbQueryRow].singleOpt) match {
-          case Some(row) =>
-            Right(row.toDemographicGroupRecord())
-          case None =>
-            Left(RecordNotFound(new RuntimeException(s"Demographic group set $id not found")))
-        }
+      DemographicGroupRecord.isValid(demographicRecord) match {
+        case Left(e) =>
+          Left(e)
+        case _ =>
+          tryWithConstraintsCheck[UpdateError, DemographicGroupRecordOut](constraintErrorsPartialFn) {
+            DemographicGroupDbQueryRow.getSqlUpdateFromRecord(id, demographicRecord).executeQuery()
+              .as(Macro.namedParser[DemographicGroupDbQueryRow].singleOpt) match {
+              case Some(row) =>
+                Right(row.toDemographicGroupRecord())
+              case None =>
+                Left(RecordNotFound(new RuntimeException(s"Demographic group set $id not found")))
+            }
+          }
       }
   }
 
@@ -420,11 +549,11 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
 
   override def createDemographicScaleSector(demographicGroupId: Int,
                                             sectorRecord: DemographicScaleSectorIn):
-  Either[UpdateError, DemographicScaleSectorOut] = tryWithConnection {
+  Either[ConstraintError, DemographicScaleSectorOut] = tryWithConnection {
 
     implicit conn =>
 
-      tryWithConstraintsCheck[UpdateError, DemographicScaleSectorOut](constraintErrorsPartialFn) {
+      tryWithConstraintsCheck[ConstraintError, DemographicScaleSectorOut](constraintErrorsPartialFn) {
         val rows = DemographicGroupsScaleSectorDbQueryRow.getSqlInsertFromRecord(demographicGroupId,
           sectorRecord).executeQuery().as(Macro.namedParser[DemographicGroupsScaleSectorDbQueryRow].single)
         Right(rows.toRecord())
@@ -433,13 +562,17 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
 
   override def patchDemographicScaleSector(id: Int, sectorRecord: DemographicScaleSectorIn): Either[UpdateError, DemographicScaleSectorOut] = tryWithConnection {
     implicit conn =>
+
       tryWithConstraintsCheck[UpdateError, DemographicScaleSectorOut](constraintErrorsPartialFn) {
-        tryWithConstraintsCheck[ConstraintError, DemographicScaleSectorOut](constraintErrorsPartialFn) {
-          val rows = DemographicGroupsScaleSectorDbQueryRow.getSqlUpdateFromRecord(id, sectorRecord).executeQuery()
-            .as(Macro.namedParser[DemographicGroupsScaleSectorDbQueryRow].single)
-          Right(rows.toRecord())
+        DemographicGroupsScaleSectorDbQueryRow.getSqlUpdateFromRecord(id, sectorRecord).executeQuery()
+          .as(Macro.namedParser[DemographicGroupsScaleSectorDbQueryRow].singleOpt) match {
+          case None =>
+            Left(RecordNotFound(new RuntimeException(s"Demographic group set $id not found")))
+          case Some(result) =>
+            Right(result.toRecord())
         }
       }
+
   }
 
   override def deleteDemographicScaleSector(id: Int): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {

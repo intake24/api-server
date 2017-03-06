@@ -37,7 +37,7 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
       case (acc, cf) => acc + (cf(0) -> cf(1))
     }
 
-  def getSurveySubmissions(surveyId: String, dateFrom: Instant, dateTo: Instant, offset: Int, limit: Int): Either[LookupError, Seq[NutrientMappedSubmission]] = tryWithConnection {
+  def getSurveySubmissions(surveyId: String, dateFrom: Option[Instant], dateTo: Option[Instant], offset: Int, limit: Int, respondentId: Option[String]): Either[LookupError, Seq[NutrientMappedSubmission]] = tryWithConnection {
     implicit conn =>
       withTransaction {
 
@@ -46,7 +46,12 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
         if (surveyExists) {
 
           val submissionRows = SQL(getSurveySubmissionsSql)
-            .on('survey_id -> surveyId, 'time_from -> dateFrom, 'time_to -> dateTo, 'offset -> offset, 'limit -> limit)
+            .on('survey_id -> surveyId,
+              'time_from -> dateFrom,
+              'time_to -> dateTo,
+              'offset -> offset,
+              'limit -> limit,
+              'respondent_id -> respondentId)
             .executeQuery()
             .as(Macro.namedParser[SubmissionRow].*)
 
@@ -90,4 +95,5 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
           Left(RecordNotFound(new RuntimeException(s"Survey $surveyId does not exist")))
       }
   }
+
 }

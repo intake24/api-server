@@ -2,11 +2,9 @@ package uk.ac.ncl.openlab.intake24.services.fooddb.demographicgroups
 
 import uk.ac.ncl.openlab.intake24.errors._
 
-import scala.collection.immutable.NumericRange
-
-abstract class NumRange[T] {
-  val start: T
-  val end: T
+abstract class NumRange[Numeric] {
+  val start: Numeric
+  val end: Numeric
 }
 
 case class DoubleRange(override val start: Double, override val end: Double) extends NumRange[Double]
@@ -31,6 +29,8 @@ case class DemographicGroupRecordOut(id: Long,
                                      weight: Option[DoubleRange],
                                      physicalLevelId: Option[Long],
                                      nutrientTypeId: Long,
+                                     nutrientRuleType: String,
+                                     nutrientTypeKCalPerUnit: Option[Double],
                                      scaleSectors: Seq[DemographicScaleSectorOut]
                                     )
 
@@ -39,8 +39,36 @@ case class DemographicGroupRecordIn(sex: Option[String],
                                     height: Option[DoubleRange],
                                     weight: Option[DoubleRange],
                                     physicalLevelId: Option[Long],
-                                    nutrientTypeId: Long
+                                    nutrientTypeId: Long,
+                                    nutrientRuleType: String,
+                                    nutrientTypeKCalPerUnit: Option[Double]
                                    )
+
+object DemographicGroupRecord {
+  val NUTRIENT_RULE_TYPE_PERCENTAGE_OF_ENERGY = "percentage_of_energy"
+  val NUTRIENT_RULE_TYPE_ENERGY_DIVIDED_BY_BMR = "energy_divided_by_bmr"
+  val NUTRIENT_RULE_TYPE_RANGE = "range"
+
+  def isValid(demographicGroupRecordIn: DemographicGroupRecordIn): Either[ConstraintError, Unit] = {
+    demographicGroupRecordIn.nutrientRuleType match {
+      case NUTRIENT_RULE_TYPE_PERCENTAGE_OF_ENERGY =>
+        demographicGroupRecordIn.nutrientTypeKCalPerUnit match {
+          case None =>
+            Left(new ConstraintViolation("nutrient_type_kcal_per_unit_not_defined",
+              new RuntimeException(s"${demographicGroupRecordIn.nutrientRuleType} requires nutrientTypeKCalPerUnit " +
+                s"being defined")))
+          case Some(v) =>
+            Right()
+        }
+      case NUTRIENT_RULE_TYPE_ENERGY_DIVIDED_BY_BMR | NUTRIENT_RULE_TYPE_RANGE =>
+        Right()
+      case _ =>
+        Left(new ConstraintViolation("nutrient_rule_type_invalid",
+          new RuntimeException("nutrientRuleType is not valid")))
+    }
+  }
+
+}
 
 trait DemographicGroupsService {
 
