@@ -7,7 +7,7 @@ import uk.ac.ncl.openlab.intake24.surveydata.NutrientMappedSubmission
 
 trait DataExportService {
 
-  def getSurveySubmissions(surveyId: String, dateFrom: Instant, dateTo: Instant, offset: Int, limit: Int): Either[LookupError, Seq[NutrientMappedSubmission]]
+  def getSurveySubmissions(surveyId: String, dateFrom: Option[Instant], dateTo: Option[Instant], offset: Int, limit: Int, respondentId: Option[String]): Either[LookupError, Seq[NutrientMappedSubmission]]
 
   //def getSurveySubmissionsAsCSV()
 

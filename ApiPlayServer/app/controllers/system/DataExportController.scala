@@ -26,7 +26,7 @@ import controllers.DatabaseErrorHandler
 import parsers.{SurveyCSVExporter, UpickleUtil}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller}
-import security.{DeadboltActionsAdapter, Roles}
+import security.{DeadboltActionsAdapter, Intake24UserKey, Roles}
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, SurveyAdminService}
@@ -47,7 +47,21 @@ class DataExportController @Inject()(service: DataExportService, surveyAdminServ
           val parsedFrom = Instant.parse(dateFrom)
           val parsedTo = Instant.parse(dateTo)
 
-          translateDatabaseResult(service.getSurveySubmissions(surveyId, parsedFrom, parsedTo, offset, limit))
+          translateDatabaseResult(service.getSurveySubmissions(surveyId, Some(parsedFrom), Some(parsedTo), offset, limit, None))
+        } catch {
+          case e: DateTimeParseException => BadRequest(write(ErrorDescription("DateFormat", "Failed to parse date parameter. Expected a UTC date in ISO 8601 format, e.g. '2017-02-15T16:40:30Z'.")))
+        }
+      }
+  }
+
+  def getMySurveySubmission(surveyId: String) = deadbolt.restrictAccess(Roles.survey_respondent)(BodyParsers.parse.empty) {
+    request =>
+      Future {
+
+        val respondentId = Intake24UserKey.fromString(request.subject.get.identifier).userName
+
+        try {
+          translateDatabaseResult(service.getSurveySubmissions(surveyId, None, None, 0, Int.MaxValue, None))
         } catch {
           case e: DateTimeParseException => BadRequest(write(ErrorDescription("DateFormat", "Failed to parse date parameter. Expected a UTC date in ISO 8601 format, e.g. '2017-02-15T16:40:30Z'.")))
         }
@@ -66,7 +80,7 @@ class DataExportController @Inject()(service: DataExportService, surveyAdminServ
                           localNutrients <- surveyAdminService.getLocalNutrientTypes(params.localeId).right;
                           dataScheme <- surveyAdminService.getCustomDataScheme(params.schemeId).right;
                           foodGroups <- foodGroupsAdminService.listFoodGroups(params.localeId).right;
-                          submissions <- service.getSurveySubmissions(surveyId, parsedFrom, parsedTo, 0, Integer.MAX_VALUE).right) yield ((localNutrients, dataScheme, foodGroups, submissions))
+                          submissions <- service.getSurveySubmissions(surveyId, Some(parsedFrom), Some(parsedTo), 0, Integer.MAX_VALUE, None).right) yield ((localNutrients, dataScheme, foodGroups, submissions))
 
           data match {
             case Right((localNutrients, dataScheme, foodGroups, submissions)) =>
