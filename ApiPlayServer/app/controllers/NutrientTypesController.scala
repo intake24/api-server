@@ -17,8 +17,8 @@ class NutrientTypesController @Inject()(nutrientService: NutrientMappingService,
                                         deadbolt: DeadboltActionsAdapter)
   extends Controller with DatabaseErrorHandler{
 
-  def list() = deadbolt.restrictToRoles(Roles.superuser) {
-    Future {
+  def list() = deadbolt.restrictToAuthenticated {
+    _ => Future {
       translateDatabaseResult(nutrientService.supportedNutrients())
     }
   }
