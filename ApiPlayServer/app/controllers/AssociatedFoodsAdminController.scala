@@ -33,13 +33,13 @@ import scala.concurrent.Future
 class AssociatedFoodsAdminController @Inject()(service: AssociatedFoodsAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
   with DatabaseErrorHandler with UpickleUtil {
 
-  def getAssociatedFoods(foodCode: String, locale: String) = deadbolt.restrictAccess(Roles.superuser) {
+  def getAssociatedFoods(foodCode: String, locale: String) = deadbolt.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getAssociatedFoods(foodCode, locale))
     }
   }
 
-  def updateAssociatedFoods(foodCode: String, locale: String) = deadbolt.restrictAccess(Roles.superuser)(upickleBodyParser[Seq[AssociatedFood]]) {
+  def updateAssociatedFoods(foodCode: String, locale: String) = deadbolt.restrictToRoles(Roles.superuser)(upickleBodyParser[Seq[AssociatedFood]]) {
     request =>
       Future {
         translateDatabaseResult(service.updateAssociatedFoods(foodCode, request.body, locale))

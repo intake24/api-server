@@ -30,7 +30,7 @@ import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex
 import upickle.default._
 
 class FoodIndexController @Inject() (foodIndexes: Map[String, FoodIndex], deadbolt: DeadboltActionsAdapter) extends Controller {
-  def lookup(locale: String, term: String) = deadbolt.restrictAccess(Roles.superuser) {
+  def lookup(locale: String, term: String) = deadbolt.restrictToRoles(Roles.superuser) {
     Future {
       foodIndexes.get(locale) match {
         case Some(index) => Ok(write(index.lookup(term, 50))).as(ContentTypes.JSON)

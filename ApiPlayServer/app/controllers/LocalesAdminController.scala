@@ -30,13 +30,13 @@ import scala.concurrent.Future
 
 class LocalesAdminController @Inject() (service: LocalesAdminService, deadbolt: DeadboltActionsAdapter) extends Controller with DatabaseErrorHandler {
   
-  def listLocales() = deadbolt.restrictAccess(Roles.superuser) {
+  def listLocales() = deadbolt.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.listLocales())
     }
   }
   
-  def getLocale(id: String) = deadbolt.restrictAccess(Roles.superuser) {
+  def getLocale(id: String) = deadbolt.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getLocale(id))
     }

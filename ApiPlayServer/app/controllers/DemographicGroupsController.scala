@@ -17,43 +17,43 @@ class DemographicGroupsController @Inject()(dgService: DemographicGroupsService,
                                             deadbolt: DeadboltActionsAdapter)
   extends Controller with ImageOrDatabaseServiceErrorHandler with UpickleUtil {
 
-  def list() = deadbolt.restrictAccess(Roles.superuser) {
+  def list() = deadbolt.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(dgService.list())
     }
   }
 
-  def createDemographicGroup() = deadbolt.restrictAccess(Roles.superuser)(upickleBodyParser[DemographicGroupRecordIn]) {
+  def createDemographicGroup() = deadbolt.restrictToRoles(Roles.superuser)(upickleBodyParser[DemographicGroupRecordIn]) {
     request => Future {
       translateDatabaseResult(dgService.createDemographicGroup(request.body))
     }
   }
 
-  def patchDemographicGroup(id: Int) = deadbolt.restrictAccess(Roles.superuser)(upickleBodyParser[DemographicGroupRecordIn]) {
+  def patchDemographicGroup(id: Int) = deadbolt.restrictToRoles(Roles.superuser)(upickleBodyParser[DemographicGroupRecordIn]) {
     request => Future {
       translateDatabaseResult(dgService.patchDemographicGroup(id, request.body))
     }
   }
 
-  def getDemographicGroup(id: Int) = deadbolt.restrictAccess(Roles.superuser) {
+  def getDemographicGroup(id: Int) = deadbolt.restrictToRoles(Roles.superuser) {
     request => Future {
       translateDatabaseResult(dgService.getDemographicGroup(id))
     }
   }
 
-  def deleteDemographicGroup(id: Int) = deadbolt.restrictAccess(Roles.superuser) {
+  def deleteDemographicGroup(id: Int) = deadbolt.restrictToRoles(Roles.superuser) {
     request => Future {
       translateDatabaseResult(dgService.deleteDemographicGroup(id))
     }
   }
 
-  def createDemographicGroupScaleSector(demographicGroupId: Int) = deadbolt.restrictAccess(Roles.superuser)(upickleBodyParser[DemographicScaleSectorIn]) {
+  def createDemographicGroupScaleSector(demographicGroupId: Int) = deadbolt.restrictToRoles(Roles.superuser)(upickleBodyParser[DemographicScaleSectorIn]) {
     request => Future {
       translateDatabaseResult(dgService.createDemographicScaleSector(demographicGroupId, request.body))
     }
   }
 
-  def patchDemographicGroupScaleSector(id: Int) = deadbolt.restrictAccess(Roles.superuser)(upickleBodyParser[DemographicScaleSectorIn]) {
+  def patchDemographicGroupScaleSector(id: Int) = deadbolt.restrictToRoles(Roles.superuser)(upickleBodyParser[DemographicScaleSectorIn]) {
     request => Future {
       translateDatabaseResult(dgService.patchDemographicScaleSector(id, request.body))
     }

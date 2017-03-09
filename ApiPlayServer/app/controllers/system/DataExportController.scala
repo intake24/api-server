@@ -38,7 +38,7 @@ import scala.concurrent.Future
 class DataExportController @Inject()(service: DataExportService, surveyAdminService: SurveyAdminService, foodGroupsAdminService: FoodGroupsAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
   with DatabaseErrorHandler with UpickleUtil {
 
-  def getSurveySubmissions(surveyId: String, dateFrom: String, dateTo: String, offset: Int, limit: Int) = deadbolt.restrictAccess(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
+  def getSurveySubmissions(surveyId: String, dateFrom: String, dateTo: String, offset: Int, limit: Int) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
     _ =>
       Future {
 
@@ -53,7 +53,7 @@ class DataExportController @Inject()(service: DataExportService, surveyAdminServ
       }
   }
 
-  def getMySurveySubmissions(surveyId: String) = deadbolt.restrictAccess(Roles.surveyRespondent(surveyId))(BodyParsers.parse.empty) {
+  def getMySurveySubmissions(surveyId: String) = deadbolt.restrictToRoles(Roles.surveyRespondent(surveyId))(BodyParsers.parse.empty) {
     request =>
       Future {
 
@@ -67,7 +67,7 @@ class DataExportController @Inject()(service: DataExportService, surveyAdminServ
       }
   }
 
-  def getSurveySubmissionsAsCSV(surveyId: String, dateFrom: String, dateTo: String) = deadbolt.restrictAccess(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
+  def getSurveySubmissionsAsCSV(surveyId: String, dateFrom: String, dateTo: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
     _ =>
       Future {
 

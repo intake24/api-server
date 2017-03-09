@@ -30,14 +30,14 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 class FoodGroupsAdminController @Inject() (service: FoodGroupsAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
     with DatabaseErrorHandler {
   
-  def listFoodGroups(locale: String) = deadbolt.restrictAccess(Roles.superuser) {
+  def listFoodGroups(locale: String) = deadbolt.restrictToRoles(Roles.superuser) {
      Future {
       // Map keys to Strings to force upickle to use js object serialisation instead of array of arrays
       translateDatabaseResult(service.listFoodGroups(locale).right.map(_.map { case (k, v) => (k.toString, v) }))
     }
   }
 
-  def getFoodGroup(id: Int, locale: String) = deadbolt.restrictAccess(Roles.superuser) {
+  def getFoodGroup(id: Int, locale: String) = deadbolt.restrictToRoles(Roles.superuser) {
      Future {
       translateDatabaseResult(service.getFoodGroup(id, locale))
     }
