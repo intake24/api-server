@@ -1,6 +1,6 @@
 package security
 
-import be.objectify.deadbolt.scala.{ActionBuilders, AuthenticatedRequest, DeadboltHandler}
+import be.objectify.deadbolt.scala.{ActionBuilders, AuthenticatedRequest, DeadboltHandler, HandlerKey}
 import be.objectify.deadbolt.scala.cache.HandlerCache
 import com.google.inject.Inject
 import play.api.mvc._
@@ -21,15 +21,18 @@ class DeadboltActionsAdapter @Inject()(actionBuilders: ActionBuilders, handlerCa
     def apply(block: => Future[Result]): Action[AnyContent] = actionBuilder(block)(handlerCache(AccessHandler))
   }
 
-  class SubjectPresentActionBuilderAdapter() {
+  class SubjectPresentActionBuilderAdapter(handlerKey: HandlerKey) {
 
     private val actionBuilder = actionBuilders.SubjectPresentAction.SubjectPresentActionBuilder()
 
     def apply(block: AuthenticatedRequest[Unit] => Future[Result]): Action[Unit] =
-      actionBuilder(BodyParsers.parse.empty)(block)(handlerCache(RefreshHandler))
+      actionBuilder(BodyParsers.parse.empty)(block)(handlerCache(handlerKey))
   }
 
-  def restrictRefresh = new SubjectPresentActionBuilderAdapter()
+  def restrictRefresh = new SubjectPresentActionBuilderAdapter(RefreshHandler)
 
   def restrictAccess(anyOfRoles: String*) = new RestrictActionBuilderAdapter(anyOfRoles)
+
+  def restrictToAuthenticated = new SubjectPresentActionBuilderAdapter(AccessHandler)
+
 }
