@@ -52,14 +52,14 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
 
   private def doDeleteUsers(surveyId: Option[String], userNames: Seq[String]): Result = translateDatabaseResult(service.deleteUsers(surveyId, userNames))
 
-  def createOrUpdateGlobalUsers() = deadbolt.restrictAccess(Roles.superuser)(upickleBodyParser[CreateOrUpdateGlobalUsersRequest]) {
+  def createOrUpdateGlobalUsers() = deadbolt.restrictToRoles(Roles.superuser)(upickleBodyParser[CreateOrUpdateGlobalUsersRequest]) {
     request =>
       Future {
         doCreateOrUpdate(None, request.body.userRecords)
       }
   }
 
-  def createOrUpdateSurveyStaff(surveyId: String) = deadbolt.restrictAccess(Roles.superuser, Roles.surveyStaff(surveyId))(upickleBodyParser[CreateOrUpdateUsersRequest]) {
+  def createOrUpdateSurveyStaff(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(upickleBodyParser[CreateOrUpdateUsersRequest]) {
     request =>
       Future {
         doCreateOrUpdate(Some(surveyId), request.body.userRecords.map {
@@ -86,7 +86,7 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
     }
   }
 
-  def createOrUpdateSurveyRespondents(surveyId: String) = deadbolt.restrictAccess(Roles.superuser, Roles.surveyStaff(surveyId))(upickleBodyParser[CreateOrUpdateUsersRequest]) {
+  def createOrUpdateSurveyRespondents(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(upickleBodyParser[CreateOrUpdateUsersRequest]) {
     request =>
       Future {
         doCreateOrUpdate(Some(surveyId), request.body.userRecords.map {
@@ -96,49 +96,49 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
       }
   }
 
-  def uploadSurveyRespondentsCSV(surveyId: String) = deadbolt.restrictAccess(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.multipartFormData) {
+  def uploadSurveyRespondentsCSV(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.multipartFormData) {
     request =>
       Future {
         uploadCSV(request.body, surveyId, Set(Roles.surveyRespondent(surveyId)), Set())
       }
   }
 
-  def uploadSurveyStaffCSV(surveyId: String) = deadbolt.restrictAccess(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.multipartFormData) {
+  def uploadSurveyStaffCSV(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.multipartFormData) {
     request =>
       Future {
         uploadCSV(request.body, surveyId, Set(Roles.surveyStaff(surveyId)), Set())
       }
   }
 
-  def deleteGlobalUsers() = deadbolt.restrictAccess(Roles.superuser)(upickleBodyParser[DeleteUsersRequest]) {
+  def deleteGlobalUsers() = deadbolt.restrictToRoles(Roles.superuser)(upickleBodyParser[DeleteUsersRequest]) {
     request =>
       Future {
         doDeleteUsers(None, request.body.userNames)
       }
   }
 
-  def listGlobalUsers(offset: Int, limit: Int) = deadbolt.restrictAccess(Roles.superuser)(BodyParsers.parse.empty) {
+  def listGlobalUsers(offset: Int, limit: Int) = deadbolt.restrictToRoles(Roles.superuser)(BodyParsers.parse.empty) {
     _ =>
       Future {
         translateDatabaseResult(service.listUsers(None, offset, limit))
       }
   }
 
-  def listSurveyStaffUsers(surveyId: String, offset: Int, limit: Int) = deadbolt.restrictAccess(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
+  def listSurveyStaffUsers(surveyId: String, offset: Int, limit: Int) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
     _ =>
       Future {
         translateDatabaseResult(service.listUsersByRole(Some(surveyId), Roles.surveyStaff(surveyId), offset, limit))
       }
   }
 
-  def listSurveyRespondentUsers(surveyId: String, offset: Int, limit: Int) = deadbolt.restrictAccess(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
+  def listSurveyRespondentUsers(surveyId: String, offset: Int, limit: Int) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
     _ =>
       Future {
         translateDatabaseResult(service.listUsersByRole(Some(surveyId), Roles.surveyRespondent(surveyId), offset, limit))
       }
   }
 
-  def deleteSurveyUsers(surveyId: String) = deadbolt.restrictAccess(Roles.superuser, Roles.surveyStaff(surveyId))(upickleBodyParser[DeleteUsersRequest]) {
+  def deleteSurveyUsers(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(upickleBodyParser[DeleteUsersRequest]) {
     request =>
       Future {
         doDeleteUsers(Some(surveyId), request.body.userNames)

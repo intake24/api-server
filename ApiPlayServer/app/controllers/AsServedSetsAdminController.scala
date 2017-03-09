@@ -58,25 +58,25 @@ class AsServedSetsAdminController @Inject()(
 
   def resolveUrls(set: AsServedSetWithPaths): AsServedSetWithUrls = AsServedSetWithUrls(set.id, set.description, set.images.map(resolveUrls))
 
-  def listAsServedSets() = deadbolt.restrictAccess(Roles.superuser) {
+  def listAsServedSets() = deadbolt.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.listAsServedSets())
     }
   }
 
-  def getAsServedSet(id: String) = deadbolt.restrictAccess(Roles.superuser) {
+  def getAsServedSet(id: String) = deadbolt.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getAsServedSetWithPaths(id).right.map(resolveUrls))
     }
   }
 
-  def exportAsServedSet(id: String) = deadbolt.restrictAccess(Roles.superuser) {
+  def exportAsServedSet(id: String) = deadbolt.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getPortableAsServedSet(id))
     }
   }
 
-  def importAsServedSet() = deadbolt.restrictAccess(Roles.superuser)(upickleBodyParser[PortableAsServedSet]) {
+  def importAsServedSet() = deadbolt.restrictToRoles(Roles.superuser)(upickleBodyParser[PortableAsServedSet]) {
     request =>
       Future {
 
@@ -151,7 +151,7 @@ class AsServedSetsAdminController @Inject()(
       res <- service.getAsServedSetWithPaths(newSet.id).wrapped.right
     ) yield res
 
-  def createAsServedSetFromSource() = deadbolt.restrictAccess(Roles.superuser)(upickleBodyParser[NewAsServedSet]) {
+  def createAsServedSetFromSource() = deadbolt.restrictToRoles(Roles.superuser)(upickleBodyParser[NewAsServedSet]) {
     request =>
       Future {
         val newSet = request.body
@@ -163,7 +163,7 @@ class AsServedSetsAdminController @Inject()(
       }
   }
 
-  def createAsServedSet() = deadbolt.restrictAccess(Roles.superuser)(parse.multipartFormData) {
+  def createAsServedSet() = deadbolt.restrictToRoles(Roles.superuser)(parse.multipartFormData) {
     request =>
       Future {
 
@@ -223,7 +223,7 @@ class AsServedSetsAdminController @Inject()(
     }
   }
 
-  def updateAsServedSet(id: String) = deadbolt.restrictAccess(Roles.superuser)(upickleBodyParser[NewAsServedSet]) {
+  def updateAsServedSet(id: String) = deadbolt.restrictToRoles(Roles.superuser)(upickleBodyParser[NewAsServedSet]) {
     request =>
       Future {
         val update = request.body

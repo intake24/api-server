@@ -35,7 +35,7 @@ import scala.concurrent.Future
 class SurveyAdminController @Inject()(service: SurveyAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
   with DatabaseErrorHandler with UpickleUtil {
 
-  def createSurvey() = deadbolt.restrictAccess(Roles.superuser)(upickleBodyParser[CreateSurveyRequest]) {
+  def createSurvey() = deadbolt.restrictToRoles(Roles.superuser)(upickleBodyParser[CreateSurveyRequest]) {
     request =>
       Future {
         val body = request.body
@@ -43,7 +43,7 @@ class SurveyAdminController @Inject()(service: SurveyAdminService, deadbolt: Dea
       }
   }
 
-  def deleteSurvey(surveyId: String) = deadbolt.restrictAccess(Roles.superuser)(BodyParsers.parse.empty) {
+  def deleteSurvey(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser)(BodyParsers.parse.empty) {
     _ =>
       Future {
         translateDatabaseResult(service.deleteSurvey(surveyId))

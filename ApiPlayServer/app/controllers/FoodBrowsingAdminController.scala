@@ -30,43 +30,43 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodBrowsingAdminService
 class FoodBrowsingAdminController @Inject() (service: FoodBrowsingAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
     with DatabaseErrorHandler {
 
-  def getUncategorisedFoods(locale: String) = deadbolt.restrictAccess(Roles.superuser) {
+  def getUncategorisedFoods(locale: String) = deadbolt.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getUncategorisedFoods(locale))
     }
   }
 
-  def getRootCategories(locale: String) = deadbolt.restrictAccess(Roles.superuser) {
+  def getRootCategories(locale: String) = deadbolt.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getRootCategories(locale))
     }
   }
 
-  def getCategoryContents(code: String, locale: String) = deadbolt.restrictAccess(Roles.superuser) {
+  def getCategoryContents(code: String, locale: String) = deadbolt.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getCategoryContents(code, locale))
     }
   }
 
-  def getFoodParentCategories(code: String, locale: String) = deadbolt.restrictAccess(Roles.superuser) {
+  def getFoodParentCategories(code: String, locale: String) = deadbolt.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getFoodParentCategories(code, locale))
     }
   }
 
-  def getFoodAllCategories(code: String, locale: String) = deadbolt.restrictAccess(Roles.superuser) {
+  def getFoodAllCategories(code: String, locale: String) = deadbolt.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getFoodAllCategoriesHeaders(code, locale))
     }
   }
 
-  def getCategoryParentCategories(code: String, locale: String) = deadbolt.restrictAccess(Roles.superuser) {
+  def getCategoryParentCategories(code: String, locale: String) = deadbolt.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getCategoryParentCategories(code, locale))
     }
   }
 
-  def getCategoryAllCategories(code: String, locale: String) = deadbolt.restrictAccess(Roles.superuser) {
+  def getCategoryAllCategories(code: String, locale: String) = deadbolt.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getCategoryAllCategoriesHeaders(code, locale))
     }

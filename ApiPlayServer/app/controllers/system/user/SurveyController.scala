@@ -38,7 +38,7 @@ class SurveyController @Inject()(service: SurveyService, deadbolt: DeadboltActio
     translateDatabaseResult(service.getPublicSurveyParameters(surveyId))
   }
 
-  def getSurveyParameters(surveyId: String) = deadbolt.restrictAccess(Roles.surveyRespondent(surveyId))(BodyParsers.parse.empty) {
+  def getSurveyParameters(surveyId: String) = deadbolt.restrictToRoles(Roles.surveyRespondent(surveyId))(BodyParsers.parse.empty) {
     _ =>
       Future {
         translateDatabaseResult(service.getSurveyParameters(surveyId))

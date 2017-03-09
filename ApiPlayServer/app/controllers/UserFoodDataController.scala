@@ -63,37 +63,37 @@ case class UserAsServedSetWithUrls(selectionImageUrl: String, images: Seq[UserAs
 
 class UserFoodDataController @Inject() (service: FoodDatabaseService, deadbolt: DeadboltActionsAdapter, imageStorageService: ImageStorageService) extends Controller with DatabaseErrorHandler {
 
-  def getCategoryContents(code: String, locale: String) = deadbolt.restrictAccess(Roles.superuser) {
+  def getCategoryContents(code: String, locale: String) = deadbolt.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getCategoryContents(code, locale))
     }
   }
 
-  def getFoodData(code: String, locale: String) = deadbolt.restrictAccess(Roles.superuser) {
+  def getFoodData(code: String, locale: String) = deadbolt.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getFoodData(code, locale))
     }
   }
 
-  def getFoodDataWithSources(code: String, locale: String) = deadbolt.restrictAccess(Roles.superuser) {
+  def getFoodDataWithSources(code: String, locale: String) = deadbolt.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getFoodData(code, locale))
     }
   }
 
-  def getAssociatedFoodPrompts(code: String, locale: String) = deadbolt.restrictAccess(Roles.superuser) {
+  def getAssociatedFoodPrompts(code: String, locale: String) = deadbolt.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getAssociatedFoods(code, locale))
     }
   }
 
-  def getBrandNames(code: String, locale: String) = deadbolt.restrictAccess(Roles.superuser) {
+  def getBrandNames(code: String, locale: String) = deadbolt.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getBrandNames(code, locale))
     }
   }
 
-  def getAsServedSet(id: String) = deadbolt.restrictAccess(Roles.superuser) {
+  def getAsServedSet(id: String) = deadbolt.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getAsServedSet(id).right.map {
         set =>
@@ -106,13 +106,13 @@ class UserFoodDataController @Inject() (service: FoodDatabaseService, deadbolt: 
     }
   }
 
-  def getDrinkwareSet(id: String) = deadbolt.restrictAccess(Roles.superuser) {
+  def getDrinkwareSet(id: String) = deadbolt.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getDrinkwareSet(id))
     }
   }
 
-  def getGuideImage(id: String) = deadbolt.restrictAccess(Roles.superuser) {
+  def getGuideImage(id: String) = deadbolt.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getGuideImage(id))
     }

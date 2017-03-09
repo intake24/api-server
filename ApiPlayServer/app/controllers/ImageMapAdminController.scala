@@ -76,21 +76,21 @@ class ImageMapAdminController @Inject()(
 
       ) yield ())
 
-  def listImageMaps() = deadbolt.restrictAccess(Roles.superuser) {
+  def listImageMaps() = deadbolt.restrictToRoles(Roles.superuser) {
     _ =>
       Future {
         translateDatabaseResult(imageMaps.listImageMaps())
       }
   }
 
-  def getImageMapBaseImageSourceId(id: String) = deadbolt.restrictAccess(Roles.superuser) {
+  def getImageMapBaseImageSourceId(id: String) = deadbolt.restrictToRoles(Roles.superuser) {
     _ =>
       Future {
         translateDatabaseResult(imageMaps.getImageMapBaseImageSourceId(id))
       }
   }
 
-  def createImageMapFromSVG() = deadbolt.restrictAccess(Roles.superuser)(parse.multipartFormData) {
+  def createImageMapFromSVG() = deadbolt.restrictToRoles(Roles.superuser)(parse.multipartFormData) {
     request =>
       Future {
         val result = for (

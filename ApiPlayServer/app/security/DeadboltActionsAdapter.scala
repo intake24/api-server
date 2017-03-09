@@ -31,7 +31,7 @@ class DeadboltActionsAdapter @Inject()(actionBuilders: ActionBuilders, handlerCa
 
   def restrictRefresh = new SubjectPresentActionBuilderAdapter(RefreshHandler)
 
-  def restrictAccess(anyOfRoles: String*) = new RestrictActionBuilderAdapter(anyOfRoles)
+  def restrictToRoles(anyOfRoles: String*) = new RestrictActionBuilderAdapter(anyOfRoles)
 
   def restrictToAuthenticated = new SubjectPresentActionBuilderAdapter(AccessHandler)
 
