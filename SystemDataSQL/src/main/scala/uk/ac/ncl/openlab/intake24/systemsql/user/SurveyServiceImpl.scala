@@ -15,12 +15,12 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
 
   override def getPublicSurveyParameters(surveyId: String): Either[LookupError, PublicSurveyParameters] = tryWithConnection {
     implicit conn =>
-      SQL("SELECT locale FROM surveys WHERE id={survey_id}")
+      SQL("SELECT locale, support_email FROM surveys WHERE id={survey_id}")
         .on('survey_id -> surveyId)
         .executeQuery()
-        .as(SqlParser.str("locale").singleOpt) match {
-        case Some(locale) =>
-          Right(PublicSurveyParameters(locale))
+        .as((SqlParser.str("locale") ~ SqlParser.str("support_email")).singleOpt ) match {
+        case Some(locale ~ email) =>
+          Right(PublicSurveyParameters(locale, email))
         case None =>
           Left(RecordNotFound(new RuntimeException(s"Survey $surveyId does not exist")))
       }

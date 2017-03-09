@@ -2,7 +2,7 @@ package uk.ac.ncl.openlab.intake24.services.systemdb.user
 
 import uk.ac.ncl.openlab.intake24.errors._
 
-case class PublicSurveyParameters(localeId: String)
+case class PublicSurveyParameters(localeId: String, supportEmail: String)
 
 case class UserSurveyParameters(schemeId: String, localeId: String, state: String, suspensionReason: Option[String], externalFollowUpURL: Option[String], supportEmail: String)
 
