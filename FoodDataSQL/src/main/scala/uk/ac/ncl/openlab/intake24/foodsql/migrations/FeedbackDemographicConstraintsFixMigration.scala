@@ -21,6 +21,9 @@ object FeedbackDemographicConstraintsFixMigration extends Migration {
     val sqlQuery =
       """
         |ALTER TABLE demographic_group
+        |DROP CONSTRAINT demographic_group_physical_activity_level_fk;
+        |
+        |ALTER TABLE demographic_group
         |DROP CONSTRAINT demographic_group_nutrient_type_fk;
         |
         |ALTER TABLE demographic_group
