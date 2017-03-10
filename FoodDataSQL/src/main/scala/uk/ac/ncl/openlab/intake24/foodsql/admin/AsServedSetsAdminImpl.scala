@@ -9,12 +9,12 @@ import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.AsServedHeader
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.AsServedSetsService
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
-@Singleton
-class AsServedSetsAdminStandaloneImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends AsServedSetsAdminImpl
 
-trait AsServedSetsAdminImpl extends AsServedSetsAdminService with SqlDataService with SqlResourceLoader {
+@Singleton
+class AsServedSetsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource, asServedService: AsServedSetsService) extends AsServedSetsAdminService with SqlDataService with SqlResourceLoader {
 
   private val logger = LoggerFactory.getLogger(classOf[AsServedSetsAdminImpl])
 

@@ -30,11 +30,11 @@ import uk.ac.ncl.openlab.intake24.foodsql.admin._
 import uk.ac.ncl.openlab.intake24.foodsql.demographicGroups._
 import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl
 import uk.ac.ncl.openlab.intake24.foodsql.images.ImageDatabaseServiceSqlImpl
-import uk.ac.ncl.openlab.intake24.foodsql.user.{FoodDataUserStandaloneImpl, FoodDatabaseUserImpl}
+import uk.ac.ncl.openlab.intake24.foodsql.user._
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.demographicgroups._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.{FoodDataService, FoodDatabaseService}
+import uk.ac.ncl.openlab.intake24.services.fooddb.user._
 import uk.ac.ncl.openlab.intake24.services.foodindex.danish.{FoodIndexImpl_da_DK, SplitterImpl_da_DK}
 import uk.ac.ncl.openlab.intake24.services.foodindex.english.{EnglishWordOps, EnglishWordOpsPlingImpl, FoodIndexImpl_en_GB, SplitterImpl_en_GB}
 import uk.ac.ncl.openlab.intake24.services.foodindex.portuguese.{FoodIndexImpl_pt_PT, SplitterImpl_pt_PT}
@@ -122,15 +122,15 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
 
     // User facing services
 
-    bind(classOf[AsServedSetsAdminService]).to(classOf[AsServedSetsAdminStandaloneImpl])
-    bind(classOf[AssociatedFoodsAdminService]).to(classOf[AssociatedFoodsAdminStandaloneImpl])
-    bind(classOf[DrinkwareAdminService]).to(classOf[DrinkwareAdminStandaloneImpl])
-    bind(classOf[FoodBrowsingAdminService]).to(classOf[FoodBrowsingAdminStandaloneImpl])
-    bind(classOf[FoodGroupsAdminService]).to(classOf[FoodGroupsAdminStandaloneImpl])
-    bind(classOf[GuideImageAdminService]).to(classOf[GuideImageAdminStandaloneImpl])
-    bind(classOf[NutrientTablesAdminService]).to(classOf[NutrientTablesAdminStandaloneImpl])
-    bind(classOf[QuickSearchService]).to(classOf[QuickSearchAdminStandaloneImpl])
-    bind(classOf[ImageMapsAdminService]).to(classOf[ImageMapsAdminStandaloneImpl])
+    bind(classOf[AsServedSetsAdminService]).to(classOf[AsServedSetsAdminImpl])
+    bind(classOf[AssociatedFoodsAdminService]).to(classOf[AssociatedFoodsAdminImpl])
+    bind(classOf[DrinkwareAdminService]).to(classOf[DrinkwareAdminImpl])
+    bind(classOf[FoodBrowsingAdminService]).to(classOf[FoodBrowsingAdminImpl])
+    bind(classOf[FoodGroupsAdminService]).to(classOf[FoodGroupsAdminImpl])
+    bind(classOf[GuideImageAdminService]).to(classOf[GuideImageAdminImpl])
+    bind(classOf[NutrientTablesAdminService]).to(classOf[NutrientTablesAdminImpl])
+    bind(classOf[QuickSearchService]).to(classOf[QuickSearchAdminImpl])
+    bind(classOf[ImageMapsAdminService]).to(classOf[ImageMapsAdminImpl])
     bind(classOf[NutrientMappingService]).to(classOf[NutrientMappingServiceSqlImpl])
 
     bind(classOf[SurveyService]).to(classOf[SurveyServiceImpl])
@@ -156,9 +156,15 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
 
     // User food database service
 
-    bind(classOf[FoodDatabaseService]).to(classOf[FoodDatabaseUserImpl])
-    bind(classOf[FoodDataService]).to(classOf[FoodDataUserStandaloneImpl])
+    bind(classOf[FoodDataService]).to(classOf[FoodDataServiceImpl])
     bind(classOf[FoodPopularityService]).to(classOf[FoodPopularityServiceImpl])
+    bind(classOf[FoodBrowsingService]).to(classOf[FoodBrowsingServiceImpl])
+    bind(classOf[AsServedSetsService]).to(classOf[AsServedSetsServiceImpl])
+    bind(classOf[GuideImageService]).to(classOf[GuideImageServiceImpl])
+    bind(classOf[AssociatedFoodsService]).to(classOf[AssociatedFoodsServiceImpl])
+    bind(classOf[DrinkwareService]).to(classOf[DrinkwareServiceImpl])
+    bind(classOf[BrandNamesService]).to(classOf[BrandNamesServiceImpl])
+
 
 
     // Demographic service

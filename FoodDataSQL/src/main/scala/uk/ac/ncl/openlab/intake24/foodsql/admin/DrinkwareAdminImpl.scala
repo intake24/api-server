@@ -7,15 +7,13 @@ import com.google.inject.name.Named
 import com.google.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.errors.{CreateError, DuplicateCode, UnexpectedDatabaseError}
-import uk.ac.ncl.openlab.intake24.foodsql.user.DrinkwareUserImpl
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.DrinkwareAdminService
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.DrinkwareService
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
 import uk.ac.ncl.openlab.intake24.{DrinkwareHeader, DrinkwareSet}
 
 @Singleton
-class DrinkwareAdminStandaloneImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends DrinkwareAdminImpl
-
-trait DrinkwareAdminImpl extends DrinkwareAdminService with SqlDataService with DrinkwareUserImpl {
+class DrinkwareAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource, drinkwareService: DrinkwareService) extends DrinkwareAdminService with SqlDataService {
 
   private val logger = LoggerFactory.getLogger(classOf[DrinkwareAdminImpl])
 
@@ -82,4 +80,6 @@ trait DrinkwareAdminImpl extends DrinkwareAdminService with SqlDataService with 
         Right(())
       }
   }
+
+  def getDrinkwareSet(id: String) = drinkwareService.getDrinkwareSet(id)
 }

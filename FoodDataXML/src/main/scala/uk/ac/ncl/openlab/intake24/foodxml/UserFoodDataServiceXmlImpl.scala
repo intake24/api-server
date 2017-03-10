@@ -22,7 +22,7 @@ import com.google.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24._
 import uk.ac.ncl.openlab.intake24.errors.{LocaleError, LookupError, RecordNotFound}
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.{FoodDatabaseService, UserAsServedImage, UserAsServedSet, UserImageMap}
+import uk.ac.ncl.openlab.intake24.services.fooddb.user._
 
 @Singleton
 class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDatabaseService {
@@ -93,7 +93,7 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDat
           }
         }
 
-        (UserFoodData(f.code, f.description, f.nutrientTableCodes, f.groupCode, portionSizeMethods, readyMealOption, sameAsBeforeOption, reasonableAmount), null)
+        ??? /// (UserFoodData(f.code, f.description, f.nutrientTableCodes, f.groupCode, portionSizeMethods, readyMealOption, sameAsBeforeOption, reasonableAmount), null)
     }
 
   def getAsServedSet(id: String) = data.asServedSets.get(id) match {

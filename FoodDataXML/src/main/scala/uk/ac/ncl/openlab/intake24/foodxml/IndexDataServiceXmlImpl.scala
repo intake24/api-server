@@ -23,9 +23,6 @@ import org.slf4j.LoggerFactory
 import com.google.inject.Inject
 import com.google.inject.Singleton
 
-import uk.ac.ncl.openlab.intake24.SplitList
-import uk.ac.ncl.openlab.intake24.UserCategoryHeader
-import uk.ac.ncl.openlab.intake24.UserFoodHeader
 
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
 

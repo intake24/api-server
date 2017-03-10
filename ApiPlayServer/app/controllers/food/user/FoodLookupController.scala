@@ -24,10 +24,12 @@ import controllers.DatabaseErrorHandler
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller}
 import security.DeadboltActionsAdapter
-import uk.ac.ncl.openlab.intake24.{UserCategoryHeader, UserFoodHeader}
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
+import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound}
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodBrowsingService
 import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, MatchedFood, Splitter}
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.FoodPopularityService
+import uk.ac.ncl.openlab.intake24.{UserCategoryHeader, UserFoodHeader}
 import upickle.default._
 
 import scala.concurrent.Future
@@ -37,8 +39,10 @@ case class SplitSuggestion(parts: Seq[String])
 case class LookupResult(foods: Seq[UserFoodHeader], categories: Seq[UserCategoryHeader])
 
 class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex], foodDescriptionSplitters: Map[String, Splitter],
-                                     foodPopularityService: FoodPopularityService,
+                                     foodBrowsingService: FoodBrowsingService, foodPopularityService: FoodPopularityService,
                                      deadbolt: DeadboltActionsAdapter) extends Controller with DatabaseErrorHandler {
+
+  import uk.ac.ncl.openlab.intake24.errors.ErrorUtils._
 
   def getSplitSuggestion(locale: String, description: String) = deadbolt.restrictToRespondents(BodyParsers.parse.empty) {
     _ =>
@@ -50,31 +54,50 @@ class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex], foodDe
       }
   }
 
-  def lookup(locale: String, description: String, maxResults: Int) = deadbolt.restrictToRespondents(BodyParsers.parse.empty) {
+  private def lookupImpl(locale: String, description: String, maxResults: Int): Either[LookupError, LookupResult] = {
+    foodIndexes.get(locale) match {
+      case Some(index) => {
+        val lookupResult = index.lookup(description, Math.max(0, Math.min(maxResults, 100)))
+
+        foodPopularityService.getPopularityCount(lookupResult.foods.map(_.food.code)).right.map {
+          popularityCounters =>
+
+            def adjustedPopularity(f: MatchedFood) = (popularityCounters(f.food.code) + 1.0) / (f.matchCost + 1.0)
+
+            val sortedFoods = lookupResult.foods.sortWith {
+              (f1, f2) => adjustedPopularity(f1) > adjustedPopularity(f2)
+            }
+
+            val sortedFoodHeaders = sortedFoods.map(_.food)
+
+            val sortedCategoryHeaders = lookupResult.categories.sortBy(_.matchCost).map(_.category)
+
+            LookupResult(sortedFoodHeaders, sortedCategoryHeaders)
+        }
+      }
+      case None => Left(RecordNotFound(new RuntimeException(s"Food index not available for locale $locale")))
+    }
+  }
+
+  def lookup(locale: String, description: String, maxResults: Int) = deadbolt.restrictToAuthenticated {
     _ =>
       Future {
-        foodIndexes.get(locale) match {
-          case Some(index) => {
-            val lookupResult = index.lookup(description, Math.min(0, Math.max(maxResults, 100)))
+        translateDatabaseResult(lookupImpl(locale, description, maxResults))
+      }
+  }
 
-            translateDatabaseResult(foodPopularityService.getPopularityCount(lookupResult.foods.map(_.food.code)).right.map {
-              popularityCounters =>
+  //FIXME: bad performance due to individual queries for every food and category
+  def lookupInCategory(locale: String, description: String, categoryCode: String, maxResult: Int) = deadbolt.restrictToAuthenticated {
+    _ =>
+      Future {
+        val result = for (
+          lookupResult <- lookupImpl(locale, description, maxResult).right;
+          foodSuperCategories <- sequence(lookupResult.foods.map(f => foodBrowsingService.getFoodAllCategories(f.code).right.map(sc => (f.code -> sc)))).right.map(_.toMap).right;
+          categorySuperCategories <- sequence(lookupResult.categories.map(c => foodBrowsingService.getCategoryAllCategories(c.code).right.map(sc => (c.code -> sc)))).right.map(_.toMap).right
+        ) yield LookupResult(lookupResult.foods.filter(f => foodSuperCategories(f.code).contains(categoryCode)),
+          lookupResult.categories.filter(c => categorySuperCategories(c.code).contains(categoryCode)))
 
-                def adjustedPopularity(f: MatchedFood) = (popularityCounters(f.food.code) + 1.0) / (f.matchCost + 1.0)
-
-                val sortedFoods = lookupResult.foods.sortWith {
-                  (f1, f2) => adjustedPopularity(f1) > adjustedPopularity(f2)
-                }
-
-                val sortedFoodHeaders = sortedFoods.map(_.food)
-
-                val sortedCategoryHeaders = lookupResult.categories.sortBy(_.matchCost).map(_.category)
-
-                LookupResult(sortedFoodHeaders, sortedCategoryHeaders)
-            })
-          }
-          case None => NotFound(write(ErrorDescription("InvalidLocale", s"Food index not available for locale $locale")))
-        }
+        translateDatabaseResult(result)
       }
   }
 }
