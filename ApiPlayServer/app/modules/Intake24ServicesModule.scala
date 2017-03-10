@@ -35,20 +35,31 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.demographicgroups._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.{FoodDataService, FoodDatabaseService}
-import uk.ac.ncl.openlab.intake24.services.foodindex.english.{EnglishWordOps, EnglishWordOpsPlingImpl, FoodIndexImpl_en_GB}
-import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, FoodIndexDataService}
+import uk.ac.ncl.openlab.intake24.services.foodindex.danish.{FoodIndexImpl_da_DK, SplitterImpl_da_DK}
+import uk.ac.ncl.openlab.intake24.services.foodindex.english.{EnglishWordOps, EnglishWordOpsPlingImpl, FoodIndexImpl_en_GB, SplitterImpl_en_GB}
+import uk.ac.ncl.openlab.intake24.services.foodindex.portuguese.{FoodIndexImpl_pt_PT, SplitterImpl_pt_PT}
+import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, FoodIndexDataService, Splitter}
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, SurveyAdminService, UserAdminService}
-import uk.ac.ncl.openlab.intake24.services.systemdb.user.SurveyService
+import uk.ac.ncl.openlab.intake24.services.systemdb.user.{FoodPopularityService, SurveyService}
 import uk.ac.ncl.openlab.intake24.systemsql.admin.{DataExportImpl, SurveyAdminImpl, UserAdminImpl}
-import uk.ac.ncl.openlab.intake24.systemsql.user.SurveyServiceImpl
+import uk.ac.ncl.openlab.intake24.systemsql.user.{FoodPopularityServiceImpl, SurveyServiceImpl}
 
 
 class Intake24ServicesModule(env: Environment, config: Configuration) extends AbstractModule {
   @Provides
   @Singleton
   def foodIndexes(injector: Injector): Map[String, FoodIndex] =
-    Map("en_GB" -> injector.getInstance(classOf[FoodIndexImpl_en_GB]))
+    Map("en_GB" -> injector.getInstance(classOf[FoodIndexImpl_en_GB]),
+      "pt_PT" -> injector.getInstance(classOf[FoodIndexImpl_pt_PT]),
+      "da_DK" -> injector.getInstance(classOf[FoodIndexImpl_da_DK]))
+
+  @Provides
+  @Singleton
+  def foodDescriptionSplitters(injector: Injector): Map[String, Splitter] =
+    Map("en_GB" -> injector.getInstance(classOf[SplitterImpl_en_GB]),
+      "pt_PT" -> injector.getInstance(classOf[SplitterImpl_pt_PT]),
+      "da_DK" -> injector.getInstance(classOf[SplitterImpl_da_DK]))
 
   @Provides
   @Named("intake24_system")
@@ -147,11 +158,11 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
 
     bind(classOf[FoodDatabaseService]).to(classOf[FoodDatabaseUserImpl])
     bind(classOf[FoodDataService]).to(classOf[FoodDataUserStandaloneImpl])
+    bind(classOf[FoodPopularityService]).to(classOf[FoodPopularityServiceImpl])
 
 
     // Demographic service
     bind(classOf[DemographicGroupsService]).to(classOf[DemographicGroupsServiceImpl])
-
 
   }
 }

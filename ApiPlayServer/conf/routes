@@ -104,6 +104,9 @@ POST           /admin/portion-size/guide-image/selection-screen-image        con
 GET            /admin/portion-size/drinkware                                 controllers.DrinkwareAdminController.listDrinkwareSets()
 GET            /admin/portion-size/drinkware/:id                             controllers.DrinkwareAdminController.getDrinkwareSet(id: String)
 
+GET            /user/foods/:locale/split-description                         controllers.food.user.FoodLookupController.getSplitSuggestion(locale: String, d: String)
+GET            /user/foods/:locale/lookup                                    controllers.food.user.FoodLookupController.lookup(locale: String, d: String, n: Int = 50)
+
 GET            /user/foods/:locale/:code                                     controllers.UserFoodDataController.getFoodData(code: String, locale: String)
 GET            /user/foods/:locale/:code/with-sources                        controllers.UserFoodDataController.getFoodDataWithSources(code: String, locale: String)
 GET            /user/foods/:locale/:code/brand-names                         controllers.UserFoodDataController.getBrandNames(code: String, locale: String)
