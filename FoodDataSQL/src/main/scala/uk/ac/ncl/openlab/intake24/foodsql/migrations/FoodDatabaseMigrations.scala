@@ -380,7 +380,8 @@ object FoodDatabaseMigrations {
     FeedbackDemographicNutrientDescriptionsMigration,
     FeedbackDemographicConstraintsFixMigration,
     FeedbackDemographicAlterNutrientRuleType,
-    FeedbackDemographicAlterSentimentEnum
+    FeedbackDemographicAlterSentimentEnum,
+    UnitFixMigration
 
   )
 }
