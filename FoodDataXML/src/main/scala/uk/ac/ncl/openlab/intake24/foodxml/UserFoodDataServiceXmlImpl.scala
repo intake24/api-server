@@ -106,10 +106,10 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDat
     case None => Left(RecordNotFound(new RuntimeException(id)))
   }
 
-  def getDrinkwareSet(id: String) = data.drinkwareSets.get(id) match {
+  def getDrinkwareSet(id: String) = ??? /* data.drinkwareSets.get(id) match {
     case Some(set) => Right(set)
     case None => Left(RecordNotFound(new RuntimeException(id)))
-  }
+  }*/
 
   def getAssociatedFoods(foodCode: String, locale: String) =
     checkLocale(locale).right.flatMap {

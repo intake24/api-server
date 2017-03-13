@@ -183,11 +183,13 @@ case class VolumeFunction(samples: Seq[(Double, Double)]) {
   }
 }
 
-case class DrinkScale(choice_id: Int, baseImage: String, overlayImage: String, width: Int, height: Int, emptyLevel: Int, fullLevel: Int, vf: VolumeFunction)
+case class VolumeSample(fl: Double, v: Double)
+
+case class DrinkScale(objectId: Int, baseImagePath: String, overlayImagePath: String, width: Int, height: Int, emptyLevel: Int, fullLevel: Int, volumeSamples: Seq[VolumeSample])
 
 case class DrinkwareHeader(id: String, description: String)
 
-case class DrinkwareSet(id: String, description: String, guide_id: String, scaleDefs: Seq[DrinkScale])
+case class DrinkwareSet(id: String, description: String, guideId: String, scales: Seq[DrinkScale])
 
 
 case class AssociatedFoodWithHeader(foodOrCategoryHeader: Either[FoodHeader, CategoryHeader], promptText: String, linkAsMain: Boolean, genericName: String) {

@@ -10,7 +10,7 @@ import uk.ac.ncl.openlab.intake24.errors.{CreateError, DuplicateCode, Unexpected
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.DrinkwareAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.DrinkwareService
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
-import uk.ac.ncl.openlab.intake24.{DrinkwareHeader, DrinkwareSet}
+import uk.ac.ncl.openlab.intake24.{DrinkwareHeader, DrinkwareSet, VolumeSample}
 
 @Singleton
 class DrinkwareAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource, drinkwareService: DrinkwareService) extends DrinkwareAdminService with SqlDataService {
@@ -44,23 +44,23 @@ class DrinkwareAdminImpl @Inject()(@Named("intake24_foods") val dataSource: Data
           logger.debug("Writing " + sets.size + " drinkware sets to database")
           val drinkwareParams = sets.map {
             set =>
-              Seq[NamedParameter]('id -> set.id, 'description -> set.description, 'guide_image_id -> set.guide_id)
+              Seq[NamedParameter]('id -> set.id, 'description -> set.description, 'guide_image_id -> set.guideId)
           }
 
           batchSql("""INSERT INTO drinkware_sets VALUES ({id}, {description}, {guide_image_id})""", drinkwareParams).execute()
 
           val drinkwareScaleParams = sets.foreach {
             set =>
-              set.scaleDefs.foreach {
+              set.scales.foreach {
                 scale =>
                   val scaleId = SQL("""INSERT INTO drinkware_scales VALUES (DEFAULT, {drinkware_set_id}, {width}, {height}, {empty_level}, {full_level}, {choice_id}, {base_image_url}, {overlay_image_url})""")
                     .on('drinkware_set_id -> set.id, 'width -> scale.width, 'height -> scale.height, 'empty_level -> scale.emptyLevel, 'full_level -> scale.fullLevel,
-                      'choice_id -> scale.choice_id, 'base_image_url -> scale.baseImage, 'overlay_image_url -> scale.overlayImage)
+                      'choice_id -> scale.objectId, 'base_image_url -> scale.baseImagePath, 'overlay_image_url -> scale.overlayImagePath)
                     .executeInsert()
                     .get
 
-                  val volumeSampleParams = scale.vf.sortedSamples.map {
-                    case (fill, volume) =>
+                  val volumeSampleParams = scale.volumeSamples.sortBy(_.fl).map {
+                    case VolumeSample(fill, volume) =>
                       Seq[NamedParameter]('scale_id -> scaleId, 'fill -> fill, 'volume -> volume)
                   }
 

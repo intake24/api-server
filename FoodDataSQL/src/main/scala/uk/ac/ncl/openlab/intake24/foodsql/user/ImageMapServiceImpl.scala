@@ -1,12 +1,18 @@
 package uk.ac.ncl.openlab.intake24.foodsql.user
 
+import javax.inject.Inject
+import javax.sql.DataSource
+
 import anorm.NamedParameter.symbol
 import anorm.{Macro, SQL, sqlToSimple}
+import com.google.inject.Singleton
+import com.google.inject.name.Named
 import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound}
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.{ImageMapService, UserImageMap, UserImageMapObject}
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
-trait ImageMapUserImpl extends ImageMapService with SqlDataService with SqlResourceLoader {
+@Singleton
+class ImageMapServiceImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends ImageMapService with SqlDataService with SqlResourceLoader {
 
   private case class ResultRow(id: String, base_image_path: String, object_id: Long, description: String, outline: Array[Double], overlay_image_path: String)
 
