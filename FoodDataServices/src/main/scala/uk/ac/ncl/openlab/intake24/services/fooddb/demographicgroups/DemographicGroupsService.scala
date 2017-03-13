@@ -47,6 +47,7 @@ case class DemographicGroupRecordIn(sex: Option[String],
 object DemographicGroupRecord {
   val NUTRIENT_RULE_TYPE_PERCENTAGE_OF_ENERGY = "percentage_of_energy"
   val NUTRIENT_RULE_TYPE_ENERGY_DIVIDED_BY_BMR = "energy_divided_by_bmr"
+  val NUTRIENT_RULE_TYPE_PER_UNIT_OF_WEIGHT = "per_unit_of_weight"
   val NUTRIENT_RULE_TYPE_RANGE = "range"
 
   def isValid(demographicGroupRecordIn: DemographicGroupRecordIn): Either[ConstraintError, Unit] = {
@@ -60,7 +61,7 @@ object DemographicGroupRecord {
           case Some(v) =>
             Right()
         }
-      case NUTRIENT_RULE_TYPE_ENERGY_DIVIDED_BY_BMR | NUTRIENT_RULE_TYPE_RANGE =>
+      case NUTRIENT_RULE_TYPE_ENERGY_DIVIDED_BY_BMR | NUTRIENT_RULE_TYPE_RANGE | NUTRIENT_RULE_TYPE_PER_UNIT_OF_WEIGHT =>
         Right()
       case _ =>
         Left(new ConstraintViolation("nutrient_rule_type_invalid",
