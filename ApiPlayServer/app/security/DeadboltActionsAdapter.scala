@@ -29,9 +29,22 @@ class DeadboltActionsAdapter @Inject()(actionBuilders: ActionBuilders, handlerCa
       actionBuilder(BodyParsers.parse.empty)(block)(handlerCache(handlerKey))
   }
 
+  class DynamicActionBuilderAdapter(dynamicName: String) {
+
+    private val actionBuilder = actionBuilders.DynamicAction(dynamicName)
+
+    def apply[A](bodyParser: BodyParser[A])(block: AuthenticatedRequest[A] => Future[Result]): Action[A] = actionBuilder(bodyParser)(block)(handlerCache(AccessHandler))
+
+    def apply(block: AuthenticatedRequest[AnyContent] => Future[Result]): Action[AnyContent] = actionBuilder(block)(handlerCache(AccessHandler))
+
+    def apply(block: => Future[Result]): Action[AnyContent] = actionBuilder(block)(handlerCache(AccessHandler))
+  }
+
   def restrictRefresh = new SubjectPresentActionBuilderAdapter(RefreshHandler)
 
   def restrictToRoles(anyOfRoles: String*) = new RestrictActionBuilderAdapter(anyOfRoles)
+
+  def restrictToRespondents = new DynamicActionBuilderAdapter("respondent")
 
   def restrictToAuthenticated = new SubjectPresentActionBuilderAdapter(AccessHandler)
 

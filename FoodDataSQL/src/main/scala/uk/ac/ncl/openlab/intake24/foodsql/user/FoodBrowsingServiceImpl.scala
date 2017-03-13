@@ -1,7 +1,11 @@
 package uk.ac.ncl.openlab.intake24.foodsql.user
 
+import javax.sql.DataSource
+
 import anorm.NamedParameter.symbol
 import anorm.{Macro, SQL, sqlToSimple}
+import com.google.inject.name.Named
+import com.google.inject.{Inject, Singleton}
 import uk.ac.ncl.openlab.intake24.errors.{LocalLookupError, LocaleError, LookupError}
 import uk.ac.ncl.openlab.intake24.foodsql.shared.SuperCategoriesQueries
 import uk.ac.ncl.openlab.intake24.foodsql.{FirstRowValidation, FirstRowValidationClause}
@@ -9,7 +13,8 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodBrowsingService
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 import uk.ac.ncl.openlab.intake24.{UserCategoryContents, UserCategoryHeader, UserFoodHeader}
 
-trait FoodBrowsingUserImpl extends FoodBrowsingService with SqlDataService with SqlResourceLoader with FirstRowValidation with SuperCategoriesQueries {
+@Singleton
+class FoodBrowsingServiceImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends FoodBrowsingService with SqlDataService with SqlResourceLoader with FirstRowValidation with SuperCategoriesQueries {
 
   private lazy val rootCategoriesQuery = sqlFromResource("user/root_categories.sql")
 

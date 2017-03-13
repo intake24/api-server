@@ -1,21 +1,21 @@
 package uk.ac.ncl.openlab.intake24.foodsql.admin
 
+import javax.inject.Named
 import javax.sql.DataSource
 
-import anorm._
+import anorm.{Macro, NamedParameter}
 import com.google.inject.{Inject, Singleton}
-import com.google.inject.name.Named
 import org.postgresql.util.PSQLException
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.GuideHeader
-import uk.ac.ncl.openlab.intake24.foodsql.user.GuideImageUserImpl
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{GuideImageAdminService, NewGuideImageRecord}
 import uk.ac.ncl.openlab.intake24.errors._
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{GuideImageAdminService, NewGuideImageRecord}
+import anorm.SQL
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.GuideImageService
+import uk.ac.ncl.openlab.intake24.sql.SqlDataService
 
 @Singleton
-class GuideImageAdminStandaloneImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends GuideImageAdminImpl
-
-trait GuideImageAdminImpl extends GuideImageAdminService with GuideImageUserImpl {
+class GuideImageAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource, guideImageService: GuideImageService) extends GuideImageAdminService with SqlDataService {
 
   private val logger = LoggerFactory.getLogger(classOf[GuideImageAdminImpl])
 
@@ -87,4 +87,6 @@ trait GuideImageAdminImpl extends GuideImageAdminService with GuideImageUserImpl
         Right(())
       }
   }
+
+  def getGuideImage(id: String) = guideImageService.getGuideImage(id)
 }

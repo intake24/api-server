@@ -11,9 +11,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
 @Singleton
-class ImageMapsAdminStandaloneImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends ImageMapsAdminImpl
-
-trait ImageMapsAdminImpl extends ImageMapsAdminService with SqlDataService with SqlResourceLoader {
+class ImageMapsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends ImageMapsAdminService with SqlDataService with SqlResourceLoader {
 
   private val logger = LoggerFactory.getLogger(classOf[ImageMapsAdminImpl])
 

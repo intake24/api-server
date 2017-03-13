@@ -10,7 +10,6 @@ import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
 import org.slf4j.LoggerFactory
 import org.rogach.scallop.ScallopConf
 import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseOptions
-import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
 import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl
 import uk.ac.ncl.openlab.intake24.sql.tools.WarningMessage
 import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseConnection

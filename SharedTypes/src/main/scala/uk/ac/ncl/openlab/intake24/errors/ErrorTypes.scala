@@ -18,6 +18,19 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.errors
 
+object ErrorUtils {
+  def sequence[E, T](s: Seq[Either[E, T]]): Either[E, Seq[T]] = {
+    val z: Either[E, Seq[T]] = Right(Seq())
+    s.foldLeft(z) {
+      (result, next) =>
+        for (
+          ts <- result.right;
+          t <- next.right
+        ) yield (t +: ts)
+    }.right.map(_.reverse)
+  }
+}
+
 sealed trait AnyError {
   val exception: Throwable
 }
@@ -77,7 +90,7 @@ sealed trait LocalDependentCreateError extends AnyError
 
 sealed trait DependentCreateError extends LocalDependentCreateError
 
-sealed trait NutrientMappingError {
+sealed trait NutrientMappingError extends AnyError {
   val exception: Throwable
 }
 

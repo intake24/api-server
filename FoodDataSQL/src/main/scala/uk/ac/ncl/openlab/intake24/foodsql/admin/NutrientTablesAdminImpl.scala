@@ -11,9 +11,7 @@ import uk.ac.ncl.openlab.intake24.sql.SqlDataService
 import uk.ac.ncl.openlab.intake24.{NutrientTable, NutrientTableRecord}
 
 @Singleton
-class NutrientTablesAdminStandaloneImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends NutrientTablesAdminImpl
-
-trait NutrientTablesAdminImpl extends NutrientTablesAdminService with SqlDataService {
+class NutrientTablesAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends NutrientTablesAdminService with SqlDataService {
 
   private case class NutrientTableDescRow(id: String, description: String) {
     def asNutrientTable = NutrientTable(id, description)

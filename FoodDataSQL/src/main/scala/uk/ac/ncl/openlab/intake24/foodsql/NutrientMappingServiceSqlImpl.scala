@@ -10,7 +10,7 @@ import uk.ac.ncl.openlab.intake24.services.nutrition.{NutrientDescription, Nutri
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
 
 @Singleton
-class NutrientMappingServiceSqlImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends NutrientMappingService with SqlDataService {
+class NutrientMappingServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends NutrientMappingService with SqlDataService {
 
   private case class NutrientDescriptionRow(id: Long, description: String, symbol: String)
 

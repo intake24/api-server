@@ -20,7 +20,7 @@ package uk.ac.ncl.openlab.intake24.services.fooddb.user
 
 trait FoodDatabaseService
   extends FoodBrowsingService
-  with AsServedImageService
+  with AsServedSetsService
   with GuideImageService
   with DrinkwareService
   with AssociatedFoodsService

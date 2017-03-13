@@ -1,7 +1,6 @@
 package uk.ac.ncl.openlab.intake24.sql.tools.food.nutrients
 
 import org.rogach.scallop.ScallopConf
-import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
 import uk.ac.ncl.openlab.intake24.nutrientsndns.{CsvNutrientTableMapping, CsvNutrientTableParser}
 import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConfigurationOptions, DatabaseConnection, WarningMessage}
 import uk.ac.ncl.openlab.intake24.{NutrientTable, NutrientTableRecord}

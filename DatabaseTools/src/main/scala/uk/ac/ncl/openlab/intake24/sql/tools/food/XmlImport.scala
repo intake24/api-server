@@ -23,7 +23,6 @@ import java.io.File
 import org.rogach.scallop.ScallopConf
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24._
-import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
 import uk.ac.ncl.openlab.intake24.foodxml._
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
 import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConnection, DatabaseOptions, WarningMessage}

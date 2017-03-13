@@ -104,12 +104,16 @@ POST           /admin/portion-size/guide-image/selection-screen-image        con
 GET            /admin/portion-size/drinkware                                 controllers.DrinkwareAdminController.listDrinkwareSets()
 GET            /admin/portion-size/drinkware/:id                             controllers.DrinkwareAdminController.getDrinkwareSet(id: String)
 
-GET            /user/foods/:locale/:code                                     controllers.UserFoodDataController.getFoodData(code: String, locale: String)
-GET            /user/foods/:locale/:code/with-sources                        controllers.UserFoodDataController.getFoodDataWithSources(code: String, locale: String)
-GET            /user/foods/:locale/:code/brand-names                         controllers.UserFoodDataController.getBrandNames(code: String, locale: String)
-GET            /user/foods/:locale/:code/associated-foods                    controllers.UserFoodDataController.getAssociatedFoodPrompts(code: String, locale: String)
+GET            /user/foods/:locale/split-description                         controllers.food.user.FoodLookupController.getSplitSuggestion(locale: String, desc: String)
+GET            /user/foods/:locale/lookup                                    controllers.food.user.FoodLookupController.lookup(locale: String, desc: String, limit: Int = 50)
+GET            /user/foods/:locale/lookup-in-category                        controllers.food.user.FoodLookupController.lookupInCategory(locale: String, desc: String, category: String, limit: Int = 50)
 
-GET            /user/portion-size/as-served/:id                              controllers.UserFoodDataController.getAsServedSet(id: String)
+GET            /user/foods/:locale/:code                                     controllers.food.user.FoodDataController.getFoodData(code: String, locale: String)
+GET            /user/foods/:locale/:code/with-sources                        controllers.food.user.FoodDataController.getFoodDataWithSources(code: String, locale: String)
+GET            /user/foods/:locale/:code/brand-names                         controllers.food.user.FoodDataController.getBrandNames(code: String, locale: String)
+GET            /user/foods/:locale/:code/associated-foods                    controllers.food.user.FoodDataController.getAssociatedFoodPrompts(code: String, locale: String)
+
+GET            /user/portion-size/as-served/:id                              controllers.food.user.FoodDataController.getAsServedSet(id: String)
 
 # Nutrient tables
 

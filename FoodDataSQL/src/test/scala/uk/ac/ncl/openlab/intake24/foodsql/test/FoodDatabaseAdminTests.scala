@@ -21,8 +21,6 @@ package uk.ac.ncl.openlab.intake24.foodsql.test
 import com.google.inject.Inject
 import com.google.inject.Singleton
 
-import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodDatabaseAdminImpl
-
 import org.scalatest.FunSuite
 import org.scalatest.BeforeAndAfterAll
 

@@ -13,9 +13,7 @@ import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 import uk.ac.ncl.openlab.intake24.{FoodGroupLocal, FoodGroupMain, FoodGroupRecord}
 
 @Singleton
-class FoodGroupsAdminStandaloneImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends FoodGroupsAdminImpl
-
-trait FoodGroupsAdminImpl extends FoodGroupsAdminService with SqlDataService with FirstRowValidation with SqlResourceLoader {
+class FoodGroupsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends FoodGroupsAdminService with SqlDataService with FirstRowValidation with SqlResourceLoader {
 
   private case class FoodGroupRow(id: Long, description: String, local_description: Option[String])
 

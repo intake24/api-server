@@ -21,7 +21,6 @@ package uk.ac.ncl.openlab.intake24.foodsql.test
 import org.scalatest.FunSuite
 import uk.ac.ncl.openlab.intake24.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.{UserCategoryContents, UserCategoryHeader, UserFoodData, UserFoodHeader}
-import uk.ac.ncl.openlab.intake24.foodsql.user.FoodDatabaseUserImpl
 
 class UserFoodDataServiceSqlImplTest extends FunSuite with TestFoodDatabase {
 

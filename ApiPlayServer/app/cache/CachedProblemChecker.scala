@@ -28,6 +28,8 @@ case class CachedProblemChecker @Inject() (
     with FoodsAdminObserver
     with LocalesAdminObserver {
 
+  import uk.ac.ncl.openlab.intake24.errors.ErrorUtils._
+
   val logger = LoggerFactory.getLogger(classOf[CachedProblemChecker])
 
   var knownCacheKeys = Set[String]()
@@ -49,16 +51,6 @@ case class CachedProblemChecker @Inject() (
   def categoryProblemsCacheKey(code: String, locale: String) = s"CachedProblemChecker.categoryProblems.$locale.$code"
   def recursiveCategoryProblemsCacheKey(code: String, locale: String) = s"CachedProblemChecker.recursiveCategoryProblems.$locale.$code"
 
-  def sequence[E, T](s: Seq[Either[E, T]]): Either[E, Seq[T]] = {
-    val z: Either[E, Seq[T]] = Right(Seq())
-    s.foldLeft(z) {
-      (result, next) =>
-        for (
-          ts <- result.right;
-          t <- next.right
-        ) yield (t +: ts)
-    }.right.map(_.reverse)
-  }
 
   val maxReturnedProblems = 10
 
@@ -84,10 +76,10 @@ case class CachedProblemChecker @Inject() (
         if (uncategorisedFoods.exists(_.code == code))
           problems += NotAssignedToCategory
 
-        if (userFoodRecord.portionSize.isEmpty)
+        if (userFoodRecord.portionSizeMethods.isEmpty)
           problems += PortionSizeMethodsEmpty
 
-        if (userFoodRecord.portionSize.size > 1 && userFoodRecord.portionSize.exists(x => x.description == "no description" || x.imageUrl == "images/placeholder.jpg"))
+        if (userFoodRecord.portionSizeMethods.size > 1 && userFoodRecord.portionSizeMethods.exists(x => x.description == "no description" || x.imageUrl == "images/placeholder.jpg"))
           problems += NoMethodDescOrImage
 
         if (adminFoodRecord.local.localDescription.isEmpty && !adminFoodRecord.local.doNotUse && translationRequired)

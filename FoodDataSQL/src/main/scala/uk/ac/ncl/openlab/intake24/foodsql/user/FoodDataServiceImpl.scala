@@ -23,17 +23,16 @@ import javax.sql.DataSource
 
 import anorm.NamedParameter.symbol
 import anorm.{Macro, SQL, SqlParser, sqlToSimple}
+import com.google.inject.Singleton
 import com.google.inject.name.Named
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.UserFoodData
-import uk.ac.ncl.openlab.intake24.errors.{LocalLookupError, LocaleError, LookupError, UndefinedLocale}
+import uk.ac.ncl.openlab.intake24.errors.{LocalLookupError, LocaleError, UndefinedLocale}
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.{FoodDataService, FoodDataSources, SourceLocale}
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.{FoodDataService, FoodDataSources, SourceLocale, UserFoodData}
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
-class FoodDataUserStandaloneImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends FoodDataUserImpl
-
-trait FoodDataUserImpl extends FoodDataService
+@Singleton
+class FoodDataServiceImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends FoodDataService
   with SqlDataService
   with SqlResourceLoader
   with FirstRowValidation
@@ -41,7 +40,7 @@ trait FoodDataUserImpl extends FoodDataService
   with InheritedPortionSizeMethodsImpl
   with InheritedNutrientTableCodesImpl {
 
-  val logger = LoggerFactory.getLogger(classOf[FoodDataUserImpl])
+  val logger = LoggerFactory.getLogger(classOf[FoodDataServiceImpl])
 
   private case class FoodRow(food_code: String, english_description: String, local_description: Option[String], prototype_description: Option[String], food_group_id: Long)
 
@@ -74,10 +73,6 @@ trait FoodDataUserImpl extends FoodDataService
     parseWithLocaleAndFoodValidation(foodCode, result, Macro.namedParser[FoodRow].single)()
   }
 
-  private def LookupErrorAdapter[T](e: Either[LookupError, T]): Either[LocalLookupError, T] = e.left.map(identity)
-
-  private def localeErrorAdapter[T](e: Either[LocaleError, T]): Either[LocalLookupError, T] = e.left.map(identity)
-
   def getFoodData(foodCode: String, locale: String): Either[LocalLookupError, (UserFoodData, FoodDataSources)] = tryWithConnection {
     implicit conn =>
       withTransaction {
@@ -94,8 +89,7 @@ trait FoodDataUserImpl extends FoodDataService
           else
             SourceLocale.Current(locale)
 
-          (UserFoodData(foodRow.food_code, localDescription, nutr.codes, foodRow.food_group_id.toInt, psm.methods,
-            attr.readyMealOption, attr.sameAsBeforeOption, attr.reasonableAmount),
+          (UserFoodData(foodRow.food_code, localDescription, foodRow.food_group_id.toInt, attr.readyMealOption, attr.sameAsBeforeOption, nutr.codes, psm.methods),
             FoodDataSources(localDescriptionSource, nutr.sourceLocale, (psm.sourceLocale, psm.sourceRecord), attr.sources))
         }
       }

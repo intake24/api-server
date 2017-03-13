@@ -1,13 +1,18 @@
 package uk.ac.ncl.openlab.intake24.foodsql.user
 
+import javax.inject.Inject
+import javax.sql.DataSource
+
 import anorm._
+import com.google.inject.Singleton
+import com.google.inject.name.Named
 import uk.ac.ncl.openlab.intake24.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.foodsql.{FirstRowValidation, FirstRowValidationClause}
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.BrandNamesService
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
-
-trait BrandNamesUserImpl extends BrandNamesService with SqlDataService with FirstRowValidation with SqlResourceLoader {
+@Singleton
+class BrandNamesServiceImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends BrandNamesService with SqlDataService with FirstRowValidation with SqlResourceLoader {
 
   private lazy val getBrandNamesQuery = sqlFromResource("user/get_brand_names_frv.sql")
 

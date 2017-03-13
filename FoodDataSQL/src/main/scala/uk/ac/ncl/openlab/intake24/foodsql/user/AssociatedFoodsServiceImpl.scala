@@ -1,13 +1,19 @@
 package uk.ac.ncl.openlab.intake24.foodsql.user
 
+import javax.inject.Inject
+import javax.sql.DataSource
+
 import anorm.{Macro, SQL, sqlToSimple}
+import com.google.inject.Singleton
+import com.google.inject.name.Named
 import uk.ac.ncl.openlab.intake24.AssociatedFood
 import uk.ac.ncl.openlab.intake24.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.foodsql.{FirstRowValidation, FirstRowValidationClause}
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.AssociatedFoodsService
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
-trait AssociatedFoodsUserImpl extends AssociatedFoodsService with SqlDataService with SqlResourceLoader with FirstRowValidation {
+@Singleton
+class AssociatedFoodsServiceImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends AssociatedFoodsService with SqlDataService with SqlResourceLoader with FirstRowValidation {
 
   private case class AssociatedFoodPromptsRow(associated_food_code: Option[String], associated_category_code: Option[String],
                                               text: String, link_as_main: Boolean, generic_name: String, locale_id: String, af_locale_id: String)

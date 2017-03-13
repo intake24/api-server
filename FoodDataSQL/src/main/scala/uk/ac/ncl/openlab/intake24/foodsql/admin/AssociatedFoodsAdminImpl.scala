@@ -8,15 +8,13 @@ import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.errors.{LocalLookupError, LocaleOrParentError, UnexpectedDatabaseError}
 import uk.ac.ncl.openlab.intake24.foodsql.SimpleValidation
 import uk.ac.ncl.openlab.intake24.foodsql.modular.AssociatedFoodsAdminQueries
-import uk.ac.ncl.openlab.intake24.foodsql.user.AssociatedFoodsUserImpl
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.AssociatedFoodsService
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
 import uk.ac.ncl.openlab.intake24.{AssociatedFood, AssociatedFoodWithHeader}
 
 @Singleton
-class AssociatedFoodsAdminStandaloneImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends AssociatedFoodsAdminImpl
-
-trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with AssociatedFoodsUserImpl with AssociatedFoodsAdminQueries with SimpleValidation with SqlDataService {
+class AssociatedFoodsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource, associatedFoodsService: AssociatedFoodsService) extends AssociatedFoodsAdminService with AssociatedFoodsAdminQueries with SimpleValidation with SqlDataService {
 
   private val logger = LoggerFactory.getLogger(classOf[AssociatedFoodsAdminImpl])
 
@@ -51,4 +49,7 @@ trait AssociatedFoodsAdminImpl extends AssociatedFoodsAdminService with Associat
         ) yield ()
       }
   }
+
+  def getAssociatedFoods(foodCode: String, locale: String): Either[LocalLookupError, Seq[AssociatedFood]] =
+    associatedFoodsService.getAssociatedFoods(foodCode, locale)
 }

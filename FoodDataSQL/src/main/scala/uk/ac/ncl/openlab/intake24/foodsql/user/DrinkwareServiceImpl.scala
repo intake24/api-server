@@ -1,15 +1,20 @@
 package uk.ac.ncl.openlab.intake24.foodsql.user
 
 import java.sql.Connection
+import javax.inject.Inject
+import javax.sql.DataSource
 
 import anorm.NamedParameter.symbol
 import anorm.{Macro, SQL, SqlParser, sqlToSimple}
+import com.google.inject.Singleton
+import com.google.inject.name.Named
 import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound}
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.DrinkwareService
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 import uk.ac.ncl.openlab.intake24.{DrinkScale, DrinkwareSet, VolumeFunction}
 
-trait DrinkwareUserImpl extends DrinkwareService with SqlDataService with SqlResourceLoader {
+@Singleton
+class DrinkwareServiceImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends DrinkwareService with SqlDataService with SqlResourceLoader {
 
   protected case class DrinkwareResultRow(id: String, scale_id: Long, description: String, guide_image_id: String,
                                           width: Int, height: Int, empty_level: Int, full_level: Int, choice_id: Int, base_image_url: String,
