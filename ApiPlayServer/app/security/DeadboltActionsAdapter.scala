@@ -27,6 +27,10 @@ class DeadboltActionsAdapter @Inject()(actionBuilders: ActionBuilders, handlerCa
 
     def apply(block: AuthenticatedRequest[Unit] => Future[Result]): Action[Unit] =
       actionBuilder(BodyParsers.parse.empty)(block)(handlerCache(handlerKey))
+
+    def apply[A](bodyParser: BodyParser[A])(block: AuthenticatedRequest[A] => Future[Result]): Action[A] =
+      actionBuilder(bodyParser)(block)(handlerCache(handlerKey))
+
   }
 
   class DynamicActionBuilderAdapter(dynamicName: String) {

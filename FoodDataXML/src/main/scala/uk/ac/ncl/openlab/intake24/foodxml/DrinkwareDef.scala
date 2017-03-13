@@ -30,13 +30,13 @@ import scala.xml.NodeSeq.seqToNodeSeq
 import uk.ac.ncl.openlab.intake24.DrinkScale
 
 object DrinkwareDef {
-  def toXml(sets: Iterable[DrinkwareSet]) =
-    sets.toSeq.sortBy(_.id).map(set =>
+  def toXml(sets: Iterable[DrinkwareSet]) = ???
+    /* sets.toSeq.sortBy(_.id).map(set =>
       <drinkware>
         <choice/>
         % Attribute (None, "guide-id", Text(set.guide_id), Null)
         {
-          set.scaleDefs.sortBy(_.choice_id).map(scale => {
+          set.scales.sortBy(_.objectId).map(scale => {
             <scale>
               <dimensions/> % 
         	  	Attribute (None, "width", Text(scale.width), Null) %
@@ -44,15 +44,15 @@ object DrinkwareDef {
     	    	Attribute (None, "emptyLevel", Text(scale.width), Null) %
         	  	Attribute (None, "fullLevel", Text(scale.width), Null)
         	  <volume-function>
-        	     { scale.vf.samples.map ( s => <value/> % Attribute (None, "fill", Text(s._1.toString), Null) 
+        	     { scale.samples.map ( s => <value/> % Attribute (None, "fill", Text(s._1.toString), Null)
         	    		 								% Attribute (None, "volume", Text(s._2.toString), Null)) }
         	  </volume-function>
-        	  <baseImage>{ scale.baseImage }</baseImage>
-        	  <overlayImage>{ scale.overlayImage }</overlayImage>
-            </scale> % Attribute(None, "choice-id", Text(scale.choice_id.toString), Null)
+        	  <baseImage>{ scale.baseImagePath }</baseImage>
+        	  <overlayImage>{ scale.overlayImagePath }</overlayImage>
+            </scale> % Attribute(None, "choice-id", Text(scale.objectId.toString), Null)
           })
         }
-      </drinkware> % Attribute(None, "id", Text(set.id), Null) % Attribute(None, "description", Text(set.description), Null))
+      </drinkware> % Attribute(None, "id", Text(set.id), Null) % Attribute(None, "description", Text(set.description), Null)) */
 
   def writeXml(path: String, sets: Iterable[DrinkwareSet]) = {
     val doc = <scran24-drinks-scale>
@@ -64,12 +64,12 @@ object DrinkwareDef {
     XML.save(path, doc, "utf-8", true, null);
   }
   
-  def parseVolumeFunc (n: NodeSeq): VolumeFunction = 
+  def parseVolumeFunc (n: NodeSeq): VolumeFunction =
     VolumeFunction((n \ "value").map ( n => {
       (n.attribute("fill").get.text.toDouble, n.attribute("volume").get.text.toDouble)
      }))
 
-  def parseXml(root: NodeSeq) = {
+  def parseXml(root: NodeSeq) = ??? /* {
     (root \ "drinkware").map(set => {
       val choice = (set \ "choice").head.attribute("guide-id").get.text
       val scales = (set \ "scale").map(n => {
@@ -91,5 +91,5 @@ object DrinkwareDef {
 
       (id, DrinkwareSet(id, description, choice, scales))
     }).toMap
-  }
+  } */
 }

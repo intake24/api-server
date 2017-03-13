@@ -164,7 +164,7 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     bind(classOf[AssociatedFoodsService]).to(classOf[AssociatedFoodsServiceImpl])
     bind(classOf[DrinkwareService]).to(classOf[DrinkwareServiceImpl])
     bind(classOf[BrandNamesService]).to(classOf[BrandNamesServiceImpl])
-
+    bind(classOf[ImageMapService]).to(classOf[ImageMapServiceImpl])
 
 
     // Demographic service

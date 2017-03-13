@@ -11,7 +11,7 @@ import com.google.inject.name.Named
 import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound}
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.DrinkwareService
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
-import uk.ac.ncl.openlab.intake24.{DrinkScale, DrinkwareSet, VolumeFunction}
+import uk.ac.ncl.openlab.intake24.{DrinkScale, DrinkwareSet, VolumeFunction, VolumeSample}
 
 @Singleton
 class DrinkwareServiceImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends DrinkwareService with SqlDataService with SqlResourceLoader {
@@ -45,7 +45,7 @@ class DrinkwareServiceImpl @Inject()(@Named("intake24_foods") val dataSource: Da
         val volume_sample_results = SQL(drinkwareVolumeSamplesQuery).on('scale_ids -> scale_ids).executeQuery().as(Macro.namedParser[VolumeSampleResultRow].*)
 
         val scales = result.map(r => DrinkScale(r.choice_id, r.base_image_url, r.overlay_image_url, r.width, r.height, r.empty_level, r.full_level,
-          VolumeFunction(volume_sample_results.filter(_.scale_id == r.scale_id).map(s => (s.fill, s.volume)))))
+          volume_sample_results.filter(_.scale_id == r.scale_id).map(s => VolumeSample(s.fill, s.volume))))
 
         conn.commit()
         Right(DrinkwareSet(id, result.head.description, result.head.guide_image_id, scales))

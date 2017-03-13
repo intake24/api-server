@@ -108,12 +108,22 @@ GET            /user/foods/:locale/split-description                         con
 GET            /user/foods/:locale/lookup                                    controllers.food.user.FoodLookupController.lookup(locale: String, desc: String, limit: Int = 50)
 GET            /user/foods/:locale/lookup-in-category                        controllers.food.user.FoodLookupController.lookupInCategory(locale: String, desc: String, category: String, limit: Int = 50)
 
+
+GET            /user/categories/:locale/:code                                controllers.food.user.FoodDataController.getCategoryContents(code: String, locale: String)
+GET            /user/categories/:locale                                      controllers.food.user.FoodDataController.getRootCategories(locale: String)
+
 GET            /user/foods/:locale/:code                                     controllers.food.user.FoodDataController.getFoodData(code: String, locale: String)
 GET            /user/foods/:locale/:code/with-sources                        controllers.food.user.FoodDataController.getFoodDataWithSources(code: String, locale: String)
 GET            /user/foods/:locale/:code/brand-names                         controllers.food.user.FoodDataController.getBrandNames(code: String, locale: String)
 GET            /user/foods/:locale/:code/associated-foods                    controllers.food.user.FoodDataController.getAssociatedFoodPrompts(code: String, locale: String)
 
 GET            /user/portion-size/as-served/:id                              controllers.food.user.FoodDataController.getAsServedSet(id: String)
+POST           /user/portion-size/as-served                                  controllers.food.user.FoodDataController.getAsServedSets()
+GET            /user/portion-size/guide-image/:id                            controllers.food.user.FoodDataController.getGuideImage(id: String)
+GET            /user/portion-size/image-maps/:id                             controllers.food.user.FoodDataController.getImageMap(id: String)
+POST           /user/portion-size/image-maps                                 controllers.food.user.FoodDataController.getImageMaps()
+GET            /user/portion-size/drinkware/:id                              controllers.food.user.FoodDataController.getDrinkwareSet(id: String)
+
 
 # Nutrient tables
 
