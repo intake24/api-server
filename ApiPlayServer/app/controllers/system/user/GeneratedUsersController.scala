@@ -54,7 +54,7 @@ class GeneratedUsersController @Inject()(userAdminService: UserAdminService,
   }
 
   // TODO: captcha to prevent new user spam
-  def genUser(surveyId: String) = Action.async(BodyParsers.parse.empty) {
+  def generateUser(surveyId: String) = Action.async(BodyParsers.parse.empty) {
     request =>
       Future {
         surveyAdminService.getSurveyParameters(surveyId) match {

@@ -6,10 +6,10 @@ case class SecureUserRecord(userName: String, passwordHashBase64: String, passwo
                             name: Option[String], email: Option[String], phone: Option[String],
                             roles: Set[String], permissions: Set[String], customFields: Map[String, String])
 
-case class PublicUserRecord(userName: String, name: Option[String], email: Option[String], phone: Option[String], customFields: Map[String, String])
+case class PublicUserRecord(surveyId: Option[String], userName: String, name: Option[String], email: Option[String], phone: Option[String], customFields: Map[String, String])
 
-case class PublicUserRecordWithPermissions(userName: String, name: Option[String], email: Option[String], phone: Option[String], customFields: Map[String, String], roles: Set[String], permissions: Set[String]) {
-  def withoutPermissions = PublicUserRecord(userName, name, email, phone, customFields)
+case class PublicUserRecordWithPermissions(surveyId: Option[String], userName: String, name: Option[String], email: Option[String], phone: Option[String], customFields: Map[String, String], roles: Set[String], permissions: Set[String]) {
+  def withoutPermissions = PublicUserRecord(surveyId, userName, name, email, phone, customFields)
 }
 
 trait UserAdminService {
@@ -38,6 +38,10 @@ trait UserAdminService {
   def getUsersByRole(surveyId: Option[String], role: String): Either[LookupError, Seq[SecureUserRecord]]
 
   def deleteUsers(surveyId: Option[String], userNames: Seq[String]): Either[DeleteError, Unit]
+
+  def getSurveySupportUsers(surveyId: String): Either[UnexpectedDatabaseError, Seq[PublicUserRecord]]
+
+  def getGlobalSupportUsers(): Either[UnexpectedDatabaseError, Seq[PublicUserRecord]]
 
   /*  def updateGlobalSupportUsers(supportUsers: Seq[UserRef]): Either[ParentError, Unit]
 

@@ -200,9 +200,17 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
 
   private case class CustomFieldRecordRow(survey_id: String, user_id: String, name: String, value: String)
 
-  private case class PublicUserRecordWithPermissionsRow(user_id: String, name: Option[String], email: Option[String], phone: Option[String], custom_fields: Array[Array[String]], roles: Array[String], permissions: Array[String])
+  private case class PublicUserRecordWithPermissionsRow(survey_id: Option[String], user_id: String, name: Option[String], email: Option[String], phone: Option[String], custom_fields: Array[Array[String]], roles: Array[String], permissions: Array[String])
 
-  private case class PublicUserRecordRow(user_id: String, name: Option[String], email: Option[String], phone: Option[String], custom_fields: Array[Array[String]])
+  private case class PublicUserRecordRow(survey_id: Option[String], user_id: String, name: Option[String], email: Option[String], phone: Option[String], custom_fields: Array[Array[String]]) {
+    def toPublicUserRecord = {
+      val customFields = custom_fields.foldLeft(Map[String, String]()) {
+        case (result, Array(name, value)) => result + (name -> value)
+      }
+
+      PublicUserRecord(survey_id, user_id, name, email, phone, customFields)
+    }
+  }
 
   @tailrec
   private def buildUserRecords(
@@ -295,7 +303,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
                 case (result, Array(name, value)) => result + (name -> value)
               }
 
-              PublicUserRecordWithPermissions(row.user_id, row.name, row.email, row.phone, customFields, row.roles.toSet, row.permissions.toSet)
+              PublicUserRecordWithPermissions(row.survey_id, row.user_id, row.name, row.email, row.phone, customFields, row.roles.toSet, row.permissions.toSet)
           }
 
           Right(records)
@@ -316,16 +324,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
         }
 
         if (surveyExists) {
-          val records = SQL(listUsersByRoleQuery).on('survey_id -> surveyId.getOrElse(""), 'role -> role, 'offset -> offset, 'limit -> limit).executeQuery().as(Macro.namedParser[PublicUserRecordRow].*).map {
-            row =>
-
-              val customFields = row.custom_fields.foldLeft(Map[String, String]()) {
-                case (result, Array(name, value)) => result + (name -> value)
-              }
-
-              PublicUserRecord(row.user_id, row.name, row.email, row.phone, customFields)
-          }
-
+          val records = SQL(listUsersByRoleQuery).on('survey_id -> surveyId.getOrElse(""), 'role -> role, 'offset -> offset, 'limit -> limit).executeQuery().as(Macro.namedParser[PublicUserRecordRow].*).map(_.toPublicUserRecord)
           Right(records)
         } else
           Left(RecordNotFound(new RuntimeException(s"Survey $surveyId does not exist")))
@@ -346,4 +345,22 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
         .executeQuery()
         .as(SqlParser.int("count").single))
   }
+
+  def getSurveySupportUsers(surveyId: String): Either[UnexpectedDatabaseError, Seq[PublicUserRecord]] = tryWithConnection {
+    implicit conn =>
+      Right(SQL("SELECT u.survey_id, u.id AS user_id, u.name, u.email, u.phone FROM survey_support_staff AS s JOIN users AS u ON u.survey_id=s.user_survey_id AND u.id=s.user_id WHERE s.survey_id={survey_id}")
+        .on('survey_id -> surveyId)
+        .executeQuery()
+        .as(Macro.namedParser[PublicUserRecordRow].*)
+        .map(_.toPublicUserRecord))
+  }
+
+  def getGlobalSupportUsers(): Either[UnexpectedDatabaseError, Seq[PublicUserRecord]] = tryWithConnection {
+    implicit conn =>
+      Right(SQL("SELECT u.survey_id, u.id AS user_id, u.name, u.email, u.phone FROM global_support_staff AS s JOIN users AS u ON u.survey_id=s.user_survey_id AND u.id=s.user_id")
+        .executeQuery()
+        .as(Macro.namedParser[PublicUserRecordRow].*)
+        .map(_.toPublicUserRecord))
+  }
+
 }

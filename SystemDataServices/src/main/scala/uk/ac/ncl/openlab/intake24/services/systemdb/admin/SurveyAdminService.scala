@@ -2,7 +2,7 @@ package uk.ac.ncl.openlab.intake24.services.systemdb.admin
 
 import java.time.Instant
 
-import uk.ac.ncl.openlab.intake24.errors.{CreateError, DeleteError, LookupError}
+import uk.ac.ncl.openlab.intake24.errors.{CreateError, DeleteError, LookupError, UnexpectedDatabaseError}
 
 sealed abstract class SurveyState(code: Long)
 
@@ -44,4 +44,5 @@ trait SurveyAdminService {
   def getLocalNutrientTypes(localeId: String): Either[LookupError, Seq[LocalNutrientDescription]]
 
   def deleteSurvey(surveyId: String): Either[DeleteError, Unit]
+
 }
