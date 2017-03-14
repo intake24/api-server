@@ -171,6 +171,8 @@ DELETE         /admin/surveys/:surveyId/delete                               con
 GET            /user/surveys/:surveyId/public-parameters                     controllers.system.user.SurveyController.getPublicSurveyParameters(surveyId: String)
 GET            /user/surveys/:surveyId/parameters                            controllers.system.user.SurveyController.getSurveyParameters(surveyId: String)
 
+POST           /user/surveys/:surveyId/generate-user                         controllers.system.user.GeneratedUsersController.genUser(surveyId: String)
+
 # POST           /admin/update-global-support-users                            controllers.system.SurveyAdminController.updateGlobalSupportUsers()
 # POST           /admin/surveys/:surveyId/support-users/update                 controllers.system.SurveyAdminController.updateSurveySupportUsers(surveyId: String)
 

@@ -25,23 +25,22 @@ import com.mohiva.play.silhouette.api.util.Credentials
 import com.mohiva.play.silhouette.api.{Environment, LoginInfo}
 import com.mohiva.play.silhouette.impl.exceptions.{IdentityNotFoundException, InvalidPasswordException}
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
+import controllers.DatabaseErrorHandler
 import models.RefreshSubject
 import parsers.UpickleUtil
 import play.api.http.ContentTypes
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
-import play.api.mvc.{Action, BodyParsers, Controller}
+import play.api.mvc.{Action, Controller}
 import security._
 import uk.ac.ncl.openlab.intake24.api.shared.{ErrorDescription, RefreshResult, SigninResult, Credentials => Intake24Credentials}
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{SurveyAdminService, UserAdminService}
 import upickle.default._
 
 import scala.concurrent.Future
 
 class SigninController @Inject()(@Named("refresh") refreshEnv: Environment[Intake24ApiEnv], @Named("access") accessEnv: Environment[Intake24ApiEnv],
-                                 credentialsProvider: CredentialsProvider, userAdminService: UserAdminService, surveyAdminService: SurveyAdminService,
-                                 deadbolt: DeadboltActionsAdapter)
-  extends Controller with UpickleUtil {
+                                 credentialsProvider: CredentialsProvider, deadbolt: DeadboltActionsAdapter)
+  extends Controller with UpickleUtil with DatabaseErrorHandler {
 
   def signin = Action.async(upickleBodyParser[Intake24Credentials]) {
     implicit request =>
@@ -70,77 +69,6 @@ class SigninController @Inject()(@Named("refresh") refreshEnv: Environment[Intak
         case e: InvalidPasswordException => Unauthorized
         case e: DatabaseFormatException => InternalServerError(write(ErrorDescription("DatabaseFormatException", e.toString())))
         case e: DatabaseAccessException => InternalServerError(write(ErrorDescription("DatabaseAccessException", e.toString())))
-      }
-  }
-
-  // TODO: captcha to prevent new user spam
-  def genUser(surveyId: String) = Action.async(BodyParsers.parse.empty) {
-    request =>
-      Future {
-
-
-        /*
-       if (survey_name.isEmpty())
-      throw new RuntimeException("This feature is not applicable to system-wide users");
-
-    try {
-      SurveyParameters parameters = dataStore.getSurveyParameters(survey_name);
-
-      if (!parameters.allowGenUsers)
-        throw new RuntimeException("Automatically generated user records are not allowed for this survey");
-
-      final String counterName = survey_name + "_gen_user_counter";
-
-      int counter = Integer.parseInt(dataStore.getGlobalValue(counterName).getOrElse("0"));
-
-      StringBuilder psb = new StringBuilder();
-
-      ByteSource bytes = rng.nextBytes(passwordLength);
-
-      for (int i = 0; i < passwordLength; i++) {
-        int index = ((int) (bytes.getBytes()[i]) + 128) % passwordChars.length();
-        psb.append(passwordChars.charAt(index));
-      }
-
-      ByteSource salt = rng.nextBytes();
-
-      String password = psb.toString();
-
-      String passwordHashBase64 = new Sha256Hash(password, salt, 1024).toBase64();
-      String passwordSaltBase64 = salt.toBase64();
-
-      Set<String> roles = new HashSet<String>();
-      roles.add("respondent");
-
-      Set<String> permissions = new HashSet<String>();
-      permissions.add("processSurvey:" + survey_name);
-
-      int retries = 20;
-      boolean addUserOk = false;
-      String username = "";
-
-      while (retries > 0) {
-        counter++;
-        username = survey_name + counter;
-
-        try {
-          dataStore.addUser(survey_name, new SecureUserRecord(username, passwordHashBase64, passwordSaltBase64, Option.<String>none(),
-              Option.<String>none(), Option.<String>none(), roles, permissions, new HashMap<String, String>()));
-          addUserOk = true;
-          break;
-        } catch (DataStoreException | DuplicateKeyException e) {
-          continue;
-        }
-      }
-
-      if (!addUserOk)
-        throw new RuntimeException("Could not find a unique user name in 20 attempts");
-
-      dataStore.setGlobalValue(counterName, Integer.toString(counter));
-
-      return new UserRecord(username, password, Option.<String>none(), Option.<String>none(), Option.<String>none(), new HashMap<String, String>());
-       */
-        Ok
       }
   }
 

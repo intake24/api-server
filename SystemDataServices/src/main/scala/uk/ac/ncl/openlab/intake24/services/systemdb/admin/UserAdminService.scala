@@ -22,6 +22,8 @@ trait UserAdminService {
 
   def createUser(surveyId: Option[String], userRecord: SecureUserRecord): Either[DependentCreateError, Unit]
 
+  def nextGeneratedUserId(surveyId: String): Either[UnexpectedDatabaseError, Int]
+
   def listUsers(surveyId: Option[String], offset: Int, limit: Int): Either[LookupError, Seq[PublicUserRecordWithPermissions]]
 
   def listUsersByRole(surveyId: Option[String], role: String, offset: Int, limit: Int): Either[LookupError, Seq[PublicUserRecord]]

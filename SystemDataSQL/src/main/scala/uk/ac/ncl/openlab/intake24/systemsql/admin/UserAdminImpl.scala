@@ -6,7 +6,7 @@ import javax.sql.DataSource
 
 import anorm._
 import uk.ac.ncl.openlab.intake24.errors._
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{PublicUserRecord, PublicUserRecordWithPermissions, SecureUserRecord, UserAdminService}
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
 import scala.annotation.tailrec
@@ -337,5 +337,13 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       SQL("DELETE FROM users WHERE survey_id={survey_id} AND id IN({user_names})").on('survey_id -> surveyId.getOrElse(""), 'user_names -> userNames).execute()
 
       Right(())
+  }
+
+  def nextGeneratedUserId(surveyId: String): Either[UnexpectedDatabaseError, Int] = tryWithConnection {
+    implicit conn =>
+      Right(SQL("INSERT INTO gen_user_counters VALUES('demo', 0) ON CONFLICT(survey_id) DO UPDATE SET count=gen_user_counters.count+1 RETURNING count")
+        .on('survey_id -> surveyId)
+        .executeQuery()
+        .as(SqlParser.int("count").single))
   }
 }
