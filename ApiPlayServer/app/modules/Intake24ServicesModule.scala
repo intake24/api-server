@@ -108,9 +108,9 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
 
     // Basic admin services -- uncached
 
-    bind(classOf[CategoriesAdminService]).annotatedWith(classOf[BasicImpl]).to(classOf[CategoriesAdminStandaloneImpl])
-    bind(classOf[FoodsAdminService]).annotatedWith(classOf[BasicImpl]).to(classOf[FoodsAdminStandaloneImpl])
-    bind(classOf[LocalesAdminService]).annotatedWith(classOf[BasicImpl]).to(classOf[LocalesAdminStandaloneImpl])
+    bind(classOf[CategoriesAdminService]).annotatedWith(classOf[BasicImpl]).to(classOf[CategoriesAdminImpl])
+    bind(classOf[FoodsAdminService]).annotatedWith(classOf[BasicImpl]).to(classOf[FoodsAdminImpl])
+    bind(classOf[LocalesAdminService]).annotatedWith(classOf[BasicImpl]).to(classOf[LocalesAdminImpl])
 
     bind(classOf[CategoriesAdminService]).to(classOf[ObservableCategoriesAdminServiceImpl])
     bind(classOf[FoodsAdminService]).to(classOf[ObservableFoodsAdminServiceImpl])

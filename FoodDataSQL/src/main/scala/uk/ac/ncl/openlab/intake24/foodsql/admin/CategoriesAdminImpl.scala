@@ -16,9 +16,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoriesAdminService
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
 
 @Singleton
-class CategoriesAdminStandaloneImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends CategoriesAdminImpl
-
-trait CategoriesAdminImpl extends CategoriesAdminService
+class CategoriesAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends CategoriesAdminService
   with SqlDataService
   with SimpleValidation
   with CategoriesAdminQueries

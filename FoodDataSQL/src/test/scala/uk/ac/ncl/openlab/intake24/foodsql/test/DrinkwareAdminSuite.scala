@@ -3,7 +3,7 @@ package uk.ac.ncl.openlab.intake24.foodsql.test
 import org.scalatest.{DoNotDiscover, FunSuite}
 import uk.ac.ncl.openlab.intake24.errors.{DuplicateCode, RecordNotFound}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.DrinkwareAdminService
-import uk.ac.ncl.openlab.intake24.{DrinkScale, DrinkwareHeader, DrinkwareSet, VolumeFunction}
+import uk.ac.ncl.openlab.intake24._
 
 @DoNotDiscover
 class DrinkwareAdminSuite(service: DrinkwareAdminService) extends FunSuite {
@@ -14,8 +14,8 @@ class DrinkwareAdminSuite(service: DrinkwareAdminService) extends FunSuite {
   
   def createDrinkwareSets(sets: Seq[DrinkwareSet]): Either[CreateError, Unit]*/
 
-  val scale1 = DrinkScale(1, "image.jpg", "image.jpg", 100, 100, 100, 100, VolumeFunction(Seq((1.0, 2.0), (2.0, 3.0), (4.0, 5.0))))
-  val scale2 = DrinkScale(2, "image2.jpg", "image2.jpg", 200, 200, 100, 100, VolumeFunction(Seq((1.0, 2.0))))
+  val scale1 = DrinkScale(1, "image.jpg", "image.jpg", 100, 100, 100, 100, Seq(VolumeSample(1.0, 2.0), VolumeSample(2.0, 3.0), VolumeSample(4.0, 5.0)))
+  val scale2 = DrinkScale(2, "image2.jpg", "image2.jpg", 200, 200, 100, 100, Seq(VolumeSample(1.0, 2.0)))
 
   val set1 = DrinkwareSet("set1", "description", "ha ha", Seq(scale1, scale2))
   val set2 = DrinkwareSet("set2", "description", "ho ho", Seq(scale1))

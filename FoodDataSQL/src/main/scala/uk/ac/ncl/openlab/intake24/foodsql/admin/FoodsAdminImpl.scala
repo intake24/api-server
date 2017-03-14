@@ -14,20 +14,18 @@ import uk.ac.ncl.openlab.intake24.foodsql.modular._
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
 
 @Singleton
-class FoodsAdminStandaloneImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends FoodsAdminImpl
-
-trait FoodsAdminImpl extends FoodsAdminService
-    with FoodsAdminQueries
-    with BrandNamesAdminQueries
-    with FoodBrowsingAdminQueries
-    with AssociatedFoodsAdminQueries
-    with CategoriesAdminQueries
-    with BrandNamesUserQueries {
+class FoodsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends FoodsAdminService
+  with FoodsAdminQueries
+  with BrandNamesAdminQueries
+  with FoodBrowsingAdminQueries
+  with AssociatedFoodsAdminQueries
+  with CategoriesAdminQueries
+  with BrandNamesUserQueries {
 
   private val logger = LoggerFactory.getLogger(classOf[FoodsAdminImpl])
 
   private case class FoodResultRow(version: UUID, code: String, description: String, local_description: Option[String], do_not_use: Option[Boolean], food_group_id: Long,
-    same_as_before_option: Option[Boolean], ready_meal_option: Option[Boolean], reasonable_amount: Option[Int], local_version: Option[UUID])
+                                   same_as_before_option: Option[Boolean], ready_meal_option: Option[Boolean], reasonable_amount: Option[Int], local_version: Option[UUID])
 
   private lazy val foodRecordQuery = sqlFromResource("admin/food_record.sql")
 
