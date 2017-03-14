@@ -298,8 +298,59 @@ object SystemDatabaseMigrations {
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         ???
       }
+    },
+
+    new Migration {
+      val versionFrom = 11l
+      val versionTo = 12l
+
+      val description = "User survey_id as the primary key in gen_user_counter"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE gen_user_counters DROP CONSTRAINT gen_user_count_id_pk").execute()
+        SQL("ALTER TABLE gen_user_counters ADD PRIMARY KEY(survey_id)").execute()
+        SQL("ALTER TABLE gen_user_counters DROP COLUMN id").execute()
+
+        Right(())
+
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    },
+
+    new Migration {
+      val versionFrom = 12l
+      val versionTo = 13l
+
+      val description = "Copy user counter values from global_values table and drop it"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        val values = SQL("SELECT name, value FROM global_values")
+          .executeQuery()
+          .as((SqlParser.str("name") ~ SqlParser.str("value")).*)
+          .filter(_._1.endsWith("_gen_user_counter"))
+          .map( x => (x._1.replace("_gen_user_counter", ""), x._2.toInt))
+
+        val params = values.map {
+          case (surveyId, count) => Seq[NamedParameter]('survey_id -> surveyId, 'count -> count)
+        }
+
+        if (params.nonEmpty) {
+          BatchSql("INSERT INTO gen_user_counters VALUES({survey_id}, {count}) ON CONFLICT(survey_id) DO UPDATE SET count={count}", params.head, params.tail:_*).execute()
+        }
+
+        SQL("DROP TABLE global_values").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
     }
-
-
   )
 }

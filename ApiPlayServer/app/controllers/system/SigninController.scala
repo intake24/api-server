@@ -25,6 +25,7 @@ import com.mohiva.play.silhouette.api.util.Credentials
 import com.mohiva.play.silhouette.api.{Environment, LoginInfo}
 import com.mohiva.play.silhouette.impl.exceptions.{IdentityNotFoundException, InvalidPasswordException}
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
+import controllers.DatabaseErrorHandler
 import models.RefreshSubject
 import parsers.UpickleUtil
 import play.api.http.ContentTypes
@@ -39,7 +40,7 @@ import scala.concurrent.Future
 
 class SigninController @Inject()(@Named("refresh") refreshEnv: Environment[Intake24ApiEnv], @Named("access") accessEnv: Environment[Intake24ApiEnv],
                                  credentialsProvider: CredentialsProvider, deadbolt: DeadboltActionsAdapter)
-  extends Controller with UpickleUtil {
+  extends Controller with UpickleUtil with DatabaseErrorHandler {
 
   def signin = Action.async(upickleBodyParser[Intake24Credentials]) {
     implicit request =>

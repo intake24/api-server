@@ -1,7 +1,10 @@
 package uk.ac.ncl.openlab.intake24.sql.tools.food.localisation
 
+import javax.sql.DataSource
+
 import org.rogach.scallop.ScallopConf
 import org.slf4j.LoggerFactory
+import uk.ac.ncl.openlab.intake24.foodsql.admin.{CategoriesAdminImpl, FoodsAdminImpl, LocalesAdminImpl}
 import uk.ac.ncl.openlab.intake24.{AssociatedFood, Locale, NewLocalCategoryRecord, NewLocalFoodRecord}
 import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl
 import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConnection, DatabaseOptions, ErrorHandler, WarningMessage}
@@ -55,8 +58,9 @@ case class LocalFoodsImport(localeCode: String, englishLocaleName: String, local
 
   val dataSource = getDataSource(options)
 
-  val dataService = new FoodDatabaseAdminImpl(dataSource)
-
+  val foodsAdminService = new FoodsAdminImpl(dataSource)
+  val categoriesAdminService = new CategoriesAdminImpl(dataSource)
+  val localesAdminService = new LocalesAdminImpl(dataSource)
   val indexDataService = new FoodIndexDataImpl(dataSource)
 
   logger.info(s"Loading $baseLocaleCode indexable foods")
@@ -75,7 +79,7 @@ case class LocalFoodsImport(localeCode: String, englishLocaleName: String, local
     case (foodCode, assocFoods) => foodCode -> assocFoods.map {
       v1 =>
 
-        val isCategory = throwOnError(dataService.isCategoryCode(v1.category))
+        val isCategory = throwOnError(categoriesAdminService.isCategoryCode(v1.category))
 
         val foodOrCategory = if (isCategory) {
           logger.debug(s"Resolved ${v1.category} as category code")
@@ -97,14 +101,14 @@ case class LocalFoodsImport(localeCode: String, englishLocaleName: String, local
   // Re-create locale
   
   logger.info(s"Re-creating locale $localeCode")
-  dataService.deleteLocale(localeCode)
-  dataService.createLocale(Locale(localeCode, englishLocaleName, localLocaleName, respondentLanguageCode, adminLanguageCode, flagCode, Some(baseLocaleCode)))
+  localesAdminService.deleteLocale(localeCode)
+  localesAdminService.createLocale(Locale(localeCode, englishLocaleName, localLocaleName, respondentLanguageCode, adminLanguageCode, flagCode, Some(baseLocaleCode)))
 
   // New local foods
 
   logger.info(s"Creating new main food records for $localeCode local foods (this will overwrite existing records!)")
-  dataService.deleteFoods(newFoods.map(_.code)) // ignore recordnotfound errors
-  throwOnError(dataService.createFoods(newFoods))
+  foodsAdminService.deleteFoods(newFoods.map(_.code)) // ignore recordnotfound errors
+  throwOnError(foodsAdminService.createFoods(newFoods))
 
   // Recoded local foods
 
@@ -126,14 +130,14 @@ case class LocalFoodsImport(localeCode: String, englishLocaleName: String, local
   }
 
   logger.info(s"Loading $localeCode portion size method remapping table")
-  val psmTable = psmTableParser.parsePortionSizeMethodsTable(options.psmTablePath(), options.localFoodTablePath(), localToIntakeCodeMap, indexableFoods, dataService)
+  val psmTable = psmTableParser.parsePortionSizeMethodsTable(options.psmTablePath(), options.localFoodTablePath(), localToIntakeCodeMap, indexableFoods, foodsAdminService)
 
   val localFoodRecords = localFoodRecordsWithoutPsm.foldLeft(Map[String, NewLocalFoodRecord]()) {
     case (result, (code, record)) => result + (code -> record.copy(portionSize = psmTable.getOrElse(code, Seq())))
   }
 
   logger.info(s"Creating local food records")
-  throwOnError(dataService.createLocalFoodRecords(localFoodRecords, localeCode))
+  throwOnError(foodsAdminService.createLocalFoodRecords(localFoodRecords, localeCode))
 
   // Category translations
 
@@ -150,7 +154,7 @@ case class LocalFoodsImport(localeCode: String, englishLocaleName: String, local
   }
 
   logger.info(s"Creating local category records")
-  dataService.createLocalCategoryRecords(newLocalCategoryRecords, localeCode)
+  categoriesAdminService.createLocalCategoryRecords(newLocalCategoryRecords, localeCode)
 
   logger.info(s"Done!")
 }

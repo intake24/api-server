@@ -30,9 +30,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.admin.LocalesAdminService
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
 
 @Singleton
-class LocalesAdminStandaloneImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends LocalesAdminImpl
-
-trait LocalesAdminImpl extends LocalesAdminService with SqlDataService {
+class LocalesAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends LocalesAdminService with SqlDataService {
 
   private case class LocaleRow(id: String, english_name: String, local_name: String, respondent_language_id: String, admin_language_id: String, country_flag_code: String, prototype_locale_id: Option[String]) {
     def mkLocale = Locale(id, english_name, local_name, respondent_language_id, admin_language_id, country_flag_code, prototype_locale_id)

@@ -34,6 +34,7 @@ libraryDependencies ++= Seq(
   "be.objectify" %% "deadbolt-scala" % "2.5.0",
   "com.lihaoyi" %% "upickle" % "0.4.1",
   "org.scalaz" %% "scalaz-core" % "7.2.6",
+  "com.typesafe.play" %% "play-mailer" % "5.0.0",
   "org.apache.shiro" % "shiro-core" % "1.2.3", // for v1.0 authentication support
   "com.typesafe.play" % "play-integration-test_2.11" % "2.5.9" % "test"
 )

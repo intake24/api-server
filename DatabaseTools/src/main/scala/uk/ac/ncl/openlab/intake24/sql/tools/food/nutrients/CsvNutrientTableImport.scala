@@ -1,6 +1,7 @@
 package uk.ac.ncl.openlab.intake24.sql.tools.food.nutrients
 
 import org.rogach.scallop.ScallopConf
+import uk.ac.ncl.openlab.intake24.foodsql.admin.NutrientTablesAdminImpl
 import uk.ac.ncl.openlab.intake24.nutrientsndns.{CsvNutrientTableMapping, CsvNutrientTableParser}
 import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConfigurationOptions, DatabaseConnection, WarningMessage}
 import uk.ac.ncl.openlab.intake24.{NutrientTable, NutrientTableRecord}
@@ -22,7 +23,7 @@ abstract class CsvNutrientTableImport(nutrientTableId: String, nutrientTableDesc
 
   val dataSource = getDataSource(dbConfig)
 
-  val nutrientTableService = new FoodDatabaseAdminImpl(dataSource)
+  val nutrientTableService = new NutrientTablesAdminImpl(dataSource)
 
   nutrientTableService.deleteNutrientTable(nutrientTableId)
 

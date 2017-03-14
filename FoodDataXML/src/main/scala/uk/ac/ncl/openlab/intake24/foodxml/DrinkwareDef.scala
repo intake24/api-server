@@ -69,7 +69,7 @@ object DrinkwareDef {
       (n.attribute("fill").get.text.toDouble, n.attribute("volume").get.text.toDouble)
      }))
 
-  def parseXml(root: NodeSeq) = ??? /* {
+  def parseXml(root: NodeSeq): Map[String, DrinkwareSet] = ??? /* {
     (root \ "drinkware").map(set => {
       val choice = (set \ "choice").head.attribute("guide-id").get.text
       val scales = (set \ "scale").map(n => {

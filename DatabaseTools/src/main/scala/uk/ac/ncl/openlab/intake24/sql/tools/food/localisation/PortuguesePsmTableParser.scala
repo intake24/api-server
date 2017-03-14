@@ -3,17 +3,17 @@ package uk.ac.ncl.openlab.intake24.sql.tools.food.localisation
 import uk.ac.ncl.openlab.intake24.PortionSizeMethod
 import au.com.bytecode.opencsv.CSVReader
 import java.io.FileReader
+
 import scala.collection.JavaConverters._
 import uk.ac.ncl.openlab.intake24.GuideImage
 import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
-
 import org.slf4j.LoggerFactory
 import org.rogach.scallop.ScallopConf
 import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseOptions
 import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl
 import uk.ac.ncl.openlab.intake24.sql.tools.WarningMessage
 import uk.ac.ncl.openlab.intake24.sql.tools.DatabaseConnection
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{FoodDatabaseAdminService, FoodsAdminService}
 import uk.ac.ncl.openlab.intake24.sql.tools.ErrorHandler
 import uk.ac.ncl.openlab.intake24.UserFoodHeader
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
@@ -26,7 +26,7 @@ class PortuguesePsmTableParser extends PortionSizeTableParser with ErrorHandler 
   private val logger = LoggerFactory.getLogger(classOf[PortuguesePsmTableParser])
 
   def parsePortionSizeMethodsTable(csvPath: String, nutrientTableCsvPath: String, localToIntakeCodes: Map[String, String],  indexableFoods: Seq[UserFoodHeader], 
-      dataService: FoodDatabaseAdminService): Map[String, Seq[PortionSizeMethod]] = {
+      dataService: FoodsAdminService): Map[String, Seq[PortionSizeMethod]] = {
     
     logger.info("Portuguese portion size methods intentionally ignored")
     
