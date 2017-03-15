@@ -1,0 +1,69 @@
+package scheduled
+
+import java.time.format.DateTimeFormatter
+import java.time.{LocalDateTime, ZoneId}
+
+import akka.actor.ActorSystem
+import com.google.inject.{Inject, Singleton}
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import play.api.libs.mailer.{Email, MailerClient}
+import play.api.{Configuration, Logger}
+import uk.ac.ncl.openlab.intake24.services.systemdb.user.{GWTClientErrorReport, GWTClientErrorService}
+
+import scala.concurrent.duration._
+
+trait ErrorDigestSender
+
+@Singleton
+class ErrorDigestSenderImpl @Inject()(config: Configuration,
+                                      system: ActorSystem,
+                                      errorService: GWTClientErrorService,
+                                      mailer: MailerClient
+                                     ) extends ErrorDigestSender {
+
+
+  val frequency = config.getInt("intake24.errorDigest.frequencyMinutes").get
+
+  system.scheduler.schedule(0 minutes, frequency minutes) {
+
+    def formatReport(report: GWTClientErrorReport) = {
+      val sb = new StringBuilder
+
+      sb.append(s"Survey ID: ${report.surveyId.getOrElse("N/A")}\n")
+      sb.append(s"User ID: ${report.userId.getOrElse("N/A")}\n\n")
+      sb.append(s"Server time: ${DateTimeFormatter.ISO_ZONED_DATE_TIME.format(LocalDateTime.ofInstant(report.reportedAt, ZoneId.systemDefault))}\n\n")
+      sb.append(s"Stack trace:\n")
+      sb.append(s"${report.exceptionChainJSON}\n\n")
+      sb.append(s"Survey state:\n")
+      sb.append(s"${report.surveyStateJSON}\n")
+
+      sb.toString
+    }
+
+    def buildDigest(newReports: Seq[GWTClientErrorReport]): String = newReports.map(formatReport).mkString("\n---------\n")
+
+    errorService.getNewErrorReports() match {
+      case Right(reports) =>
+        if (reports.nonEmpty) {
+          val subject = s"Intake24 had ${reports.size} client error(s) since last report"
+
+          try {
+            val email = Email(subject, "Intake24 <no-reply@intake24.co.uk>", Seq("bugs@intake24.co.uk"), Some(buildDigest(reports)))
+            mailer.send(email)
+
+            errorService.markAsSeen(reports.map(_.id)) match {
+              case Left(error) => Logger.error("Failed to mark error reports as seen", error.exception)
+              case Right(_) => ()
+            }
+
+          } catch {
+            case e: Throwable => Logger.error("Failed to send error digest e-mail", e)
+          }
+        } else {
+          Logger.info("No new errors to report")
+        }
+
+      case Left(error) => Logger.error("Failed to get new error reports", error.exception)
+    }
+  }
+}

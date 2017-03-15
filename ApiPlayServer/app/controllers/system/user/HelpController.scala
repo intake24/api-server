@@ -49,7 +49,7 @@ class HelpController @Inject()(cache: CacheApi,
                                deadbolt: DeadboltActionsAdapter) extends Controller
   with DatabaseErrorHandler with UpickleUtil {
 
-  val logger = play.api.Logger(classOf[HelpController])
+  val logger = play.api.Logger(classOf[GWTClientErrorReportController])
 
   val callbackRequestRate = config.getInt("intake24.help.callbackRequestRateSeconds").get
 
