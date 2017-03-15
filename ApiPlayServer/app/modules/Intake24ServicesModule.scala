@@ -24,6 +24,8 @@ import com.google.inject.{AbstractModule, Injector, Provides, Singleton}
 import play.api.db.Database
 import play.api.{Configuration, Environment}
 import play.db.NamedDatabase
+import scheduled.{ErrorDigestSender, ErrorDigestSenderImpl}
+import sms.{SMSService, TwilioSMSImpl}
 import uk.ac.ncl.openlab.intake24.datastoresql.{DataStoreScala, DataStoreSqlImpl}
 import uk.ac.ncl.openlab.intake24.foodsql.NutrientMappingServiceSqlImpl
 import uk.ac.ncl.openlab.intake24.foodsql.admin._
@@ -41,9 +43,9 @@ import uk.ac.ncl.openlab.intake24.services.foodindex.portuguese.{FoodIndexImpl_p
 import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, FoodIndexDataService, Splitter}
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, SurveyAdminService, UserAdminService}
-import uk.ac.ncl.openlab.intake24.services.systemdb.user.{FoodPopularityService, SurveyService}
+import uk.ac.ncl.openlab.intake24.services.systemdb.user.{FoodPopularityService, GWTClientErrorService, SurveyService}
 import uk.ac.ncl.openlab.intake24.systemsql.admin.{DataExportImpl, SurveyAdminImpl, UserAdminImpl}
-import uk.ac.ncl.openlab.intake24.systemsql.user.{FoodPopularityServiceImpl, SurveyServiceImpl}
+import uk.ac.ncl.openlab.intake24.systemsql.user.{FoodPopularityServiceImpl, GWTClientErrorServiceImpl, SurveyServiceImpl}
 
 
 class Intake24ServicesModule(env: Environment, config: Configuration) extends AbstractModule {
@@ -166,6 +168,15 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     bind(classOf[BrandNamesService]).to(classOf[BrandNamesServiceImpl])
     bind(classOf[ImageMapService]).to(classOf[ImageMapServiceImpl])
 
+    bind(classOf[GWTClientErrorService]).to(classOf[GWTClientErrorServiceImpl])
+
+    // SMS service
+
+    bind(classOf[SMSService]).to(classOf[TwilioSMSImpl])
+
+    // Error digest service
+
+    bind(classOf[ErrorDigestSender]).to(classOf[ErrorDigestSenderImpl]).asEagerSingleton()
 
     // Demographic service
     bind(classOf[DemographicGroupsService]).to(classOf[DemographicGroupsServiceImpl])

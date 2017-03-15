@@ -333,14 +333,14 @@ object SystemDatabaseMigrations {
           .executeQuery()
           .as((SqlParser.str("name") ~ SqlParser.str("value")).*)
           .filter(_._1.endsWith("_gen_user_counter"))
-          .map( x => (x._1.replace("_gen_user_counter", ""), x._2.toInt))
+          .map(x => (x._1.replace("_gen_user_counter", ""), x._2.toInt))
 
         val params = values.map {
           case (surveyId, count) => Seq[NamedParameter]('survey_id -> surveyId, 'count -> count)
         }
 
         if (params.nonEmpty) {
-          BatchSql("INSERT INTO gen_user_counters VALUES({survey_id}, {count}) ON CONFLICT(survey_id) DO UPDATE SET count={count}", params.head, params.tail:_*).execute()
+          BatchSql("INSERT INTO gen_user_counters VALUES({survey_id}, {count}) ON CONFLICT(survey_id) DO UPDATE SET count={count}", params.head, params.tail: _*).execute()
         }
 
         SQL("DROP TABLE global_values").execute()
@@ -350,6 +350,38 @@ object SystemDatabaseMigrations {
 
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         ???
+      }
+    },
+
+    new Migration {
+      val versionFrom = 13l
+      val versionTo = 14l
+
+      val description = "Create gwt_client_error_reports table"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        val query =
+          """﻿CREATE TABLE gwt_client_error_reports(
+            |    id serial NOT NULL PRIMARY KEY,
+            |    user_id character varying(256),
+            |    survey_id character varying(64),
+            |    reported_at timestamp NOT NULL,
+            |    gwt_permutation_name character varying(256) NOT NULL,
+            |    exception_chain_json text NOT NULL,
+            |    survey_state_json text NOT NULL,
+            |   ﻿new boolean NOT NULL DEFAULT true
+            |)""".stripMargin
+
+        SQL(query).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("DROP TABLE gwt_client_error_reports").execute()
+
+        Right(())
       }
     }
   )

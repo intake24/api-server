@@ -196,3 +196,7 @@ PATCH          /admin/demographic-group-scale-sectors/:id                    con
 DELETE         /admin/demographic-group-scale-sectors/:id                    controllers.DemographicGroupsController.deleteDemographicGroupScaleSector(id: Int)
 
 GET            /admin/henry-coefficients                                     controllers.DemographicGroupsController.getHenryCoefficients()
+
+# Client error reporting
+
+POST           /user/errors/report                                           controllers.system.user.GWTClientErrorReportController.reportError()

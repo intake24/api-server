@@ -24,11 +24,13 @@ import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import controllers.DatabaseErrorHandler
 import parsers.UpickleUtil
+import play.api.Configuration
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.mailer.{Email, MailerClient}
 import play.api.mvc._
 import play.cache.CacheApi
-import security.{DeadboltActionsAdapter, Roles}
+import security.{DeadboltActionsAdapter, Intake24UserKey, Roles}
+import sms.SMSService
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.UserAdminService
 
 import scala.concurrent.Future
@@ -38,14 +40,18 @@ import scala.concurrent.duration._
 case class CallbackRequest(name: String, phone: String)
 
 class HelpController @Inject()(cache: CacheApi,
+                               config: Configuration,
                                system: ActorSystem,
                                mailer: MailerClient,
+                               smsService: SMSService,
                                userAdminService: UserAdminService,
                                passwordHasherRegistry: PasswordHasherRegistry,
                                deadbolt: DeadboltActionsAdapter) extends Controller
   with DatabaseErrorHandler with UpickleUtil {
 
-  val logger = play.api.Logger(classOf[HelpController])
+  val logger = play.api.Logger(classOf[GWTClientErrorReportController])
+
+  val callbackRequestRate = config.getInt("intake24.help.callbackRequestRateSeconds").get
 
   // TODO: captcha to prevent new spam
   // TODO: localise e-mail messages
@@ -53,13 +59,14 @@ class HelpController @Inject()(cache: CacheApi,
     request =>
       Future {
         val userKey = request.subject.get.identifier
+        val userName = Intake24UserKey.fromString(userKey).userName
         val cacheKey = s"reject-callback-$userKey"
 
 
         if (cache.get[String](cacheKey) != null)
           TooManyRequests
         else {
-          cache.set(userKey, "t", 10)
+          cache.set(cacheKey, "t", callbackRequestRate)
 
           val supportUsers = userAdminService.getSurveySupportUsers(surveyId).right.flatMap {
             users =>
@@ -74,21 +81,38 @@ class HelpController @Inject()(cache: CacheApi,
           val result = supportUsers.right.map {
             users =>
               val emailAddresses = users.flatMap(_.email)
+              val phoneNumbers = users.flatMap(_.phone)
 
               if (emailAddresses.isEmpty)
                 logger.error(s"No support e-mail addresses are available for survey $surveyId: support user list is empty or none of support users have an e-mail address set")
               else
-                system.scheduler.scheduleOnce(0.seconds) {
+                system.scheduler.scheduleOnce(0 seconds) {
+                  try {
+                    val message = Email(
+                      subject = s"Someone needs help completing their Intake24 survey ($surveyId)",
+                      bodyText = Some(s"Please call ${request.body.name} on ${request.body.phone} (survey ID: $surveyId, user ID: $userName)"),
+                      from = "Intake24 <support@intake24.co.uk>",
+                      to = emailAddresses
+                    )
 
-                  val message = Email(
-                    subject = s"Someone needs help completing their Intake24 survey ($surveyId)",
-                    bodyText = Some(s"Please call ${request.body.name} on ${request.body.phone} (survey ID: $surveyId)"),
-                    from = "Intake24",
-                    replyTo = Some("support@intake24.co.uk"),
-                    to = emailAddresses
-                  )
+                    mailer.send(message)
+                  } catch {
+                    case e: Throwable => logger.error("Failed to send e-mail message", e)
+                  }
+                }
 
-                  mailer.send(message)
+              if (phoneNumbers.isEmpty)
+                logger.warn(s"No support phone numbers are available for survey $surveyId: support user list is empty or none of support users have a phone number set")
+              else
+                system.scheduler.scheduleOnce(0 seconds) {
+                  phoneNumbers.foreach {
+                    toNumber =>
+                      try {
+                        smsService.sendMessage(s"Intake24: please call ${request.body.name} on ${request.body.phone} (survey ID: $surveyId, user ID: $userName)", toNumber)
+                      } catch {
+                        case e: Throwable => logger.error("Failed to send SMS message", e)
+                      }
+                  }
                 }
 
               ()
