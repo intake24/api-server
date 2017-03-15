@@ -24,6 +24,7 @@ import com.google.inject.{AbstractModule, Injector, Provides, Singleton}
 import play.api.db.Database
 import play.api.{Configuration, Environment}
 import play.db.NamedDatabase
+import sms.{SMSService, TwilioSMSImpl}
 import uk.ac.ncl.openlab.intake24.datastoresql.{DataStoreScala, DataStoreSqlImpl}
 import uk.ac.ncl.openlab.intake24.foodsql.NutrientMappingServiceSqlImpl
 import uk.ac.ncl.openlab.intake24.foodsql.admin._
@@ -166,6 +167,9 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     bind(classOf[BrandNamesService]).to(classOf[BrandNamesServiceImpl])
     bind(classOf[ImageMapService]).to(classOf[ImageMapServiceImpl])
 
+    // SMS service
+
+    bind(classOf[SMSService]).to(classOf[TwilioSMSImpl])
 
     // Demographic service
     bind(classOf[DemographicGroupsService]).to(classOf[DemographicGroupsServiceImpl])

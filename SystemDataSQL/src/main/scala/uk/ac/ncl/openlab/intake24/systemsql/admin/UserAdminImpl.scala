@@ -346,18 +346,22 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
         .as(SqlParser.int("count").single))
   }
 
+  lazy private val getSurveySupportStaffQuery = sqlFromResource("admin/get_survey_support_staff.sql")
+
   def getSurveySupportUsers(surveyId: String): Either[UnexpectedDatabaseError, Seq[PublicUserRecord]] = tryWithConnection {
     implicit conn =>
-      Right(SQL("SELECT u.survey_id, u.id AS user_id, u.name, u.email, u.phone FROM survey_support_staff AS s JOIN users AS u ON u.survey_id=s.user_survey_id AND u.id=s.user_id WHERE s.survey_id={survey_id}")
+      Right(SQL(getSurveySupportStaffQuery)
         .on('survey_id -> surveyId)
         .executeQuery()
         .as(Macro.namedParser[PublicUserRecordRow].*)
         .map(_.toPublicUserRecord))
   }
 
+  lazy private val getGlobalSupportStaffQuery = sqlFromResource("admin/get_global_support_staff.sql")
+
   def getGlobalSupportUsers(): Either[UnexpectedDatabaseError, Seq[PublicUserRecord]] = tryWithConnection {
     implicit conn =>
-      Right(SQL("SELECT u.survey_id, u.id AS user_id, u.name, u.email, u.phone FROM global_support_staff AS s JOIN users AS u ON u.survey_id=s.user_survey_id AND u.id=s.user_id")
+      Right(SQL(getGlobalSupportStaffQuery)
         .executeQuery()
         .as(Macro.namedParser[PublicUserRecordRow].*)
         .map(_.toPublicUserRecord))
