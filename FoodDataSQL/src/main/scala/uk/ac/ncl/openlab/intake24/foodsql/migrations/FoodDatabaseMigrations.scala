@@ -379,7 +379,9 @@ object FoodDatabaseMigrations {
     FeedbackDemographicScaleRangeNotEmpty,
     FeedbackDemographicNutrientDescriptionsMigration,
     FeedbackDemographicConstraintsFixMigration,
-    FeedbackDemographicAlterNutrientRuleType
+    FeedbackDemographicAlterNutrientRuleType,
+    FeedbackDemographicAlterSentimentEnum,
+    UnitFixMigration
 
   )
 }

@@ -16,13 +16,13 @@ class UserAdminTest extends ApiTestSuite with RandomData with BeforeAndAfterAll 
 
   val newUsers = Seq.fill(Random.nextInt(9) + 1)(randomUserRecordWithPermission(customFieldNames))
 
+  val testSurveyId = randomString(10)
+
   def toPublicUserRecord(r: UserRecordWithPermissions) =
-    PublicUserRecordWithPermissions(r.userName, r.name, r.email, r.phone, r.customFields, r.roles, r.permissions)
+    PublicUserRecordWithPermissions(Some(testSurveyId), r.userName, r.name, r.email, r.phone, r.customFields, r.roles, r.permissions)
 
   def toPublicUserRecord(r: UserRecord) =
-    PublicUserRecord(r.userName, r.name, r.email, r.phone, r.customFields)
-
-  val testSurveyId = randomString(10)
+    PublicUserRecord(Some(testSurveyId), r.userName, r.name, r.email, r.phone, r.customFields)
 
   var adminAccessToken: String = null
 
@@ -104,7 +104,7 @@ class UserAdminTest extends ApiTestSuite with RandomData with BeforeAndAfterAll 
 
     val publicUserRecords = users.map {
       user =>
-        PublicUserRecord(user.userName, user.name, user.email, user.phone, user.customFields)
+        PublicUserRecord(Some(randomString(10)), user.userName, user.name, user.email, user.phone, user.customFields)
     }
 
     val userList = assertSuccessful(userAdminClient.listSurveyStaff(adminAccessToken, testSurveyId, 0, 100))
@@ -157,7 +157,7 @@ class UserAdminTest extends ApiTestSuite with RandomData with BeforeAndAfterAll 
 
     val publicUserRecords = users.map {
       user =>
-        PublicUserRecord(user.userName, user.name, user.email, user.phone, user.customFields)
+        PublicUserRecord(Some(randomString(10)), user.userName, user.name, user.email, user.phone, user.customFields)
     }
 
     val userList = assertSuccessful(userAdminClient.listSurveyRespondents(adminAccessToken, testSurveyId, 0, 100))
