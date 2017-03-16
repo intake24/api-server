@@ -383,6 +383,27 @@ object SystemDatabaseMigrations {
 
         Right(())
       }
+    },
+
+    new Migration {
+      val versionFrom = 14l
+      val versionTo = 15l
+
+      val description = "Rename gwt_client_error_reports to client_error_reports and drop GWT-specific fields"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE gwt_client_error_reports RENAME TO client_error_reports").execute()
+        SQL("ALTER TABLE client_error_reports DROP COLUMN gwt_permutation_name").execute()
+        SQL("ALTER TABLE client_error_reports RENAME COLUMN exception_chain_json TO stack_trace").execute()
+        SQL("ALTER TABLE client_error_reports ALTER COLUMN stack_trace TYPE character varying(256)[] USING ARRAY[]::character varying(256)[]").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
     }
   )
 }

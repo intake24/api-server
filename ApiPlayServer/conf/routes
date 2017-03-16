@@ -199,4 +199,4 @@ GET            /admin/henry-coefficients                                     con
 
 # Client error reporting
 
-POST           /user/errors/report                                           controllers.system.user.GWTClientErrorReportController.reportError()
+POST           /errors/report                                                controllers.system.ClientErrorReportController.reportError()
