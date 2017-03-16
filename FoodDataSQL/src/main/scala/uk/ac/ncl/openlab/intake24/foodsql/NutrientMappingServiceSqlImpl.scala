@@ -5,12 +5,23 @@ import javax.sql.DataSource
 import anorm.{Macro, SQL, SqlParser, sqlToSimple}
 import com.google.inject.name.Named
 import com.google.inject.{Inject, Singleton}
-import uk.ac.ncl.openlab.intake24.errors.{NutrientMappingError, RecordNotFound, UnexpectedDatabaseError}
+import org.slf4j.LoggerFactory
+import uk.ac.ncl.openlab.intake24.FoodGroupRecord
+import uk.ac.ncl.openlab.intake24.errors.{AnyError, NutrientMappingError, RecordNotFound, UnexpectedDatabaseError}
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.{FoodDataService, ResolvedFoodData}
 import uk.ac.ncl.openlab.intake24.services.nutrition.{NutrientDescription, NutrientMappingService}
-import uk.ac.ncl.openlab.intake24.sql.SqlDataService
+import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
+import uk.ac.ncl.openlab.intake24.surveydata.{NutrientMappedFood, NutrientMappedMeal, NutrientMappedSubmission, SurveySubmission}
 
 @Singleton
-class NutrientMappingServiceSqlImpl @Inject() (@Named("intake24_foods") val dataSource: DataSource) extends NutrientMappingService with SqlDataService {
+class NutrientMappingServiceSqlImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource,
+                                              foodDataService: FoodDataService,
+                                              foodGroupsService: FoodGroupsAdminService) extends NutrientMappingService with SqlDataService with SqlResourceLoader {
+
+  import uk.ac.ncl.openlab.intake24.errors.ErrorUtils._
+
+  private val logger = LoggerFactory.getLogger(classOf[NutrientMappingServiceSqlImpl])
 
   private case class NutrientDescriptionRow(id: Long, description: String, symbol: String)
 
@@ -46,4 +57,83 @@ class NutrientMappingServiceSqlImpl @Inject() (@Named("intake24_foods") val data
   }
 
   def energyKcalNutrientId(): Long = 1
+
+  def mapSubmission(submission: SurveySubmission, locale: String): Either[AnyError, NutrientMappedSubmission] = tryWithConnection {
+    implicit conn =>
+
+      // I have spent an hour writing an "optimal" solution for this, but then realised that food data inheritance is tricky
+      // and it is better to solve performance issues using caching :(
+
+      // Lesson learned: trust your past self.
+
+      val foodCodes = submission.meals.flatMap(_.foods).map(_.code).distinct
+
+      val result =
+        for (foodData <- sequence(foodCodes.map(foodDataService.getFoodData(_, locale))).right;
+             foodDataMap <- Right(foodData.map(_._1).foldLeft(Map[String, ResolvedFoodData]()) {
+               case (map, data) => map + (data.code) -> data
+             }).right;
+             foodGroupData <- sequence(foodData.map(_._1.groupCode).distinct.map(foodGroupsService.getFoodGroup(_, locale))).right;
+             foodGroupMap <- Right(foodGroupData.map(_._1).foldLeft(Map[Int, FoodGroupRecord]()) {
+               case (map, record) => map + (record.) -> record
+             }).right;)
+        ) yield 1
+      /*
+
+
+ .flatMap {
+     foodData =>
+
+       val foodDataMap = foodData.map(_._1).foldLeft(Map[String, ResolvedFoodData]()) {
+         case (map, data) => map + (data.code) -> data
+       }
+
+       val (unmappedCodes, mappedCodes) = foodCodes.partition(foodDataMap(_).nutrientTableCodes.isEmpty)
+
+       logger.warn(s"Some foods are missing nutrient table mapping for locale $locale: ${unmappedCodes.mkString(",")}")
+
+       val (failed, successful) = mappedCodes.map {
+         code =>
+           val mapping = foodDataMap(code).nutrientTableCodes
+           if (mapping.size > 1)
+             logger.warn(s"Food $code has more than one nutrient table mapping, the first one will be chosen arbitrarily")
+
+           nutrientsFor(mapping.head._1, mapping.head._2, 100.0).right.map(n => (code, (mapping.head, n))).left.map(e => (code, mapping.head))
+       }.partition(_.isLeft)
+
+       val errors = failed.map {
+         case (Left((code, (tableId, recordId)))) => s"$tableId/$recordId for food $locale/$code"
+       }
+
+       logger.warn(s"Some nutrient table records could not be retrieved: ${errors.mkString(",")}")
+
+
+
+       val nutrientDataMap = successful.map(_.right.get).toMap
+
+       val mappedMeals = submission.meals.map {
+         meal =>
+           val mappedFoods = meal.foods.map {
+             food =>
+               val foodData = foodDataMap(food.code)
+               val nutrientData = nutrientDataMap.get(food.code)
+
+               val tableId = nutrientData.map(_._1._1)
+               val recordId = nutrientData.map(_._1._2)
+               val nutrientMap = nutrientData.map(_._2).getOrElse(Map())
+
+               val weight = food.portionSize.portionWeight
+
+               NutrientMappedFood(food.code, foodData.englishDescription, foodData.localDescription, food.isReadyMeal, food.searchTerm, food.brand, food.portionSize, food.customData,
+                 tableId, recordId, weight <= foodData.reasonableAmount.toDouble, foodData.groupCode, foodData.
+               )
+           }
+       }
+
+   }
+}
+*/
+      translateDatabaseResult(result)
+  }
+
 }

@@ -37,7 +37,7 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
       case (acc, cf) => acc + (cf(0) -> cf(1))
     }
 
-  def getSurveySubmissions(surveyId: String, dateFrom: Option[Instant], dateTo: Option[Instant], offset: Int, limit: Int, respondentId: Option[String]): Either[LookupError, Seq[NutrientMappedSubmission]] = tryWithConnection {
+  def getSurveySubmissions(surveyId: String, dateFrom: Option[Instant], dateTo: Option[Instant], offset: Int, limit: Int, respondentId: Option[String]): Either[LookupError, Seq[ExportSubmission]] = tryWithConnection {
     implicit conn =>
       withTransaction {
 
@@ -79,13 +79,13 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
                             (nutrientRow.n_type.toInt, nutrientRow.n_amount)
                         }.toMap
 
-                        NutrientMappedFood(foodRow.code, foodRow.english_description, foodRow.local_description, foodRow.search_term, foodRow.nutrient_table_id, foodRow.nutrient_table_code, foodRow.ready_meal,
-                          CompletedPortionSize(foodRow.portion_size_method_id, customFieldsAsMap(foodRow.portion_size_data)), foodRow.reasonable_amount,
+                        ExportFood(foodRow.code, foodRow.english_description, foodRow.local_description, foodRow.search_term, foodRow.nutrient_table_id, foodRow.nutrient_table_code, foodRow.ready_meal,
+                          PortionSize(foodRow.portion_size_method_id, customFieldsAsMap(foodRow.portion_size_data)), foodRow.reasonable_amount,
                           foodRow.food_group_id, foodRow.brand, nutrients, customFieldsAsMap(foodRow.custom_fields))
                     }
-                    NutrientMappedMeal(mealRow.name, MealTime(mealRow.hours, mealRow.minutes), customFieldsAsMap(mealRow.custom_fields), foods)
+                    ExportMeal(mealRow.name, MealTime(mealRow.hours, mealRow.minutes), customFieldsAsMap(mealRow.custom_fields), foods)
                 }
-                NutrientMappedSubmission(submissionRow.id, submissionRow.user_id, customFieldsAsMap(submissionRow.user_custom_fields), customFieldsAsMap(submissionRow.submission_custom_fields),
+                ExportSubmission(submissionRow.id, submissionRow.user_id, customFieldsAsMap(submissionRow.user_custom_fields), customFieldsAsMap(submissionRow.submission_custom_fields),
                   submissionRow.start_time, submissionRow.end_time, meals)
             }
 

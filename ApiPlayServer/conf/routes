@@ -104,25 +104,6 @@ POST           /admin/portion-size/guide-image/selection-screen-image        con
 GET            /admin/portion-size/drinkware                                 controllers.DrinkwareAdminController.listDrinkwareSets()
 GET            /admin/portion-size/drinkware/:id                             controllers.DrinkwareAdminController.getDrinkwareSet(id: String)
 
-GET            /user/foods/:locale/split-description                         controllers.food.user.FoodLookupController.getSplitSuggestion(locale: String, desc: String)
-GET            /user/foods/:locale/lookup                                    controllers.food.user.FoodLookupController.lookup(locale: String, desc: String, limit: Int = 50)
-GET            /user/foods/:locale/lookup-in-category                        controllers.food.user.FoodLookupController.lookupInCategory(locale: String, desc: String, category: String, limit: Int = 50)
-
-
-GET            /user/categories/:locale/:code                                controllers.food.user.FoodDataController.getCategoryContents(code: String, locale: String)
-GET            /user/categories/:locale                                      controllers.food.user.FoodDataController.getRootCategories(locale: String)
-
-GET            /user/foods/:locale/:code                                     controllers.food.user.FoodDataController.getFoodData(code: String, locale: String)
-GET            /user/foods/:locale/:code/with-sources                        controllers.food.user.FoodDataController.getFoodDataWithSources(code: String, locale: String)
-GET            /user/foods/:locale/:code/brand-names                         controllers.food.user.FoodDataController.getBrandNames(code: String, locale: String)
-GET            /user/foods/:locale/:code/associated-foods                    controllers.food.user.FoodDataController.getAssociatedFoodPrompts(code: String, locale: String)
-
-GET            /user/portion-size/as-served/:id                              controllers.food.user.FoodDataController.getAsServedSet(id: String)
-POST           /user/portion-size/as-served                                  controllers.food.user.FoodDataController.getAsServedSets()
-GET            /user/portion-size/guide-image/:id                            controllers.food.user.FoodDataController.getGuideImage(id: String)
-GET            /user/portion-size/image-maps/:id                             controllers.food.user.FoodDataController.getImageMap(id: String)
-POST           /user/portion-size/image-maps                                 controllers.food.user.FoodDataController.getImageMaps()
-GET            /user/portion-size/drinkware/:id                              controllers.food.user.FoodDataController.getDrinkwareSet(id: String)
 
 
 # Nutrient tables
@@ -168,16 +149,9 @@ DELETE         /admin/users/:surveyId/delete                                 con
 POST           /admin/surveys/new                                            controllers.system.SurveyAdminController.createSurvey()
 DELETE         /admin/surveys/:surveyId/delete                               controllers.system.SurveyAdminController.deleteSurvey(surveyId)
 
-GET            /user/surveys/:surveyId/public-parameters                     controllers.system.user.SurveyController.getPublicSurveyParameters(surveyId: String)
-GET            /user/surveys/:surveyId/parameters                            controllers.system.user.SurveyController.getSurveyParameters(surveyId: String)
-
-POST           /user/surveys/:surveyId/generate-user                         controllers.system.user.GeneratedUsersController.generateUser(surveyId: String)
-POST           /user/surveys/:surveyId/request-callback                      controllers.system.user.HelpController.requestCallback(surveyId)
-
 # POST           /admin/update-global-support-users                            controllers.system.SurveyAdminController.updateGlobalSupportUsers()
 # POST           /admin/surveys/:surveyId/support-users/update                 controllers.system.SurveyAdminController.updateSurveySupportUsers(surveyId: String)
 
-GET            /user/surveys/:surveyId/my-submissions                        controllers.system.DataExportController.getMySurveySubmissions(surveyId)
 
 GET            /admin/surveys/:surveyId/submissions                          controllers.system.DataExportController.getSurveySubmissions(surveyId, dateFrom: String, dateTo: String, offset: Int, limit: Int)
 GET            /admin/surveys/:surveyId/submissions/csv                      controllers.system.DataExportController.getSurveySubmissionsAsCSV(surveyId, dateFrom: String, dateTo: String)
@@ -197,6 +171,8 @@ DELETE         /admin/demographic-group-scale-sectors/:id                    con
 
 GET            /admin/henry-coefficients                                     controllers.DemographicGroupsController.getHenryCoefficients()
 
-# Client error reporting
+# Client-side error logging
 
 POST           /errors/report                                                controllers.system.ClientErrorReportController.reportError()
+
+->             /user                                                         user.Routes

@@ -28,7 +28,7 @@ import com.google.inject.name.Named
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.errors.{LocalLookupError, LocaleError, UndefinedLocale}
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.{FoodDataService, FoodDataSources, SourceLocale, UserFoodData}
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.{FoodDataService, FoodDataSources, SourceLocale, ResolvedFoodData}
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
 @Singleton
@@ -73,7 +73,7 @@ class FoodDataServiceImpl @Inject()(@Named("intake24_foods") val dataSource: Dat
     parseWithLocaleAndFoodValidation(foodCode, result, Macro.namedParser[FoodRow].single)()
   }
 
-  def getFoodData(foodCode: String, locale: String): Either[LocalLookupError, (UserFoodData, FoodDataSources)] = tryWithConnection {
+  def getFoodData(foodCode: String, locale: String): Either[LocalLookupError, (ResolvedFoodData, FoodDataSources)] = tryWithConnection {
     implicit conn =>
       withTransaction {
         for (
@@ -89,7 +89,7 @@ class FoodDataServiceImpl @Inject()(@Named("intake24_foods") val dataSource: Dat
           else
             SourceLocale.Current(locale)
 
-          (UserFoodData(foodRow.food_code, localDescription, foodRow.food_group_id.toInt, attr.readyMealOption, attr.sameAsBeforeOption, nutr.codes, psm.methods),
+          (ResolvedFoodData(foodRow.food_code, foodRow.english_description, localDescription, foodRow.food_group_id.toInt, attr.reasonableAmount, attr.readyMealOption, attr.sameAsBeforeOption, nutr.codes, psm.methods),
             FoodDataSources(localDescriptionSource, nutr.sourceLocale, (psm.sourceLocale, psm.sourceRecord), attr.sources))
         }
       }

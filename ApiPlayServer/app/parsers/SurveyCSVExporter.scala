@@ -7,7 +7,7 @@ import java.time.format.DateTimeFormatter
 import au.com.bytecode.opencsv.CSVWriter
 import uk.ac.ncl.openlab.intake24.FoodGroupRecord
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{CustomDataScheme, LocalNutrientDescription}
-import uk.ac.ncl.openlab.intake24.surveydata.NutrientMappedSubmission
+import uk.ac.ncl.openlab.intake24.surveydata.ExportSubmission
 
 import scala.collection.mutable
 
@@ -16,7 +16,7 @@ object SurveyCSVExporter {
   val MISSING_FOOD_KEY_PORTION_SIZE = "missingFoodPortionSize"
   val MISSING_FOOD_KEY_LEFTOVERS = "missingFoodLeftovers"
 
-  def exportSurveySubmissions(dataScheme: CustomDataScheme, foodGroups: Map[Int, FoodGroupRecord], localNutrients: Seq[LocalNutrientDescription], submissions: Seq[NutrientMappedSubmission]): Either[String, File] = {
+  def exportSurveySubmissions(dataScheme: CustomDataScheme, foodGroups: Map[Int, FoodGroupRecord], localNutrients: Seq[LocalNutrientDescription], submissions: Seq[ExportSubmission]): Either[String, File] = {
     val file = File.createTempFile("intake24-export-", ".csv")
     val writer = new CSVWriter(new FileWriter(file))
     try {

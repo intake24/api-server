@@ -404,6 +404,61 @@ object SystemDatabaseMigrations {
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         ???
       }
+    },
+
+    new Migration {
+      val versionFrom = 15l
+      val versionTo = 16l
+
+      val description = "Add time zone to survey submission times"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE survey_submissions ALTER COLUMN start_time TYPE timestamp with time zone").execute()
+        SQL("ALTER TABLE survey_submissions ALTER COLUMN end_time TYPE timestamp with time zone").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    },
+
+    new Migration {
+      val versionFrom = 16l
+      val versionTo = 17l
+
+      val description = "Convert survey submission log to array and delete old logs (they take up too much space and no one has ever used them)"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE survey_submissions ALTER COLUMN log TYPE text[] USING ARRAY[]::text[]").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    },
+
+    new Migration {
+      val versionFrom = 17l
+      val versionTo = 18l
+
+      val description = "Drop survey_submission_user_custom_fields"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("DROP TABLE survey_submission_user_custom_fields").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
     }
   )
 }

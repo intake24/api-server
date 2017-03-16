@@ -44,4 +44,11 @@ class SurveyController @Inject()(service: SurveyService, deadbolt: DeadboltActio
         translateDatabaseResult(service.getSurveyParameters(surveyId))
       }
   }
+
+  def submitSurvey(surveyId: String) = deadbolt.restrictToRoles(Roles.surveyRespondent(surveyId))(BodyParsers.parse.empty) {
+    _ =>
+      Future {
+        //service.sub
+      }
+  }
 }
