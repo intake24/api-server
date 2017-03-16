@@ -1,7 +1,3 @@
-[submodule "resty-gwt"]
-	path = resty-gwt
-	url = https://github.com/digitalinteraction/resty-gwt.git
-	branch = master
 [submodule "PTStemmer-Java"]
 	path = PTStemmer-Java
 	url = https://github.com/digitalinteraction/PTStemmer-Java

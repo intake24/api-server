@@ -1,2 +1,0 @@
-# Module net.scran24.Scran24.JUnit
-# RPC service class, partial path of RPC policy file
