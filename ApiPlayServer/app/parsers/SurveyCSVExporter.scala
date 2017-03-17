@@ -6,8 +6,7 @@ import java.time.format.DateTimeFormatter
 
 import au.com.bytecode.opencsv.CSVWriter
 import uk.ac.ncl.openlab.intake24.FoodGroupRecord
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{CustomDataScheme, LocalNutrientDescription}
-import uk.ac.ncl.openlab.intake24.surveydata.ExportSubmission
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{CustomDataScheme, ExportSubmission, LocalNutrientDescription}
 
 import scala.collection.mutable
 

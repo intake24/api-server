@@ -22,16 +22,21 @@ import javax.inject.Inject
 
 import controllers.DatabaseErrorHandler
 import parsers.UpickleUtil
+import play.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{Action, BodyParsers, Controller}
-import security.{DeadboltActionsAdapter, Roles}
+import security.{DeadboltActionsAdapter, Intake24UserKey, Roles}
+import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
+import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.SurveyService
-import upickle.default._
+import uk.ac.ncl.openlab.intake24.surveydata.SurveySubmission
 
 import scala.concurrent.Future
+import upickle.default.write
 
-
-class SurveyController @Inject()(service: SurveyService, deadbolt: DeadboltActionsAdapter) extends Controller
+class SurveyController @Inject()(service: SurveyService,
+                                 nutrientMappingService: NutrientMappingService,
+                                 deadbolt: DeadboltActionsAdapter) extends Controller
   with DatabaseErrorHandler with UpickleUtil {
 
   def getPublicSurveyParameters(surveyId: String) = Action {
@@ -45,10 +50,26 @@ class SurveyController @Inject()(service: SurveyService, deadbolt: DeadboltActio
       }
   }
 
-  def submitSurvey(surveyId: String) = deadbolt.restrictToRoles(Roles.surveyRespondent(surveyId))(BodyParsers.parse.empty) {
-    _ =>
+  def submitSurvey(surveyId: String) = deadbolt.restrictToRoles(Roles.surveyRespondent(surveyId))(upickleBodyParser[SurveySubmission]) {
+    request =>
       Future {
-        //service.sub
+        service.getSurveyParameters(surveyId) match {
+          case Right(params) =>
+            if (params.state != "running")
+              Forbidden(write(ErrorDescription("SurveyNotRunning", "Survey not accepting submissions at this time")))
+            else {
+              val userName = Intake24UserKey.fromString(request.subject.get.identifier).userName
+
+              Logger.warn(request.body.toString)
+
+
+              val result = for (nutrientMappedSubmission <- nutrientMappingService.mapSurveySubmission(request.body, params.localeId).right;
+                                _ <- service.createSubmission(surveyId, userName, nutrientMappedSubmission).right)
+                yield ()
+              translateDatabaseResult(result)
+            }
+          case Left(error) => translateDatabaseError(error)
+        }
       }
   }
 }

@@ -1,13 +1,13 @@
 package uk.ac.ncl.openlab.intake24.systemsql.admin
 
-import java.time.Instant
+import java.time.{Instant, ZonedDateTime}
 import java.util.UUID
 import javax.inject.{Inject, Named}
 import javax.sql.DataSource
 
 import anorm._
 import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound}
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.DataExportService
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, ExportFood, ExportMeal, ExportSubmission}
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 import uk.ac.ncl.openlab.intake24.surveydata._
 
@@ -21,7 +21,7 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
 
   lazy val getSurveySubmissionNutrientsSql = sqlFromResource("admin/get_survey_submission_nutrients.sql")
 
-  private case class SubmissionRow(id: UUID, survey_id: String, user_id: String, start_time: Instant, end_time: Instant, log: String,
+  private case class SubmissionRow(id: UUID, survey_id: String, user_id: String, start_time: ZonedDateTime, end_time: ZonedDateTime, log: String,
                                    submission_custom_fields: Array[Array[String]], user_custom_fields: Array[Array[String]])
 
   private case class MealRow(submission_id: UUID, meal_id: Long, hours: Int, minutes: Int, name: String, custom_fields: Array[Array[String]])

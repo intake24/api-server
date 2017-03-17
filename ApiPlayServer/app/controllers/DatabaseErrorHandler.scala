@@ -5,6 +5,7 @@ import play.api.http.ContentTypes
 import play.api.mvc.{Result, Results}
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 import uk.ac.ncl.openlab.intake24.errors._
+
 import upickle.default._
 
 trait DatabaseErrorHandler extends Results {

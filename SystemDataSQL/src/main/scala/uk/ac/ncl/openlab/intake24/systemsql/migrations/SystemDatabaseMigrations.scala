@@ -1,4 +1,4 @@
-package uk.ac.ncl.openlab.intake24.datastoresql.migrations
+package uk.ac.ncl.openlab.intake24.systemsql.migrations
 
 import java.sql.Connection
 

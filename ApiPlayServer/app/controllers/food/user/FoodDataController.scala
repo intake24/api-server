@@ -10,7 +10,7 @@ import security.DeadboltActionsAdapter
 import uk.ac.ncl.openlab.intake24._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageStorageService
 import uk.ac.ncl.openlab.intake24.services.fooddb.user._
-import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService
+import uk.ac.ncl.openlab.intake24.services.nutrition.{FoodCompositionService, NutrientMappingService}
 
 import scala.concurrent.Future
 
@@ -43,7 +43,7 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
                                    drinkwareService: DrinkwareService,
                                    guideImageService: GuideImageService,
                                    imageMapService: ImageMapService,
-                                   nutrientMappingService: NutrientMappingService,
+                                   foodCompositionService: FoodCompositionService,
                                    imageStorageService: ImageStorageService,
                                    deadbolt: DeadboltActionsAdapter) extends Controller with DatabaseErrorHandler with UpickleUtil {
 
@@ -78,11 +78,11 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
   def getFoodData(code: String, locale: String) = deadbolt.restrictToAuthenticated {
     _ =>
       Future {
-        val energyKcalId = nutrientMappingService.energyKcalNutrientId()
+        val energyKcalId = foodCompositionService.getEnergyKcalNutrientId()
 
         val result = for (
           foodData <- foodDataService.getFoodData(code, locale).right.map(_._1).right;
-          caloriesPer100g <- nutrientMappingService.nutrientsFor(foodData.nutrientTableCodes.head._1, foodData.nutrientTableCodes.head._2, 100).right.map(_ (energyKcalId)).right;
+          caloriesPer100g <- foodCompositionService.getFoodCompositionRecord(foodData.nutrientTableCodes.head._1, foodData.nutrientTableCodes.head._2).right.map(_ (energyKcalId)).right;
           associatedFoods <- associatedFoodsService.getAssociatedFoods(code, locale).right;
           brands <- brandNamesService.getBrandNames(code, locale).right;
           categories <- foodBrowsingService.getFoodAllCategories(code).right

@@ -8,7 +8,7 @@ import com.google.inject.{Inject, Singleton}
 import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound, UnexpectedDatabaseError}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.NutrientTablesAdminService
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
-import uk.ac.ncl.openlab.intake24.{NutrientTable, NutrientTableRecord}
+import uk.ac.ncl.openlab.intake24.{NutrientTable, FoodCompositionRecord}
 
 @Singleton
 class NutrientTablesAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends NutrientTablesAdminService with SqlDataService {
@@ -76,7 +76,7 @@ class NutrientTablesAdminImpl @Inject()(@Named("intake24_foods") val dataSource:
 
   private val nutrientsInsertQuery = "INSERT INTO nutrient_table_records_nutrients VALUES({record_id},{nutrient_table_id},{nutrient_type_id},{units_per_100g})"
 
-  def createNutrientTableRecords(records: Seq[NutrientTableRecord]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
+  def createNutrientTableRecords(records: Seq[FoodCompositionRecord]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
 
       withTransaction {
@@ -101,7 +101,7 @@ class NutrientTablesAdminImpl @Inject()(@Named("intake24_foods") val dataSource:
       }
   }
 
-  def updateNutrientTableRecords(records: Seq[NutrientTableRecord]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
+  def updateNutrientTableRecords(records: Seq[FoodCompositionRecord]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
         if (records.nonEmpty) {

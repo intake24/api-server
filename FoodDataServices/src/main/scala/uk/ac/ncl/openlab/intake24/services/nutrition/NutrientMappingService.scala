@@ -18,22 +18,12 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.services.nutrition
 
-import uk.ac.ncl.openlab.intake24.errors.{NutrientMappingError, UnexpectedDatabaseError}
-import uk.ac.ncl.openlab.intake24.surveydata.{NutrientMappedSubmission, SurveySubmission}
+import java.time.Instant
 
-case class NutrientDescription(nutrientId: Long, description: String, unit: String)
+import uk.ac.ncl.openlab.intake24.errors.AnyError
+import uk.ac.ncl.openlab.intake24.surveydata._
 
 trait NutrientMappingService {
-  def supportedNutrients(): Either[UnexpectedDatabaseError, Seq[NutrientDescription]]
-  
-  def energyKcalNutrientId(): Long
-  
-  def nutrientsFor(table_id: String, record_id: String, weight: Double): Either[NutrientMappingError, Map[Long, Double]]
 
-  def javaNutrientsFor(table_id: String, record_id: String, weight: Double): Either[NutrientMappingError, java.util.Map[java.lang.Long, java.lang.Double]] =
-    nutrientsFor(table_id, record_id, weight).right.map(scalaMap => scala.collection.JavaConversions.mapAsJavaMap(scalaMap.map {
-      case (k, v) => (new java.lang.Long(k), new java.lang.Double(v))
-    }))
-
-  def mapSubmission(submission: SurveySubmission, locale: String): Either[NutrientMappingError, NutrientMappedSubmission]
+  def mapSurveySubmission(submission: SurveySubmission, locale: String): Either[AnyError, NutrientMappedSubmission]
 }

@@ -1,7 +1,7 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.admin
 
 import uk.ac.ncl.openlab.intake24.errors.{LookupError, UnexpectedDatabaseError}
-import uk.ac.ncl.openlab.intake24.{NutrientTable, NutrientTableRecord}
+import uk.ac.ncl.openlab.intake24.{NutrientTable, FoodCompositionRecord}
 
 trait NutrientTablesAdminService {
 
@@ -17,6 +17,6 @@ trait NutrientTablesAdminService {
 
   def deleteAllNutrientTables(): Either[UnexpectedDatabaseError, Unit]
 
-  def createNutrientTableRecords(records: Seq[NutrientTableRecord]): Either[UnexpectedDatabaseError, Unit]
+  def createNutrientTableRecords(records: Seq[FoodCompositionRecord]): Either[UnexpectedDatabaseError, Unit]
 }
 

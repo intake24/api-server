@@ -4,7 +4,7 @@ import javax.inject.{Inject, Named}
 import javax.sql.DataSource
 
 import anorm._
-import uk.ac.ncl.openlab.intake24.datastoresql.Util
+
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.SurveyState
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.{PublicSurveyParameters, SurveyService, UserSurveyParameters}
@@ -85,7 +85,7 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
 
           val batch = BatchSql("INSERT INTO survey_submission_meals VALUES (DEFAULT, {survey_submission_id}::uuid, {hours}, {minutes}, {name})", mealParams.head, mealParams.tail: _*)
 
-          val mealIds = Util.batchKeys(batch)
+          val mealIds = AnormUtil.batchKeys(batch)
 
           val meals = mealIds.zip(survey.meals)
 
@@ -119,7 +119,7 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
             val batch = BatchSql("INSERT INTO survey_submission_foods VALUES (DEFAULT, {meal_id}, {code}, {english_description}, {local_description}, {ready_meal}, {search_term}, {portion_size_method_id}, {reasonable_amount},{food_group_id},{food_group_english_description},{food_group_local_description},{brand},{nutrient_table_id},{nutrient_table_code})",
               mealFoodsParams.head, mealFoodsParams.tail: _*)
 
-            val foodIds = Util.batchKeys(batch)
+            val foodIds = AnormUtil.batchKeys(batch)
 
             val foods = foodIds.zip(meals.flatMap(_._2.foods))
 

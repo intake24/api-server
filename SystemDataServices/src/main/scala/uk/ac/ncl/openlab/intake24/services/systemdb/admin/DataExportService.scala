@@ -1,13 +1,13 @@
 package uk.ac.ncl.openlab.intake24.services.systemdb.admin
 
-import java.time.Instant
+import java.time.{Instant, ZonedDateTime}
 import java.util.UUID
 
 import uk.ac.ncl.openlab.intake24.errors.LookupError
 import uk.ac.ncl.openlab.intake24.surveydata.{MealTime, PortionSize}
 
 
-case class ExportSubmission(id: UUID, userName: String, userCustomData: Map[String, String], surveyCustomData: Map[String, String], startTime: Instant, endTime: Instant, meals: Seq[ExportMeal])
+case class ExportSubmission(id: UUID, userName: String, userCustomData: Map[String, String], surveyCustomData: Map[String, String], startTime: ZonedDateTime, endTime: ZonedDateTime, meals: Seq[ExportMeal])
 
 case class ExportMeal(name: String, time: MealTime, customData: Map[String, String], foods: Seq[ExportFood])
 

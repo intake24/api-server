@@ -16,7 +16,7 @@ import uk.ac.ncl.openlab.intake24.PortionSizeMethod
 import uk.ac.ncl.openlab.intake24.FoodGroupLocal
 import uk.ac.ncl.openlab.intake24.LocalFoodRecord
 import uk.ac.ncl.openlab.intake24.NutrientTable
-import uk.ac.ncl.openlab.intake24.NutrientTableRecord
+import uk.ac.ncl.openlab.intake24.FoodCompositionRecord
 
 import uk.ac.ncl.openlab.intake24.NewLocalFoodRecord
 import uk.ac.ncl.openlab.intake24.NewLocalCategoryRecord
@@ -97,7 +97,7 @@ trait RandomData {
     codes.map(randomNewCategory(_))
   }
 
-  def randomLocalFoods(forFoods: Seq[String], assocFoods: IndexedSeq[String], assocCategories: IndexedSeq[String], nutrientTableRecords: IndexedSeq[NutrientTableRecord]) = {
+  def randomLocalFoods(forFoods: Seq[String], assocFoods: IndexedSeq[String], assocCategories: IndexedSeq[String], nutrientTableRecords: IndexedSeq[FoodCompositionRecord]) = {
     forFoods.foldLeft(Map[String, NewLocalFoodRecord]()) {
       (map, code) => map + (code -> randomLocalFoodRecord(nutrientTableRecords, assocFoods, assocCategories))
     }
@@ -117,12 +117,12 @@ trait RandomData {
         val count = randomCount(min, max)
         val q = Seq(1l, 2l, 3l, 4l, 5l)
         Seq.fill(count) {
-          NutrientTableRecord(table.id, randomIdentifier, q.map(n => (n -> Random.nextDouble() * 100.0)).toMap)
+          FoodCompositionRecord(table.id, randomIdentifier, q.map(n => (n -> Random.nextDouble() * 100.0)).toMap)
         }
     }
   }
 
-  def randomNutrientCodes(nutrientTableRecords: IndexedSeq[NutrientTableRecord]) =
+  def randomNutrientCodes(nutrientTableRecords: IndexedSeq[FoodCompositionRecord]) =
     nutrientTableRecords.groupBy(_.table_id).foldLeft(Map[String, String]()) {
       case (result, (tableCode, records)) =>
         if (Random.nextBoolean())
@@ -131,7 +131,7 @@ trait RandomData {
           result
     }
 
-  def randomLocalFoodRecord(nutrientTableRecords: IndexedSeq[NutrientTableRecord], assocFoodCodes: IndexedSeq[String], assocCategoryCodes: IndexedSeq[String]) =
+  def randomLocalFoodRecord(nutrientTableRecords: IndexedSeq[FoodCompositionRecord], assocFoodCodes: IndexedSeq[String], assocCategoryCodes: IndexedSeq[String]) =
     NewLocalFoodRecord(Some(randomDescription), Random.nextBoolean(), randomNutrientCodes(nutrientTableRecords), randomPortionSizeMethods,
       randomAssociatedFoods(assocFoodCodes, assocCategoryCodes), randomBrands)
 

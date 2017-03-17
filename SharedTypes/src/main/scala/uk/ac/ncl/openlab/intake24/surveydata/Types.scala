@@ -1,12 +1,14 @@
 package uk.ac.ncl.openlab.intake24.surveydata
 
-import java.time.Instant
+import java.time.ZonedDateTime
 
 case class MealTime(hours: Int, minutes: Int)
 
 case class PortionSize(method: String, data: Map[String, String]) {
   def servingWeight = data("servingWeight").toDouble
+
   def leftoversWeight = data("leftoversWeight").toDouble
+
   def portionWeight = servingWeight - leftoversWeight
 }
 
@@ -16,11 +18,15 @@ case class Meal(name: String, foods: Seq[Food], time: MealTime, customData: Map[
 
 case class MissingFood(name: String, brand: String, description: String, portionSize: String, leftovers: String)
 
-case class SurveySubmission(startTime: Instant, endTime: Instant, meals: Seq[Meal], missingFoods: Seq[MissingFood], log: Seq[String], customData: Map[String, String])
+// TODO:
+// upickle is getting confused on this type for some reason
+// extra field gets it unstuck, but it needs replacement in the long run
+
+case class SurveySubmission(startTime: ZonedDateTime, endTime: ZonedDateTime, meals: Seq[Meal], missingFoods: Seq[MissingFood], log: Seq[String], customData: Map[String, String], _up: String)
 
 case class NutrientMappedMeal(name: String, time: MealTime, customData: Map[String, String], foods: Seq[NutrientMappedFood])
 
 case class NutrientMappedFood(code: String, englishDescription: String, localDescription: String, isReadyMeal: Boolean, searchTerm: String, brand: String, portionSize: PortionSize, customData: Map[String, String],
-                              nutrientTableId: Option[String], nutrientTableCode: Option[String], reasonableAmount: Boolean, foodGroupId: Int, foodGroupEnglishDescription: String, foodGroupLocalDescription: Option[String], nutrients: Map[Int, Double])
+                              nutrientTableId: Option[String], nutrientTableCode: Option[String], reasonableAmount: Boolean, foodGroupId: Int, foodGroupEnglishDescription: String, foodGroupLocalDescription: Option[String], nutrients: Map[Long, Double])
 
-case class NutrientMappedSubmission(startTime: Instant, endTime: Instant, meals: Seq[NutrientMappedMeal], missingFoods: Seq[MissingFood], log: Seq[String], customData: Map[String, String])
+case class NutrientMappedSubmission(startTime: ZonedDateTime, endTime: ZonedDateTime, meals: Seq[NutrientMappedMeal], missingFoods: Seq[MissingFood], log: Seq[String], customData: Map[String, String])

@@ -22,24 +22,25 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
-import _root_.models.{SecurityInfo, Intake24User}
+import _root_.models.{Intake24User, SecurityInfo}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
-import uk.ac.ncl.openlab.intake24.datastoresql.DataStoreScala
+import uk.ac.ncl.openlab.intake24.errors.RecordNotFound
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.UserAdminService
 
 import scala.concurrent.Future
 
-class IdentityServiceImpl @Inject()(val dataStore: DataStoreScala) extends IdentityService[Intake24User] {
+class IdentityServiceImpl @Inject()(val userAdminService: UserAdminService) extends IdentityService[Intake24User] {
 
   implicit val securityInfoFormat = Json.format[SecurityInfo]
 
   def retrieve(loginInfo: LoginInfo): Future[Option[Intake24User]] = Future {
     val intake24key = Intake24UserKey.fromString(loginInfo.providerKey)
 
-    dataStore.getUserRecord(intake24key.surveyId.getOrElse(""), intake24key.userName).map {
-      record =>
-        Intake24User(record.userName, SecurityInfo(record.roles, record.permissions))
+    userAdminService.getUserById(intake24key.surveyId, intake24key.userName) match {
+      case Right(secureUserRecord) => Some(Intake24User(secureUserRecord.userName, SecurityInfo(secureUserRecord.roles, secureUserRecord.permissions)))
+      case Left(RecordNotFound(_)) => None
+      case Left(e) => throw e.exception
     }
   }
-
 }

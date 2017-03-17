@@ -20,13 +20,13 @@ package uk.ac.ncl.openlab.intake24.nutrientsndns
 
 import com.google.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.errors.{NutrientMappingError, RecordNotFound, TableNotFound}
-import uk.ac.ncl.openlab.intake24.services.nutrition.{NutrientDescription, NutrientMappingService}
+import uk.ac.ncl.openlab.intake24.errors.{RecordNotFound, TableNotFound}
+import uk.ac.ncl.openlab.intake24.services.nutrition.{FoodCompositionService, NutrientDescription}
 
 @Singleton
-case class LegacyNutrientMappingServiceImpl @Inject() (tables: Map[String, NutrientTable]) extends NutrientMappingService {
+case class LegacyFoodCompositionServiceImpl @Inject()(tables: Map[String, NutrientTable]) extends FoodCompositionService {
 
-  def supportedNutrients() = Right(Seq(
+  def getSupportedNutrients() = Right(Seq(
     NutrientDescription(1, "Energy (kcal)", "kcal"),
     NutrientDescription(2, "Energy (kJ)", "kJ"),
     NutrientDescription(8, "Water", "g"),
@@ -88,13 +88,13 @@ case class LegacyNutrientMappingServiceImpl @Inject() (tables: Map[String, Nutri
     NutrientDescription(151, "Manganese", "g"),
     NutrientDescription(152, "Selenium", "g")))
 
-  val log = LoggerFactory.getLogger(classOf[LegacyNutrientMappingServiceImpl])
-  
-  def energyKcalNutrientId() = 1l
+  val log = LoggerFactory.getLogger(classOf[LegacyFoodCompositionServiceImpl])
 
-  def nutrientsFor(table_id: String, record_id: String, weight: Double): Either[NutrientMappingError, Map[Long, Double]] = tables.get(table_id) match {
+  def getEnergyKcalNutrientId() = 1l
+
+  def getFoodCompositionRecord(table_id: String, record_id: String) = tables.get(table_id) match {
     case Some(table) => table.records.get(record_id) match {
-      case Some(record) => Right(record.mapValues(v => v / 100.0 * weight))
+      case Some(record) => Right(record)
       case None => Left(RecordNotFound(new RuntimeException(s"table_id: $table_id, record_id: $record_id")))
     }
     case None => Left(TableNotFound(new RuntimeException(table_id)))

@@ -90,7 +90,7 @@ sealed trait LocalDependentCreateError extends AnyError
 
 sealed trait DependentCreateError extends LocalDependentCreateError
 
-sealed trait NutrientMappingError extends AnyError {
+sealed trait FoodCompositionTableError extends AnyError {
   val exception: Throwable
 }
 
@@ -102,7 +102,7 @@ case class UndefinedLocale(exception: Throwable) extends LocaleError
 
 case class RecordNotFound(exception: Throwable)
   extends LookupError
-  with NutrientMappingError
+  with FoodCompositionTableError
   with DeleteError
   with UpdateError
   with AnyError
@@ -119,7 +119,7 @@ case class IllegalParent(exception: Throwable) extends ParentError
 
 case class ConstraintViolation(name: String, exception: Throwable) extends ConstraintError
 
-case class TableNotFound(exception: Throwable) extends NutrientMappingError
+case class TableNotFound(exception: Throwable) extends FoodCompositionTableError
 
 case class UnexpectedDatabaseError(exception: Throwable)
   extends LocaleError
@@ -127,7 +127,7 @@ case class UnexpectedDatabaseError(exception: Throwable)
   with DeleteError
   with UpdateError
   with CreateError
-  with NutrientMappingError
+  with FoodCompositionTableError
   with ParentError
   with ConstraintError
   with AnyError

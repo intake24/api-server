@@ -18,6 +18,15 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.services.nutrition
 
-trait EatWellPlateService {
-  
+import uk.ac.ncl.openlab.intake24.errors.{FoodCompositionTableError, UnexpectedDatabaseError}
+
+case class NutrientDescription(nutrientId: Long, description: String, unit: String)
+
+trait FoodCompositionService {
+
+  def getSupportedNutrients(): Either[UnexpectedDatabaseError, Seq[NutrientDescription]]
+
+  def getEnergyKcalNutrientId(): Long
+
+  def getFoodCompositionRecord(table_id: String, record_id: String): Either[FoodCompositionTableError, Map[Long, Double]]
 }
