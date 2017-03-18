@@ -1,14 +1,14 @@
 package scheduled
 
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDateTime, ZoneId}
+import java.time.{ZoneId, ZonedDateTime}
 
 import akka.actor.ActorSystem
 import com.google.inject.{Inject, Singleton}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.mailer.{Email, MailerClient}
 import play.api.{Configuration, Logger}
-import uk.ac.ncl.openlab.intake24.services.systemdb.user.{GWTClientErrorReport, GWTClientErrorService}
+import uk.ac.ncl.openlab.intake24.services.systemdb.user.{ClientErrorReport, ClientErrorService}
 
 import scala.concurrent.duration._
 
@@ -17,7 +17,7 @@ trait ErrorDigestSender
 @Singleton
 class ErrorDigestSenderImpl @Inject()(config: Configuration,
                                       system: ActorSystem,
-                                      errorService: GWTClientErrorService,
+                                      errorService: ClientErrorService,
                                       mailer: MailerClient
                                      ) extends ErrorDigestSender {
 
@@ -26,21 +26,27 @@ class ErrorDigestSenderImpl @Inject()(config: Configuration,
 
   system.scheduler.schedule(0 minutes, frequency minutes) {
 
-    def formatReport(report: GWTClientErrorReport) = {
+    def formatReport(report: ClientErrorReport) = {
       val sb = new StringBuilder
 
       sb.append(s"Survey ID: ${report.surveyId.getOrElse("N/A")}\n")
       sb.append(s"User ID: ${report.userId.getOrElse("N/A")}\n\n")
-      sb.append(s"Server time: ${DateTimeFormatter.ISO_ZONED_DATE_TIME.format(LocalDateTime.ofInstant(report.reportedAt, ZoneId.systemDefault))}\n\n")
-      sb.append(s"Stack trace:\n")
-      sb.append(s"${report.exceptionChainJSON}\n\n")
+      sb.append(s"Server time: ${DateTimeFormatter.ISO_ZONED_DATE_TIME.format(ZonedDateTime.ofInstant(report.reportedAt, ZoneId.systemDefault))}\n\n")
+      sb.append(s"Stack trace:\n\n")
+
+      report.stackTrace.foreach {
+        stackTraceLine =>
+          sb.append(stackTraceLine)
+          sb.append("\n")
+      }
+
       sb.append(s"Survey state:\n")
       sb.append(s"${report.surveyStateJSON}\n")
 
       sb.toString
     }
 
-    def buildDigest(newReports: Seq[GWTClientErrorReport]): String = newReports.map(formatReport).mkString("\n---------\n")
+    def buildDigest(newReports: Seq[ClientErrorReport]): String = newReports.map(formatReport).mkString("\n---------\n")
 
     errorService.getNewErrorReports() match {
       case Right(reports) =>

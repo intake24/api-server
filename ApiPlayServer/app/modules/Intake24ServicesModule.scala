@@ -43,9 +43,9 @@ import uk.ac.ncl.openlab.intake24.services.foodindex.portuguese.{FoodIndexImpl_p
 import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, FoodIndexDataService, Splitter}
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, SurveyAdminService, UserAdminService}
-import uk.ac.ncl.openlab.intake24.services.systemdb.user.{FoodPopularityService, GWTClientErrorService, SurveyService}
+import uk.ac.ncl.openlab.intake24.services.systemdb.user.{FoodPopularityService, ClientErrorService, SurveyService}
 import uk.ac.ncl.openlab.intake24.systemsql.admin.{DataExportImpl, SurveyAdminImpl, UserAdminImpl}
-import uk.ac.ncl.openlab.intake24.systemsql.user.{FoodPopularityServiceImpl, GWTClientErrorServiceImpl, SurveyServiceImpl}
+import uk.ac.ncl.openlab.intake24.systemsql.user.{FoodPopularityServiceImpl, ClientErrorServiceImpl, SurveyServiceImpl}
 
 
 class Intake24ServicesModule(env: Environment, config: Configuration) extends AbstractModule {
@@ -168,7 +168,7 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     bind(classOf[BrandNamesService]).to(classOf[BrandNamesServiceImpl])
     bind(classOf[ImageMapService]).to(classOf[ImageMapServiceImpl])
 
-    bind(classOf[GWTClientErrorService]).to(classOf[GWTClientErrorServiceImpl])
+    bind(classOf[ClientErrorService]).to(classOf[ClientErrorServiceImpl])
 
     // SMS service
 

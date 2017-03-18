@@ -24,7 +24,7 @@ import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import controllers.DatabaseErrorHandler
 import parsers.UpickleUtil
-import play.api.Configuration
+import play.api.{Configuration, Logger}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.mailer.{Email, MailerClient}
 import play.api.mvc._
@@ -49,8 +49,6 @@ class HelpController @Inject()(cache: CacheApi,
                                deadbolt: DeadboltActionsAdapter) extends Controller
   with DatabaseErrorHandler with UpickleUtil {
 
-  val logger = play.api.Logger(classOf[GWTClientErrorReportController])
-
   val callbackRequestRate = config.getInt("intake24.help.callbackRequestRateSeconds").get
 
   // TODO: captcha to prevent new spam
@@ -71,7 +69,7 @@ class HelpController @Inject()(cache: CacheApi,
           val supportUsers = userAdminService.getSurveySupportUsers(surveyId).right.flatMap {
             users =>
               if (users.isEmpty) {
-                logger.warn(s"Support user list is empty for survey $surveyId -- falling back to global support users")
+                Logger.warn(s"Support user list is empty for survey $surveyId -- falling back to global support users")
                 userAdminService.getGlobalSupportUsers()
               }
               else
@@ -84,7 +82,7 @@ class HelpController @Inject()(cache: CacheApi,
               val phoneNumbers = users.flatMap(_.phone)
 
               if (emailAddresses.isEmpty)
-                logger.error(s"No support e-mail addresses are available for survey $surveyId: support user list is empty or none of support users have an e-mail address set")
+                Logger.error(s"No support e-mail addresses are available for survey $surveyId: support user list is empty or none of support users have an e-mail address set")
               else
                 system.scheduler.scheduleOnce(0 seconds) {
                   try {
@@ -97,12 +95,12 @@ class HelpController @Inject()(cache: CacheApi,
 
                     mailer.send(message)
                   } catch {
-                    case e: Throwable => logger.error("Failed to send e-mail message", e)
+                    case e: Throwable => Logger.error("Failed to send e-mail message", e)
                   }
                 }
 
               if (phoneNumbers.isEmpty)
-                logger.warn(s"No support phone numbers are available for survey $surveyId: support user list is empty or none of support users have a phone number set")
+                Logger.warn(s"No support phone numbers are available for survey $surveyId: support user list is empty or none of support users have a phone number set")
               else
                 system.scheduler.scheduleOnce(0 seconds) {
                   phoneNumbers.foreach {
@@ -110,7 +108,7 @@ class HelpController @Inject()(cache: CacheApi,
                       try {
                         smsService.sendMessage(s"Intake24: please call ${request.body.name} on ${request.body.phone} (survey ID: $surveyId, user ID: $userName)", toNumber)
                       } catch {
-                        case e: Throwable => logger.error("Failed to send SMS message", e)
+                        case e: Throwable => Logger.error("Failed to send SMS message", e)
                       }
                   }
                 }
