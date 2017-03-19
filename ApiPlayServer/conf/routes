@@ -165,13 +165,13 @@ DELETE         /admin/users/:surveyId/users                                  con
 
 # Survey management
 
-POST           /admin/surveys/new                                            controllers.system.SurveyAdminController.createSurvey()
-DELETE         /admin/surveys/:surveyId/delete                               controllers.system.SurveyAdminController.deleteSurvey(surveyId)
+POST           /admin/surveys                                                controllers.system.SurveyAdminController.createSurvey()
+DELETE         /admin/surveys/:surveyId                                      controllers.system.SurveyAdminController.deleteSurvey(surveyId)
 
 GET            /user/surveys/:surveyId/public-parameters                     controllers.system.user.SurveyController.getPublicSurveyParameters(surveyId: String)
 GET            /user/surveys/:surveyId/parameters                            controllers.system.user.SurveyController.getSurveyParameters(surveyId: String)
 
-POST           /user/surveys/:surveyId/generate-user                         controllers.system.user.GeneratedUsersController.generateUser(surveyId: String)
+POST           /user/surveys/:surveyId/users/respondents/generate            controllers.system.user.GeneratedUsersController.generateUser(surveyId: String)
 POST           /user/surveys/:surveyId/request-callback                      controllers.system.user.HelpController.requestCallback(surveyId)
 
 # POST           /admin/update-global-support-users                            controllers.system.SurveyAdminController.updateGlobalSupportUsers()
