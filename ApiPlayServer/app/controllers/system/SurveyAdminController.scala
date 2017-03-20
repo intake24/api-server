@@ -43,6 +43,13 @@ class SurveyAdminController @Inject()(service: SurveyAdminService, deadbolt: Dea
       }
   }
 
+  def list() = deadbolt.restrictToRoles(Roles.superuser) {
+    _ =>
+      Future {
+        translateDatabaseResult(service.listSurveys())
+      }
+  }
+
   def deleteSurvey(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser)(BodyParsers.parse.empty) {
     _ =>
       Future {

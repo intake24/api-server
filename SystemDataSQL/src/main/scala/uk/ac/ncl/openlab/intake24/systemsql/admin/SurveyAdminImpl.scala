@@ -12,6 +12,10 @@ import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
 class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends SurveyAdminService with SqlDataService with SqlResourceLoader {
 
+  def listSurveys(): Either[UnexpectedDatabaseError, Seq[UserSurveyParameters]] = {
+
+  }
+
   def createSurvey(surveyId: String, parameters: NewSurveyParameters): Either[CreateError, UserSurveyParameters] = tryWithConnection {
     implicit conn =>
       tryWithConstraintCheck("surveys_id_pk", DuplicateCode(_)) {

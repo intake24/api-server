@@ -38,6 +38,8 @@ case class LocalNutrientDescription(nutrientTypeId: Int, description: String, un
 trait SurveyAdminService {
   def createSurvey(surveyId: String, parameters: NewSurveyParameters): Either[CreateError, UserSurveyParameters]
 
+  def listSurveys(): Either[UnexpectedDatabaseError, Seq[UserSurveyParameters]]
+
   def getSurveyParameters(surveyId: String): Either[LookupError, SurveyParameters]
 
   def getCustomDataScheme(schemeId: String): Either[LookupError, CustomDataScheme]

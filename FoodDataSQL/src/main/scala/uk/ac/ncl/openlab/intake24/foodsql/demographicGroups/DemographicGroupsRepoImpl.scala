@@ -468,7 +468,7 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
           |       dgs.name as sector_name,
           |       dgs.description as sector_description
           |FROM demographic_group AS dg
-          LEFT JOIN nutrient_type_in_kcal AS nt_kcal ON nt_kcal.nutrient_type_id = dg.nutrient_type_id
+          |LEFT JOIN nutrient_type_in_kcal AS nt_kcal ON nt_kcal.nutrient_type_id = dg.nutrient_type_id
           |LEFT JOIN demographic_group_scale_sector AS dgs ON dgs.demographic_group_id = dg.id;
         """.stripMargin
 
