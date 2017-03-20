@@ -25,7 +25,7 @@ lazy val commonSettings = Seq(
 
 lazy val sharedTypes = Project(id = "sharedTypes", base = file("SharedTypes")).settings(commonSettings: _*)
 
-lazy val infiauto = Project(id = "infiauto", base = file ("infiauto"))
+lazy val infiauto = Project(id = "infiauto", base = file ("infiauto")).settings(commonSettings: _*)
 
 lazy val phraseSearch = Project(id = "phrasesearch", base = file ("PhraseSearch")).dependsOn(infiauto).settings(commonSettings: _*)
 
@@ -36,8 +36,6 @@ lazy val commonSql = Project(id = "commonSql", base = file("CommonSQL")).setting
 
 
 lazy val systemDataServices = Project(id = "systemDataServices", base = file("SystemDataServices")).dependsOn(gwtShared, sharedTypes).settings(commonSettings: _*)
-
-lazy val systemDataMongo = Project(id = "systemDataMongo", base = file ("SystemDataMongo")).dependsOn(systemDataServices % "compile->compile;test->test").settings(commonSettings: _*)
 
 lazy val systemDataSql = Project(id = "systemDataSql", base = file("SystemDataSQL")).dependsOn(commonSql, systemDataServices % "compile->compile;test->test").settings(commonSettings: _*)
 
@@ -53,7 +51,7 @@ lazy val nutrientsCsv = Project(id = "nutrientsCsv", base = file("NutrientsCSV")
 lazy val foodDataSql = Project(id = "foodDataSql", base = file("FoodDataSQL")).dependsOn(commonSql, foodDataServices % "compile->compile;test->test", sharedTypes, foodDataXml, nutrientsCsv).settings(commonSettings: _*)
 
 
-lazy val databaseTools = Project(id = "databaseTools", base = file("DatabaseTools")).dependsOn(commonSql, imageProcessorIM, systemDataMongo, systemDataSql, foodDataXml, foodDataSql, apiClient).settings(commonSettings: _*)
+lazy val databaseTools = Project(id = "databaseTools", base = file("DatabaseTools")).dependsOn(commonSql, imageProcessorIM, systemDataSql, foodDataXml, foodDataSql, apiClient).settings(commonSettings: _*)
 
 
 lazy val imageStorageLocal = Project(id = "imageStorageLocal", base = file("ImageStorageLocal")).dependsOn(foodDataServices).settings(commonSettings: _*)
