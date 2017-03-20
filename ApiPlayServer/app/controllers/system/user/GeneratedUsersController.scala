@@ -22,13 +22,13 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import controllers.DatabaseErrorHandler
-import parsers.UpickleUtil
+import io.circe.generic.auto._
+import parsers.JsonUtils
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc._
 import security.Roles
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{SecureUserRecord, SurveyAdminService, UserAdminService}
-import upickle.default._
 
 import scala.concurrent.Future
 import scala.util.Random
@@ -38,7 +38,7 @@ case class GeneratedCredentials(userName: String, password: String)
 class GeneratedUsersController @Inject()(userAdminService: UserAdminService,
                                          surveyAdminService: SurveyAdminService,
                                          passwordHasherRegistry: PasswordHasherRegistry) extends Controller
-  with DatabaseErrorHandler with UpickleUtil {
+  with DatabaseErrorHandler with JsonUtils {
 
   private def generateCredentials(surveyId: String, counter: Int): GeneratedCredentials = {
     val userName = surveyId + Integer.toString(counter)
@@ -60,7 +60,7 @@ class GeneratedUsersController @Inject()(userAdminService: UserAdminService,
         surveyAdminService.getSurveyParameters(surveyId) match {
           case Right(params) =>
             if (!params.allowGeneratedUsers)
-              Forbidden(write(ErrorDescription("GenUsersNotAllowed", "Generated users are not allowed for this survey")))
+              Forbidden(toJsonString(ErrorDescription("GenUsersNotAllowed", "Generated users are not allowed for this survey")))
             else {
               val result = userAdminService.nextGeneratedUserId(surveyId).right.flatMap {
                 counter =>

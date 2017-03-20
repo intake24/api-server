@@ -27,6 +27,8 @@ import security.DeadboltActionsAdapter
 import security.Roles
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodBrowsingAdminService
 
+import io.circe.generic.auto._
+
 class FoodBrowsingAdminController @Inject() (service: FoodBrowsingAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
     with DatabaseErrorHandler {
 

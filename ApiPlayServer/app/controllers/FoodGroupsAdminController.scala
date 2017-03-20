@@ -18,27 +18,28 @@ limitations under the License.
 
 package controllers
 
-import scala.concurrent.Future
-
 import javax.inject.Inject
+
+import io.circe.generic.auto._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
-import security.DeadboltActionsAdapter
-import security.Roles
+import security.{DeadboltActionsAdapter, Roles}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 
-class FoodGroupsAdminController @Inject() (service: FoodGroupsAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
-    with DatabaseErrorHandler {
-  
+import scala.concurrent.Future
+
+class FoodGroupsAdminController @Inject()(service: FoodGroupsAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
+  with DatabaseErrorHandler {
+
   def listFoodGroups(locale: String) = deadbolt.restrictToRoles(Roles.superuser) {
-     Future {
+    Future {
       // Map keys to Strings to force upickle to use js object serialisation instead of array of arrays
       translateDatabaseResult(service.listFoodGroups(locale).right.map(_.map { case (k, v) => (k.toString, v) }))
     }
   }
 
   def getFoodGroup(id: Int, locale: String) = deadbolt.restrictToRoles(Roles.superuser) {
-     Future {
+    Future {
       translateDatabaseResult(service.getFoodGroup(id, locale))
     }
   }

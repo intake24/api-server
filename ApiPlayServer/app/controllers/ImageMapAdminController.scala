@@ -21,6 +21,7 @@ package controllers
 import java.nio.file.Paths
 import javax.inject.Inject
 
+import io.circe.generic.auto._
 import parsers.FormDataUtil
 import play.api.libs.Files.TemporaryFile
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
@@ -30,7 +31,6 @@ import security.{DeadboltActionsAdapter, Roles}
 import uk.ac.ncl.openlab.intake24.api.shared.{ErrorDescription, NewImageMapRequest}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
-import upickle.default._
 
 import scala.concurrent.Future
 
@@ -54,7 +54,7 @@ class ImageMapAdminController @Inject()(
 
   private def validateParams(params: NewImageMapRequest, parsedImageMap: AWTImageMap): Either[Result, Unit] =
     parsedImageMap.outlines.keySet.find(k => !params.objectDescriptions.contains(k.toString)) match {
-      case Some(missingId) => Left(BadRequest(write(ErrorDescription("InvalidParameter", s"Missing description for object $missingId"))))
+      case Some(missingId) => Left(BadRequest(toJsonString(ErrorDescription("InvalidParameter", s"Missing description for object $missingId"))))
       case None => Right(())
     }
 
@@ -99,7 +99,7 @@ class ImageMapAdminController @Inject()(
           sourceKeywords <- getOptionalMultipleData("baseImageKeywords", request.body).right;
           params <- getParsedData[NewImageMapRequest]("imageMapParameters", request.body).right;
           imageMap <- (svgParser.parseImageMap(svgImage.ref.file.getPath) match {
-            case Left(e) => Left(BadRequest(write(ErrorDescription("InvalidParameter", s"Failed to parse the SVG image map: ${e.getClass.getName}: ${e.getMessage}"))))
+            case Left(e) => Left(BadRequest(toJsonString(ErrorDescription("InvalidParameter", s"Failed to parse the SVG image map: ${e.getClass.getName}: ${e.getMessage}"))))
             case Right(m) => Right(m)
           }).right;
           _ <- validateParams(params, imageMap).right;

@@ -26,7 +26,7 @@ import play.api.mvc.Controller
 import security.DeadboltActionsAdapter
 import security.Roles
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.QuickSearchService
-import upickle.default._
+import io.circe.generic.auto._
 
 class QuickSearchController @Inject() (service: QuickSearchService, deadbolt: DeadboltActionsAdapter) extends Controller
     with DatabaseErrorHandler {

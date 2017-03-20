@@ -1,32 +1,31 @@
 package controllers.food.user
 
+import io.circe.{Encoder, Json}
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.{InheritableAttributeSource, SourceLocale, SourceRecord}
-import upickle.Js
 
-/**
-  * Created by nip13 on 10/03/2017.
-  */
 object FoodSourceWriters {
-  implicit val sourceLocaleWriter = upickle.default.Writer[SourceLocale] {
-    case t => t match {
-      case SourceLocale.Current(locale) => Js.Obj(("source", Js.Str("current")), ("id", Js.Str(locale)))
-      case SourceLocale.Prototype(locale) => Js.Obj(("source", Js.Str("prototype")), ("id", Js.Str(locale)))
+  implicit val sourceLocaleWriter = new Encoder[SourceLocale] {
+    def apply(a: SourceLocale): Json = a match {
+      case SourceLocale.Current(locale) => Json.obj(("source", Json.fromString("current")), ("id", Json.fromString(locale)))
+      case SourceLocale.Prototype(locale) => Json.obj(("source", Json.fromString("prototype")), ("id", Json.fromString(locale)))
     }
   }
 
-  implicit val sourceRecordWriter = upickle.default.Writer[SourceRecord] {
-    case t => t match {
-      case SourceRecord.CategoryRecord(code) => Js.Obj(("source", Js.Str("category")), ("code", Js.Str(code)))
-      case SourceRecord.FoodRecord(code) => Js.Obj(("source", Js.Str("food")), ("code", Js.Str(code)))
-      case SourceRecord.NoRecord => Js.Obj(("source", Js.Str("none")))
+  implicit val sourceRecordWriter = new Encoder[SourceRecord] {
+    def apply(a: SourceRecord): Json = a match {
+      case SourceRecord.CategoryRecord(code) => Json.obj(("source", Json.fromString("category")), ("code", Json.fromString(code)))
+      case SourceRecord.FoodRecord(code) => Json.obj(("source", Json.fromString("food")), ("code", Json.fromString(code)))
+      case SourceRecord.NoRecord => Json.obj(("source", Json.fromString("none")))
     }
   }
 
-  implicit val inheritableAttributeSourceWriter = upickle.default.Writer[InheritableAttributeSource] {
-    case t => t match {
-      case InheritableAttributeSource.FoodRecord(code: String) => Js.Obj(("source", Js.Str("food")), ("code", Js.Str(code)))
-      case InheritableAttributeSource.CategoryRecord(code: String) => Js.Obj(("source", Js.Str("category")), ("code", Js.Str(code)))
-      case InheritableAttributeSource.Default => Js.Obj(("source", Js.Str("default")))
+  implicit val inheritableAttributeSourceWriter = new Encoder[InheritableAttributeSource] {
+    def apply(a: InheritableAttributeSource): Json = a match {
+
+      case InheritableAttributeSource.FoodRecord(code: String) => Json.obj(("source", Json.fromString("food")), ("code", Json.fromString(code)))
+      case InheritableAttributeSource.CategoryRecord(code: String) => Json.obj(("source", Json.fromString("category")), ("code", Json.fromString(code)))
+      case InheritableAttributeSource.Default => Json.obj(("source", Json.fromString("default")))
+
     }
   }
 }

@@ -22,7 +22,8 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import controllers.DatabaseErrorHandler
-import parsers.{UpickleUtil, UserRecordsCSVParser}
+import io.circe.generic.auto._
+import parsers.{JsonUtils, UserRecordsCSVParser}
 import play.api.http.ContentTypes
 import play.api.libs.Files
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
@@ -30,13 +31,12 @@ import play.api.mvc.{BodyParsers, Controller, MultipartFormData, Result}
 import security.{DeadboltActionsAdapter, Roles}
 import uk.ac.ncl.openlab.intake24.api.shared._
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{SecureUserRecord, UserAdminService}
-import upickle.default._
 
 import scala.concurrent.Future
 
 
 class UserAdminController @Inject()(service: UserAdminService, passwordHasherRegistry: PasswordHasherRegistry, deadbolt: DeadboltActionsAdapter) extends Controller
-  with DatabaseErrorHandler with UpickleUtil {
+  with DatabaseErrorHandler with JsonUtils {
 
   private def doCreateOrUpdate(surveyId: Option[String], userRecords: Seq[UserRecordWithPermissions]): Result = {
     val hasher = passwordHasherRegistry.current
@@ -52,14 +52,14 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
 
   private def doDeleteUsers(surveyId: Option[String], userNames: Seq[String]): Result = translateDatabaseResult(service.deleteUsers(surveyId, userNames))
 
-  def createOrUpdateGlobalUsers() = deadbolt.restrictToRoles(Roles.superuser)(upickleBodyParser[CreateOrUpdateGlobalUsersRequest]) {
+  def createOrUpdateGlobalUsers() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[CreateOrUpdateGlobalUsersRequest]) {
     request =>
       Future {
         doCreateOrUpdate(None, request.body.userRecords)
       }
   }
 
-  def createOrUpdateSurveyStaff(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(upickleBodyParser[CreateOrUpdateUsersRequest]) {
+  def createOrUpdateSurveyStaff(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(jsonBodyParser[CreateOrUpdateUsersRequest]) {
     request =>
       Future {
         doCreateOrUpdate(Some(surveyId), request.body.userRecords.map {
@@ -71,7 +71,7 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
 
   private def uploadCSV(formData: MultipartFormData[Files.TemporaryFile], surveyId: String, roles: Set[String], permissions: Set[String]): Result = {
     if (formData.files.length != 1)
-      BadRequest(write(ErrorDescription("BadRequest", s"Expected exactly one file attachment, got ${formData.files.length}"))).as(ContentTypes.JSON)
+      BadRequest(toJsonString(ErrorDescription("BadRequest", s"Expected exactly one file attachment, got ${formData.files.length}"))).as(ContentTypes.JSON)
     else {
       UserRecordsCSVParser.parseFile(formData.files(0).ref.file) match {
         case Right(records) =>
@@ -81,12 +81,12 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
           }
           doCreateOrUpdate(Some(surveyId), recordsWithPermissions)
         case Left(error) =>
-          BadRequest(write(ErrorDescription("InvalidCSV", error)))
+          BadRequest(toJsonString(ErrorDescription("InvalidCSV", error)))
       }
     }
   }
 
-  def createOrUpdateSurveyRespondents(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(upickleBodyParser[CreateOrUpdateUsersRequest]) {
+  def createOrUpdateSurveyRespondents(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(jsonBodyParser[CreateOrUpdateUsersRequest]) {
     request =>
       Future {
         doCreateOrUpdate(Some(surveyId), request.body.userRecords.map {
@@ -110,7 +110,7 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
       }
   }
 
-  def deleteGlobalUsers() = deadbolt.restrictToRoles(Roles.superuser)(upickleBodyParser[DeleteUsersRequest]) {
+  def deleteGlobalUsers() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[DeleteUsersRequest]) {
     request =>
       Future {
         doDeleteUsers(None, request.body.userNames)
@@ -138,7 +138,7 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
       }
   }
 
-  def deleteSurveyUsers(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(upickleBodyParser[DeleteUsersRequest]) {
+  def deleteSurveyUsers(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(jsonBodyParser[DeleteUsersRequest]) {
     request =>
       Future {
         doDeleteUsers(Some(surveyId), request.body.userNames)

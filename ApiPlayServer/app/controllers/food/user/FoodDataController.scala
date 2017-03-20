@@ -3,14 +3,15 @@ package controllers.food.user
 import javax.inject.Inject
 
 import controllers.DatabaseErrorHandler
-import parsers.UpickleUtil
+import io.circe.generic.auto._
+import parsers.JsonUtils
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
 import security.DeadboltActionsAdapter
 import uk.ac.ncl.openlab.intake24._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageStorageService
 import uk.ac.ncl.openlab.intake24.services.fooddb.user._
-import uk.ac.ncl.openlab.intake24.services.nutrition.{FoodCompositionService, NutrientMappingService}
+import uk.ac.ncl.openlab.intake24.services.nutrition.FoodCompositionService
 
 import scala.concurrent.Future
 
@@ -45,7 +46,7 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
                                    imageMapService: ImageMapService,
                                    foodCompositionService: FoodCompositionService,
                                    imageStorageService: ImageStorageService,
-                                   deadbolt: DeadboltActionsAdapter) extends Controller with DatabaseErrorHandler with UpickleUtil {
+                                   deadbolt: DeadboltActionsAdapter) extends Controller with DatabaseErrorHandler with JsonUtils {
 
   import uk.ac.ncl.openlab.intake24.errors.ErrorUtils._
 
@@ -130,7 +131,7 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
       }
   }
 
-  def getAsServedSets() = deadbolt.restrictToAuthenticated(upickleBodyParser[Seq[String]]) {
+  def getAsServedSets() = deadbolt.restrictToAuthenticated(jsonBodyParser[Seq[String]]) {
     request =>
       Future {
         translateDatabaseResult(sequence(request.body.map(asServedImageService.getAsServedSet(_))).right.map(_.map(toAsServedSetWithUrls)))
@@ -183,7 +184,7 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
       }
   }
 
-  def getImageMaps() = deadbolt.restrictToAuthenticated(upickleBodyParser[Seq[String]]) {
+  def getImageMaps() = deadbolt.restrictToAuthenticated(jsonBodyParser[Seq[String]]) {
     request =>
       Future {
         translateDatabaseResult(imageMapService.getImageMaps(request.body).right.map(_.map(toImageMapWithUrls)))

@@ -32,8 +32,9 @@ libraryDependencies ++= Seq(
   "net.codingwell" %% "scala-guice" % "4.1.0",
   "com.mohiva" %% "play-silhouette" % "4.0.0",
   "be.objectify" %% "deadbolt-scala" % "2.5.0",
-  "com.lihaoyi" %% "upickle" % "0.4.1",
-  "org.scalaz" %% "scalaz-core" % "7.2.6",
+  "io.circe" %% "circe-core" % "0.7.0",
+  "io.circe" %% "circe-generic" % "0.7.0",
+  "io.circe" %% "circe-parser" % "0.7.0",
   "com.typesafe.play" %% "play-mailer" % "5.0.0",
   "com.twilio.sdk" % "twilio" % "7.7.0",
   "org.apache.shiro" % "shiro-core" % "1.2.3", // for v1.0 authentication support

@@ -18,22 +18,23 @@ limitations under the License.
 
 package controllers
 
-import scala.concurrent.Future
-
 import javax.inject.Inject
+
+import io.circe.generic.auto._
+import parsers.JsonUtils
 import play.api.http.ContentTypes
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
-import security.DeadboltActionsAdapter
-import security.Roles
+import security.{DeadboltActionsAdapter, Roles}
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex
-import upickle.default._
 
-class FoodIndexController @Inject() (foodIndexes: Map[String, FoodIndex], deadbolt: DeadboltActionsAdapter) extends Controller {
+import scala.concurrent.Future
+
+class FoodIndexController @Inject()(foodIndexes: Map[String, FoodIndex], deadbolt: DeadboltActionsAdapter) extends Controller with JsonUtils {
   def lookup(locale: String, term: String) = deadbolt.restrictToRoles(Roles.superuser) {
     Future {
       foodIndexes.get(locale) match {
-        case Some(index) => Ok(write(index.lookup(term, 50))).as(ContentTypes.JSON)
+        case Some(index) => Ok(toJsonString(index.lookup(term, 50))).as(ContentTypes.JSON)
         case None => BadRequest(s"Food index not configured for locale $locale")
       }
     }

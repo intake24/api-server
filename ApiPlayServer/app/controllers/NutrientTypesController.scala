@@ -2,6 +2,7 @@ package controllers
 
 import javax.inject.Inject
 
+import io.circe.generic.auto._
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.Controller
 import security.DeadboltActionsAdapter

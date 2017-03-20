@@ -21,7 +21,8 @@ package controllers.system.user
 import javax.inject.Inject
 
 import controllers.DatabaseErrorHandler
-import parsers.UpickleUtil
+import io.circe.generic.auto._
+import parsers.JsonUtils
 import play.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{Action, BodyParsers, Controller}
@@ -32,12 +33,11 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.user.SurveyService
 import uk.ac.ncl.openlab.intake24.surveydata.SurveySubmission
 
 import scala.concurrent.Future
-import upickle.default.write
 
 class SurveyController @Inject()(service: SurveyService,
                                  nutrientMappingService: NutrientMappingService,
                                  deadbolt: DeadboltActionsAdapter) extends Controller
-  with DatabaseErrorHandler with UpickleUtil {
+  with DatabaseErrorHandler with JsonUtils {
 
   def getPublicSurveyParameters(surveyId: String) = Action {
     translateDatabaseResult(service.getPublicSurveyParameters(surveyId))
@@ -50,13 +50,13 @@ class SurveyController @Inject()(service: SurveyService,
       }
   }
 
-  def submitSurvey(surveyId: String) = deadbolt.restrictToRoles(Roles.surveyRespondent(surveyId))(upickleBodyParser[SurveySubmission]) {
+  def submitSurvey(surveyId: String) = deadbolt.restrictToRoles(Roles.surveyRespondent(surveyId))(jsonBodyParser[SurveySubmission]) {
     request =>
       Future {
         service.getSurveyParameters(surveyId) match {
           case Right(params) =>
             if (params.state != "running")
-              Forbidden(write(ErrorDescription("SurveyNotRunning", "Survey not accepting submissions at this time")))
+              Forbidden(toJsonString(ErrorDescription("SurveyNotRunning", "Survey not accepting submissions at this time")))
             else {
               val userName = Intake24UserKey.fromString(request.subject.get.identifier).userName
 

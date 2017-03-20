@@ -20,7 +20,8 @@ package controllers
 
 import javax.inject.Inject
 
-import parsers.UpickleUtil
+import io.circe.generic.auto._
+import parsers.JsonUtils
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
 import security.{DeadboltActionsAdapter, Roles}
@@ -31,7 +32,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageAdminService
 import scala.concurrent.Future
 
 class GuideImageAdminController @Inject()(guideImageAdminService: GuideImageAdminService, imageMapsAdminService: ImageMapsAdminService, imageAdminService: ImageAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
-  with ImageOrDatabaseServiceErrorHandler with UpickleUtil {
+  with ImageOrDatabaseServiceErrorHandler with JsonUtils {
 
   import ImageAdminService.WrapDatabaseError
 
@@ -53,7 +54,7 @@ class GuideImageAdminController @Inject()(guideImageAdminService: GuideImageAdmi
     }
   }
 
-  def createGuideImage() = deadbolt.restrictToRoles(Roles.superuser)(upickleBodyParser[NewGuideImageRequest]) {
+  def createGuideImage() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[NewGuideImageRequest]) {
     request =>
       Future {
 

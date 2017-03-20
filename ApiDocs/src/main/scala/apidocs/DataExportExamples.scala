@@ -4,12 +4,12 @@ import java.time.Clock
 import java.time.temporal.{ChronoField, TemporalField}
 import java.util.UUID
 
-import parsers.UpickleUtil
+import parsers.JsonUtils
 import uk.ac.ncl.openlab.intake24.api.shared._
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{PublicUserRecord, PublicUserRecordWithPermissions}
 import uk.ac.ncl.openlab.intake24.surveydata._
 
-object DataExportExamples extends UpickleUtil {
+object DataExportExamples extends JsonUtils {
 
   import JSONPrettyPrinter._
 

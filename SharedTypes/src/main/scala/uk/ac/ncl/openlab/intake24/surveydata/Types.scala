@@ -18,11 +18,7 @@ case class Meal(name: String, foods: Seq[Food], time: MealTime, customData: Map[
 
 case class MissingFood(name: String, brand: String, description: String, portionSize: String, leftovers: String)
 
-// TODO:
-// upickle is getting confused on this type for some reason
-// extra field gets it unstuck, but it needs replacement in the long run
-
-case class SurveySubmission(startTime: ZonedDateTime, endTime: ZonedDateTime, meals: Seq[Meal], missingFoods: Seq[MissingFood], log: Seq[String], customData: Map[String, String], _up: String)
+case class SurveySubmission(startTime: ZonedDateTime, endTime: ZonedDateTime, meals: Seq[Meal], missingFoods: Seq[MissingFood], log: Seq[String], customData: Map[String, String])
 
 case class NutrientMappedMeal(name: String, time: MealTime, customData: Map[String, String], foods: Seq[NutrientMappedFood])
 

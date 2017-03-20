@@ -20,18 +20,18 @@ package controllers
 
 import javax.inject.Inject
 
-import parsers.UpickleUtil
+import parsers.JsonUtils
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
 import security.{DeadboltActionsAdapter, Roles}
 import uk.ac.ncl.openlab.intake24.AssociatedFood
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
-import upickle.default._
+import io.circe.generic.auto._
 
 import scala.concurrent.Future
 
 class AssociatedFoodsAdminController @Inject()(service: AssociatedFoodsAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
-  with DatabaseErrorHandler with UpickleUtil {
+  with DatabaseErrorHandler with JsonUtils {
 
   def getAssociatedFoods(foodCode: String, locale: String) = deadbolt.restrictToRoles(Roles.superuser) {
     Future {
@@ -39,7 +39,7 @@ class AssociatedFoodsAdminController @Inject()(service: AssociatedFoodsAdminServ
     }
   }
 
-  def updateAssociatedFoods(foodCode: String, locale: String) = deadbolt.restrictToRoles(Roles.superuser)(upickleBodyParser[Seq[AssociatedFood]]) {
+  def updateAssociatedFoods(foodCode: String, locale: String) = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[Seq[AssociatedFood]]) {
     request =>
       Future {
         translateDatabaseResult(service.updateAssociatedFoods(foodCode, request.body, locale))
