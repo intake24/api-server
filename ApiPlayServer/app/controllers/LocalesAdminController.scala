@@ -24,7 +24,7 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
 import security.DeadboltActionsAdapter
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.LocalesAdminService
-import upickle.default._
+import io.circe.generic.auto._
 import security.Roles
 import scala.concurrent.Future
 

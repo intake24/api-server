@@ -23,20 +23,21 @@ import java.time.format.{DateTimeFormatter, DateTimeParseException}
 import javax.inject.Inject
 
 import controllers.DatabaseErrorHandler
-import parsers.{SurveyCSVExporter, UpickleUtil}
+import parsers.{SurveyCSVExporter, JsonUtils}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller}
 import security.{DeadboltActionsAdapter, Intake24UserKey, Roles}
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, SurveyAdminService}
-import upickle.default._
+
+import io.circe.generic.auto._
 
 import scala.concurrent.Future
 
 
 class DataExportController @Inject()(service: DataExportService, surveyAdminService: SurveyAdminService, foodGroupsAdminService: FoodGroupsAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
-  with DatabaseErrorHandler with UpickleUtil {
+  with DatabaseErrorHandler with JsonUtils {
 
   def getSurveySubmissions(surveyId: String, dateFrom: String, dateTo: String, offset: Int, limit: Int) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
     _ =>
@@ -48,7 +49,7 @@ class DataExportController @Inject()(service: DataExportService, surveyAdminServ
 
           translateDatabaseResult(service.getSurveySubmissions(surveyId, Some(parsedFrom), Some(parsedTo), offset, limit, None))
         } catch {
-          case e: DateTimeParseException => BadRequest(write(ErrorDescription("DateFormat", "Failed to parse date parameter. Expected a UTC date in ISO 8601 format, e.g. '2017-02-15T16:40:30Z'.")))
+          case e: DateTimeParseException => BadRequest(toJsonString(ErrorDescription("DateFormat", "Failed to parse date parameter. Expected a UTC date in ISO 8601 format, e.g. '2017-02-15T16:40:30Z'.")))
         }
       }
   }
@@ -62,7 +63,7 @@ class DataExportController @Inject()(service: DataExportService, surveyAdminServ
         try {
           translateDatabaseResult(service.getSurveySubmissions(surveyId, None, None, 0, Int.MaxValue, Some(respondentId)))
         } catch {
-          case e: DateTimeParseException => BadRequest(write(ErrorDescription("DateFormat", "Failed to parse date parameter. Expected a UTC date in ISO 8601 format, e.g. '2017-02-15T16:40:30Z'.")))
+          case e: DateTimeParseException => BadRequest(toJsonString(ErrorDescription("DateFormat", "Failed to parse date parameter. Expected a UTC date in ISO 8601 format, e.g. '2017-02-15T16:40:30Z'.")))
         }
       }
   }
@@ -87,14 +88,14 @@ class DataExportController @Inject()(service: DataExportService, surveyAdminServ
                 case Right(csvFile) =>
                   val dateStamp = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.ofInstant(Clock.systemUTC().instant(), ZoneId.systemDefault).withNano(0)).replace(":", "-").replace("T", "-")
                   Ok.sendFile(csvFile, fileName = _ => s"intake24-$surveyId-data-$dateStamp.csv", onClose = () => csvFile.delete())
-                case Left(exportError) => InternalServerError(write(ErrorDescription("ExportError", exportError)))
+                case Left(exportError) => InternalServerError(toJsonString(ErrorDescription("ExportError", exportError)))
               }
             case Left(databaseError) => translateDatabaseError(databaseError)
           }
 
 
         } catch {
-          case e: DateTimeParseException => BadRequest(write(ErrorDescription("DateFormat", "Failed to parse date parameter. Expected a UTC date in ISO 8601 format, e.g. '2017-02-15T16:40:30Z'.")))
+          case e: DateTimeParseException => BadRequest(toJsonString(ErrorDescription("DateFormat", "Failed to parse date parameter. Expected a UTC date in ISO 8601 format, e.g. '2017-02-15T16:40:30Z'.")))
         }
       }
   }

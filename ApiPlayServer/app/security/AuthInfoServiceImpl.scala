@@ -18,54 +18,53 @@ limitations under the License.
 
 package security
 
-import com.mohiva.play.silhouette.api.AuthInfo
-import com.mohiva.play.silhouette.api.LoginInfo
-import com.mohiva.play.silhouette.api.util.PasswordInfo
-import scala.reflect.ClassTag
-import scala.concurrent.Future
-import play.api.Logger
+import javax.inject.{Inject, Singleton}
 
-import play.api.libs.json.JsObject
-import play.api.libs.json.Json
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.Logger
-import javax.inject.Inject
+import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import javax.inject.Singleton
 import com.mohiva.play.silhouette.api.util.PasswordInfo
-import uk.ac.ncl.openlab.intake24.datastoresql.DataStoreScala
+import play.api.Logger
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import uk.ac.ncl.openlab.intake24.errors.RecordNotFound
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.UserAdminService
+
+import scala.concurrent.Future
+import scala.reflect.ClassTag
 
 @Singleton
-class AuthInfoServiceImpl @Inject() (dataStore: DataStoreScala) extends AuthInfoRepository {
+class AuthInfoServiceImpl @Inject()(userAdminService: UserAdminService) extends AuthInfoRepository {
 
   def find[T](loginInfo: LoginInfo)(implicit tag: ClassTag[T]): Future[Option[T]] = Future {
-
     Logger.debug("Retrieving " + loginInfo.toString())
 
     val intake24key = Intake24UserKey.fromString(loginInfo.providerKey)
 
-    dataStore.getUserRecord(intake24key.surveyId.getOrElse(""), intake24key.userName).map {
-      record =>
-        PasswordInfo(record.passwordHasher, record.passwordHashBase64, Some(record.passwordSaltBase64)).asInstanceOf[T]
+    userAdminService.getUserById(intake24key.surveyId, intake24key.userName) match {
+      case Right(secureUserRecord) => Some(PasswordInfo(secureUserRecord.passwordHasher, secureUserRecord.passwordHashBase64, Some(secureUserRecord.passwordSaltBase64)).asInstanceOf[T])
+      case Left(RecordNotFound(_)) => None
+      case Left(e) => throw e.exception
     }
   }
 
   def save[T](loginInfo: LoginInfo, authInfo: T): Future[T] = ???
+
   def add[T](loginInfo: LoginInfo, authInfo: T): Future[T] = ???
+
   def remove[T](loginInfo: LoginInfo)(implicit tag: scala.reflect.ClassTag[T]): Future[Unit] = ???
 
   def update[T](loginInfo: LoginInfo, authInfo: T): scala.concurrent.Future[T] = ???
-  /* 
-   
-   Updating user records is not currently supported 
-    
+
+  /*
+
+   Updating user records is not currently supported
+
    Future {
     Logger.debug("Updating " + loginInfo.toString())
-    
+
     val info = authInfo.asInstanceOf[PasswordInfo]
 
     val intake24key = Intake24UserKey.fromString(loginInfo.providerKey)
-    
+
     dataStore.getUserRecord(intake24key.surveyName, intake24key.userName) match {
       case Some(record) => {
         val newRecord = SecureUserRecord(record.username, info.password, info.salt.get, info.hasher, record.roles, record.permissions, record.customFields)

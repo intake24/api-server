@@ -23,7 +23,7 @@ import javax.inject.Inject
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import controllers.DatabaseErrorHandler
-import parsers.UpickleUtil
+import parsers.JsonUtils
 import play.api.{Configuration, Logger}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.mailer.{Email, MailerClient}
@@ -35,6 +35,7 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.admin.UserAdminService
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import io.circe.generic.auto._
 
 
 case class CallbackRequest(name: String, phone: String)
@@ -47,13 +48,13 @@ class HelpController @Inject()(cache: CacheApi,
                                userAdminService: UserAdminService,
                                passwordHasherRegistry: PasswordHasherRegistry,
                                deadbolt: DeadboltActionsAdapter) extends Controller
-  with DatabaseErrorHandler with UpickleUtil {
+  with DatabaseErrorHandler with JsonUtils {
 
   val callbackRequestRate = config.getInt("intake24.help.callbackRequestRateSeconds").get
 
   // TODO: captcha to prevent new spam
   // TODO: localise e-mail messages
-  def requestCallback(surveyId: String) = deadbolt.restrictToRoles(Roles.surveyRespondent(surveyId))(upickleBodyParser[CallbackRequest]) {
+  def requestCallback(surveyId: String) = deadbolt.restrictToRoles(Roles.surveyRespondent(surveyId))(jsonBodyParser[CallbackRequest]) {
     request =>
       Future {
         val userKey = request.subject.get.identifier

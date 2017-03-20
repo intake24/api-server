@@ -5,21 +5,21 @@ import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 import be.objectify.deadbolt.scala.AuthenticatedRequest
+import io.circe.generic.auto._
 import org.slf4j.LoggerFactory
-import parsers.UpickleUtil
+import parsers.JsonUtils
 import play.api.http.ContentTypes
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{AnyContent, Controller}
 import security.{DeadboltActionsAdapter, Roles}
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
-import upickle.default._
 
 import scala.concurrent.Future
 
 class ImageAdminController @Inject()(service: ImageAdminService, databaseService: ImageDatabaseService, storageService: ImageStorageService, deadbolt: DeadboltActionsAdapter)
   extends Controller
     with ImageOrDatabaseServiceErrorHandler
-    with UpickleUtil {
+    with JsonUtils {
 
   private val logger = LoggerFactory.getLogger(classOf[ImageAdminController])
 
@@ -53,7 +53,7 @@ class ImageAdminController @Inject()(service: ImageAdminService, databaseService
 
           error match {
             case Some(e) => translateImageServiceAndDatabaseResult(e)
-            case _ => Ok(write(results.map(_.right.get)))
+            case _ => Ok(toJsonString(results.map(_.right.get)))
           }
         }
       }
@@ -88,14 +88,14 @@ class ImageAdminController @Inject()(service: ImageAdminService, databaseService
       }
   }
 
-  def updateSourceImage(id: Int) = deadbolt.restrictToRoles(Roles.superuser)(upickleBodyParser[SourceImageRecordUpdate]) {
+  def updateSourceImage(id: Int) = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[SourceImageRecordUpdate]) {
     request =>
       Future {
         translateDatabaseResult(databaseService.updateSourceImageRecord(id, request.body))
       }
   }
 
-  def deleteSourceImages() = deadbolt.restrictToRoles(Roles.superuser)(upickleBodyParser[Seq[Long]]) {
+  def deleteSourceImages() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[Seq[Long]]) {
     request =>
       Future {
         translateImageServiceAndDatabaseResult(service.deleteSourceImages(request.body))

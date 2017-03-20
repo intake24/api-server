@@ -30,7 +30,8 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodBrowsingService
 import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, MatchedFood, Splitter}
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.FoodPopularityService
 import uk.ac.ncl.openlab.intake24.{UserCategoryHeader, UserFoodHeader}
-import upickle.default._
+import io.circe.generic.auto._
+import parsers.JsonUtils
 
 import scala.concurrent.Future
 
@@ -40,7 +41,7 @@ case class LookupResult(foods: Seq[UserFoodHeader], categories: Seq[UserCategory
 
 class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex], foodDescriptionSplitters: Map[String, Splitter],
                                      foodBrowsingService: FoodBrowsingService, foodPopularityService: FoodPopularityService,
-                                     deadbolt: DeadboltActionsAdapter) extends Controller with DatabaseErrorHandler {
+                                     deadbolt: DeadboltActionsAdapter) extends Controller with DatabaseErrorHandler with JsonUtils {
 
   import uk.ac.ncl.openlab.intake24.errors.ErrorUtils._
 
@@ -48,8 +49,8 @@ class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex], foodDe
     _ =>
       Future {
         foodDescriptionSplitters.get(locale) match {
-          case Some(splitter) => Ok(write(SplitSuggestion(splitter.split(description))))
-          case None => NotFound(write(ErrorDescription("InvalidLocale", s"Splitter service not available for locale $locale")))
+          case Some(splitter) => Ok(toJsonString(SplitSuggestion(splitter.split(description))))
+          case None => NotFound(toJsonString(ErrorDescription("InvalidLocale", s"Splitter service not available for locale $locale")))
         }
       }
   }

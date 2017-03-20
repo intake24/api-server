@@ -20,24 +20,25 @@ package controllers
 
 import javax.inject.Inject
 
-import parsers.UpickleUtil
+import io.circe.generic.auto._
+import parsers.JsonUtils
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
 import security.{DeadboltActionsAdapter, Roles}
-import uk.ac.ncl.openlab.intake24.{LocalCategoryRecordUpdate, MainCategoryRecordUpdate, NewLocalCategoryRecord, NewMainCategoryRecord}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoriesAdminService
+import uk.ac.ncl.openlab.intake24.{LocalCategoryRecordUpdate, MainCategoryRecordUpdate, NewLocalCategoryRecord, NewMainCategoryRecord}
 
 import scala.concurrent.Future
 
-
-class CategoriesAdminController @Inject() (service: CategoriesAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
-    with DatabaseErrorHandler with UpickleUtil {
+class CategoriesAdminController @Inject()(service: CategoriesAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
+  with DatabaseErrorHandler with JsonUtils {
 
   def getCategoryRecord(code: String, locale: String) = deadbolt.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getCategoryRecord(code, locale))
     }
   }
+
   def isCategoryCodeAvailable(code: String) = deadbolt.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.isCategoryCodeAvailable(code))
@@ -50,7 +51,7 @@ class CategoriesAdminController @Inject() (service: CategoriesAdminService, dead
     }
   }
 
-  def createMainCategoryRecord() = deadbolt.restrictToRoles(Roles.superuser)(upickleBodyParser[NewMainCategoryRecord]) {
+  def createMainCategoryRecord() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[NewMainCategoryRecord]) {
     request =>
       Future {
         translateDatabaseResult(service.createMainCategoryRecords(Seq(request.body)))
@@ -63,14 +64,14 @@ class CategoriesAdminController @Inject() (service: CategoriesAdminService, dead
     }
   }
 
-  def updateMainCategoryRecord(categoryCode: String) = deadbolt.restrictToRoles(Roles.superuser)(upickleBodyParser[MainCategoryRecordUpdate]) {
+  def updateMainCategoryRecord(categoryCode: String) = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[MainCategoryRecordUpdate]) {
     request =>
       Future {
         translateDatabaseResult(service.updateMainCategoryRecord(categoryCode, request.body))
       }
   }
 
-  def updateLocalCategoryRecord(categoryCode: String, locale: String) = deadbolt.restrictToRoles(Roles.superuser)(upickleBodyParser[LocalCategoryRecordUpdate]) {
+  def updateLocalCategoryRecord(categoryCode: String, locale: String) = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[LocalCategoryRecordUpdate]) {
     request =>
       Future {
         val req = request.body

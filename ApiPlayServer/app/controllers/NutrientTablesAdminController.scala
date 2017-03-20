@@ -18,18 +18,18 @@ limitations under the License.
 
 package controllers
 
-import be.objectify.deadbolt.scala.DeadboltActions
 import javax.inject.Inject
-import play.api.mvc.Action
-import play.api.mvc.Controller
-import security.Roles
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.NutrientTablesAdminService
+
+import io.circe.generic.auto._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import security.DeadboltActionsAdapter
+import play.api.mvc.Controller
+import security.{DeadboltActionsAdapter, Roles}
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.NutrientTablesAdminService
+
 import scala.concurrent.Future
 
-class NutrientTablesAdminController @Inject() (service: NutrientTablesAdminService, deadbolt: DeadboltActionsAdapter) extends Controller with DatabaseErrorHandler {
-  
+class NutrientTablesAdminController @Inject()(service: NutrientTablesAdminService, deadbolt: DeadboltActionsAdapter) extends Controller with DatabaseErrorHandler {
+
   def listNutrientTables() = deadbolt.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.listNutrientTables())

@@ -1,4 +1,8 @@
-[submodule "resty-gwt"]
-	path = resty-gwt
-	url = https://github.com/digitalinteraction/resty-gwt.git
+[submodule "PTStemmer-Java"]
+	path = PTStemmer-Java
+	url = https://github.com/digitalinteraction/PTStemmer-Java
+	branch = master
+[submodule "infiauto"]
+	path = infiauto
+	url = https://github.com/digitalinteraction/infiauto
 	branch = master

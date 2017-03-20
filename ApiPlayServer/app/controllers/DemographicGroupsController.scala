@@ -1,21 +1,22 @@
 package controllers
 
 import com.google.inject.Inject
-import parsers.UpickleUtil
 import play.api.http.ContentTypes
 import play.mvc.Controller
 import security.{DeadboltActionsAdapter, Roles}
 import uk.ac.ncl.openlab.intake24.services.fooddb.demographicgroups._
+
 import scala.concurrent.Future
 import play.api.libs.concurrent.Execution.Implicits._
-import upickle.default.write
+import io.circe.generic.auto._
+import parsers.JsonUtils
 
 /**
   * Created by Tim Osadchiy on 09/02/2017.
   */
 class DemographicGroupsController @Inject()(dgService: DemographicGroupsService,
                                             deadbolt: DeadboltActionsAdapter)
-  extends Controller with ImageOrDatabaseServiceErrorHandler with UpickleUtil {
+  extends Controller with ImageOrDatabaseServiceErrorHandler with JsonUtils {
 
   def list() = deadbolt.restrictToAuthenticated {
     _ =>
@@ -24,14 +25,14 @@ class DemographicGroupsController @Inject()(dgService: DemographicGroupsService,
       }
   }
 
-  def createDemographicGroup() = deadbolt.restrictToRoles(Roles.superuser)(upickleBodyParser[DemographicGroupRecordIn]) {
+  def createDemographicGroup() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[DemographicGroupRecordIn]) {
     request =>
       Future {
         translateDatabaseResult(dgService.createDemographicGroup(request.body))
       }
   }
 
-  def patchDemographicGroup(id: Int) = deadbolt.restrictToRoles(Roles.superuser)(upickleBodyParser[DemographicGroupRecordIn]) {
+  def patchDemographicGroup(id: Int) = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[DemographicGroupRecordIn]) {
     request =>
       Future {
         translateDatabaseResult(dgService.patchDemographicGroup(id, request.body))
@@ -52,14 +53,14 @@ class DemographicGroupsController @Inject()(dgService: DemographicGroupsService,
       }
   }
 
-  def createDemographicGroupScaleSector(demographicGroupId: Int) = deadbolt.restrictToRoles(Roles.superuser)(upickleBodyParser[DemographicScaleSectorIn]) {
+  def createDemographicGroupScaleSector(demographicGroupId: Int) = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[DemographicScaleSectorIn]) {
     request =>
       Future {
         translateDatabaseResult(dgService.createDemographicScaleSector(demographicGroupId, request.body))
       }
   }
 
-  def patchDemographicGroupScaleSector(id: Int) = deadbolt.restrictToRoles(Roles.superuser)(upickleBodyParser[DemographicScaleSectorIn]) {
+  def patchDemographicGroupScaleSector(id: Int) = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[DemographicScaleSectorIn]) {
     request =>
       Future {
         translateDatabaseResult(dgService.patchDemographicScaleSector(id, request.body))
@@ -93,7 +94,7 @@ class DemographicGroupsController @Inject()(dgService: DemographicGroupsService,
           HenryCoefficients("f", IntRange(60, Int.MaxValue), 8.52, 421, 10.7)
         )
 
-        Ok(write(result)).as(ContentTypes.JSON)
+        Ok(toJsonString(result)).as(ContentTypes.JSON)
       }
   }
 

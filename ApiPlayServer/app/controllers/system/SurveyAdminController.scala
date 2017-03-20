@@ -21,21 +21,21 @@ package controllers.system
 import javax.inject.Inject
 
 import controllers.DatabaseErrorHandler
-import parsers.UpickleUtil
+import parsers.JsonUtils
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller}
 import security.{DeadboltActionsAdapter, Roles}
 import uk.ac.ncl.openlab.intake24.api.shared.CreateSurveyRequest
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{NewSurveyParameters, SurveyAdminService}
-import upickle.default._
+import io.circe.generic.auto._
 
 import scala.concurrent.Future
 
 
 class SurveyAdminController @Inject()(service: SurveyAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
-  with DatabaseErrorHandler with UpickleUtil {
+  with DatabaseErrorHandler with JsonUtils {
 
-  def createSurvey() = deadbolt.restrictToRoles(Roles.superuser)(upickleBodyParser[CreateSurveyRequest]) {
+  def createSurvey() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[CreateSurveyRequest]) {
     request =>
       Future {
         val body = request.body

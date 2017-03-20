@@ -26,13 +26,11 @@ import play.api.{Configuration, Environment}
 import play.db.NamedDatabase
 import scheduled.{ErrorDigestSender, ErrorDigestSenderImpl}
 import sms.{SMSService, TwilioSMSImpl}
-import uk.ac.ncl.openlab.intake24.datastoresql.{DataStoreScala, DataStoreSqlImpl}
-import uk.ac.ncl.openlab.intake24.foodsql.NutrientMappingServiceSqlImpl
 import uk.ac.ncl.openlab.intake24.foodsql.admin._
 import uk.ac.ncl.openlab.intake24.foodsql.demographicGroups._
 import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl
 import uk.ac.ncl.openlab.intake24.foodsql.images.ImageDatabaseServiceSqlImpl
-import uk.ac.ncl.openlab.intake24.foodsql.user._
+import uk.ac.ncl.openlab.intake24.foodsql.user.{FoodCompositionServiceImpl, _}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.demographicgroups._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
@@ -41,11 +39,11 @@ import uk.ac.ncl.openlab.intake24.services.foodindex.danish.{FoodIndexImpl_da_DK
 import uk.ac.ncl.openlab.intake24.services.foodindex.english.{EnglishWordOps, EnglishWordOpsPlingImpl, FoodIndexImpl_en_GB, SplitterImpl_en_GB}
 import uk.ac.ncl.openlab.intake24.services.foodindex.portuguese.{FoodIndexImpl_pt_PT, SplitterImpl_pt_PT}
 import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, FoodIndexDataService, Splitter}
-import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService
+import uk.ac.ncl.openlab.intake24.services.nutrition.{DefaultNutrientMappingServiceImpl, FoodCompositionService, NutrientMappingService}
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, SurveyAdminService, UserAdminService}
-import uk.ac.ncl.openlab.intake24.services.systemdb.user.{FoodPopularityService, ClientErrorService, SurveyService}
+import uk.ac.ncl.openlab.intake24.services.systemdb.user.{ClientErrorService, FoodPopularityService, SurveyService}
 import uk.ac.ncl.openlab.intake24.systemsql.admin.{DataExportImpl, SurveyAdminImpl, UserAdminImpl}
-import uk.ac.ncl.openlab.intake24.systemsql.user.{FoodPopularityServiceImpl, ClientErrorServiceImpl, SurveyServiceImpl}
+import uk.ac.ncl.openlab.intake24.systemsql.user.{ClientErrorServiceImpl, FoodPopularityServiceImpl, SurveyServiceImpl}
 
 
 class Intake24ServicesModule(env: Environment, config: Configuration) extends AbstractModule {
@@ -102,8 +100,6 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
   }
 
   def configure() = {
-    bind(classOf[DataStoreScala]).to(classOf[DataStoreSqlImpl])
-
     // Utility services
 
     bind(classOf[EnglishWordOps]).to(classOf[EnglishWordOpsPlingImpl])
@@ -133,7 +129,8 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     bind(classOf[NutrientTablesAdminService]).to(classOf[NutrientTablesAdminImpl])
     bind(classOf[QuickSearchService]).to(classOf[QuickSearchAdminImpl])
     bind(classOf[ImageMapsAdminService]).to(classOf[ImageMapsAdminImpl])
-    bind(classOf[NutrientMappingService]).to(classOf[NutrientMappingServiceSqlImpl])
+    bind(classOf[FoodCompositionService]).to(classOf[FoodCompositionServiceImpl])
+    bind(classOf[NutrientMappingService]).to(classOf[DefaultNutrientMappingServiceImpl])
 
     bind(classOf[SurveyService]).to(classOf[SurveyServiceImpl])
 

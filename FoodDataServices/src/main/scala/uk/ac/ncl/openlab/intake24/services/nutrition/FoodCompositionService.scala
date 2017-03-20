@@ -18,12 +18,15 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.services.nutrition
 
-import java.time.Instant
+import uk.ac.ncl.openlab.intake24.errors.{FoodCompositionTableError, UnexpectedDatabaseError}
 
-import uk.ac.ncl.openlab.intake24.errors.AnyError
-import uk.ac.ncl.openlab.intake24.surveydata._
+case class NutrientDescription(nutrientId: Long, description: String, unit: String)
 
-trait NutrientMappingService {
+trait FoodCompositionService {
 
-  def mapSurveySubmission(submission: SurveySubmission, locale: String): Either[AnyError, NutrientMappedSubmission]
+  def getSupportedNutrients(): Either[UnexpectedDatabaseError, Seq[NutrientDescription]]
+
+  def getEnergyKcalNutrientId(): Long
+
+  def getFoodCompositionRecord(table_id: String, record_id: String): Either[FoodCompositionTableError, Map[Long, Double]]
 }

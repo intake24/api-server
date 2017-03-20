@@ -1,12 +1,13 @@
 package parsers
 
+import io.circe.Decoder
 import play.api.libs.Files.TemporaryFile
 import play.api.mvc.MultipartFormData.FilePart
 import play.api.mvc.Results.BadRequest
 import play.api.mvc.{MultipartFormData, Result}
-import upickle.default._
+import io.circe.generic.auto._
 
-trait FormDataUtil extends UpickleUtil {
+trait FormDataUtil extends JsonUtils {
 
   def getFile(key: String, parsedBody: MultipartFormData[TemporaryFile]): Either[Result, FilePart[TemporaryFile]] = {
     parsedBody.file(key) match {
@@ -29,7 +30,7 @@ trait FormDataUtil extends UpickleUtil {
     }
   }
 
-  def getMultipleParsedData[T](key: String, parsedBody: MultipartFormData[TemporaryFile])(implicit reader: Reader[T]): Either[Result, Seq[T]] =
+  def getMultipleParsedData[T](key: String, parsedBody: MultipartFormData[TemporaryFile])(implicit reader: Decoder[T]): Either[Result, Seq[T]] =
     getMultipleData(key, parsedBody).right.flatMap {
       fields =>
         fields.map(parseJson[T](_)).foldRight(Right(Nil): Either[Result, List[T]]) {
@@ -51,7 +52,7 @@ trait FormDataUtil extends UpickleUtil {
         Right(seq.head)
   }
 
-  def getParsedData[T](key: String, parsedBody: MultipartFormData[TemporaryFile])(implicit reader: Reader[T]): Either[Result, T] =
+  def getParsedData[T](key: String, parsedBody: MultipartFormData[TemporaryFile])(implicit reader: Decoder[T]): Either[Result, T] =
     getData(key, parsedBody).right.flatMap {
       str =>
         parseJson[T](str)

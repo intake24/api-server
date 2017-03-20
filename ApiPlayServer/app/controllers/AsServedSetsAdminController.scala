@@ -21,17 +21,16 @@ package controllers
 import java.nio.file.Paths
 import javax.inject.Inject
 
-import parsers.UpickleUtil
+import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.{Controller, Result}
+import play.api.mvc.Controller
 import security.{DeadboltActionsAdapter, Roles}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
-import upickle.default._
+import io.circe.generic.auto._
+import parsers.JsonUtils
 
 import scala.concurrent.Future
-import scalaz.Scalaz._
-import play.api.Logger
 
 case class AsServedImageWithUrls(sourceId: Long, imageUrl: String, thumbnailUrl: String, weight: Double)
 
@@ -49,9 +48,10 @@ class AsServedSetsAdminController @Inject()(
                                              imageAdmin: ImageAdminService,
                                              imageStorage: ImageStorageService,
                                              deadbolt: DeadboltActionsAdapter) extends Controller
-  with ImageOrDatabaseServiceErrorHandler with UpickleUtil {
+  with ImageOrDatabaseServiceErrorHandler with JsonUtils {
 
-  import ImageAdminService.{WrapDatabaseError, WrapImageServiceError}
+  import ImageAdminService.WrapDatabaseError
+  import uk.ac.ncl.openlab.intake24.errors.ErrorUtils.sequence
 
   def resolveUrls(image: AsServedImageWithPaths): AsServedImageWithUrls =
     AsServedImageWithUrls(image.sourceId, imageStorage.getUrl(image.imagePath), imageStorage.getUrl(image.thumbnailPath), image.weight)
@@ -76,7 +76,7 @@ class AsServedSetsAdminController @Inject()(
     }
   }
 
-  def importAsServedSet() = deadbolt.restrictToRoles(Roles.superuser)(upickleBodyParser[PortableAsServedSet]) {
+  def importAsServedSet() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[PortableAsServedSet]) {
     request =>
       Future {
 
@@ -151,7 +151,7 @@ class AsServedSetsAdminController @Inject()(
       res <- service.getAsServedSetWithPaths(newSet.id).wrapped.right
     ) yield res
 
-  def createAsServedSetFromSource() = deadbolt.restrictToRoles(Roles.superuser)(upickleBodyParser[NewAsServedSet]) {
+  def createAsServedSetFromSource() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[NewAsServedSet]) {
     request =>
       Future {
         val newSet = request.body
@@ -199,9 +199,9 @@ class AsServedSetsAdminController @Inject()(
             val description = request.body.dataParts("description").head
 
             val result = for (
-              sourceIds <- records.map {
+              sourceIds <- sequence(records.map {
                 record => imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForAsServed(setId, record._1.filename), Paths.get(record._1.ref.file.getPath), keywords, uploaderName)
-              }.toList.sequenceU.right;
+              }).right;
               result <- createAsServedSetImpl(NewAsServedSet(setId, description, sourceIds.zip(weights).map { case (id, weight) => NewAsServedImage(id, weight) })).right)
               yield result
 
@@ -223,7 +223,7 @@ class AsServedSetsAdminController @Inject()(
     }
   }
 
-  def updateAsServedSet(id: String) = deadbolt.restrictToRoles(Roles.superuser)(upickleBodyParser[NewAsServedSet]) {
+  def updateAsServedSet(id: String) = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[NewAsServedSet]) {
     request =>
       Future {
         val update = request.body

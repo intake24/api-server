@@ -1,7 +1,7 @@
 package uk.ac.ncl.openlab.intake24.sql.tools.food.nutrients
 
 import org.rogach.scallop.ScallopConf
-import uk.ac.ncl.openlab.intake24.NutrientTableRecord
+import uk.ac.ncl.openlab.intake24.FoodCompositionRecord
 import uk.ac.ncl.openlab.intake24.foodsql.admin.NutrientTablesAdminImpl
 import uk.ac.ncl.openlab.intake24.nutrientsndns.{CsvNutrientTableMapping, CsvNutrientTableParser}
 import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConfigurationOptions, DatabaseConnection, WarningMessage}
@@ -29,7 +29,7 @@ abstract class CsvNutrientTableUpdate(nutrientTableId: String, nutrientMapping: 
 
   val records = table.records.map {
     case (code, nmap) =>
-      NutrientTableRecord(nutrientTableId, code, nmap)
+      FoodCompositionRecord(nutrientTableId, code, nmap)
   }.toSeq
  
   nutrientTableService.updateNutrientTableRecords(records)

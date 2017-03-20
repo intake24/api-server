@@ -1,5 +1,5 @@
 WITH RECURSIVE v AS(
-  SELECT (SELECT code FROM foods WHERE code='COCO') AS food_code
+  SELECT (SELECT code FROM foods WHERE code={food_code}) AS food_code
 ), t(code, level) AS (
   (SELECT category_code as code, 0 as level FROM foods_categories WHERE food_code IN (SELECT food_code FROM v) ORDER BY code)
     UNION

@@ -1,13 +1,13 @@
 package uk.ac.ncl.openlab.intake24.systemsql.admin
 
-import java.time.Instant
+import java.time.{Instant, ZonedDateTime}
 import java.util.UUID
 import javax.inject.{Inject, Named}
 import javax.sql.DataSource
 
 import anorm._
 import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound}
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.DataExportService
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, ExportFood, ExportMeal, ExportSubmission}
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 import uk.ac.ncl.openlab.intake24.surveydata._
 
@@ -21,7 +21,7 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
 
   lazy val getSurveySubmissionNutrientsSql = sqlFromResource("admin/get_survey_submission_nutrients.sql")
 
-  private case class SubmissionRow(id: UUID, survey_id: String, user_id: String, start_time: Instant, end_time: Instant, log: String,
+  private case class SubmissionRow(id: UUID, survey_id: String, user_id: String, start_time: ZonedDateTime, end_time: ZonedDateTime, log: String,
                                    submission_custom_fields: Array[Array[String]], user_custom_fields: Array[Array[String]])
 
   private case class MealRow(submission_id: UUID, meal_id: Long, hours: Int, minutes: Int, name: String, custom_fields: Array[Array[String]])
@@ -37,7 +37,7 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
       case (acc, cf) => acc + (cf(0) -> cf(1))
     }
 
-  def getSurveySubmissions(surveyId: String, dateFrom: Option[Instant], dateTo: Option[Instant], offset: Int, limit: Int, respondentId: Option[String]): Either[LookupError, Seq[NutrientMappedSubmission]] = tryWithConnection {
+  def getSurveySubmissions(surveyId: String, dateFrom: Option[Instant], dateTo: Option[Instant], offset: Int, limit: Int, respondentId: Option[String]): Either[LookupError, Seq[ExportSubmission]] = tryWithConnection {
     implicit conn =>
       withTransaction {
 
@@ -79,13 +79,13 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
                             (nutrientRow.n_type.toInt, nutrientRow.n_amount)
                         }.toMap
 
-                        NutrientMappedFood(foodRow.code, foodRow.english_description, foodRow.local_description, foodRow.search_term, foodRow.nutrient_table_id, foodRow.nutrient_table_code, foodRow.ready_meal,
-                          CompletedPortionSize(foodRow.portion_size_method_id, customFieldsAsMap(foodRow.portion_size_data)), foodRow.reasonable_amount,
+                        ExportFood(foodRow.code, foodRow.english_description, foodRow.local_description, foodRow.search_term, foodRow.nutrient_table_id, foodRow.nutrient_table_code, foodRow.ready_meal,
+                          PortionSize(foodRow.portion_size_method_id, customFieldsAsMap(foodRow.portion_size_data)), foodRow.reasonable_amount,
                           foodRow.food_group_id, foodRow.brand, nutrients, customFieldsAsMap(foodRow.custom_fields))
                     }
-                    NutrientMappedMeal(mealRow.name, MealTime(mealRow.hours, mealRow.minutes), customFieldsAsMap(mealRow.custom_fields), foods)
+                    ExportMeal(mealRow.name, MealTime(mealRow.hours, mealRow.minutes), customFieldsAsMap(mealRow.custom_fields), foods)
                 }
-                NutrientMappedSubmission(submissionRow.id, submissionRow.user_id, customFieldsAsMap(submissionRow.user_custom_fields), customFieldsAsMap(submissionRow.submission_custom_fields),
+                ExportSubmission(submissionRow.id, submissionRow.user_id, customFieldsAsMap(submissionRow.user_custom_fields), customFieldsAsMap(submissionRow.submission_custom_fields),
                   submissionRow.start_time, submissionRow.end_time, meals)
             }
 

@@ -1,6 +1,7 @@
 package uk.ac.ncl.openlab.intake24.services.systemdb.user
 
 import uk.ac.ncl.openlab.intake24.errors._
+import uk.ac.ncl.openlab.intake24.surveydata.NutrientMappedSubmission
 
 case class PublicSurveyParameters(localeId: String, supportEmail: String)
 
@@ -12,5 +13,5 @@ trait SurveyService {
 
   def getSurveyParameters(surveyId: String): Either[LookupError, UserSurveyParameters]
 
-  //def generateUser(surveyId): Either[GeneratedUserInfo]
+  def createSubmission(surveyId: String, userName: String, submission: NutrientMappedSubmission): Either[UnexpectedDatabaseError, Unit]
 }

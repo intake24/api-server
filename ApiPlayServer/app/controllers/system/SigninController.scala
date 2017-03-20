@@ -26,23 +26,23 @@ import com.mohiva.play.silhouette.api.{Environment, LoginInfo}
 import com.mohiva.play.silhouette.impl.exceptions.{IdentityNotFoundException, InvalidPasswordException}
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import controllers.DatabaseErrorHandler
+import io.circe.generic.auto._
 import models.RefreshSubject
-import parsers.UpickleUtil
+import parsers.JsonUtils
 import play.api.http.ContentTypes
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
 import play.api.mvc.{Action, Controller}
 import security._
 import uk.ac.ncl.openlab.intake24.api.shared.{ErrorDescription, RefreshResult, SigninResult, Credentials => Intake24Credentials}
-import upickle.default._
 
 import scala.concurrent.Future
 
 class SigninController @Inject()(@Named("refresh") refreshEnv: Environment[Intake24ApiEnv], @Named("access") accessEnv: Environment[Intake24ApiEnv],
                                  credentialsProvider: CredentialsProvider, deadbolt: DeadboltActionsAdapter)
-  extends Controller with UpickleUtil with DatabaseErrorHandler {
+  extends Controller with JsonUtils with DatabaseErrorHandler {
 
-  def signin = Action.async(upickleBodyParser[Intake24Credentials]) {
+  def signin = Action.async(jsonBodyParser[Intake24Credentials]) {
     implicit request =>
 
       val credentials = request.body
@@ -58,7 +58,7 @@ class SigninController @Inject()(@Named("refresh") refreshEnv: Environment[Intak
                 val customClaims = Json.obj("i24t" -> "refresh")
 
                 refreshEnv.authenticatorService.init(authenticator.copy(customClaims = Some(customClaims))).map { token =>
-                  Ok(write(SigninResult(token))).as(ContentTypes.JSON)
+                  Ok(toJsonString(SigninResult(token))).as(ContentTypes.JSON)
                 }
             }
             case None =>
@@ -67,8 +67,8 @@ class SigninController @Inject()(@Named("refresh") refreshEnv: Environment[Intak
       }.recover {
         case e: IdentityNotFoundException => Unauthorized
         case e: InvalidPasswordException => Unauthorized
-        case e: DatabaseFormatException => InternalServerError(write(ErrorDescription("DatabaseFormatException", e.toString())))
-        case e: DatabaseAccessException => InternalServerError(write(ErrorDescription("DatabaseAccessException", e.toString())))
+        case e: DatabaseFormatException => InternalServerError(toJsonString(ErrorDescription("DatabaseFormatException", e.toString())))
+        case e: DatabaseAccessException => InternalServerError(toJsonString(ErrorDescription("DatabaseAccessException", e.toString())))
       }
   }
 
@@ -96,7 +96,7 @@ class SigninController @Inject()(@Named("refresh") refreshEnv: Environment[Intak
                  */
 
                 accessEnv.authenticatorService.init(accessToken.copy(customClaims = Some(customClaims))).map {
-                  serialisedAccessToken => (Ok(write(RefreshResult(serialisedAccessToken))).as(ContentTypes.JSON))
+                  serialisedAccessToken => (Ok(toJsonString(RefreshResult(serialisedAccessToken))).as(ContentTypes.JSON))
                 }
 
             }
@@ -105,8 +105,8 @@ class SigninController @Inject()(@Named("refresh") refreshEnv: Environment[Intak
           }.recover {
             case e: IdentityNotFoundException => Unauthorized
             case e: InvalidPasswordException => Unauthorized
-            case e: DatabaseFormatException => InternalServerError(write(ErrorDescription("DatabaseFormatException", e.toString())))
-            case e: DatabaseAccessException => InternalServerError(write(ErrorDescription("DatabaseAccessException", e.toString())))
+            case e: DatabaseFormatException => InternalServerError(toJsonString(ErrorDescription("DatabaseFormatException", e.toString())))
+            case e: DatabaseAccessException => InternalServerError(toJsonString(ErrorDescription("DatabaseAccessException", e.toString())))
           }
 
         case _ => Future.successful(Unauthorized.withHeaders(("WWW-Authenticate", "X-Auth-Token")))

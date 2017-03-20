@@ -25,7 +25,9 @@ lazy val commonSettings = Seq(
 
 lazy val sharedTypes = Project(id = "sharedTypes", base = file("SharedTypes")).settings(commonSettings: _*)
 
-lazy val phraseSearch = Project(id = "phrasesearch", base = file ("PhraseSearch")).settings(commonSettings: _*)
+lazy val infiauto = Project(id = "infiauto", base = file ("infiauto"))
+
+lazy val phraseSearch = Project(id = "phrasesearch", base = file ("PhraseSearch")).dependsOn(infiauto).settings(commonSettings: _*)
 
 lazy val gwtShared = Project(id = "gwtShared", base = file("ClientShared")).settings(commonSettings: _*)
 
@@ -40,7 +42,9 @@ lazy val systemDataMongo = Project(id = "systemDataMongo", base = file ("SystemD
 lazy val systemDataSql = Project(id = "systemDataSql", base = file("SystemDataSQL")).dependsOn(commonSql, systemDataServices % "compile->compile;test->test").settings(commonSettings: _*)
 
 
-lazy val foodDataServices = Project(id = "foodDataServices", base = file("FoodDataServices")).dependsOn(sharedTypes, phraseSearch).settings(commonSettings: _*)
+lazy val ptStemmer = Project(id = "ptStemmer", base = file("PTStemmer-Java"))
+
+lazy val foodDataServices = Project(id = "foodDataServices", base = file("FoodDataServices")).dependsOn(sharedTypes, phraseSearch, ptStemmer).settings(commonSettings: _*)
 
 lazy val foodDataXml = Project(id = "foodDataXml", base = file("FoodDataXML")).dependsOn(foodDataServices).settings(commonSettings: _*)
 

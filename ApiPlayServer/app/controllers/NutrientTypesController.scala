@@ -2,25 +2,23 @@ package controllers
 
 import javax.inject.Inject
 
+import io.circe.generic.auto._
 import play.api.libs.concurrent.Execution.Implicits._
-import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService
-import security.DeadboltActionsAdapter
 import play.api.mvc.Controller
-import security.Roles
+import security.DeadboltActionsAdapter
+import uk.ac.ncl.openlab.intake24.services.nutrition.FoodCompositionService
 
 import scala.concurrent.Future
 
-/**
-  * Created by Tim Osadchiy on 16/02/2017.
-  */
-class NutrientTypesController @Inject()(nutrientService: NutrientMappingService,
+class NutrientTypesController @Inject()(service: FoodCompositionService,
                                         deadbolt: DeadboltActionsAdapter)
-  extends Controller with DatabaseErrorHandler{
+  extends Controller with DatabaseErrorHandler {
 
   def list() = deadbolt.restrictToAuthenticated {
-    _ => Future {
-      translateDatabaseResult(nutrientService.supportedNutrients())
-    }
+    _ =>
+      Future {
+        translateDatabaseResult(service.getSupportedNutrients())
+      }
   }
 
 }
