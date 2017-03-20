@@ -7,18 +7,45 @@ import javax.sql.DataSource
 import anorm._
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
+import uk.ac.ncl.openlab.intake24.services.systemdb.user.UserSurveyParameters
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
 class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends SurveyAdminService with SqlDataService with SqlResourceLoader {
 
-  def createSurvey(surveyId: String, parameters: NewSurveyParameters): Either[CreateError, Unit] = tryWithConnection {
+  def createSurvey(surveyId: String, parameters: NewSurveyParameters): Either[CreateError, UserSurveyParameters] = tryWithConnection {
     implicit conn =>
       tryWithConstraintCheck("surveys_id_pk", DuplicateCode(_)) {
-        SQL("INSERT INTO surveys VALUES ({id}, 0, DEFAULT, DEFAULT, {scheme_id}, {locale}, {allow_gen_users}, '', {survey_monkey_url}, {support_email})")
-          .on('id -> surveyId, 'scheme_id -> parameters.schemeId, 'locale -> parameters.localeId, 'allow_gen_users -> parameters.allowGeneratedUsers,
-            'survey_monkey_url -> parameters.externalFollowUpURL, 'support_email -> parameters.supportEmail)
-          .execute()
-        Right(())
+
+        val sqlQuery =
+          """
+            |INSERT INTO surveys (
+            |         id, state, start_date, end_date, scheme_id, locale,
+            |         allow_gen_users, suspension_reason, survey_monkey_url, support_email
+            |)
+            |VALUES ({id}, 0, DEFAULT, DEFAULT,
+            |        {scheme_id}, {locale}, {allow_gen_users}, '',
+            |        {survey_monkey_url}, {support_email})
+            |RETURNING id,
+            |          state,
+            |          start_date,
+            |          end_date,
+            |          scheme_id,
+            |          locale,
+            |          allow_gen_users,
+            |          suspension_reason,
+            |          survey_monkey_url,
+            |          support_email
+          """.stripMargin
+
+        val row = SQL(sqlQuery)
+          .on('id -> surveyId,
+              'scheme_id -> parameters.schemeId,
+              'locale -> parameters.localeId,
+              'allow_gen_users -> parameters.allowGeneratedUsers,
+              'survey_monkey_url -> parameters.externalFollowUpURL,
+              'support_email -> parameters.supportEmail)
+          .executeQuery().as(Macro.namedParser[SurveyParametersRow].single)
+        Right(row.toUserSurveyParameters)
       }
   }
 
@@ -33,7 +60,13 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
   }
 
   private case class SurveyParametersRow(scheme_id: String, state: Int, locale: String, start_date: Instant, end_date: Instant, suspension_reason: Option[String],
-                                         allow_gen_users: Boolean, survey_monkey_url: Option[String], support_email: String)
+                                         allow_gen_users: Boolean, survey_monkey_url: Option[String], support_email: String) {
+
+    def toUserSurveyParameters: UserSurveyParameters = new UserSurveyParameters(
+      this.scheme_id, this.locale, this.state.toString, this.suspension_reason, this.survey_monkey_url, this.support_email
+    )
+
+  }
 
   override def getSurveyParameters(surveyId: String): Either[LookupError, SurveyParameters] = tryWithConnection {
     implicit conn =>

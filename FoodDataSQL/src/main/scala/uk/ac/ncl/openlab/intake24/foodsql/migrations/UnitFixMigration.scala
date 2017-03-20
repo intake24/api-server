@@ -11,8 +11,8 @@ import uk.ac.ncl.openlab.intake24.sql.migrations.{Migration, MigrationFailed}
   */
 object UnitFixMigration extends Migration {
 
-  val versionFrom = 26l
-  val versionTo = 27l
+  val versionFrom = 27l
+  val versionTo = 28l
 
   val description = "Fix units for nutrient types"
 

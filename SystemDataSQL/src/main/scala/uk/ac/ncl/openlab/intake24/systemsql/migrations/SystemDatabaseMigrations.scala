@@ -362,7 +362,8 @@ object SystemDatabaseMigrations {
       def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
 
         val query =
-          """﻿CREATE TABLE gwt_client_error_reports(
+          """
+            |CREATE TABLE gwt_client_error_reports(
             |    id serial NOT NULL PRIMARY KEY,
             |    user_id character varying(256),
             |    survey_id character varying(64),

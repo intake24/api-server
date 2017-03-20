@@ -3,6 +3,7 @@ package uk.ac.ncl.openlab.intake24.services.systemdb.admin
 import java.time.Instant
 
 import uk.ac.ncl.openlab.intake24.errors.{CreateError, DeleteError, LookupError, UnexpectedDatabaseError}
+import uk.ac.ncl.openlab.intake24.services.systemdb.user.UserSurveyParameters
 
 sealed abstract class SurveyState(code: Long)
 
@@ -35,7 +36,7 @@ case class SurveyParameters(schemeId: String, localeId: String, state: Int, star
 case class LocalNutrientDescription(nutrientTypeId: Int, description: String, unit: String)
 
 trait SurveyAdminService {
-  def createSurvey(surveyId: String, parameters: NewSurveyParameters): Either[CreateError, Unit]
+  def createSurvey(surveyId: String, parameters: NewSurveyParameters): Either[CreateError, UserSurveyParameters]
 
   def getSurveyParameters(surveyId: String): Either[LookupError, SurveyParameters]
 
