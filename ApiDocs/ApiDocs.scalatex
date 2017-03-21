@@ -498,7 +498,7 @@
       @p
         @b{GET}
       @p
-        @hl.asciidoc{/admin/surveys/<survey_id>/submissions?dateFrom=<date_from>&dateTo=<date_to>&offset=<offset>&limit=<limit>}
+        @hl.asciidoc{/surveys/<survey_id>/submissions?dateFrom=<date_from>&dateTo=<date_to>&offset=<offset>&limit=<limit>}
       @p
         where
         @ul
@@ -600,7 +600,7 @@
       @p
         @b{GET} 
       @p
-        @hl.asciidoc{/admin/surveys/<survey_id>/submissions/csv?dateFrom=<date_from>&dateTo=<date_to>}
+        @hl.asciidoc{/surveys/<survey_id>/submissions/csv?dateFrom=<date_from>&dateTo=<date_to>}
        where
         @ul
           @li

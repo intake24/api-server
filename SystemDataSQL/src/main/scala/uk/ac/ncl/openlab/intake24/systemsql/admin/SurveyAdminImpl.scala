@@ -1,6 +1,6 @@
 package uk.ac.ncl.openlab.intake24.systemsql.admin
 
-import java.time.Instant
+import java.time.{Instant, ZonedDateTime}
 import javax.inject.{Inject, Named}
 import javax.sql.DataSource
 
@@ -12,11 +12,19 @@ import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
 class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends SurveyAdminService with SqlDataService with SqlResourceLoader {
 
-  def listSurveys(): Either[UnexpectedDatabaseError, Seq[UserSurveyParameters]] = {
-    Right(Seq())
+  def listSurveys(): Either[UnexpectedDatabaseError, Seq[SurveyParametersOut]] = tryWithConnection {
+    implicit connection =>
+      val sqlQuery =
+        """
+          |SELECT * FROM surveys;
+        """.stripMargin
+
+      val result = SQL(sqlQuery).executeQuery().as(Macro.namedParser[SurveyParametersRow].*).map(row => row.toSurveyParameters)
+
+      Right(result)
   }
 
-  def createSurvey(surveyId: String, parameters: NewSurveyParameters): Either[CreateError, UserSurveyParameters] = tryWithConnection {
+  def createSurvey(surveyId: String, parameters: NewSurveyParameters): Either[CreateError, SurveyParametersOut] = tryWithConnection {
     implicit conn =>
       tryWithConstraintCheck("surveys_id_pk", DuplicateCode(_)) {
 
@@ -43,13 +51,13 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
 
         val row = SQL(sqlQuery)
           .on('id -> surveyId,
-              'scheme_id -> parameters.schemeId,
-              'locale -> parameters.localeId,
-              'allow_gen_users -> parameters.allowGeneratedUsers,
-              'survey_monkey_url -> parameters.externalFollowUpURL,
-              'support_email -> parameters.supportEmail)
+            'scheme_id -> parameters.schemeId,
+            'locale -> parameters.localeId,
+            'allow_gen_users -> parameters.allowGeneratedUsers,
+            'survey_monkey_url -> parameters.externalFollowUpURL,
+            'support_email -> parameters.supportEmail)
           .executeQuery().as(Macro.namedParser[SurveyParametersRow].single)
-        Right(row.toUserSurveyParameters)
+        Right(row.toSurveyParameters)
       }
   }
 
@@ -63,23 +71,25 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
       }
   }
 
-  private case class SurveyParametersRow(scheme_id: String, state: Int, locale: String, start_date: Instant, end_date: Instant, suspension_reason: Option[String],
+  private case class SurveyParametersRow(id: String, scheme_id: String, state: Int, locale: String,
+                                         start_date: ZonedDateTime, end_date: ZonedDateTime, suspension_reason: Option[String],
                                          allow_gen_users: Boolean, survey_monkey_url: Option[String], support_email: String) {
 
-    def toUserSurveyParameters: UserSurveyParameters = new UserSurveyParameters(
-      this.scheme_id, this.locale, this.state.toString, this.suspension_reason, this.survey_monkey_url, this.support_email
+    def toSurveyParameters: SurveyParametersOut = new SurveyParametersOut(
+      this.id, this.scheme_id, this.locale, this.state, this.start_date, this.end_date,
+      this.suspension_reason, this.allow_gen_users, this.survey_monkey_url, this.support_email
     )
 
   }
 
-  override def getSurveyParameters(surveyId: String): Either[LookupError, SurveyParameters] = tryWithConnection {
+  override def getSurveyParameters(surveyId: String): Either[LookupError, SurveyParametersOut] = tryWithConnection {
     implicit conn =>
       SQL("SELECT scheme_id, state, locale, start_date, end_date, suspension_reason, allow_gen_users, survey_monkey_url, support_email FROM surveys WHERE id={survey_id}")
         .on('survey_id -> surveyId)
         .executeQuery()
         .as(Macro.namedParser[SurveyParametersRow].singleOpt) match {
         case Some(row) =>
-          Right(SurveyParameters(row.scheme_id, row.locale, row.state, row.start_date, row.end_date, row.suspension_reason, row.allow_gen_users, row.survey_monkey_url, row.support_email))
+          Right(row.toSurveyParameters)
         case None =>
           Left(RecordNotFound(new RuntimeException(s"Survey $surveyId does not exist")))
       }

@@ -1,9 +1,8 @@
 package uk.ac.ncl.openlab.intake24.services.systemdb.admin
 
-import java.time.Instant
+import java.time.{Instant, ZonedDateTime}
 
 import uk.ac.ncl.openlab.intake24.errors.{CreateError, DeleteError, LookupError, UnexpectedDatabaseError}
-import uk.ac.ncl.openlab.intake24.services.systemdb.user.UserSurveyParameters
 
 sealed abstract class SurveyState(code: Long)
 
@@ -30,17 +29,19 @@ case class CustomDataScheme(userCustomFields: Seq[CustomFieldDescription], surve
 
 case class NewSurveyParameters(schemeId: String, localeId: String, allowGeneratedUsers: Boolean, externalFollowUpURL: Option[String], supportEmail: String)
 
-case class SurveyParameters(schemeId: String, localeId: String, state: Int, startDate: Instant, endDate: Instant, suspensionReason: Option[String],
-                            allowGeneratedUsers: Boolean, externalFollowUpURL: Option[String], supportEmail: String)
+case class SurveyParametersOut(id: String, schemeId: String, localeId: String, state: Int,
+                               startDate: ZonedDateTime, endDate: ZonedDateTime,
+                               suspensionReason: Option[String], allowGeneratedUsers: Boolean,
+                               externalFollowUpURL: Option[String], supportEmail: String)
 
 case class LocalNutrientDescription(nutrientTypeId: Int, description: String, unit: String)
 
 trait SurveyAdminService {
-  def createSurvey(surveyId: String, parameters: NewSurveyParameters): Either[CreateError, UserSurveyParameters]
+  def createSurvey(surveyId: String, parameters: NewSurveyParameters): Either[CreateError, SurveyParametersOut]
 
-  def listSurveys(): Either[UnexpectedDatabaseError, Seq[UserSurveyParameters]]
+  def listSurveys(): Either[UnexpectedDatabaseError, Seq[SurveyParametersOut]]
 
-  def getSurveyParameters(surveyId: String): Either[LookupError, SurveyParameters]
+  def getSurveyParameters(surveyId: String): Either[LookupError, SurveyParametersOut]
 
   def getCustomDataScheme(schemeId: String): Either[LookupError, CustomDataScheme]
 

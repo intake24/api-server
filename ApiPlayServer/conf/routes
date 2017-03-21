@@ -146,15 +146,16 @@ DELETE         /admin/users/:surveyId/users                                  con
 
 # Survey management
 
-POST           /admin/surveys                                                controllers.system.SurveyAdminController.createSurvey()
-DELETE         /admin/surveys/:surveyId                                      controllers.system.SurveyAdminController.deleteSurvey(surveyId)
+GET            /surveys                                                      controllers.system.SurveyAdminController.list()
+POST           /surveys                                                      controllers.system.SurveyAdminController.createSurvey()
+DELETE         /surveys/:surveyId                                            controllers.system.SurveyAdminController.deleteSurvey(surveyId)
 
 # POST           /admin/update-global-support-users                            controllers.system.SurveyAdminController.updateGlobalSupportUsers()
 # POST           /admin/surveys/:surveyId/support-users/update                 controllers.system.SurveyAdminController.updateSurveySupportUsers(surveyId: String)
 
 
-GET            /admin/surveys/:surveyId/submissions                          controllers.system.DataExportController.getSurveySubmissions(surveyId, dateFrom: String, dateTo: String, offset: Int, limit: Int)
-GET            /admin/surveys/:surveyId/submissions/csv                      controllers.system.DataExportController.getSurveySubmissionsAsCSV(surveyId, dateFrom: String, dateTo: String)
+GET            /surveys/:surveyId/submissions                                controllers.system.DataExportController.getSurveySubmissions(surveyId, dateFrom: String, dateTo: String, offset: Int, limit: Int)
+GET            /surveys/:surveyId/submissions/csv                            controllers.system.DataExportController.getSurveySubmissionsAsCSV(surveyId, dateFrom: String, dateTo: String)
 # GET            /admin/surveys/:surveyId/submissions/xlsx                     controllers.system.DataExportController.getSurveySubmissionsAsXLSX(surveyId, dateFrom: Long, dateTo: Long, offset: Int, limit: Int)
 
 # Demographic groups
