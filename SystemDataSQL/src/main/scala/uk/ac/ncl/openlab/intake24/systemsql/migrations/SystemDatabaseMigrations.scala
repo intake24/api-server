@@ -371,7 +371,7 @@ object SystemDatabaseMigrations {
             |    gwt_permutation_name character varying(256) NOT NULL,
             |    exception_chain_json text NOT NULL,
             |    survey_state_json text NOT NULL,
-            |   ﻿new boolean NOT NULL DEFAULT true
+            |    new boolean NOT NULL DEFAULT true
             |)""".stripMargin
 
         SQL(query).execute()
