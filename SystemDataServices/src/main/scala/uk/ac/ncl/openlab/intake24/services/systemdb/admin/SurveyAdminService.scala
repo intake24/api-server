@@ -39,6 +39,8 @@ case class LocalNutrientDescription(nutrientTypeId: Int, description: String, un
 trait SurveyAdminService {
   def createSurvey(surveyId: String, parameters: NewSurveyParameters): Either[CreateError, SurveyParametersOut]
 
+  def getSurvey(surveyId: String): Either[LookupError, SurveyParametersOut]
+
   def listSurveys(): Either[UnexpectedDatabaseError, Seq[SurveyParametersOut]]
 
   def getSurveyParameters(surveyId: String): Either[LookupError, SurveyParametersOut]

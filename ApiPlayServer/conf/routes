@@ -148,6 +148,7 @@ DELETE         /admin/users/:surveyId/users                                  con
 
 GET            /surveys                                                      controllers.system.SurveyAdminController.list()
 POST           /surveys                                                      controllers.system.SurveyAdminController.createSurvey()
+GET            /surveys/:surveyId                                            controllers.system.SurveyAdminController.getSurvey(surveyId)
 DELETE         /surveys/:surveyId                                            controllers.system.SurveyAdminController.deleteSurvey(surveyId)
 
 # POST           /admin/update-global-support-users                            controllers.system.SurveyAdminController.updateGlobalSupportUsers()

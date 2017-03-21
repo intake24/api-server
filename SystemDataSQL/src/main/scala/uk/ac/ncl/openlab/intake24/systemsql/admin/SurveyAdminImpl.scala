@@ -24,6 +24,21 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
       Right(result)
   }
 
+  def getSurvey(surveyId: String): Either[LookupError, SurveyParametersOut] = tryWithConnection {
+    implicit connection =>
+      val sqlQuery =
+        """
+          |SELECT * FROM surveys
+          |WHERE id = {id};
+        """.stripMargin
+
+      SQL(sqlQuery).on('id -> surveyId).executeQuery().as(Macro.namedParser[SurveyParametersRow].singleOpt) match {
+        case Some(r) => Right(r.toSurveyParameters)
+        case None => Left(RecordNotFound(new RuntimeException(s"Survey with id: $surveyId not found")))
+      }
+
+  }
+
   def createSurvey(surveyId: String, parameters: NewSurveyParameters): Either[CreateError, SurveyParametersOut] = tryWithConnection {
     implicit conn =>
       tryWithConstraintCheck("surveys_id_pk", DuplicateCode(_)) {
