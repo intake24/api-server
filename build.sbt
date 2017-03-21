@@ -66,8 +66,6 @@ lazy val apiPlayServer = Project(id = "apiPlayServer", base = file("ApiPlayServe
 lazy val apiClient = Project(id = "apiClient", base = file("ApiClient")).dependsOn(apiShared).settings(commonSettings: _*)
 
 
-lazy val siteTest = Project(id = "siteTest", base = file("SiteTest")).settings(commonSettings: _*)
-
 lazy val apiDocs = scalatex.ScalatexReadme(
   projectId = "apiDocs",
   wd = file(""),
