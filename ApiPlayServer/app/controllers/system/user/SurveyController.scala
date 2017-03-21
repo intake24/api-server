@@ -60,9 +60,6 @@ class SurveyController @Inject()(service: SurveyService,
             else {
               val userName = Intake24UserKey.fromString(request.subject.get.identifier).userName
 
-              Logger.warn(request.body.toString)
-
-
               val result = for (nutrientMappedSubmission <- nutrientMappingService.mapSurveySubmission(request.body, params.localeId).right;
                                 _ <- service.createSubmission(surveyId, userName, nutrientMappedSubmission).right)
                 yield ()

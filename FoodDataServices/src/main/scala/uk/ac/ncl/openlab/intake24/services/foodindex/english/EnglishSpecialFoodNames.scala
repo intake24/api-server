@@ -23,6 +23,6 @@ import uk.ac.ncl.openlab.intake24.services.foodindex.LocalSpecialFoodNames
 class EnglishSpecialFoodNames extends LocalSpecialFoodNames {
   def buildMySandwichLabel = "Add your own sandwich »"
   def buildMySaladLabel = "Add your own salad »"
-  def salad = "salad"
-  def sandwich = "sandwich"
+  def saladDescription = "salad"
+  def sandwichDescription = "sandwich"
 }
