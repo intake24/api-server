@@ -34,7 +34,7 @@ abstract class AbstractFoodIndex (foodData: FoodIndexDataService, phoneticEncode
 
   val ft0 = System.currentTimeMillis()
 
-  val localSpecialFoodHeaders = Seq(UserFoodHeader(FoodIndex.specialFoodSalad, localSpecialFoods.buildMySaladLabel), UserFoodHeader(FoodIndex.specialFoodSandwich, localSpecialFoods.buildMySandwichLabel))
+  val localSpecialFoodHeaders = Seq(UserFoodHeader(FoodIndex.specialFoodSalad, localSpecialFoods.saladDescription), UserFoodHeader(FoodIndex.specialFoodSandwich, localSpecialFoods.sandwichDescription))
   // FIXME: Error handling
   val indexableFoods = foodData.indexableFoods(locale).right.get ++ localSpecialFoodHeaders
 

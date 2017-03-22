@@ -23,7 +23,7 @@ object MigrateSystemDatabase extends App with DatabaseConnection with WarningMes
 
   val migrations = new MigrationsImpl(dataSource)
 
-  migrations.applyMigrations(uk.ac.ncl.openlab.intake24.datastoresql.migrations.SystemDatabaseMigrations.activeMigrations) match {
+  migrations.applyMigrations(uk.ac.ncl.openlab.intake24.systemsql.migrations.SystemDatabaseMigrations.activeMigrations) match {
     case Left(MigrationFailed(e)) => throw e
     case Left(DatabaseError(e)) => throw e.exception
     case Right(()) => {}

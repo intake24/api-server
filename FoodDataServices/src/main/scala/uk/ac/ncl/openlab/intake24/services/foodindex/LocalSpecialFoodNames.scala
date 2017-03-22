@@ -21,6 +21,6 @@ package uk.ac.ncl.openlab.intake24.services.foodindex
 trait LocalSpecialFoodNames {
   def buildMySandwichLabel: String
   def buildMySaladLabel: String
-  def salad: String
-  def sandwich: String
+  def saladDescription: String
+  def sandwichDescription: String
 }

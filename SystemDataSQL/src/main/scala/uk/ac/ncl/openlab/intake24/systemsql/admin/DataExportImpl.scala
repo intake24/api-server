@@ -21,7 +21,7 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
 
   lazy val getSurveySubmissionNutrientsSql = sqlFromResource("admin/get_survey_submission_nutrients.sql")
 
-  private case class SubmissionRow(id: UUID, survey_id: String, user_id: String, start_time: ZonedDateTime, end_time: ZonedDateTime, log: String,
+  private case class SubmissionRow(id: UUID, survey_id: String, user_id: String, start_time: ZonedDateTime, end_time: ZonedDateTime, log: Array[String],
                                    submission_custom_fields: Array[Array[String]], user_custom_fields: Array[Array[String]])
 
   private case class MealRow(submission_id: UUID, meal_id: Long, hours: Int, minutes: Int, name: String, custom_fields: Array[Array[String]])
@@ -95,5 +95,4 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
           Left(RecordNotFound(new RuntimeException(s"Survey $surveyId does not exist")))
       }
   }
-
 }

@@ -21,7 +21,6 @@ package uk.ac.ncl.openlab.intake24.sql.tools.system
 import anorm._
 import org.rogach.scallop._
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.datastoresql.DataStoreSqlImpl
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.SecureUserRecord
 import uk.ac.ncl.openlab.intake24.sql.SqlFileUtil
 import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConfiguration, DatabaseConnection, DatabaseOptions, WarningMessage}
