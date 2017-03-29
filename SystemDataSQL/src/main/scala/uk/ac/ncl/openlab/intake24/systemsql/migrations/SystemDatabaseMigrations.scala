@@ -460,6 +460,177 @@ object SystemDatabaseMigrations {
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         ???
       }
+    },
+
+    new Migration {
+      val versionFrom = 18l
+      val versionTo = 19l
+
+      val description = "Drop unused help_requests and help_request_times tabels"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("DROP TABLE help_requests").execute()
+        SQL("DROP TABLE last_help_request_times").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    },
+
+    new Migration {
+      val versionFrom = 19l
+      val versionTo = 20l
+
+      val description = "Add integer PK to users"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        def updateUserIdColumn(table: String, userSurveyIdColumnName: String) = {
+          SQL(s"ALTER TABLE $table ADD COLUMN old_user_id character varying(256)").execute()
+          SQL(s"UPDATE $table SET old_user_id=user_id").execute()
+          SQL(s"ALTER TABLE $table ALTER COLUMN user_id DROP NOT NULL").execute()
+          SQL(s"ALTER TABLE $table ALTER COLUMN user_id TYPE integer USING NULL").execute()
+          SQL(s"UPDATE $table SET user_id=(SELECT id FROM users WHERE $table.$userSurveyIdColumnName=users.survey_id AND $table.old_user_id=users.old_id)").execute()
+          SQL(s"ALTER TABLE $table ALTER COLUMN user_id SET NOT NULL").execute()
+          SQL(s"ALTER TABLE $table DROP COLUMN old_user_id").execute()
+        }
+
+        def createForeignKeyCascadeDelete(table: String) = {
+          SQL(s"ALTER TABLE $table ADD CONSTRAINT ${table}_user_id_fkey FOREIGN KEY(user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE").execute()
+        }
+
+        def createForeignKeyRestrictDelete(table: String) = {
+          SQL(s"ALTER TABLE $table ADD CONSTRAINT ${table}_user_id_fkey FOREIGN KEY(user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE RESTRICT").execute()
+        }
+
+        def dropColumn(table: String, columnName: String) = {
+          SQL(s"ALTER TABLE $table DROP COLUMN $columnName").execute()
+        }
+
+
+        SQL("ALTER TABLE users ADD COLUMN old_id character varying(256)").execute()
+        SQL("UPDATE users set old_id = id").execute()
+
+        SQL("ALTER TABLE user_roles DROP CONSTRAINT user_roles_users_fk").execute()
+        SQL("ALTER TABLE user_permissions DROP CONSTRAINT user_permissions_users_fk").execute()
+        SQL("ALTER TABLE user_custom_fields DROP CONSTRAINT user_custom_fields_users_fk").execute()
+        SQL("ALTER TABLE survey_submissions DROP CONSTRAINT survey_submissions_users_fk").execute()
+        SQL("ALTER TABLE external_test_users DROP CONSTRAINT external_test_users_survey_id_fk").execute()
+        SQL("ALTER TABLE survey_support_staff DROP CONSTRAINT survey_support_staff_user_id_fk").execute()
+        SQL("ALTER TABLE global_support_staff DROP CONSTRAINT global_support_staff_user_id_fk").execute()
+        SQL("ALTER TABLE missing_foods DROP CONSTRAINT missing_foods_user_fk").execute()
+
+        SQL("ALTER TABLE users DROP CONSTRAINT users_id_pk").execute()
+
+        SQL("CREATE SEQUENCE user_id_seq").execute()
+        SQL("ALTER TABLE users ALTER COLUMN id TYPE integer USING nextval('user_id_seq')").execute()
+        SQL("ALTER TABLE users ALTER COLUMN id SET DEFAULT nextval('user_id_seq')").execute()
+        SQL("ALTER SEQUENCE user_id_seq OWNED BY users.id").execute()
+        SQL("ALTER TABLE users ADD PRIMARY KEY(id)").execute()
+
+        SQL("ALTER TABLE global_support_staff DROP CONSTRAINT global_support_staff_pk").execute()
+        SQL("ALTER TABLE survey_support_staff DROP CONSTRAINT survey_support_staff_pk").execute()
+
+        Seq("user_roles", "user_permissions", "user_custom_fields", "survey_submissions",
+          "external_test_users", "missing_foods").foreach(updateUserIdColumn(_, "survey_id"))
+
+        Seq("survey_support_staff", "global_support_staff").foreach(updateUserIdColumn(_, "user_survey_id"))
+
+        // It's OK to automatically delete dependent records from these tables
+        Seq("user_roles", "user_permissions", "user_custom_fields", "survey_support_staff",
+          "global_support_staff", "external_test_users").foreach(createForeignKeyCascadeDelete(_))
+
+        // But these need to be deleted manually first to prevent unintentional data loss
+        Seq("survey_submissions", "missing_foods").foreach(createForeignKeyRestrictDelete(_))
+
+        Seq("user_custom_fields", "external_test_users").foreach(dropColumn(_, "survey_id")) // keep survey_id for "user_roles" and "user_permissions" to rewrite roles later
+
+        Seq("survey_support_staff", "global_support_staff").foreach(dropColumn(_, "user_survey_id"))
+
+        SQL("ALTER TABLE survey_support_staff ADD PRIMARY KEY(survey_id, user_id)").execute()
+        SQL("ALTER TABLE global_support_staff ADD PRIMARY KEY(user_id)").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    },
+
+    new Migration {
+      val versionFrom = 20l
+      val versionTo = 21l
+
+      val description = "Move survey aliases to a separate table"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL(
+          """CREATE TABLE user_survey_aliases(
+            |  user_id integer NOT NULL,
+            |  survey_id character varying(32),
+            |  user_name character varying(256),
+            |  CONSTRAINT user_aliases_pkey PRIMARY KEY(survey_id, user_name),
+            |  CONSTRAINT user_aliases_user_id_fkey FOREIGN KEY(user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
+            |  CONSTRAINT user_aliases_survey_id_fkey FOREIGN KEY(survey_id) REFERENCES surveys(id) ON UPDATE CASCADE ON DELETE RESTRICT
+            |)
+          """.stripMargin).execute()
+
+        SQL("INSERT INTO user_survey_aliases SELECT id, survey_id, old_id FROM users WHERE survey_id <> ''").execute()
+
+        SQL("ALTER TABLE users DROP old_id, DROP survey_id").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    },
+
+    new Migration {
+      val versionFrom = 21l
+      val versionTo = 22l
+
+      val description = "Drop useless ids from roles and permissions"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE user_roles DROP COLUMN id").execute()
+        SQL("ALTER TABLE user_roles ADD PRIMARY KEY(user_id, role)").execute()
+
+        SQL("ALTER TABLE user_permissions DROP COLUMN id").execute()
+        SQL("ALTER TABLE user_permissions ADD PRIMARY KEY(user_id, permission)").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    },
+
+    new Migration {
+      val versionFrom = 22l
+      val versionTo = 23l
+
+      val description = "Create index on users.email"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("CREATE INDEX users_email_index ON users(email)").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
     }
   )
 }
