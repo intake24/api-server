@@ -47,7 +47,7 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
         SecureUserRecord(record.userName, passwordInfo.password, passwordInfo.salt.get, passwordInfo.hasher, record.name, record.email, record.phone, record.roles, record.permissions, record.customFields)
     }
 
-    translateDatabaseResult(service.createOrUpdateUsers(surveyId, secureUserRecords))
+    translateDatabaseResult(service.createOrUpdateUsersWithAliases(surveyId, secureUserRecords))
   }
 
   private def doDeleteUsers(surveyId: Option[String], userNames: Seq[String]): Result = translateDatabaseResult(service.deleteUsers(surveyId, userNames))

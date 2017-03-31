@@ -2,46 +2,70 @@ package uk.ac.ncl.openlab.intake24.services.systemdb.admin
 
 import uk.ac.ncl.openlab.intake24.errors._
 
-case class SecureUserRecord(userName: String, passwordHashBase64: String, passwordSaltBase64: String, passwordHasher: String,
-                            name: Option[String], email: Option[String], phone: Option[String],
-                            roles: Set[String], permissions: Set[String], customFields: Map[String, String])
+case class UserInfo(name: Option[String], email: Option[String], phone: Option[String], roles: Seq[String], customFields: Map[String, String])
 
-case class PublicUserRecord(surveyId: Option[String], userName: String, name: Option[String], email: Option[String], phone: Option[String], customFields: Map[String, String])
+case class UserInfoWithId(id: Int, name: Option[String], email: Option[String], phone: Option[String], roles: Seq[String], customFields: Map[String, String])
 
-case class PublicUserRecordWithPermissions(surveyId: Option[String], userName: String, name: Option[String], email: Option[String], phone: Option[String], customFields: Map[String, String], roles: Set[String], permissions: Set[String]) {
-  def withoutPermissions = PublicUserRecord(surveyId, userName, name, email, phone, customFields)
-}
+case class SecurePassword(hashBase64: String, saltBase64: String, hasher: String)
+
+/**
+  * A user name in a specific survey's namespace, meant to avoid user name clashes across
+  * different surveys.
+  */
+case class SurveyUserAlias(surveyId: String, userName: String)
+
+case class NewUserWithAlias(alias: SurveyUserAlias, userInfo: UserInfo, password: SecurePassword)
+
 
 trait UserAdminService {
 
-  def getCustomUserData(surveyId: Option[String], userId: String): Either[LookupError, Map[String, String]]
+  /**
+    * This function meant for uploading survey respondent data from external files and will
+    * automatically create a survey alias.
+    */
+  def createOrUpdateUsersWithAliases(users: Seq[NewUserWithAlias]): Either[DependentUpdateError, Unit]
 
-  def updateCustomUserData(surveyId: Option[String], userId: String, userData: Map[String, String]): Either[ParentError, Unit]
+  def createUser(userInfo: UserInfo): Either[DependentCreateError, UserInfoWithId]
 
-  def createOrUpdateUsers(surveyId: Option[String], userRecords: Seq[SecureUserRecord]): Either[DependentUpdateError, Unit]
+  def updateUser(userId: Int, newRecord: UserInfo): Either[DependentUpdateError, UserInfoWithId]
 
-  def createUser(surveyId: Option[String], userRecord: SecureUserRecord): Either[DependentCreateError, Unit]
+
+  def getUserById(userId: Int): Either[LookupError, UserInfoWithId]
+
+  def getUserByAlias(alias: SurveyUserAlias): Either[LookupError, UserInfoWithId]
+
+  def deleteUsers(userIds: Seq[Int]): Either[DeleteError, Unit]
+
+
+  def getUserPasswordById(userId: Int): Either[LookupError, SecurePassword]
+
+  def updateUserPassword(userId: Int, update: SecurePassword): Either[UpdateError, Unit]
+
+  def getUserPasswordByAlias(surveyId: String, userName: String): Either[LookupError, SecurePassword]
+
+
+  def listGlobalUsers(offset: Int, limit: Int): Either[UnexpectedDatabaseError, Seq[UserInfoWithId]]
+
+  def listUsersBySurvey(surveyId: String, offset: Int, limit: Int): Either[LookupError, Seq[UserInfoWithId]]
+
+  def listUsersByRole(role: String, offset: Int, limit: Int): Either[LookupError, Seq[UserInfo]]
+
+  // Custom data support
+
+  def getCustomUserData(userId: Int): Either[LookupError, Map[String, String]]
+
+  def updateCustomUserData(userId: Int, customUserData: Map[String, String]): Either[ParentError, Unit]
+
+
+  // Auto generated users support
 
   def nextGeneratedUserId(surveyId: String): Either[UnexpectedDatabaseError, Int]
 
-  def listUsers(surveyId: Option[String], offset: Int, limit: Int): Either[LookupError, Seq[PublicUserRecordWithPermissions]]
+  // Support users
 
-  def listUsersByRole(surveyId: Option[String], role: String, offset: Int, limit: Int): Either[LookupError, Seq[PublicUserRecord]]
+  def getSurveySupportUsers(surveyId: String): Either[UnexpectedDatabaseError, Seq[UserInfoWithId]]
 
-  @deprecated
-  def getAllUsersInSurvey(surveyId: String): Either[LookupError, Seq[SecureUserRecord]]
-
-  @deprecated
-  def getUserById(surveyId: Option[String], name: String): Either[LookupError, SecureUserRecord]
-
-  @deprecated
-  def getUsersByRole(surveyId: Option[String], role: String): Either[LookupError, Seq[SecureUserRecord]]
-
-  def deleteUsers(surveyId: Option[String], userNames: Seq[String]): Either[DeleteError, Unit]
-
-  def getSurveySupportUsers(surveyId: String): Either[UnexpectedDatabaseError, Seq[PublicUserRecord]]
-
-  def getGlobalSupportUsers(): Either[UnexpectedDatabaseError, Seq[PublicUserRecord]]
+  def getGlobalSupportUsers(): Either[UnexpectedDatabaseError, Seq[UserInfoWithId]]
 
   /*  def updateGlobalSupportUsers(supportUsers: Seq[UserRef]): Either[ParentError, Unit]
 

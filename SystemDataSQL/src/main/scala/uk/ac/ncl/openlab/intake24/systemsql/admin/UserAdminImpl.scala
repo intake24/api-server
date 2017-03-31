@@ -13,93 +13,108 @@ import scala.annotation.tailrec
 
 class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends UserAdminService with SqlDataService with SqlResourceLoader {
 
-  private def updateUserRolesQuery(surveyId: Option[String], roles: Map[String, Set[String]])(implicit connection: Connection): Either[ParentError, Unit] = {
-    SQL("DELETE FROM user_roles WHERE survey_id={survey_id} AND user_id IN ({user_ids})")
-      .on('survey_id -> surveyId.getOrElse(""), 'user_ids -> roles.keySet.toSeq)
+  private case class RolesForId(userId: Int, roles: Seq[String])
+
+  private def updateUserRolesByIds(roles: Seq[RolesForId])(implicit connection: Connection): Either[ParentError, Unit] = {
+
+    SQL("DELETE FROM user_roles WHERE user_id IN (user_ids)")
+      .on('user_ids -> roles.map(_.userId))
       .execute()
 
-    val roleParams = roles.toSeq.flatMap {
-      case (userName, roles) =>
-        roles.map {
-          role =>
-            Seq[NamedParameter]('survey_id -> surveyId.getOrElse(""), 'user_id -> userName, 'role -> role)
+    val params = roles.flatMap {
+      r =>
+        r.roles.map {
+          role => Seq[NamedParameter]('user_id -> r.userId, 'role -> role)
         }
     }
 
-    if (!roleParams.isEmpty) {
-      tryWithConstraintCheck("user_roles_users_fk", e => ParentRecordNotFound(new RuntimeException(s"Could not update roles because one of the user records was not found"))) {
-        BatchSql("INSERT INTO user_roles VALUES (DEFAULT, {survey_id}, {user_id}, {role})", roleParams.head, roleParams.tail: _*).execute()
+    if (!params.isEmpty) {
+      tryWithConstraintCheck("user_roles_user_id_fkey", e => ParentRecordNotFound(new RuntimeException(s"Could not update roles because one of the user records was not found"))) {
+        BatchSql("INSERT INTO user_roles(user_id, role) VALUES ({user_id}, {role})", params.head, params.tail: _*).execute()
         Right(())
       }
+    }
+
+    Right(())
+  }
+
+  private case class RolesForAlias(surveyId: String, userName: String, roles: Seq[String])
+
+  private def updateUserRolesByAlias(roles: Seq[RolesForAlias])(implicit connection: Connection): Either[ParentError, Unit] = {
+
+    SQL("DELETE FROM user_roles WHERE user_id IN (SELECT user_id FROM user_survey_aliases WHERE (survey_id, user_name) IN (SELECT unnest(ARRAY[{survey_ids}]), unnest(ARRAY[{user_names}])))")
+      .on('user_names -> roles.map(_.userName), 'survey_ids -> roles.map(_.surveyId))
+      .execute()
+
+    val params = roles.flatMap {
+      r =>
+        r.roles.map {
+          role => Seq[NamedParameter]('survey_id -> r.surveyId, 'user_name -> r.userName, 'role -> role)
+        }
+    }
+
+    if (!params.isEmpty) {
+      tryWithConstraintCheck("user_roles_user_id_fkey", e => ParentRecordNotFound(new RuntimeException(s"Could not update roles because one of the user records was not found"))) {
+        BatchSql("INSERT INTO user_roles(user_id, role) VALUES (SELECT id FROM user_survey_aliases WHERE survey_id={survey_id} AND user_name={user_name}, {role})", params.head, params.tail: _*).execute()
+        Right(())
+      }
+    }
+
+    Right(())
+  }
+
+  private case class CustomDataForId(userId: Int, customData: Map[String, String])
+
+  private def updateCustomDataById(customData: Seq[CustomDataForId])(implicit connection: Connection): Either[ParentError, Unit] = {
+
+    if (customData.nonEmpty) {
+
+      SQL("DELETE FROM user_custom_fields WHERE user_id IN ({user_ids})")
+        .on('user_ids -> customData.map(_.userId))
+        .execute()
+
+      val userCustomFieldParams = customData.flatMap {
+        case r =>
+          r.customData.map {
+            case (name, value) => Seq[NamedParameter]('user_id -> r.userId, 'name -> name, 'value -> value)
+          }
+      }
+
+      if (!userCustomFieldParams.isEmpty)
+        tryWithConstraintCheck("user_custom_fields_user_id_fkey", e => ParentRecordNotFound(new RuntimeException(s"Could not update custom user data because one of the user records was not found"))) {
+          BatchSql("INSERT INTO user_custom_fields VALUES (DEFAULT, {user_id}, {name}, {value})", userCustomFieldParams.head, userCustomFieldParams.tail: _*).execute()
+          Right(())
+        }
+      else
+        Right(())
     } else
       Right(())
   }
 
-  private def updateUserPermissionsQuery(surveyId: Option[String], permissions: Map[String, Set[String]])(implicit connection: Connection): Either[ParentError, Unit] = {
-    SQL("DELETE FROM user_permissions WHERE survey_id={survey_id} AND user_id IN ({user_ids})")
-      .on('survey_id -> surveyId.getOrElse(""), 'user_ids -> permissions.keySet.toSeq)
-      .execute()
+  private lazy val createOrUpdateUserByAliasQuery = sqlFromResource("admin/users/create_or_update_user_by_alias.sql")
 
-    val permissionParams = permissions.toSeq.flatMap {
-      case (userName, permissions) =>
-        permissions.map {
-          permission =>
-            Seq[NamedParameter]('survey_id -> surveyId.getOrElse(""), 'user_id -> userName, 'permission -> permission)
-        }
-    }
-
-    if (!permissionParams.isEmpty) {
-      tryWithConstraintCheck("user_permissions_users_fk", e => ParentRecordNotFound(new RuntimeException(s"Could not update permissions because one of the user records was not found"))) {
-        BatchSql("INSERT INTO user_permissions VALUES (DEFAULT, {survey_id}, {user_id}, {permission})", permissionParams.head, permissionParams.tail: _*).execute()
-        Right(())
-      }
-    } else
-      Right(())
-  }
-
-  private def updateUserCustomDataQuery(surveyId: Option[String], customData: Map[String, Map[String, String]])(implicit connection: Connection): Either[ParentError, Unit] = {
-    SQL("DELETE FROM user_custom_fields WHERE survey_id={survey_id} AND user_id IN ({user_ids})")
-      .on('survey_id -> surveyId.getOrElse(""), 'user_ids -> customData.keySet.toSeq)
-      .execute()
-
-    val userCustomFieldParams = customData.toSeq.flatMap {
-      case (userName, data) =>
-        data.map {
-          case (name, value) => Seq[NamedParameter]('survey_id -> surveyId.getOrElse(""), 'user_id -> userName, 'name -> name, 'value -> value)
-        }
-    }
-
-    if (!userCustomFieldParams.isEmpty)
-      tryWithConstraintCheck("user_custom_fields_users_fk", e => ParentRecordNotFound(new RuntimeException(s"Could not update custom user data because one of the user records was not found"))) {
-        BatchSql("INSERT INTO user_custom_fields VALUES (DEFAULT, {survey_id}, {user_id}, {name}, {value})", userCustomFieldParams.head, userCustomFieldParams.tail: _*).execute()
-        Right(())
-      }
-    else
-      Right(())
-  }
-
-  def createOrUpdateUsers(surveyId: Option[String], userRecords: Seq[SecureUserRecord]): Either[DependentUpdateError, Unit] = tryWithConnection {
+  def createOrUpdateUsersWithAliases(usersWithAliases: Seq[NewUserWithAlias]): Either[DependentUpdateError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
-        val userParams = userRecords.map {
-          record =>
-            Seq[NamedParameter]('id -> record.userName, 'survey_id -> surveyId.getOrElse(""), 'password_hash -> record.passwordHashBase64, 'password_salt -> record.passwordSaltBase64,
-              'password_hasher -> record.passwordHasher, 'name -> record.name, 'email -> record.email, 'phone -> record.phone)
+
+        val upsertParams = usersWithAliases.map {
+          u =>
+            Seq[NamedParameter]('survey_id -> u.alias.surveyId, 'user_name -> u.alias.userName,
+              'password_hash -> u.password.hashBase64, 'password_salt -> u.password.saltBase64, 'password_hasher -> u.password.hasher,
+              'name -> u.userInfo.name, 'email -> u.userInfo.email, 'phone -> u.userInfo.phone)
         }
 
-        if (userParams.nonEmpty) {
-          BatchSql("INSERT INTO users VALUES ({id}, {survey_id}, {password_hash}, {password_salt}, {password_hasher}, {name}, {email}, {phone}) " +
-            "ON CONFLICT ON CONSTRAINT users_id_pk DO UPDATE " +
-            "SET password_hash={password_hash},password_salt={password_salt},password_hasher={password_hasher},name={name},email={email},phone={phone}", userParams.head, userParams.tail: _*).execute()
+        if (upsertParams.nonEmpty) {
+          BatchSql(createOrUpdateUserByAliasQuery, upsertParams.head, upsertParams.tail: _*).execute()
 
           for (
-            _ <- updateUserRolesQuery(surveyId, userRecords.foldLeft(Map[String, Set[String]]()) {
+            _ <- updateUserRoles(surveyId, userRecords.foldLeft(Map[String, Set[String]]()) {
               case (acc, record) => acc + (record.userName -> record.roles)
             }).right;
             _ <- updateUserPermissionsQuery(surveyId, userRecords.foldLeft(Map[String, Set[String]]()) {
               case (acc, record) => acc + (record.userName -> record.permissions)
             }).right;
-            _ <- updateUserCustomDataQuery(surveyId, userRecords.foldLeft(Map[String, Map[String, String]]()) {
+            _ <- updateCustomDataById(surveyId, userRecords.foldLeft(Map[String, Map[String, String]]()) {
               case (acc, record) => acc + (record.userName -> record.customFields)
             }).right
           ) yield ()
@@ -124,9 +139,9 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
               'phone -> userRecord.phone)
             .execute()
           for (
-            _ <- updateUserRolesQuery(surveyId, Map(userRecord.userName -> userRecord.roles)).right;
+            _ <- updateUserRoles(surveyId, Map(userRecord.userName -> userRecord.roles)).right;
             _ <- updateUserPermissionsQuery(surveyId, Map(userRecord.userName -> userRecord.permissions)).right;
-            _ <- updateUserCustomDataQuery(surveyId, Map(userRecord.userName -> userRecord.customFields)).right
+            _ <- updateCustomDataById(surveyId, Map(userRecord.userName -> userRecord.customFields)).right
           ) yield ()
         }
       }
@@ -166,7 +181,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
         else if (!userExists)
           Left(ParentRecordNotFound(new RuntimeException(s"User $userId does not exist in survey $surveyId")))
         else {
-          updateUserCustomDataQuery(surveyId, Map(userId -> data))
+          updateCustomDataById(surveyId, Map(userId -> data))
         }
       }
   }
