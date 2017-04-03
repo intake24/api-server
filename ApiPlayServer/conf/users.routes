@@ -1,0 +1,14 @@
+# User management
+
+GET           /                                 controllers.system.UserAdminController.findUsers(query: String, limit: Int)
+POST          /                                 controllers.system.UserAdminController.createUser()
+DELETE        /                                 controllers.system.UserAdminController.deleteUsers()
+
+GET           /:surveyId/staff                  controllers.system.UserAdminController.listSurveyStaffUsers(surveyId: String, offset: Int, limit: Int)
+POST          /:surveyId/staff                  controllers.system.UserAdminController.createOrUpdateSurveyStaff(surveyId: String)
+POST          /:surveyId/staff/csv              controllers.system.UserAdminController.uploadSurveyStaffCSV(surveyId: String)
+
+GET           /:surveyId/respondents            controllers.system.UserAdminController.listSurveyRespondentUsers(surveyId: String, offset: Int, limit: Int)
+POST          /:surveyId/respondents            controllers.system.UserAdminController.createOrUpdateSurveyRespondents(surveyId: String)
+POST          /:surveyId/respondents/csv        controllers.system.UserAdminController.uploadSurveyRespondentsCSV(surveyId: String)
+DELETE        /:surveyId/respondents            controllers.system.UserAdminController.deleteSurveyUsers(surveyId: String)

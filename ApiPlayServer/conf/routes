@@ -130,12 +130,6 @@ POST           /admin/images/process-for-selection-screen                    con
 # GET     /index/split-list/:locale             controllers.FoodIndexController.splitList(locale: String)
 
 
-# User management
-
-GET            /admin/users                                                  controllers.system.UserAdminController.listGlobalUsers(offset: Int, limit: Int)
-POST           /admin/users                                                  controllers.system.UserAdminController.createOrUpdateGlobalUsers()
-DELETE         /admin/users                                                  controllers.system.UserAdminController.deleteGlobalUsers()
-
 # Survey management
 
 GET            /surveys                                                      controllers.system.SurveyAdminController.list()
@@ -151,13 +145,6 @@ GET            /surveys/:surveyId/submissions                                con
 GET            /surveys/:surveyId/submissions/csv                            controllers.system.DataExportController.getSurveySubmissionsAsCSV(surveyId, dateFrom: String, dateTo: String)
 # GET            /admin/surveys/:surveyId/submissions/xlsx                     controllers.system.DataExportController.getSurveySubmissionsAsXLSX(surveyId, dateFrom: Long, dateTo: Long, offset: Int, limit: Int)
 
-GET            /surveys/:surveyId/users/staff                                controllers.system.UserAdminController.listSurveyStaffUsers(surveyId: String, offset: Int, limit: Int)
-POST           /surveys/:surveyId/users/staff                                controllers.system.UserAdminController.createOrUpdateSurveyStaff(surveyId: String)
-POST           /surveys/:surveyId/users/staff/upload-csv                     controllers.system.UserAdminController.uploadSurveyStaffCSV(surveyId: String)
-GET            /surveys/:surveyId/users/respondents                          controllers.system.UserAdminController.listSurveyRespondentUsers(surveyId: String, offset: Int, limit: Int)
-POST           /surveys/:survey_id/users/respondents                         controllers.system.UserAdminController.createOrUpdateSurveyRespondents(survey_id: String)
-POST           /surveys/:survey_id/users/respondents/upload-csv              controllers.system.UserAdminController.uploadSurveyRespondentsCSV(survey_id: String)
-DELETE         /surveys/:surveyId/users                                      controllers.system.UserAdminController.deleteSurveyUsers(surveyId: String)
 
 # Demographic groups
 
@@ -178,3 +165,4 @@ GET            /admin/henry-coefficients                                     con
 POST           /errors/report                                                controllers.system.ClientErrorReportController.reportError()
 
 ->             /user                                                         user.Routes
+->             /users                                                        users.Routes

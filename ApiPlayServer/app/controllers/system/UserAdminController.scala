@@ -30,7 +30,7 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller, MultipartFormData, Result}
 import security.{DeadboltActionsAdapter, Roles}
 import uk.ac.ncl.openlab.intake24.api.shared._
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{SecureUserRecord, UserAdminService}
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{NewUser, NewUserWithAlias, SecureUserRecord, UserAdminService}
 
 import scala.concurrent.Future
 
@@ -50,7 +50,7 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
     translateDatabaseResult(service.createOrUpdateUsersWithAliases(surveyId, secureUserRecords))
   }
 
-  private def doDeleteUsers(surveyId: Option[String], userNames: Seq[String]): Result = translateDatabaseResult(service.deleteUsers(surveyId, userNames))
+  private def doDeleteUsers(surveyId: Option[String], userNames: Seq[String]): Result = translateDatabaseResult(service.deleteUsersById(surveyId, userNames))
 
   def createOrUpdateGlobalUsers() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[CreateOrUpdateGlobalUsersRequest]) {
     request =>
@@ -110,31 +110,45 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
       }
   }
 
-  def deleteGlobalUsers() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[DeleteUsersRequest]) {
+  def deleteUsers() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[DeleteUsersRequest]) {
     request =>
       Future {
-        doDeleteUsers(None, request.body.userNames)
+        translateDatabaseResult(service.deleteUsersById(request.body.userIds))
       }
   }
 
-  def listGlobalUsers(offset: Int, limit: Int) = deadbolt.restrictToRoles(Roles.superuser)(BodyParsers.parse.empty) {
+  def findUsers(query: String, limit: Int) = deadbolt.restrictToRoles(Roles.superuser)(BodyParsers.parse.empty) {
     _ =>
       Future {
-        translateDatabaseResult(service.listUsers(None, offset, limit))
+        translateDatabaseResult(service.findUsers(query, limit))
+      }
+  }
+
+  def listUsersByRole(role: String, offset: Int, limit: Int) = deadbolt.restrictToRoles(Roles.superuser)(BodyParsers.parse.empty) {
+    _ =>
+      Future {
+        translateDatabaseResult(service.listUsersByRole(role, offset, limit))
+      }
+  }
+
+  def createUser() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[NewUser]) {
+    request =>
+      Future {
+        translateDatabaseResult(service.createUser(request.body))
       }
   }
 
   def listSurveyStaffUsers(surveyId: String, offset: Int, limit: Int) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
     _ =>
       Future {
-        translateDatabaseResult(service.listUsersByRole(Some(surveyId), Roles.surveyStaff(surveyId), offset, limit))
+        translateDatabaseResult(service.listUsersByRole(Roles.surveyStaff(surveyId), offset, limit))
       }
   }
 
   def listSurveyRespondentUsers(surveyId: String, offset: Int, limit: Int) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
     _ =>
       Future {
-        translateDatabaseResult(service.listUsersByRole(Some(surveyId), Roles.surveyRespondent(surveyId), offset, limit))
+        translateDatabaseResult(service.listUsersByRole(Roles.surveyRespondent(surveyId), offset, limit))
       }
   }
 
