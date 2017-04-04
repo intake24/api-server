@@ -5,13 +5,13 @@ import java.time.LocalDateTime
 
 import uk.ac.ncl.openlab.intake24.errors.{DeleteError, LookupError, UnexpectedDatabaseError}
 
-case class SourceImageRecord(id: Long, path: String, thumbnailPath: String, keywords: Seq[String], uploader: String, uploadedAt: LocalDateTime)
+case class SourceImageRecord(id: Int, path: String, thumbnailPath: String, keywords: Seq[String], uploader: String, uploadedAt: LocalDateTime)
 
 case class NewSourceImageRecord(path: String, thumbnailPath: String, keywords: Seq[String], uploader: String)
 
 case class SourceImageRecordUpdate(keywords: Seq[String])
 
-case class ProcessedImageRecord(path: String, sourceId: Long, purpose: ProcessedImagePurpose)
+case class ProcessedImageRecord(path: String, sourceId: Int, purpose: ProcessedImagePurpose)
 
 sealed trait ProcessedImagePurpose
 
@@ -35,7 +35,7 @@ object ProcessedImagePurpose {
     case ImageMapOverlay => 5l
   }
 
-  def fromId(id: Long) = id match {
+  def fromId(id: Int) = id match {
     case 1l => AsServedMainImage
     case 2l => AsServedThumbnail
     case 3l => PortionSizeSelectionImage
@@ -47,19 +47,19 @@ object ProcessedImagePurpose {
 
 trait ImageDatabaseService {
 
-  def createSourceImageRecords(records: Seq[NewSourceImageRecord]): Either[UnexpectedDatabaseError, Seq[Long]]
+  def createSourceImageRecords(records: Seq[NewSourceImageRecord]): Either[UnexpectedDatabaseError, Seq[Int]]
 
-  def getSourceImageRecords(ids: Seq[Long]): Either[LookupError, Seq[SourceImageRecord]]
+  def getSourceImageRecords(ids: Seq[Int]): Either[LookupError, Seq[SourceImageRecord]]
 
   def listSourceImageRecords(offset: Int, limit: Int, searchTerm: Option[String]): Either[UnexpectedDatabaseError, Seq[SourceImageRecord]]
 
-  def updateSourceImageRecord(id: Long, update: SourceImageRecordUpdate): Either[LookupError, Unit]
+  def updateSourceImageRecord(id: Int, update: SourceImageRecordUpdate): Either[LookupError, Unit]
 
-  def deleteSourceImageRecords(ids: Seq[Long]): Either[DeleteError, Unit]
+  def deleteSourceImageRecords(ids: Seq[Int]): Either[DeleteError, Unit]
 
-  def createProcessedImageRecords(records: Seq[ProcessedImageRecord]): Either[UnexpectedDatabaseError, Seq[Long]]
+  def createProcessedImageRecords(records: Seq[ProcessedImageRecord]): Either[UnexpectedDatabaseError, Seq[Int]]
 
-  def deleteProcessedImageRecords(ids: Seq[Long]): Either[UnexpectedDatabaseError, Unit]
+  def deleteProcessedImageRecords(ids: Seq[Int]): Either[UnexpectedDatabaseError, Unit]
 
-  def getProcessedImageRecords(ids: Seq[Long]): Either[LookupError, Seq[ProcessedImageRecord]]
+  def getProcessedImageRecords(ids: Seq[Int]): Either[LookupError, Seq[ProcessedImageRecord]]
 }

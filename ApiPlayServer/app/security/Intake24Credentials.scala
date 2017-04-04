@@ -20,32 +20,32 @@ package security
 
 import play.api.libs.json.Json
 import com.mohiva.play.silhouette.api.util.Credentials
-import uk.ac.ncl.openlab.intake24.api.shared.{ Credentials => Intake24Credentials }
+import uk.ac.ncl.openlab.intake24.api.shared.{SurveyAliasCredentials => Intake24Credentials}
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.SurveyUserAlias
 
-case class Intake24UserKey(surveyId: Option[String], userName: String) {
-  override def toString = surveyId.map(_ + Intake24UserKey.separatorChar).getOrElse("") + userName
-}
-
-object Intake24UserKey {  
+object SurveyAliasUtils {
   private val separatorChar = '#'
-  
+
+  def toString(alias: SurveyUserAlias) = alias.surveyId + separatorChar + alias.userName
+
   def fromString(s: String) = {
     val separatorIndex = s.lastIndexOf(separatorChar)
+
     if (separatorIndex == -1)
-      Intake24UserKey(None, s)
-    else
-      Intake24UserKey(Some(s.substring(0, separatorIndex)), s.substring(separatorIndex + 1))
-  } 
+      throw new RuntimeException("surveyId is required")
+
+    SurveyUserAlias(s.substring(0, separatorIndex), s.substring(separatorIndex + 1))
+  }
 }
 
 object Intake24CredentialsUtil {
-  implicit def asSimpleCredentials(credentials: Intake24Credentials) = Credentials(Intake24UserKey(credentials.survey_id, credentials.username).toString(), credentials.password)
-  
+  implicit def asSimpleCredentials(credentials: Intake24Credentials) = Credentials(SurveyAliasUtils(credentials.surveyId, credentials.userName).toString(), credentials.password)
+
   implicit def fromSimpleCredentials(credentials: Credentials) = {
-    val key = Intake24UserKey.fromString(credentials.identifier)
+    val key = SurveyAliasUtils.fromString(credentials.identifier)
 
     Intake24Credentials(key.surveyId, key.userName, credentials.password)
-  } 
-  
-  implicit val jsonFormat = Json.format[Intake24Credentials]  
+  }
+
+  implicit val jsonFormat = Json.format[Intake24Credentials]
 }

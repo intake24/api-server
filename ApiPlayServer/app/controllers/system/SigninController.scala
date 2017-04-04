@@ -34,7 +34,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
 import play.api.mvc.{Action, Controller}
 import security._
-import uk.ac.ncl.openlab.intake24.api.shared.{ErrorDescription, RefreshResult, SigninResult, Credentials => Intake24Credentials}
+import uk.ac.ncl.openlab.intake24.api.shared.{ErrorDescription, RefreshResult, SigninResult, SurveyAliasCredentials => Intake24Credentials}
 
 import scala.concurrent.Future
 
@@ -47,7 +47,7 @@ class SigninController @Inject()(@Named("refresh") refreshEnv: Environment[Intak
 
       val credentials = request.body
 
-      val authResult = credentialsProvider.authenticate(Credentials(Intake24UserKey(credentials.survey_id, credentials.username).toString, credentials.password))
+      val authResult = credentialsProvider.authenticate(Credentials(SurveyAliasUtils(credentials.surveyId, credentials.userName).toString, credentials.password))
 
       authResult.flatMap {
         loginInfo =>

@@ -3,7 +3,7 @@ package uk.ac.ncl.openlab.intake24.sql.tools.food.migrations
 import org.rogach.scallop.ScallopConf
 import uk.ac.ncl.openlab.intake24.api.client.scalajhttp.{GuideImageAdminClientImpl, ImageAdminClientImpl, ImageMapAdminClientImpl, SigninClientImpl}
 import uk.ac.ncl.openlab.intake24.api.client.{ApiConfigChooser, ApiConfigurationOptions, ConsoleApiErrorHandler}
-import uk.ac.ncl.openlab.intake24.api.shared.Credentials
+import uk.ac.ncl.openlab.intake24.api.shared.SurveyAliasCredentials
 import uk.ac.ncl.openlab.intake24.sql.tools._
 
 object FoodV18_3_Create_Selection_Images extends App with MigrationRunner with WarningMessage with ConsoleApiErrorHandler {
@@ -38,7 +38,7 @@ object FoodV18_3_Create_Selection_Images extends App with MigrationRunner with W
       _ <- guideImageAdminService.updateGuideSelectionImage(authToken, id, selectionImageDescriptor.id).right) yield ()
 
   val result = for (
-    authToken <- signinService.signin(Credentials(None, apiConfig.userName, apiConfig.password)).right;
+    authToken <- signinService.signin(SurveyAliasCredentials(None, apiConfig.userName, apiConfig.password)).right;
     guideHeaders <- guideImageAdminService.listGuideImages(authToken.refreshToken).right;
     result <- sequence(guideHeaders.map {
       header =>

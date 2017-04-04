@@ -19,6 +19,7 @@ case class SurveyUserAlias(surveyId: String, userName: String)
 
 case class NewUserWithAlias(alias: SurveyUserAlias, userInfo: UserInfo, password: SecurePassword)
 
+case class SurveyUser(userName: String, password: String, name: Option[String], email: Option[String], phone: Option[String], customFields: Map[String, String])
 
 trait UserAdminService {
 
@@ -35,22 +36,27 @@ trait UserAdminService {
 
   def getUserById(userId: Int): Either[LookupError, UserInfoWithId]
 
+  def getUserByEmail(email: String): Either[LookupError, UserInfoWithId]
+
   def getUserByAlias(alias: SurveyUserAlias): Either[LookupError, UserInfoWithId]
 
-  def deleteUsersById(userIds: Seq[Int]): Either[DeleteError, Unit]
+  def deleteUsersById(userIds: Seq[Int]): Either[UnexpectedDatabaseError, Unit]
 
+  def deleteUsersByAlias(userAliases: Seq[SurveyUserAlias]): Either[UnexpectedDatabaseError, Unit]
 
 
   def getUserPasswordById(userId: Int): Either[LookupError, SecurePassword]
 
   def getUserPasswordByAlias(alias: SurveyUserAlias): Either[LookupError, SecurePassword]
 
+  def getUserPasswordByEmail(email: String): Either[LookupError, SecurePassword]
+
   def updateUserPassword(userId: Int, update: SecurePassword): Either[UpdateError, Unit]
 
 
   def findUsers(query: String, limit: Int): Either[UnexpectedDatabaseError, Seq[UserInfoWithId]]
 
-  def listUsersByRole(role: String, offset: Int, limit: Int): Either[UnexpectedDatabaseError, Seq[UserInfo]]
+  def listUsersByRole(role: String, offset: Int, limit: Int): Either[UnexpectedDatabaseError, Seq[UserInfoWithId]]
 
   // Custom data support
 

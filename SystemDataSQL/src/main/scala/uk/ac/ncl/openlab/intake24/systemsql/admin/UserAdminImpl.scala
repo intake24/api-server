@@ -203,13 +203,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
         SQL("SELECT id, name, email, phone FROM users WHERE id={user_id}")
           .on('user_id -> userId)
           .as(UserInfoRow.parser.singleOpt) match {
-          case Some(row) =>
-            val roles = SQL("SELECT role FROM user_roles WHERE user_id={user_id}").on('user_id -> userId).as(SqlParser.str("role").*).toSet
-            val custom_fields = SQL("SELECT name, value FROM user_custom_fields WHERE user_id={user_id}").on('user_id -> userId).as((SqlParser.str("name") ~ SqlParser.str("value")).*).map {
-              case name ~ value => (name, value)
-            }.toMap
-
-            Right(UserInfoWithId(row.id, row.name, row.email, row.phone, roles, custom_fields))
+          case Some(row) => Right(buildUserRecordsFromRows(Seq(row)).head)
           case None => Left(RecordNotFound(new RuntimeException(s"User $userId does not exist")))
         }
       }
@@ -221,34 +215,35 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
         SQL("SELECT id, name, email, phone FROM users JOIN user_survey_aliases ON users.id = user_survey_aliases.user_id WHERE survey_id={survey_id} AND user_name={user_name}")
           .on('survey_id -> alias.surveyId, 'user_name -> alias.userName)
           .as(UserInfoRow.parser.singleOpt) match {
-          case Some(row) =>
-            val roles = SQL("SELECT role FROM user_roles JOIN user_survey_aliases ON user_roles.user_id=user_survey_aliases.user_id WHERE survey_id={survey_id} AND user_name={user_name}")
-              .on('survey_id -> alias.surveyId, 'user_name -> alias.userName)
-              .as(SqlParser.str("role").*).toSet
-
-            val custom_fields = SQL(
-              """SELECT name, value FROM user_custom_fields JOIN user_survey_aliases ON user_custom_fields.user_id=user_survey_aliases.user_id
-                |WHERE survey_id={survey_id} AND user_name={user_name}""".stripMargin)
-              .on('survey_id -> alias.surveyId, 'user_name -> alias.userName)
-              .as((SqlParser.str("name") ~ SqlParser.str("value")).*).map {
-              case name ~ value => (name, value)
-            }.toMap
-
-            Right(UserInfoWithId(row.id, row.name, row.email, row.phone, roles, custom_fields))
+          case Some(row) => Right(buildUserRecordsFromRows(Seq(row)).head)
           case None => Left(RecordNotFound(new RuntimeException(s"User alias ${alias.surveyId}/${alias.userName} does not exist")))
         }
       }
   }
 
-  def deleteUsersById(userIds: Seq[Int]): Either[DeleteError, Unit] = tryWithConnection {
+  def getUserByEmail(email: String): Either[LookupError, UserInfoWithId] = tryWithConnection {
     implicit conn =>
+      withTransaction {
+        SQL("SELECT id, name, email, phone FROM users WHERE email={email}")
+          .on('email -> email)
+          .as(UserInfoRow.parser.singleOpt) match {
+          case Some(row) => Right(buildUserRecordsFromRows(Seq(row)).head)
+          case None => Left(RecordNotFound(new RuntimeException(s"User with e-mail address <$email> does not exist")))
+        }
+      }
+  }
+
+  def deleteUsersById(userIds: Seq[Int]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
+    implicit conn =>
+
       SQL("DELETE FROM users WHERE id IN({user_ids})").on('user_ids -> userIds).execute()
 
       Right(())
   }
 
-  def deleteUsersByAlias(aliases: Seq[SurveyUserAlias]): Either[DeleteError, Unit] = tryWithConnection {
+  def deleteUsersByAlias(aliases: Seq[SurveyUserAlias]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
+
 
       val params = aliases.map {
         a =>
@@ -256,7 +251,6 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       }
 
       if (params.nonEmpty) {
-
         BatchSql("DELETE FROM users WHERE id IN (SELECT user_id FROM user_survey_aliases AS a WHERE a.survey_id={survey_id} AND a.user_name={user_name})", params.head, params.tail: _*).execute()
         Right(())
       }
@@ -281,6 +275,16 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
         .as(PasswordRow.parser.singleOpt) match {
         case Some(row) => Right(SecurePassword(row.password_hash, row.password_salt, row.password_hasher))
         case None => Left(RecordNotFound(new RuntimeException(s"User alias ${alias.surveyId}/${alias.userName} does not exist")))
+      }
+  }
+
+  def getUserPasswordByEmail(email: String): Either[LookupError, SecurePassword] = tryWithConnection {
+    implicit conn =>
+      SQL("SELECT password_hash, password_salt, password_hasher FROM users WHERE email={email}")
+        .on('email -> email)
+        .as(PasswordRow.parser.singleOpt) match {
+        case Some(row) => Right(SecurePassword(row.password_hash, row.password_salt, row.password_hasher))
+        case None => Left(RecordNotFound(new RuntimeException(s"User with e-mail addess <$email> does not exist")))
       }
   }
 

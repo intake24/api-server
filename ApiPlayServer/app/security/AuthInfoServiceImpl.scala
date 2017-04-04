@@ -37,10 +37,14 @@ class AuthInfoServiceImpl @Inject()(userAdminService: UserAdminService) extends 
   def find[T](loginInfo: LoginInfo)(implicit tag: ClassTag[T]): Future[Option[T]] = Future {
     Logger.debug("Retrieving " + loginInfo.toString())
 
-    val intake24key = Intake24UserKey.fromString(loginInfo.providerKey)
+    val databaseResult = loginInfo.providerID match {
+      case AuthProviders.surveyAlias => userAdminService.getUserPasswordByAlias(SurveyAliasUtils.fromString(loginInfo.providerKey))
+      case AuthProviders.email => userAdminService.getUserPasswordByEmail(loginInfo.providerKey)
+      case x => throw new RuntimeException(s"Auth info provider $x not supported")
+    }
 
-    userAdminService.getUserById(intake24key.surveyId, intake24key.userName) match {
-      case Right(secureUserRecord) => Some(PasswordInfo(secureUserRecord.passwordHasher, secureUserRecord.passwordHashBase64, Some(secureUserRecord.passwordSaltBase64)).asInstanceOf[T])
+    databaseResult match {
+      case Right(password) => Some(PasswordInfo(password.hasher, password.hashBase64, Some(password.saltBase64)).asInstanceOf[T])
       case Left(RecordNotFound(_)) => None
       case Left(e) => throw e.exception
     }
@@ -53,25 +57,4 @@ class AuthInfoServiceImpl @Inject()(userAdminService: UserAdminService) extends 
   def remove[T](loginInfo: LoginInfo)(implicit tag: scala.reflect.ClassTag[T]): Future[Unit] = ???
 
   def update[T](loginInfo: LoginInfo, authInfo: T): scala.concurrent.Future[T] = ???
-
-  /*
-
-   Updating user records is not currently supported
-
-   Future {
-    Logger.debug("Updating " + loginInfo.toString())
-
-    val info = authInfo.asInstanceOf[PasswordInfo]
-
-    val intake24key = Intake24UserKey.fromString(loginInfo.providerKey)
-
-    dataStore.getUserRecord(intake24key.surveyName, intake24key.userName) match {
-      case Some(record) => {
-        val newRecord = SecureUserRecord(record.username, info.password, info.salt.get, info.hasher, record.roles, record.permissions, record.customFields)
-        dataStore.saveUsers(intake24key.surveyName, Seq(newRecord))
-        authInfo
-      }
-      case None => throw new RuntimeException("User record not found")
-    }
-  }*/
 }

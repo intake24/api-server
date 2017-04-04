@@ -28,7 +28,7 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc._
 import security.Roles
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{SecureUserRecord, SurveyAdminService, UserAdminService}
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 
 import scala.concurrent.Future
 import scala.util.Random
@@ -47,10 +47,14 @@ class GeneratedUsersController @Inject()(userAdminService: UserAdminService,
     GeneratedCredentials(userName, password)
   }
 
-  private def mkSecureUserRecord(surveyId: String, credentials: GeneratedCredentials): SecureUserRecord = {
+  private def mkNewUserRecord(surveyId: String, credentials: GeneratedCredentials): NewUserWithAlias = {
     val pwInfo = passwordHasherRegistry.current.hash(credentials.password)
 
-    SecureUserRecord(credentials.userName, pwInfo.password, pwInfo.salt.get, pwInfo.hasher, None, None, None, Set(Roles.surveyRespondent(surveyId)), Set(), Map())
+    NewUserWithAlias(
+      SurveyUserAlias(surveyId, credentials.userName),
+      UserInfo(None, None, None, Set(Roles.surveyRespondent(surveyId)), Map()),
+      SecurePassword(pwInfo.password, pwInfo.salt.get, pwInfo.hasher)
+    )
   }
 
   // TODO: captcha to prevent new user spam
@@ -65,9 +69,9 @@ class GeneratedUsersController @Inject()(userAdminService: UserAdminService,
               val result = userAdminService.nextGeneratedUserId(surveyId).right.flatMap {
                 counter =>
                   val credentials = generateCredentials(surveyId, counter)
-                  val secureUserRecord = mkSecureUserRecord(surveyId, credentials)
+                  val newUserRecord = mkNewUserRecord(surveyId, credentials)
 
-                  userAdminService.createUser(Some(surveyId), secureUserRecord).right.map(_ => credentials)
+                  userAdminService.createOrUpdateUsersWithAliases(Seq(newUserRecord)).right.map(_ => credentials)
               }
 
               translateDatabaseResult(result)

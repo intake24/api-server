@@ -17,7 +17,7 @@ object UserManagementExamples {
   val surveyUserRecord = asPrettyJSON(Seq(PublicUserRecord("user1", Some("John Smith"), None, None, Map("City" -> "Newcastle")),
     PublicUserRecord("user2", Some("Jack Black"), None, None, Map("City" -> "Cambridge"))))
 
-  val surveyUserUpdate = asPrettyJSON(Seq(CreateOrUpdateUsersRequest(Seq(UserRecord("user1", "p455w0rd", Some("John Smith"), Some("john@smith.com"), Some("+441234567890"), Map())))))
+  val surveyUserUpdate = asPrettyJSON(Seq(CreateOrUpdateSurveyUsersRequest(Seq(UserRecord("user1", "p455w0rd", Some("John Smith"), Some("john@smith.com"), Some("+441234567890"), Map())))))
 
   val surveyStaffRecord = asPrettyJSON(Seq(PublicUserRecord("staff1", Some("Jane Doe"), None, None, Map())))
 }

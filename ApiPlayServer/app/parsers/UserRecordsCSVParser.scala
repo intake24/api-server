@@ -3,7 +3,7 @@ package parsers
 import java.io.{File, FileReader}
 
 import au.com.bytecode.opencsv.CSVReader
-import uk.ac.ncl.openlab.intake24.api.shared.UserRecord
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.SurveyUser
 
 import scala.collection.JavaConverters._
 
@@ -72,7 +72,7 @@ object UserRecordsCSVParser {
     else
       ""
 
-  private def parseRow(rowIndex: Int, headerFormat: HeaderFormat, row: Array[String]): Either[String, UserRecord] =
+  private def parseRow(rowIndex: Int, headerFormat: HeaderFormat, row: Array[String]): Either[String, SurveyUser] =
     if (row.length < 2)
       Left(s"""Too few columns in row ${rowIndex + 1}: at least 2 required, only ${row.length} found""")
     else {
@@ -90,11 +90,11 @@ object UserRecordsCSVParser {
       if (containsWhitespace(userName) || containsWhitespace(password))
         Left(s"""Spaces and tabs are not allowed in user names or passwords (in row ${rowIndex + 1})""")
       else
-        Right(UserRecord(userName, password, name, email, phone, customFields))
+        Right(SurveyUser(userName, password, name, email, phone, customFields))
     }
 
-  private def parseRows(headerFormat: HeaderFormat, rows: Seq[Array[String]]): Either[String, Seq[UserRecord]] = {
-    val z: Either[String, Seq[UserRecord]] = Right(Seq())
+  private def parseRows(headerFormat: HeaderFormat, rows: Seq[Array[String]]): Either[String, Seq[SurveyUser]] = {
+    val z: Either[String, Seq[SurveyUser]] = Right(Seq())
     rows.zipWithIndex.foldRight(z) {
       case ((row, rowIndex), acc) =>
         for (parsedRows <- acc.right;
@@ -103,7 +103,7 @@ object UserRecordsCSVParser {
     }
   }
 
-  private def validateUniqueness(userRecords: Seq[UserRecord]): Either[String, Unit] = {
+  private def validateUniqueness(userRecords: Seq[SurveyUser]): Either[String, Unit] = {
     val (_, duplicateSet) = userRecords.foldLeft((Set[String](), Set[String]())) {
       case ((unique, duplicate), record) =>
         if (unique.contains(record.userName))
@@ -118,7 +118,7 @@ object UserRecordsCSVParser {
       Left(s"Duplicate user name(s) found: ${duplicateSet.mkString(", ")}")
   }
 
-  def parseFile(file: File): Either[String, Seq[UserRecord]] = {
+  def parseFile(file: File): Either[String, Seq[SurveyUser]] = {
     val reader = new CSVReader(new FileReader(file))
 
     try {

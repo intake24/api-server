@@ -1,6 +1,8 @@
 package uk.ac.ncl.openlab.intake24.api.shared
 
-case class Credentials(survey_id: Option[String], username: String, password: String)
+case class EmailCredentials(email: String, password: String)
+
+case class SurveyAliasCredentials(surveyId: String, userName: String, password: String)
 
 case class SigninResult(refreshToken: String)
 

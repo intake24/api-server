@@ -18,6 +18,7 @@ limitations under the License.
 
 package models
 
-import com.mohiva.play.silhouette.api.Identity
+import com.mohiva.play.silhouette.api.{Identity, LoginInfo}
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.UserInfoWithId
 
-case class Intake24User(id: String, securityInfo: SecurityInfo) extends Identity
+case class Intake24User(loginInfo: LoginInfo, userInfo: UserInfoWithId) extends Identity

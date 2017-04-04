@@ -20,11 +20,10 @@ package security
 
 import javax.inject.Inject
 
+import _root_.models.Intake24User
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
-import _root_.models.{Intake24User, SecurityInfo}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.libs.json.Json
 import uk.ac.ncl.openlab.intake24.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.UserAdminService
 
@@ -32,13 +31,16 @@ import scala.concurrent.Future
 
 class IdentityServiceImpl @Inject()(val userAdminService: UserAdminService) extends IdentityService[Intake24User] {
 
-  implicit val securityInfoFormat = Json.format[SecurityInfo]
-
   def retrieve(loginInfo: LoginInfo): Future[Option[Intake24User]] = Future {
-    val intake24key = Intake24UserKey.fromString(loginInfo.providerKey)
 
-    userAdminService.getUserById(intake24key.surveyId, intake24key.userName) match {
-      case Right(secureUserRecord) => Some(Intake24User(secureUserRecord.userName, SecurityInfo(secureUserRecord.roles, secureUserRecord.permissions)))
+    val databaseResult = loginInfo.providerID match {
+      case AuthProviders.surveyAlias => userAdminService.getUserByAlias(SurveyAliasUtils.fromString(loginInfo.providerKey))
+      case AuthProviders.email => userAdminService.getUserByEmail(loginInfo.providerKey)
+      case x => throw new RuntimeException(s"Invalid login provider: $x")
+    }
+
+    databaseResult match {
+      case Right(userInfo) => Some(Intake24User(loginInfo, userInfo))
       case Left(RecordNotFound(_)) => None
       case Left(e) => throw e.exception
     }

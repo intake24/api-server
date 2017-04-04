@@ -27,7 +27,7 @@ class UserAdminTest extends ApiTestSuite with RandomData with BeforeAndAfterAll 
   var adminAccessToken: String = null
 
   override def beforeAll(): Unit = {
-    val adminRefreshToken = assertSuccessful(signinClient.signin(Credentials(None, "admin", "intake24"))).refreshToken
+    val adminRefreshToken = assertSuccessful(signinClient.signin(SurveyAliasCredentials(None, "admin", "intake24"))).refreshToken
     adminAccessToken = assertSuccessful(signinClient.refresh(adminRefreshToken)).accessToken
 
     assertSuccessful(surveyAdminClient.createSurvey(adminAccessToken, CreateSurveyRequest(testSurveyId, "default", "enGB", false, None, "blah@blah.com")))
@@ -77,7 +77,7 @@ class UserAdminTest extends ApiTestSuite with RandomData with BeforeAndAfterAll 
 
     val publicUsers = users.map(toPublicUserRecord)
 
-    assertSuccessful(userAdminClient.createOrUpdateSurveyStaff(adminAccessToken, testSurveyId, CreateOrUpdateUsersRequest(users)))
+    assertSuccessful(userAdminClient.createOrUpdateSurveyStaff(adminAccessToken, testSurveyId, CreateOrUpdateSurveyUsersRequest(users)))
 
     val userList = assertSuccessful(userAdminClient.listSurveyStaff(adminAccessToken, testSurveyId, 0, 100))
 
@@ -131,7 +131,7 @@ class UserAdminTest extends ApiTestSuite with RandomData with BeforeAndAfterAll 
 
     val publicUsers = users.map(toPublicUserRecord)
 
-    assertSuccessful(userAdminClient.createOrUpdateSurveyRespondents(adminAccessToken, testSurveyId, CreateOrUpdateUsersRequest(users)))
+    assertSuccessful(userAdminClient.createOrUpdateSurveyRespondents(adminAccessToken, testSurveyId, CreateOrUpdateSurveyUsersRequest(users)))
 
     val userList = assertSuccessful(userAdminClient.listSurveyRespondents(adminAccessToken, testSurveyId, 0, 100))
 
@@ -182,8 +182,8 @@ class UserAdminTest extends ApiTestSuite with RandomData with BeforeAndAfterAll 
   var staffUserAccessToken: String = null
 
   test("Create and sign in as survey staff") {
-    assertSuccessful(userAdminClient.createOrUpdateSurveyStaff(adminAccessToken, testSurveyId, CreateOrUpdateUsersRequest(Seq(staffTestUserRecord))))
-    val refreshToken = assertSuccessful(signinClient.signin(Credentials(Some(testSurveyId), staffTestUserRecord.userName, staffTestUserRecord.password))).refreshToken
+    assertSuccessful(userAdminClient.createOrUpdateSurveyStaff(adminAccessToken, testSurveyId, CreateOrUpdateSurveyUsersRequest(Seq(staffTestUserRecord))))
+    val refreshToken = assertSuccessful(signinClient.signin(SurveyAliasCredentials(Some(testSurveyId), staffTestUserRecord.userName, staffTestUserRecord.password))).refreshToken
     staffUserAccessToken = assertSuccessful(signinClient.refresh(refreshToken)).accessToken
   }
 
@@ -196,7 +196,7 @@ class UserAdminTest extends ApiTestSuite with RandomData with BeforeAndAfterAll 
   }
 
   test("Try to create users for another survey") {
-    assertForbidden(userAdminClient.createOrUpdateSurveyStaff(staffUserAccessToken, "_no_such_survey", CreateOrUpdateUsersRequest(Seq())))
+    assertForbidden(userAdminClient.createOrUpdateSurveyStaff(staffUserAccessToken, "_no_such_survey", CreateOrUpdateSurveyUsersRequest(Seq())))
   }
 
   test("Try to delete users from another survey") {

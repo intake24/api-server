@@ -48,7 +48,7 @@ lazy val foodDataXml = Project(id = "foodDataXml", base = file("FoodDataXML")).d
 
 lazy val nutrientsCsv = Project(id = "nutrientsCsv", base = file("NutrientsCSV")).dependsOn(sharedTypes, foodDataServices).settings(commonSettings: _*)
 
-lazy val foodDataSql = Project(id = "foodDataSql", base = file("FoodDataSQL")).dependsOn(commonSql, foodDataServices % "compile->compile;test->test", sharedTypes, foodDataXml, nutrientsCsv).settings(commonSettings: _*)
+lazy val foodDataSql = Project(id = "foodDataSql", base = file("FoodDataSQL")).dependsOn(commonSql, foodDataServices % "compile->compile;test->test", foodDataXml, nutrientsCsv).settings(commonSettings: _*)
 
 
 lazy val databaseTools = Project(id = "databaseTools", base = file("DatabaseTools")).dependsOn(commonSql, imageProcessorIM, systemDataSql, foodDataXml, foodDataSql, apiClient).settings(commonSettings: _*)

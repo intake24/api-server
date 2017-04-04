@@ -6,7 +6,7 @@ import org.scalatest.FunSuite
 import uk.ac.ncl.openlab.intake24.api.client.ApiError
 import uk.ac.ncl.openlab.intake24.api.client.ApiError.{ErrorParseFailed, RequestFailed, ResultParseFailed}
 import uk.ac.ncl.openlab.intake24.api.client.scalajhttp.SigninClientImpl
-import uk.ac.ncl.openlab.intake24.api.shared.Credentials
+import uk.ac.ncl.openlab.intake24.api.shared.SurveyAliasCredentials
 
 trait ApiTestSuite extends FunSuite {
 

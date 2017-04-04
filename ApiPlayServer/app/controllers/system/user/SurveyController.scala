@@ -26,7 +26,7 @@ import parsers.JsonUtils
 import play.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{Action, BodyParsers, Controller}
-import security.{DeadboltActionsAdapter, Intake24UserKey, Roles}
+import security.{DeadboltActionsAdapter, Intake24SurveyAlias$, Roles}
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.SurveyService
@@ -58,7 +58,7 @@ class SurveyController @Inject()(service: SurveyService,
             if (params.state != "running")
               Forbidden(toJsonString(ErrorDescription("SurveyNotRunning", "Survey not accepting submissions at this time")))
             else {
-              val userName = Intake24UserKey.fromString(request.subject.get.identifier).userName
+              val userName = Intake24SurveyAlias.fromString(request.subject.get.identifier).userName
 
               val result = for (nutrientMappedSubmission <- nutrientMappingService.mapSurveySubmission(request.body, params.localeId).right;
                                 _ <- service.createSubmission(surveyId, userName, nutrientMappedSubmission).right)

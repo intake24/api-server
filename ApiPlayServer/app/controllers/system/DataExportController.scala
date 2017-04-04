@@ -26,7 +26,7 @@ import controllers.DatabaseErrorHandler
 import parsers.{SurveyCSVExporter, JsonUtils}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller}
-import security.{DeadboltActionsAdapter, Intake24UserKey, Roles}
+import security.{DeadboltActionsAdapter, Roles}
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, SurveyAdminService}
@@ -58,7 +58,9 @@ class DataExportController @Inject()(service: DataExportService, surveyAdminServ
     request =>
       Future {
 
-        val respondentId = Intake24UserKey.fromString(request.subject.get.identifier).userName
+        //request.subject.
+
+        val respondentId = Intake24SurveyAlias.fromString(request.subject.get.identifier).userName
 
         try {
           translateDatabaseResult(service.getSurveySubmissions(surveyId, None, None, 0, Int.MaxValue, Some(respondentId)))

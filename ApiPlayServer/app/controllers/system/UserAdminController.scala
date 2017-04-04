@@ -30,104 +30,47 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller, MultipartFormData, Result}
 import security.{DeadboltActionsAdapter, Roles}
 import uk.ac.ncl.openlab.intake24.api.shared._
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{NewUser, NewUserWithAlias, SecureUserRecord, UserAdminService}
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.SurveyUser
 
 import scala.concurrent.Future
-
 
 class UserAdminController @Inject()(service: UserAdminService, passwordHasherRegistry: PasswordHasherRegistry, deadbolt: DeadboltActionsAdapter) extends Controller
   with DatabaseErrorHandler with JsonUtils {
 
-  private def doCreateOrUpdate(surveyId: Option[String], userRecords: Seq[UserRecordWithPermissions]): Result = {
+  private def doCreateOrUpdate(surveyId: String, roles: Set[String], userRecords: Seq[SurveyUser]): Result = {
     val hasher = passwordHasherRegistry.current
 
-    val secureUserRecords = userRecords.map {
+    val newUserRecords = userRecords.map {
       record =>
         val passwordInfo = hasher.hash(record.password)
-        SecureUserRecord(record.userName, passwordInfo.password, passwordInfo.salt.get, passwordInfo.hasher, record.name, record.email, record.phone, record.roles, record.permissions, record.customFields)
+
+        NewUserWithAlias(
+          SurveyUserAlias(surveyId, record.userName),
+          UserInfo(record.name, record.email, record.phone, roles, record.customFields),
+          SecurePassword(passwordInfo.password, passwordInfo.salt.get, passwordInfo.hasher))
     }
 
-    translateDatabaseResult(service.createOrUpdateUsersWithAliases(surveyId, secureUserRecords))
+    translateDatabaseResult(service.createOrUpdateUsersWithAliases(newUserRecords))
   }
 
-  private def doDeleteUsers(surveyId: Option[String], userNames: Seq[String]): Result = translateDatabaseResult(service.deleteUsersById(surveyId, userNames))
-
-  def createOrUpdateGlobalUsers() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[CreateOrUpdateGlobalUsersRequest]) {
-    request =>
-      Future {
-        doCreateOrUpdate(None, request.body.userRecords)
-      }
-  }
-
-  def createOrUpdateSurveyStaff(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(jsonBodyParser[CreateOrUpdateUsersRequest]) {
-    request =>
-      Future {
-        doCreateOrUpdate(Some(surveyId), request.body.userRecords.map {
-          record =>
-            UserRecordWithPermissions(record.userName, record.password, record.name, record.email, record.phone, record.customFields, Set(Roles.surveyStaff(surveyId)), Set())
-        })
-      }
-  }
-
-  private def uploadCSV(formData: MultipartFormData[Files.TemporaryFile], surveyId: String, roles: Set[String], permissions: Set[String]): Result = {
+  private def uploadCSV(formData: MultipartFormData[Files.TemporaryFile], surveyId: String, roles: Set[String]): Result = {
     if (formData.files.length != 1)
       BadRequest(toJsonString(ErrorDescription("BadRequest", s"Expected exactly one file attachment, got ${formData.files.length}"))).as(ContentTypes.JSON)
     else {
       UserRecordsCSVParser.parseFile(formData.files(0).ref.file) match {
-        case Right(records) =>
-          val recordsWithPermissions = records.map {
-            record =>
-              UserRecordWithPermissions(record.userName, record.password, record.name, record.email, record.phone, record.customFields, roles, permissions)
-          }
-          doCreateOrUpdate(Some(surveyId), recordsWithPermissions)
+        case Right(csvRecords) =>
+          doCreateOrUpdate(surveyId, roles, csvRecords)
         case Left(error) =>
           BadRequest(toJsonString(ErrorDescription("InvalidCSV", error)))
       }
     }
   }
 
-  def createOrUpdateSurveyRespondents(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(jsonBodyParser[CreateOrUpdateUsersRequest]) {
-    request =>
-      Future {
-        doCreateOrUpdate(Some(surveyId), request.body.userRecords.map {
-          record =>
-            UserRecordWithPermissions(record.userName, record.password, record.name, record.email, record.phone, record.customFields, Set(Roles.surveyRespondent(surveyId)), Set())
-        })
-      }
-  }
-
-  def uploadSurveyRespondentsCSV(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.multipartFormData) {
-    request =>
-      Future {
-        uploadCSV(request.body, surveyId, Set(Roles.surveyRespondent(surveyId)), Set())
-      }
-  }
-
-  def uploadSurveyStaffCSV(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.multipartFormData) {
-    request =>
-      Future {
-        uploadCSV(request.body, surveyId, Set(Roles.surveyStaff(surveyId)), Set())
-      }
-  }
-
-  def deleteUsers() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[DeleteUsersRequest]) {
-    request =>
-      Future {
-        translateDatabaseResult(service.deleteUsersById(request.body.userIds))
-      }
-  }
-
   def findUsers(query: String, limit: Int) = deadbolt.restrictToRoles(Roles.superuser)(BodyParsers.parse.empty) {
     _ =>
       Future {
         translateDatabaseResult(service.findUsers(query, limit))
-      }
-  }
-
-  def listUsersByRole(role: String, offset: Int, limit: Int) = deadbolt.restrictToRoles(Roles.superuser)(BodyParsers.parse.empty) {
-    _ =>
-      Future {
-        translateDatabaseResult(service.listUsersByRole(role, offset, limit))
       }
   }
 
@@ -138,10 +81,31 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
       }
   }
 
+  def deleteUsers() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[DeleteUsersRequest]) {
+    request =>
+      Future {
+        translateDatabaseResult(service.deleteUsersById(request.body.userIds))
+      }
+  }
+
   def listSurveyStaffUsers(surveyId: String, offset: Int, limit: Int) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
     _ =>
       Future {
         translateDatabaseResult(service.listUsersByRole(Roles.surveyStaff(surveyId), offset, limit))
+      }
+  }
+
+  def createOrUpdateSurveyStaff(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(jsonBodyParser[CreateOrUpdateSurveyUsersRequest]) {
+    request =>
+      Future {
+        doCreateOrUpdate(surveyId, Set(Roles.surveyStaff(surveyId)), request.body.users)
+      }
+  }
+
+  def uploadSurveyStaffCSV(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.multipartFormData) {
+    request =>
+      Future {
+        uploadCSV(request.body, surveyId, Set(Roles.surveyStaff(surveyId)))
       }
   }
 
@@ -152,10 +116,24 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
       }
   }
 
-  def deleteSurveyUsers(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(jsonBodyParser[DeleteUsersRequest]) {
+  def createOrUpdateSurveyRespondents(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(jsonBodyParser[CreateOrUpdateSurveyUsersRequest]) {
     request =>
       Future {
-        doDeleteUsers(Some(surveyId), request.body.userNames)
+        doCreateOrUpdate(surveyId, Set(Roles.surveyRespondent(surveyId)), request.body.users)
+      }
+  }
+
+  def uploadSurveyRespondentsCSV(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.multipartFormData) {
+    request =>
+      Future {
+        uploadCSV(request.body, surveyId, Set(Roles.surveyRespondent(surveyId)))
+      }
+  }
+
+  def deleteSurveyUsers(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(jsonBodyParser[DeleteSurveyUsersRequest]) {
+    request =>
+      Future {
+        translateDatabaseResult(service.deleteUsersByAlias(request.body.userNames.map(n => SurveyUserAlias(request.body.surveyId, n))))
       }
   }
 }

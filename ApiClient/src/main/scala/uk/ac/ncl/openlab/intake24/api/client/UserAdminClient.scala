@@ -1,6 +1,6 @@
 package uk.ac.ncl.openlab.intake24.api.client
 
-import uk.ac.ncl.openlab.intake24.api.shared.{CreateOrUpdateGlobalUsersRequest, CreateOrUpdateUsersRequest, DeleteUsersRequest}
+import uk.ac.ncl.openlab.intake24.api.shared.{CreateOrUpdateGlobalUsersRequest, CreateOrUpdateSurveyUsersRequest, DeleteUsersRequest}
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{PublicUserRecord, PublicUserRecordWithPermissions}
 
 trait UserAdminClient {
@@ -11,13 +11,13 @@ trait UserAdminClient {
 
   def deleteGlobalUsers(accessToken: String, request: DeleteUsersRequest): Either[ApiError, Unit]
 
-  def createOrUpdateSurveyStaff(accessToken: String, surveyId: String, request: CreateOrUpdateUsersRequest): Either[ApiError, Unit]
+  def createOrUpdateSurveyStaff(accessToken: String, surveyId: String, request: CreateOrUpdateSurveyUsersRequest): Either[ApiError, Unit]
 
   def uploadSurveyStaffCSV(accessToken: String, surveyId: String, csvFilePath: String): Either[ApiError, Unit]
 
   def listSurveyStaff(accessToken: String, surveyId: String, offset: Int, limit: Int): Either[ApiError, Seq[PublicUserRecord]]
 
-  def createOrUpdateSurveyRespondents(accessToken: String, surveyId: String, request: CreateOrUpdateUsersRequest): Either[ApiError, Unit]
+  def createOrUpdateSurveyRespondents(accessToken: String, surveyId: String, request: CreateOrUpdateSurveyUsersRequest): Either[ApiError, Unit]
 
   def uploadSurveyRespondentsCSV(accessToken: String, surveyId: String, csvFilePath: String): Either[ApiError, Unit]
 

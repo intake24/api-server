@@ -29,7 +29,7 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.mailer.{Email, MailerClient}
 import play.api.mvc._
 import play.cache.CacheApi
-import security.{DeadboltActionsAdapter, Intake24UserKey, Roles}
+import security.{DeadboltActionsAdapter, Intake24SurveyAlias$, Roles}
 import sms.SMSService
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.UserAdminService
 
@@ -58,7 +58,7 @@ class HelpController @Inject()(cache: CacheApi,
     request =>
       Future {
         val userKey = request.subject.get.identifier
-        val userName = Intake24UserKey.fromString(userKey).userName
+        val userName = Intake24SurveyAlias.fromString(userKey).userName
         val cacheKey = s"reject-callback-$userKey"
 
 
