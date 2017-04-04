@@ -18,16 +18,21 @@ limitations under the License.
 
 package models
 
-import be.objectify.deadbolt.scala.models.{Permission, Role, Subject}
+import be.objectify.deadbolt.scala.models.Subject
 import com.mohiva.play.silhouette.impl.authenticators.JWTAuthenticator
 
 sealed trait Intake24Subject extends Subject {
-  def authenticator: JWTAuthenticator
+  val userId: Long
+  val jwt: JWTAuthenticator
 }
 
-case class RefreshSubject(identifier: String, authenticator: JWTAuthenticator) extends Intake24Subject {
+case class RefreshSubject(identifier: String, userId: Long, jwt: JWTAuthenticator) extends Intake24Subject {
   val roles = List()
   val permissions = List()
 }
 
-case class AccessSubject(identifier: String, roles: List[Role], permissions: List[Permission], authenticator: JWTAuthenticator) extends Intake24Subject
+case class AccessSubject(identifier: String, userId: Long, userRoles: Set[String], jwt: JWTAuthenticator) extends Intake24Subject {
+  def roles = userRoles.toList.map(SecurityRole(_))
+
+  val permissions = List()
+}

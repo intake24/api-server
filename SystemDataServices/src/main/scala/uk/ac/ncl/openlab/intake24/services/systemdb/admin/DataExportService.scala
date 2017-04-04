@@ -7,7 +7,7 @@ import uk.ac.ncl.openlab.intake24.errors.LookupError
 import uk.ac.ncl.openlab.intake24.surveydata.{MealTime, PortionSize}
 
 
-case class ExportSubmission(id: UUID, userName: String, userCustomData: Map[String, String], surveyCustomData: Map[String, String], startTime: ZonedDateTime, endTime: ZonedDateTime, meals: Seq[ExportMeal])
+case class ExportSubmission(id: UUID, userId: Int, userAlias: Option[String], userCustomData: Map[String, String], surveyCustomData: Map[String, String], startTime: ZonedDateTime, endTime: ZonedDateTime, meals: Seq[ExportMeal])
 
 case class ExportMeal(name: String, time: MealTime, customData: Map[String, String], foods: Seq[ExportFood])
 
@@ -17,7 +17,7 @@ case class ExportFood(code: String, englishDescription: String, localDescription
 
 trait DataExportService {
 
-  def getSurveySubmissions(surveyId: String, dateFrom: Option[Instant], dateTo: Option[Instant], offset: Int, limit: Int, respondentId: Option[String]): Either[LookupError, Seq[ExportSubmission]]
+  def getSurveySubmissions(surveyId: String, dateFrom: Option[Instant], dateTo: Option[Instant], offset: Int, limit: Int, respondentId: Option[Int]): Either[LookupError, Seq[ExportSubmission]]
 
   //def getSurveySubmissionsAsCSV()
 

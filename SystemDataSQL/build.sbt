@@ -30,5 +30,6 @@ libraryDependencies ++= Seq(
   "com.google.gwt" % "gwt-user" % "2.7.0" % "provided",
   "org.slf4j" % "slf4j-api" % "1.7.21",
   "net.codingwell" %% "scala-guice" % "4.1.0",
+  "org.apache.commons" % "commons-lang3" % "3.4",
   "org.scalatest" %% "scalatest" % "2.2.5" % "test"
 )

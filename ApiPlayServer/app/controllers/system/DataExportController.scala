@@ -58,9 +58,7 @@ class DataExportController @Inject()(service: DataExportService, surveyAdminServ
     request =>
       Future {
 
-        //request.subject.
-
-        val respondentId = Intake24SurveyAlias.fromString(request.subject.get.identifier).userName
+        val respondentId = request.subject.get.identifier.toInt
 
         try {
           translateDatabaseResult(service.getSurveySubmissions(surveyId, None, None, 0, Int.MaxValue, Some(respondentId)))

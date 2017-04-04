@@ -29,13 +29,14 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.mailer.{Email, MailerClient}
 import play.api.mvc._
 import play.cache.CacheApi
-import security.{DeadboltActionsAdapter, Intake24SurveyAlias$, Roles}
+import security._
 import sms.SMSService
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.UserAdminService
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import io.circe.generic.auto._
+import models.Intake24Subject
 
 
 case class CallbackRequest(name: String, phone: String)
@@ -57,10 +58,14 @@ class HelpController @Inject()(cache: CacheApi,
   def requestCallback(surveyId: String) = deadbolt.restrictToRoles(Roles.surveyRespondent(surveyId))(jsonBodyParser[CallbackRequest]) {
     request =>
       Future {
-        val userKey = request.subject.get.identifier
-        val userName = Intake24SurveyAlias.fromString(userKey).userName
-        val cacheKey = s"reject-callback-$userKey"
+        val subject = request.subject.get.asInstanceOf[Intake24Subject]
 
+        val cacheKey = s"reject-callback-${subject.userId.toString}"
+
+        val userName = subject.jwt.loginInfo.providerID match {
+          case SurveyAliasProvider.ID => SurveyAliasUtils.fromString(subject.jwt.loginInfo.providerKey).userName
+          case _ => subject.userId.toString
+        }
 
         if (cache.get[String](cacheKey) != null)
           TooManyRequests

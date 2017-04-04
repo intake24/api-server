@@ -21,7 +21,7 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
 
   lazy val getSurveySubmissionNutrientsSql = sqlFromResource("admin/get_survey_submission_nutrients.sql")
 
-  private case class SubmissionRow(id: UUID, survey_id: String, user_id: String, start_time: ZonedDateTime, end_time: ZonedDateTime, log: Array[String],
+  private case class SubmissionRow(id: UUID, survey_id: String, user_id: Int, user_name: Option[String], start_time: ZonedDateTime, end_time: ZonedDateTime, log: Array[String],
                                    submission_custom_fields: Array[Array[String]], user_custom_fields: Array[Array[String]])
 
   private case class MealRow(submission_id: UUID, meal_id: Long, hours: Int, minutes: Int, name: String, custom_fields: Array[Array[String]])
@@ -37,7 +37,7 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
       case (acc, cf) => acc + (cf(0) -> cf(1))
     }
 
-  def getSurveySubmissions(surveyId: String, dateFrom: Option[Instant], dateTo: Option[Instant], offset: Int, limit: Int, respondentId: Option[String]): Either[LookupError, Seq[ExportSubmission]] = tryWithConnection {
+  def getSurveySubmissions(surveyId: String, dateFrom: Option[Instant], dateTo: Option[Instant], offset: Int, limit: Int, respondentId: Option[Int]): Either[LookupError, Seq[ExportSubmission]] = tryWithConnection {
     implicit conn =>
       withTransaction {
 
@@ -85,7 +85,7 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
                     }
                     ExportMeal(mealRow.name, MealTime(mealRow.hours, mealRow.minutes), customFieldsAsMap(mealRow.custom_fields), foods)
                 }
-                ExportSubmission(submissionRow.id, submissionRow.user_id, customFieldsAsMap(submissionRow.user_custom_fields), customFieldsAsMap(submissionRow.submission_custom_fields),
+                ExportSubmission(submissionRow.id, submissionRow.user_id, submissionRow.user_name, customFieldsAsMap(submissionRow.user_custom_fields), customFieldsAsMap(submissionRow.submission_custom_fields),
                   submissionRow.start_time, submissionRow.end_time, meals)
             }
 

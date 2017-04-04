@@ -631,6 +631,25 @@ object SystemDatabaseMigrations {
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         ???
       }
+    },
+
+    new Migration {
+      val versionFrom = 23l
+      val versionTo = 24l
+
+      val description = "Create simple_name for searching on user names without accents and diacritics"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE users ADD COLUMN simple_name character varying(512)").execute()
+        SQL("CREATE INDEX users_simple_name_index ON users(simple_name)").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
     }
   )
 }

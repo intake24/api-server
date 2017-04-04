@@ -3,12 +3,11 @@ package uk.ac.ncl.openlab.intake24.api.client.test
 import java.io.{File, FileWriter}
 
 import com.opencsv.CSVWriter
-import uk.ac.ncl.openlab.intake24.api.shared.{UserRecord, UserRecordWithPermissions}
-
+import uk.ac.ncl.openlab
 import scala.util.Random
 
 trait RandomData {
-
+/*
   def randomString(length: Int) = Random.alphanumeric.take(length).mkString
 
   def randomEmail = if (Random.nextBoolean)
@@ -68,6 +67,6 @@ trait RandomData {
     val customFieldNames = randomCustomFieldNames
     val users = Seq.fill(Random.nextInt(9) + 1)(randomUserRecord(customFieldNames))
     (users, createTempCSVFile(customFieldNames, users))
-  }
+  }*/
 
 }

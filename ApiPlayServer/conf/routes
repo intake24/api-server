@@ -4,8 +4,9 @@
 
 # SHARED CONTROLLERS #
 
-POST           /signin                                                       controllers.system.SigninController.signin
-POST           /refresh                                                      controllers.system.SigninController.refresh
+POST           /signin                                                       controllers.system.SigninController.signinWithEmail()
+POST           /signin/alias                                                 controllers.system.SigninController.signinWithAlias()
+POST           /refresh                                                      controllers.system.SigninController.refresh()
 
 GET            /index/lookup/:locale/:term                                   controllers.FoodIndexController.lookup(locale, term)
 

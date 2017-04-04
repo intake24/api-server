@@ -39,7 +39,7 @@ object SurveyAliasUtils {
 }
 
 object Intake24CredentialsUtil {
-  implicit def asSimpleCredentials(credentials: Intake24Credentials) = Credentials(SurveyAliasUtils(credentials.surveyId, credentials.userName).toString(), credentials.password)
+  implicit def asSimpleCredentials(credentials: Intake24Credentials) = Credentials(SurveyUserAlias(credentials.surveyId, credentials.userName).toString(), credentials.password)
 
   implicit def fromSimpleCredentials(credentials: Credentials) = {
     val key = SurveyAliasUtils.fromString(credentials.identifier)

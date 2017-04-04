@@ -13,5 +13,5 @@ trait SurveyService {
 
   def getSurveyParameters(surveyId: String): Either[LookupError, UserSurveyParameters]
 
-  def createSubmission(surveyId: String, userName: String, submission: NutrientMappedSubmission): Either[UnexpectedDatabaseError, Unit]
+  def createSubmission(userId: Long, submission: NutrientMappedSubmission): Either[UnexpectedDatabaseError, Unit]
 }

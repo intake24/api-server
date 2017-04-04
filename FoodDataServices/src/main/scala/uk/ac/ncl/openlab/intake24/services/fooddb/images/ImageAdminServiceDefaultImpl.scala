@@ -71,7 +71,7 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
     Right(())
   }
 
-  def deleteProcessedImages(ids: Seq[Int]): Either[ImageServiceOrDatabaseError, Unit] = {
+  def deleteProcessedImages(ids: Seq[Long]): Either[ImageServiceOrDatabaseError, Unit] = {
     for (
       paths <- imageDatabase.getProcessedImageRecords(ids).wrapped.right.map(_.map(_.path)).right;
       _ <- imageDatabase.deleteProcessedImageRecords(ids).wrapped.right;
@@ -112,7 +112,7 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
       ) yield id.head
   }
 
-  def deleteSourceImages(ids: Seq[Int]): Either[ImageServiceOrDatabaseError, Unit] = {
+  def deleteSourceImages(ids: Seq[Long]): Either[ImageServiceOrDatabaseError, Unit] = {
     for (
       records <- imageDatabase.getSourceImageRecords(ids).wrapped.right;
       _ <- imageDatabase.deleteSourceImageRecords(ids).wrapped.right;
@@ -213,13 +213,13 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
         ) yield actualPath
     }
 
-  private def mkProcessedMainImageRecords(sourceIds: Seq[Int], paths: Seq[AsServedImagePaths]): Seq[ProcessedImageRecord] =
+  private def mkProcessedMainImageRecords(sourceIds: Seq[Long], paths: Seq[AsServedImagePaths]): Seq[ProcessedImageRecord] =
     sourceIds.zip(paths).map { case (id, paths) => ProcessedImageRecord(paths.mainImage, id, ProcessedImagePurpose.AsServedMainImage) }
 
-  private def mkProcessedThumbnailRecords(sourceIds: Seq[Int], paths: Seq[AsServedImagePaths]): Seq[ProcessedImageRecord] =
+  private def mkProcessedThumbnailRecords(sourceIds: Seq[Long], paths: Seq[AsServedImagePaths]): Seq[ProcessedImageRecord] =
     sourceIds.zip(paths).map { case (id, paths) => ProcessedImageRecord(paths.thumbnail, id, ProcessedImagePurpose.AsServedThumbnail) }
 
-  def processForAsServed(setId: String, sourceImageIds: Seq[Int]): Either[ImageServiceOrDatabaseError, Seq[AsServedImageDescriptor]] =
+  def processForAsServed(setId: String, sourceImageIds: Seq[Long]): Either[ImageServiceOrDatabaseError, Seq[AsServedImageDescriptor]] =
     for (
       sources <- {
         logger.debug("Getting source image descriptors")
@@ -248,7 +248,7 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
       }
     }
 
-  def processForImageMapBase(imageMapId: String, sourceImageId: Int): Either[ImageServiceOrDatabaseError, ImageDescriptor] = {
+  def processForImageMapBase(imageMapId: String, sourceImageId: Long): Either[ImageServiceOrDatabaseError, ImageDescriptor] = {
     logger.debug(s"Processing base image for image map $imageMapId")
     for (
       source <- {
@@ -269,7 +269,7 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
     }
   }
 
-  def generateImageMapOverlays(imageMapId: String, sourceId: Int, imageMap: AWTImageMap): Either[ImageServiceOrDatabaseError, Map[Int, ImageDescriptor]] =
+  def generateImageMapOverlays(imageMapId: String, sourceId: Long, imageMap: AWTImageMap): Either[ImageServiceOrDatabaseError, Map[Int, ImageDescriptor]] =
     generateAndUploadImageMapOverlays(imageMapId, imageMap).right.flatMap {
       overlays =>
         val (objectIds, overlayPaths) = overlays.toSeq.unzip
@@ -284,7 +284,7 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
         }
     }
 
-  def processForSelectionScreen(pathPrefix: String, sourceImageId: Int): Either[ImageServiceOrDatabaseError, ImageDescriptor] =
+  def processForSelectionScreen(pathPrefix: String, sourceImageId: Long): Either[ImageServiceOrDatabaseError, ImageDescriptor] =
     for (source <- imageDatabase.getSourceImageRecords(Seq(sourceImageId)).wrapped.right;
          actualPath <- processAndUploadSelectionScreenImage(pathPrefix, source.head.path).right;
          ssiId <- imageDatabase.createProcessedImageRecords(Seq(ProcessedImageRecord(actualPath, source.head.id, ProcessedImagePurpose.PortionSizeSelectionImage))).wrapped.right)

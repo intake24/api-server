@@ -3,12 +3,11 @@ package uk.ac.ncl.openlab.intake24.api.client.test
 import org.scalatest.BeforeAndAfterAll
 import uk.ac.ncl.openlab.intake24.api.client.scalajhttp.{SurveyAdminClientImpl, UserAdminClientImpl}
 import uk.ac.ncl.openlab.intake24.api.shared._
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{PublicUserRecord, PublicUserRecordWithPermissions}
 
 import scala.util.Random
 
 class UserAdminTest extends ApiTestSuite with RandomData with BeforeAndAfterAll {
-
+  /*
   val userAdminClient = new UserAdminClientImpl(apiBaseUrl)
   val surveyAdminClient = new SurveyAdminClientImpl(apiBaseUrl)
 
@@ -205,6 +204,5 @@ class UserAdminTest extends ApiTestSuite with RandomData with BeforeAndAfterAll 
 
   test("Delete test staff account") {
     assertSuccessful(userAdminClient.deleteSurveyUsers(adminAccessToken, testSurveyId, DeleteUsersRequest(Seq(staffTestUserRecord.userName))))
-  }
-
+  }*/
 }

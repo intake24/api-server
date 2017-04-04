@@ -15,7 +15,7 @@ class ImageDatabaseServiceSqlImpl @Inject()(@Named("intake24_foods") val dataSou
 
   private val logger = LoggerFactory.getLogger(classOf[ImageDatabaseServiceSqlImpl])
 
-  private case class SourceImageRecordRow(id: Int, path: String, thumbnail_path: String, keywords: Array[String], uploader: String, uploaded_at: LocalDateTime) {
+  private case class SourceImageRecordRow(id: Long, path: String, thumbnail_path: String, keywords: Array[String], uploader: String, uploaded_at: LocalDateTime) {
     def toSourceImageRecord = SourceImageRecord(id, path, thumbnail_path, keywords, uploader, uploaded_at)
   }
 
@@ -25,7 +25,7 @@ class ImageDatabaseServiceSqlImpl @Inject()(@Named("intake24_foods") val dataSou
 
   private lazy val filterSourceImagesQuery = sqlFromResource("admin/filter_source_image_records.sql")
 
-  def createSourceImageRecords(records: Seq[NewSourceImageRecord]): Either[UnexpectedDatabaseError, Seq[Int]] = tryWithConnection {
+  def createSourceImageRecords(records: Seq[NewSourceImageRecord]): Either[UnexpectedDatabaseError, Seq[Long]] = tryWithConnection {
     implicit conn =>
       withTransaction {
         val query = "INSERT INTO source_images(id,path,thumbnail_path,uploader,uploaded_at) VALUES(DEFAULT,{path},{thumbnail_path},{uploader},DEFAULT)"
@@ -53,7 +53,7 @@ class ImageDatabaseServiceSqlImpl @Inject()(@Named("intake24_foods") val dataSou
       }
   }
 
-  def getSourceImageRecords(ids: Seq[Int]): Either[LookupError, Seq[SourceImageRecord]] = tryWithConnection {
+  def getSourceImageRecords(ids: Seq[Long]): Either[LookupError, Seq[SourceImageRecord]] = tryWithConnection {
     implicit conn =>
 
       val result = SQL(getSourceImagesQuery).on('ids -> ids).executeQuery().as(Macro.namedParser[SourceImageRecordRow].*).map {
@@ -97,7 +97,7 @@ class ImageDatabaseServiceSqlImpl @Inject()(@Named("intake24_foods") val dataSou
       }
   }
 
-  override def deleteSourceImageRecords(ids: Seq[Int]): Either[DeleteError, Unit] = tryWithConnection {
+  override def deleteSourceImageRecords(ids: Seq[Long]): Either[DeleteError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
         tryWithConstraintCheck[DeleteError, Unit]("processed_images_source_image_fk", e => StillReferenced(e)) {
@@ -109,7 +109,7 @@ class ImageDatabaseServiceSqlImpl @Inject()(@Named("intake24_foods") val dataSou
       }
   }
 
-  def createProcessedImageRecords(records: Seq[ProcessedImageRecord]): Either[UnexpectedDatabaseError, Seq[Int]] = tryWithConnection {
+  def createProcessedImageRecords(records: Seq[ProcessedImageRecord]): Either[UnexpectedDatabaseError, Seq[Long]] = tryWithConnection {
     implicit conn =>
       val query = "INSERT INTO processed_images VALUES(DEFAULT,{path},{source_id},{purpose},DEFAULT)"
 
@@ -121,7 +121,7 @@ class ImageDatabaseServiceSqlImpl @Inject()(@Named("intake24_foods") val dataSou
       Right(AnormUtil.batchKeys(batchSql(query, params)))
   }
 
-  def deleteProcessedImageRecords(ids: Seq[Int]): Either[UnexpectedDatabaseError, Unit] =
+  def deleteProcessedImageRecords(ids: Seq[Long]): Either[UnexpectedDatabaseError, Unit] =
     tryWithConnection {
       implicit conn =>
         val query = "DELETE FROM processed_images WHERE id IN ({ids})"
@@ -132,9 +132,9 @@ class ImageDatabaseServiceSqlImpl @Inject()(@Named("intake24_foods") val dataSou
     }
 
 
-  private case class ProcessedImageRecordRow(id: Int, path: String, source_id: Int, purpose: Int)
+  private case class ProcessedImageRecordRow(id: Long, path: String, source_id: Int, purpose: Int)
 
-  def getProcessedImageRecords(ids: Seq[Int]): Either[LookupError, Seq[ProcessedImageRecord]] = tryWithConnection {
+  def getProcessedImageRecords(ids: Seq[Long]): Either[LookupError, Seq[ProcessedImageRecord]] = tryWithConnection {
     implicit conn =>
       val result = SQL("SELECT id, path, source_id, purpose FROM processed_images WHERE id IN({ids})").on('ids -> ids).executeQuery().as(Macro.namedParser[ProcessedImageRecordRow].*).map {
         row =>

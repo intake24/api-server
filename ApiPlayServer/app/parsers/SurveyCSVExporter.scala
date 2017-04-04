@@ -47,7 +47,7 @@ object SurveyCSVExporter {
               meal.foods.foreach {
                 food =>
                   val row = mutable.Buffer[String]()
-                  row.append(submission.id.toString, submission.userName)
+                  row.append(submission.id.toString, submission.userAlias.getOrElse("N/A"))
                   dataScheme.userCustomFields.map(_.key).foreach(k => row.append(submission.userCustomData.getOrElse(k, "N/A")))
                   val timeToComplete = s"${Duration.between(submission.startTime, submission.endTime).getSeconds / 60} min"
                   row.append(DateTimeFormatter.ISO_INSTANT.format(submission.startTime), DateTimeFormatter.ISO_INSTANT.format(submission.endTime), timeToComplete)

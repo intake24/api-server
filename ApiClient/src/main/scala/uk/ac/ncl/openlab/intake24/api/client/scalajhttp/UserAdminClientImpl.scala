@@ -2,12 +2,11 @@ package uk.ac.ncl.openlab.intake24.api.client.scalajhttp
 
 import java.nio.file.Paths
 
-import uk.ac.ncl.openlab.intake24.api.client.{ApiError, ApiResponseParser, UserAdminClient}
-import uk.ac.ncl.openlab.intake24.api.shared.{CreateOrUpdateGlobalUsersRequest, CreateOrUpdateSurveyUsersRequest, DeleteUsersRequest}
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{PublicUserRecord, PublicUserRecordWithPermissions}
+import uk.ac.ncl.openlab.intake24.api.client.{ApiResponseParser, UserAdminClient}
+
 
 class UserAdminClientImpl(apiBaseUrl: String) extends UserAdminClient with HttpRequestUtil with ApiResponseParser {
-  override def createOrUpdateGlobalUsers(accessToken: String, request: CreateOrUpdateGlobalUsersRequest): Either[ApiError, Unit] =
+  /*override def createOrUpdateGlobalUsers(accessToken: String, request: CreateOrUpdateGlobalUsersRequest): Either[ApiError, Unit] =
     parseApiResponseDiscardBody(getAuthPostRequest(s"$apiBaseUrl/admin/users/create-or-update", accessToken, request).asString)
 
   override def deleteGlobalUsers(accessToken: String, request: DeleteUsersRequest): Either[ApiError, Unit] =
@@ -35,5 +34,5 @@ class UserAdminClientImpl(apiBaseUrl: String) extends UserAdminClient with HttpR
     parseApiResponseDiscardBody(getAuthPostRequest(s"$apiBaseUrl/admin/users/$surveyId/staff/create-or-update", accessToken, request).asString)
 
   override def createOrUpdateSurveyRespondents(accessToken: String, surveyId: String, request: CreateOrUpdateSurveyUsersRequest): Either[ApiError, Unit] =
-    parseApiResponseDiscardBody(getAuthPostRequest(s"$apiBaseUrl/admin/users/$surveyId/respondents/create-or-update", accessToken, request).asString)
+    parseApiResponseDiscardBody(getAuthPostRequest(s"$apiBaseUrl/admin/users/$surveyId/respondents/create-or-update", accessToken, request).asString)*/
 }

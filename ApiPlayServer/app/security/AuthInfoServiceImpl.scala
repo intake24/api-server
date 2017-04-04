@@ -38,8 +38,8 @@ class AuthInfoServiceImpl @Inject()(userAdminService: UserAdminService) extends 
     Logger.debug("Retrieving " + loginInfo.toString())
 
     val databaseResult = loginInfo.providerID match {
-      case AuthProviders.surveyAlias => userAdminService.getUserPasswordByAlias(SurveyAliasUtils.fromString(loginInfo.providerKey))
-      case AuthProviders.email => userAdminService.getUserPasswordByEmail(loginInfo.providerKey)
+      case SurveyAliasProvider.ID => userAdminService.getUserPasswordByAlias(SurveyAliasUtils.fromString(loginInfo.providerKey))
+      case EmailProvider.ID => userAdminService.getUserPasswordByEmail(loginInfo.providerKey)
       case x => throw new RuntimeException(s"Auth info provider $x not supported")
     }
 

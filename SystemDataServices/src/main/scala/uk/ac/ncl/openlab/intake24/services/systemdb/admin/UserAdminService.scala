@@ -4,7 +4,7 @@ import uk.ac.ncl.openlab.intake24.errors._
 
 case class UserInfo(name: Option[String], email: Option[String], phone: Option[String], roles: Set[String], customFields: Map[String, String])
 
-case class UserInfoWithId(id: Int, name: Option[String], email: Option[String], phone: Option[String], roles: Set[String], customFields: Map[String, String])
+case class UserInfoWithId(id: Long, name: Option[String], email: Option[String], phone: Option[String], roles: Set[String], customFields: Map[String, String])
 
 case class SecurePassword(hashBase64: String, saltBase64: String, hasher: String)
 
@@ -29,29 +29,29 @@ trait UserAdminService {
     */
   def createOrUpdateUsersWithAliases(users: Seq[NewUserWithAlias]): Either[DependentUpdateError, Unit]
 
-  def createUser(newUser: NewUser): Either[CreateError, Int]
+  def createUser(newUser: NewUser): Either[CreateError, Long]
 
-  def updateUser(userId: Int, newRecord: UserInfo): Either[UpdateError, Unit]
+  def updateUser(userId: Long, newRecord: UserInfo): Either[UpdateError, Unit]
 
 
-  def getUserById(userId: Int): Either[LookupError, UserInfoWithId]
+  def getUserById(userId: Long): Either[LookupError, UserInfoWithId]
 
   def getUserByEmail(email: String): Either[LookupError, UserInfoWithId]
 
   def getUserByAlias(alias: SurveyUserAlias): Either[LookupError, UserInfoWithId]
 
-  def deleteUsersById(userIds: Seq[Int]): Either[UnexpectedDatabaseError, Unit]
+  def deleteUsersById(userIds: Seq[Long]): Either[UnexpectedDatabaseError, Unit]
 
   def deleteUsersByAlias(userAliases: Seq[SurveyUserAlias]): Either[UnexpectedDatabaseError, Unit]
 
 
-  def getUserPasswordById(userId: Int): Either[LookupError, SecurePassword]
+  def getUserPasswordById(userId: Long): Either[LookupError, SecurePassword]
 
   def getUserPasswordByAlias(alias: SurveyUserAlias): Either[LookupError, SecurePassword]
 
   def getUserPasswordByEmail(email: String): Either[LookupError, SecurePassword]
 
-  def updateUserPassword(userId: Int, update: SecurePassword): Either[UpdateError, Unit]
+  def updateUserPassword(userId: Long, update: SecurePassword): Either[UpdateError, Unit]
 
 
   def findUsers(query: String, limit: Int): Either[UnexpectedDatabaseError, Seq[UserInfoWithId]]
@@ -60,9 +60,9 @@ trait UserAdminService {
 
   // Custom data support
 
-  def getCustomUserData(userId: Int): Either[LookupError, Map[String, String]]
+  def getCustomUserData(userId: Long): Either[LookupError, Map[String, String]]
 
-  def updateCustomUserData(userId: Int, customUserData: Map[String, String]): Either[UpdateError, Unit]
+  def updateCustomUserData(userId: Long, customUserData: Map[String, String]): Either[UpdateError, Unit]
 
 
   // Auto generated users support

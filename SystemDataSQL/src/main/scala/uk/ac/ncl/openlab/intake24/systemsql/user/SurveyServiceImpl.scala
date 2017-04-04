@@ -56,13 +56,13 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
       }
   }
 
-  def createSubmission(surveyId: String, userId: String, survey: NutrientMappedSubmission): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
+  def createSubmission(userId: Long, survey: NutrientMappedSubmission): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
         val generatedId = java.util.UUID.randomUUID()
 
         SQL("INSERT INTO survey_submissions VALUES ({id}::uuid, {survey_id}, {user_id}, {start_time}, {end_time}, ARRAY[{log}])")
-          .on('id -> generatedId, 'survey_id -> surveyId, 'user_id -> userId, 'start_time -> survey.startTime,
+          .on('id -> generatedId, 'user_id -> userId, 'start_time -> survey.startTime,
             'end_time -> survey.endTime, 'log -> survey.log)
           .execute()
 

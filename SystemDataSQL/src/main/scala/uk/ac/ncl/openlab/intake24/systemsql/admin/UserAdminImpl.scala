@@ -5,13 +5,18 @@ import javax.inject.{Inject, Named}
 import javax.sql.DataSource
 
 import anorm._
+import org.apache.commons.lang3.StringUtils
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
+//import org.apache.commons.
+
+import scala.collection.JavaConverters._
+
 class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends UserAdminService with SqlDataService with SqlResourceLoader {
 
-  private case class RolesForId(userId: Int, roles: Set[String])
+  private case class RolesForId(userId: Long, roles: Set[String])
 
   private def updateUserRolesById(roles: Seq[RolesForId])(implicit connection: Connection): Either[RecordNotFound, Unit] = {
 
@@ -61,7 +66,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
     Right(())
   }
 
-  private case class CustomDataForId(userId: Int, customData: Map[String, String])
+  private case class CustomDataForId(userId: Long, customData: Map[String, String])
 
   private def updateCustomDataById(customData: Seq[CustomDataForId])(implicit connection: Connection): Either[UpdateError, Unit] = {
 
@@ -128,7 +133,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
           u =>
             Seq[NamedParameter]('survey_id -> u.alias.surveyId, 'user_name -> u.alias.userName,
               'password_hash -> u.password.hashBase64, 'password_salt -> u.password.saltBase64, 'password_hasher -> u.password.hasher,
-              'name -> u.userInfo.name, 'email -> u.userInfo.email, 'phone -> u.userInfo.phone)
+              'name -> u.userInfo.name, 'email -> u.userInfo.email, 'phone -> u.userInfo.phone, 'simple_name -> u.userInfo.name.map(StringUtils.stripAccents(_).toLowerCase()))
         }
 
         if (upsertParams.nonEmpty) {
@@ -147,18 +152,19 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       }
   }
 
-  def createUser(newUser: NewUser): Either[CreateError, Int] = tryWithConnection {
+  def createUser(newUser: NewUser): Either[CreateError, Long] = tryWithConnection {
     implicit conn =>
       withTransaction {
 
-        val userId = SQL("INSERT INTO users VALUES (DEFAULT, {password_hash}, {password_salt}, {password_hasher}, {name}, {email}, {phone})")
+        val userId = SQL("INSERT INTO users VALUES (DEFAULT, {password_hash}, {password_salt}, {password_hasher}, {name}, {email}, {phone}, {simple_name})")
           .on('password_hash -> newUser.password.hashBase64,
             'password_salt -> newUser.password.saltBase64,
             'password_hasher -> newUser.password.hasher,
+            'simple_name -> newUser.userInfo.name.map(StringUtils.stripAccents(_).toLowerCase()),
             'name -> newUser.userInfo.name,
             'email -> newUser.userInfo.email,
             'phone -> newUser.userInfo.phone)
-          .executeInsert(SqlParser.scalar[Int].single)
+          .executeInsert(SqlParser.scalar[Long].single)
 
         (for (
           _ <- updateUserRolesById(Seq(RolesForId(userId, newUser.userInfo.roles))).right;
@@ -167,12 +173,13 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       }
   }
 
-  def updateUser(userId: Int, newRecord: UserInfo): Either[UpdateError, Unit] = tryWithConnection {
+  def updateUser(userId: Long, newRecord: UserInfo): Either[UpdateError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
 
-        val count = SQL("UPDATE users SET name={name},email={email},phone={phone} WHERE survey_id={survey_id} AND user_id={user_id}")
-          .on('user_id -> userId, 'name -> newRecord.name, 'email -> newRecord.email, 'phone -> newRecord.phone).executeUpdate()
+        val count = SQL("UPDATE users SET name={name},email={email},phone={phone},simple_name={simple_name} WHERE survey_id={survey_id} AND user_id={user_id}")
+          .on('user_id -> userId, 'name -> newRecord.name, 'email -> newRecord.email, 'phone -> newRecord.phone,
+            'simple_name -> newRecord.name.map(StringUtils.stripAccents(_).toLowerCase())).executeUpdate()
 
         if (count == 1) {
           for (_ <- updateUserRolesById(Seq(RolesForId(userId, newRecord.roles))).right;
@@ -184,7 +191,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       }
   }
 
-  private case class UserInfoRow(id: Int, name: Option[String], email: Option[String], phone: Option[String])
+  private case class UserInfoRow(id: Long, name: Option[String], email: Option[String], phone: Option[String])
 
   private object UserInfoRow {
     val parser = Macro.namedParser[UserInfoRow]
@@ -197,7 +204,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
   }
 
 
-  def getUserById(userId: Int): Either[LookupError, UserInfoWithId] = tryWithConnection {
+  def getUserById(userId: Long): Either[LookupError, UserInfoWithId] = tryWithConnection {
     implicit conn =>
       withTransaction {
         SQL("SELECT id, name, email, phone FROM users WHERE id={user_id}")
@@ -233,7 +240,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       }
   }
 
-  def deleteUsersById(userIds: Seq[Int]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
+  def deleteUsersById(userIds: Seq[Long]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
 
       SQL("DELETE FROM users WHERE id IN({user_ids})").on('user_ids -> userIds).execute()
@@ -258,7 +265,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       else Right(())
   }
 
-  def getUserPasswordById(userId: Int): Either[LookupError, SecurePassword] = tryWithConnection {
+  def getUserPasswordById(userId: Long): Either[LookupError, SecurePassword] = tryWithConnection {
     implicit conn =>
       SQL("SELECT password_hash, password_salt, password_hasher FROM users WHERE id={user_id}")
         .on('user_id -> userId)
@@ -270,7 +277,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
 
   def getUserPasswordByAlias(alias: SurveyUserAlias): Either[LookupError, SecurePassword] = tryWithConnection {
     implicit conn =>
-      SQL("SELECT password_hash, password_salt, password_hasher FROM users JOIN user_survey_aliases AS a WHERE a.survey_id={survey_id} AND a.user_name={user_name}")
+      SQL("SELECT password_hash, password_salt, password_hasher FROM users JOIN user_survey_aliases AS a ON a.user_id=users.id WHERE a.survey_id={survey_id} AND a.user_name={user_name}")
         .on('survey_id -> alias.surveyId, 'user_name -> alias.userName)
         .as(PasswordRow.parser.singleOpt) match {
         case Some(row) => Right(SecurePassword(row.password_hash, row.password_salt, row.password_hasher))
@@ -288,7 +295,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       }
   }
 
-  def updateUserPassword(userId: Int, update: SecurePassword): Either[UpdateError, Unit] = tryWithConnection {
+  def updateUserPassword(userId: Long, update: SecurePassword): Either[UpdateError, Unit] = tryWithConnection {
     implicit conn =>
       val count = SQL("UPDATE users SET password_hash={hash},password_salt={salt},password_hasher={hasher} WHERE id={user_id}")
         .on('user_id -> userId, 'hash -> update.hashBase64, 'salt -> update.saltBase64, 'hasher -> update.hasher)
@@ -300,16 +307,16 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
         Right(())
   }
 
-  private def getUserRoles(userIds: Seq[Int])(implicit connection: java.sql.Connection): Map[Int, Set[String]] = {
-    SQL("SELECT user_id, role FROM user_roles WHERE user_id IN {user_ids}")
-      .on('user_ids -> userIds).as((SqlParser.int("user_id") ~ SqlParser.str("role")).*).foldLeft(Map[Int, Set[String]]()) {
+  private def getUserRoles(userIds: Seq[Long])(implicit connection: java.sql.Connection): Map[Long, Set[String]] = {
+    SQL("SELECT user_id, role FROM user_roles WHERE user_id IN ({user_ids})")
+      .on('user_ids -> userIds).as((SqlParser.long("user_id") ~ SqlParser.str("role")).*).foldLeft(Map[Long, Set[String]]()) {
       case (acc, userId ~ role) => acc + (userId -> (acc.getOrElse(userId, Set()) + role))
     }
   }
 
-  private def getUserCustomData(userIds: Seq[Int])(implicit connection: java.sql.Connection): Map[Int, Map[String, String]] = {
-    SQL("SELECT user_id, name, value FROM user_custom_fields WHERE user_id IN {user_ids}")
-      .on('user_ids -> userIds).as((SqlParser.int("user_id") ~ SqlParser.str("name") ~ SqlParser.str("value")).*).foldLeft(Map[Int, Map[String, String]]()) {
+  private def getUserCustomData(userIds: Seq[Long])(implicit connection: java.sql.Connection): Map[Long, Map[String, String]] = {
+    SQL("SELECT user_id, name, value FROM user_custom_fields WHERE user_id IN ({user_ids})")
+      .on('user_ids -> userIds).as((SqlParser.long("user_id") ~ SqlParser.str("name") ~ SqlParser.str("value")).*).foldLeft(Map[Long, Map[String, String]]()) {
       case (acc, userId ~ name ~ value) => acc + (userId -> (acc.getOrElse(userId, Map()) + (name -> value)))
     }
   }
@@ -327,8 +334,8 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
   def findUsers(query: String, limit: Int): Either[UnexpectedDatabaseError, Seq[UserInfoWithId]] = tryWithConnection {
     implicit conn =>
       withTransaction {
-        val rows = SQL("SELECT id,name,email,phone FROM users WHERE name LIKE %{query}% ORDER BY id LIMIT {limit}")
-          .on('query -> query, 'limit -> limit)
+        val rows = SQL("SELECT id,name,email,phone FROM users WHERE (name LIKE %{name_query}% OR email LIKE %{query}%) ORDER BY id LIMIT {limit}")
+          .on('name_query -> StringUtils.stripAccents(query).toLowerCase(), 'query -> query, 'limit -> limit)
           .as(UserInfoRow.parser.*)
         Right(buildUserRecordsFromRows(rows))
       }
@@ -346,7 +353,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
 
   private case class UserDataRow(name: String, value: String)
 
-  def getCustomUserData(userId: Int): Either[LookupError, Map[String, String]] = tryWithConnection {
+  def getCustomUserData(userId: Long): Either[LookupError, Map[String, String]] = tryWithConnection {
     implicit conn =>
 
       withTransaction {
@@ -364,7 +371,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       }
   }
 
-  def updateCustomUserData(userId: Int, data: Map[String, String]): Either[UpdateError, Unit] = tryWithConnection {
+  def updateCustomUserData(userId: Long, data: Map[String, String]): Either[UpdateError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
 

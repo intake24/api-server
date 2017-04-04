@@ -34,9 +34,9 @@ class IdentityServiceImpl @Inject()(val userAdminService: UserAdminService) exte
   def retrieve(loginInfo: LoginInfo): Future[Option[Intake24User]] = Future {
 
     val databaseResult = loginInfo.providerID match {
-      case AuthProviders.surveyAlias => userAdminService.getUserByAlias(SurveyAliasUtils.fromString(loginInfo.providerKey))
-      case AuthProviders.email => userAdminService.getUserByEmail(loginInfo.providerKey)
-      case x => throw new RuntimeException(s"Invalid login provider: $x")
+      case SurveyAliasProvider.ID => userAdminService.getUserByAlias(SurveyAliasUtils.fromString(loginInfo.providerKey))
+      case EmailProvider.ID => userAdminService.getUserByEmail(loginInfo.providerKey)
+      case x => throw new RuntimeException(s"Unsupported login provider: $x")
     }
 
     databaseResult match {
