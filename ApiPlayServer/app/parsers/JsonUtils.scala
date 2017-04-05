@@ -88,9 +88,13 @@ trait JsonUtils {
   def jsonBodyParser[T](implicit dec: Decoder[T]): BodyParser[T] =
     when(
       request => request.contentType.exists(_.equalsIgnoreCase(ContentTypes.JSON)),
-      tolerantText,
-      _ => Future.successful(Results.UnsupportedMediaType)).validate {
-      stringBody =>
-        parseJson[T](stringBody)
+      raw,
+      _ => Future.successful(Results.UnsupportedMediaType)
+    ).validate {
+      rawBuffer =>
+        rawBuffer.asBytes() match {
+          case Some(byteString) => parseJson[T](byteString.utf8String)
+          case None => Left(Results.EntityTooLarge)
+        }
     }
 }

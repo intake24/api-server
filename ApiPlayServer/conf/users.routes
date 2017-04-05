@@ -1,6 +1,6 @@
 # User management
 
-GET           /                                 controllers.system.UserAdminController.findUsers(query: String, limit: Int)
+GET           /                                 controllers.system.UserAdminController.findUsers(q: String, limit: Int)
 POST          /                                 controllers.system.UserAdminController.createUser()
 DELETE        /                                 controllers.system.UserAdminController.deleteUsers()
 

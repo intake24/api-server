@@ -24,6 +24,7 @@ import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
 import parsers.{JsonUtils, UserRecordsCSVParser}
+import play.api.Logger
 import play.api.http.ContentTypes
 import play.api.libs.Files
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
@@ -70,14 +71,20 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
   def findUsers(query: String, limit: Int) = deadbolt.restrictToRoles(Roles.superuser)(BodyParsers.parse.empty) {
     _ =>
       Future {
-        translateDatabaseResult(service.findUsers(query, limit))
+        translateDatabaseResult(service.findUsers(query, Math.min(Math.max(limit, 0), 100)))
       }
   }
 
-  def createUser() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[NewUser]) {
+  def createUser() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[CreateUserRequest]) {
     request =>
       Future {
-        translateDatabaseResult(service.createUser(request.body))
+
+        Logger.info(s"Name: ${request.body.userInfo.name}")
+
+
+        val pwInfo = passwordHasherRegistry.current.hash(request.body.password)
+
+        translateDatabaseResult(service.createUser(NewUser(request.body.userInfo, SecurePassword(pwInfo.password, pwInfo.salt.get, pwInfo.hasher))))
       }
   }
 
@@ -133,7 +140,7 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
   def deleteSurveyUsers(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(jsonBodyParser[DeleteSurveyUsersRequest]) {
     request =>
       Future {
-        translateDatabaseResult(service.deleteUsersByAlias(request.body.userNames.map(n => SurveyUserAlias(request.body.surveyId, n))))
+        translateDatabaseResult(service.deleteUsersByAlias(request.body.userNames.map(n => SurveyUserAlias(surveyId, n))))
       }
   }
 }

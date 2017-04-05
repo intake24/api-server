@@ -8,6 +8,8 @@ object AnormUtil {
   
   private val logger = LoggerFactory.getLogger("uk.ac.ncl.openlab.intake24.AnormUtil")
 
+  def escapeLike(s: String) = s.replace("\\", "\\\\").replace("_", "\\_").replace("%", "\\%")
+
   def isNull(row: Row, columnName: String): Boolean = row.get(columnName).get._1 == null
 
   @deprecated("Create a pull request for anorm instead...")

@@ -10,60 +10,61 @@ import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
-//import org.apache.commons.
-
-import scala.collection.JavaConverters._
-
 class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends UserAdminService with SqlDataService with SqlResourceLoader {
 
   private case class RolesForId(userId: Long, roles: Set[String])
 
   private def updateUserRolesById(roles: Seq[RolesForId])(implicit connection: Connection): Either[RecordNotFound, Unit] = {
+    if (roles.nonEmpty) {
 
-    SQL("DELETE FROM user_roles WHERE user_id IN (user_ids)")
-      .on('user_ids -> roles.map(_.userId))
-      .execute()
+      SQL("DELETE FROM user_roles WHERE user_id IN ({user_ids})")
+        .on('user_ids -> roles.map(_.userId))
+        .execute()
 
-    val params = roles.flatMap {
-      r =>
-        r.roles.map {
-          role => Seq[NamedParameter]('user_id -> r.userId, 'role -> role)
-        }
-    }
-
-    if (!params.isEmpty) {
-      tryWithConstraintCheck("user_roles_user_id_fkey", e => RecordNotFound(new RuntimeException(s"Could not update roles because one of the user records was not found"))) {
-        BatchSql("INSERT INTO user_roles(user_id, role) VALUES ({user_id}, {role})", params.head, params.tail: _*).execute()
-        Right(())
+      val params = roles.flatMap {
+        r =>
+          r.roles.map {
+            role => Seq[NamedParameter]('user_id -> r.userId, 'role -> role)
+          }
       }
-    }
 
-    Right(())
+      if (!params.isEmpty) {
+        tryWithConstraintCheck("user_roles_user_id_fkey", e => RecordNotFound(new RuntimeException(s"Could not update roles because one of the user records was not found"))) {
+          BatchSql("INSERT INTO user_roles(user_id, role) VALUES ({user_id}, {role})", params.head, params.tail: _*).execute()
+          Right(())
+        }
+      } else
+        Right(())
+    } else
+      Right(())
   }
 
   private case class RolesForAlias(surveyId: String, userName: String, roles: Set[String])
 
   private def updateUserRolesByAlias(roles: Seq[RolesForAlias])(implicit connection: Connection): Either[RecordNotFound, Unit] = {
+    if (roles.nonEmpty) {
 
-    SQL("DELETE FROM user_roles WHERE user_id IN (SELECT user_id FROM user_survey_aliases WHERE (survey_id, user_name) IN (SELECT unnest(ARRAY[{survey_ids}]), unnest(ARRAY[{user_names}])))")
-      .on('user_names -> roles.map(_.userName), 'survey_ids -> roles.map(_.surveyId))
-      .execute()
+      SQL("DELETE FROM user_roles WHERE user_id IN (SELECT user_id FROM user_survey_aliases WHERE (survey_id, user_name) IN (SELECT unnest(ARRAY[{survey_ids}]), unnest(ARRAY[{user_names}])))")
+        .on('user_names -> roles.map(_.userName), 'survey_ids -> roles.map(_.surveyId))
+        .execute()
 
-    val params = roles.flatMap {
-      r =>
-        r.roles.map {
-          role => Seq[NamedParameter]('survey_id -> r.surveyId, 'user_name -> r.userName, 'role -> role)
-        }
-    }
-
-    if (!params.isEmpty) {
-      tryWithConstraintCheck("user_roles_user_id_fkey", e => RecordNotFound(new RuntimeException(s"Could not update roles because one of the user records was not found"))) {
-        BatchSql("INSERT INTO user_roles(user_id, role) VALUES (SELECT id FROM user_survey_aliases WHERE survey_id={survey_id} AND user_name={user_name}, {role})", params.head, params.tail: _*).execute()
-        Right(())
+      val params = roles.flatMap {
+        r =>
+          r.roles.map {
+            role => Seq[NamedParameter]('survey_id -> r.surveyId, 'user_name -> r.userName, 'role -> role)
+          }
       }
-    }
 
-    Right(())
+      if (!params.isEmpty) {
+        tryWithConstraintCheck("user_roles_user_id_fkey", e => RecordNotFound(new RuntimeException(s"Could not update roles because one of the user records was not found"))) {
+          BatchSql("INSERT INTO user_roles(user_id, role) SELECT user_id,{role} FROM user_survey_aliases WHERE survey_id={survey_id} AND user_name={user_name}", params.head, params.tail: _*).execute()
+          Right(())
+        }
+      }
+
+      Right(())
+    } else
+      Right(())
   }
 
   private case class CustomDataForId(userId: Long, customData: Map[String, String])
@@ -156,20 +157,23 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
     implicit conn =>
       withTransaction {
 
-        val userId = SQL("INSERT INTO users VALUES (DEFAULT, {password_hash}, {password_salt}, {password_hasher}, {name}, {email}, {phone}, {simple_name})")
-          .on('password_hash -> newUser.password.hashBase64,
-            'password_salt -> newUser.password.saltBase64,
-            'password_hasher -> newUser.password.hasher,
-            'simple_name -> newUser.userInfo.name.map(StringUtils.stripAccents(_).toLowerCase()),
-            'name -> newUser.userInfo.name,
-            'email -> newUser.userInfo.email,
-            'phone -> newUser.userInfo.phone)
-          .executeInsert(SqlParser.scalar[Long].single)
+        tryWithConstraintCheck[CreateError, Long]("users_email_unique", e => DuplicateCode(e)) {
 
-        (for (
-          _ <- updateUserRolesById(Seq(RolesForId(userId, newUser.userInfo.roles))).right;
-          _ <- updateCustomDataById(Seq(CustomDataForId(userId, newUser.userInfo.customFields))).right
-        ) yield userId).left.map(e => UnexpectedDatabaseError(e.exception))
+          val userId = SQL("INSERT INTO users VALUES (DEFAULT, {password_hash}, {password_salt}, {password_hasher}, {name}, {email}, {phone}, {simple_name})")
+            .on('password_hash -> newUser.password.hashBase64,
+              'password_salt -> newUser.password.saltBase64,
+              'password_hasher -> newUser.password.hasher,
+              'simple_name -> newUser.userInfo.name.map(StringUtils.stripAccents(_).toLowerCase()),
+              'name -> newUser.userInfo.name,
+              'email -> newUser.userInfo.email,
+              'phone -> newUser.userInfo.phone)
+            .executeInsert(SqlParser.scalar[Long].single)
+
+          (for (
+            _ <- updateUserRolesById(Seq(RolesForId(userId, newUser.userInfo.roles))).right;
+            _ <- updateCustomDataById(Seq(CustomDataForId(userId, newUser.userInfo.customFields))).right
+          ) yield userId).left.map(e => UnexpectedDatabaseError(e.exception))
+        }
       }
   }
 
@@ -308,17 +312,23 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
   }
 
   private def getUserRoles(userIds: Seq[Long])(implicit connection: java.sql.Connection): Map[Long, Set[String]] = {
-    SQL("SELECT user_id, role FROM user_roles WHERE user_id IN ({user_ids})")
-      .on('user_ids -> userIds).as((SqlParser.long("user_id") ~ SqlParser.str("role")).*).foldLeft(Map[Long, Set[String]]()) {
-      case (acc, userId ~ role) => acc + (userId -> (acc.getOrElse(userId, Set()) + role))
-    }
+    if (userIds.isEmpty)
+      Map()
+    else
+      SQL("SELECT user_id, role FROM user_roles WHERE user_id IN ({user_ids})")
+        .on('user_ids -> userIds).as((SqlParser.long("user_id") ~ SqlParser.str("role")).*).foldLeft(Map[Long, Set[String]]()) {
+        case (acc, userId ~ role) => acc + (userId -> (acc.getOrElse(userId, Set()) + role))
+      }
   }
 
   private def getUserCustomData(userIds: Seq[Long])(implicit connection: java.sql.Connection): Map[Long, Map[String, String]] = {
-    SQL("SELECT user_id, name, value FROM user_custom_fields WHERE user_id IN ({user_ids})")
-      .on('user_ids -> userIds).as((SqlParser.long("user_id") ~ SqlParser.str("name") ~ SqlParser.str("value")).*).foldLeft(Map[Long, Map[String, String]]()) {
-      case (acc, userId ~ name ~ value) => acc + (userId -> (acc.getOrElse(userId, Map()) + (name -> value)))
-    }
+    if (userIds.isEmpty)
+      Map()
+    else
+      SQL("SELECT user_id, name, value FROM user_custom_fields WHERE user_id IN ({user_ids})")
+        .on('user_ids -> userIds).as((SqlParser.long("user_id") ~ SqlParser.str("name") ~ SqlParser.str("value")).*).foldLeft(Map[Long, Map[String, String]]()) {
+        case (acc, userId ~ name ~ value) => acc + (userId -> (acc.getOrElse(userId, Map()) + (name -> value)))
+      }
   }
 
   private def buildUserRecordsFromRows(rows: Seq[UserInfoRow])(implicit connection: java.sql.Connection): Seq[UserInfoWithId] = {
@@ -334,8 +344,8 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
   def findUsers(query: String, limit: Int): Either[UnexpectedDatabaseError, Seq[UserInfoWithId]] = tryWithConnection {
     implicit conn =>
       withTransaction {
-        val rows = SQL("SELECT id,name,email,phone FROM users WHERE (name LIKE %{name_query}% OR email LIKE %{query}%) ORDER BY id LIMIT {limit}")
-          .on('name_query -> StringUtils.stripAccents(query).toLowerCase(), 'query -> query, 'limit -> limit)
+        val rows = SQL("SELECT id,name,email,phone FROM users WHERE (simple_name LIKE {name_query} OR email LIKE {query}) ORDER BY id LIMIT {limit}")
+          .on('name_query -> ("%" + AnormUtil.escapeLike(StringUtils.stripAccents(query).toLowerCase()) + "%"), 'query -> ("%" + AnormUtil.escapeLike(query) + "%"), 'limit -> limit)
           .as(UserInfoRow.parser.*)
         Right(buildUserRecordsFromRows(rows))
       }
@@ -344,7 +354,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
   def listUsersByRole(role: String, offset: Int, limit: Int): Either[UnexpectedDatabaseError, Seq[UserInfoWithId]] = tryWithConnection {
     implicit conn =>
       withTransaction {
-        val rows = SQL("SELECT id,name,email,phone FROM users JOIN user_roles ON users.id=user_roles.id AND role={role} OFFSET {offset} LIMIT {limit}")
+        val rows = SQL("SELECT id,name,email,phone FROM users JOIN user_roles ON users.id=user_roles.user_id AND role={role} OFFSET {offset} LIMIT {limit}")
           .on('role -> role, 'offset -> offset, 'limit -> limit)
           .as(UserInfoRow.parser.*)
         Right(buildUserRecordsFromRows(rows))

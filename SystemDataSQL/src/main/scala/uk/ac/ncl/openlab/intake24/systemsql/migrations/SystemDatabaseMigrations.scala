@@ -650,6 +650,47 @@ object SystemDatabaseMigrations {
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         ???
       }
+    },
+
+    new Migration {
+      val versionFrom = 24l
+      val versionTo = 25l
+
+      val description = "Add unique e-mail constraint"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE users ADD CONSTRAINT users_email_unique UNIQUE(email)").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    },
+
+    new Migration {
+      val versionFrom = 25l
+      val versionTo = 26l
+
+      val description = "Convert old roles"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE user_roles DROP CONSTRAINT no_duplicate_roles").execute()
+        SQL("ALTER TABLE user_roles DROP CONSTRAINT user_roles_pkey").execute()
+        SQL("UPDATE user_roles SET role=survey_id || '/' || role WHERE role='staff' OR role='respondent'").execute()
+        SQL("DELETE FROM user_roles WHERE EXISTS (SELECT 1 FROM user_roles AS t WHERE t.user_id = user_roles.user_id AND t.role = user_roles.role AND t.ctid > user_roles.ctid)").execute()
+        SQL("ALTER TABLE user_roles ADD CONSTRAINT user_roles_pkey PRIMARY KEY(user_id, role)").execute()
+        SQL("ALTER TABLE user_roles DROP COLUMN survey_id").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
     }
   )
 }
