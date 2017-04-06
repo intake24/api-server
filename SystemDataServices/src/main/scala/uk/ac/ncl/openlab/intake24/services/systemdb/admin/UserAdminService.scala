@@ -4,7 +4,7 @@ import uk.ac.ncl.openlab.intake24.errors._
 
 case class UserInfo(name: Option[String], email: Option[String], phone: Option[String], roles: Set[String], customFields: Map[String, String])
 
-case class UserInfoWithId(id: Long, name: Option[String], email: Option[String], phone: Option[String], roles: Set[String], customFields: Map[String, String])
+case class UserInfoWithId(id: Long, name: Option[String], email: Option[String], phone: Option[String], roles: Set[String], aliases: Set[String], customFields: Map[String, String])
 
 case class SecurePassword(hashBase64: String, saltBase64: String, hasher: String)
 
