@@ -61,7 +61,7 @@ class SurveyController @Inject()(service: SurveyService,
               val userId = request.subject.get.asInstanceOf[Intake24Subject].userId
 
               val result = for (nutrientMappedSubmission <- nutrientMappingService.mapSurveySubmission(request.body, params.localeId).right;
-                                _ <- service.createSubmission(userId, nutrientMappedSubmission).right)
+                                _ <- service.createSubmission(userId, surveyId, nutrientMappedSubmission).right)
                 yield ()
               translateDatabaseResult(result)
             }

@@ -39,7 +39,7 @@ class SurveyAdminController @Inject()(service: SurveyAdminService, deadbolt: Dea
     request =>
       Future {
         val body = request.body
-        translateDatabaseResult(service.createSurvey(body.surveyId, NewSurveyParameters(body.schemeId, body.localeId, body.allowGeneratedUsers, body.externalFollowUpUrl, body.supportEmail)))
+        translateDatabaseResult(service.createSurvey(body.id, NewSurveyParameters(body.schemeId, body.localeId, body.allowGeneratedUsers, body.externalFollowUpURL, body.supportEmail)))
       }
   }
 

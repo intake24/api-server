@@ -1,0 +1,26 @@
+# Survey management
+
+GET           /                                   controllers.system.SurveyAdminController.list()
+POST          /                                   controllers.system.SurveyAdminController.createSurvey()
+GET           /:surveyId                          controllers.system.SurveyAdminController.getSurvey(surveyId)
+DELETE        /:surveyId                          controllers.system.SurveyAdminController.deleteSurvey(surveyId)
+
+# POST           /admin/update-global-support-users                            controllers.system.SurveyAdminController.updateGlobalSupportUsers()
+# POST           /admin/surveys/:surveyId/support-users/update                 controllers.system.SurveyAdminController.updateSurveySupportUsers(surveyId: String)
+
+
+GET           /:surveyId/submissions              controllers.system.DataExportController.getSurveySubmissions(surveyId, dateFrom: String, dateTo: String, offset: Int, limit: Int)
+GET           /:surveyId/submissions/csv          controllers.system.DataExportController.getSurveySubmissionsAsCSV(surveyId, dateFrom: String, dateTo: String)
+# GET            /admin/surveys/:surveyId/submissions/xlsx                     controllers.system.DataExportController.getSurveySubmissionsAsXLSX(surveyId, dateFrom: Long, dateTo: Long, offset: Int, limit: Int)
+
+# Survey info and submissions
+
+GET           /:surveyId/public-parameters        controllers.system.user.SurveyController.getPublicSurveyParameters(surveyId: String)
+GET           /:surveyId/parameters               controllers.system.user.SurveyController.getSurveyParameters(surveyId: String)
+
+POST          /:surveyId/generate-user            controllers.system.user.GeneratedUsersController.generateUser(surveyId: String)
+
+POST          /:surveyId                          controllers.system.user.SurveyController.submitSurvey(surveyId: String)
+POST          /:surveyId/request-callback         controllers.system.user.HelpController.requestCallback(surveyId)
+
+GET           /:surveyId/my-submissions           controllers.system.DataExportController.getMySurveySubmissions(surveyId)

@@ -99,7 +99,7 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
 
   override def getSurveyParameters(surveyId: String): Either[LookupError, SurveyParametersOut] = tryWithConnection {
     implicit conn =>
-      SQL("SELECT scheme_id, state, locale, start_date, end_date, suspension_reason, allow_gen_users, survey_monkey_url, support_email FROM surveys WHERE id={survey_id}")
+      SQL("SELECT id, scheme_id, state, locale, start_date, end_date, suspension_reason, allow_gen_users, survey_monkey_url, support_email FROM surveys WHERE id={survey_id}")
         .on('survey_id -> surveyId)
         .executeQuery()
         .as(Macro.namedParser[SurveyParametersRow].singleOpt) match {

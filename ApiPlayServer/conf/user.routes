@@ -22,14 +22,3 @@ GET         /portion-size/image-maps/:id                 controllers.food.user.F
 POST        /portion-size/image-maps                     controllers.food.user.FoodDataController.getImageMaps()
 GET         /portion-size/drinkware/:id                  controllers.food.user.FoodDataController.getDrinkwareSet(id: String)
 
-# Survey info and submissions
-
-GET         /surveys/:surveyId/public-parameters         controllers.system.user.SurveyController.getPublicSurveyParameters(surveyId: String)
-GET         /surveys/:surveyId/parameters                controllers.system.user.SurveyController.getSurveyParameters(surveyId: String)
-
-POST        /surveys/:surveyId/generate-user             controllers.system.user.GeneratedUsersController.generateUser(surveyId: String)
-
-POST        /surveys/:surveyId                           controllers.system.user.SurveyController.submitSurvey(surveyId: String)
-POST        /surveys/:surveyId/request-callback          controllers.system.user.HelpController.requestCallback(surveyId)
-
-GET         /surveys/:surveyId/my-submissions            controllers.system.DataExportController.getMySurveySubmissions(surveyId)

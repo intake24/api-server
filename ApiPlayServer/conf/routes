@@ -131,20 +131,6 @@ POST           /admin/images/process-for-selection-screen                    con
 # GET     /index/split-list/:locale             controllers.FoodIndexController.splitList(locale: String)
 
 
-# Survey management
-
-GET            /surveys                                                      controllers.system.SurveyAdminController.list()
-POST           /surveys                                                      controllers.system.SurveyAdminController.createSurvey()
-GET            /surveys/:surveyId                                            controllers.system.SurveyAdminController.getSurvey(surveyId)
-DELETE         /surveys/:surveyId                                            controllers.system.SurveyAdminController.deleteSurvey(surveyId)
-
-# POST           /admin/update-global-support-users                            controllers.system.SurveyAdminController.updateGlobalSupportUsers()
-# POST           /admin/surveys/:surveyId/support-users/update                 controllers.system.SurveyAdminController.updateSurveySupportUsers(surveyId: String)
-
-
-GET            /surveys/:surveyId/submissions                                controllers.system.DataExportController.getSurveySubmissions(surveyId, dateFrom: String, dateTo: String, offset: Int, limit: Int)
-GET            /surveys/:surveyId/submissions/csv                            controllers.system.DataExportController.getSurveySubmissionsAsCSV(surveyId, dateFrom: String, dateTo: String)
-# GET            /admin/surveys/:surveyId/submissions/xlsx                     controllers.system.DataExportController.getSurveySubmissionsAsXLSX(surveyId, dateFrom: Long, dateTo: Long, offset: Int, limit: Int)
 
 
 # Demographic groups
@@ -167,3 +153,4 @@ POST           /errors/report                                                con
 
 ->             /user                                                         user.Routes
 ->             /users                                                        users.Routes
+->             /surveys                                                      surveys.Routes
