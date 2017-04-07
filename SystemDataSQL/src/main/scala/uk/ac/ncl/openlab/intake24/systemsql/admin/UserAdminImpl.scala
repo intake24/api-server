@@ -57,7 +57,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
 
       if (!params.isEmpty) {
         tryWithConstraintCheck("user_roles_user_id_fkey", e => RecordNotFound(new RuntimeException(s"Could not update roles because one of the user records was not found"))) {
-          BatchSql("INSERT INTO user_roles(user_id, role) SELECT user_id,{role} FROM user_survey_aliases WHERE survey_id={survey_id} AND user_name={user_name}", params.head, params.tail: _*).execute()
+          BatchSql("INSERT INTO user_roles (survey_id, user_id, role) SELECT {survey_id}, user_id, {role} FROM user_survey_aliases WHERE survey_id={survey_id} AND user_name={user_name}", params.head, params.tail: _*).execute()
           Right(())
         }
       }
@@ -108,13 +108,13 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       val userCustomFieldParams = customData.flatMap {
         case r =>
           r.customData.map {
-            case (name, value) => Seq[NamedParameter]('survey_id -> r.surveyId, 'user_name -> r.userName, 'name -> name, 'value -> value)
+            case (name, value) => Seq[NamedParameter]('user_id -> r.surveyId, 'user_name -> r.userName, 'name -> name, 'value -> value)
           }
       }
 
       if (!userCustomFieldParams.isEmpty)
         tryWithConstraintCheck("user_custom_fields_user_id_fkey", e => RecordNotFound(new RuntimeException(s"Could not update custom user data because one of the user records was not found"))) {
-          BatchSql("INSERT INTO user_custom_fields VALUES (DEFAULT, {user_id}, {name}, {value})", userCustomFieldParams.head, userCustomFieldParams.tail: _*).execute()
+          BatchSql("INSERT INTO user_custom_fields VALUES ({user_id}, {name}, {value})", userCustomFieldParams.head, userCustomFieldParams.tail: _*).execute()
           Right(())
         }
       else
