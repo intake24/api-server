@@ -112,10 +112,26 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
       }
   }
 
+  /**
+    * Only users that have a user name in this survey will be returned.
+    *
+    * If someone has a respondent role but does not have a user alias for this survey they will be filtered out.
+    *
+    * This is because client-side user presentation currently does not make sense without a user name.
+    */
   def listSurveyRespondentUsers(surveyId: String, offset: Int, limit: Int) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
     _ =>
       Future {
-        translateDatabaseResult(service.listUsersByRole(Roles.surveyRespondent(surveyId), offset, limit))
+        val result =
+          for (users <- service.listUsersByRole(Roles.surveyRespondent(surveyId), offset, limit).right;
+               surveyUserNames <- service.getSurveyUserNames(users.map(_.id), surveyId).right)
+            yield
+              users.filter(u => surveyUserNames.contains(u.id)).map {
+                user =>
+                  UserInfoWithSurveyUserName(user.id, surveyUserNames(user.id), user.name, user.email, user.phone, user.roles, user.customFields)
+              }
+
+        translateDatabaseResult(result)
       }
   }
 

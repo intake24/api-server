@@ -331,24 +331,25 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       }
   }
 
-  private def getUserAliases(userIds: Seq[Long])(implicit connection: java.sql.Connection): Map[Long, Set[String]] = {
-    if (userIds.isEmpty)
-      Map()
-    else
-      SQL("SELECT user_id, user_name FROM user_survey_aliases WHERE user_id IN ({user_ids})")
-        .on('user_ids -> userIds).as((SqlParser.long("user_id") ~ SqlParser.str("user_name")).*).foldLeft(Map[Long, Set[String]]()) {
-        case (acc, userId ~ userName) => acc + (userId -> (acc.getOrElse(userId, Set()) + userName))
-      }
+  def getSurveyUserNames(userIds: Seq[Long], surveyId: String): Either[UnexpectedDatabaseError, Map[Long, String]] = tryWithConnection {
+    implicit connection =>
+      if (userIds.isEmpty)
+        Right(Map())
+      else
+        Right(SQL("SELECT user_id, user_name FROM user_survey_aliases WHERE user_id IN ({user_ids}) AND survey_id={survey_id}")
+          .on('user_ids -> userIds, 'survey_id -> surveyId)
+          .as((SqlParser.long("user_id") ~ SqlParser.str("user_name")).*).foldLeft(Map[Long, String]()) {
+          case (acc, userId ~ userName) => acc + (userId -> userName)
+        })
   }
 
   private def buildUserRecordsFromRows(rows: Seq[UserInfoRow])(implicit connection: java.sql.Connection): Seq[UserInfoWithId] = {
     val roles = getUserRoles(rows.map(_.id)).withDefaultValue(Set[String]())
     val customData = getUserCustomData(rows.map(_.id)).withDefaultValue(Map[String, String]())
-    val userAliases = getUserAliases(rows.map(_.id)).withDefaultValue(Set[String]())
 
     rows.map {
       row =>
-        UserInfoWithId(row.id, row.name, row.email, row.phone, roles(row.id), userAliases(row.id), customData(row.id))
+        UserInfoWithId(row.id, row.name, row.email, row.phone, roles(row.id), customData(row.id))
     }
   }
 

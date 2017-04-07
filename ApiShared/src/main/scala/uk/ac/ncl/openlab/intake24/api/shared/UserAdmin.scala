@@ -9,3 +9,5 @@ case class DeleteSurveyUsersRequest(userNames: Seq[String])
 case class CreateUserRequest(userInfo: UserInfo, password: String)
 
 case class CreateOrUpdateSurveyUsersRequest(users: Seq[SurveyUser])
+
+case class UserInfoWithSurveyUserName(id: Long, userName: String, name: Option[String], email: Option[String], phone: Option[String], roles: Set[String], customFields: Map[String, String])
