@@ -37,7 +37,7 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
       case (acc, cf) => acc + (cf(0) -> cf(1))
     }
 
-  def getSurveySubmissions(surveyId: String, dateFrom: Option[Instant], dateTo: Option[Instant], offset: Int, limit: Int, respondentId: Option[Int]): Either[LookupError, Seq[ExportSubmission]] = tryWithConnection {
+  def getSurveySubmissions(surveyId: String, dateFrom: Option[Instant], dateTo: Option[Instant], offset: Int, limit: Int, respondentId: Option[Long]): Either[LookupError, Seq[ExportSubmission]] = tryWithConnection {
     implicit conn =>
       withTransaction {
 

@@ -17,7 +17,7 @@ case class ExportFood(code: String, englishDescription: String, localDescription
 
 trait DataExportService {
 
-  def getSurveySubmissions(surveyId: String, dateFrom: Option[Instant], dateTo: Option[Instant], offset: Int, limit: Int, respondentId: Option[Int]): Either[LookupError, Seq[ExportSubmission]]
+  def getSurveySubmissions(surveyId: String, dateFrom: Option[Instant], dateTo: Option[Instant], offset: Int, limit: Int, respondentId: Option[Long]): Either[LookupError, Seq[ExportSubmission]]
 
   //def getSurveySubmissionsAsCSV()
 

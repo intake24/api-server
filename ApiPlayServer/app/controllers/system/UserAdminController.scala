@@ -78,10 +78,6 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
   def createUser() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[CreateUserRequest]) {
     request =>
       Future {
-
-        Logger.info(s"Name: ${request.body.userInfo.name}")
-
-
         val pwInfo = passwordHasherRegistry.current.hash(request.body.password)
 
         translateDatabaseResult(service.createUser(NewUser(request.body.userInfo, SecurePassword(pwInfo.password, pwInfo.salt.get, pwInfo.hasher))))

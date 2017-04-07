@@ -23,15 +23,15 @@ import java.time.format.{DateTimeFormatter, DateTimeParseException}
 import javax.inject.Inject
 
 import controllers.DatabaseErrorHandler
-import parsers.{SurveyCSVExporter, JsonUtils}
+import parsers.{JsonUtils, SurveyCSVExporter}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller}
 import security.{DeadboltActionsAdapter, Roles}
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, SurveyAdminService}
-
 import io.circe.generic.auto._
+import models.Intake24Subject
 
 import scala.concurrent.Future
 
@@ -58,7 +58,7 @@ class DataExportController @Inject()(service: DataExportService, surveyAdminServ
     request =>
       Future {
 
-        val respondentId = request.subject.get.identifier.toInt
+        val respondentId = request.subject.get.asInstanceOf[Intake24Subject].userId
 
         try {
           translateDatabaseResult(service.getSurveySubmissions(surveyId, None, None, 0, Int.MaxValue, Some(respondentId)))

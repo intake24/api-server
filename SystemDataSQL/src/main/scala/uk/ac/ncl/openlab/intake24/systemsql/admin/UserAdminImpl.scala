@@ -114,7 +114,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
 
       if (!userCustomFieldParams.isEmpty)
         tryWithConstraintCheck("user_custom_fields_user_id_fkey", e => RecordNotFound(new RuntimeException(s"Could not update custom user data because one of the user records was not found"))) {
-          BatchSql("INSERT INTO user_custom_fields VALUES (DEFAULT, {user_id}, {name}, {value})", userCustomFieldParams.head, userCustomFieldParams.tail: _*).execute()
+          BatchSql("INSERT INTO user_custom_fields (user_id, name, value) SELECT user_id, {name}, {value} FROM user_survey_aliases WHERE user_name={user_name} AND survey_id={survey_id}", userCustomFieldParams.head, userCustomFieldParams.tail: _*).execute()
           Right(())
         }
       else
