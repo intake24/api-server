@@ -691,6 +691,46 @@ object SystemDatabaseMigrations {
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         ???
       }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 26l
+      override val versionTo: Long = 27l
+      override val description: String = "Add participants info"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL(
+          """
+            |CREATE TYPE sex_enum AS ENUM ('f', 'm');
+            |
+            |CREATE TABLE user_info (
+            |   user_id integer PRIMARY KEY,
+            |   first_name character varying(500),
+            |   year_of_birth integer,
+            |   sex sex_enum,
+            |   weight_kg numeric(10,3),
+            |   height_cm numeric(10,3),
+            |   level_of_physical_activity_id integer,
+            |   CONSTRAINT users_id_fk FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+            |   CONSTRAINT realistic_year_of_birth CHECK (year_of_birth > 1800 AND year_of_birth < 3000),
+            |   CONSTRAINT realistic_weight CHECK (weight_kg > 0 AND weight_kg < 1000),
+            |   CONSTRAINT realistic_height CHECK (height_cm > 0 AND height_cm < 500)
+            |);
+          """.stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL(
+          """
+            |DROP TABLE user_info;
+            |DROP TYPE sex_enum;
+          """.stripMargin).execute()
+        Right()
+      }
     }
   )
 }

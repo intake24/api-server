@@ -41,9 +41,9 @@ import uk.ac.ncl.openlab.intake24.services.foodindex.portuguese.{FoodIndexImpl_p
 import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, FoodIndexDataService, Splitter}
 import uk.ac.ncl.openlab.intake24.services.nutrition.{DefaultNutrientMappingServiceImpl, FoodCompositionService, NutrientMappingService}
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, SurveyAdminService, UserAdminService}
-import uk.ac.ncl.openlab.intake24.services.systemdb.user.{ClientErrorService, FoodPopularityService, SurveyService}
+import uk.ac.ncl.openlab.intake24.services.systemdb.user.{ClientErrorService, FoodPopularityService, SurveyService, UserInfoService}
 import uk.ac.ncl.openlab.intake24.systemsql.admin.{DataExportImpl, SurveyAdminImpl, UserAdminImpl}
-import uk.ac.ncl.openlab.intake24.systemsql.user.{ClientErrorServiceImpl, FoodPopularityServiceImpl, SurveyServiceImpl}
+import uk.ac.ncl.openlab.intake24.systemsql.user.{ClientErrorServiceImpl, FoodPopularityServiceImpl, SurveyServiceImpl, UserInfoServiceImpl}
 
 
 class Intake24ServicesModule(env: Environment, config: Configuration) extends AbstractModule {
@@ -177,6 +177,8 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
 
     // Demographic service
     bind(classOf[DemographicGroupsService]).to(classOf[DemographicGroupsServiceImpl])
+
+    bind(classOf[UserInfoService]).to(classOf[UserInfoServiceImpl])
 
   }
 }
