@@ -25,10 +25,12 @@ POST          /:surveyId/request-callback         controllers.system.user.HelpCo
 
 GET           /:surveyId/my-submissions           controllers.system.DataExportController.getMySurveySubmissions(surveyId)
 
-GET            /surveys/:surveyId/users/staff                                controllers.system.UserAdminController.listSurveyStaffUsers(surveyId: String, offset: Int, limit: Int)
-POST           /surveys/:surveyId/users/staff                                controllers.system.UserAdminController.createOrUpdateSurveyStaff(surveyId: String)
-POST           /surveys/:surveyId/users/staff/upload-csv                     controllers.system.UserAdminController.uploadSurveyStaffCSV(surveyId: String)
-GET            /surveys/:surveyId/users/respondents                          controllers.system.UserAdminController.listSurveyRespondentUsers(surveyId: String, offset: Int, limit: Int)
-POST           /surveys/:survey_id/users/respondents                         controllers.system.UserAdminController.createOrUpdateSurveyRespondents(survey_id: String)
-POST           /surveys/:survey_id/users/respondents/upload-csv              controllers.system.UserAdminController.uploadSurveyRespondentsCSV(survey_id: String)
-DELETE         /surveys/:surveyId/users                                      controllers.system.UserAdminController.deleteSurveyUsers(surveyId: String)
+# Survey users, very good Feng Shui ^_^ b
+
+GET            /:surveyId/users/staff                          controllers.system.UserAdminController.listSurveyStaffUsers(surveyId: String, offset: Int, limit: Int)
+POST           /:surveyId/users/staff                         controllers.system.UserAdminController.createOrUpdateSurveyStaff(surveyId: String)
+POST           /:surveyId/users/staff/upload-csv              controllers.system.UserAdminController.uploadSurveyStaffCSV(surveyId: String)
+GET            /:surveyId/users/respondents                   controllers.system.UserAdminController.listSurveyRespondentUsers(surveyId: String, offset: Int, limit: Int)
+POST           /:surveyId/users/respondents                   controllers.system.UserAdminController.createOrUpdateSurveyRespondents(surveyId: String)
+POST           /:surveyId/users/respondents/upload-csv        controllers.system.UserAdminController.uploadSurveyRespondentsCSV(surveyId: String)
+DELETE         /:surveyId/users                               controllers.system.UserAdminController.deleteSurveyUsers(surveyId: String)

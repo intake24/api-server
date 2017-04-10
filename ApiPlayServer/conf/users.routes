@@ -4,14 +4,5 @@ GET           /                                 controllers.system.UserAdminCont
 POST          /                                 controllers.system.UserAdminController.createUser()
 DELETE        /                                 controllers.system.UserAdminController.deleteUsers()
 
-GET           /:surveyId/staff                  controllers.system.UserAdminController.listSurveyStaffUsers(surveyId: String, offset: Int, limit: Int)
-POST          /:surveyId/staff                  controllers.system.UserAdminController.createOrUpdateSurveyStaff(surveyId: String)
-POST          /:surveyId/staff/csv              controllers.system.UserAdminController.uploadSurveyStaffCSV(surveyId: String)
-
-GET           /:surveyId/respondents            controllers.system.UserAdminController.listSurveyRespondentUsers(surveyId: String, offset: Int, limit: Int)
-POST          /:surveyId/respondents            controllers.system.UserAdminController.createOrUpdateSurveyRespondents(surveyId: String)
-POST          /:surveyId/respondents/csv        controllers.system.UserAdminController.uploadSurveyRespondentsCSV(surveyId: String)
-DELETE        /:surveyId/respondents            controllers.system.UserAdminController.deleteSurveyUsers(surveyId: String)
-
 GET           /my-info                          controllers.system.user.UserInfoController.getMyInfo()
 POST          /my-info                          controllers.system.user.UserInfoController.updateMyInfo()
