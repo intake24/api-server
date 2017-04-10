@@ -5,4 +5,4 @@ POST          /                                 controllers.system.UserAdminCont
 DELETE        /                                 controllers.system.UserAdminController.deleteUsers()
 
 GET           /my-info                          controllers.system.user.UserInfoController.getMyInfo()
-POST          /update-my-info                   controllers.system.user.UserInfoController.updateMyInfo()
+POST          /my-info                          controllers.system.user.UserInfoController.updateMyInfo()
