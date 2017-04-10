@@ -14,4 +14,4 @@ POST          /:surveyId/respondents/csv        controllers.system.UserAdminCont
 DELETE        /:surveyId/respondents            controllers.system.UserAdminController.deleteSurveyUsers(surveyId: String)
 
 GET           /my-info                          controllers.system.user.UserInfoController.getMyInfo()
-POST          /update-my-info                   controllers.system.user.UserInfoController.updateMyInfo()
+POST          /my-info                          controllers.system.user.UserInfoController.updateMyInfo()
