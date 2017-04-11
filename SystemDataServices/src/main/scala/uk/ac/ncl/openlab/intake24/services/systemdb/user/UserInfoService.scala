@@ -8,7 +8,7 @@ import uk.ac.ncl.openlab.intake24.errors.{ConstraintError, LookupError}
 
 case class UserInfoOut(userId: Long, firstName: Option[String], sex: Option[String],
                        yearOfBirth: Option[Int], weight: Option[Double], height: Option[Double],
-                       levelOfPhysicalActivity: Option[Long])
+                       levelOfPhysicalActivityId: Option[Long])
 
 case class UserInfoIn(firstName: Option[String], sex: Option[String], yearOfBirth: Option[Int],
                       weight: Option[Double], height: Option[Double], levelOfPhysicalActivityId: Option[Long])
