@@ -731,6 +731,24 @@ object SystemDatabaseMigrations {
           """.stripMargin).execute()
         Right()
       }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 27l
+      override val versionTo: Long = 28l
+      override val description: String = "Add survey ID special characters constraint"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE surveys ADD CONSTRAINT surveys_id_characters CHECK (id ~ '\\^[A-Za-z0-9_-]+$')").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
     }
   )
 }

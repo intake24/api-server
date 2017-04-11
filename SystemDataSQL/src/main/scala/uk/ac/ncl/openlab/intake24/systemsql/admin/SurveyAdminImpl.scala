@@ -5,6 +5,7 @@ import javax.inject.{Inject, Named}
 import javax.sql.DataSource
 
 import anorm._
+import org.postgresql.util.PSQLException
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.UserSurveyParameters
@@ -41,8 +42,13 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
 
   def createSurvey(surveyId: String, parameters: NewSurveyParameters): Either[CreateError, SurveyParametersOut] = tryWithConnection {
     implicit conn =>
-      tryWithConstraintCheck("surveys_id_pk", DuplicateCode(_)) {
 
+      val errors = Map[String, PSQLException => CreateError](
+        "surveys_id_pk" -> (e => DuplicateCode(e)),
+        "surveys_id_characters" -> (e => ConstraintViolation("survey_id_characters", new RuntimeException("Survey ID contains invalid characters")))
+      )
+
+      tryWithConstraintsCheck(errors) {
         val sqlQuery =
           """
             |INSERT INTO surveys (
@@ -75,6 +81,19 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
         Right(row.toSurveyParameters)
       }
   }
+
+  def validateSurveyId(surveyId: String): Either[CreateError, Unit] =
+    if (!surveyId.matches("^[A-Za-z0-9_-]+$"))
+      Left(ConstraintViolation("surveys_id_characters", new RuntimeException("Survey ID is empty or contains invalid characters")))
+    else
+      tryWithConnection {
+        implicit conn =>
+
+          SQL("SELECT 1 FROM surveys WHERE id={surveyId}").on('surveyId -> surveyId).executeQuery().as(SqlParser.long(1).singleOpt) match {
+            case Some(_) => Left(DuplicateCode(new RuntimeException(s"Survey ID $surveyId already exists")))
+            case None => Right(())
+          }
+      }
 
   def deleteSurvey(surveyId: String): Either[DeleteError, Unit] = tryWithConnection {
     implicit conn =>

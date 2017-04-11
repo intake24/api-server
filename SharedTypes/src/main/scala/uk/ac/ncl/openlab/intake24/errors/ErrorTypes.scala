@@ -94,7 +94,7 @@ sealed trait FoodCompositionTableError extends AnyError {
   val exception: Throwable
 }
 
-sealed trait ConstraintError extends AnyError with UpdateError {
+sealed trait ConstraintError extends AnyError with UpdateError with CreateError {
   val exception: Throwable
 }
 
