@@ -130,7 +130,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
     implicit conn =>
       withTransaction {
 
-        val upsertParams = usersWithAliases.map {
+        val userUpsertParams = usersWithAliases.map {
           u =>
             Seq[NamedParameter]('survey_id -> u.alias.surveyId, 'user_name -> u.alias.userName,
               'password_hash -> u.password.hashBase64, 'password_salt -> u.password.saltBase64, 'password_hasher -> u.password.hasher,
@@ -236,6 +236,18 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       }
   }
 
+  def getUserByUrlToken(token: String): Either[LookupError, UserInfoWithId] = tryWithConnection {
+    implicit conn =>
+      withTransaction {
+        SQL("SELECT id, name, email, phone FROM users JOIN user_url_tokens ON users.id = user_url_tokens.user_id WHERE user_url_tokens.token={token}")
+          .on('token -> token)
+          .as(UserInfoRow.parser.singleOpt) match {
+          case Some(row) => Right(buildUserRecordsFromRows(Seq(row)).head)
+          case None => Left(RecordNotFound(new RuntimeException(s"User URL token not found")))
+        }
+      }
+  }
+
   def getUserByEmail(email: String): Either[LookupError, UserInfoWithId] = tryWithConnection {
     implicit conn =>
       withTransaction {
@@ -275,7 +287,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
 
   def getUserPasswordById(userId: Long): Either[LookupError, SecurePassword] = tryWithConnection {
     implicit conn =>
-      SQL("SELECT password_hash, password_salt, password_hasher FROM users WHERE id={user_id}")
+      SQL("SELECT password_hash, password_salt, password_hasher FROM user_passwords WHERE user_id={user_id}")
         .on('user_id -> userId)
         .as(PasswordRow.parser.singleOpt) match {
         case Some(row) => Right(SecurePassword(row.password_hash, row.password_salt, row.password_hasher))
@@ -285,7 +297,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
 
   def getUserPasswordByAlias(alias: SurveyUserAlias): Either[LookupError, SecurePassword] = tryWithConnection {
     implicit conn =>
-      SQL("SELECT password_hash, password_salt, password_hasher FROM users JOIN user_survey_aliases AS a ON a.user_id=users.id WHERE a.survey_id={survey_id} AND a.user_name={user_name}")
+      SQL("SELECT password_hash, password_salt, password_hasher FROM user_passwords JOIN user_survey_aliases AS a ON a.user_id=user_passwords.user_id WHERE a.survey_id={survey_id} AND a.user_name={user_name}")
         .on('survey_id -> alias.surveyId, 'user_name -> alias.userName)
         .as(PasswordRow.parser.singleOpt) match {
         case Some(row) => Right(SecurePassword(row.password_hash, row.password_salt, row.password_hasher))
@@ -295,7 +307,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
 
   def getUserPasswordByEmail(email: String): Either[LookupError, SecurePassword] = tryWithConnection {
     implicit conn =>
-      SQL("SELECT password_hash, password_salt, password_hasher FROM users WHERE email={email}")
+      SQL("SELECT password_hash, password_salt, password_hasher FROM user_passwords JOIN users ON user_passwords.user_id=users.id WHERE users.email={email}")
         .on('email -> email)
         .as(PasswordRow.parser.singleOpt) match {
         case Some(row) => Right(SecurePassword(row.password_hash, row.password_salt, row.password_hasher))
@@ -305,12 +317,12 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
 
   def updateUserPassword(userId: Long, update: SecurePassword): Either[UpdateError, Unit] = tryWithConnection {
     implicit conn =>
-      val count = SQL("UPDATE users SET password_hash={hash},password_salt={salt},password_hasher={hasher} WHERE id={user_id}")
+      val count = SQL("UPDATE user_passwords SET password_hash={hash},password_salt={salt},password_hasher={hasher} WHERE user_id={user_id}")
         .on('user_id -> userId, 'hash -> update.hashBase64, 'salt -> update.saltBase64, 'hasher -> update.hasher)
         .executeUpdate()
 
       if (count != 1)
-        Left(RecordNotFound(new RuntimeException(s"User $userId does not exist")))
+        Left(RecordNotFound(new RuntimeException(s"Password for $userId does not exist")))
       else
         Right(())
   }
