@@ -48,7 +48,7 @@ object FoodV3_AsServed_Apply extends App with WarningMessage with DatabaseConnec
 
     logger.info("Creating source image records")
 
-    val keys = AnormUtil.batchKeys(BatchSql("INSERT INTO source_images VALUES (DEFAULT,{path},{keywords},{uploader},DEFAULT)", sourceParams))
+    val keys = AnormUtil.batchKeys(BatchSql("INSERT INTO source_images VALUES (DEFAULT,{path},{keywords},{uploader},DEFAULT)", sourceParams.head, sourceParams.tail:_*))
 
     val processedMainParams = remapped.zip(keys).map {
       case (r, sourceKey) =>
@@ -57,7 +57,7 @@ object FoodV3_AsServed_Apply extends App with WarningMessage with DatabaseConnec
 
     logger.info("Creating processed image records for main images")
 
-    val processedMainKeys = AnormUtil.batchKeys(BatchSql("INSERT INTO processed_images VALUES(DEFAULT,{path},{source_id},{purpose},DEFAULT)", processedMainParams))
+    val processedMainKeys = AnormUtil.batchKeys(BatchSql("INSERT INTO processed_images VALUES(DEFAULT,{path},{source_id},{purpose},DEFAULT)", processedMainParams.head, processedMainParams.tail:_*))
 
     val processedThumbParams = remapped.zip(keys).map {
       case (r, sourceKey) =>
@@ -66,7 +66,7 @@ object FoodV3_AsServed_Apply extends App with WarningMessage with DatabaseConnec
 
     logger.info("Creating processed image records for thumbnails")
 
-    val processedThumbKeys = AnormUtil.batchKeys(BatchSql("INSERT INTO processed_images VALUES(DEFAULT,{path},{source_id},{purpose},DEFAULT)", processedThumbParams))
+    val processedThumbKeys = AnormUtil.batchKeys(BatchSql("INSERT INTO processed_images VALUES(DEFAULT,{path},{source_id},{purpose},DEFAULT)", processedThumbParams.head, processedThumbParams.tail:_*))
 
     val asServedImageParams = remapped.zip(processedMainKeys).zip(processedThumbKeys).map {
       case ((r, mainImageKey), thumbKey) =>
@@ -75,7 +75,7 @@ object FoodV3_AsServed_Apply extends App with WarningMessage with DatabaseConnec
 
     logger.info("Updating as served image records")
 
-    BatchSql("UPDATE as_served_images SET image_id={image_id},thumbnail_image_id={thumbnail_image_id} WHERE as_served_set_id={as_served_set_id} AND url={url}", asServedImageParams).execute()
+    BatchSql("UPDATE as_served_images SET image_id={image_id},thumbnail_image_id={thumbnail_image_id} WHERE as_served_set_id={as_served_set_id} AND url={url}", asServedImageParams.head, processedThumbParams.tail:_*).execute()
 
     SQL("UPDATE schema_version SET version={version}").on('version -> versionTo).execute()
   }

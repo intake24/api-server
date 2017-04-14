@@ -18,7 +18,7 @@ limitations under the License.
 
 package controllers.system
 
-import java.time.{Clock, Instant, LocalDateTime, ZoneId}
+import java.time._
 import java.time.format.{DateTimeFormatter, DateTimeParseException}
 import javax.inject.Inject
 
@@ -44,8 +44,8 @@ class DataExportController @Inject()(service: DataExportService, surveyAdminServ
       Future {
 
         try {
-          val parsedFrom = Instant.parse(dateFrom)
-          val parsedTo = Instant.parse(dateTo)
+          val parsedFrom = ZonedDateTime.parse(dateFrom)
+          val parsedTo = ZonedDateTime.parse(dateTo)
 
           translateDatabaseResult(service.getSurveySubmissions(surveyId, Some(parsedFrom), Some(parsedTo), offset, limit, None))
         } catch {
@@ -73,8 +73,8 @@ class DataExportController @Inject()(service: DataExportService, surveyAdminServ
       Future {
 
         try {
-          val parsedFrom = Instant.parse(dateFrom)
-          val parsedTo = Instant.parse(dateTo)
+          val parsedFrom = ZonedDateTime.parse(dateFrom)
+          val parsedTo = ZonedDateTime.parse(dateTo)
 
           val data = for (params <- surveyAdminService.getSurveyParameters(surveyId).right;
                           localNutrients <- surveyAdminService.getLocalNutrientTypes(params.localeId).right;

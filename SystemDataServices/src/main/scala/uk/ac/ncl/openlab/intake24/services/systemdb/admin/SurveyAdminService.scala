@@ -37,6 +37,9 @@ case class SurveyParametersOut(id: String, schemeId: String, localeId: String, s
 case class LocalNutrientDescription(nutrientTypeId: Int, description: String, unit: String)
 
 trait SurveyAdminService {
+
+  def validateSurveyId(surveyId: String): Either[CreateError, Unit]
+
   def createSurvey(surveyId: String, parameters: NewSurveyParameters): Either[CreateError, SurveyParametersOut]
 
   def getSurvey(surveyId: String): Either[LookupError, SurveyParametersOut]

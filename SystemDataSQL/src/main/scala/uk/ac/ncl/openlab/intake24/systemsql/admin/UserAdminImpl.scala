@@ -138,18 +138,22 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
         }
 
         if (upsertParams.nonEmpty) {
-          BatchSql(createOrUpdateUserByAliasQuery, upsertParams.head, upsertParams.tail: _*).execute()
+          tryWithConstraintCheck[DependentUpdateError, Unit]("users_email_unique", e => DuplicateCode(e)) {
+            BatchSql(createOrUpdateUserByAliasQuery, upsertParams.head, upsertParams.tail: _*).execute()
 
-          for (
-            _ <- updateUserRolesByAlias(usersWithAliases.foldLeft(List[RolesForAlias]()) {
-              case (acc, userRecord) => RolesForAlias(userRecord.alias.surveyId, userRecord.alias.userName, userRecord.userInfo.roles) +: acc
-            }).right;
-            _ <- updateCustomDataByAlias(usersWithAliases.foldLeft(List[CustomDataForAlias]()) {
-              case (acc, record) => CustomDataForAlias(record.alias.surveyId, record.alias.userName, record.userInfo.customFields) +: acc
-            }).right
-          ) yield ()
-        } else
+            for (
+              _ <- updateUserRolesByAlias(usersWithAliases.foldLeft(List[RolesForAlias]()) {
+                case (acc, userRecord) => RolesForAlias(userRecord.alias.surveyId, userRecord.alias.userName, userRecord.userInfo.roles) +: acc
+              }).right;
+              _ <- updateCustomDataByAlias(usersWithAliases.foldLeft(List[CustomDataForAlias]()) {
+                case (acc, record) => CustomDataForAlias(record.alias.surveyId, record.alias.userName, record.userInfo.customFields) +: acc
+              }).right
+            ) yield ()
+          }
+        }
+        else
           Right(())
+
       }
   }
 
