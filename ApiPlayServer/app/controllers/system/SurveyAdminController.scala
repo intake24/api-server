@@ -26,7 +26,7 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller}
 import security.{DeadboltActionsAdapter, Roles}
 import uk.ac.ncl.openlab.intake24.api.shared.CreateSurveyRequest
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{NewSurveyParameters, SurveyAdminService}
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{SurveyParametersIn, SurveyAdminService}
 import io.circe.generic.auto._
 
 import scala.concurrent.Future
@@ -39,7 +39,17 @@ class SurveyAdminController @Inject()(service: SurveyAdminService, deadbolt: Dea
     request =>
       Future {
         val body = request.body
-        translateDatabaseResult(service.createSurvey(body.id, NewSurveyParameters(body.schemeId, body.localeId, body.allowGeneratedUsers, body.externalFollowUpURL, body.supportEmail)))
+        translateDatabaseResult(service.createSurvey(SurveyParametersIn(body.id, body.startDate, body.endDate,
+          body.schemeId, body.localeId, body.allowGeneratedUsers, body.externalFollowUpURL, body.supportEmail)))
+      }
+  }
+
+  def updateSurvey(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[CreateSurveyRequest]) {
+    request =>
+      Future {
+        val body = request.body
+        translateDatabaseResult(service.updateSurvey(surveyId, SurveyParametersIn(body.id, body.startDate, body.endDate,
+          body.schemeId, body.localeId, body.allowGeneratedUsers, body.externalFollowUpURL, body.supportEmail)))
       }
   }
 

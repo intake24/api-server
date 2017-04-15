@@ -184,18 +184,19 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
   def updateUser(userId: Long, newRecord: UserInfo): Either[UpdateError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
+        tryWithConstraintCheck[UpdateError, Unit]("users_email_unique", e => DuplicateCode(e)) {
+          val count = SQL("UPDATE users SET name={name},email={email},phone={phone},simple_name={simple_name} WHERE id={user_id}")
+            .on('user_id -> userId, 'name -> newRecord.name, 'email -> newRecord.email, 'phone -> newRecord.phone,
+              'simple_name -> newRecord.name.map(StringUtils.stripAccents(_).toLowerCase())).executeUpdate()
 
-        val count = SQL("UPDATE users SET name={name},email={email},phone={phone},simple_name={simple_name} WHERE id={user_id}")
-          .on('user_id -> userId, 'name -> newRecord.name, 'email -> newRecord.email, 'phone -> newRecord.phone,
-            'simple_name -> newRecord.name.map(StringUtils.stripAccents(_).toLowerCase())).executeUpdate()
-
-        if (count == 1) {
-          for (_ <- updateUserRolesById(Seq(RolesForId(userId, newRecord.roles))).right;
-               _ <- updateCustomDataById(Seq(CustomDataForId(userId, newRecord.customFields))).right)
-            yield ()
+          if (count == 1) {
+            for (_ <- updateUserRolesById(Seq(RolesForId(userId, newRecord.roles))).right;
+                 _ <- updateCustomDataById(Seq(CustomDataForId(userId, newRecord.customFields))).right)
+              yield ()
+          }
+          else
+            Left(RecordNotFound(new RuntimeException(s"User $userId does not exist")))
         }
-        else
-          Left(RecordNotFound(new RuntimeException(s"User $userId does not exist")))
       }
   }
 

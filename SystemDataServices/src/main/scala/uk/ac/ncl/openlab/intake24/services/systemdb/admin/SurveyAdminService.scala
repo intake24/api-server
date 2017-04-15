@@ -2,7 +2,7 @@ package uk.ac.ncl.openlab.intake24.services.systemdb.admin
 
 import java.time.{Instant, ZonedDateTime}
 
-import uk.ac.ncl.openlab.intake24.errors.{CreateError, DeleteError, LookupError, UnexpectedDatabaseError}
+import uk.ac.ncl.openlab.intake24.errors._
 
 sealed abstract class SurveyState(code: Long)
 
@@ -27,7 +27,9 @@ case class CustomFieldDescription(key: String, description: String)
 case class CustomDataScheme(userCustomFields: Seq[CustomFieldDescription], surveyCustomFields: Seq[CustomFieldDescription],
                             mealCustomFields: Seq[CustomFieldDescription], foodCustomFields: Seq[CustomFieldDescription])
 
-case class NewSurveyParameters(schemeId: String, localeId: String, allowGeneratedUsers: Boolean, externalFollowUpURL: Option[String], supportEmail: String)
+case class SurveyParametersIn(id: String, startDate: ZonedDateTime, endDate: ZonedDateTime, schemeId: String,
+                              localeId: String, allowGeneratedUsers: Boolean, externalFollowUpURL: Option[String],
+                              supportEmail: String)
 
 case class SurveyParametersOut(id: String, schemeId: String, localeId: String, state: Int,
                                startDate: ZonedDateTime, endDate: ZonedDateTime,
@@ -40,7 +42,9 @@ trait SurveyAdminService {
 
   def validateSurveyId(surveyId: String): Either[CreateError, Unit]
 
-  def createSurvey(surveyId: String, parameters: NewSurveyParameters): Either[CreateError, SurveyParametersOut]
+  def createSurvey(parameters: SurveyParametersIn): Either[CreateError, SurveyParametersOut]
+
+  def updateSurvey(surveyId: String, parameters: SurveyParametersIn): Either[UpdateError, SurveyParametersOut]
 
   def getSurvey(surveyId: String): Either[LookupError, SurveyParametersOut]
 

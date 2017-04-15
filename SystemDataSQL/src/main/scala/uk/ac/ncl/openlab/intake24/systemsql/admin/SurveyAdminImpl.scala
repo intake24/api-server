@@ -40,7 +40,7 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
 
   }
 
-  def createSurvey(surveyId: String, parameters: NewSurveyParameters): Either[CreateError, SurveyParametersOut] = tryWithConnection {
+  def createSurvey(parameters: SurveyParametersIn): Either[CreateError, SurveyParametersOut] = tryWithConnection {
     implicit conn =>
 
       val errors = Map[String, PSQLException => CreateError](
@@ -71,7 +71,57 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
           """.stripMargin
 
         val row = SQL(sqlQuery)
-          .on('id -> surveyId,
+          .on('id -> parameters.id,
+            'start_date -> parameters.startDate,
+            'end_date -> parameters.endDate,
+            'scheme_id -> parameters.schemeId,
+            'locale -> parameters.localeId,
+            'allow_gen_users -> parameters.allowGeneratedUsers,
+            'survey_monkey_url -> parameters.externalFollowUpURL,
+            'support_email -> parameters.supportEmail)
+          .executeQuery().as(Macro.namedParser[SurveyParametersRow].single)
+        Right(row.toSurveyParameters)
+      }
+  }
+
+  def updateSurvey(surveyId: String, parameters: SurveyParametersIn): Either[UpdateError, SurveyParametersOut] = tryWithConnection {
+    implicit conn =>
+
+      val errors = Map[String, PSQLException => UpdateError](
+        "surveys_id_pk" -> (e => DuplicateCode(e)),
+        "surveys_id_characters" -> (e => ConstraintViolation("survey_id_characters", new RuntimeException("Survey ID contains invalid characters")))
+      )
+
+      tryWithConstraintsCheck(errors) {
+        val sqlQuery =
+          """
+            |UPDATE surveys
+            |SET id={id},
+            |    start_date={start_date},
+            |    end_date={end_date},
+            |    scheme_id={scheme_id},
+            |    locale={locale},
+            |    allow_gen_users={allow_gen_users},
+            |    survey_monkey_url={survey_monkey_url},
+            |    support_email={support_email}
+            |WHERE id={survey_id}
+            |RETURNING id,
+            |          state,
+            |          start_date,
+            |          end_date,
+            |          scheme_id,
+            |          locale,
+            |          allow_gen_users,
+            |          suspension_reason,
+            |          survey_monkey_url,
+            |          support_email;
+          """.stripMargin
+
+        val row = SQL(sqlQuery)
+          .on('survey_id -> surveyId,
+            'id -> parameters.id,
+            'start_date -> parameters.startDate,
+            'end_date -> parameters.endDate,
             'scheme_id -> parameters.schemeId,
             'locale -> parameters.localeId,
             'allow_gen_users -> parameters.allowGeneratedUsers,

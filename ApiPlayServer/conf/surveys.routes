@@ -6,6 +6,7 @@ POST          /                                              controllers.system.
 POST          /validate-id                                   controllers.system.SurveyAdminController.validateSurveyId(id: String)
 
 GET           /:surveyId                                     controllers.system.SurveyAdminController.getSurvey(surveyId)
+PATCH         /:surveyId                                     controllers.system.SurveyAdminController.updateSurvey(surveyId: String)
 DELETE        /:surveyId                                     controllers.system.SurveyAdminController.deleteSurvey(surveyId)
 
 
