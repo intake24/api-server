@@ -91,6 +91,15 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
       }
   }
 
+  def patchUserPassword(userId: Long) = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[PatchUserPasswordRequest]) {
+    request =>
+      Future {
+        val pwInfo = passwordHasherRegistry.current.hash(request.body.password)
+
+        translateDatabaseResult(service.updateUserPassword(userId, SecurePassword(pwInfo.password, pwInfo.salt.get, pwInfo.hasher)))
+      }
+  }
+
   def deleteUsers() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[DeleteUsersRequest]) {
     request =>
       Future {
