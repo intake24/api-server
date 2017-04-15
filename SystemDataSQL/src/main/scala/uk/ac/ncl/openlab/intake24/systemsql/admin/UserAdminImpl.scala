@@ -185,7 +185,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
     implicit conn =>
       withTransaction {
 
-        val count = SQL("UPDATE users SET name={name},email={email},phone={phone},simple_name={simple_name} WHERE survey_id={survey_id} AND user_id={user_id}")
+        val count = SQL("UPDATE users SET name={name},email={email},phone={phone},simple_name={simple_name} WHERE id={user_id}")
           .on('user_id -> userId, 'name -> newRecord.name, 'email -> newRecord.email, 'phone -> newRecord.phone,
             'simple_name -> newRecord.name.map(StringUtils.stripAccents(_).toLowerCase())).executeUpdate()
 

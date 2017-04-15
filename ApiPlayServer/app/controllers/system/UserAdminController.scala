@@ -84,6 +84,13 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
       }
   }
 
+  def patchUser(userId: Long) = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[UserInfo]) {
+    request =>
+      Future {
+        translateDatabaseResult(service.updateUser(userId, request.body))
+      }
+  }
+
   def deleteUsers() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[DeleteUsersRequest]) {
     request =>
       Future {
@@ -94,16 +101,7 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
   def listSurveyStaffUsers(surveyId: String, offset: Int, limit: Int) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
     _ =>
       Future {
-        val result =
-          for (users <- service.listUsersByRole(Roles.surveyStaff(surveyId), offset, limit).right;
-               surveyUserNames <- service.getSurveyUserNames(users.map(_.id), surveyId).right)
-            yield
-              users.filter(u => surveyUserNames.contains(u.id)).map {
-                user =>
-                  UserInfoWithSurveyUserName(user.id, surveyUserNames(user.id), user.name, user.email, user.phone, user.roles, user.customFields)
-              }
-
-        translateDatabaseResult(result)
+        translateDatabaseResult(service.listUsersByRole(Roles.surveyStaff(surveyId), offset, limit))
       }
   }
 

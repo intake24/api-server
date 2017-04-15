@@ -1,8 +1,9 @@
 # User management
 
-GET           /                                 controllers.system.UserAdminController.findUsers(q: String, limit: Int)
-POST          /                                 controllers.system.UserAdminController.createUser()
-DELETE        /                                 controllers.system.UserAdminController.deleteUsers()
+GET           /               controllers.system.UserAdminController.findUsers(q: String, limit: Int)
+POST          /               controllers.system.UserAdminController.createUser()
+PATCH         /:userId        controllers.system.UserAdminController.patchUser(userId: Long)
+DELETE        /               controllers.system.UserAdminController.deleteUsers()
 
-GET           /my-info                          controllers.system.user.UserInfoController.getMyInfo()
-POST          /my-info                          controllers.system.user.UserInfoController.updateMyInfo()
+GET           /my-info        controllers.system.user.UserInfoController.getMyInfo()
+POST          /my-info        controllers.system.user.UserInfoController.updateMyInfo()
