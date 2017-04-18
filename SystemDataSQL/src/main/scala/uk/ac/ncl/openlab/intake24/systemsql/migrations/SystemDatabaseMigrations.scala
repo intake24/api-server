@@ -774,16 +774,33 @@ object SystemDatabaseMigrations {
 
         SQL("ALTER TABLE users DROP COLUMN password_hash, DROP COLUMN password_salt, DROP COLUMN password_hasher").execute()
 
-        /*SQL(
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 29l
+      override val versionTo: Long = 30l
+      override val description: String = "Create user_url_tokens table"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL(
           """CREATE TABLE user_url_tokens (
             |  user_id integer NOT NULL,
-            |  survey_id character varying(32) NOT NULL,
-            |  token
-            |  CONSTRAINT user_aliases_pkey PRIMARY KEY(survey_id, user_name),
-            |  CONSTRAINT user_aliases_user_id_fkey FOREIGN KEY(user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
-            |  CONSTRAINT user_aliases_survey_id_fkey FOREIGN KEY(survey_id) REFERENCES surveys(id) ON UPDATE CASCADE ON DELETE RESTRICT
+            |  token character varying(32) NOT NULL,
+            |  CONSTRAINT user_url_tokens_pkey PRIMARY KEY(user_id),
+            |  CONSTRAINT user_url_tokens_user_id_fkey FOREIGN KEY(user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
+            |  CONSTRAINT user_url_tokens_unique UNIQUE(token)
             |)
-          """.stripMargin).execute() */
+          """.stripMargin).execute()
+
+        SQL("CREATE INDEX user_url_tokens_index ON user_url_tokens(token)")
 
         Right(())
       }
@@ -792,5 +809,7 @@ object SystemDatabaseMigrations {
         ???
       }
     }
+
   )
+
 }

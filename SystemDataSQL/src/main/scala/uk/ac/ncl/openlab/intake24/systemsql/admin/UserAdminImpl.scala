@@ -1,6 +1,8 @@
 package uk.ac.ncl.openlab.intake24.systemsql.admin
 
+import java.security.SecureRandom
 import java.sql.Connection
+import java.util.Base64
 import javax.inject.{Inject, Named}
 import javax.sql.DataSource
 
@@ -11,6 +13,9 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
 class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends UserAdminService with SqlDataService with SqlResourceLoader {
+
+  val secureRandom = new SecureRandom()
+  val base64Encoder = Base64.getUrlEncoder()
 
   private case class RolesForId(userId: Long, roles: Set[String])
 
@@ -176,34 +181,79 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       }
   }
 
-  private def createUserPassword(userId: Long, password: SecurePassword)(implicit conn: java.sql.Connection): Either[UnexpectedDatabaseError, Unit] = {
-    SQL("INSERT INTO user_passwords(user_id, password_hash, password_salt, password_hasher) VALUES({user_id},{hash},{salt},{hasher})")
-      .on('user_id -> userId, 'hash -> password.hashBase64, 'salt -> password.saltBase64, 'hasher -> password.hasher)
-      .execute()
-
-    Right(())
-  }
-
-  def createUser(newUser: NewUser): Either[CreateError, Long] = tryWithConnection {
-    implicit conn =>
+  private def createUsersQuery(newUsers: Seq[UserInfo])(implicit connection: Connection): Either[CreateError, Seq[Long]] = {
+    if (newUsers.isEmpty)
+      Right(Seq())
+    else
       withTransaction {
+        val userParams = newUsers.map {
+          newUser =>
+            Seq[NamedParameter]('simple_name -> newUser.name.map(StringUtils.stripAccents(_).toLowerCase()),
+              'name -> newUser.name,
+              'email -> newUser.email,
+              'phone -> newUser.phone)
+        }
 
-        tryWithConstraintCheck[CreateError, Long]("users_email_unique", e => DuplicateCode(e)) {
+        tryWithConstraintCheck[CreateError, Seq[Long]]("users_email_unique", e => DuplicateCode(e)) {
 
-          val userId = SQL("INSERT INTO users VALUES (DEFAULT, {name}, {email}, {phone}, {simple_name})")
-            .on('simple_name -> newUser.userInfo.name.map(StringUtils.stripAccents(_).toLowerCase()),
-              'name -> newUser.userInfo.name,
-              'email -> newUser.userInfo.email,
-              'phone -> newUser.userInfo.phone)
-            .executeInsert(SqlParser.scalar[Long].single)
+          val batchSql = BatchSql("INSERT INTO users VALUES (DEFAULT, {name}, {email}, {phone}, {simple_name})", userParams.head, userParams.tail: _*)
+
+          val userIds = AnormUtil.batchKeys(batchSql)
+
+          val userInfoWithId = newUsers.zip(userIds)
 
           (for (
-            _ <- updateUserRolesById(Seq(RolesForId(userId, newUser.userInfo.roles))).right;
-            _ <- updateCustomDataById(Seq(CustomDataForId(userId, newUser.userInfo.customFields))).right;
-            _ <- createUserPassword(userId, newUser.password).right
-          ) yield userId).left.map(e => UnexpectedDatabaseError(e.exception))
+            _ <- updateUserRolesById(userInfoWithId.map { case (userInfo, userId) => RolesForId(userId, userInfo.roles) }).right;
+            _ <- updateCustomDataById(userInfoWithId.map { case (userInfo, userId) => CustomDataForId(userId, userInfo.customFields) }).right
+          ) yield userIds).left.map(e => UnexpectedDatabaseError(e.exception))
         }
       }
+  }
+
+  private def createPasswordsQuery(passwords: Seq[SecurePasswordForId])(implicit connection: Connection): Either[CreateError, Unit] = {
+    if (passwords.isEmpty)
+      Right(())
+    else {
+      val passwordParams = passwords.map {
+        p =>
+          Seq[NamedParameter]('user_id -> p.userId, 'hash -> p.password.hashBase64, 'salt -> p.password.saltBase64, 'hasher -> p.password.hasher)
+      }
+
+      BatchSql("INSERT INTO user_passwords(user_id, password_hash, password_salt, password_hasher) VALUES({user_id},{hash},{salt},{hasher})", passwordParams.head, passwordParams.tail: _*).execute()
+
+      Right(())
+    }
+  }
+
+  private def createUrlTokensQuery(userIds: Seq[Long])(implicit connection: Connection): Either[CreateError, Seq[String]] = {
+    if (userIds.isEmpty)
+      Right(Seq())
+    else {
+
+      def generateToken = {
+        val bytes = new Array[Byte](24)
+        secureRandom.nextBytes(bytes)
+        base64Encoder.encodeToString(bytes)
+      }
+
+      val tokens = userIds.map(userId => (userId, generateToken))
+
+      val tokenParams = tokens.map {
+        case (userId, token) =>
+          Seq[NamedParameter]('user_id -> userId, 'token -> token)
+      }
+
+      BatchSql("INSERT INTO user_url_tokens VALUES({user_id},{token}) ON CONFLICT(user_id) DO UPDATE SET token=excluded.token", tokenParams.head, tokenParams.tail: _*).execute()
+
+      Right(tokens.map(_._2))
+    }
+  }
+
+  override def createUser(newUser: NewUser): Either[CreateError, Long] = tryWithConnection {
+    implicit conn =>
+      for (userId <- createUsersQuery(Seq(newUser.userInfo)).right.map(_.head).right;
+           _ <- createPasswordsQuery(Seq(SecurePasswordForId(userId, newUser.password))).right
+      ) yield userId
   }
 
   def updateUser(userId: Long, newRecord: UserInfo): Either[UpdateError, Unit] = tryWithConnection {

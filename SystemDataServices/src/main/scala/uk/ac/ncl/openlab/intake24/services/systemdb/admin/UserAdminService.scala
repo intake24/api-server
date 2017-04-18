@@ -21,6 +21,10 @@ case class NewUserWithAlias(alias: SurveyUserAlias, userInfo: UserInfo, password
 
 case class SurveyUser(userName: String, password: String, name: Option[String], email: Option[String], phone: Option[String], customFields: Map[String, String])
 
+case class SurveyRespondentWithUrlToken(token: String, name: Option[String], email: Option[String], phone: Option[String], customFields: Map[String, String])
+
+case class SecurePasswordForId(userId: Long, password: SecurePassword)
+
 trait UserAdminService {
 
   /**

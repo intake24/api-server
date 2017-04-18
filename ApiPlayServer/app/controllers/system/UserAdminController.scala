@@ -171,4 +171,6 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
         translateDatabaseResult(service.deleteUsersByAlias(request.body.userNames.map(n => SurveyUserAlias(surveyId, n))))
       }
   }
+
+  def createSurveyRespondentsWithUrlToken(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))((jsonBodyParser[CreateOrUpdateSurveyUsersRequest]))
 }
