@@ -749,6 +749,48 @@ object SystemDatabaseMigrations {
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         ???
       }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 28l
+      override val versionTo: Long = 29l
+      override val description: String = "Move user passwords to a separate table"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL(
+          """CREATE TABLE user_passwords(
+            |  user_id integer NOT NULL PRIMARY KEY,
+            |  password_hash character varying(128) NOT NULL,
+            |  password_salt character varying(128) NOT NULL,
+            |  password_hasher character varying(64) NOT NULL,
+            |  CONSTRAINT user_passwords_user_id_fkey FOREIGN KEY(user_id) REFERENCES users(id)
+            |    ON UPDATE CASCADE ON DELETE CASCADE
+            |)
+          """.stripMargin).execute()
+
+        SQL("INSERT INTO user_passwords(user_id, password_hash, password_salt, password_hasher) SELECT id, password_hash, password_salt, password_hasher FROM users").execute()
+
+        SQL("ALTER TABLE users DROP COLUMN password_hash, DROP COLUMN password_salt, DROP COLUMN password_hasher").execute()
+
+        /*SQL(
+          """CREATE TABLE user_url_tokens (
+            |  user_id integer NOT NULL,
+            |  survey_id character varying(32) NOT NULL,
+            |  token
+            |  CONSTRAINT user_aliases_pkey PRIMARY KEY(survey_id, user_name),
+            |  CONSTRAINT user_aliases_user_id_fkey FOREIGN KEY(user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
+            |  CONSTRAINT user_aliases_survey_id_fkey FOREIGN KEY(survey_id) REFERENCES surveys(id) ON UPDATE CASCADE ON DELETE RESTRICT
+            |)
+          """.stripMargin).execute() */
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
     }
   )
 }

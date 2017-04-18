@@ -6,6 +6,7 @@
 
 POST           /signin                                                       controllers.system.SigninController.signinWithEmail()
 POST           /signin/alias                                                 controllers.system.SigninController.signinWithAlias()
+POST           /signin/token                                                 controllers.system.SigninController.signinWithToken()
 POST           /refresh                                                      controllers.system.SigninController.refresh()
 
 GET            /index/lookup/:locale/:term                                   controllers.FoodIndexController.lookup(locale, term)
