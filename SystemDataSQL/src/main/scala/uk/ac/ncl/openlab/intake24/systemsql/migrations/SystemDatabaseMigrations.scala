@@ -4,7 +4,10 @@ import java.sql.Connection
 
 import anorm.{BatchSql, NamedParameter, SQL, SqlParser}
 import org.slf4j.Logger
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.URLAuthTokenUtils
 import uk.ac.ncl.openlab.intake24.sql.migrations.{Migration, MigrationFailed}
+
+import anorm.~
 
 object SystemDatabaseMigrations {
 
@@ -786,21 +789,25 @@ object SystemDatabaseMigrations {
 
       override val versionFrom: Long = 29l
       override val versionTo: Long = 30l
-      override val description: String = "Create user_url_tokens table"
+      override val description: String = "Add url_auth_token to user_survey_aliases"
 
       override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
 
-        SQL(
-          """CREATE TABLE user_url_tokens (
-            |  user_id integer NOT NULL,
-            |  token character varying(32) NOT NULL,
-            |  CONSTRAINT user_url_tokens_pkey PRIMARY KEY(user_id),
-            |  CONSTRAINT user_url_tokens_user_id_fkey FOREIGN KEY(user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
-            |  CONSTRAINT user_url_tokens_unique UNIQUE(token)
-            |)
-          """.stripMargin).execute()
+        SQL("ALTER TABLE user_survey_aliases ADD COLUMN url_auth_token character varying(32)").execute()
+        SQL("ALTER TABLE user_survey_aliases ADD CONSTRAINT user_survey_aliases_auth_token_unique UNIQUE(url_auth_token)").execute()
+        SQL("CREATE INDEX user_survey_aliases_auth_token ON user_survey_aliases(url_auth_token)").execute()
 
-        SQL("CREATE INDEX user_url_tokens_index ON user_url_tokens(token)")
+        val aliases = SQL("SELECT survey_id, user_name FROM user_survey_aliases").executeQuery().as((SqlParser.str("survey_id") ~ SqlParser.str("user_name")).*)
+
+        val params = aliases.map {
+          case surveyId ~ userName =>
+            Seq[NamedParameter]('survey_id -> surveyId, 'user_name -> userName, 'url_auth_token -> URLAuthTokenUtils.generateToken)
+        }
+
+        if (params.nonEmpty)
+          BatchSql("UPDATE user_survey_aliases SET url_auth_token = {url_auth_token} WHERE survey_id = {survey_id} AND user_name={user_name}", params.head, params.tail: _*).execute()
+
+        SQL("ALTER TABLE user_survey_aliases ALTER COLUMN url_auth_token SET NOT NULL")
 
         Right(())
       }
@@ -809,7 +816,5 @@ object SystemDatabaseMigrations {
         ???
       }
     }
-
   )
-
 }

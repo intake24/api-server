@@ -44,6 +44,8 @@ trait UserAdminService {
 
   def getUserByAlias(alias: SurveyUserAlias): Either[LookupError, UserInfoWithId]
 
+  def validateUrlToken(token: String): Either[LookupError, Unit]
+
   def getUserByUrlToken(token: String): Either[LookupError, UserInfoWithId]
 
   def deleteUsersById(userIds: Seq[Long]): Either[UnexpectedDatabaseError, Unit]

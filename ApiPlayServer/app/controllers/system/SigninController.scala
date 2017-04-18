@@ -39,7 +39,8 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.admin.SurveyUserAlias
 import scala.concurrent.Future
 
 class SigninController @Inject()(@Named("refresh") refreshEnv: Environment[Intake24ApiEnv], @Named("access") accessEnv: Environment[Intake24ApiEnv],
-                                 emailProvider: EmailProvider, surveyAliasProvider: SurveyAliasProvider, deadbolt: DeadboltActionsAdapter)
+                                 emailProvider: EmailProvider, surveyAliasProvider: SurveyAliasProvider,
+                                 urlTokenProvider: URLTokenProvider, deadbolt: DeadboltActionsAdapter)
   extends Controller with JsonUtils with DatabaseErrorHandler {
 
   def handleAuthResult(authResult: Future[LoginInfo])(implicit request: RequestHeader): Future[Result] = authResult.flatMap {
@@ -84,8 +85,11 @@ class SigninController @Inject()(@Named("refresh") refreshEnv: Environment[Intak
       handleAuthResult(authResult)
   }
 
-  def signinWithToken = Action {
-    NotFound
+  def signinWithToken(authToken: String) = Action.async {
+    implicit request =>
+      val authResult = urlTokenProvider.authenticate(authToken)
+
+      handleAuthResult(authResult)
   }
 
   def refresh = deadbolt.restrictRefresh {

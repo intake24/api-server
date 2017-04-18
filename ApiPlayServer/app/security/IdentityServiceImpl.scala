@@ -36,6 +36,7 @@ class IdentityServiceImpl @Inject()(val userAdminService: UserAdminService) exte
     val databaseResult = loginInfo.providerID match {
       case SurveyAliasProvider.ID => userAdminService.getUserByAlias(SurveyAliasUtils.fromString(loginInfo.providerKey))
       case EmailProvider.ID => userAdminService.getUserByEmail(loginInfo.providerKey)
+      case URLTokenProvider.ID => userAdminService.getUserByUrlToken(loginInfo.providerKey)
       case x => throw new RuntimeException(s"Unsupported login provider: $x")
     }
 

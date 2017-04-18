@@ -1,8 +1,6 @@
 package uk.ac.ncl.openlab.intake24.systemsql.admin
 
-import java.security.SecureRandom
 import java.sql.Connection
-import java.util.Base64
 import javax.inject.{Inject, Named}
 import javax.sql.DataSource
 
@@ -13,9 +11,6 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
 class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends UserAdminService with SqlDataService with SqlResourceLoader {
-
-  val secureRandom = new SecureRandom()
-  val base64Encoder = Base64.getUrlEncoder()
 
   private case class RolesForId(userId: Long, roles: Set[String])
 
@@ -157,7 +152,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
 
         val userUpsertParams = usersWithAliases.map {
           u =>
-            Seq[NamedParameter]('survey_id -> u.alias.surveyId, 'user_name -> u.alias.userName, 'name -> u.userInfo.name,
+            Seq[NamedParameter]('survey_id -> u.alias.surveyId, 'user_name -> u.alias.userName, 'url_auth_token -> URLAuthTokenUtils.generateToken, 'name -> u.userInfo.name,
               'email -> u.userInfo.email, 'phone -> u.userInfo.phone, 'simple_name -> u.userInfo.name.map(StringUtils.stripAccents(_).toLowerCase()))
         }
 
@@ -225,30 +220,6 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
     }
   }
 
-  private def createUrlTokensQuery(userIds: Seq[Long])(implicit connection: Connection): Either[CreateError, Seq[String]] = {
-    if (userIds.isEmpty)
-      Right(Seq())
-    else {
-
-      def generateToken = {
-        val bytes = new Array[Byte](24)
-        secureRandom.nextBytes(bytes)
-        base64Encoder.encodeToString(bytes)
-      }
-
-      val tokens = userIds.map(userId => (userId, generateToken))
-
-      val tokenParams = tokens.map {
-        case (userId, token) =>
-          Seq[NamedParameter]('user_id -> userId, 'token -> token)
-      }
-
-      BatchSql("INSERT INTO user_url_tokens VALUES({user_id},{token}) ON CONFLICT(user_id) DO UPDATE SET token=excluded.token", tokenParams.head, tokenParams.tail: _*).execute()
-
-      Right(tokens.map(_._2))
-    }
-  }
-
   override def createUser(newUser: NewUser): Either[CreateError, Long] = tryWithConnection {
     implicit conn =>
       for (userId <- createUsersQuery(Seq(newUser.userInfo)).right.map(_.head).right;
@@ -287,7 +258,6 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
     val parser = Macro.namedParser[PasswordRow]
   }
 
-
   def getUserById(userId: Long): Either[LookupError, UserInfoWithId] = tryWithConnection {
     implicit conn =>
       withTransaction {
@@ -312,14 +282,24 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       }
   }
 
+  def validateUrlToken(token: String): Either[LookupError, Unit] = tryWithConnection {
+    implicit conn =>
+      val valid = SQL("SELECT 1 FROM user_survey_aliases WHERE url_auth_token={token}").on('token -> token).executeQuery().as(SqlParser.long(1).singleOpt).isDefined
+
+      if (valid)
+        Right(())
+      else
+        Left(RecordNotFound(new RuntimeException(s"Invalid URL authentication token: $token")))
+  }
+
   def getUserByUrlToken(token: String): Either[LookupError, UserInfoWithId] = tryWithConnection {
     implicit conn =>
       withTransaction {
-        SQL("SELECT id, name, email, phone FROM users JOIN user_url_tokens ON users.id = user_url_tokens.user_id WHERE user_url_tokens.token={token}")
+        SQL("SELECT id, name, email, phone FROM users JOIN user_survey_aliases ON users.id = user_survey_aliases.user_id WHERE user_survey_aliases.url_auth_token={token}")
           .on('token -> token)
           .as(UserInfoRow.parser.singleOpt) match {
           case Some(row) => Right(buildUserRecordsFromRows(Seq(row)).head)
-          case None => Left(RecordNotFound(new RuntimeException(s"User URL token not found")))
+          case None => Left(RecordNotFound(new RuntimeException(s"User with given URL authentication token not found")))
         }
       }
   }

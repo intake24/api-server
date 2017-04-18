@@ -1,5 +1,5 @@
 WITH a AS (
-  INSERT INTO user_survey_aliases (user_id, survey_id, user_name) VALUES (nextval('user_id_seq'), {survey_id}, {user_name})
+  INSERT INTO user_survey_aliases (user_id, survey_id, user_name, url_auth_token) VALUES (nextval('user_id_seq'), {survey_id}, {user_name}, {url_auth_token})
   ON CONFLICT(survey_id, user_name) DO UPDATE SET user_id = user_survey_aliases.user_id RETURNING user_id
 )
 INSERT INTO users (id, name, email, phone, simple_name)

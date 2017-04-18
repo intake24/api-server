@@ -172,5 +172,8 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
       }
   }
 
-  def createSurveyRespondentsWithUrlToken(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))((jsonBodyParser[CreateOrUpdateSurveyUsersRequest]))
+  def createSurveyRespondentsWithUrlToken(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(jsonBodyParser[CreateOrUpdateSurveyUsersRequest]) {
+    _ =>
+      Future.successful(NotImplemented)
+  }
 }
