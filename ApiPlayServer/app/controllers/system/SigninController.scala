@@ -84,6 +84,10 @@ class SigninController @Inject()(@Named("refresh") refreshEnv: Environment[Intak
       handleAuthResult(authResult)
   }
 
+  def signinWithToken = Action {
+    NotFound
+  }
+
   def refresh = deadbolt.restrictRefresh {
     implicit request =>
 

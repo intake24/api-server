@@ -123,6 +123,26 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       Right(())
   }
 
+  private case class SecurePasswordForAlias(alias: SurveyUserAlias, password: SecurePassword)
+
+  private def createOrUpdatePasswordsByAlias(passwords: Seq[SecurePasswordForAlias])(implicit connection: Connection): Either[UnexpectedDatabaseError, Unit] = {
+    if (passwords.nonEmpty) {
+      val params = passwords.map {
+        case p =>
+          Seq[NamedParameter]('user_name -> p.alias.userName, 'survey_id -> p.alias.surveyId, 'password_hash -> p.password.hashBase64, 'password_salt -> p.password.saltBase64,
+            'password_hasher -> p.password.hasher)
+      }
+
+      BatchSql(
+        """INSERT INTO user_passwords(user_id, password_hash, password_salt, password_hasher)
+          |  SELECT user_id,{password_hash},{password_salt},{password_hasher} FROM user_survey_aliases WHERE user_name={user_name} AND survey_id={survey_id}
+          |  ON CONFLICT(user_id) DO UPDATE SET password_hash=excluded.password_hash,password_salt=excluded.password_salt,password_hasher=excluded.password_hasher""".stripMargin,
+        params.head, params.tail: _*).execute()
+
+      Right()
+    } else
+      Right()
+  }
 
   private lazy val createOrUpdateUserByAliasQuery = sqlFromResource("admin/users/create_or_update_user_by_alias.sql")
 
@@ -132,14 +152,13 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
 
         val userUpsertParams = usersWithAliases.map {
           u =>
-            Seq[NamedParameter]('survey_id -> u.alias.surveyId, 'user_name -> u.alias.userName,
-              'password_hash -> u.password.hashBase64, 'password_salt -> u.password.saltBase64, 'password_hasher -> u.password.hasher,
-              'name -> u.userInfo.name, 'email -> u.userInfo.email, 'phone -> u.userInfo.phone, 'simple_name -> u.userInfo.name.map(StringUtils.stripAccents(_).toLowerCase()))
+            Seq[NamedParameter]('survey_id -> u.alias.surveyId, 'user_name -> u.alias.userName, 'name -> u.userInfo.name,
+              'email -> u.userInfo.email, 'phone -> u.userInfo.phone, 'simple_name -> u.userInfo.name.map(StringUtils.stripAccents(_).toLowerCase()))
         }
 
-        if (upsertParams.nonEmpty) {
+        if (userUpsertParams.nonEmpty) {
           tryWithConstraintCheck[DependentUpdateError, Unit]("users_email_unique", e => DuplicateCode(e)) {
-            BatchSql(createOrUpdateUserByAliasQuery, upsertParams.head, upsertParams.tail: _*).execute()
+            BatchSql(createOrUpdateUserByAliasQuery, userUpsertParams.head, userUpsertParams.tail: _*).execute()
 
             for (
               _ <- updateUserRolesByAlias(usersWithAliases.foldLeft(List[RolesForAlias]()) {
@@ -147,14 +166,22 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
               }).right;
               _ <- updateCustomDataByAlias(usersWithAliases.foldLeft(List[CustomDataForAlias]()) {
                 case (acc, record) => CustomDataForAlias(record.alias.surveyId, record.alias.userName, record.userInfo.customFields) +: acc
-              }).right
+              }).right;
+              _ <- createOrUpdatePasswordsByAlias(usersWithAliases.map(u => SecurePasswordForAlias(u.alias, u.password))).right
             ) yield ()
           }
         }
         else
           Right(())
-
       }
+  }
+
+  private def createUserPassword(userId: Long, password: SecurePassword)(implicit conn: java.sql.Connection): Either[UnexpectedDatabaseError, Unit] = {
+    SQL("INSERT INTO user_passwords(user_id, password_hash, password_salt, password_hasher) VALUES({user_id},{hash},{salt},{hasher})")
+      .on('user_id -> userId, 'hash -> password.hashBase64, 'salt -> password.saltBase64, 'hasher -> password.hasher)
+      .execute()
+
+    Right(())
   }
 
   def createUser(newUser: NewUser): Either[CreateError, Long] = tryWithConnection {
@@ -163,11 +190,8 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
 
         tryWithConstraintCheck[CreateError, Long]("users_email_unique", e => DuplicateCode(e)) {
 
-          val userId = SQL("INSERT INTO users VALUES (DEFAULT, {password_hash}, {password_salt}, {password_hasher}, {name}, {email}, {phone}, {simple_name})")
-            .on('password_hash -> newUser.password.hashBase64,
-              'password_salt -> newUser.password.saltBase64,
-              'password_hasher -> newUser.password.hasher,
-              'simple_name -> newUser.userInfo.name.map(StringUtils.stripAccents(_).toLowerCase()),
+          val userId = SQL("INSERT INTO users VALUES (DEFAULT, {name}, {email}, {phone}, {simple_name})")
+            .on('simple_name -> newUser.userInfo.name.map(StringUtils.stripAccents(_).toLowerCase()),
               'name -> newUser.userInfo.name,
               'email -> newUser.userInfo.email,
               'phone -> newUser.userInfo.phone)
@@ -175,7 +199,8 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
 
           (for (
             _ <- updateUserRolesById(Seq(RolesForId(userId, newUser.userInfo.roles))).right;
-            _ <- updateCustomDataById(Seq(CustomDataForId(userId, newUser.userInfo.customFields))).right
+            _ <- updateCustomDataById(Seq(CustomDataForId(userId, newUser.userInfo.customFields))).right;
+            _ <- createUserPassword(userId, newUser.password).right
           ) yield userId).left.map(e => UnexpectedDatabaseError(e.exception))
         }
       }
