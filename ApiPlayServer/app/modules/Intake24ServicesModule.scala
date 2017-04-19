@@ -40,9 +40,9 @@ import uk.ac.ncl.openlab.intake24.services.foodindex.english.{EnglishWordOps, En
 import uk.ac.ncl.openlab.intake24.services.foodindex.portuguese.{FoodIndexImpl_pt_PT, SplitterImpl_pt_PT}
 import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, FoodIndexDataService, Splitter}
 import uk.ac.ncl.openlab.intake24.services.nutrition.{DefaultNutrientMappingServiceImpl, FoodCompositionService, NutrientMappingService}
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, SurveyAdminService, UserAdminService}
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, SigninLogService, SurveyAdminService, UserAdminService}
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.{ClientErrorService, FoodPopularityService, SurveyService, UserInfoService}
-import uk.ac.ncl.openlab.intake24.systemsql.admin.{DataExportImpl, SurveyAdminImpl, UserAdminImpl}
+import uk.ac.ncl.openlab.intake24.systemsql.admin.{DataExportImpl, SigninLogImpl, SurveyAdminImpl, UserAdminImpl}
 import uk.ac.ncl.openlab.intake24.systemsql.user.{ClientErrorServiceImpl, FoodPopularityServiceImpl, SurveyServiceImpl, UserInfoServiceImpl}
 
 
@@ -179,6 +179,8 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     bind(classOf[DemographicGroupsService]).to(classOf[DemographicGroupsServiceImpl])
 
     bind(classOf[UserInfoService]).to(classOf[UserInfoServiceImpl])
+
+    bind(classOf[SigninLogService]).to(classOf[SigninLogImpl])
 
   }
 }

@@ -815,6 +815,36 @@ object SystemDatabaseMigrations {
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         ???
       }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 30l
+      override val versionTo: Long = 31l
+      override val description: String = "Create signin_log table"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL(
+          """
+            |CREATE TABLE signin_log(
+            |  id serial NOT NULL PRIMARY KEY,
+            |  date timestamp with time zone NOT NULL DEFAULT now(),
+            |  remote_address character varying(64) NOT NULL,
+            |  provider character varying(64) NOT NULL,
+            |  provider_key character varying(512) NOT NULL,
+            |  successful boolean NOT NULL,
+            |  user_id integer,
+            |  message text
+            |)
+          """.stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
     }
   )
 }

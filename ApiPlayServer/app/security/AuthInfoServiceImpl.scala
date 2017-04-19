@@ -35,8 +35,6 @@ import scala.reflect.ClassTag
 class AuthInfoServiceImpl @Inject()(userAdminService: UserAdminService) extends AuthInfoRepository {
 
   def find[T](loginInfo: LoginInfo)(implicit tag: ClassTag[T]): Future[Option[T]] = Future {
-    Logger.debug("Retrieving " + loginInfo.toString())
-
     val databaseResult = loginInfo.providerID match {
       case SurveyAliasProvider.ID => userAdminService.getUserPasswordByAlias(SurveyAliasUtils.fromString(loginInfo.providerKey))
       case EmailProvider.ID => userAdminService.getUserPasswordByEmail(loginInfo.providerKey)
