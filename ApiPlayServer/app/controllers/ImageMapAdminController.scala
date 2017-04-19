@@ -27,10 +27,11 @@ import play.api.libs.Files.TemporaryFile
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.MultipartFormData.FilePart
 import play.api.mvc.{Controller, Result}
-import security.{DeadboltActionsAdapter, Roles}
+import security.DeadboltActionsAdapter
 import uk.ac.ncl.openlab.intake24.api.shared.{ErrorDescription, NewImageMapRequest}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
+import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
 import scala.concurrent.Future
 

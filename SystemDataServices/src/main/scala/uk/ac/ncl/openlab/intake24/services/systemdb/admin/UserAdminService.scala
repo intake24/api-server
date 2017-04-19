@@ -8,7 +8,7 @@ case class UserInfoWithId(id: Long, name: Option[String], email: Option[String],
 
 case class SecurePassword(hashBase64: String, saltBase64: String, hasher: String)
 
-case class NewUser(userInfo: UserInfo, password: SecurePassword)
+case class NewUserWithPassword(userInfo: UserInfo, password: SecurePassword)
 
 
 /**
@@ -33,7 +33,9 @@ trait UserAdminService {
     */
   def createOrUpdateUsersWithAliases(users: Seq[NewUserWithAlias]): Either[DependentUpdateError, Unit]
 
-  def createUser(newUser: NewUser): Either[CreateError, Long]
+  def createUsers(users: Seq[UserInfo]): Either[CreateError, Seq[Long]]
+
+  def createUserWithPassword(newUser: NewUserWithPassword): Either[CreateError, Long]
 
   def updateUser(userId: Long, newRecord: UserInfo): Either[UpdateError, Unit]
 
@@ -66,7 +68,7 @@ trait UserAdminService {
 
   def listUsersByRole(role: String, offset: Int, limit: Int): Either[UnexpectedDatabaseError, Seq[UserInfoWithId]]
 
-  def getSurveyUserNames(userIds: Seq[Long], surveyId: String): Either[UnexpectedDatabaseError, Map[Long, String]]
+  def getSurveyUserAliases(userIds: Seq[Long], surveyId: String): Either[UnexpectedDatabaseError, Map[Long, String]]
 
   // Custom data support
 

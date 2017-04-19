@@ -18,19 +18,19 @@ limitations under the License.
 
 package controllers
 
-import scala.concurrent.Future
-
 import javax.inject.Inject
+
+import io.circe.generic.auto._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
 import security.DeadboltActionsAdapter
-import security.Roles
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodBrowsingAdminService
+import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
-import io.circe.generic.auto._
+import scala.concurrent.Future
 
-class FoodBrowsingAdminController @Inject() (service: FoodBrowsingAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
-    with DatabaseErrorHandler {
+class FoodBrowsingAdminController @Inject()(service: FoodBrowsingAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
+  with DatabaseErrorHandler {
 
   def getUncategorisedFoods(locale: String) = deadbolt.restrictToRoles(Roles.superuser) {
     Future {

@@ -24,11 +24,12 @@ import javax.inject.Inject
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
-import security.{DeadboltActionsAdapter, Roles}
+import security.DeadboltActionsAdapter
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
 import io.circe.generic.auto._
 import parsers.JsonUtils
+import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
 import scala.concurrent.Future
 

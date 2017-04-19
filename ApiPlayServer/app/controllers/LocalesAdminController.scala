@@ -18,14 +18,15 @@ limitations under the License.
 
 package controllers
 
-import be.objectify.deadbolt.scala.DeadboltActions
 import javax.inject.Inject
+
+import io.circe.generic.auto._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
 import security.DeadboltActionsAdapter
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.LocalesAdminService
-import io.circe.generic.auto._
-import security.Roles
+import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
+
 import scala.concurrent.Future
 
 class LocalesAdminController @Inject() (service: LocalesAdminService, deadbolt: DeadboltActionsAdapter) extends Controller with DatabaseErrorHandler {

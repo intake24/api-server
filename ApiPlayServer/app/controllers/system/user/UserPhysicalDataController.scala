@@ -9,18 +9,18 @@ import play.api.mvc.{Controller}
 import security.{DeadboltActionsAdapter}
 import io.circe.generic.auto._
 import models.Intake24Subject
-import uk.ac.ncl.openlab.intake24.services.systemdb.user.{UserInfoIn, UserInfoService}
+import uk.ac.ncl.openlab.intake24.services.systemdb.user.{UserPhysicalDataIn, UserPhysicalDataService}
 
 import scala.concurrent.Future
 
 /**
   * Created by Tim Osadchiy on 09/04/2017.
   */
-class UserInfoController @Inject()(service: UserInfoService,
-                                   deadbolt: DeadboltActionsAdapter)
+class UserPhysicalDataController @Inject()(service: UserPhysicalDataService,
+                                           deadbolt: DeadboltActionsAdapter)
   extends Controller with DatabaseErrorHandler with JsonUtils {
 
-  def getMyInfo() = deadbolt.restrictToAuthenticated {
+  def getMyPhysicalData() = deadbolt.restrictToAuthenticated {
     request =>
       Future {
         val userId = request.subject.get.asInstanceOf[Intake24Subject].userId
@@ -28,7 +28,7 @@ class UserInfoController @Inject()(service: UserInfoService,
       }
   }
 
-  def updateMyInfo() = deadbolt.restrictToAuthenticated(jsonBodyParser[UserInfoIn]) {
+  def updateMyPhysicalData() = deadbolt.restrictToAuthenticated(jsonBodyParser[UserPhysicalDataIn]) {
     request =>
       Future {
         val userId = request.subject.get.asInstanceOf[Intake24Subject].userId

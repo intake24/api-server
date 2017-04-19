@@ -6,6 +6,7 @@ import javax.sql.DataSource
 
 import anorm._
 import org.apache.commons.lang3.StringUtils
+import org.postgresql.util.PSQLException
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
@@ -176,33 +177,32 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       }
   }
 
-  private def createUsersQuery(newUsers: Seq[UserInfo])(implicit connection: Connection): Either[CreateError, Seq[Long]] = {
+  def createUsersQuery(newUsers: Seq[UserInfo])(implicit connection: Connection): Either[CreateError, Seq[Long]] = {
     if (newUsers.isEmpty)
       Right(Seq())
-    else
-      withTransaction {
-        val userParams = newUsers.map {
-          newUser =>
-            Seq[NamedParameter]('simple_name -> newUser.name.map(StringUtils.stripAccents(_).toLowerCase()),
-              'name -> newUser.name,
-              'email -> newUser.email,
-              'phone -> newUser.phone)
-        }
-
-        tryWithConstraintCheck[CreateError, Seq[Long]]("users_email_unique", e => DuplicateCode(e)) {
-
-          val batchSql = BatchSql("INSERT INTO users VALUES (DEFAULT, {name}, {email}, {phone}, {simple_name})", userParams.head, userParams.tail: _*)
-
-          val userIds = AnormUtil.batchKeys(batchSql)
-
-          val userInfoWithId = newUsers.zip(userIds)
-
-          (for (
-            _ <- updateUserRolesById(userInfoWithId.map { case (userInfo, userId) => RolesForId(userId, userInfo.roles) }).right;
-            _ <- updateCustomDataById(userInfoWithId.map { case (userInfo, userId) => CustomDataForId(userId, userInfo.customFields) }).right
-          ) yield userIds).left.map(e => UnexpectedDatabaseError(e.exception))
-        }
+    else {
+      val userParams = newUsers.map {
+        newUser =>
+          Seq[NamedParameter]('simple_name -> newUser.name.map(StringUtils.stripAccents(_).toLowerCase()),
+            'name -> newUser.name,
+            'email -> newUser.email,
+            'phone -> newUser.phone)
       }
+
+      tryWithConstraintCheck[CreateError, Seq[Long]]("users_email_unique", e => DuplicateCode(e)) {
+
+        val batchSql = BatchSql("INSERT INTO users VALUES (DEFAULT, {name}, {email}, {phone}, {simple_name})", userParams.head, userParams.tail: _*)
+
+        val userIds = AnormUtil.batchKeys(batchSql)
+
+        val userInfoWithId = newUsers.zip(userIds)
+
+        (for (
+          _ <- updateUserRolesById(userInfoWithId.map { case (userInfo, userId) => RolesForId(userId, userInfo.roles) }).right;
+          _ <- updateCustomDataById(userInfoWithId.map { case (userInfo, userId) => CustomDataForId(userId, userInfo.customFields) }).right
+        ) yield userIds).left.map(e => UnexpectedDatabaseError(e.exception))
+      }
+    }
   }
 
   private def createPasswordsQuery(passwords: Seq[SecurePasswordForId])(implicit connection: Connection): Either[CreateError, Unit] = {
@@ -220,11 +220,16 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
     }
   }
 
-  override def createUser(newUser: NewUser): Either[CreateError, Long] = tryWithConnection {
+  def createUserWithPassword(newUser: NewUserWithPassword): Either[CreateError, Long] = tryWithConnection {
     implicit conn =>
       for (userId <- createUsersQuery(Seq(newUser.userInfo)).right.map(_.head).right;
            _ <- createPasswordsQuery(Seq(SecurePasswordForId(userId, newUser.password))).right
       ) yield userId
+  }
+
+  def createUsers(newUsers: Seq[UserInfo]): Either[CreateError, Seq[Long]] = tryWithConnection {
+    implicit conn =>
+      createUsersQuery(newUsers)
   }
 
   def updateUser(userId: Long, newRecord: UserInfo): Either[UpdateError, Unit] = tryWithConnection {
@@ -403,7 +408,33 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       }
   }
 
-  def getSurveyUserNames(userIds: Seq[Long], surveyId: String): Either[UnexpectedDatabaseError, Map[Long, String]] = tryWithConnection {
+  def createSurveyUserAliasesQuery(surveyId: String, surveyUserNames: Map[Long, String])(implicit connection: java.sql.Connection): Either[DependentCreateError, Map[Long, String]] = {
+    if (surveyUserNames.isEmpty)
+      Right(Map())
+    else {
+      val errors = Map[String, PSQLException => DependentCreateError](
+        "user_aliases_pkey" -> (e => DuplicateCode(e)),
+        "user_aliases_user_id_fkey" -> (e => ParentRecordNotFound(e)),
+        "user_aliases_survey_id_fkey" -> (e => ParentRecordNotFound(e))
+      )
+
+      val authTokens = surveyUserNames.map {
+        case (userId, _) => (userId, URLAuthTokenUtils.generateToken)
+      }
+
+      val params = surveyUserNames.toSeq.map {
+        case (userId, userName) =>
+          Seq[NamedParameter]('user_id -> userId, 'survey_id -> surveyId, 'user_name -> userName, 'auth_token -> authTokens(userId))
+      }
+
+      tryWithConstraintsCheck[DependentCreateError, Map[Long, String]](errors) {
+        BatchSql("INSERT INTO user_survey_aliases (user_id, survey_id, user_name, url_auth_token) VALUES ({user_id},{survey_id},{user_name},{auth_token})", params.head, params.tail: _*).execute()
+        Right(authTokens)
+      }
+    }
+  }
+
+  def getSurveyUserAliases(userIds: Seq[Long], surveyId: String): Either[UnexpectedDatabaseError, Map[Long, String]] = tryWithConnection {
     implicit connection =>
       if (userIds.isEmpty)
         Right(Map())

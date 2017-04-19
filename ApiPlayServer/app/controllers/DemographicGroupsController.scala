@@ -1,15 +1,16 @@
 package controllers
 
 import com.google.inject.Inject
-import play.api.http.ContentTypes
-import play.mvc.Controller
-import security.{DeadboltActionsAdapter, Roles}
-import uk.ac.ncl.openlab.intake24.services.fooddb.demographicgroups._
-
-import scala.concurrent.Future
-import play.api.libs.concurrent.Execution.Implicits._
 import io.circe.generic.auto._
 import parsers.JsonUtils
+import play.api.http.ContentTypes
+import play.api.libs.concurrent.Execution.Implicits._
+import play.mvc.Controller
+import security.DeadboltActionsAdapter
+import uk.ac.ncl.openlab.intake24.services.fooddb.demographicgroups._
+import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
+
+import scala.concurrent.Future
 
 /**
   * Created by Tim Osadchiy on 09/02/2017.

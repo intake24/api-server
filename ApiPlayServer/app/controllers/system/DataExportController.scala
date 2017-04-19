@@ -26,12 +26,13 @@ import controllers.DatabaseErrorHandler
 import parsers.{JsonUtils, SurveyCSVExporter}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller}
-import security.{DeadboltActionsAdapter, Roles}
+import security.DeadboltActionsAdapter
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, SurveyAdminService}
 import io.circe.generic.auto._
 import models.Intake24Subject
+import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
 import scala.concurrent.Future
 

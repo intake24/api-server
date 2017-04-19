@@ -1,14 +1,14 @@
 package controllers
 
-import be.objectify.deadbolt.scala.DeadboltActions
 import javax.inject.Inject
+
+import io.circe.generic.auto._
 import modules.ProblemCheckerService
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
 import security.DeadboltActionsAdapter
-import uk.ac.ncl.openlab.intake24.services.util.Timing
-import io.circe.generic.auto._
-import security.Roles
+import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
+
 import scala.concurrent.Future
 
 class ProblemCheckerController @Inject() (service: ProblemCheckerService, deadbolt: DeadboltActionsAdapter) extends Controller with DatabaseErrorHandler {

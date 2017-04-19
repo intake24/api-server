@@ -23,20 +23,21 @@ import javax.inject.Inject
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import controllers.DatabaseErrorHandler
+import io.circe.generic.auto._
+import models.Intake24Subject
 import parsers.JsonUtils
-import play.api.{Configuration, Logger}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.mailer.{Email, MailerClient}
 import play.api.mvc._
+import play.api.{Configuration, Logger}
 import play.cache.CacheApi
 import security._
 import sms.SMSService
+import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.UserAdminService
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import io.circe.generic.auto._
-import models.Intake24Subject
 
 
 case class CallbackRequest(name: String, phone: String)

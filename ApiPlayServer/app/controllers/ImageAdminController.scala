@@ -11,8 +11,9 @@ import parsers.JsonUtils
 import play.api.http.ContentTypes
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{AnyContent, Controller}
-import security.{DeadboltActionsAdapter, Roles}
+import security.DeadboltActionsAdapter
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
+import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
 import scala.concurrent.Future
 

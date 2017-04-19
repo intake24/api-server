@@ -18,15 +18,16 @@ limitations under the License.
 
 package controllers
 
-import scala.concurrent.Future
-
 import javax.inject.Inject
+
+import io.circe.generic.auto._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
 import security.DeadboltActionsAdapter
-import security.Roles
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.DrinkwareAdminService
-import io.circe.generic.auto._
+import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
+
+import scala.concurrent.Future
 
 class DrinkwareAdminController @Inject() (service: DrinkwareAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
     with DatabaseErrorHandler {

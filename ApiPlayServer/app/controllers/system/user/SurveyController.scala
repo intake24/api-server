@@ -28,9 +28,10 @@ import parsers.JsonUtils
 import play.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{Action, BodyParsers, Controller}
-import security.{DeadboltActionsAdapter, Roles}
+import security.DeadboltActionsAdapter
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService
+import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.UserAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.SurveyService
 import uk.ac.ncl.openlab.intake24.surveydata.SurveySubmission
@@ -64,7 +65,7 @@ class SurveyController @Inject()(service: SurveyService,
         val userId = request.subject.get.asInstanceOf[Intake24Subject].userId
 
         val result = for (
-          userNameOpt <- userService.getSurveyUserNames(Seq(userId), surveyId).right.map(_.get(userId)).right;
+          userNameOpt <- userService.getSurveyUserAliases(Seq(userId), surveyId).right.map(_.get(userId)).right;
           followUpUrlOpt <- service.getSurveyFollowUpURL(surveyId).right
         ) yield {
 

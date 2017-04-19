@@ -28,7 +28,7 @@ trait DatabaseErrorHandler extends Results with JsonUtils {
   }
 
   def translateDatabaseError(error: AnyError): Result = error match {
-    case DuplicateCode(_) => BadRequest(toJsonString(ErrorDescription("DuplicateCode", "Object with this code or id already exists, duplicate codes are not allowed"))).as(ContentTypes.JSON)
+    case DuplicateCode(e) => BadRequest(toJsonString(ErrorDescription("DuplicateCode", e.getMessage))).as(ContentTypes.JSON)
     case VersionConflict(_) => Conflict(toJsonString(ErrorDescription("VersionConflict", "Object has been concurrently edited by someone else, try again using the new base version"))).as(ContentTypes.JSON)
     case RecordNotFound(e) => NotFound(toJsonString(ErrorDescription("RecordNotFound", "Object does not exist: " + e.getMessage))).as(ContentTypes.JSON)
     case StillReferenced(_) => BadRequest(toJsonString(ErrorDescription("StillReferenced", "Object cannot be deleted because it is still referenced by other objects, delete them first"))).as(ContentTypes.JSON)

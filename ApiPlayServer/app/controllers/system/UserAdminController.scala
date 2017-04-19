@@ -24,19 +24,22 @@ import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
 import parsers.{JsonUtils, UserRecordsCSVParser}
-import play.api.Logger
 import play.api.http.ContentTypes
 import play.api.libs.Files
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller, MultipartFormData, Result}
-import security.{DeadboltActionsAdapter, Roles}
+import security.DeadboltActionsAdapter
 import uk.ac.ncl.openlab.intake24.api.shared._
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.SurveyUser
+import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{SurveyUser, _}
+import uk.ac.ncl.openlab.intake24.services.systemdb.user.UserPhysicalDataService
 
 import scala.concurrent.Future
 
-class UserAdminController @Inject()(service: UserAdminService, passwordHasherRegistry: PasswordHasherRegistry, deadbolt: DeadboltActionsAdapter) extends Controller
+class UserAdminController @Inject()(service: UserAdminService,
+                                    UsersSupportService: UserPhysicalDataService,
+                                    usersSupportService: UsersSupportService,
+                                    passwordHasherRegistry: PasswordHasherRegistry, deadbolt: DeadboltActionsAdapter) extends Controller
   with DatabaseErrorHandler with JsonUtils {
 
   private def doCreateOrUpdate(surveyId: String, roles: Set[String], userRecords: Seq[SurveyUser]): Result = {
@@ -80,7 +83,7 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
       Future {
         val pwInfo = passwordHasherRegistry.current.hash(request.body.password)
 
-        translateDatabaseResult(service.createUser(NewUser(request.body.userInfo, SecurePassword(pwInfo.password, pwInfo.salt.get, pwInfo.hasher))))
+        translateDatabaseResult(service.createUserWithPassword(NewUserWithPassword(request.body.userInfo, SecurePassword(pwInfo.password, pwInfo.salt.get, pwInfo.hasher))))
       }
   }
 
@@ -140,7 +143,7 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
       Future {
         val result =
           for (users <- service.listUsersByRole(Roles.surveyRespondent(surveyId), offset, limit).right;
-               surveyUserNames <- service.getSurveyUserNames(users.map(_.id), surveyId).right)
+               surveyUserNames <- service.getSurveyUserAliases(users.map(_.id), surveyId).right)
             yield
               users.filter(u => surveyUserNames.contains(u.id)).map {
                 user =>
@@ -172,8 +175,10 @@ class UserAdminController @Inject()(service: UserAdminService, passwordHasherReg
       }
   }
 
-  def createSurveyRespondentsWithUrlToken(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(jsonBodyParser[CreateOrUpdateSurveyUsersRequest]) {
-    _ =>
-      Future.successful(NotImplemented)
+  def createRespondentsWithPhysicalData(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(jsonBodyParser[CreateRespondentsWithPhysicalDataRequest]) {
+    request =>
+      Future {
+        translateDatabaseResult(usersSupportService.createRespondentsWithPhysicalData(surveyId, request.body.users))
+      }
   }
 }
