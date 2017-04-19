@@ -24,17 +24,22 @@ import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
 import models.Intake24Subject
 import parsers.JsonUtils
+import play.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{Action, BodyParsers, Controller}
 import security.{DeadboltActionsAdapter, Roles}
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.UserAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.SurveyService
 import uk.ac.ncl.openlab.intake24.surveydata.SurveySubmission
 
 import scala.concurrent.Future
 
+case class SurveyFollowUp(url: Option[String])
+
 class SurveyController @Inject()(service: SurveyService,
+                                 userService: UserAdminService,
                                  nutrientMappingService: NutrientMappingService,
                                  deadbolt: DeadboltActionsAdapter) extends Controller
   with DatabaseErrorHandler with JsonUtils {
@@ -47,6 +52,28 @@ class SurveyController @Inject()(service: SurveyService,
     _ =>
       Future {
         translateDatabaseResult(service.getSurveyParameters(surveyId))
+      }
+  }
+
+  def getSurveyFollowUp(surveyId: String) = deadbolt.restrictToRoles(Roles.surveyRespondent(surveyId))(BodyParsers.parse.empty) {
+    request =>
+      Future {
+        val userId = request.subject.get.asInstanceOf[Intake24Subject].userId
+
+        val result = for (
+          userNameOpt <- userService.getSurveyUserNames(Seq(userId), surveyId).right.map(_.get(userId)).right;
+          followUpUrlOpt <- service.getSurveyFollowUpURL(surveyId).right
+        ) yield {
+
+          if (userNameOpt.isEmpty)
+            Logger.warn(s"Survey user has no survey alias (for external follow up URL): $userId")
+
+          for (userName <- userNameOpt;
+               followUpUrl <- followUpUrlOpt)
+            yield followUpUrl.replace("[intake24_username_value]", userName)
+        }
+
+        translateDatabaseResult(result.right.map(SurveyFollowUp(_)))
       }
   }
 
