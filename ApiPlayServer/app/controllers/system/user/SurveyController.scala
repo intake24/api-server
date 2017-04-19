@@ -20,6 +20,7 @@ package controllers.system.user
 
 import javax.inject.Inject
 
+import akka.actor.ActorSystem
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
 import models.Intake24Subject
@@ -35,12 +36,14 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.user.SurveyService
 import uk.ac.ncl.openlab.intake24.surveydata.SurveySubmission
 
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 case class SurveyFollowUp(url: Option[String])
 
 class SurveyController @Inject()(service: SurveyService,
                                  userService: UserAdminService,
                                  nutrientMappingService: NutrientMappingService,
+                                 actorSystem: ActorSystem,
                                  deadbolt: DeadboltActionsAdapter) extends Controller
   with DatabaseErrorHandler with JsonUtils {
 
@@ -87,10 +90,20 @@ class SurveyController @Inject()(service: SurveyService,
             else {
               val userId = request.subject.get.asInstanceOf[Intake24Subject].userId
 
-              val result = for (nutrientMappedSubmission <- nutrientMappingService.mapSurveySubmission(request.body, params.localeId).right;
-                                _ <- service.createSubmission(userId, surveyId, nutrientMappedSubmission).right)
-                yield ()
-              translateDatabaseResult(result)
+              // No reason to keep the user waiting for the database result because reporting nutrient mapping or
+              // database errors to the user is not helpful at this point.
+              // Schedule submission asynchronously to release the request immediately and log errors server-side instead.
+              actorSystem.scheduler.scheduleOnce(0 seconds) {
+                val result = for (nutrientMappedSubmission <- nutrientMappingService.mapSurveySubmission(request.body, params.localeId).right;
+                                  _ <- service.createSubmission(userId, surveyId, nutrientMappedSubmission).right) yield ()
+
+                result match {
+                  case Right(()) => ()
+                  case Left(e) => Logger.error("Failed to process survey submission", e.exception)
+                }
+              }
+
+              Ok
             }
           case Left(error) => translateDatabaseError(error)
         }
