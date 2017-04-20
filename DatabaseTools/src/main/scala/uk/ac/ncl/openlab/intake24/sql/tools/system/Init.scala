@@ -21,7 +21,7 @@ package uk.ac.ncl.openlab.intake24.sql.tools.system
 import anorm._
 import org.rogach.scallop._
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{NewUserWithPassword, SecurePassword, UserInfo}
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{NewUserWithPassword, SecurePassword, NewUserProfile}
 import uk.ac.ncl.openlab.intake24.sql.SqlFileUtil
 import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConfiguration, DatabaseConnection, DatabaseOptions, WarningMessage}
 import uk.ac.ncl.openlab.intake24.systemsql.admin.UserAdminImpl
@@ -86,7 +86,7 @@ object Init extends DatabaseConnection with SqlFileUtil {
 
       userAdminService.createUserWithPassword(
         NewUserWithPassword(
-          UserInfo(Some("Intake24 Super User"), Some("support@intake24.co.uk"), None, true, true, Set("superuser", "admin"), Map()),
+          NewUserProfile(Some("Intake24 Super User"), Some("support@intake24.co.uk"), None, true, true, Set("superuser", "admin"), Map()),
           SecurePassword("7klnEraBssvRBTnFR5FbIJ/5Qjqgf8w3/7Rs4gBoFBY=", "hUkIQLASWraVS4JDPOr8tA==", "shiro-sha256"))) match {
         case Left(e) => e.exception.printStackTrace()
         case _ => Right(())

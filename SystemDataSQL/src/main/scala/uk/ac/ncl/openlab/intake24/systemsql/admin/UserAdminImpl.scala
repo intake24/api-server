@@ -15,6 +15,8 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
 
   private case class RolesForId(userId: Long, roles: Set[String])
 
+  private case class SecurePasswordForId(userId: Long, password: SecurePassword)
+
   private def updateUserRolesById(roles: Seq[RolesForId])(implicit connection: Connection): Either[RecordNotFound, Unit] = {
     if (roles.nonEmpty) {
 
@@ -177,7 +179,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       }
   }
 
-  def createUsersQuery(newUsers: Seq[UserInfo])(implicit connection: Connection): Either[CreateError, Seq[Long]] = {
+  def createUsersQuery(newUsers: Seq[NewUserProfile])(implicit connection: Connection): Either[CreateError, Seq[Long]] = {
     if (newUsers.isEmpty)
       Right(Seq())
     else {
@@ -186,14 +188,12 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
           Seq[NamedParameter]('simple_name -> newUser.name.map(StringUtils.stripAccents(_).toLowerCase()),
             'name -> newUser.name,
             'email -> newUser.email,
-            'phone -> newUser.phone,
-            'email_n -> newUser.emailNotifications,
-            'sms_n -> newUser.smsNotifications)
+            'phone -> newUser.phone)
       }
 
       tryWithConstraintCheck[CreateError, Seq[Long]]("users_email_unique", e => DuplicateCode(e)) {
 
-        val batchSql = BatchSql("INSERT INTO users VALUES (DEFAULT, {name}, {email}, {phone}, {simple_name}, {email_n}, {sms_n})", userParams.head, userParams.tail: _*)
+        val batchSql = BatchSql("INSERT INTO users(name,email,phone,simple_name) VALUES ({name},{email},{phone},{simple_name})", userParams.head, userParams.tail: _*)
 
         val userIds = AnormUtil.batchKeys(batchSql)
 
@@ -229,23 +229,23 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       ) yield userId
   }
 
-  def createUsers(newUsers: Seq[UserInfo]): Either[CreateError, Seq[Long]] = tryWithConnection {
+  def createUsers(newUsers: Seq[NewUserProfile]): Either[CreateError, Seq[Long]] = tryWithConnection {
     implicit conn =>
       createUsersQuery(newUsers)
   }
 
-  def updateUser(userId: Long, newRecord: UserInfo): Either[UpdateError, Unit] = tryWithConnection {
+  def updateUser(userId: Long, update: UserProfileUpdate): Either[UpdateError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
         tryWithConstraintCheck[UpdateError, Unit]("users_email_unique", e => DuplicateCode(e)) {
           val count = SQL("UPDATE users SET name={name},email={email},phone={phone},simple_name={simple_name},email_notifications={email_n},sms_notifications={sms_n} WHERE id={user_id}")
-            .on('user_id -> userId, 'name -> newRecord.name, 'email -> newRecord.email, 'phone -> newRecord.phone,
-              'email_n -> newRecord.emailNotifications, 'sms_n -> newRecord.smsNotifications,
-              'simple_name -> newRecord.name.map(StringUtils.stripAccents(_).toLowerCase())).executeUpdate()
+            .on('user_id -> userId, 'name -> update.name, 'email -> update.email, 'phone -> update.phone,
+              'email_n -> update.emailNotifications, 'sms_n -> update.smsNotifications,
+              'simple_name -> update.name.map(StringUtils.stripAccents(_).toLowerCase())).executeUpdate()
 
           if (count == 1) {
-            for (_ <- updateUserRolesById(Seq(RolesForId(userId, newRecord.roles))).right;
-                 _ <- updateCustomDataById(Seq(CustomDataForId(userId, newRecord.customFields))).right)
+            for (_ <- updateUserRolesById(Seq(RolesForId(userId, update.roles))).right;
+                 _ <- updateCustomDataById(Seq(CustomDataForId(userId, update.customFields))).right)
               yield ()
           }
           else
@@ -256,7 +256,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
 
   private case class UserInfoRow(id: Long, name: Option[String], email: Option[String], phone: Option[String], email_notifications: Boolean, sms_notifications: Boolean)
 
-  private object UserInfoRow {
+  private object UserProfileRow {
     val parser = Macro.namedParser[UserInfoRow]
   }
 
@@ -266,24 +266,24 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
     val parser = Macro.namedParser[PasswordRow]
   }
 
-  def getUserById(userId: Long): Either[LookupError, UserInfoWithId] = tryWithConnection {
+  def getUserById(userId: Long): Either[LookupError, UserProfile] = tryWithConnection {
     implicit conn =>
       withTransaction {
         SQL("SELECT id, name, email, phone, email_notifications, sms_notifications FROM users WHERE id={user_id}")
           .on('user_id -> userId)
-          .as(UserInfoRow.parser.singleOpt) match {
+          .as(UserProfileRow.parser.singleOpt) match {
           case Some(row) => Right(buildUserRecordsFromRows(Seq(row)).head)
           case None => Left(RecordNotFound(new RuntimeException(s"User $userId does not exist")))
         }
       }
   }
 
-  def getUserByAlias(alias: SurveyUserAlias): Either[LookupError, UserInfoWithId] = tryWithConnection {
+  def getUserByAlias(alias: SurveyUserAlias): Either[LookupError, UserProfile] = tryWithConnection {
     implicit conn =>
       withTransaction {
         SQL("SELECT id, name, email, phone, email_notifications, sms_notifications FROM users JOIN user_survey_aliases ON users.id = user_survey_aliases.user_id WHERE survey_id={survey_id} AND user_name={user_name}")
           .on('survey_id -> alias.surveyId, 'user_name -> alias.userName)
-          .as(UserInfoRow.parser.singleOpt) match {
+          .as(UserProfileRow.parser.singleOpt) match {
           case Some(row) => Right(buildUserRecordsFromRows(Seq(row)).head)
           case None => Left(RecordNotFound(new RuntimeException(s"User alias ${alias.surveyId}/${alias.userName} does not exist")))
         }
@@ -300,24 +300,24 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
         Left(RecordNotFound(new RuntimeException(s"Invalid URL authentication token: $token")))
   }
 
-  def getUserByUrlToken(token: String): Either[LookupError, UserInfoWithId] = tryWithConnection {
+  def getUserByUrlToken(token: String): Either[LookupError, UserProfile] = tryWithConnection {
     implicit conn =>
       withTransaction {
         SQL("SELECT id, name, email, phone, email_notifications, sms_notifications FROM users JOIN user_survey_aliases ON users.id = user_survey_aliases.user_id WHERE user_survey_aliases.url_auth_token={token}")
           .on('token -> token)
-          .as(UserInfoRow.parser.singleOpt) match {
+          .as(UserProfileRow.parser.singleOpt) match {
           case Some(row) => Right(buildUserRecordsFromRows(Seq(row)).head)
           case None => Left(RecordNotFound(new RuntimeException(s"User with given URL authentication token not found")))
         }
       }
   }
 
-  def getUserByEmail(email: String): Either[LookupError, UserInfoWithId] = tryWithConnection {
+  def getUserByEmail(email: String): Either[LookupError, UserProfile] = tryWithConnection {
     implicit conn =>
       withTransaction {
         SQL("SELECT id, name, email, phone, email_notifications, sms_notifications FROM users WHERE email={email}")
           .on('email -> email)
-          .as(UserInfoRow.parser.singleOpt) match {
+          .as(UserProfileRow.parser.singleOpt) match {
           case Some(row) => Right(buildUserRecordsFromRows(Seq(row)).head)
           case None => Left(RecordNotFound(new RuntimeException(s"User with e-mail address <$email> does not exist")))
         }
@@ -449,32 +449,32 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
         })
   }
 
-  private def buildUserRecordsFromRows(rows: Seq[UserInfoRow])(implicit connection: java.sql.Connection): Seq[UserInfoWithId] = {
+  private def buildUserRecordsFromRows(rows: Seq[UserInfoRow])(implicit connection: java.sql.Connection): Seq[UserProfile] = {
     val roles = getUserRoles(rows.map(_.id)).withDefaultValue(Set[String]())
     val customData = getUserCustomData(rows.map(_.id)).withDefaultValue(Map[String, String]())
 
     rows.map {
       row =>
-        UserInfoWithId(row.id, row.name, row.email, row.phone, row.email_notifications, row.sms_notifications, roles(row.id), customData(row.id))
+        UserProfile(row.id, row.name, row.email, row.phone, row.email_notifications, row.sms_notifications, roles(row.id), customData(row.id))
     }
   }
 
-  def findUsers(query: String, limit: Int): Either[UnexpectedDatabaseError, Seq[UserInfoWithId]] = tryWithConnection {
+  def findUsers(query: String, limit: Int): Either[UnexpectedDatabaseError, Seq[UserProfile]] = tryWithConnection {
     implicit conn =>
       withTransaction {
         val rows = SQL("SELECT id,name,email,phone,email_notifications,sms_notifications FROM users WHERE (simple_name LIKE {name_query} OR email LIKE {query}) ORDER BY id LIMIT {limit}")
           .on('name_query -> ("%" + AnormUtil.escapeLike(StringUtils.stripAccents(query).toLowerCase()) + "%"), 'query -> ("%" + AnormUtil.escapeLike(query) + "%"), 'limit -> limit)
-          .as(UserInfoRow.parser.*)
+          .as(UserProfileRow.parser.*)
         Right(buildUserRecordsFromRows(rows))
       }
   }
 
-  def listUsersByRole(role: String, offset: Int, limit: Int): Either[UnexpectedDatabaseError, Seq[UserInfoWithId]] = tryWithConnection {
+  def listUsersByRole(role: String, offset: Int, limit: Int): Either[UnexpectedDatabaseError, Seq[UserProfile]] = tryWithConnection {
     implicit conn =>
       withTransaction {
         val rows = SQL("SELECT id,name,email,phone,email_notifications,sms_notifications FROM users JOIN user_roles ON users.id=user_roles.user_id AND role={role} OFFSET {offset} LIMIT {limit}")
           .on('role -> role, 'offset -> offset, 'limit -> limit)
-          .as(UserInfoRow.parser.*)
+          .as(UserProfileRow.parser.*)
         Right(buildUserRecordsFromRows(rows))
       }
   }

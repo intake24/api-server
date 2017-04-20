@@ -29,17 +29,21 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
 import scala.concurrent.Future
 
-class LocalesAdminController @Inject() (service: LocalesAdminService, deadbolt: DeadboltActionsAdapter) extends Controller with DatabaseErrorHandler {
-  
-  def listLocales() = deadbolt.restrictToRoles(Roles.superuser) {
-    Future {
-      translateDatabaseResult(service.listLocales())
-    }
+class LocalesAdminController @Inject()(service: LocalesAdminService, deadbolt: DeadboltActionsAdapter) extends Controller with DatabaseErrorHandler {
+
+  //FIXME: needs to be restricted to staff & admins only, but Deadbolt needs to be replaced first
+
+  def listLocales() = deadbolt.restrictToAuthenticated {
+    _ =>
+      Future {
+        translateDatabaseResult(service.listLocales())
+      }
   }
-  
-  def getLocale(id: String) = deadbolt.restrictToRoles(Roles.superuser) {
-    Future {
-      translateDatabaseResult(service.getLocale(id))
-    }
+
+  def getLocale(id: String) = deadbolt.restrictToAuthenticated {
+    _ =>
+      Future {
+        translateDatabaseResult(service.getLocale(id))
+      }
   }
 }

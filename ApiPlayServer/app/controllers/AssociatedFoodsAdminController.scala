@@ -40,7 +40,7 @@ class AssociatedFoodsAdminController @Inject()(service: AssociatedFoodsAdminServ
     }
   }
 
-  def updateAssociatedFoods(foodCode: String, locale: String) = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[Seq[AssociatedFood]]) {
+  def updateAssociatedFoods(foodCode: String, locale: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.foodDatabaseMaintainer(locale))(jsonBodyParser[Seq[AssociatedFood]]) {
     request =>
       Future {
         translateDatabaseResult(service.updateAssociatedFoods(foodCode, request.body, locale))

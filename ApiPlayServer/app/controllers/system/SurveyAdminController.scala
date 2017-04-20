@@ -22,7 +22,9 @@ import javax.inject.Inject
 
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
+import models.Intake24Subject
 import parsers.JsonUtils
+import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller}
 import security.DeadboltActionsAdapter
@@ -61,14 +63,26 @@ class SurveyAdminController @Inject()(service: SurveyAdminService, deadbolt: Dea
       }
   }
 
-  def list() = deadbolt.restrictToRoles(Roles.superuser) {
-    _ =>
+  // FIXME: Restrict to staff & admins only after Deadbolt replacement
+
+  def list() = deadbolt.restrictToAuthenticated {
+    request =>
       Future {
-        translateDatabaseResult(service.listSurveys())
+
+        val user = request.subject.get
+
+        val filteredResult = service.listSurveys().right.map {
+          _.filter {
+            survey =>
+              user.roles.exists( r=> r.name == Roles.surveyStaff(survey.id) || r.name == Roles.superuser || r.name == Roles.surveyAdmin)
+          }
+        }
+
+        translateDatabaseResult(filteredResult)
       }
   }
 
-  def getSurvey(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser)(BodyParsers.parse.empty) {
+  def getSurvey(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
     _ =>
       Future {
         translateDatabaseResult(service.getSurvey(surveyId))

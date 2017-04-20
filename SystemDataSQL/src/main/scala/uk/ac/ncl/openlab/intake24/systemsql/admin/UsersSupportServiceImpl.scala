@@ -14,12 +14,12 @@ class UsersSupportServiceImpl @Inject()(@Named("intake24_system") val dataSource
                                         usersService: UserAdminImpl,
                                         physicalDataService: UserPhysicalDataServiceImpl) extends UsersSupportService with SqlDataService {
 
-  def createRespondentsWithPhysicalData(surveyId: String, newUsers: Seq[NewRespondentWithPhysicalData]): Either[DependentCreateError, Seq[NewRespondentInfo]] = tryWithConnection {
+  def createRespondentsWithPhysicalData(surveyId: String, newUsers: Seq[NewRespondentWithPhysicalData]): Either[DependentCreateError, Seq[NewRespondentIds]] = tryWithConnection {
     implicit conn =>
       withTransaction {
 
         val newUsersInfo = newUsers.map {
-          u => UserInfo(u.name, u.email, u.phone, true, true, Set(Roles.surveyRespondent(surveyId)), Map())
+          u => NewUserProfile(u.name, u.email, u.phone, Set(Roles.surveyRespondent(surveyId)), Map())
         }
 
         usersService.createUsersQuery(newUsersInfo).right.flatMap {
@@ -40,7 +40,7 @@ class UsersSupportServiceImpl @Inject()(@Named("intake24_system") val dataSource
                  _ <- physicalDataService.batchUpdateQuery(physicalData).right
             ) yield usersWithIds.map {
               case (newUserData, userId) =>
-                NewRespondentInfo(userId, newUserData.externalId, authTokens(userId))
+                NewRespondentIds(userId, newUserData.externalId, authTokens(userId))
             }
         }
       }

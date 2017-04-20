@@ -1,10 +1,12 @@
 # User management
 
-GET          /                        controllers.system.UserAdminController.findUsers(q: String, limit: Int)
-POST         /                        controllers.system.UserAdminController.createUser()
-PATCH        /:userId                 controllers.system.UserAdminController.patchUser(userId: Long)
-PATCH        /:userId/password        controllers.system.UserAdminController.patchUserPassword(userId: Long)
-POST         /delete                  controllers.system.UserAdminController.deleteUsers()
+GET           /                        controllers.system.UserAdminController.findUsers(q: String, limit: Int)
+POST          /                        controllers.system.UserAdminController.createUser()
+PATCH         /:userId                 controllers.system.UserAdminController.patchUser(userId: Long)
+DELETE        /:userId                 controllers.system.UserAdminController.deleteUser(userId: Long)
+PATCH         /:userId/password        controllers.system.UserAdminController.patchUserPassword(userId: Long)
 
-GET          /my-info                 controllers.system.user.UserPhysicalDataController.getMyPhysicalData()
-POST         /my-info                 controllers.system.user.UserPhysicalDataController.updateMyPhysicalData()
+POST          /delete                  controllers.system.UserAdminController.deleteUsers()
+
+GET           /my-info                 controllers.system.user.UserPhysicalDataController.getMyPhysicalData()
+POST          /my-info                 controllers.system.user.UserPhysicalDataController.updateMyPhysicalData()

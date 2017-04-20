@@ -77,7 +77,7 @@ class HelpController @Inject()(cache: CacheApi,
             users =>
               if (users.isEmpty) {
                 Logger.warn(s"Support user list is empty for survey $surveyId -- falling back to global support users")
-                userAdminService.listUsersByRole(Roles.globalsupport, 0, 100)
+                userAdminService.listUsersByRole(Roles.globalSupport, 0, 100)
               }
               else
                 Right(users)

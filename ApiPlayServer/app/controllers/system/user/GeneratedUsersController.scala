@@ -52,7 +52,7 @@ class GeneratedUsersController @Inject()(userAdminService: UserAdminService,
 
     NewUserWithAlias(
       SurveyUserAlias(surveyId, credentials.userName),
-      UserInfo(None, None, None, Set(Roles.surveyRespondent(surveyId)), Map()),
+      NewUserProfile(None, None, None, Set(Roles.surveyRespondent(surveyId)), Map()),
       SecurePassword(pwInfo.password, pwInfo.salt.get, pwInfo.hasher)
     )
   }

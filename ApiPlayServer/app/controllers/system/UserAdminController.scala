@@ -23,6 +23,7 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
+import models.{AccessSubject, Intake24Subject}
 import parsers.{JsonUtils, UserRecordsCSVParser}
 import play.api.http.ContentTypes
 import play.api.libs.Files
@@ -30,11 +31,13 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller, MultipartFormData, Result}
 import security.DeadboltActionsAdapter
 import uk.ac.ncl.openlab.intake24.api.shared._
+import uk.ac.ncl.openlab.intake24.errors.AnyError
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{SurveyUser, _}
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.UserPhysicalDataService
 
 import scala.concurrent.Future
+
 
 class UserAdminController @Inject()(service: UserAdminService,
                                     UsersSupportService: UserPhysicalDataService,
@@ -42,7 +45,7 @@ class UserAdminController @Inject()(service: UserAdminService,
                                     passwordHasherRegistry: PasswordHasherRegistry, deadbolt: DeadboltActionsAdapter) extends Controller
   with DatabaseErrorHandler with JsonUtils {
 
-  private def doCreateOrUpdate(surveyId: String, roles: Set[String], userRecords: Seq[SurveyUser]): Result = {
+  private def doCreateOrUpdate(surveyId: String, roles: Set[String], userRecords: Seq[NewRespondent]): Result = {
     val hasher = passwordHasherRegistry.current
 
     val newUserRecords = userRecords.map {
@@ -51,7 +54,7 @@ class UserAdminController @Inject()(service: UserAdminService,
 
         NewUserWithAlias(
           SurveyUserAlias(surveyId, record.userName),
-          UserInfo(record.name, record.email, record.phone, roles, record.customFields),
+          NewUserProfile(record.name, record.email, record.phone, roles, record.customFields),
           SecurePassword(passwordInfo.password, passwordInfo.salt.get, passwordInfo.hasher))
     }
 
@@ -87,19 +90,67 @@ class UserAdminController @Inject()(service: UserAdminService,
       }
   }
 
-  def patchUser(userId: Long) = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[UserInfo]) {
-    request =>
-      Future {
-        translateDatabaseResult(service.updateUser(userId, request.body))
+  private def doWithDatabaseCheck(check: Either[AnyError, Boolean])(block: => Result): Result =
+    check match {
+      case Right(true) => block
+      case Right(false) => Forbidden
+      case Left(e) => translateDatabaseError(e)
+    }
+
+  private def canPatchUser[T](subject: AccessSubject, userId: Long): Either[AnyError, Boolean] = {
+    // Forbid changing your own password for now until e-mail/SMS validation is working,
+    // but allow survey admins/staff to change it for you
+
+    if (subject.userRoles.contains(Roles.superuser))
+    // Superuser can change anyone's password
+      Right(true)
+    else
+      service.getUserById(userId).right.map {
+        userProfile =>
+          val userIsRespondent = userProfile.roles.filter(_.endsWith(Roles.respondentSuffix)).map(_.dropRight(Roles.respondentSuffix.length))
+
+          // Global survey admin can change any respondent's password
+          if (subject.userRoles.contains(Roles.surveyAdmin))
+            userIsRespondent.nonEmpty
+          else {
+            // Survey staff can change passwords for users who are respondents in their surveys
+            val subjectIsStaff = subject.userRoles.filter(_.endsWith(Roles.staffSuffix)).map(_.dropRight(Roles.staffSuffix.length))
+            subjectIsStaff.exists(surveyId => userIsRespondent.contains(surveyId))
+          }
       }
   }
 
-  def patchUserPassword(userId: Long) = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[PatchUserPasswordRequest]) {
+  def patchUser(userId: Long) = deadbolt.restrictToAuthenticated(jsonBodyParser[UserProfileUpdate]) {
     request =>
       Future {
-        val pwInfo = passwordHasherRegistry.current.hash(request.body.password)
+        val subject = request.subject.get.asInstanceOf[AccessSubject]
 
-        translateDatabaseResult(service.updateUserPassword(userId, SecurePassword(pwInfo.password, pwInfo.salt.get, pwInfo.hasher)))
+        doWithDatabaseCheck(canPatchUser(subject, userId)) {
+          translateDatabaseResult(service.updateUser(userId, request.body))
+        }
+      }
+  }
+
+  def patchUserPassword(userId: Long) = deadbolt.restrictToAuthenticated(jsonBodyParser[PatchUserPasswordRequest]) {
+    request =>
+      Future {
+        val subject = request.subject.get.asInstanceOf[AccessSubject]
+
+        doWithDatabaseCheck(canPatchUser(subject, userId)) {
+          val pwInfo = passwordHasherRegistry.current.hash(request.body.password)
+          translateDatabaseResult(service.updateUserPassword(userId, SecurePassword(pwInfo.password, pwInfo.salt.get, pwInfo.hasher)))
+        }
+      }
+  }
+
+  def deleteUser(userId: Long) = deadbolt.restrictToAuthenticated(BodyParsers.parse.empty) {
+    request =>
+      Future {
+        val subject = request.subject.get.asInstanceOf[AccessSubject]
+
+        doWithDatabaseCheck(canPatchUser(subject, userId)) {
+          translateDatabaseResult(service.deleteUsersById(Seq(userId)))
+        }
       }
   }
 
@@ -147,7 +198,7 @@ class UserAdminController @Inject()(service: UserAdminService,
             yield
               users.filter(u => surveyUserNames.contains(u.id)).map {
                 user =>
-                  UserInfoWithSurveyUserName(user.id, surveyUserNames(user.id), user.name, user.email, user.phone, user.roles, user.customFields)
+                  UserInfoWithSurveyUserName(user.id, surveyUserNames(user.id), user.name, user.email, user.phone, user.emailNotifications, user.smsNotifications, user.roles, user.customFields)
               }
 
         translateDatabaseResult(result)

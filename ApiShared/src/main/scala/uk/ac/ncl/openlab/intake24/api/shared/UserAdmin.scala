@@ -6,14 +6,16 @@ case class DeleteUsersRequest(userIds: Seq[Long])
 
 case class DeleteSurveyUsersRequest(userNames: Seq[String])
 
-case class CreateUserRequest(userInfo: UserInfo, password: String)
+case class CreateUserRequest(userInfo: NewUserProfile, password: String)
 
 case class PatchUserPasswordRequest(password: String)
 
-case class CreateOrUpdateSurveyUsersRequest(users: Seq[SurveyUser])
+case class NewRespondent(userName: String, password: String, name: Option[String], email: Option[String], phone: Option[String], customFields: Map[String, String])
 
-case class UserInfoWithSurveyUserName(id: Long, userName: String, name: Option[String], email: Option[String], phone: Option[String], roles: Set[String], customFields: Map[String, String])
+case class CreateOrUpdateSurveyUsersRequest(users: Seq[NewRespondent])
+
+case class UserInfoWithSurveyUserName(id: Long, userName: String, name: Option[String], email: Option[String], phone: Option[String], emailNotifications: Boolean, smsNotifications: Boolean, roles: Set[String], customFields: Map[String, String])
 
 case class CreateRespondentsWithPhysicalDataRequest(users: Seq[NewRespondentWithPhysicalData])
 
-case class CreateRespondentsWithPhysicalDataResponse(userData: Seq[NewRespondentInfo])
+case class CreateRespondentsWithPhysicalDataResponse(userData: Seq[NewRespondentIds])
