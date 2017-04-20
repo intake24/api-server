@@ -863,6 +863,63 @@ object SystemDatabaseMigrations {
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         ???
       }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 32l
+      override val versionTo: Long = 33l
+      override val description: String = "Delete global_support_staff tables and use roles instead"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("INSERT INTO user_roles(user_id, role) SELECT user_id,'globalsupport' FROM global_support_staff").execute()
+        SQL("DROP TABLE global_support_staff").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 33l
+      override val versionTo: Long = 34l
+      override val description: String = "Delete survey_support_staff tables and use roles instead"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("INSERT INTO user_roles(user_id, role) SELECT user_id, survey_id || '/support' FROM survey_support_staff").execute()
+        SQL("DROP TABLE survey_support_staff").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 34l
+      override val versionTo: Long = 35l
+      override val description: String = "Add sms_notifications and email_notifications to user profile"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE users ADD COLUMN email_notifications boolean NOT NULL DEFAULT true").execute()
+        SQL("ALTER TABLE users ADD COLUMN sms_notifications boolean NOT NULL DEFAULT true").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
     }
   )
 }

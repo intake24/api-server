@@ -86,7 +86,7 @@ object Init extends DatabaseConnection with SqlFileUtil {
 
       userAdminService.createUserWithPassword(
         NewUserWithPassword(
-          UserInfo(Some("Intake24 Super User"), Some("support@intake24.co.uk"), None, Set("superuser", "admin"), Map()),
+          UserInfo(Some("Intake24 Super User"), Some("support@intake24.co.uk"), None, true, true, Set("superuser", "admin"), Map()),
           SecurePassword("7klnEraBssvRBTnFR5FbIJ/5Qjqgf8w3/7Rs4gBoFBY=", "hUkIQLASWraVS4JDPOr8tA==", "shiro-sha256"))) match {
         case Left(e) => e.exception.printStackTrace()
         case _ => Right(())

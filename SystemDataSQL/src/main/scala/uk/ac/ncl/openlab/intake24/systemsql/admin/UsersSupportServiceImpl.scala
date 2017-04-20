@@ -19,7 +19,7 @@ class UsersSupportServiceImpl @Inject()(@Named("intake24_system") val dataSource
       withTransaction {
 
         val newUsersInfo = newUsers.map {
-          u => UserInfo(u.name, u.email, u.phone, Set(Roles.surveyRespondent(surveyId)), Map())
+          u => UserInfo(u.name, u.email, u.phone, true, true, Set(Roles.surveyRespondent(surveyId)), Map())
         }
 
         usersService.createUsersQuery(newUsersInfo).right.flatMap {

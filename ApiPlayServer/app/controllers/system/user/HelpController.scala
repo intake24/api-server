@@ -73,11 +73,11 @@ class HelpController @Inject()(cache: CacheApi,
         else {
           cache.set(cacheKey, "t", callbackRequestRate)
 
-          val supportUsers = userAdminService.getSurveySupportUsers(surveyId).right.flatMap {
+          val supportUsers = userAdminService.listUsersByRole(Roles.surveySupport(surveyId), 0, 100).right.flatMap {
             users =>
               if (users.isEmpty) {
                 Logger.warn(s"Support user list is empty for survey $surveyId -- falling back to global support users")
-                userAdminService.getGlobalSupportUsers()
+                userAdminService.listUsersByRole(Roles.globalsupport, 0, 100)
               }
               else
                 Right(users)
@@ -85,11 +85,11 @@ class HelpController @Inject()(cache: CacheApi,
 
           val result = supportUsers.right.map {
             users =>
-              val emailAddresses = users.flatMap(_.email)
-              val phoneNumbers = users.flatMap(_.phone)
+              val emailAddresses = users.filter(_.emailNotifications).flatMap(_.email)
+              val phoneNumbers = users.filter(_.smsNotifications).flatMap(_.phone)
 
               if (emailAddresses.isEmpty)
-                Logger.error(s"No support e-mail addresses are available for survey $surveyId: support user list is empty or none of support users have an e-mail address set")
+                Logger.error(s"No support e-mail addresses are available for survey $surveyId: support user list is empty, none of support users have an e-mail address set, or all available support users have e-mail notifications disabled")
               else
                 system.scheduler.scheduleOnce(0 seconds) {
                   try {
@@ -107,7 +107,7 @@ class HelpController @Inject()(cache: CacheApi,
                 }
 
               if (phoneNumbers.isEmpty)
-                Logger.warn(s"No support phone numbers are available for survey $surveyId: support user list is empty or none of support users have a phone number set")
+                Logger.warn(s"No support phone numbers are available for survey $surveyId: support user list is empty, none of support users have a phone number set, or all available support users have SMS notifiactions disabled")
               else
                 system.scheduler.scheduleOnce(0 seconds) {
                   phoneNumbers.foreach {
