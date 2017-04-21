@@ -324,29 +324,32 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       }
   }
 
-  def deleteUsersById(userIds: Seq[Long]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
+  def deleteUsersById(userIds: Seq[Long]): Either[DeleteError, Unit] = tryWithConnection {
     implicit conn =>
 
-      SQL("DELETE FROM users WHERE id IN({user_ids})").on('user_ids -> userIds).execute()
+      tryWithConstraintCheck("survey_submissions_user_id_fkey", e => StillReferenced(new RuntimeException("User cannot be deleted because they have survey submissions", e))) {
+        SQL("DELETE FROM users WHERE id IN({user_ids})").on('user_ids -> userIds).execute()
 
-      Right(())
-  }
-
-  def deleteUsersByAlias(aliases: Seq[SurveyUserAlias]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
-    implicit conn =>
-
-
-      val params = aliases.map {
-        a =>
-          Seq[NamedParameter]('survey_id -> a.surveyId, 'user_name -> a.userName)
-      }
-
-      if (params.nonEmpty) {
-        BatchSql("DELETE FROM users WHERE id IN (SELECT user_id FROM user_survey_aliases AS a WHERE a.survey_id={survey_id} AND a.user_name={user_name})", params.head, params.tail: _*).execute()
         Right(())
       }
+  }
 
-      else Right(())
+  def deleteUsersByAlias(aliases: Seq[SurveyUserAlias]): Either[DeleteError, Unit] = tryWithConnection {
+    implicit conn =>
+
+      tryWithConstraintCheck("survey_submissions_user_id_fkey", e => StillReferenced(new RuntimeException("User cannot be deleted because they have survey submissions", e))) {
+        val params = aliases.map {
+          a =>
+            Seq[NamedParameter]('survey_id -> a.surveyId, 'user_name -> a.userName)
+        }
+
+        if (params.nonEmpty) {
+          BatchSql("DELETE FROM users WHERE id IN (SELECT user_id FROM user_survey_aliases AS a WHERE a.survey_id={survey_id} AND a.user_name={user_name})", params.head, params.tail: _*).execute()
+          Right(())
+        }
+
+        else Right(())
+      }
   }
 
   def getUserPasswordById(userId: Long): Either[LookupError, SecurePassword] = tryWithConnection {

@@ -47,7 +47,7 @@ trait UserAdminService {
 
   def deleteUsersById(userIds: Seq[Long]): Either[DeleteError, Unit]
 
-  def deleteUsersByAlias(userAliases: Seq[SurveyUserAlias]): Either[UnexpectedDatabaseError, Unit]
+  def deleteUsersByAlias(userAliases: Seq[SurveyUserAlias]): Either[DeleteError, Unit]
 
 
   def getUserPasswordById(userId: Long): Either[LookupError, SecurePassword]
