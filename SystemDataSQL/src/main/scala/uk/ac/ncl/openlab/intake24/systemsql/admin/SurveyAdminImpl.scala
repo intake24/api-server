@@ -132,6 +132,38 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
       }
   }
 
+  def staffUpdateSurvey(surveyId: String, parameters: StaffSurveyUpdate): Either[UpdateError, SurveyParametersOut] = tryWithConnection {
+    implicit conn =>
+      val sqlQuery =
+        """
+          |UPDATE surveys
+          |SET start_date={start_date},
+          |    end_date={end_date},
+          |    survey_monkey_url={survey_monkey_url},
+          |    support_email={support_email}
+          |WHERE id={survey_id}
+          |RETURNING id,
+          |          state,
+          |          start_date,
+          |          end_date,
+          |          scheme_id,
+          |          locale,
+          |          allow_gen_users,
+          |          suspension_reason,
+          |          survey_monkey_url,
+          |          support_email;
+        """.stripMargin
+
+      val row = SQL(sqlQuery)
+        .on('survey_id -> surveyId,
+          'start_date -> parameters.startDate,
+          'end_date -> parameters.endDate,
+          'survey_monkey_url -> parameters.externalFollowUpURL,
+          'support_email -> parameters.supportEmail)
+        .executeQuery().as(Macro.namedParser[SurveyParametersRow].single)
+      Right(row.toSurveyParameters)
+  }
+
   def validateSurveyId(surveyId: String): Either[CreateError, Unit] =
     if (!surveyId.matches("^[A-Za-z0-9_-]+$"))
       Left(ConstraintViolation("surveys_id_characters", new RuntimeException("Survey ID is empty or contains invalid characters")))

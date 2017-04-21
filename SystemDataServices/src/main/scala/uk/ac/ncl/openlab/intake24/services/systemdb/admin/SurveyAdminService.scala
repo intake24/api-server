@@ -36,6 +36,9 @@ case class SurveyParametersOut(id: String, schemeId: String, localeId: String, s
                                suspensionReason: Option[String], allowGeneratedUsers: Boolean,
                                externalFollowUpURL: Option[String], supportEmail: String)
 
+// Staff cannot change survey ID, scheme, locale and generated user settings
+case class StaffSurveyUpdate(startDate: ZonedDateTime, endDate: ZonedDateTime, externalFollowUpURL: Option[String], supportEmail: String)
+
 case class LocalNutrientDescription(nutrientTypeId: Int, description: String, unit: String)
 
 trait SurveyAdminService {
@@ -45,6 +48,8 @@ trait SurveyAdminService {
   def createSurvey(parameters: SurveyParametersIn): Either[CreateError, SurveyParametersOut]
 
   def updateSurvey(surveyId: String, parameters: SurveyParametersIn): Either[UpdateError, SurveyParametersOut]
+
+  def staffUpdateSurvey(surveyId: String, update: StaffSurveyUpdate): Either[UpdateError, SurveyParametersOut]
 
   def getSurvey(surveyId: String): Either[LookupError, SurveyParametersOut]
 
