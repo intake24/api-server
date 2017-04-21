@@ -920,6 +920,24 @@ object SystemDatabaseMigrations {
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         ???
       }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 35l
+      override val versionTo: Long = 36l
+      override val description: String = "Add user_agent to signin_log"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE signin_log ADD COLUMN user_agent character varying(512)").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
     }
   )
 }

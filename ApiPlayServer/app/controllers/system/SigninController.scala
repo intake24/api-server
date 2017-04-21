@@ -59,16 +59,18 @@ class SigninController @Inject()(@Named("refresh") refreshEnv: Environment[Intak
 
   def getRemoteAddress(request: RequestHeader) = request.headers.get("X-Real-IP").getOrElse(request.remoteAddress)
 
+  def getUserAgent(request: RequestHeader) = request.headers.get("User-Agent")
+
   def handleAuthResult(providerID: String, providerKey: String, authResult: Future[LoginInfo])(implicit request: RequestHeader): Future[Result] = {
 
-    def logException(e: Throwable) = logAttemptAsync(SigninAttempt(getRemoteAddress(request), providerID, providerKey, false, None, Some(e.getClass.getSimpleName + ": " + e.getMessage)))
+    def logException(e: Throwable) = logAttemptAsync(SigninAttempt(getRemoteAddress(request), getUserAgent(request), providerID, providerKey, false, None, Some(e.getClass.getSimpleName + ": " + e.getMessage)))
 
     authResult.flatMap {
       loginInfo =>
         refreshEnv.identityService.retrieve(loginInfo).flatMap {
           case Some(user) =>
 
-            logAttemptAsync(SigninAttempt(getRemoteAddress(request), providerID, providerKey, true, Some(user.userInfo.id), None))
+            logAttemptAsync(SigninAttempt(getRemoteAddress(request), getUserAgent(request), providerID, providerKey, true, Some(user.userInfo.id), None))
 
             refreshEnv.authenticatorService.create(loginInfo).flatMap {
               authenticator =>
@@ -81,7 +83,7 @@ class SigninController @Inject()(@Named("refresh") refreshEnv: Environment[Intak
                 }
             }
           case None =>
-            logAttemptAsync(SigninAttempt(getRemoteAddress(request), loginInfo.providerID, loginInfo.providerKey, false, None, Some("Authentication was successful, but identity service could not find user")))
+            logAttemptAsync(SigninAttempt(getRemoteAddress(request), getUserAgent(request), loginInfo.providerID, loginInfo.providerKey, false, None, Some("Authentication was successful, but identity service could not find user")))
             Future.successful(Unauthorized)
         }
     }.recover {
