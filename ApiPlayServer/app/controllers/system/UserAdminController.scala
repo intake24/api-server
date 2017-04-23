@@ -175,13 +175,6 @@ class UserAdminController @Inject()(service: UserAdminService,
       }
   }
 
-  def uploadSurveyStaffCSV(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.multipartFormData) {
-    request =>
-      Future {
-        uploadCSV(request.body, surveyId, Set(Roles.surveyStaff(surveyId)))
-      }
-  }
-
   /**
     * Only users that have a user name in this survey will be returned.
     *

@@ -36,7 +36,6 @@ GET           /:surveyId/my-submissions                              controllers
 
 GET           /:surveyId/users/staff                                 controllers.system.UserAdminController.listSurveyStaffUsers(surveyId: String, offset: Int, limit: Int)
 POST          /:surveyId/users/staff                                 controllers.system.UserAdminController.createOrUpdateSurveyStaff(surveyId: String)
-POST          /:surveyId/users/staff/upload-csv                      controllers.system.UserAdminController.uploadSurveyStaffCSV(surveyId: String)
 GET           /:surveyId/users/respondents                           controllers.system.UserAdminController.listSurveyRespondentUsers(surveyId: String, offset: Int, limit: Int)
 POST          /:surveyId/users/respondents                           controllers.system.UserAdminController.createOrUpdateSurveyRespondents(surveyId: String)
 POST          /:surveyId/users/respondents/upload-csv                controllers.system.UserAdminController.uploadSurveyRespondentsCSV(surveyId: String)
