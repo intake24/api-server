@@ -55,7 +55,7 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             |         id, state, start_date, end_date, scheme_id, locale,
             |         allow_gen_users, suspension_reason, survey_monkey_url, support_email
             |)
-            |VALUES ({id}, 0, DEFAULT, DEFAULT,
+            |VALUES ({id}, 0, {start_date}, {end_date},
             |        {scheme_id}, {locale}, {allow_gen_users}, '',
             |        {survey_monkey_url}, {support_email})
             |RETURNING id,
