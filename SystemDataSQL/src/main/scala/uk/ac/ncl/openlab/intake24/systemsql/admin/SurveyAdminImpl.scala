@@ -55,7 +55,7 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             |         id, state, start_date, end_date, scheme_id, locale,
             |         allow_gen_users, suspension_reason, survey_monkey_url, support_email
             |)
-            |VALUES ({id}, 0, {start_date}, {end_date},
+            |VALUES ({id}, {state}, {start_date}, {end_date},
             |        {scheme_id}, {locale}, {allow_gen_users}, '',
             |        {survey_monkey_url}, {support_email})
             |RETURNING id,
@@ -72,6 +72,7 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
 
         val row = SQL(sqlQuery)
           .on('id -> parameters.id,
+            'state -> parameters.state,
             'start_date -> parameters.startDate,
             'end_date -> parameters.endDate,
             'scheme_id -> parameters.schemeId,
@@ -97,6 +98,7 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
           """
             |UPDATE surveys
             |SET id={id},
+            |    state={state},
             |    start_date={start_date},
             |    end_date={end_date},
             |    scheme_id={scheme_id},
@@ -120,6 +122,7 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
         val row = SQL(sqlQuery)
           .on('survey_id -> surveyId,
             'id -> parameters.id,
+            'state -> parameters.state,
             'start_date -> parameters.startDate,
             'end_date -> parameters.endDate,
             'scheme_id -> parameters.schemeId,

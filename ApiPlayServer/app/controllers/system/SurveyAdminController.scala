@@ -22,13 +22,11 @@ import javax.inject.Inject
 
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
-import models.{AccessSubject, Intake24Subject}
+import models.AccessSubject
 import parsers.JsonUtils
-import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller}
 import security.DeadboltActionsAdapter
-import uk.ac.ncl.openlab.intake24.api.shared.CreateSurveyRequest
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{StaffSurveyUpdate, SurveyAdminService, SurveyParametersIn}
 
@@ -38,16 +36,14 @@ import scala.concurrent.Future
 class SurveyAdminController @Inject()(service: SurveyAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
   with DatabaseErrorHandler with JsonUtils {
 
-  def createSurvey() = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyAdmin)(jsonBodyParser[CreateSurveyRequest]) {
+  def createSurvey() = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyAdmin)(jsonBodyParser[SurveyParametersIn]) {
     request =>
       Future {
-        val body = request.body
-        translateDatabaseResult(service.createSurvey(SurveyParametersIn(body.id, body.startDate, body.endDate,
-          body.schemeId, body.localeId, body.allowGeneratedUsers, body.externalFollowUpURL, body.supportEmail)))
+        translateDatabaseResult(service.createSurvey(request.body))
       }
   }
 
-  def updateSurvey(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser[CreateSurveyRequest]) {
+  def updateSurvey(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser[SurveyParametersIn]) {
     request =>
       Future {
 
@@ -59,8 +55,7 @@ class SurveyAdminController @Inject()(service: SurveyAdminService, deadbolt: Dea
         // Survey staff is not allowed to change survey ID, scheme, locale and generated user settings
           translateDatabaseResult(service.staffUpdateSurvey(surveyId, StaffSurveyUpdate(params.startDate, params.endDate, params.externalFollowUpURL, params.supportEmail)))
         else
-          translateDatabaseResult(service.updateSurvey(surveyId, SurveyParametersIn(params.id, params.startDate, params.endDate,
-            params.schemeId, params.localeId, params.allowGeneratedUsers, params.externalFollowUpURL, params.supportEmail)))
+          translateDatabaseResult(service.updateSurvey(surveyId, params))
       }
   }
 

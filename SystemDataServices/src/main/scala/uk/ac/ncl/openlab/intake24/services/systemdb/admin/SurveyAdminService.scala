@@ -27,9 +27,10 @@ case class CustomFieldDescription(key: String, description: String)
 case class CustomDataScheme(userCustomFields: Seq[CustomFieldDescription], surveyCustomFields: Seq[CustomFieldDescription],
                             mealCustomFields: Seq[CustomFieldDescription], foodCustomFields: Seq[CustomFieldDescription])
 
-case class SurveyParametersIn(id: String, startDate: ZonedDateTime, endDate: ZonedDateTime, schemeId: String,
-                              localeId: String, allowGeneratedUsers: Boolean, externalFollowUpURL: Option[String],
-                              supportEmail: String)
+case class SurveyParametersIn(id: String, schemeId: String, localeId: String, state: Int,
+                              startDate: ZonedDateTime, endDate: ZonedDateTime,
+                              allowGeneratedUsers: Boolean,
+                              externalFollowUpURL: Option[String], supportEmail: String)
 
 case class SurveyParametersOut(id: String, schemeId: String, localeId: String, state: Int,
                                startDate: ZonedDateTime, endDate: ZonedDateTime,
