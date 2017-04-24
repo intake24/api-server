@@ -855,7 +855,7 @@ object SystemDatabaseMigrations {
 
       override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
 
-        SQL( "ALTER TABLE user_info RENAME TO user_physical_data".stripMargin).execute()
+        SQL("ALTER TABLE user_info RENAME TO user_physical_data".stripMargin).execute()
 
         Right(())
       }
@@ -938,6 +938,37 @@ object SystemDatabaseMigrations {
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         ???
       }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 36l
+      override val versionTo: Long = 37l
+      override val description: String = "Add birthdate to user_physical_data"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL(
+          """
+            |ALTER TABLE user_physical_data ADD COLUMN birthdate date;
+            |ALTER TABLE user_physical_data DROP CONSTRAINT realistic_year_of_birth;
+            |ALTER TABLE user_physical_data DROP COLUMN year_of_birth;
+          """.stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL(
+          """
+            |ALTER TABLE user_physical_data DROP COLUMN birthdate;
+            |ALTER TABLE user_physical_data ADD COLUMN year_of_birth integer;
+            |ALTER TABLE user_physical_data ADD CONSTRAINT realistic_year_of_birth CHECK (year_of_birth > 1800 AND year_of_birth < 3000);
+          """.stripMargin).execute()
+
+        Right(())
+      }
     }
+
   )
 }
