@@ -13,16 +13,17 @@ import uk.ac.ncl.openlab.intake24.surveydata.NutrientMappedSubmission
 
 class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends SurveyService with SqlDataService with SqlResourceLoader {
 
-  private case class UserSurveyParametersRow(scheme_id: String, state: Int, locale: String, started: Boolean, finished: Boolean, suspension_reason: Option[String], support_email: String)
+  private case class UserSurveyParametersRow(scheme_id: String, state: Int, locale: String, started: Boolean, finished: Boolean, suspension_reason: Option[String],
+                                             support_email: String, originating_url: Option[String])
 
   override def getPublicSurveyParameters(surveyId: String): Either[LookupError, PublicSurveyParameters] = tryWithConnection {
     implicit conn =>
-      SQL("SELECT locale, support_email FROM surveys WHERE id={survey_id}")
+      SQL("SELECT locale, support_email, originating_url FROM surveys WHERE id={survey_id}")
         .on('survey_id -> surveyId)
         .executeQuery()
-        .as((SqlParser.str("locale") ~ SqlParser.str("support_email")).singleOpt) match {
-        case Some(locale ~ email) =>
-          Right(PublicSurveyParameters(locale, email))
+        .as((SqlParser.str("locale") ~ SqlParser.str("support_email") ~ SqlParser.str("originating_url").?).singleOpt) match {
+        case Some(locale ~ email ~ url) =>
+          Right(PublicSurveyParameters(locale, email, url))
         case None =>
           Left(RecordNotFound(new RuntimeException(s"Survey $surveyId does not exist")))
       }
@@ -30,7 +31,7 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
 
   override def getSurveyParameters(surveyId: String): Either[LookupError, UserSurveyParameters] = tryWithConnection {
     implicit conn =>
-      SQL("SELECT scheme_id, state, locale, now() >= start_date AS started, now() > end_date AS finished, suspension_reason, support_email FROM surveys WHERE id={survey_id}")
+      SQL("SELECT scheme_id, state, locale, now() >= start_date AS started, now() > end_date AS finished, suspension_reason, support_email, originating_url FROM surveys WHERE id={survey_id}")
         .on('survey_id -> surveyId)
         .executeQuery()
         .as(Macro.namedParser[UserSurveyParametersRow].singleOpt) match {
@@ -180,7 +181,7 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
           }
 
           if (missingFoodsParams.nonEmpty) {
-            BatchSql("INSERT INTO survey_submission_missing_foods VALUES(DEFAULT,{meal_id},{name},{brand},{description},{portion_size},{leftovers})", missingFoodsParams.head, missingFoodsParams.tail:_*).execute()
+            BatchSql("INSERT INTO survey_submission_missing_foods VALUES(DEFAULT,{meal_id},{name},{brand},{description},{portion_size},{leftovers})", missingFoodsParams.head, missingFoodsParams.tail: _*).execute()
           }
         }
 

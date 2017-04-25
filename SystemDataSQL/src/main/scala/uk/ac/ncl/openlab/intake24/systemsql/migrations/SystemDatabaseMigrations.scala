@@ -929,7 +929,6 @@ object SystemDatabaseMigrations {
       override val description: String = "Add user_agent to signin_log"
 
       override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
-
         SQL("ALTER TABLE signin_log ADD COLUMN user_agent character varying(512)").execute()
 
         Right(())
@@ -980,17 +979,35 @@ object SystemDatabaseMigrations {
 
         SQL(
           """
-             |CREATE table survey_submission_missing_foods (
-             |  id serial NOT NULL,
-             |  meal_id integer NOT NULL,
-             |  name character varying(512) NOT NULL,
-             |  brand character varying(512) NOT NULL,
-             |  description character varying(512) NOT NULL,
-             |  portion_size character varying(512) NOT NULL,
-             |  leftovers character varying(512) NOT NULL,
-             |  CONSTRAINT survey_submission_missing_foods_fkey FOREIGN KEY(meal_id) REFERENCES survey_submission_meals(id)
-             |)
+            |CREATE table survey_submission_missing_foods (
+            |  id serial NOT NULL,
+            |  meal_id integer NOT NULL,
+            |  name character varying(512) NOT NULL,
+            |  brand character varying(512) NOT NULL,
+            |  description character varying(512) NOT NULL,
+            |  portion_size character varying(512) NOT NULL,
+            |  leftovers character varying(512) NOT NULL,
+            |  CONSTRAINT survey_submission_missing_foods_fkey FOREIGN KEY(meal_id) REFERENCES survey_submission_meals(id)
+            |)
           """.stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 38l
+      override val versionTo: Long = 39l
+      override val description: String = "Add originating_url to surveys"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("ALTER TABLE surveys ADD COLUMN originating_url character varying(512)").execute()
 
         Right(())
       }
