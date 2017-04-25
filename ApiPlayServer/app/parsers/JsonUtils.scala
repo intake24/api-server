@@ -1,6 +1,6 @@
 package parsers
 
-import java.time.ZonedDateTime
+import java.time.{LocalDate, ZonedDateTime}
 import java.time.format.DateTimeFormatter
 
 import cats.syntax.either._
@@ -27,6 +27,15 @@ trait JsonUtils {
   implicit val offsetDateTimeDecoder = Decoder.decodeString.emap {
     str =>
       Either.catchNonFatal(ZonedDateTime.parse(str)).leftMap { t => s"${t.getClass.getName}: ${t.getMessage}" }
+  }
+
+  implicit val dateEncoder = new Encoder[LocalDate] {
+    def apply(a: LocalDate): Json = Json.fromString(DateTimeFormatter.ISO_DATE.format(a))
+  }
+
+  implicit val dateDecoder = Decoder.decodeString.emap {
+    str =>
+      Either.catchNonFatal(LocalDate.parse(str)).leftMap { t => s"${t.getClass.getName}: ${t.getMessage}" }
   }
 
   implicit def optionEncoder[T](implicit enc: Encoder[T]) = new Encoder[Option[T]] {
