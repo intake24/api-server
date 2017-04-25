@@ -968,7 +968,37 @@ object SystemDatabaseMigrations {
 
         Right(())
       }
-    }
+    },
 
+    new Migration {
+
+      override val versionFrom: Long = 37l
+      override val versionTo: Long = 38l
+      override val description: String = "Create survey_submission_missing_foods"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL(
+          """
+             |CREATE table survey_submission_missing_foods (
+             |  id serial NOT NULL,
+             |  meal_id integer NOT NULL,
+             |  name character varying(512) NOT NULL,
+             |  brand character varying(512) NOT NULL,
+             |  description character varying(512) NOT NULL,
+             |  portion_size character varying(512) NOT NULL,
+             |  leftovers character varying(512) NOT NULL,
+             |  CONSTRAINT survey_submission_missing_foods_fkey FOREIGN KEY(meal_id) REFERENCES survey_submission_meals(id)
+             |)
+          """.stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    }
   )
 }

@@ -104,11 +104,11 @@ class DefaultNutrientMappingServiceImpl @Inject()(foodDataService: FoodDataServi
 
           }
 
-          NutrientMappedMeal(meal.name, meal.time, meal.customData, mappedFoods)
+          NutrientMappedMeal(meal.name, meal.time, meal.customData, mappedFoods, meal.missingFoods)
 
       }
 
-      NutrientMappedSubmission(submission.startTime, submission.endTime, mappedMeals, submission.missingFoods, submission.log, submission.customData)
+      NutrientMappedSubmission(submission.startTime, submission.endTime, mappedMeals, submission.log, submission.customData)
     }
   }
 }

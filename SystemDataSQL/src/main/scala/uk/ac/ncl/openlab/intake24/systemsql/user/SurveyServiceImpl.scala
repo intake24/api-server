@@ -167,6 +167,21 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
               BatchSql("INSERT INTO survey_submission_nutrients(id, food_id, nutrient_type_id, amount) VALUES (DEFAULT, {food_id}, {nutrient_type_id}, {value})", foodNutrientParams.head, foodNutrientParams.tail: _*).execute()
             }
           }
+
+          // Missing foods
+
+          val missingFoodsParams = meals.flatMap {
+            case (meal_id, meal) =>
+              meal.missingFoods.map {
+                case missingFood =>
+                  Seq[NamedParameter]('meal_id -> meal_id, 'name -> missingFood.name, 'brand -> missingFood.brand, 'description -> missingFood.description,
+                    'portion_size -> missingFood.portionSize, 'leftovers -> missingFood.leftovers)
+              }
+          }
+
+          if (missingFoodsParams.nonEmpty) {
+            BatchSql("INSERT INTO survey_submission_missing_foods VALUES(DEFAULT,{meal_id},{name},{brand},{description},{portion_size},{leftovers})", missingFoodsParams.head, missingFoodsParams.tail:_*).execute()
+          }
         }
 
         Right(())

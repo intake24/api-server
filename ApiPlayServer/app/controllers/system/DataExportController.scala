@@ -32,6 +32,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, SurveyAdminService}
 import io.circe.generic.auto._
 import models.Intake24Subject
+import play.api.Logger
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
 import scala.concurrent.Future
@@ -70,12 +71,13 @@ class DataExportController @Inject()(service: DataExportService, surveyAdminServ
   }
 
   def getSurveySubmissionsAsCSV(surveyId: String, dateFrom: String, dateTo: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
-    _ =>
+    request =>
       Future {
 
         try {
           val parsedFrom = ZonedDateTime.parse(dateFrom)
           val parsedTo = ZonedDateTime.parse(dateTo)
+          val forceBOM = request.getQueryString("forceBOM").isDefined
 
           val data = for (params <- surveyAdminService.getSurveyParameters(surveyId).right;
                           localNutrients <- surveyAdminService.getLocalNutrientTypes(params.localeId).right;
@@ -85,10 +87,13 @@ class DataExportController @Inject()(service: DataExportService, surveyAdminServ
 
           data match {
             case Right((localNutrients, dataScheme, foodGroups, submissions)) =>
-              SurveyCSVExporter.exportSurveySubmissions(dataScheme, foodGroups, localNutrients, submissions) match {
+              SurveyCSVExporter.exportSurveySubmissions(dataScheme, foodGroups, localNutrients, submissions, forceBOM ) match {
                 case Right(csvFile) =>
                   val dateStamp = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.ofInstant(Clock.systemUTC().instant(), ZoneId.systemDefault).withNano(0)).replace(":", "-").replace("T", "-")
-                  Ok.sendFile(csvFile, fileName = _ => s"intake24-$surveyId-data-$dateStamp.csv", onClose = () => csvFile.delete())
+
+                  Logger.error(csvFile.getAbsolutePath)
+
+                  Ok.sendFile(csvFile, fileName = _ => s"intake24-$surveyId-data-$dateStamp.csv", onClose = () => csvFile.delete()).as(if (forceBOM) "application/octet-stream" else "text/csv;charset=utf-8")
                 case Left(exportError) => InternalServerError(toJsonString(ErrorDescription("ExportError", exportError)))
               }
             case Left(databaseError) => translateDatabaseError(databaseError)

@@ -19,6 +19,8 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
 
   lazy val getSurveySubmissionFoodsSql = sqlFromResource("admin/get_survey_submission_foods.sql")
 
+  lazy val getSurveySubmissionMissingFoodsSql = sqlFromResource("admin/get_survey_submission_missing_foods.sql")
+
   lazy val getSurveySubmissionNutrientsSql = sqlFromResource("admin/get_survey_submission_nutrients.sql")
 
   private case class SubmissionRow(id: UUID, survey_id: String, user_id: Int, user_name: Option[String], start_time: ZonedDateTime, end_time: ZonedDateTime, log: Array[String],
@@ -29,6 +31,8 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
   private case class FoodRow(meal_id: Long, food_id: Long, code: String, english_description: String, local_description: Option[String], ready_meal: Boolean, search_term: String,
                              portion_size_method_id: String, reasonable_amount: Boolean, food_group_id: Int, brand: String, nutrient_table_id: String, nutrient_table_code: String,
                              custom_fields: Array[Array[String]], portion_size_data: Array[Array[String]])
+
+  private case class MissingFoodRow(meal_id: Long, name: String, brand: String, description: String, portion_size: String, leftovers: String)
 
   private case class NutrientRow(food_id: Long, n_type: Long, n_amount: Double)
 
@@ -66,6 +70,8 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
 
             val foodRows = SQL(getSurveySubmissionFoodsSql).on('submission_ids -> submissionIdsSeqParam).executeQuery().as(Macro.namedParser[FoodRow].*).groupBy(_.meal_id)
 
+            val missingFoodRows = SQL(getSurveySubmissionMissingFoodsSql).on('submission_ids -> submissionIdsSeqParam).executeQuery().as(Macro.namedParser[MissingFoodRow].*).groupBy(_.meal_id)
+
             val nutrientRows = SQL(getSurveySubmissionNutrientsSql).on('submission_ids -> submissionIdsSeqParam).executeQuery().as(Macro.namedParser[NutrientRow].*).groupBy(_.food_id)
 
             val submissions = submissionRows.map {
@@ -83,7 +89,13 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
                           PortionSize(foodRow.portion_size_method_id, customFieldsAsMap(foodRow.portion_size_data)), foodRow.reasonable_amount,
                           foodRow.food_group_id, foodRow.brand, nutrients, customFieldsAsMap(foodRow.custom_fields))
                     }
-                    ExportMeal(mealRow.name, MealTime(mealRow.hours, mealRow.minutes), customFieldsAsMap(mealRow.custom_fields), foods)
+
+                    val missingFoods = missingFoodRows.getOrElse(mealRow.meal_id, Seq()).map {
+                      mfr =>
+                        MissingFood(mfr.name, mfr.brand, mfr.description, mfr.portion_size, mfr.leftovers)
+                    }
+
+                    ExportMeal(mealRow.name, MealTime(mealRow.hours, mealRow.minutes), customFieldsAsMap(mealRow.custom_fields), foods, missingFoods)
                 }
                 ExportSubmission(submissionRow.id, submissionRow.user_id, submissionRow.user_name, customFieldsAsMap(submissionRow.user_custom_fields), customFieldsAsMap(submissionRow.submission_custom_fields),
                   submissionRow.start_time, submissionRow.end_time, meals)

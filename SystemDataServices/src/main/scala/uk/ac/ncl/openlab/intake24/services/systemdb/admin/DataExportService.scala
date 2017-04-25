@@ -4,16 +4,15 @@ import java.time.{Instant, ZonedDateTime}
 import java.util.UUID
 
 import uk.ac.ncl.openlab.intake24.errors.LookupError
-import uk.ac.ncl.openlab.intake24.surveydata.{MealTime, PortionSize}
+import uk.ac.ncl.openlab.intake24.surveydata.{MealTime, MissingFood, PortionSize}
 
 
 case class ExportSubmission(id: UUID, userId: Int, userAlias: Option[String], userCustomData: Map[String, String], surveyCustomData: Map[String, String], startTime: ZonedDateTime, endTime: ZonedDateTime, meals: Seq[ExportMeal])
 
-case class ExportMeal(name: String, time: MealTime, customData: Map[String, String], foods: Seq[ExportFood])
+case class ExportMeal(name: String, time: MealTime, customData: Map[String, String], foods: Seq[ExportFood], missingFoods: Seq[MissingFood])
 
 case class ExportFood(code: String, englishDescription: String, localDescription: Option[String], searchTerm: String, nutrientTableId: String, nutrientTableCode: String, isReadyMeal: Boolean,
                       portionSize: PortionSize, reasonableAmount: Boolean, foodGroupId: Int, brand: String, nutrients: Map[Int, Double], customData: Map[String, String])
-
 
 trait DataExportService {
 
