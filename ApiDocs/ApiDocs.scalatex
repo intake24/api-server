@@ -566,17 +566,12 @@
                 @p @hl.asciidoc{HTTP 400 Bad Request}: the request format is incorrect.
               @li
                 @p @hl.asciidoc{HTTP 404 Not Found}: the survey identifier is invalid.
-    @sect{Delete survey user accounts}
-     To delete one or more system-wide users,
+    @sect{Delete user accounts}
+     To delete one or more users,
       @p
-        @b{DELETE} @hl.asciidoc{/admin/users/<survey_id>/delete}
+        @b{DELETE} @hl.asciidoc{/users}
       @p
-        where
-        @ul
-          @li
-            @b{survey_id} is the survey identifier.
-      @p
-        with a body consisting of a JSON object with a single field, @b{userNames}, containing an array of user names to delete:
+        with a body consisting of a JSON object with a single field, @b{userIds}, containing an array of Intake24 user IDs to delete:
       @p
         @hl.js{@UserManagementExamples.globalUserDelete}
       @p
