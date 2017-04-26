@@ -7,7 +7,7 @@
 @sect{Intake24 JSON API}
 
   @p
-    @i{Version 2.12.0}
+    @i{Version 2.13.0}
 
   @p
     @i{Food database API documentation is temporarily unavailable because it is out of date}
@@ -80,21 +80,18 @@
       @p
         The client applicaton must expect that an access token can expire at any time and consequently any request can be denied with the
         @hl.asciidoc{HTTP 401 Unauthorized} code. In that case, the application must obtain a new access token and retry the request.
-    @sect{Signing in}
-      To obtain a @b{refresh} token, @b{POST} a sign in request to
+    @sect{Signing in using a global account}
+      To obtain a @b{refresh} token for a global system account (e.g. admin or survey staff), @b{POST} a sign in request to
         @p
           @hl.asciidoc{/signin}
         @p
           with the following JSON body:
-            @hl.js{@SigninExamples.signInRequest}
+            @hl.js{@SigninExamples.emailSigninRequest}
         @p
           where
         @ul
           @li
-            @b{survey_id} is the optional survey_identifier for the user that you are signing in as (user names are unique w.r.t individual surveys, but not system-wide).
-            This field should contain an empty value if the user you would like to sign in as is a system-wide user, such as an administrator (see @sect.ref{Optional type}).
-          @li
-            @b{username} is the unique user ID
+            @b{email} is the user's system-wide e-mail address
           @li
             @b{password} is the user's password
         @sect{Response}
@@ -105,6 +102,48 @@
               @p The application must cache the refresh token securely for long-term use.
             @li
               @p @hl.asciidoc{HTTP 401 Unauthorized}: the provided credentials were not recognised.
+    @sect{Signing in using a survey alias}
+        To obtain a @b{refresh} token for a survey respondent using their internal survey alias, @b{POST} a sign in request to
+          @p
+            @hl.asciidoc{/signin/alias}
+          @p
+            with the following JSON body:
+              @hl.js{@SigninExamples.aliasSigninRequest}
+          @p
+            where
+          @ul
+            @li
+              @b{survey_id} is the optional survey_identifier for the user that you are signing in as (user names are unique w.r.t individual surveys, but not system-wide).
+              This field should contain an empty value if the user you would like to sign in as is a system-wide user, such as an administrator (see @sect.ref{Optional type}).
+            @li
+              @b{username} is the survey user ID (does not have to be unique system-wide)
+            @li
+              @b{password} is the user's password
+          @sect{Response}
+            @ul
+              @li
+                @p @hl.asciidoc{HTTP 200 OK}: successful authentication.
+                @p The body is a JSON object containing a single field, @b{refreshToken}: @hl.js{@SigninExamples.signInResult}
+                @p The application must cache the refresh token securely for long-term use.
+              @li
+                @p @hl.asciidoc{HTTP 401 Unauthorized}: the provided credentials were not recognised.
+    @sect{Signing in using an URL-embedded token}
+         To obtain a @b{refresh} token for a survey respondent using the URL-embedded authentication token, @b{POST} a sign in request to
+           @p
+             @hl.asciidoc{/signin/token/<token>}
+           @p
+             where
+           @ul
+             @li
+               @b{token} is the user's personal authentication token
+           @sect{Response}
+             @ul
+               @li
+                 @p @hl.asciidoc{HTTP 200 OK}: successful authentication.
+                 @p The body is a JSON object containing a single field, @b{refreshToken}: @hl.js{@SigninExamples.signInResult}
+                 @p The application must cache the refresh token securely for long-term use.
+               @li
+                 @p @hl.asciidoc{HTTP 401 Unauthorized}: the provided credentials were not recognised.
     @sect{Refreshing the access token}
       To obtain a new @b{access} token, @b{POST} a refresh request to
         @p
@@ -465,17 +504,74 @@
           @li
             @p @hl.asciidoc{HTTP 404 Not Found}: the survey identifier is invalid.
 
-    @sect{Delete survey user accounts}
-     To delete one or more system-wide users,
+    @sect{Create survey respondent accounts for site integration}
+      To create respondent accounts for use with URL-embedded token authentication model (useful for linking to Intake24 surveys
+      from 3rd party sites),
       @p
-        @b{DELETE} @hl.asciidoc{/admin/users/<survey_id>/delete}
+        @b{POST} @hl.asciidoc{/surveys/<survey_id>/users/respondents/with-physical-data}
       @p
         where
         @ul
           @li
-            @b{survey_id} is the survey identifier.
+            @b{survey_id} is the survey identifier
       @p
-        with a body consisting of a JSON object with a single field, @b{userNames}, containing an array of user names to delete:
+        with the following JSON body:
+          @hl.js{@UserManagementExamples.createRespondentsWithPhysicalDataRequest}
+      @p
+        where
+        @ul
+          @li
+            @b{users} is an array of new user account information objects, where
+            @ul
+              @li
+                @b{externalId} is an arbitrary string uniquely identifying the user in the external database; typically the user's e-mail or a numerical user ID,
+              @li
+                @b{name} is the optional real name of this user,
+              @li
+                @b{email} is the optional e-mail address for this user (to receive e-mail reminders/notifications),
+              @li
+                @b{phone} is the optional phone number for this user (to receive SMS reminders/notifications),
+              @li
+                @b{sex} is the optional user's sex, "m" for male or "f" for female,
+              @li
+                @b{birthdate} is the optional user's date of birth, in the ISO 8601 date format (e.g. "2017-04-25"),
+              @li
+                @b{weight} is the optional user's current weight, in kilograms,
+              @li
+                @b{height} is the optional user's height, in centimeters
+      @sect{Response}
+            @ul
+              @li
+                @p @hl.asciidoc{HTTP 200 OK}: user accounts have been successfully created. Response body is a JSON object:
+                  @hl.js{@UserManagementExamples.createRespondentsWithPhysicalDataResponse}
+                @p
+                  where
+                  @ul
+                    @li
+                      @p
+                        @b{userData} is an array of objects describing the newly created user accounts corresponding to the
+                        @b{users} array in the request object, where
+                      @ul
+                        @li
+                          @p @b{userId} is the Intake24 user ID for the new user (required to update or delete the user account later),
+                        @li
+                          @p @b{externalId} is the external user ID as given in the request,
+                        @li
+                          @p @b{urlAuthToken} is the URL-embeddable authentication token for simple cross-site authentication
+              @li
+                @p @hl.asciidoc{HTTP 401 Unauthorized}: the access token is missing, invalid, or has expired. Get a new token and try again.
+              @li
+                @p @hl.asciidoc{HTTP 403 Forbidden}: the access token is valid, but you don't have the right to perform this operation.
+              @li
+                @p @hl.asciidoc{HTTP 400 Bad Request}: the request format is incorrect.
+              @li
+                @p @hl.asciidoc{HTTP 404 Not Found}: the survey identifier is invalid.
+    @sect{Delete user accounts}
+     To delete one or more users,
+      @p
+        @b{DELETE} @hl.asciidoc{/users}
+      @p
+        with a body consisting of a JSON object with a single field, @b{userIds}, containing an array of Intake24 user IDs to delete:
       @p
         @hl.js{@UserManagementExamples.globalUserDelete}
       @p

@@ -1,13 +1,13 @@
 package uk.ac.ncl.openlab.intake24.systemsql.user
 
-import java.time.ZonedDateTime
+import java.time.LocalDate
 import javax.inject.{Inject, Named}
 import javax.sql.DataSource
 
-import anorm.{BatchSql, Macro, NamedParameter, Row, SQL, SimpleSql}
+import anorm._
 import org.postgresql.util.PSQLException
 import uk.ac.ncl.openlab.intake24.errors._
-import uk.ac.ncl.openlab.intake24.services.systemdb.user.{SurveyService, UserPhysicalDataIn, UserPhysicalDataOut, UserPhysicalDataService}
+import uk.ac.ncl.openlab.intake24.services.systemdb.user.{UserPhysicalDataIn, UserPhysicalDataOut, UserPhysicalDataService}
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
 /**
@@ -21,7 +21,7 @@ class UserPhysicalDataServiceImpl @Inject()(@Named("intake24_system") val dataSo
   }
 
   private case class UserInfoRow(user_id: Long, first_name: Option[String], sex: Option[String],
-                                 birthdate: Option[ZonedDateTime], weight_kg: Option[Double], height_cm: Option[Double],
+                                 birthdate: Option[LocalDate], weight_kg: Option[Double], height_cm: Option[Double],
                                  level_of_physical_activity_id: Option[Long]) {
     def toUserInfoOut(): UserPhysicalDataOut = {
       UserPhysicalDataOut(this.user_id, this.first_name, this.sex, this.birthdate, this.weight_kg,
@@ -48,8 +48,7 @@ class UserPhysicalDataServiceImpl @Inject()(@Named("intake24_system") val dataSo
         """.stripMargin
       SQL(query).on(
         'user_id -> userId,
-        'first_name -> userInfo.firstName,
-        'birthdate -> userInfo.birthdate,
+        'birthdate -> userInfo.birthdate.map(_.atStartOfDay()), // anorm doesn't know how to handle LocalDate
         'sex -> userInfo.sex,
         'weight_kg -> userInfo.weight,
         'height_cm -> userInfo.height,
@@ -94,7 +93,7 @@ class UserPhysicalDataServiceImpl @Inject()(@Named("intake24_system") val dataSo
       val params = update.toSeq.map {
         case (userId, userInfo) =>
           Seq[NamedParameter]('user_id -> userId, 'first_name -> userInfo.firstName,
-            'birthdate -> userInfo.birthdate, 'sex -> userInfo.sex,
+            'birthdate -> userInfo.birthdate.map(_.atStartOfDay()), 'sex -> userInfo.sex, // anorm doesn't know how to handle LocalDate
             'weight_kg -> userInfo.weight, 'height_cm -> userInfo.height,
             'level_of_physical_activity_id -> userInfo.levelOfPhysicalActivityId)
       }
