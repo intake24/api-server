@@ -124,7 +124,7 @@ class UserAdminController @Inject()(service: UserAdminService,
   }
 
   private def subjectIsStaff[T](subject: AccessSubject): Boolean = {
-    subject.userRoles.map(role => role.contains(Roles.staffSuffix)).reduce((a, b) => a || b)
+    subject.userRoles.contains(Roles.superuser) || subject.userRoles.map(role => role.endsWith(Roles.staffSuffix)).foldLeft(false)(_ || _)
   }
 
   def patchUser(userId: Long) = deadbolt.restrictToAuthenticated(jsonBodyParser[UserProfileUpdate]) {
