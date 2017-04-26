@@ -232,4 +232,31 @@ class UserAdminController @Inject()(service: UserAdminService,
         translateDatabaseResult(usersSupportService.createRespondentsWithPhysicalData(surveyId, request.body.users))
       }
   }
+
+  def giveAccessToSurvey(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(jsonBodyParser[UserAccessToSurveySeq]) {
+    request =>
+      Future {
+        //        Check that all roles contain surveyId as prefix then perform update for every user
+        request.body.containsSurveyId(surveyId) match {
+          case true =>
+            request.body.users.map(userAccess => service.giveAccessToSurvey(userAccess))
+            Ok
+          case false => Forbidden
+        }
+      }
+  }
+
+  def withdrawAccessToSurvey(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(jsonBodyParser[UserAccessToSurveySeq]) {
+    request =>
+      Future {
+        //        Check that all roles contain surveyId as prefix then perform update for every user
+        request.body.containsSurveyId(surveyId) match {
+          case true =>
+            request.body.users.map(userAccess => service.withdrawAccessToSurvey(userAccess))
+            Ok
+          case false => Forbidden
+        }
+      }
+  }
+
 }
