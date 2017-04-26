@@ -74,10 +74,13 @@ class UserAdminController @Inject()(service: UserAdminService,
     }
   }
 
-  def findUsers(query: String, limit: Int) = deadbolt.restrictToRoles(Roles.superuser)(BodyParsers.parse.empty) {
-    _ =>
+  def findUsers(query: String, limit: Int) = deadbolt.restrictToAuthenticated(BodyParsers.parse.empty) {
+    request =>
       Future {
-        translateDatabaseResult(service.findUsers(query, Math.min(Math.max(limit, 0), 100)))
+        subjectIsStaff(request.subject.get.asInstanceOf[AccessSubject]) match {
+          case true => translateDatabaseResult(service.findUsers(query, Math.min(Math.max(limit, 0), 100)))
+          case false => Forbidden
+        }
       }
   }
 
@@ -118,6 +121,10 @@ class UserAdminController @Inject()(service: UserAdminService,
             subjectIsStaff.exists(surveyId => userIsRespondent.contains(surveyId))
           }
       }
+  }
+
+  private def subjectIsStaff[T](subject: AccessSubject): Boolean = {
+    subject.userRoles.map(role => role.contains(Roles.staffSuffix)).reduce((a, b) => a || b)
   }
 
   def patchUser(userId: Long) = deadbolt.restrictToAuthenticated(jsonBodyParser[UserProfileUpdate]) {
