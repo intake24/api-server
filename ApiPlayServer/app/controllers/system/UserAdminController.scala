@@ -222,7 +222,9 @@ class UserAdminController @Inject()(service: UserAdminService,
   def createRespondentsWithPhysicalData(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(jsonBodyParser[CreateRespondentsWithPhysicalDataRequest]) {
     request =>
       Future {
-        translateDatabaseResult(usersSupportService.createRespondentsWithPhysicalData(surveyId, request.body.users))
+        translateDatabaseResult(usersSupportService.createRespondentsWithPhysicalData(surveyId, request.body.users).right.map {
+          userData => CreateRespondentsWithPhysicalDataResponse(userData)
+        })
       }
   }
 }

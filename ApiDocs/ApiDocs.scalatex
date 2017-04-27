@@ -7,7 +7,7 @@
 @sect{Intake24 JSON API}
 
   @p
-    @i{Version 2.13.0}
+    @i{Version 2.20.0}
 
   @p
     @i{Food database API documentation is temporarily unavailable because it is out of date}
@@ -549,7 +549,7 @@
                   @ul
                     @li
                       @p
-                        @b{userData} is an array of objects describing the newly created user accounts corresponding to the
+                        @b{userKeys} is an array of objects describing the newly created user accounts corresponding to the
                         @b{users} array in the request object, where
                       @ul
                         @li
