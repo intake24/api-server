@@ -2,7 +2,7 @@ package controllers
 
 import com.google.inject.Inject
 import io.circe.generic.auto._
-import parsers.JsonUtils
+import parsers.{HtmlSanitisePolicy, JsonUtils}
 import play.api.http.ContentTypes
 import play.api.libs.concurrent.Execution.Implicits._
 import play.mvc.Controller
@@ -18,6 +18,12 @@ import scala.concurrent.Future
 class DemographicGroupsController @Inject()(dgService: DemographicGroupsService,
                                             deadbolt: DeadboltActionsAdapter)
   extends Controller with ImageOrDatabaseServiceErrorHandler with JsonUtils {
+
+  private def sanitiseDemographicScaleSector(demographicScaleSectorIn: DemographicScaleSectorIn): DemographicScaleSectorIn = {
+    DemographicScaleSectorIn(HtmlSanitisePolicy.sanitise(demographicScaleSectorIn.name),
+      demographicScaleSectorIn.description.map(d => HtmlSanitisePolicy.sanitise(d)),
+      demographicScaleSectorIn.sentiment, demographicScaleSectorIn.range)
+  }
 
   def list() = deadbolt.restrictToAuthenticated {
     _ =>
@@ -57,14 +63,16 @@ class DemographicGroupsController @Inject()(dgService: DemographicGroupsService,
   def createDemographicGroupScaleSector(demographicGroupId: Int) = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[DemographicScaleSectorIn]) {
     request =>
       Future {
-        translateDatabaseResult(dgService.createDemographicScaleSector(demographicGroupId, request.body))
+        val sanitised = sanitiseDemographicScaleSector(request.body)
+        translateDatabaseResult(dgService.createDemographicScaleSector(demographicGroupId, sanitised))
       }
   }
 
   def patchDemographicGroupScaleSector(id: Int) = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[DemographicScaleSectorIn]) {
     request =>
       Future {
-        translateDatabaseResult(dgService.patchDemographicScaleSector(id, request.body))
+        val sanitised = sanitiseDemographicScaleSector(request.body)
+        translateDatabaseResult(dgService.patchDemographicScaleSector(id, sanitised))
       }
   }
 
