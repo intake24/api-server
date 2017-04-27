@@ -352,6 +352,38 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       }
   }
 
+  def giveAccessToSurvey(userAccessToSurvey: UserAccessToSurvey): Either[UpdateError, Unit] = tryWithConnection {
+    implicit conn =>
+      val query =
+        """
+          |INSERT INTO user_roles (user_id, role)
+          |VALUES ({user_id}, {role})
+          |ON CONFLICT (user_id, role) DO NOTHING;
+        """.stripMargin
+      SQL(query).on(
+        'user_id -> userAccessToSurvey.userId,
+        'role -> userAccessToSurvey.role
+      ).execute()
+
+      Right()
+  }
+
+  def withdrawAccessToSurvey(userAccessToSurvey: UserAccessToSurvey): Either[UpdateError, Unit] = tryWithConnection {
+    implicit conn =>
+      val query =
+        """
+          |DELETE FROM user_roles
+          |WHERE user_id={user_id} AND role={role};
+        """.stripMargin
+
+      SQL(query).on(
+        'user_id -> userAccessToSurvey.userId,
+        'role -> userAccessToSurvey.role
+      ).execute()
+
+      Right()
+  }
+
   def getUserPasswordById(userId: Long): Either[LookupError, SecurePassword] = tryWithConnection {
     implicit conn =>
       SQL("SELECT password_hash, password_salt, password_hasher FROM user_passwords WHERE user_id={user_id}")

@@ -32,6 +32,10 @@ POST          /:surveyId/request-callback                            controllers
 
 GET           /:surveyId/my-submissions                              controllers.system.DataExportController.getMySurveySubmissions(surveyId)
 
+# Survey Permissions
+POST          /:surveyId/acl                                         controllers.system.UserAdminController.giveAccessToSurvey(surveyId)
+DELETE        /:surveyId/acl                                         controllers.system.UserAdminController.withdrawAccessToSurvey(surveyId)
+
 # Survey users, very good Feng Shui ^_^ b
 
 GET           /:surveyId/users/staff                                 controllers.system.UserAdminController.listSurveyStaffUsers(surveyId: String, offset: Int, limit: Int)

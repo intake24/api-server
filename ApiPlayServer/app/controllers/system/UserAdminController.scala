@@ -74,10 +74,13 @@ class UserAdminController @Inject()(service: UserAdminService,
     }
   }
 
-  def findUsers(query: String, limit: Int) = deadbolt.restrictToRoles(Roles.superuser)(BodyParsers.parse.empty) {
-    _ =>
+  def findUsers(query: String, limit: Int) = deadbolt.restrictToAuthenticated(BodyParsers.parse.empty) {
+    request =>
       Future {
-        translateDatabaseResult(service.findUsers(query, Math.min(Math.max(limit, 0), 100)))
+        subjectIsStaff(request.subject.get.asInstanceOf[AccessSubject]) match {
+          case true => translateDatabaseResult(service.findUsers(query, Math.min(Math.max(limit, 0), 100)))
+          case false => Forbidden
+        }
       }
   }
 
@@ -118,6 +121,10 @@ class UserAdminController @Inject()(service: UserAdminService,
             subjectIsStaff.exists(surveyId => userIsRespondent.contains(surveyId))
           }
       }
+  }
+
+  private def subjectIsStaff[T](subject: AccessSubject): Boolean = {
+    subject.userRoles.contains(Roles.superuser) || subject.userRoles.map(role => role.endsWith(Roles.staffSuffix)).foldLeft(false)(_ || _)
   }
 
   def patchUser(userId: Long) = deadbolt.restrictToAuthenticated(jsonBodyParser[UserProfileUpdate]) {
@@ -227,4 +234,31 @@ class UserAdminController @Inject()(service: UserAdminService,
         })
       }
   }
+
+  def giveAccessToSurvey(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(jsonBodyParser[UserAccessToSurveySeq]) {
+    request =>
+      Future {
+        //        Check that all roles contain surveyId as prefix then perform update for every user
+        request.body.containsSurveyId(surveyId) match {
+          case true =>
+            request.body.users.map(userAccess => service.giveAccessToSurvey(userAccess))
+            Ok
+          case false => Forbidden
+        }
+      }
+  }
+
+  def withdrawAccessToSurvey(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(jsonBodyParser[UserAccessToSurveySeq]) {
+    request =>
+      Future {
+        //        Check that all roles contain surveyId as prefix then perform update for every user
+        request.body.containsSurveyId(surveyId) match {
+          case true =>
+            request.body.users.map(userAccess => service.withdrawAccessToSurvey(userAccess))
+            Ok
+          case false => Forbidden
+        }
+      }
+  }
+
 }

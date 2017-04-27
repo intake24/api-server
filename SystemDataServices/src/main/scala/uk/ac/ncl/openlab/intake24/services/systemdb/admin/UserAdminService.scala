@@ -20,6 +20,14 @@ case class SurveyUserAlias(surveyId: String, userName: String)
 
 case class NewUserWithAlias(alias: SurveyUserAlias, userInfo: NewUserProfile, password: SecurePassword)
 
+case class UserAccessToSurveySeq(users: Seq[UserAccessToSurvey]) {
+  def containsSurveyId(surveyId: String): Boolean = {
+    users.map(userAccess => userAccess.role.startsWith(surveyId)).forall(_ == true)
+  }
+}
+
+case class UserAccessToSurvey(userId: Long, role: String)
+
 trait UserAdminService {
 
   /**
@@ -48,6 +56,10 @@ trait UserAdminService {
   def deleteUsersById(userIds: Seq[Long]): Either[DeleteError, Unit]
 
   def deleteUsersByAlias(userAliases: Seq[SurveyUserAlias]): Either[DeleteError, Unit]
+
+  def giveAccessToSurvey(userAccessToSurvey: UserAccessToSurvey): Either[UpdateError, Unit]
+
+  def withdrawAccessToSurvey(userAccessToSurvey: UserAccessToSurvey): Either[UpdateError, Unit]
 
 
   def getUserPasswordById(userId: Long): Either[LookupError, SecurePassword]

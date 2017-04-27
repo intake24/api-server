@@ -47,6 +47,7 @@ class UserPhysicalDataServiceImpl @Inject()(@Named("intake24_system") val dataSo
           |RETURNING user_id, first_name, birthdate, sex, weight_kg, height_cm, level_of_physical_activity_id;
         """.stripMargin
       SQL(query).on(
+        'first_name -> userInfo.firstName,
         'user_id -> userId,
         'birthdate -> userInfo.birthdate.map(_.atStartOfDay()), // anorm doesn't know how to handle LocalDate
         'sex -> userInfo.sex,
