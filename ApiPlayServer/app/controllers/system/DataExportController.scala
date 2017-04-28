@@ -91,8 +91,6 @@ class DataExportController @Inject()(service: DataExportService, surveyAdminServ
                 case Right(csvFile) =>
                   val dateStamp = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.ofInstant(Clock.systemUTC().instant(), ZoneId.systemDefault).withNano(0)).replace(":", "-").replace("T", "-")
 
-                  Logger.error(csvFile.getAbsolutePath)
-
                   Ok.sendFile(csvFile, fileName = _ => s"intake24-$surveyId-data-$dateStamp.csv", onClose = () => csvFile.delete()).as(if (forceBOM) "application/octet-stream" else "text/csv;charset=utf-8")
                 case Left(exportError) => InternalServerError(toJsonString(ErrorDescription("ExportError", exportError)))
               }

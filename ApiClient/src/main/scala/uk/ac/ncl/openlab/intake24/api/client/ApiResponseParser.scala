@@ -1,7 +1,6 @@
 package uk.ac.ncl.openlab.intake24.api.client
 
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
-import upickle.default._
 
 import scalaj.http.HttpResponse
 

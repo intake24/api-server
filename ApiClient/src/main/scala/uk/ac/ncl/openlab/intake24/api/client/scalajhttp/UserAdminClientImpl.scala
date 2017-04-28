@@ -2,10 +2,13 @@ package uk.ac.ncl.openlab.intake24.api.client.scalajhttp
 
 import java.nio.file.Paths
 
-import uk.ac.ncl.openlab.intake24.api.client.{ApiResponseParser, UserAdminClient}
+import uk.ac.ncl.openlab.intake24.api.client.{ApiResponseParser, AuthCache, UserAdminClient}
 
 
-class UserAdminClientImpl(apiBaseUrl: String) extends UserAdminClient with HttpRequestUtil with ApiResponseParser {
+class UserAdminClientImpl(apiBaseUrl: String, authCache: AuthCache) extends UserAdminClient with HttpRequestUtil with ApiResponseParser {
+
+
+
   /*override def createOrUpdateGlobalUsers(accessToken: String, request: CreateOrUpdateGlobalUsersRequest): Either[ApiError, Unit] =
     parseApiResponseDiscardBody(getAuthPostRequest(s"$apiBaseUrl/admin/users/create-or-update", accessToken, request).asString)
 

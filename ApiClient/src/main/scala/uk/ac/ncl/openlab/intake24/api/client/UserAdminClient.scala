@@ -1,7 +1,10 @@
 package uk.ac.ncl.openlab.intake24.api.client
 
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.UserProfile
 
 trait UserAdminClient {
+
+  def getUserByEmail(email: String): Either[ApiError, UserProfile]
 
 /*  def listGlobalUsers(accessToken: String, offset: Int, limit: Int): Either[ApiError, Seq[PublicUserRecordWithPermissions]]
 
