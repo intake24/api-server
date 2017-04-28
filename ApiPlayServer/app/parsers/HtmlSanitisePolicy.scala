@@ -58,6 +58,7 @@ object HtmlSanitisePolicy {
   def easedSanitise(html: String) = {
     val policy: PolicyFactory = Sanitizers.FORMATTING.and(Sanitizers.BLOCKS)
       .and(Sanitizers.LINKS).and(Sanitizers.IMAGES).and(IFRAME_POLICY)
+        .and(Sanitizers.STYLES)
     policy.sanitize(html)
   }
 
