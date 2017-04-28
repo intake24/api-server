@@ -30,15 +30,19 @@ case class CustomDataScheme(userCustomFields: Seq[CustomFieldDescription], surve
 case class SurveyParametersIn(id: String, schemeId: String, localeId: String, state: Int,
                               startDate: ZonedDateTime, endDate: ZonedDateTime,
                               allowGeneratedUsers: Boolean,
-                              externalFollowUpURL: Option[String], supportEmail: String)
+                              externalFollowUpURL: Option[String], supportEmail: String,
+                              description: Option[String])
 
 case class SurveyParametersOut(id: String, schemeId: String, localeId: String, state: Int,
                                startDate: ZonedDateTime, endDate: ZonedDateTime,
                                suspensionReason: Option[String], allowGeneratedUsers: Boolean,
-                               externalFollowUpURL: Option[String], supportEmail: String)
+                               externalFollowUpURL: Option[String], supportEmail: String,
+                               description: Option[String])
 
 // Staff cannot change survey ID, scheme, locale and generated user settings
-case class StaffSurveyUpdate(startDate: ZonedDateTime, endDate: ZonedDateTime, externalFollowUpURL: Option[String], supportEmail: String)
+case class StaffSurveyUpdate(startDate: ZonedDateTime, endDate: ZonedDateTime,
+                             externalFollowUpURL: Option[String], supportEmail: String,
+                             description: Option[String])
 
 case class LocalNutrientDescription(nutrientTypeId: Int, description: String, unit: String)
 

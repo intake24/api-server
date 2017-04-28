@@ -9,7 +9,6 @@ import org.postgresql.util.PSQLException
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.fooddb.demographicgroups._
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
-import org.owasp.html.{PolicyFactory, Sanitizers}
 
 /**
   * Created by Tim Osadchiy on 09/02/2017.
@@ -21,11 +20,6 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
 
   val constraintErrorsPartialFn = PartialFunction[String, PSQLException => ConstraintError] {
     constraintName => (e: PSQLException) => ConstraintViolation(constraintName, e)
-  }
-
-  private def sanitiseHtml(html: String): String = {
-    val policy: PolicyFactory = Sanitizers.FORMATTING.and(Sanitizers.BLOCKS).and(Sanitizers.LINKS)
-    policy.sanitize(html)
   }
 
   private def unpackOptionalRangeToQuery[T](range: Option[NumRange[T]]): Option[String] = {
@@ -398,8 +392,8 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
 
       SQL(query).on(
         'demographic_group_id -> demographicGroupId,
-        'name -> sanitiseHtml(record.name),
-        'description -> (for (d <- record.description) yield sanitiseHtml(d)),
+        'name -> record.name,
+        'description -> record.description,
         'sentiment -> record.sentiment,
         'range -> s"[${record.range.start}, ${record.range.end})"
       )
@@ -425,8 +419,8 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
 
       SQL(query).on(
         'id -> id,
-        'name -> sanitiseHtml(record.name),
-        'description -> (for (d <- record.description) yield sanitiseHtml(d)),
+        'name -> record.name,
+        'description -> record.description,
         'sentiment -> record.sentiment,
         'range -> s"[${record.range.start}, ${record.range.end})"
       )

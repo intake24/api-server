@@ -23,7 +23,7 @@ import javax.inject.Inject
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
 import models.AccessSubject
-import parsers.JsonUtils
+import parsers.{HtmlSanitisePolicy, JsonUtils}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller}
 import security.DeadboltActionsAdapter
@@ -36,10 +36,17 @@ import scala.concurrent.Future
 class SurveyAdminController @Inject()(service: SurveyAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
   with DatabaseErrorHandler with JsonUtils {
 
+  private def sanitiseSurvey(surveyParametersIn: SurveyParametersIn): SurveyParametersIn = {
+    SurveyParametersIn(surveyParametersIn.id, surveyParametersIn.schemeId, surveyParametersIn.localeId,
+      surveyParametersIn.state, surveyParametersIn.startDate, surveyParametersIn.endDate,
+      surveyParametersIn.allowGeneratedUsers, surveyParametersIn.externalFollowUpURL,
+      surveyParametersIn.supportEmail, surveyParametersIn.description.map(d => HtmlSanitisePolicy.sanitise(d)))
+  }
+
   def createSurvey() = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyAdmin)(jsonBodyParser[SurveyParametersIn]) {
     request =>
       Future {
-        translateDatabaseResult(service.createSurvey(request.body))
+        translateDatabaseResult(service.createSurvey(sanitiseSurvey(request.body)))
       }
   }
 
@@ -49,11 +56,13 @@ class SurveyAdminController @Inject()(service: SurveyAdminService, deadbolt: Dea
 
         val subject = request.subject.get.asInstanceOf[AccessSubject]
 
-        val params = request.body
+        val params = sanitiseSurvey(request.body)
 
         if (!subject.userRoles.contains(Roles.superuser) && !subject.userRoles.contains(Roles.surveyAdmin))
         // Survey staff is not allowed to change survey ID, scheme, locale and generated user settings
-          translateDatabaseResult(service.staffUpdateSurvey(surveyId, StaffSurveyUpdate(params.startDate, params.endDate, params.externalFollowUpURL, params.supportEmail)))
+          translateDatabaseResult(service.staffUpdateSurvey(surveyId,
+            StaffSurveyUpdate(params.startDate, params.endDate,
+              params.externalFollowUpURL, params.supportEmail, params.description)))
         else
           translateDatabaseResult(service.updateSurvey(surveyId, params))
       }

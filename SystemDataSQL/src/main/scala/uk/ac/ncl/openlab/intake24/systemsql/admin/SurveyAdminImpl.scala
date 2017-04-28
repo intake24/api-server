@@ -53,11 +53,12 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
           """
             |INSERT INTO surveys (
             |         id, state, start_date, end_date, scheme_id, locale,
-            |         allow_gen_users, suspension_reason, survey_monkey_url, support_email
+            |         allow_gen_users, suspension_reason, survey_monkey_url, support_email,
+            |         description
             |)
             |VALUES ({id}, {state}, {start_date}, {end_date},
             |        {scheme_id}, {locale}, {allow_gen_users}, '',
-            |        {survey_monkey_url}, {support_email})
+            |        {survey_monkey_url}, {support_email}, {description})
             |RETURNING id,
             |          state,
             |          start_date,
@@ -67,7 +68,8 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             |          allow_gen_users,
             |          suspension_reason,
             |          survey_monkey_url,
-            |          support_email
+            |          support_email,
+            |          description
           """.stripMargin
 
         val row = SQL(sqlQuery)
@@ -79,7 +81,8 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             'locale -> parameters.localeId,
             'allow_gen_users -> parameters.allowGeneratedUsers,
             'survey_monkey_url -> parameters.externalFollowUpURL,
-            'support_email -> parameters.supportEmail)
+            'support_email -> parameters.supportEmail,
+            'description -> parameters.description)
           .executeQuery().as(Macro.namedParser[SurveyParametersRow].single)
         Right(row.toSurveyParameters)
       }
@@ -105,7 +108,8 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             |    locale={locale},
             |    allow_gen_users={allow_gen_users},
             |    survey_monkey_url={survey_monkey_url},
-            |    support_email={support_email}
+            |    support_email={support_email},
+            |    description={description}
             |WHERE id={survey_id}
             |RETURNING id,
             |          state,
@@ -116,7 +120,8 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             |          allow_gen_users,
             |          suspension_reason,
             |          survey_monkey_url,
-            |          support_email;
+            |          support_email,
+            |          description;
           """.stripMargin
 
         val row = SQL(sqlQuery)
@@ -129,7 +134,8 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             'locale -> parameters.localeId,
             'allow_gen_users -> parameters.allowGeneratedUsers,
             'survey_monkey_url -> parameters.externalFollowUpURL,
-            'support_email -> parameters.supportEmail)
+            'support_email -> parameters.supportEmail,
+            'description -> parameters.description)
           .executeQuery().as(Macro.namedParser[SurveyParametersRow].single)
         Right(row.toSurveyParameters)
       }
@@ -143,7 +149,8 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
           |SET start_date={start_date},
           |    end_date={end_date},
           |    survey_monkey_url={survey_monkey_url},
-          |    support_email={support_email}
+          |    support_email={support_email},
+          |    description={description}
           |WHERE id={survey_id}
           |RETURNING id,
           |          state,
@@ -154,7 +161,8 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
           |          allow_gen_users,
           |          suspension_reason,
           |          survey_monkey_url,
-          |          support_email;
+          |          support_email,
+          |          description;
         """.stripMargin
 
       val row = SQL(sqlQuery)
@@ -162,7 +170,8 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
           'start_date -> parameters.startDate,
           'end_date -> parameters.endDate,
           'survey_monkey_url -> parameters.externalFollowUpURL,
-          'support_email -> parameters.supportEmail)
+          'support_email -> parameters.supportEmail,
+          'description -> parameters.description)
         .executeQuery().as(Macro.namedParser[SurveyParametersRow].single)
       Right(row.toSurveyParameters)
   }
@@ -192,11 +201,13 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
 
   private case class SurveyParametersRow(id: String, scheme_id: String, state: Int, locale: String,
                                          start_date: ZonedDateTime, end_date: ZonedDateTime, suspension_reason: Option[String],
-                                         allow_gen_users: Boolean, survey_monkey_url: Option[String], support_email: String) {
+                                         allow_gen_users: Boolean, survey_monkey_url: Option[String], support_email: String,
+                                         description: Option[String]) {
 
     def toSurveyParameters: SurveyParametersOut = new SurveyParametersOut(
       this.id, this.scheme_id, this.locale, this.state, this.start_date, this.end_date,
-      this.suspension_reason, this.allow_gen_users, this.survey_monkey_url, this.support_email
+      this.suspension_reason, this.allow_gen_users, this.survey_monkey_url, this.support_email,
+      this.description
     )
 
   }
