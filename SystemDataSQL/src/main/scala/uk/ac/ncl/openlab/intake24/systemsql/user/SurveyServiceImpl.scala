@@ -14,7 +14,7 @@ import uk.ac.ncl.openlab.intake24.surveydata.NutrientMappedSubmission
 class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends SurveyService with SqlDataService with SqlResourceLoader {
 
   private case class UserSurveyParametersRow(scheme_id: String, state: Int, locale: String, started: Boolean, finished: Boolean, suspension_reason: Option[String],
-                                             support_email: String, originating_url: Option[String])
+                                             support_email: String, originating_url: Option[String], description: Option[String])
 
   override def getPublicSurveyParameters(surveyId: String): Either[LookupError, PublicSurveyParameters] = tryWithConnection {
     implicit conn =>
@@ -31,7 +31,7 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
 
   override def getSurveyParameters(surveyId: String): Either[LookupError, UserSurveyParameters] = tryWithConnection {
     implicit conn =>
-      SQL("SELECT scheme_id, state, locale, now() >= start_date AS started, now() > end_date AS finished, suspension_reason, support_email, originating_url FROM surveys WHERE id={survey_id}")
+      SQL("SELECT scheme_id, state, locale, now() >= start_date AS started, now() > end_date AS finished, suspension_reason, support_email, originating_url, description FROM surveys WHERE id={survey_id}")
         .on('survey_id -> surveyId)
         .executeQuery()
         .as(Macro.namedParser[UserSurveyParametersRow].singleOpt) match {
@@ -50,7 +50,7 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
               "pending"
           }
 
-          Right(UserSurveyParameters(row.scheme_id, row.locale, state, row.suspension_reason, row.support_email))
+          Right(UserSurveyParameters(row.scheme_id, row.locale, state, row.suspension_reason, row.support_email, row.description))
         }
         case None =>
           Left(RecordNotFound(new RuntimeException(s"Survey $surveyId does not exist")))

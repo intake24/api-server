@@ -5,7 +5,8 @@ import uk.ac.ncl.openlab.intake24.surveydata.NutrientMappedSubmission
 
 case class PublicSurveyParameters(localeId: String, supportEmail: String, originatingURL: Option[String])
 
-case class UserSurveyParameters(schemeId: String, localeId: String, state: String, suspensionReason: Option[String], supportEmail: String)
+case class UserSurveyParameters(schemeId: String, localeId: String, state: String, suspensionReason: Option[String],
+                                supportEmail: String, description: Option[String])
 
 trait SurveyService {
 
