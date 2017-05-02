@@ -124,7 +124,7 @@ class UserAdminController @Inject()(service: UserAdminService,
   }
 
   private def subjectIsStaff[T](subject: AccessSubject): Boolean = {
-    subject.userRoles.contains(Roles.superuser) || subject.userRoles.map(role => role.endsWith(Roles.staffSuffix)).foldLeft(false)(_ || _)
+    subject.userRoles.contains(Roles.superuser) || subject.userRoles.contains(Roles.surveyAdmin) || subject.userRoles.map(role => role.endsWith(Roles.staffSuffix)).foldLeft(false)(_ || _)
   }
 
   def patchUser(userId: Long) = deadbolt.restrictToAuthenticated(jsonBodyParser[UserProfileUpdate]) {
@@ -168,14 +168,14 @@ class UserAdminController @Inject()(service: UserAdminService,
       }
   }
 
-  def listSurveyStaffUsers(surveyId: String, offset: Int, limit: Int) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
+  def listSurveyStaffUsers(surveyId: String, offset: Int, limit: Int) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
     _ =>
       Future {
         translateDatabaseResult(service.listUsersByRole(Roles.surveyStaff(surveyId), offset, limit))
       }
   }
 
-  def createOrUpdateSurveyStaff(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(jsonBodyParser[CreateOrUpdateSurveyUsersRequest]) {
+  def createOrUpdateSurveyStaff(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser[CreateOrUpdateSurveyUsersRequest]) {
     request =>
       Future {
         doCreateOrUpdate(surveyId, Set(Roles.surveyStaff(surveyId)), request.body.users)
@@ -189,7 +189,7 @@ class UserAdminController @Inject()(service: UserAdminService,
     *
     * This is because client-side user presentation currently does not make sense without a user name.
     */
-  def listSurveyRespondentUsers(surveyId: String, offset: Int, limit: Int) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
+  def listSurveyRespondentUsers(surveyId: String, offset: Int, limit: Int) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
     _ =>
       Future {
         val result =
@@ -205,28 +205,28 @@ class UserAdminController @Inject()(service: UserAdminService,
       }
   }
 
-  def createOrUpdateSurveyRespondents(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(jsonBodyParser[CreateOrUpdateSurveyUsersRequest]) {
+  def createOrUpdateSurveyRespondents(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser[CreateOrUpdateSurveyUsersRequest]) {
     request =>
       Future {
         doCreateOrUpdate(surveyId, Set(Roles.surveyRespondent(surveyId)), request.body.users)
       }
   }
 
-  def uploadSurveyRespondentsCSV(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(BodyParsers.parse.multipartFormData) {
+  def uploadSurveyRespondentsCSV(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(BodyParsers.parse.multipartFormData) {
     request =>
       Future {
         uploadCSV(request.body, surveyId, Set(Roles.surveyRespondent(surveyId)))
       }
   }
 
-  def deleteSurveyUsers(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(jsonBodyParser[DeleteSurveyUsersRequest]) {
+  def deleteSurveyUsers(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser[DeleteSurveyUsersRequest]) {
     request =>
       Future {
         translateDatabaseResult(service.deleteUsersByAlias(request.body.userNames.map(n => SurveyUserAlias(surveyId, n))))
       }
   }
 
-  def createRespondentsWithPhysicalData(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(jsonBodyParser[CreateRespondentsWithPhysicalDataRequest]) {
+  def createRespondentsWithPhysicalData(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser[CreateRespondentsWithPhysicalDataRequest]) {
     request =>
       Future {
         translateDatabaseResult(usersSupportService.createRespondentsWithPhysicalData(surveyId, request.body.users).right.map {
@@ -235,7 +235,7 @@ class UserAdminController @Inject()(service: UserAdminService,
       }
   }
 
-  def giveAccessToSurvey(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(jsonBodyParser[UserAccessToSurveySeq]) {
+  def giveAccessToSurvey(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser[UserAccessToSurveySeq]) {
     request =>
       Future {
         //        Check that all roles contain surveyId as prefix then perform update for every user
@@ -248,7 +248,7 @@ class UserAdminController @Inject()(service: UserAdminService,
       }
   }
 
-  def withdrawAccessToSurvey(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyStaff(surveyId))(jsonBodyParser[UserAccessToSurveySeq]) {
+  def withdrawAccessToSurvey(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser[UserAccessToSurveySeq]) {
     request =>
       Future {
         //        Check that all roles contain surveyId as prefix then perform update for every user
