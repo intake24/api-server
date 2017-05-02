@@ -744,6 +744,8 @@ object SystemDatabaseMigrations {
 
       override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
 
+        SQL("DELETE FROM surveys WHERE id=''").execute()
+
         SQL("ALTER TABLE surveys ADD CONSTRAINT surveys_id_characters CHECK (id ~ '\\^[A-Za-z0-9_-]+$')").execute()
 
         Right(())
