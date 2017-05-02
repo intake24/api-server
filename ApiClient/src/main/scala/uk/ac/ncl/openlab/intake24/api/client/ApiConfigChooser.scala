@@ -2,13 +2,13 @@ package uk.ac.ncl.openlab.intake24.api.client
 
 import java.io.{BufferedReader, InputStreamReader}
 
-import upickle.default.read
+import io.circe.generic.auto._
 
-object ApiConfigChooser {
+object ApiConfigChooser extends JsonParser {
 
   val default = IndexedSeq("Development" -> "development-api-config.json", "Test" -> "test-api-config.json", "Production" -> "production-api-config.json")
 
-  def getDevelopmentApiConfiguration(configDirRelativePath: String = "./api-config") = read[ApiConfiguration](scala.io.Source.fromFile(configDirRelativePath + "/" + "development-api-config.json").mkString)
+  def getDevelopmentApiConfiguration(configDirRelativePath: String = "./api-config") = fromJson[ApiConfiguration](scala.io.Source.fromFile(configDirRelativePath + "/" + "development-api-config.json").mkString).right.get
 
   def chooseApiConfiguration(message: String = "Please choose the API instance for this operation:", configDirPath: String = "./api-config", options: IndexedSeq[(String, String)] = default): ApiConfiguration = {
 
@@ -46,6 +46,6 @@ object ApiConfigChooser {
 
     println()
 
-    read[ApiConfiguration](scala.io.Source.fromFile(configDirPath + "/" + options(choice.get)._2).mkString)
+    fromJson[ApiConfiguration](scala.io.Source.fromFile(configDirPath + "/" + options(choice.get)._2).mkString).right.get
   }
 }

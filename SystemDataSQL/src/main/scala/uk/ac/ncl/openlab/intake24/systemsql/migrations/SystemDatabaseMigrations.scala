@@ -744,6 +744,8 @@ object SystemDatabaseMigrations {
 
       override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
 
+        SQL("DELETE FROM surveys WHERE id=''").execute()
+
         SQL("ALTER TABLE surveys ADD CONSTRAINT surveys_id_characters CHECK (id ~ '\\^[A-Za-z0-9_-]+$')").execute()
 
         Right(())
@@ -1026,6 +1028,24 @@ object SystemDatabaseMigrations {
 
       override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         SQL("ALTER TABLE surveys ADD COLUMN description character varying(10000)").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 40l
+      override val versionTo: Long = 41l
+      override val description: String = "Add feedback_enabled flag to surveys"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("ALTER TABLE surveys ADD COLUMN feedback_enabled boolean NOT NULL DEFAULT false").execute()
 
         Right(())
       }

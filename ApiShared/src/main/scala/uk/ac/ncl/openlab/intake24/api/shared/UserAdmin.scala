@@ -18,4 +18,4 @@ case class UserInfoWithSurveyUserName(id: Long, userName: String, name: Option[S
 
 case class CreateRespondentsWithPhysicalDataRequest(users: Seq[NewRespondentWithPhysicalData])
 
-case class CreateRespondentsWithPhysicalDataResponse(userData: Seq[NewRespondentIds])
+case class CreateRespondentsWithPhysicalDataResponse(userKeys: Seq[NewRespondentIds])

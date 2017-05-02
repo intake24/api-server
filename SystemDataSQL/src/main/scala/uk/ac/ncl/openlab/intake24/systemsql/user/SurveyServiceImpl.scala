@@ -4,17 +4,16 @@ import javax.inject.{Inject, Named}
 import javax.sql.DataSource
 
 import anorm._
-
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.SurveyState
-import uk.ac.ncl.openlab.intake24.services.systemdb.user.{PublicSurveyParameters, SurveyService, UserSurveyParameters}
+import uk.ac.ncl.openlab.intake24.services.systemdb.user.{PublicSurveyParameters, SurveyFollowUp, SurveyService, UserSurveyParameters}
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 import uk.ac.ncl.openlab.intake24.surveydata.NutrientMappedSubmission
 
 class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends SurveyService with SqlDataService with SqlResourceLoader {
 
   private case class UserSurveyParametersRow(scheme_id: String, state: Int, locale: String, started: Boolean, finished: Boolean, suspension_reason: Option[String],
-                                             support_email: String, originating_url: Option[String], description: Option[String])
+                                             originating_url: Option[String], description: Option[String])
 
   override def getPublicSurveyParameters(surveyId: String): Either[LookupError, PublicSurveyParameters] = tryWithConnection {
     implicit conn =>
@@ -31,7 +30,7 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
 
   override def getSurveyParameters(surveyId: String): Either[LookupError, UserSurveyParameters] = tryWithConnection {
     implicit conn =>
-      SQL("SELECT scheme_id, state, locale, now() >= start_date AS started, now() > end_date AS finished, suspension_reason, support_email, originating_url, description FROM surveys WHERE id={survey_id}")
+      SQL("SELECT scheme_id, locale, state, now() >= start_date AS started, now() > end_date AS finished, suspension_reason, originating_url, description FROM surveys WHERE id={survey_id}")
         .on('survey_id -> surveyId)
         .executeQuery()
         .as(Macro.namedParser[UserSurveyParametersRow].singleOpt) match {
@@ -50,16 +49,22 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
               "pending"
           }
 
-          Right(UserSurveyParameters(row.scheme_id, row.locale, state, row.suspension_reason, row.support_email, row.description))
+          Right(UserSurveyParameters(row.scheme_id, row.locale, state, row.suspension_reason, row.description))
+
         }
         case None =>
           Left(RecordNotFound(new RuntimeException(s"Survey $surveyId does not exist")))
       }
   }
 
-  override def getSurveyFollowUpURL(surveyId: String): Either[LookupError, Option[String]] = tryWithConnection {
+  private case class SurveyFollowUpRow(survey_monkey_url: Option[String], feedback_enabled: Boolean)
+
+  override def getSurveyFollowUp(surveyId: String): Either[LookupError, SurveyFollowUp] = tryWithConnection {
     implicit conn =>
-      Right(SQL("SELECT survey_monkey_url FROM surveys WHERE id={survey_id}").on('survey_id -> surveyId).as(SqlParser.str("survey_monkey_url").?.single))
+      SQL("SELECT survey_monkey_url, feedback_enabled FROM surveys WHERE id={survey_id}").on('survey_id -> surveyId).as(Macro.namedParser[SurveyFollowUpRow].singleOpt) match {
+        case Some(row) => Right(SurveyFollowUp(row.survey_monkey_url, row.feedback_enabled))
+        case None => Left(RecordNotFound(new RuntimeException(s"Survey $surveyId does not exist")))
+      }
   }
 
   def createSubmission(userId: Long, surveyId: String, survey: NutrientMappedSubmission): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {

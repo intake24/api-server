@@ -3,18 +3,18 @@ package uk.ac.ncl.openlab.intake24.api.client.scalajhttp
 import java.nio.file.Path
 
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.api.client.{ApiError, ApiResponseParser, ImageMapAdminClient}
+import uk.ac.ncl.openlab.intake24.api.client.{ApiError, ApiResponseParser, ImageMapAdminClient, JsonParser}
 import uk.ac.ncl.openlab.intake24.api.shared.NewImageMapRequest
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.ImageMapHeader
-import upickle.default._
+import io.circe.generic.auto._
 
-class ImageMapAdminClientImpl(apiBaseUrl: String) extends ImageMapAdminClient with ApiResponseParser with HttpRequestUtil {
+class ImageMapAdminClientImpl(apiBaseUrl: String) extends ImageMapAdminClient with ApiResponseParser with HttpRequestUtil with JsonParser {
 
   val logger = LoggerFactory.getLogger(classOf[ImageMapAdminClientImpl])
 
   def createImageMap(accessToken: String, baseImage: Path, svgImage: Path, sourceKeywords: Seq[String], params: NewImageMapRequest): Either[ApiError, Unit] = {
 
-    val paramsJson = write(params).toString
+    val paramsJson = toJson(params)
 
     val req = getAuthPostRequestForm(s"$apiBaseUrl/admin/portion-size/image-map/new-from-svg", accessToken, Seq(("imageMapParameters", paramsJson)),
       Seq(("baseImage", baseImage), ("svg", svgImage)))
