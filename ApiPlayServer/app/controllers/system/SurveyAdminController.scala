@@ -36,17 +36,20 @@ import scala.concurrent.Future
 class SurveyAdminController @Inject()(service: SurveyAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
   with DatabaseErrorHandler with JsonUtils {
 
-  private def sanitiseSurvey(surveyParametersIn: SurveyParametersIn): SurveyParametersIn = {
+  private def sanitiseSurvey(surveyParametersIn: SurveyParametersIn, strict: Boolean = true): SurveyParametersIn = {
+    val description =
+      if (strict) surveyParametersIn.description.map(d => HtmlSanitisePolicy.sanitise(d))
+      else surveyParametersIn.description.map(d => HtmlSanitisePolicy.easedSanitise(d))
     SurveyParametersIn(surveyParametersIn.id, surveyParametersIn.schemeId, surveyParametersIn.localeId,
       surveyParametersIn.state, surveyParametersIn.startDate, surveyParametersIn.endDate,
       surveyParametersIn.allowGeneratedUsers, surveyParametersIn.externalFollowUpURL,
-      surveyParametersIn.supportEmail, surveyParametersIn.description.map(d => HtmlSanitisePolicy.sanitise(d)))
+      surveyParametersIn.supportEmail, description)
   }
 
   def createSurvey() = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyAdmin)(jsonBodyParser[SurveyParametersIn]) {
     request =>
       Future {
-        translateDatabaseResult(service.createSurvey(sanitiseSurvey(request.body)))
+        translateDatabaseResult(service.createSurvey(sanitiseSurvey(request.body, false)))
       }
   }
 
@@ -56,9 +59,11 @@ class SurveyAdminController @Inject()(service: SurveyAdminService, deadbolt: Dea
 
         val subject = request.subject.get.asInstanceOf[AccessSubject]
 
-        val params = sanitiseSurvey(request.body)
+        val isStaff = !subject.userRoles.contains(Roles.superuser) && !subject.userRoles.contains(Roles.surveyAdmin)
 
-        if (!subject.userRoles.contains(Roles.superuser) && !subject.userRoles.contains(Roles.surveyAdmin))
+        val params = sanitiseSurvey(request.body, isStaff)
+
+        if (isStaff)
         // Survey staff is not allowed to change survey ID, scheme, locale and generated user settings
           translateDatabaseResult(service.staffUpdateSurvey(surveyId,
             StaffSurveyUpdate(params.startDate, params.endDate,
