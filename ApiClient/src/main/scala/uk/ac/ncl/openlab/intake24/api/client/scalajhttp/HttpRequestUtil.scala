@@ -2,17 +2,19 @@ package uk.ac.ncl.openlab.intake24.api.client.scalajhttp
 
 import java.nio.file.{Files, Path}
 
-import upickle.default._
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.auto._
+import uk.ac.ncl.openlab.intake24.api.client.JsonParser
 
 import scalaj.http.{Http, MultiPart, StringBodyConnectFunc}
 
-trait HttpRequestUtil {
+trait HttpRequestUtil extends JsonParser {
 
   protected val connectionTimeoutMs = 1000
   protected val responseTimeoutMs = 30000
 
-  protected def getHttpRequest[T](url: String, method: String, authToken: Option[String], body: T)(implicit writer: Writer[T]) = {
-    val req = Http(url).timeout(connectionTimeoutMs, responseTimeoutMs).method(method).charset("utf-8").header("Content-Type", "application/json").copy(connectFunc = StringBodyConnectFunc(writer.write(body).toString))
+  protected def getHttpRequest[T](url: String, method: String, authToken: Option[String], body: T)(implicit encoder: Encoder[T]) = {
+    val req = Http(url).timeout(connectionTimeoutMs, responseTimeoutMs).method(method).charset("utf-8").header("Content-Type", "application/json").copy(connectFunc = StringBodyConnectFunc(toJson(body)))
     authToken match {
       case Some(token) => req.header("X-Auth-Token", token)
       case None => req
@@ -43,22 +45,22 @@ trait HttpRequestUtil {
     }
   }
 
-  protected def getAuthGetRequest[T](url: String, authToken: String, body: T)(implicit writer: Writer[T]) =
+  protected def getAuthGetRequest[T](url: String, authToken: String, body: T)(implicit encoder: Encoder[T]) =
     getHttpRequest(url, "GET", Some(authToken), body)
 
   protected def getAuthGetRequestNoBody(url: String, authToken: String) =
     getHttpRequestNoBody(url, "GET", Some(authToken))
 
-  protected def getAuthDeleteRequest[T](url: String, authToken: String, body: T)(implicit writer: Writer[T]) =
+  protected def getAuthDeleteRequest[T](url: String, authToken: String, body: T)(implicit encoder: Encoder[T]) =
     getHttpRequest(url, "DELETE", Some(authToken), body)
 
   protected def getAuthDeleteRequestNoBody(url: String, authToken: String) =
     getHttpRequestNoBody(url, "DELETE", Some(authToken))
 
-  protected def getPostRequest[T](url: String, body: T)(implicit writer: Writer[T]) =
+  protected def getPostRequest[T](url: String, body: T)(implicit encoder: Encoder[T]) =
     getHttpRequest(url, "POST", None, body)
 
-  protected def getAuthPostRequest[T](url: String, authToken: String, body: T)(implicit writer: Writer[T]) =
+  protected def getAuthPostRequest[T](url: String, authToken: String, body: T)(implicit encoder: Encoder[T]) =
     getHttpRequest(url, "POST", Some(authToken), body)
 
   protected def getAuthPostRequestNoBody(url: String, authToken: String) =

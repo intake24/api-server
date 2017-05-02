@@ -4,6 +4,8 @@ import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.api.client.{ApiError, ApiResponseParser, ImageAdminClient}
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageDescriptor
 
+import io.circe.generic.auto._
+
 class ImageAdminClientImpl(apiBaseUrl: String) extends ImageAdminClient with ApiResponseParser with HttpRequestUtil {
   val logger = LoggerFactory.getLogger(classOf[ImageAdminClientImpl])
 

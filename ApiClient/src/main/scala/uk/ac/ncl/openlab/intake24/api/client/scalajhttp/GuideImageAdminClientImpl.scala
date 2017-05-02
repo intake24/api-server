@@ -5,6 +5,8 @@ import uk.ac.ncl.openlab.intake24.api.client.{ApiError, ApiResponseParser, Guide
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.api.shared.NewGuideImageRequest
 
+import io.circe.generic.auto._
+
 class GuideImageAdminClientImpl(apiBaseUrl: String) extends GuideImageAdminClient with ApiResponseParser with HttpRequestUtil {
 
   val logger = LoggerFactory.getLogger(classOf[GuideImageAdminClientImpl])
