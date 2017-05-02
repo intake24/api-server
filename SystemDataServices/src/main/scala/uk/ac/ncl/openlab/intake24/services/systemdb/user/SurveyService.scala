@@ -5,7 +5,9 @@ import uk.ac.ncl.openlab.intake24.surveydata.NutrientMappedSubmission
 
 case class PublicSurveyParameters(localeId: String, supportEmail: String, originatingURL: Option[String])
 
-case class UserSurveyParameters(schemeId: String, localeId: String, state: String, suspensionReason: Option[String], supportEmail: String)
+case class UserSurveyParameters(schemeId: String, localeId: String, state: String, suspensionReason: Option[String], description: Option[String])
+
+case class SurveyFollowUp(followUpUrl: Option[String], showFeedback: Boolean)
 
 trait SurveyService {
 
@@ -13,7 +15,7 @@ trait SurveyService {
 
   def getSurveyParameters(surveyId: String): Either[LookupError, UserSurveyParameters]
 
-  def getSurveyFollowUpURL(surveyId: String): Either[LookupError, Option[String]]
+  def getSurveyFollowUp(surveyId: String): Either[LookupError, SurveyFollowUp]
 
   def createSubmission(userId: Long, surveyId: String, submission: NutrientMappedSubmission): Either[UnexpectedDatabaseError, Unit]
 }

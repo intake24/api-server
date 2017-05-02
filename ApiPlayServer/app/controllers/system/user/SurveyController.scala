@@ -39,8 +39,6 @@ import uk.ac.ncl.openlab.intake24.surveydata.SurveySubmission
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-case class SurveyFollowUp(url: Option[String])
-
 class SurveyController @Inject()(service: SurveyService,
                                  userService: UserAdminService,
                                  nutrientMappingService: NutrientMappingService,
@@ -66,18 +64,20 @@ class SurveyController @Inject()(service: SurveyService,
 
         val result = for (
           userNameOpt <- userService.getSurveyUserAliases(Seq(userId), surveyId).right.map(_.get(userId)).right;
-          followUpUrlOpt <- service.getSurveyFollowUpURL(surveyId).right
+          followUp <- service.getSurveyFollowUp(surveyId).right
         ) yield {
 
           if (userNameOpt.isEmpty)
             Logger.warn(s"Survey user has no survey alias (for external follow up URL): $userId")
 
-          for (userName <- userNameOpt;
-               followUpUrl <- followUpUrlOpt)
+          val followUpUrlWithUserName = for (userName <- userNameOpt;
+               followUpUrl <- followUp.followUpUrl)
             yield followUpUrl.replace("[intake24_username_value]", userName)
+
+          followUp.copy(followUpUrl = followUpUrlWithUserName)
         }
 
-        translateDatabaseResult(result.right.map(SurveyFollowUp(_)))
+        translateDatabaseResult(result)
       }
   }
 
