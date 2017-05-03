@@ -315,7 +315,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
   def getUserByEmail(email: String): Either[LookupError, UserProfile] = tryWithConnection {
     implicit conn =>
       withTransaction {
-        SQL("SELECT id, name, email, phone, email_notifications, sms_notifications FROM users WHERE email={email}")
+        SQL("SELECT id, name, email, phone, email_notifications, sms_notifications FROM users WHERE lower(email)=lower({email})")
           .on('email -> email)
           .as(UserProfileRow.parser.singleOpt) match {
           case Some(row) => Right(buildUserRecordsFromRows(Seq(row)).head)
@@ -406,7 +406,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
 
   def getUserPasswordByEmail(email: String): Either[LookupError, SecurePassword] = tryWithConnection {
     implicit conn =>
-      SQL("SELECT password_hash, password_salt, password_hasher FROM user_passwords JOIN users ON user_passwords.user_id=users.id WHERE users.email={email}")
+      SQL("SELECT password_hash, password_salt, password_hasher FROM user_passwords JOIN users ON user_passwords.user_id=users.id WHERE lower(users.email)=lower({email})")
         .on('email -> email)
         .as(PasswordRow.parser.singleOpt) match {
         case Some(row) => Right(SecurePassword(row.password_hash, row.password_salt, row.password_hasher))

@@ -1054,6 +1054,28 @@ object SystemDatabaseMigrations {
         ???
 
       }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 41l
+      override val versionTo: Long = 42l
+      override val description: String = "Create case-insensitive e-mail index"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE users DROP CONSTRAINT users_email_unique").execute()
+        SQL("DROP INDEX users_email_index").execute()
+
+        SQL("CREATE UNIQUE INDEX users_email_case_insensitive_index ON users (lower(email))").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
     }
   )
 }
