@@ -23,12 +23,11 @@ import javax.inject.Inject
 import akka.actor.ActorSystem
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
-import models.Intake24Subject
 import parsers.JsonUtils
 import play.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{Action, BodyParsers, Controller}
-import security.DeadboltActionsAdapter
+import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
@@ -43,24 +42,24 @@ class SurveyController @Inject()(service: SurveyService,
                                  userService: UserAdminService,
                                  nutrientMappingService: NutrientMappingService,
                                  actorSystem: ActorSystem,
-                                 deadbolt: DeadboltActionsAdapter) extends Controller
+                                 rab: Intake24RestrictedActionBuilder) extends Controller
   with DatabaseErrorHandler with JsonUtils {
 
   def getPublicSurveyParameters(surveyId: String) = Action {
     translateDatabaseResult(service.getPublicSurveyParameters(surveyId))
   }
 
-  def getSurveyParameters(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId), Roles.surveyRespondent(surveyId))(BodyParsers.parse.empty) {
+  def getSurveyParameters(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId), Roles.surveyRespondent(surveyId))(BodyParsers.parse.empty) {
     _ =>
       Future {
         translateDatabaseResult(service.getSurveyParameters(surveyId))
       }
   }
 
-  def getSurveyFollowUp(surveyId: String) = deadbolt.restrictToRoles(Roles.surveyRespondent(surveyId))(BodyParsers.parse.empty) {
+  def getSurveyFollowUp(surveyId: String) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(BodyParsers.parse.empty) {
     request =>
       Future {
-        val userId = request.subject.get.asInstanceOf[Intake24Subject].userId
+        val userId = request.subject.userId
 
         val result = for (
           userNameOpt <- userService.getSurveyUserAliases(Seq(userId), surveyId).right.map(_.get(userId)).right;
@@ -71,7 +70,7 @@ class SurveyController @Inject()(service: SurveyService,
             Logger.warn(s"Survey user has no survey alias (for external follow up URL): $userId")
 
           val followUpUrlWithUserName = for (userName <- userNameOpt;
-               followUpUrl <- followUp.followUpUrl)
+                                             followUpUrl <- followUp.followUpUrl)
             yield followUpUrl.replace("[intake24_username_value]", userName)
 
           followUp.copy(followUpUrl = followUpUrlWithUserName)
@@ -81,7 +80,7 @@ class SurveyController @Inject()(service: SurveyService,
       }
   }
 
-  def submitSurvey(surveyId: String) = deadbolt.restrictToRoles(Roles.surveyRespondent(surveyId))(jsonBodyParser[SurveySubmission]) {
+  def submitSurvey(surveyId: String) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(jsonBodyParser[SurveySubmission]) {
     request =>
       Future {
         service.getSurveyParameters(surveyId) match {
@@ -89,7 +88,7 @@ class SurveyController @Inject()(service: SurveyService,
             if (params.state != "running")
               Forbidden(toJsonString(ErrorDescription("SurveyNotRunning", "Survey not accepting submissions at this time")))
             else {
-              val userId = request.subject.get.asInstanceOf[Intake24Subject].userId
+              val userId = request.subject.userId
 
               // No reason to keep the user waiting for the database result because reporting nutrient mapping or
               // database errors to the user is not helpful at this point.

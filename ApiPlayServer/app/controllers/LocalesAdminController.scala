@@ -23,24 +23,24 @@ import javax.inject.Inject
 import io.circe.generic.auto._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
-import security.DeadboltActionsAdapter
+import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.LocalesAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
 import scala.concurrent.Future
 
-class LocalesAdminController @Inject()(service: LocalesAdminService, deadbolt: DeadboltActionsAdapter) extends Controller with DatabaseErrorHandler {
+class LocalesAdminController @Inject()(service: LocalesAdminService, rab: Intake24RestrictedActionBuilder) extends Controller with DatabaseErrorHandler {
 
   //FIXME: needs to be restricted to staff & admins only, but Deadbolt needs to be replaced first
 
-  def listLocales() = deadbolt.restrictToAuthenticated {
+  def listLocales() = rab.restrictToAuthenticated {
     _ =>
       Future {
         translateDatabaseResult(service.listLocales())
       }
   }
 
-  def getLocale(id: String) = deadbolt.restrictToAuthenticated {
+  def getLocale(id: String) = rab.restrictToAuthenticated {
     _ =>
       Future {
         translateDatabaseResult(service.getLocale(id))

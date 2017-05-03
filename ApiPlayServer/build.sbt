@@ -31,7 +31,6 @@ libraryDependencies ++= Seq(
   cache,
   "net.codingwell" %% "scala-guice" % "4.1.0",
   "com.mohiva" %% "play-silhouette" % "4.0.0",
-  "be.objectify" %% "deadbolt-scala" % "2.5.0",
   "io.circe" %% "circe-core" % "0.7.0",
   "io.circe" %% "circe-generic" % "0.7.0",
   "io.circe" %% "circe-parser" % "0.7.0",

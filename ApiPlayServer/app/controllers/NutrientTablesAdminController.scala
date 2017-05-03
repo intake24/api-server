@@ -23,15 +23,15 @@ import javax.inject.Inject
 import io.circe.generic.auto._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
-import security.DeadboltActionsAdapter
+import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.NutrientTablesAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
 import scala.concurrent.Future
 
-class NutrientTablesAdminController @Inject()(service: NutrientTablesAdminService, deadbolt: DeadboltActionsAdapter) extends Controller with DatabaseErrorHandler {
+class NutrientTablesAdminController @Inject()(service: NutrientTablesAdminService, rab: Intake24RestrictedActionBuilder) extends Controller with DatabaseErrorHandler {
 
-  def listNutrientTables() = deadbolt.restrictToRoles(Roles.superuser) {
+  def listNutrientTables() = rab.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.listNutrientTables())
     }

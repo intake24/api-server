@@ -24,55 +24,55 @@ import io.circe.generic.auto._
 import parsers.JsonUtils
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
-import security.DeadboltActionsAdapter
+import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoriesAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 import uk.ac.ncl.openlab.intake24.{LocalCategoryRecordUpdate, MainCategoryRecordUpdate, NewLocalCategoryRecord, NewMainCategoryRecord}
 
 import scala.concurrent.Future
 
-class CategoriesAdminController @Inject()(service: CategoriesAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
+class CategoriesAdminController @Inject()(service: CategoriesAdminService, rab: Intake24RestrictedActionBuilder) extends Controller
   with DatabaseErrorHandler with JsonUtils {
 
-  def getCategoryRecord(code: String, locale: String) = deadbolt.restrictToRoles(Roles.superuser) {
+  def getCategoryRecord(code: String, locale: String) = rab.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getCategoryRecord(code, locale))
     }
   }
 
-  def isCategoryCodeAvailable(code: String) = deadbolt.restrictToRoles(Roles.superuser) {
+  def isCategoryCodeAvailable(code: String) = rab.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.isCategoryCodeAvailable(code))
     }
   }
 
-  def isCategoryCode(code: String) = deadbolt.restrictToRoles(Roles.superuser) {
+  def isCategoryCode(code: String) = rab.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.isCategoryCodeAvailable(code))
     }
   }
 
-  def createMainCategoryRecord() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[NewMainCategoryRecord]) {
+  def createMainCategoryRecord() = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[NewMainCategoryRecord]) {
     request =>
       Future {
         translateDatabaseResult(service.createMainCategoryRecords(Seq(request.body)))
       }
   }
 
-  def deleteCategory(categoryCode: String) = deadbolt.restrictToRoles(Roles.superuser) {
+  def deleteCategory(categoryCode: String) = rab.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.deleteCategory(categoryCode))
     }
   }
 
-  def updateMainCategoryRecord(categoryCode: String) = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[MainCategoryRecordUpdate]) {
+  def updateMainCategoryRecord(categoryCode: String) = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[MainCategoryRecordUpdate]) {
     request =>
       Future {
         translateDatabaseResult(service.updateMainCategoryRecord(categoryCode, request.body))
       }
   }
 
-  def updateLocalCategoryRecord(categoryCode: String, locale: String) = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[LocalCategoryRecordUpdate]) {
+  def updateLocalCategoryRecord(categoryCode: String, locale: String) = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[LocalCategoryRecordUpdate]) {
     request =>
       Future {
         val req = request.body

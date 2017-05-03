@@ -23,22 +23,22 @@ import javax.inject.Inject
 import io.circe.generic.auto._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
-import security.DeadboltActionsAdapter
+import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.QuickSearchService
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
 import scala.concurrent.Future
 
-class QuickSearchController @Inject() (service: QuickSearchService, deadbolt: DeadboltActionsAdapter) extends Controller
+class QuickSearchController @Inject() (service: QuickSearchService, rab: Intake24RestrictedActionBuilder) extends Controller
     with DatabaseErrorHandler {
 
-  def searchFoods(searchTerm: String, locale: String) = deadbolt.restrictToRoles(Roles.superuser) {
+  def searchFoods(searchTerm: String, locale: String) = rab.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.searchFoods(searchTerm, locale))
     }
   }
 
-  def searchCategories(searchTerm: String, locale: String) = deadbolt.restrictToRoles(Roles.superuser) {
+  def searchCategories(searchTerm: String, locale: String) = rab.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.searchCategories(searchTerm, locale))
     }

@@ -25,14 +25,14 @@ import parsers.JsonUtils
 import play.api.http.ContentTypes
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
-import security.DeadboltActionsAdapter
+import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
 import scala.concurrent.Future
 
-class FoodIndexController @Inject()(foodIndexes: Map[String, FoodIndex], deadbolt: DeadboltActionsAdapter) extends Controller with JsonUtils {
-  def lookup(locale: String, term: String) = deadbolt.restrictToRoles(Roles.superuser) {
+class FoodIndexController @Inject()(foodIndexes: Map[String, FoodIndex], rab: Intake24RestrictedActionBuilder) extends Controller with JsonUtils {
+  def lookup(locale: String, term: String) = rab.restrictToRoles(Roles.superuser) {
     Future {
       foodIndexes.get(locale) match {
         case Some(index) => Ok(toJsonString(index.lookup(term, 50))).as(ContentTypes.JSON)

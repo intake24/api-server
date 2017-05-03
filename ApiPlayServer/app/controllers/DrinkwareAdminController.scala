@@ -23,22 +23,22 @@ import javax.inject.Inject
 import io.circe.generic.auto._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
-import security.DeadboltActionsAdapter
+import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.DrinkwareAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
 import scala.concurrent.Future
 
-class DrinkwareAdminController @Inject() (service: DrinkwareAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
+class DrinkwareAdminController @Inject() (service: DrinkwareAdminService, rab: Intake24RestrictedActionBuilder) extends Controller
     with DatabaseErrorHandler {
   
-  def listDrinkwareSets() = deadbolt.restrictToRoles(Roles.superuser) {
+  def listDrinkwareSets() = rab.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.listDrinkwareSets())
     }
   }
 
-  def getDrinkwareSet(id: String) = deadbolt.restrictToRoles(Roles.superuser) {
+  def getDrinkwareSet(id: String) = rab.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getDrinkwareSet(id))
     }

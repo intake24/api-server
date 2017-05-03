@@ -18,19 +18,9 @@ limitations under the License.
 
 package modules
 
-import play.api.Environment
+import com.google.inject.{AbstractModule, Provides, Singleton}
 import play.api.Configuration
-import play.api.inject.Module
-import play.api.inject.Binding
-import be.objectify.deadbolt.scala.cache.HandlerCache
-import security.DeadboltHandlerCacheImpl
-import com.google.inject.AbstractModule
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageStorageService
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageStorageLocal
-import com.google.inject.Injector
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.LocalImageStorageSettings
-import com.google.inject.Provides
-import com.google.inject.Singleton
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.{ImageStorageLocal, ImageStorageService, LocalImageStorageSettings}
 
 class LocalStorageModule extends AbstractModule {
 

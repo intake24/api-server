@@ -19,7 +19,8 @@ object Roles {
 
   def surveyRespondent(surveyId: String) = s"$surveyId$respondentSuffix"
 
-
   def foodDatabaseMaintainer(localeId: String) = s"fdbm/$localeId"
+
+
 
 }

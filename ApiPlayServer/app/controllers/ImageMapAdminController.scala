@@ -27,7 +27,7 @@ import play.api.libs.Files.TemporaryFile
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.MultipartFormData.FilePart
 import play.api.mvc.{Controller, Result}
-import security.DeadboltActionsAdapter
+import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.api.shared.{ErrorDescription, NewImageMapRequest}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
@@ -40,7 +40,7 @@ class ImageMapAdminController @Inject()(
                                          imageDatabase: ImageDatabaseService,
                                          imageAdmin: ImageAdminService,
                                          imageStorage: ImageStorageService,
-                                         deadbolt: DeadboltActionsAdapter) extends Controller
+                                         rab: Intake24RestrictedActionBuilder) extends Controller
   with ImageOrDatabaseServiceErrorHandler with FormDataUtil {
 
   import ImageAdminService.WrapDatabaseError
@@ -77,21 +77,21 @@ class ImageMapAdminController @Inject()(
 
       ) yield ())
 
-  def listImageMaps() = deadbolt.restrictToRoles(Roles.superuser) {
+  def listImageMaps() = rab.restrictToRoles(Roles.superuser) {
     _ =>
       Future {
         translateDatabaseResult(imageMaps.listImageMaps())
       }
   }
 
-  def getImageMapBaseImageSourceId(id: String) = deadbolt.restrictToRoles(Roles.superuser) {
+  def getImageMapBaseImageSourceId(id: String) = rab.restrictToRoles(Roles.superuser) {
     _ =>
       Future {
         translateDatabaseResult(imageMaps.getImageMapBaseImageSourceId(id))
       }
   }
 
-  def createImageMapFromSVG() = deadbolt.restrictToRoles(Roles.superuser)(parse.multipartFormData) {
+  def createImageMapFromSVG() = rab.restrictToRoles(Roles.superuser)(parse.multipartFormData) {
     request =>
       Future {
         val result = for (
@@ -104,7 +104,7 @@ class ImageMapAdminController @Inject()(
             case Right(m) => Right(m)
           }).right;
           _ <- validateParams(params, imageMap).right;
-          _ <- createImageMap(baseImage, sourceKeywords, params, imageMap, request.subject.get.identifier).right
+          _ <- createImageMap(baseImage, sourceKeywords, params, imageMap, request.subject.userId.toString).right // FIXME: better uploader string
         ) yield ()
 
         result match {

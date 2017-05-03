@@ -6,7 +6,7 @@ import parsers.{HtmlSanitisePolicy, JsonUtils}
 import play.api.http.ContentTypes
 import play.api.libs.concurrent.Execution.Implicits._
 import play.mvc.Controller
-import security.DeadboltActionsAdapter
+import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.services.fooddb.demographicgroups._
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
@@ -16,7 +16,7 @@ import scala.concurrent.Future
   * Created by Tim Osadchiy on 09/02/2017.
   */
 class DemographicGroupsController @Inject()(dgService: DemographicGroupsService,
-                                            deadbolt: DeadboltActionsAdapter)
+                                            rab: Intake24RestrictedActionBuilder)
   extends Controller with ImageOrDatabaseServiceErrorHandler with JsonUtils {
 
   private def sanitiseDemographicScaleSector(demographicScaleSectorIn: DemographicScaleSectorIn): DemographicScaleSectorIn = {
@@ -25,42 +25,42 @@ class DemographicGroupsController @Inject()(dgService: DemographicGroupsService,
       demographicScaleSectorIn.sentiment, demographicScaleSectorIn.range)
   }
 
-  def list() = deadbolt.restrictToAuthenticated {
+  def list() = rab.restrictToAuthenticated {
     _ =>
       Future {
         translateDatabaseResult(dgService.list())
       }
   }
 
-  def createDemographicGroup() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[DemographicGroupRecordIn]) {
+  def createDemographicGroup() = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[DemographicGroupRecordIn]) {
     request =>
       Future {
         translateDatabaseResult(dgService.createDemographicGroup(request.body))
       }
   }
 
-  def patchDemographicGroup(id: Int) = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[DemographicGroupRecordIn]) {
+  def patchDemographicGroup(id: Int) = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[DemographicGroupRecordIn]) {
     request =>
       Future {
         translateDatabaseResult(dgService.patchDemographicGroup(id, request.body))
       }
   }
 
-  def getDemographicGroup(id: Int) = deadbolt.restrictToAuthenticated {
+  def getDemographicGroup(id: Int) = rab.restrictToAuthenticated {
     request =>
       Future {
         translateDatabaseResult(dgService.getDemographicGroup(id))
       }
   }
 
-  def deleteDemographicGroup(id: Int) = deadbolt.restrictToRoles(Roles.superuser) {
+  def deleteDemographicGroup(id: Int) = rab.restrictToRoles(Roles.superuser) {
     _ =>
       Future {
         translateDatabaseResult(dgService.deleteDemographicGroup(id))
       }
   }
 
-  def createDemographicGroupScaleSector(demographicGroupId: Int) = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[DemographicScaleSectorIn]) {
+  def createDemographicGroupScaleSector(demographicGroupId: Int) = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[DemographicScaleSectorIn]) {
     request =>
       Future {
         val sanitised = sanitiseDemographicScaleSector(request.body)
@@ -68,7 +68,7 @@ class DemographicGroupsController @Inject()(dgService: DemographicGroupsService,
       }
   }
 
-  def patchDemographicGroupScaleSector(id: Int) = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[DemographicScaleSectorIn]) {
+  def patchDemographicGroupScaleSector(id: Int) = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[DemographicScaleSectorIn]) {
     request =>
       Future {
         val sanitised = sanitiseDemographicScaleSector(request.body)
@@ -76,14 +76,14 @@ class DemographicGroupsController @Inject()(dgService: DemographicGroupsService,
       }
   }
 
-  def deleteDemographicGroupScaleSector(id: Int) = deadbolt.restrictToRoles(Roles.superuser) {
+  def deleteDemographicGroupScaleSector(id: Int) = rab.restrictToRoles(Roles.superuser) {
     _ =>
       Future {
         translateDatabaseResult(dgService.deleteDemographicScaleSector(id))
       }
   }
 
-  def getHenryCoefficients() = deadbolt.restrictToAuthenticated {
+  def getHenryCoefficients() = rab.restrictToAuthenticated {
     _ =>
       Future {
 

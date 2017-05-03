@@ -24,23 +24,23 @@ import io.circe.generic.auto._
 import parsers.JsonUtils
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
-import security.DeadboltActionsAdapter
+import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.AssociatedFood
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
 import scala.concurrent.Future
 
-class AssociatedFoodsAdminController @Inject()(service: AssociatedFoodsAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
+class AssociatedFoodsAdminController @Inject()(service: AssociatedFoodsAdminService, rab: Intake24RestrictedActionBuilder) extends Controller
   with DatabaseErrorHandler with JsonUtils {
 
-  def getAssociatedFoods(foodCode: String, locale: String) = deadbolt.restrictToRoles(Roles.superuser) {
+  def getAssociatedFoods(foodCode: String, locale: String) = rab.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getAssociatedFoods(foodCode, locale))
     }
   }
 
-  def updateAssociatedFoods(foodCode: String, locale: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.foodDatabaseMaintainer(locale))(jsonBodyParser[Seq[AssociatedFood]]) {
+  def updateAssociatedFoods(foodCode: String, locale: String) = rab.restrictToRoles(Roles.superuser, Roles.foodDatabaseMaintainer(locale))(jsonBodyParser[Seq[AssociatedFood]]) {
     request =>
       Future {
         translateDatabaseResult(service.updateAssociatedFoods(foodCode, request.body, locale))

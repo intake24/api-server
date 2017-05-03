@@ -24,7 +24,7 @@ import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
-import models.Intake24Subject
+
 import parsers.JsonUtils
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.mailer.{Email, MailerClient}
@@ -49,17 +49,17 @@ class HelpController @Inject()(cache: CacheApi,
                                smsService: SMSService,
                                userAdminService: UserAdminService,
                                passwordHasherRegistry: PasswordHasherRegistry,
-                               deadbolt: DeadboltActionsAdapter) extends Controller
+                               rab: Intake24RestrictedActionBuilder) extends Controller
   with DatabaseErrorHandler with JsonUtils {
 
   val callbackRequestRate = config.getInt("intake24.help.callbackRequestRateSeconds").get
 
   // TODO: captcha to prevent new spam
   // TODO: localise e-mail messages
-  def requestCallback(surveyId: String) = deadbolt.restrictToRoles(Roles.surveyRespondent(surveyId))(jsonBodyParser[CallbackRequest]) {
+  def requestCallback(surveyId: String) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(jsonBodyParser[CallbackRequest]) {
     request =>
       Future {
-        val subject = request.subject.get.asInstanceOf[Intake24Subject]
+        val subject = request.subject
 
         val cacheKey = s"reject-callback-${subject.userId.toString}"
 

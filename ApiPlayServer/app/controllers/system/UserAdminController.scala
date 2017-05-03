@@ -23,13 +23,12 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
-import models.{AccessSubject, Intake24Subject}
 import parsers.{JsonUtils, UserRecordsCSVParser}
 import play.api.http.ContentTypes
 import play.api.libs.Files
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller, MultipartFormData, Result}
-import security.DeadboltActionsAdapter
+import security.{Intake24AccessToken, Intake24RestrictedActionBuilder}
 import uk.ac.ncl.openlab.intake24.api.shared._
 import uk.ac.ncl.openlab.intake24.errors.AnyError
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
@@ -42,7 +41,9 @@ import scala.concurrent.Future
 class UserAdminController @Inject()(service: UserAdminService,
                                     UsersSupportService: UserPhysicalDataService,
                                     usersSupportService: UsersSupportService,
-                                    passwordHasherRegistry: PasswordHasherRegistry, deadbolt: DeadboltActionsAdapter) extends Controller
+                                    passwordHasherRegistry: PasswordHasherRegistry,
+                                    rab: Intake24RestrictedActionBuilder,
+                                    authChecks: UserAuthChecks) extends Controller
   with DatabaseErrorHandler with JsonUtils {
 
   private def doCreateOrUpdate(surveyId: String, roles: Set[String], userRecords: Seq[NewRespondent]): Result = {
@@ -74,17 +75,14 @@ class UserAdminController @Inject()(service: UserAdminService,
     }
   }
 
-  def findUsers(query: String, limit: Int) = deadbolt.restrictToAuthenticated(BodyParsers.parse.empty) {
-    request =>
+  def findUsers(query: String, limit: Int) = rab.restrictAccess(authChecks.canListUsers) {
+    _ =>
       Future {
-        subjectIsStaff(request.subject.get.asInstanceOf[AccessSubject]) match {
-          case true => translateDatabaseResult(service.findUsers(query, Math.min(Math.max(limit, 0), 100)))
-          case false => Forbidden
-        }
+        translateDatabaseResult(service.findUsers(query, Math.min(Math.max(limit, 0), 100)))
       }
   }
 
-  def createUser() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[CreateUserRequest]) {
+  def createUser() = rab.restrictAccess(authChecks.canCreateUser)(jsonBodyParser[CreateUserRequest]) {
     request =>
       Future {
         val pwInfo = passwordHasherRegistry.current.hash(request.body.password)
@@ -93,89 +91,43 @@ class UserAdminController @Inject()(service: UserAdminService,
       }
   }
 
-  private def doWithDatabaseCheck(check: Either[AnyError, Boolean])(block: => Result): Result =
-    check match {
-      case Right(true) => block
-      case Right(false) => Forbidden
-      case Left(e) => translateDatabaseError(e)
-    }
-
-  private def canPatchUser[T](subject: AccessSubject, userId: Long): Either[AnyError, Boolean] = {
-    // Forbid changing your own password for now until e-mail/SMS validation is working,
-    // but allow survey admins/staff to change it for you
-
-    if (subject.userRoles.contains(Roles.superuser))
-    // Superuser can change anyone's password
-      Right(true)
-    else
-      service.getUserById(userId).right.map {
-        userProfile =>
-          val userIsRespondent = userProfile.roles.filter(_.endsWith(Roles.respondentSuffix)).map(_.dropRight(Roles.respondentSuffix.length))
-
-          // Global survey admin can change any respondent's password
-          if (subject.userRoles.contains(Roles.surveyAdmin))
-            userIsRespondent.nonEmpty
-          else {
-            // Survey staff can change passwords for users who are respondents in their surveys
-            val subjectIsStaff = subject.userRoles.filter(_.endsWith(Roles.staffSuffix)).map(_.dropRight(Roles.staffSuffix.length))
-            subjectIsStaff.exists(surveyId => userIsRespondent.contains(surveyId))
-          }
-      }
-  }
-
-  private def subjectIsStaff[T](subject: AccessSubject): Boolean = {
-    subject.userRoles.contains(Roles.superuser) || subject.userRoles.contains(Roles.surveyAdmin) || subject.userRoles.map(role => role.endsWith(Roles.staffSuffix)).foldLeft(false)(_ || _)
-  }
-
-  def patchUser(userId: Long) = deadbolt.restrictToAuthenticated(jsonBodyParser[UserProfileUpdate]) {
+  def patchUser(userId: Long) = rab.restrictAccessWithDatabaseCheck(authChecks.canPatchUser(userId))(jsonBodyParser[UserProfileUpdate]) {
     request =>
       Future {
-        val subject = request.subject.get.asInstanceOf[AccessSubject]
-
-        doWithDatabaseCheck(canPatchUser(subject, userId)) {
-          translateDatabaseResult(service.updateUser(userId, request.body))
-        }
+        translateDatabaseResult(service.updateUser(userId, request.body))
       }
   }
 
-  def patchUserPassword(userId: Long) = deadbolt.restrictToAuthenticated(jsonBodyParser[PatchUserPasswordRequest]) {
+  def patchUserPassword(userId: Long) = rab.restrictAccessWithDatabaseCheck(authChecks.canPatchUser(userId))(jsonBodyParser[PatchUserPasswordRequest]) {
     request =>
       Future {
-        val subject = request.subject.get.asInstanceOf[AccessSubject]
-
-        doWithDatabaseCheck(canPatchUser(subject, userId)) {
-          val pwInfo = passwordHasherRegistry.current.hash(request.body.password)
-          translateDatabaseResult(service.updateUserPassword(userId, SecurePassword(pwInfo.password, pwInfo.salt.get, pwInfo.hasher)))
-        }
+        val pwInfo = passwordHasherRegistry.current.hash(request.body.password)
+        translateDatabaseResult(service.updateUserPassword(userId, SecurePassword(pwInfo.password, pwInfo.salt.get, pwInfo.hasher)))
       }
   }
 
-  def deleteUser(userId: Long) = deadbolt.restrictToAuthenticated(BodyParsers.parse.empty) {
+  def deleteUser(userId: Long) = rab.restrictAccessWithDatabaseCheck(authChecks.canDeleteUser(userId))(BodyParsers.parse.empty) {
     request =>
       Future {
-        val subject = request.subject.get.asInstanceOf[AccessSubject]
-
-        doWithDatabaseCheck(canPatchUser(subject, userId)) {
-          translateDatabaseResult(service.deleteUsersById(Seq(userId)))
-        }
+        translateDatabaseResult(service.deleteUsersById(Seq(userId)))
       }
   }
 
-  def deleteUsers() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[DeleteUsersRequest]) {
+  def deleteUsers() = rab.restrictAccess(authChecks.canCreateUser)(jsonBodyParser[DeleteUsersRequest]) {
     request =>
       Future {
         translateDatabaseResult(service.deleteUsersById(request.body.userIds))
       }
   }
 
-  def listSurveyStaffUsers(surveyId: String, offset: Int, limit: Int) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
+  def listSurveyStaffUsers(surveyId: String, offset: Int, limit: Int) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
     _ =>
       Future {
         translateDatabaseResult(service.listUsersByRole(Roles.surveyStaff(surveyId), offset, limit))
       }
   }
 
-  def createOrUpdateSurveyStaff(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser[CreateOrUpdateSurveyUsersRequest]) {
+  def createOrUpdateSurveyStaff(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser[CreateOrUpdateSurveyUsersRequest]) {
     request =>
       Future {
         doCreateOrUpdate(surveyId, Set(Roles.surveyStaff(surveyId)), request.body.users)
@@ -189,7 +141,7 @@ class UserAdminController @Inject()(service: UserAdminService,
     *
     * This is because client-side user presentation currently does not make sense without a user name.
     */
-  def listSurveyRespondentUsers(surveyId: String, offset: Int, limit: Int) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
+  def listSurveyRespondentUsers(surveyId: String, offset: Int, limit: Int) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
     _ =>
       Future {
         val result =
@@ -205,28 +157,28 @@ class UserAdminController @Inject()(service: UserAdminService,
       }
   }
 
-  def createOrUpdateSurveyRespondents(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser[CreateOrUpdateSurveyUsersRequest]) {
+  def createOrUpdateSurveyRespondents(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser[CreateOrUpdateSurveyUsersRequest]) {
     request =>
       Future {
         doCreateOrUpdate(surveyId, Set(Roles.surveyRespondent(surveyId)), request.body.users)
       }
   }
 
-  def uploadSurveyRespondentsCSV(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(BodyParsers.parse.multipartFormData) {
+  def uploadSurveyRespondentsCSV(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(BodyParsers.parse.multipartFormData) {
     request =>
       Future {
         uploadCSV(request.body, surveyId, Set(Roles.surveyRespondent(surveyId)))
       }
   }
 
-  def deleteSurveyUsers(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser[DeleteSurveyUsersRequest]) {
+  def deleteSurveyUsers(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser[DeleteSurveyUsersRequest]) {
     request =>
       Future {
         translateDatabaseResult(service.deleteUsersByAlias(request.body.userNames.map(n => SurveyUserAlias(surveyId, n))))
       }
   }
 
-  def createRespondentsWithPhysicalData(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser[CreateRespondentsWithPhysicalDataRequest]) {
+  def createRespondentsWithPhysicalData(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser[CreateRespondentsWithPhysicalDataRequest]) {
     request =>
       Future {
         translateDatabaseResult(usersSupportService.createRespondentsWithPhysicalData(surveyId, request.body.users).right.map {
@@ -235,7 +187,7 @@ class UserAdminController @Inject()(service: UserAdminService,
       }
   }
 
-  def giveAccessToSurvey(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser[UserAccessToSurveySeq]) {
+  def giveAccessToSurvey(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser[UserAccessToSurveySeq]) {
     request =>
       Future {
         //        Check that all roles contain surveyId as prefix then perform update for every user
@@ -248,7 +200,7 @@ class UserAdminController @Inject()(service: UserAdminService,
       }
   }
 
-  def withdrawAccessToSurvey(surveyId: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser[UserAccessToSurveySeq]) {
+  def withdrawAccessToSurvey(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser[UserAccessToSurveySeq]) {
     request =>
       Future {
         //        Check that all roles contain surveyId as prefix then perform update for every user

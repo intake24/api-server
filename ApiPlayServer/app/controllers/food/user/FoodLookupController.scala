@@ -23,7 +23,7 @@ import javax.inject.Inject
 import controllers.DatabaseErrorHandler
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller}
-import security.DeadboltActionsAdapter
+import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound}
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodBrowsingService
@@ -41,11 +41,11 @@ case class LookupResult(foods: Seq[UserFoodHeader], categories: Seq[UserCategory
 
 class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex], foodDescriptionSplitters: Map[String, Splitter],
                                      foodBrowsingService: FoodBrowsingService, foodPopularityService: FoodPopularityService,
-                                     deadbolt: DeadboltActionsAdapter) extends Controller with DatabaseErrorHandler with JsonUtils {
+                                     rab: Intake24RestrictedActionBuilder) extends Controller with DatabaseErrorHandler with JsonUtils {
 
   import uk.ac.ncl.openlab.intake24.errors.ErrorUtils._
 
-  def getSplitSuggestion(locale: String, description: String) = deadbolt.restrictToRespondents(BodyParsers.parse.empty) {
+  def getSplitSuggestion(locale: String, description: String) = rab.restrictToRespondents(BodyParsers.parse.empty) {
     _ =>
       Future {
         foodDescriptionSplitters.get(locale) match {
@@ -80,7 +80,7 @@ class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex], foodDe
     }
   }
 
-  def lookup(locale: String, description: String, maxResults: Int) = deadbolt.restrictToAuthenticated {
+  def lookup(locale: String, description: String, maxResults: Int) = rab.restrictToAuthenticated {
     _ =>
       Future {
         translateDatabaseResult(lookupImpl(locale, description, maxResults))
@@ -88,7 +88,7 @@ class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex], foodDe
   }
 
   //FIXME: bad performance due to individual queries for every food and category
-  def lookupInCategory(locale: String, description: String, categoryCode: String, maxResult: Int) = deadbolt.restrictToAuthenticated {
+  def lookupInCategory(locale: String, description: String, categoryCode: String, maxResult: Int) = rab.restrictToAuthenticated {
     _ =>
       Future {
         val result = for (

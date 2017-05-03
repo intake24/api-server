@@ -26,22 +26,20 @@ import controllers.DatabaseErrorHandler
 import parsers.{JsonUtils, SurveyCSVExporter}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller}
-import security.DeadboltActionsAdapter
+import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, SurveyAdminService}
 import io.circe.generic.auto._
-import models.Intake24Subject
-import play.api.Logger
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
 import scala.concurrent.Future
 
 
-class DataExportController @Inject()(service: DataExportService, surveyAdminService: SurveyAdminService, foodGroupsAdminService: FoodGroupsAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
+class DataExportController @Inject()(service: DataExportService, surveyAdminService: SurveyAdminService, foodGroupsAdminService: FoodGroupsAdminService, rab: Intake24RestrictedActionBuilder) extends Controller
   with DatabaseErrorHandler with JsonUtils {
 
-  def getSurveySubmissions(surveyId: String, dateFrom: String, dateTo: String, offset: Int, limit: Int) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
+  def getSurveySubmissions(surveyId: String, dateFrom: String, dateTo: String, offset: Int, limit: Int) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
     _ =>
       Future {
 
@@ -56,11 +54,11 @@ class DataExportController @Inject()(service: DataExportService, surveyAdminServ
       }
   }
 
-  def getMySurveySubmissions(surveyId: String) = deadbolt.restrictToRoles(Roles.surveyRespondent(surveyId))(BodyParsers.parse.empty) {
+  def getMySurveySubmissions(surveyId: String) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(BodyParsers.parse.empty) {
     request =>
       Future {
 
-        val respondentId = request.subject.get.asInstanceOf[Intake24Subject].userId
+        val respondentId = request.subject.userId
 
         try {
           translateDatabaseResult(service.getSurveySubmissions(surveyId, None, None, 0, Int.MaxValue, Some(respondentId)))
@@ -70,7 +68,7 @@ class DataExportController @Inject()(service: DataExportService, surveyAdminServ
       }
   }
 
-  def getSurveySubmissionsAsCSV(surveyId: String, dateFrom: String, dateTo: String) = deadbolt.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
+  def getSurveySubmissionsAsCSV(surveyId: String, dateFrom: String, dateTo: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
     request =>
       Future {
 

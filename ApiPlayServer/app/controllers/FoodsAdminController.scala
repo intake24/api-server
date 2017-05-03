@@ -24,63 +24,63 @@ import io.circe.generic.auto._
 import parsers.JsonUtils
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
-import security.DeadboltActionsAdapter
+import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 import uk.ac.ncl.openlab.intake24.{LocalFoodRecordUpdate, MainFoodRecordUpdate, NewMainFoodRecord}
 
 import scala.concurrent.Future
 
-class FoodsAdminController @Inject() (service: FoodsAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
+class FoodsAdminController @Inject() (service: FoodsAdminService, rab: Intake24RestrictedActionBuilder) extends Controller
     with DatabaseErrorHandler with JsonUtils {
 
-  def getFoodRecord(code: String, locale: String) = deadbolt.restrictToRoles(Roles.superuser) {
+  def getFoodRecord(code: String, locale: String) = rab.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getFoodRecord(code, locale))
     }
   }
 
-  def isFoodCodeAvailable(code: String) = deadbolt.restrictToRoles(Roles.superuser) {
+  def isFoodCodeAvailable(code: String) = rab.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.isFoodCodeAvailable(code))
     }
   }
 
-  def isFoodCode(code: String) = deadbolt.restrictToRoles(Roles.superuser) {
+  def isFoodCode(code: String) = rab.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.isFoodCode(code))
     }
   }
 
-  def createFood() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[NewMainFoodRecord]) {
+  def createFood() = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[NewMainFoodRecord]) {
     request =>
       Future {
         translateDatabaseResult(service.createFood(request.body))
       }
   }
 
-  def createFoodWithTempCode() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[NewMainFoodRecord]) {
+  def createFoodWithTempCode() = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[NewMainFoodRecord]) {
     request =>
       Future {
         translateDatabaseResult(service.createFoodWithTempCode(request.body))
       }
   }
 
-  def updateMainFoodRecord(foodCode: String) = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[MainFoodRecordUpdate]) {
+  def updateMainFoodRecord(foodCode: String) = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[MainFoodRecordUpdate]) {
     request =>
       Future {
         translateDatabaseResult(service.updateMainFoodRecord(foodCode, request.body))
       }
   }
 
-  def updateLocalFoodRecord(foodCode: String, locale: String) = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[LocalFoodRecordUpdate]) {
+  def updateLocalFoodRecord(foodCode: String, locale: String) = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[LocalFoodRecordUpdate]) {
     request =>
       Future {
         translateDatabaseResult(service.updateLocalFoodRecord(foodCode, request.body, locale))
       }
   }
 
-  def deleteFood(code: String) = deadbolt.restrictToRoles(Roles.superuser) {
+  def deleteFood(code: String) = rab.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.deleteFoods(Seq(code)))
     }

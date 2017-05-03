@@ -23,23 +23,23 @@ import javax.inject.Inject
 import io.circe.generic.auto._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
-import security.DeadboltActionsAdapter
+import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
 import scala.concurrent.Future
 
-class FoodGroupsAdminController @Inject()(service: FoodGroupsAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
+class FoodGroupsAdminController @Inject()(service: FoodGroupsAdminService, rab: Intake24RestrictedActionBuilder) extends Controller
   with DatabaseErrorHandler {
 
-  def listFoodGroups(locale: String) = deadbolt.restrictToRoles(Roles.superuser) {
+  def listFoodGroups(locale: String) = rab.restrictToRoles(Roles.superuser) {
     Future {
       // Map keys to Strings to force upickle to use js object serialisation instead of array of arrays
       translateDatabaseResult(service.listFoodGroups(locale).right.map(_.map { case (k, v) => (k.toString, v) }))
     }
   }
 
-  def getFoodGroup(id: Int, locale: String) = deadbolt.restrictToRoles(Roles.superuser) {
+  def getFoodGroup(id: Int, locale: String) = rab.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getFoodGroup(id, locale))
     }

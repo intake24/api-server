@@ -7,7 +7,7 @@ import io.circe.generic.auto._
 import parsers.JsonUtils
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
-import security.DeadboltActionsAdapter
+import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageStorageService
 import uk.ac.ncl.openlab.intake24.services.fooddb.user._
@@ -46,11 +46,11 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
                                    imageMapService: ImageMapService,
                                    foodCompositionService: FoodCompositionService,
                                    imageStorageService: ImageStorageService,
-                                   deadbolt: DeadboltActionsAdapter) extends Controller with DatabaseErrorHandler with JsonUtils {
+                                   rab: Intake24RestrictedActionBuilder) extends Controller with DatabaseErrorHandler with JsonUtils {
 
   import uk.ac.ncl.openlab.intake24.errors.ErrorUtils._
 
-  def getCategoryContents(code: String, locale: String) = deadbolt.restrictToAuthenticated {
+  def getCategoryContents(code: String, locale: String) = rab.restrictToAuthenticated {
     _ =>
       Future {
         translateDatabaseResult(foodBrowsingService.getCategoryContents(code, locale).right.map {
@@ -59,7 +59,7 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
       }
   }
 
-  def getRootCategories(locale: String) = deadbolt.restrictToAuthenticated {
+  def getRootCategories(locale: String) = rab.restrictToAuthenticated {
     _ =>
       Future {
         translateDatabaseResult(foodBrowsingService.getRootCategories(locale))
@@ -76,7 +76,7 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
     PortionSizeMethodForSurvey(psm.method, psm.description, resolvedImageUrl, psm.useForRecipes, parametersMap)
   }
 
-  def getFoodData(code: String, locale: String) = deadbolt.restrictToAuthenticated {
+  def getFoodData(code: String, locale: String) = rab.restrictToAuthenticated {
     _ =>
       Future {
         val energyKcalId = foodCompositionService.getEnergyKcalNutrientId()
@@ -94,21 +94,21 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
       }
   }
 
-  def getFoodDataWithSources(code: String, locale: String) = deadbolt.restrictToAuthenticated {
+  def getFoodDataWithSources(code: String, locale: String) = rab.restrictToAuthenticated {
     _ =>
       Future {
         translateDatabaseResult(foodDataService.getFoodData(code, locale))
       }
   }
 
-  def getAssociatedFoodPrompts(code: String, locale: String) = deadbolt.restrictToAuthenticated {
+  def getAssociatedFoodPrompts(code: String, locale: String) = rab.restrictToAuthenticated {
     _ =>
       Future {
         translateDatabaseResult(associatedFoodsService.getAssociatedFoods(code, locale))
       }
   }
 
-  def getBrandNames(code: String, locale: String) = deadbolt.restrictToAuthenticated {
+  def getBrandNames(code: String, locale: String) = rab.restrictToAuthenticated {
     _ =>
       Future {
         translateDatabaseResult(brandNamesService.getBrandNames(code, locale))
@@ -124,14 +124,14 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
     UserAsServedSetWithUrls(imageStorageService.getUrl(set.selectionImagePath), images)
   }
 
-  def getAsServedSet(id: String) = deadbolt.restrictToAuthenticated {
+  def getAsServedSet(id: String) = rab.restrictToAuthenticated {
     _ =>
       Future {
         translateDatabaseResult(asServedImageService.getAsServedSet(id).right.map(toAsServedSetWithUrls))
       }
   }
 
-  def getAsServedSets() = deadbolt.restrictToAuthenticated(jsonBodyParser[Seq[String]]) {
+  def getAsServedSets() = rab.restrictToAuthenticated(jsonBodyParser[Seq[String]]) {
     request =>
       Future {
         translateDatabaseResult(sequence(request.body.map(asServedImageService.getAsServedSet(_))).right.map(_.map(toAsServedSetWithUrls)))
@@ -147,7 +147,7 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
     UserDrinkwareSetWithUrls(set.guideId, scales)
   }
 
-  def getDrinkwareSet(id: String) = deadbolt.restrictToAuthenticated {
+  def getDrinkwareSet(id: String) = rab.restrictToAuthenticated {
     _ =>
       Future {
         translateDatabaseResult(drinkwareService.getDrinkwareSet(id).right.map(toDrinkwareSetWithUrls))
@@ -165,7 +165,7 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
     UserGuideImageWithUrls(guideImage.description, toImageMapWithUrls(imageMap), guideImage.weights.map { case (k, v) => (k.toString, v) })
   }
 
-  def getGuideImage(id: String) = deadbolt.restrictToAuthenticated {
+  def getGuideImage(id: String) = rab.restrictToAuthenticated {
     _ =>
       Future {
         val result = for (
@@ -177,14 +177,14 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
       }
   }
 
-  def getImageMap(id: String) = deadbolt.restrictToAuthenticated {
+  def getImageMap(id: String) = rab.restrictToAuthenticated {
     _ =>
       Future {
         translateDatabaseResult(imageMapService.getImageMap(id).right.map(toImageMapWithUrls))
       }
   }
 
-  def getImageMaps() = deadbolt.restrictToAuthenticated(jsonBodyParser[Seq[String]]) {
+  def getImageMaps() = rab.restrictToAuthenticated(jsonBodyParser[Seq[String]]) {
     request =>
       Future {
         translateDatabaseResult(imageMapService.getImageMaps(request.body).right.map(_.map(toImageMapWithUrls)))

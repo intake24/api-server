@@ -24,7 +24,7 @@ import io.circe.generic.auto._
 import parsers.JsonUtils
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
-import security.DeadboltActionsAdapter
+import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.api.shared.NewGuideImageRequest
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{GuideImageAdminService, ImageMapsAdminService, NewGuideImageRecord}
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageAdminService
@@ -32,30 +32,30 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
 import scala.concurrent.Future
 
-class GuideImageAdminController @Inject()(guideImageAdminService: GuideImageAdminService, imageMapsAdminService: ImageMapsAdminService, imageAdminService: ImageAdminService, deadbolt: DeadboltActionsAdapter) extends Controller
+class GuideImageAdminController @Inject()(guideImageAdminService: GuideImageAdminService, imageMapsAdminService: ImageMapsAdminService, imageAdminService: ImageAdminService, rab: Intake24RestrictedActionBuilder) extends Controller
   with ImageOrDatabaseServiceErrorHandler with JsonUtils {
 
   import ImageAdminService.WrapDatabaseError
 
-  def listGuideImages() = deadbolt.restrictToRoles(Roles.superuser) {
+  def listGuideImages() = rab.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(guideImageAdminService.listGuideImages())
     }
   }
 
-  def getGuideImage(id: String) = deadbolt.restrictToRoles(Roles.superuser) {
+  def getGuideImage(id: String) = rab.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(guideImageAdminService.getGuideImage(id))
     }
   }
 
-  def updateGuideSelectionImage(id: String, selectionImageId: Long) = deadbolt.restrictToRoles(Roles.superuser) {
+  def updateGuideSelectionImage(id: String, selectionImageId: Long) = rab.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(guideImageAdminService.updateGuideSelectionImage(id, selectionImageId))
     }
   }
 
-  def createGuideImage() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[NewGuideImageRequest]) {
+  def createGuideImage() = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[NewGuideImageRequest]) {
     request =>
       Future {
 

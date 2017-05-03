@@ -24,7 +24,7 @@ import javax.inject.Inject
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
-import security.DeadboltActionsAdapter
+import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
 import io.circe.generic.auto._
@@ -48,7 +48,7 @@ class AsServedSetsAdminController @Inject()(
                                              imageDatabase: ImageDatabaseService,
                                              imageAdmin: ImageAdminService,
                                              imageStorage: ImageStorageService,
-                                             deadbolt: DeadboltActionsAdapter) extends Controller
+                                             rab: Intake24RestrictedActionBuilder) extends Controller
   with ImageOrDatabaseServiceErrorHandler with JsonUtils {
 
   import ImageAdminService.WrapDatabaseError
@@ -59,25 +59,25 @@ class AsServedSetsAdminController @Inject()(
 
   def resolveUrls(set: AsServedSetWithPaths): AsServedSetWithUrls = AsServedSetWithUrls(set.id, set.description, set.images.map(resolveUrls))
 
-  def listAsServedSets() = deadbolt.restrictToRoles(Roles.superuser) {
+  def listAsServedSets() = rab.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.listAsServedSets())
     }
   }
 
-  def getAsServedSet(id: String) = deadbolt.restrictToRoles(Roles.superuser) {
+  def getAsServedSet(id: String) = rab.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getAsServedSetWithPaths(id).right.map(resolveUrls))
     }
   }
 
-  def exportAsServedSet(id: String) = deadbolt.restrictToRoles(Roles.superuser) {
+  def exportAsServedSet(id: String) = rab.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getPortableAsServedSet(id))
     }
   }
 
-  def importAsServedSet() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[PortableAsServedSet]) {
+  def importAsServedSet() = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[PortableAsServedSet]) {
     request =>
       Future {
 
@@ -85,7 +85,7 @@ class AsServedSetsAdminController @Inject()(
 
         val sourceImages = set.images.map {
           img =>
-            NewSourceImageRecord(img.sourcePath, img.sourceThumbnailPath, img.sourceKeywords, request.subject.get.identifier.split('#')(0))
+            NewSourceImageRecord(img.sourcePath, img.sourceThumbnailPath, img.sourceKeywords, request.subject.userId.toString) // FIXME: something like John Smith <john.smith@gmail.com> is probably more useful.
         }
 
         val result = for (
@@ -152,7 +152,7 @@ class AsServedSetsAdminController @Inject()(
       res <- service.getAsServedSetWithPaths(newSet.id).wrapped.right
     ) yield res
 
-  def createAsServedSetFromSource() = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[NewAsServedSet]) {
+  def createAsServedSetFromSource() = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[NewAsServedSet]) {
     request =>
       Future {
         val newSet = request.body
@@ -164,7 +164,7 @@ class AsServedSetsAdminController @Inject()(
       }
   }
 
-  def createAsServedSet() = deadbolt.restrictToRoles(Roles.superuser)(parse.multipartFormData) {
+  def createAsServedSet() = rab.restrictToRoles(Roles.superuser)(parse.multipartFormData) {
     request =>
       Future {
 
@@ -194,7 +194,7 @@ class AsServedSetsAdminController @Inject()(
           else {
             val records = files.zip(weights)
 
-            val uploaderName = request.subject.get.identifier.split('#')(0)
+            val uploaderName = request.subject.userId.toString // FIXME: something like John Smith <john.smith@gmail.com> is probably more useful.
             val keywords = request.body.dataParts.getOrElse("keywords", Seq())
             val setId = request.body.dataParts("id").head
             val description = request.body.dataParts("description").head
@@ -224,7 +224,7 @@ class AsServedSetsAdminController @Inject()(
     }
   }
 
-  def updateAsServedSet(id: String) = deadbolt.restrictToRoles(Roles.superuser)(jsonBodyParser[NewAsServedSet]) {
+  def updateAsServedSet(id: String) = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[NewAsServedSet]) {
     request =>
       Future {
         val update = request.body
