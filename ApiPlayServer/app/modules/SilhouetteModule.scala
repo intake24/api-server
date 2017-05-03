@@ -18,13 +18,12 @@ limitations under the License.
 
 package modules
 
-import com.google.inject.name.Named
 import com.google.inject.{AbstractModule, Provides, Singleton}
-import com.mohiva.play.silhouette.api.{Environment, EventBus}
 import com.mohiva.play.silhouette.api.crypto.Base64AuthenticatorEncoder
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.services.{AuthenticatorService, IdentityService}
 import com.mohiva.play.silhouette.api.util._
+import com.mohiva.play.silhouette.api.{Environment, EventBus}
 import com.mohiva.play.silhouette.impl.authenticators.{JWTAuthenticator, JWTAuthenticatorService, JWTAuthenticatorSettings}
 import com.mohiva.play.silhouette.impl.util.{DefaultFingerprintGenerator, SecureRandomIDGenerator}
 import models.Intake24User
@@ -44,40 +43,21 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     bind[FingerprintGenerator].toInstance(new DefaultFingerprintGenerator(false))
     bind[Clock].toInstance(Clock())
     bind[AuthInfoRepository].to[AuthInfoServiceImpl]
-
-
-    /* bind[CacheLayer].to[PlayCacheLayer]
-    bind[EventBus].toInstance(EventBus())
-    */
   }
 
   @Provides
   @Singleton
-  @Named("refresh")
-  def provideRefreshEnvironment(identityService: IdentityService[Intake24User],
-                                @Named("refresh") authenticatorService: AuthenticatorService[JWTAuthenticator],
-                                eventBus: EventBus): Environment[Intake24ApiEnv] = {
-    Environment[Intake24ApiEnv](
-      identityService,
-      authenticatorService,
-      Seq(),
-      eventBus
-    )
-  }
+  def provideAuthenticatorService(fingerprintGenerator: FingerprintGenerator,
+                                  idGenerator: IDGenerator,
+                                  configuration: Configuration,
+                                  clock: Clock): AuthenticatorService[JWTAuthenticator] = {
 
-  @Provides
-  @Singleton
-  @Named("refresh")
-  def provideRefreshAuthenticatorService(fingerprintGenerator: FingerprintGenerator,
-                                         idGenerator: IDGenerator,
-                                         configuration: Configuration,
-                                         clock: Clock): AuthenticatorService[JWTAuthenticator] = {
     val settings = JWTAuthenticatorSettings(
       fieldName = "X-Auth-Token",
       issuerClaim = "intake24",
       requestParts = Some(Seq(RequestPart.Headers)),
       authenticatorIdleTimeout = None,
-      authenticatorExpiry = configuration.getInt("intake24.security.refreshTokenExpiryDays").getOrElse(1825).days,
+      authenticatorExpiry = 0.minutes, // Will be overriden when the token is created
       sharedSecret = configuration.getString("play.crypto.secret").get)
 
     new JWTAuthenticatorService(settings, None, new Base64AuthenticatorEncoder(), idGenerator, clock)
@@ -85,29 +65,9 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
 
   @Provides
   @Singleton
-  @Named("access")
-  def provideAccessAuthenticatorService(fingerprintGenerator: FingerprintGenerator,
-                                        idGenerator: IDGenerator,
-                                        configuration: Configuration,
-                                        clock: Clock): AuthenticatorService[JWTAuthenticator] = {
-
-    val settings = JWTAuthenticatorSettings(
-      fieldName = "X-Auth-Token",
-      issuerClaim = "intake24",
-      requestParts = Some(Seq(RequestPart.Headers)),
-      authenticatorIdleTimeout = None,
-      authenticatorExpiry = configuration.getInt("intake24.security.accessTokenExpiryMinutes").getOrElse(10).minutes,
-      sharedSecret = configuration.getString("play.crypto.secret").get)
-
-    new JWTAuthenticatorService(settings, None, new Base64AuthenticatorEncoder(), idGenerator, clock)
-  }
-
-  @Provides
-  @Singleton
-  @Named("access")
-  def provideAccessEnvironment(identityService: IdentityService[Intake24User],
-                               @Named("access") authenticatorService: AuthenticatorService[JWTAuthenticator],
-                               eventBus: EventBus): Environment[Intake24ApiEnv] = {
+  def provideSilhouetteEnvironment(identityService: IdentityService[Intake24User],
+                                   authenticatorService: AuthenticatorService[JWTAuthenticator],
+                                   eventBus: EventBus): Environment[Intake24ApiEnv] = {
     Environment[Intake24ApiEnv](
       identityService,
       authenticatorService,

@@ -27,9 +27,8 @@ import com.mohiva.play.silhouette.api.{Environment, LoginInfo}
 import com.mohiva.play.silhouette.impl.exceptions.{IdentityNotFoundException, InvalidPasswordException}
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
-
 import parsers.JsonUtils
-import play.api.Logger
+import play.api.{Configuration, Logger}
 import play.api.http.ContentTypes
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
@@ -42,11 +41,18 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{SigninAttempt, Signin
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class SigninController @Inject()(@Named("refresh") refreshEnv: Environment[Intake24ApiEnv], @Named("access") accessEnv: Environment[Intake24ApiEnv],
-                                 emailProvider: EmailProvider, surveyAliasProvider: SurveyAliasProvider, urlTokenProvider: URLTokenProvider,
-                                 signinLogService: SigninLogService, actorSystem: ActorSystem, rab: Intake24RestrictedActionBuilder)
+class SigninController @Inject()(silhouette: Environment[Intake24ApiEnv],
+                                 emailProvider: EmailProvider,
+                                 surveyAliasProvider: SurveyAliasProvider,
+                                 urlTokenProvider: URLTokenProvider,
+                                 signinLogService: SigninLogService,
+                                 actorSystem: ActorSystem,
+                                 rab: Intake24RestrictedActionBuilder,
+                                 configuration: Configuration)
   extends Controller with JsonUtils with DatabaseErrorHandler {
 
+  val accessTokenExpiryPeriod = configuration.getInt("intake24.security.accessTokenExpiryMinutes").getOrElse(10).minutes
+  val refreshTokenExpiryPeriod = configuration.getInt("intake24.security.refreshTokenExpiryDays").getOrElse(1825).days
 
   def logAttemptAsync(event: SigninAttempt) = {
     actorSystem.scheduler.scheduleOnce(0 seconds) {
@@ -67,17 +73,17 @@ class SigninController @Inject()(@Named("refresh") refreshEnv: Environment[Intak
 
     authResult.flatMap {
       loginInfo =>
-        refreshEnv.identityService.retrieve(loginInfo).flatMap {
+        silhouette.identityService.retrieve(loginInfo).flatMap {
           case Some(user) =>
 
             logAttemptAsync(SigninAttempt(getRemoteAddress(request), getUserAgent(request), providerID, providerKey, true, Some(user.userInfo.id), None))
 
-            refreshEnv.authenticatorService.create(loginInfo).flatMap {
-              authenticator =>
+            silhouette.authenticatorService.create(loginInfo).flatMap {
+              t =>
 
                 val customClaims = Json.obj("type" -> "refresh", "userId" -> user.userInfo.id)
 
-                refreshEnv.authenticatorService.init(authenticator.copy(customClaims = Some(customClaims))).map {
+                silhouette.authenticatorService.init(t.copy(customClaims = Some(customClaims), expirationDateTime = t.lastUsedDateTime.plusSeconds(refreshTokenExpiryPeriod.toSeconds.toInt))).map {
                   token =>
                     Ok(toJsonString(SigninResult(token))).as(ContentTypes.JSON)
                 }
@@ -140,8 +146,8 @@ class SigninController @Inject()(@Named("refresh") refreshEnv: Environment[Intak
 
       val jwt = request.subject.jwt
 
-      refreshEnv.identityService.retrieve(jwt.loginInfo).flatMap {
-        case Some(user) => accessEnv.authenticatorService.create(jwt.loginInfo).flatMap {
+      silhouette.identityService.retrieve(jwt.loginInfo).flatMap {
+        case Some(user) => silhouette.authenticatorService.create(jwt.loginInfo).flatMap {
           accessToken =>
             val customClaims = Json.obj("type" -> "access", "userId" -> user.userInfo.id, "roles" -> user.userInfo.roles.toList)
             /*
@@ -156,7 +162,7 @@ class SigninController @Inject()(@Named("refresh") refreshEnv: Environment[Intak
                  refreshTokenValue <- refreshEnv.authenticatorService.init(updatedRefreshToken))
              */
 
-            accessEnv.authenticatorService.init(accessToken.copy(customClaims = Some(customClaims))).map {
+            silhouette.authenticatorService.init(accessToken.copy(customClaims = Some(customClaims), expirationDateTime = accessToken.lastUsedDateTime.plusSeconds(accessTokenExpiryPeriod.toSeconds.toInt))).map {
               serialisedAccessToken => (Ok(toJsonString(RefreshResult(serialisedAccessToken))).as(ContentTypes.JSON))
             }
 
