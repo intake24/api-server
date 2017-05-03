@@ -234,7 +234,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       createUsersQuery(newUsers)
   }
 
-  def updateUser(userId: Long, update: UserProfileUpdate): Either[UpdateError, Unit] = tryWithConnection {
+  def updateUserProfile(userId: Long, update: UserProfileUpdate): Either[UpdateError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
         tryWithConstraintCheck[UpdateError, Unit]("users_email_unique", e => DuplicateCode(e)) {
@@ -242,16 +242,22 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
             .on('user_id -> userId, 'name -> update.name, 'email -> update.email, 'phone -> update.phone,
               'email_n -> update.emailNotifications, 'sms_n -> update.smsNotifications,
               'simple_name -> update.name.map(StringUtils.stripAccents(_).toLowerCase())).executeUpdate()
-
           if (count == 1) {
-            for (_ <- updateUserRolesById(Seq(RolesForId(userId, update.roles))).right;
-                 _ <- updateCustomDataById(Seq(CustomDataForId(userId, update.customFields))).right)
-              yield ()
+            Right()
           }
           else
             Left(RecordNotFound(new RuntimeException(s"User $userId does not exist")))
         }
       }
+  }
+
+  def updateUser(userId: Long, update: UserProfileUpdate): Either[UpdateError, Unit] = tryWithConnection {
+    implicit conn =>
+      for (
+        _ <- updateUserProfile(userId, update).right;
+        _ <- updateUserRolesById(Seq(RolesForId(userId, update.roles))).right;
+        _ <- updateCustomDataById(Seq(CustomDataForId(userId, update.customFields))).right
+      ) yield ()
   }
 
   private case class UserInfoRow(id: Long, name: Option[String], email: Option[String], phone: Option[String], email_notifications: Boolean, sms_notifications: Boolean)

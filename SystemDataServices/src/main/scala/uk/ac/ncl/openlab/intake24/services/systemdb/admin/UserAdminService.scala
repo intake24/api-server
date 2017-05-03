@@ -1,10 +1,14 @@
 package uk.ac.ncl.openlab.intake24.services.systemdb.admin
 
 import uk.ac.ncl.openlab.intake24.errors._
+import uk.ac.ncl.openlab.intake24.services.systemdb.user.UserPhysicalDataOut
 
 case class NewUserProfile(name: Option[String], email: Option[String], phone: Option[String], roles: Set[String], customFields: Map[String, String])
 
 case class UserProfile(id: Long, name: Option[String], email: Option[String], phone: Option[String], emailNotifications: Boolean, smsNotifications: Boolean, roles: Set[String], customFields: Map[String, String])
+
+case class UserProfileWithPhysicalData(userProfile: UserProfile,
+                                       physicalData: Option[UserPhysicalDataOut])
 
 case class UserProfileUpdate(name: Option[String], email: Option[String], phone: Option[String], emailNotifications: Boolean, smsNotifications: Boolean, roles: Set[String], customFields: Map[String, String])
 
@@ -41,6 +45,8 @@ trait UserAdminService {
   def createUserWithPassword(newUser: NewUserWithPassword): Either[CreateError, Long]
 
   def updateUser(userId: Long, update: UserProfileUpdate): Either[UpdateError, Unit]
+
+  def updateUserProfile(userId: Long, update: UserProfileUpdate): Either[UpdateError, Unit]
 
   def getUserById(userId: Long): Either[LookupError, UserProfile]
 

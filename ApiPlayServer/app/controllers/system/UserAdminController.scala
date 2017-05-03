@@ -29,17 +29,19 @@ import play.api.http.ContentTypes
 import play.api.libs.Files
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller, MultipartFormData, Result}
-import security.DeadboltActionsAdapter
+import security.{AclService, DeadboltActionsAdapter}
 import uk.ac.ncl.openlab.intake24.api.shared._
 import uk.ac.ncl.openlab.intake24.errors.AnyError
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
-import uk.ac.ncl.openlab.intake24.services.systemdb.user.UserPhysicalDataService
+import uk.ac.ncl.openlab.intake24.services.systemdb.user.{UserPhysicalDataIn, UserPhysicalDataService}
 
 import scala.concurrent.Future
 
 
 class UserAdminController @Inject()(service: UserAdminService,
+                                    aclService: AclService,
+                                    userPhysicalData: UserPhysicalDataService,
                                     UsersSupportService: UserPhysicalDataService,
                                     usersSupportService: UsersSupportService,
                                     passwordHasherRegistry: PasswordHasherRegistry, deadbolt: DeadboltActionsAdapter) extends Controller
@@ -100,29 +102,6 @@ class UserAdminController @Inject()(service: UserAdminService,
       case Left(e) => translateDatabaseError(e)
     }
 
-  private def canPatchUser[T](subject: AccessSubject, userId: Long): Either[AnyError, Boolean] = {
-    // Forbid changing your own password for now until e-mail/SMS validation is working,
-    // but allow survey admins/staff to change it for you
-
-    if (subject.userRoles.contains(Roles.superuser))
-    // Superuser can change anyone's password
-      Right(true)
-    else
-      service.getUserById(userId).right.map {
-        userProfile =>
-          val userIsRespondent = userProfile.roles.filter(_.endsWith(Roles.respondentSuffix)).map(_.dropRight(Roles.respondentSuffix.length))
-
-          // Global survey admin can change any respondent's password
-          if (subject.userRoles.contains(Roles.surveyAdmin))
-            userIsRespondent.nonEmpty
-          else {
-            // Survey staff can change passwords for users who are respondents in their surveys
-            val subjectIsStaff = subject.userRoles.filter(_.endsWith(Roles.staffSuffix)).map(_.dropRight(Roles.staffSuffix.length))
-            subjectIsStaff.exists(surveyId => userIsRespondent.contains(surveyId))
-          }
-      }
-  }
-
   private def subjectIsStaff[T](subject: AccessSubject): Boolean = {
     subject.userRoles.contains(Roles.superuser) || subject.userRoles.map(role => role.endsWith(Roles.staffSuffix)).foldLeft(false)(_ || _)
   }
@@ -132,9 +111,26 @@ class UserAdminController @Inject()(service: UserAdminService,
       Future {
         val subject = request.subject.get.asInstanceOf[AccessSubject]
 
-        doWithDatabaseCheck(canPatchUser(subject, userId)) {
-          translateDatabaseResult(service.updateUser(userId, request.body))
+        val subjectIsStaff = subject.userRoles.filter(_.endsWith(Roles.staffSuffix)).map(_.dropRight(Roles.staffSuffix.length))
+        val patchRequestAllowed = request.body.roles.forall(r => r.endsWith(Roles.respondentSuffix)) &&
+          request.body.roles.filter(_.endsWith(Roles.respondentSuffix)).map(_.dropRight(Roles.respondentSuffix.length))
+            .forall(surveyId => subjectIsStaff.contains(surveyId))
+
+        if (patchRequestAllowed) {
+          doWithDatabaseCheck(aclService.canPatchUser(subject, userId)) {
+            translateDatabaseResult(service.updateUser(userId, request.body))
+          }
+        } else {
+          Forbidden
         }
+      }
+  }
+
+  def patchMe() = deadbolt.restrictToAuthenticated(jsonBodyParser[UserProfileUpdate]) {
+    request =>
+      Future {
+        val userId = request.subject.get.asInstanceOf[AccessSubject].userId
+        translateDatabaseResult(service.updateUser(userId, request.body))
       }
   }
 
@@ -143,7 +139,7 @@ class UserAdminController @Inject()(service: UserAdminService,
       Future {
         val subject = request.subject.get.asInstanceOf[AccessSubject]
 
-        doWithDatabaseCheck(canPatchUser(subject, userId)) {
+        doWithDatabaseCheck(aclService.canPatchUser(subject, userId)) {
           val pwInfo = passwordHasherRegistry.current.hash(request.body.password)
           translateDatabaseResult(service.updateUserPassword(userId, SecurePassword(pwInfo.password, pwInfo.salt.get, pwInfo.hasher)))
         }
@@ -155,7 +151,7 @@ class UserAdminController @Inject()(service: UserAdminService,
       Future {
         val subject = request.subject.get.asInstanceOf[AccessSubject]
 
-        doWithDatabaseCheck(canPatchUser(subject, userId)) {
+        doWithDatabaseCheck(aclService.canPatchUser(subject, userId)) {
           translateDatabaseResult(service.deleteUsersById(Seq(userId)))
         }
       }

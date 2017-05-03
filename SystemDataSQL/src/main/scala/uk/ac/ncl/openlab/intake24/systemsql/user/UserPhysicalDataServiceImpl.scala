@@ -20,11 +20,11 @@ class UserPhysicalDataServiceImpl @Inject()(@Named("intake24_system") val dataSo
     constraintName => (e: PSQLException) => ConstraintViolation(e.toString, e)
   }
 
-  private case class UserInfoRow(user_id: Long, first_name: Option[String], sex: Option[String],
-                                 birthdate: Option[LocalDate], weight_kg: Option[Double], height_cm: Option[Double],
-                                 level_of_physical_activity_id: Option[Long]) {
+  private case class UserInfoRow(user_id: Long, sex: Option[String],
+                                 birthdate: Option[LocalDate], weight_kg: Option[Double],
+                                 height_cm: Option[Double], level_of_physical_activity_id: Option[Long]) {
     def toUserInfoOut(): UserPhysicalDataOut = {
-      UserPhysicalDataOut(this.user_id, this.first_name, this.sex, this.birthdate, this.weight_kg,
+      UserPhysicalDataOut(this.user_id, this.sex, this.birthdate, this.weight_kg,
         this.height_cm, this.level_of_physical_activity_id)
     }
   }
@@ -33,21 +33,19 @@ class UserPhysicalDataServiceImpl @Inject()(@Named("intake24_system") val dataSo
     def getSqlUpdate(userId: Long, userInfo: UserPhysicalDataIn): SimpleSql[Row] = {
       val query =
         """
-          |INSERT INTO user_physical_data (user_id, first_name, birthdate, sex, weight_kg,
+          |INSERT INTO user_physical_data (user_id, birthdate, sex, weight_kg,
           |                       height_cm, level_of_physical_activity_id)
-          |VALUES ({user_id}, {first_name}, {birthdate}, {sex}::sex_enum, {weight_kg},
+          |VALUES ({user_id}, {birthdate}, {sex}::sex_enum, {weight_kg},
           |        {height_cm}, {level_of_physical_activity_id})
           |ON CONFLICT (user_id) DO UPDATE
-          |SET first_name = {first_name},
-          |    birthdate = {birthdate},
+          |SET birthdate = {birthdate},
           |    sex = {sex}::sex_enum,
           |    weight_kg = {weight_kg},
           |    height_cm = {height_cm},
           |    level_of_physical_activity_id = {level_of_physical_activity_id}
-          |RETURNING user_id, first_name, birthdate, sex, weight_kg, height_cm, level_of_physical_activity_id;
+          |RETURNING user_id, birthdate, sex, weight_kg, height_cm, level_of_physical_activity_id;
         """.stripMargin
       SQL(query).on(
-        'first_name -> userInfo.firstName,
         'user_id -> userId,
         'birthdate -> userInfo.birthdate.map(_.atStartOfDay()), // anorm doesn't know how to handle LocalDate
         'sex -> userInfo.sex,
@@ -60,7 +58,7 @@ class UserPhysicalDataServiceImpl @Inject()(@Named("intake24_system") val dataSo
     def getSqlGet(userId: Long): SimpleSql[Row] = {
       val query =
         """
-          |SELECT user_id, first_name, birthdate, sex, weight_kg, height_cm, level_of_physical_activity_id
+          |SELECT user_id, birthdate, sex, weight_kg, height_cm, level_of_physical_activity_id
           |FROM user_physical_data
           |WHERE user_id={user_id};
         """.stripMargin
@@ -93,20 +91,19 @@ class UserPhysicalDataServiceImpl @Inject()(@Named("intake24_system") val dataSo
     else {
       val params = update.toSeq.map {
         case (userId, userInfo) =>
-          Seq[NamedParameter]('user_id -> userId, 'first_name -> userInfo.firstName,
+          Seq[NamedParameter]('user_id -> userId,
             'birthdate -> userInfo.birthdate.map(_.atStartOfDay()), 'sex -> userInfo.sex, // anorm doesn't know how to handle LocalDate
             'weight_kg -> userInfo.weight, 'height_cm -> userInfo.height,
             'level_of_physical_activity_id -> userInfo.levelOfPhysicalActivityId)
       }
 
       val query =
-        """|INSERT INTO user_physical_data (user_id, first_name, birthdate, sex, weight_kg,
-           |                       height_cm, level_of_physical_activity_id)
-           |VALUES ({user_id}, {first_name}, {birthdate}, {sex}::sex_enum, {weight_kg},
+        """|INSERT INTO user_physical_data (user_id, birthdate, sex, weight_kg, height_cm,
+           |                                level_of_physical_activity_id)
+           |VALUES ({user_id}, {birthdate}, {sex}::sex_enum, {weight_kg},
            |        {height_cm}, {level_of_physical_activity_id})
            |ON CONFLICT (user_id) DO UPDATE
-           |SET first_name = {first_name},
-           |    birthdate = {birthdate},
+           |SET birthdate = {birthdate},
            |    sex = {sex}::sex_enum,
            |    weight_kg = {weight_kg},
            |    height_cm = {height_cm},
