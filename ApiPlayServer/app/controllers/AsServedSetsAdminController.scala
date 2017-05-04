@@ -48,6 +48,7 @@ class AsServedSetsAdminController @Inject()(
                                              imageDatabase: ImageDatabaseService,
                                              imageAdmin: ImageAdminService,
                                              imageStorage: ImageStorageService,
+                                             foodAuthChecks: FoodAuthChecks,
                                              rab: Intake24RestrictedActionBuilder) extends Controller
   with ImageOrDatabaseServiceErrorHandler with JsonUtils {
 
@@ -59,25 +60,25 @@ class AsServedSetsAdminController @Inject()(
 
   def resolveUrls(set: AsServedSetWithPaths): AsServedSetWithUrls = AsServedSetWithUrls(set.id, set.description, set.images.map(resolveUrls))
 
-  def listAsServedSets() = rab.restrictToRoles(Roles.superuser) {
+  def listAsServedSets() = rab.restrictAccess(foodAuthChecks.canReadPortionSizeMethods) {
     Future {
       translateDatabaseResult(service.listAsServedSets())
     }
   }
 
-  def getAsServedSet(id: String) = rab.restrictToRoles(Roles.superuser) {
+  def getAsServedSet(id: String) = rab.restrictAccess(foodAuthChecks.canReadPortionSizeMethods) {
     Future {
       translateDatabaseResult(service.getAsServedSetWithPaths(id).right.map(resolveUrls))
     }
   }
 
-  def exportAsServedSet(id: String) = rab.restrictToRoles(Roles.superuser) {
+  def exportAsServedSet(id: String) = rab.restrictAccess(foodAuthChecks.canReadPortionSizeMethods) {
     Future {
       translateDatabaseResult(service.getPortableAsServedSet(id))
     }
   }
 
-  def importAsServedSet() = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[PortableAsServedSet]) {
+  def importAsServedSet() = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(jsonBodyParser[PortableAsServedSet]) {
     request =>
       Future {
 
@@ -152,7 +153,7 @@ class AsServedSetsAdminController @Inject()(
       res <- service.getAsServedSetWithPaths(newSet.id).wrapped.right
     ) yield res
 
-  def createAsServedSetFromSource() = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[NewAsServedSet]) {
+  def createAsServedSetFromSource() = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(jsonBodyParser[NewAsServedSet]) {
     request =>
       Future {
         val newSet = request.body
@@ -164,7 +165,7 @@ class AsServedSetsAdminController @Inject()(
       }
   }
 
-  def createAsServedSet() = rab.restrictToRoles(Roles.superuser)(parse.multipartFormData) {
+  def createAsServedSet() = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(parse.multipartFormData) {
     request =>
       Future {
 
@@ -224,7 +225,7 @@ class AsServedSetsAdminController @Inject()(
     }
   }
 
-  def updateAsServedSet(id: String) = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[NewAsServedSet]) {
+  def updateAsServedSet(id: String) = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(jsonBodyParser[NewAsServedSet]) {
     request =>
       Future {
         val update = request.body

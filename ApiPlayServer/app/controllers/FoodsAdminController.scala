@@ -31,56 +31,58 @@ import uk.ac.ncl.openlab.intake24.{LocalFoodRecordUpdate, MainFoodRecordUpdate, 
 
 import scala.concurrent.Future
 
-class FoodsAdminController @Inject() (service: FoodsAdminService, rab: Intake24RestrictedActionBuilder) extends Controller
-    with DatabaseErrorHandler with JsonUtils {
+class FoodsAdminController @Inject()(service: FoodsAdminService,
+                                     foodAuthChecks: FoodAuthChecks,
+                                     rab: Intake24RestrictedActionBuilder) extends Controller
+  with DatabaseErrorHandler with JsonUtils {
 
-  def getFoodRecord(code: String, locale: String) = rab.restrictToRoles(Roles.superuser) {
+  def getFoodRecord(code: String, locale: String) = rab.restrictAccess(foodAuthChecks.canReadFoods(locale)) {
     Future {
       translateDatabaseResult(service.getFoodRecord(code, locale))
     }
   }
 
-  def isFoodCodeAvailable(code: String) = rab.restrictToRoles(Roles.superuser) {
+  def isFoodCodeAvailable(code: String) = rab.restrictAccess(foodAuthChecks.canCheckFoodCodes) {
     Future {
       translateDatabaseResult(service.isFoodCodeAvailable(code))
     }
   }
 
-  def isFoodCode(code: String) = rab.restrictToRoles(Roles.superuser) {
+  def isFoodCode(code: String) = rab.restrictAccess(foodAuthChecks.canCheckFoodCodes) {
     Future {
       translateDatabaseResult(service.isFoodCode(code))
     }
   }
 
-  def createFood() = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[NewMainFoodRecord]) {
+  def createFood() = rab.restrictAccess(foodAuthChecks.canCreateMainFoods)(jsonBodyParser[NewMainFoodRecord]) {
     request =>
       Future {
         translateDatabaseResult(service.createFood(request.body))
       }
   }
 
-  def createFoodWithTempCode() = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[NewMainFoodRecord]) {
+  def createFoodWithTempCode() = rab.restrictAccess(foodAuthChecks.canCreateMainFoods)(jsonBodyParser[NewMainFoodRecord]) {
     request =>
       Future {
         translateDatabaseResult(service.createFoodWithTempCode(request.body))
       }
   }
 
-  def updateMainFoodRecord(foodCode: String) = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[MainFoodRecordUpdate]) {
+  def updateMainFoodRecord(foodCode: String) = rab.restrictAccess(foodAuthChecks.canUpdateMainFoods)(jsonBodyParser[MainFoodRecordUpdate]) {
     request =>
       Future {
         translateDatabaseResult(service.updateMainFoodRecord(foodCode, request.body))
       }
   }
 
-  def updateLocalFoodRecord(foodCode: String, locale: String) = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[LocalFoodRecordUpdate]) {
+  def updateLocalFoodRecord(foodCode: String, locale: String) = rab.restrictAccess(foodAuthChecks.canUpdateLocalFoods(locale))(jsonBodyParser[LocalFoodRecordUpdate]) {
     request =>
       Future {
         translateDatabaseResult(service.updateLocalFoodRecord(foodCode, request.body, locale))
       }
   }
 
-  def deleteFood(code: String) = rab.restrictToRoles(Roles.superuser) {
+  def deleteFood(code: String) = rab.restrictAccess(foodAuthChecks.canDeleteFoods) {
     Future {
       translateDatabaseResult(service.deleteFoods(Seq(code)))
     }

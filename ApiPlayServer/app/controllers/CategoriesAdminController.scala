@@ -31,48 +31,50 @@ import uk.ac.ncl.openlab.intake24.{LocalCategoryRecordUpdate, MainCategoryRecord
 
 import scala.concurrent.Future
 
-class CategoriesAdminController @Inject()(service: CategoriesAdminService, rab: Intake24RestrictedActionBuilder) extends Controller
+class CategoriesAdminController @Inject()(service: CategoriesAdminService,
+                                          foodAuthChecks: FoodAuthChecks,
+                                          rab: Intake24RestrictedActionBuilder) extends Controller
   with DatabaseErrorHandler with JsonUtils {
 
-  def getCategoryRecord(code: String, locale: String) = rab.restrictToRoles(Roles.superuser) {
+  def getCategoryRecord(code: String, locale: String) = rab.restrictAccess(foodAuthChecks.canReadFoods(locale)) {
     Future {
       translateDatabaseResult(service.getCategoryRecord(code, locale))
     }
   }
 
-  def isCategoryCodeAvailable(code: String) = rab.restrictToRoles(Roles.superuser) {
+  def isCategoryCodeAvailable(code: String) = rab.restrictAccess(foodAuthChecks.canCheckFoodCodes) {
     Future {
       translateDatabaseResult(service.isCategoryCodeAvailable(code))
     }
   }
 
-  def isCategoryCode(code: String) = rab.restrictToRoles(Roles.superuser) {
+  def isCategoryCode(code: String) = rab.restrictAccess(foodAuthChecks.canCheckFoodCodes) {
     Future {
       translateDatabaseResult(service.isCategoryCodeAvailable(code))
     }
   }
 
-  def createMainCategoryRecord() = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[NewMainCategoryRecord]) {
+  def createMainCategoryRecord() = rab.restrictAccess(foodAuthChecks.canCreateMainFoods)(jsonBodyParser[NewMainCategoryRecord]) {
     request =>
       Future {
         translateDatabaseResult(service.createMainCategoryRecords(Seq(request.body)))
       }
   }
 
-  def deleteCategory(categoryCode: String) = rab.restrictToRoles(Roles.superuser) {
+  def deleteCategory(categoryCode: String) = rab.restrictAccess(foodAuthChecks.canDeleteFoods) {
     Future {
       translateDatabaseResult(service.deleteCategory(categoryCode))
     }
   }
 
-  def updateMainCategoryRecord(categoryCode: String) = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[MainCategoryRecordUpdate]) {
+  def updateMainCategoryRecord(categoryCode: String) = rab.restrictAccess(foodAuthChecks.canUpdateMainFoods)(jsonBodyParser[MainCategoryRecordUpdate]) {
     request =>
       Future {
         translateDatabaseResult(service.updateMainCategoryRecord(categoryCode, request.body))
       }
   }
 
-  def updateLocalCategoryRecord(categoryCode: String, locale: String) = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[LocalCategoryRecordUpdate]) {
+  def updateLocalCategoryRecord(categoryCode: String, locale: String) = rab.restrictAccess(foodAuthChecks.canUpdateLocalFoods(locale))(jsonBodyParser[LocalCategoryRecordUpdate]) {
     request =>
       Future {
         val req = request.body

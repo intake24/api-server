@@ -31,7 +31,8 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
 import scala.concurrent.Future
 
-class FoodIndexController @Inject()(foodIndexes: Map[String, FoodIndex], rab: Intake24RestrictedActionBuilder) extends Controller with JsonUtils {
+class FoodIndexController @Inject()(foodIndexes: Map[String, FoodIndex],
+                                    rab: Intake24RestrictedActionBuilder) extends Controller with JsonUtils {
   def lookup(locale: String, term: String) = rab.restrictToRoles(Roles.superuser) {
     Future {
       foodIndexes.get(locale) match {

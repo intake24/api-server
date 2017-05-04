@@ -29,18 +29,18 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
 import scala.concurrent.Future
 
-class LocalesAdminController @Inject()(service: LocalesAdminService, rab: Intake24RestrictedActionBuilder) extends Controller with DatabaseErrorHandler {
+class LocalesAdminController @Inject()(service: LocalesAdminService,
+                                       foodAuthChecks: FoodAuthChecks,
+                                       rab: Intake24RestrictedActionBuilder) extends Controller with DatabaseErrorHandler {
 
-  //FIXME: needs to be restricted to staff & admins only, but Deadbolt needs to be replaced first
-
-  def listLocales() = rab.restrictToAuthenticated {
+  def listLocales() = rab.restrictAccess(foodAuthChecks.canReadLocales) {
     _ =>
       Future {
         translateDatabaseResult(service.listLocales())
       }
   }
 
-  def getLocale(id: String) = rab.restrictToAuthenticated {
+  def getLocale(id: String) = rab.restrictAccess(foodAuthChecks.canReadLocales) {
     _ =>
       Future {
         translateDatabaseResult(service.getLocale(id))

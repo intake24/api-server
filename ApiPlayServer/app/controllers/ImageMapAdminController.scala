@@ -40,6 +40,7 @@ class ImageMapAdminController @Inject()(
                                          imageDatabase: ImageDatabaseService,
                                          imageAdmin: ImageAdminService,
                                          imageStorage: ImageStorageService,
+                                         foodAuthChecks: FoodAuthChecks,
                                          rab: Intake24RestrictedActionBuilder) extends Controller
   with ImageOrDatabaseServiceErrorHandler with FormDataUtil {
 
@@ -77,21 +78,21 @@ class ImageMapAdminController @Inject()(
 
       ) yield ())
 
-  def listImageMaps() = rab.restrictToRoles(Roles.superuser) {
+  def listImageMaps() = rab.restrictAccess(foodAuthChecks.canReadPortionSizeMethods) {
     _ =>
       Future {
         translateDatabaseResult(imageMaps.listImageMaps())
       }
   }
 
-  def getImageMapBaseImageSourceId(id: String) = rab.restrictToRoles(Roles.superuser) {
+  def getImageMapBaseImageSourceId(id: String) = rab.restrictAccess(foodAuthChecks.canReadPortionSizeMethods) {
     _ =>
       Future {
         translateDatabaseResult(imageMaps.getImageMapBaseImageSourceId(id))
       }
   }
 
-  def createImageMapFromSVG() = rab.restrictToRoles(Roles.superuser)(parse.multipartFormData) {
+  def createImageMapFromSVG() = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(parse.multipartFormData) {
     request =>
       Future {
         val result = for (

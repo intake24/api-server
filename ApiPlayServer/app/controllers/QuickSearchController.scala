@@ -29,16 +29,18 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
 import scala.concurrent.Future
 
-class QuickSearchController @Inject() (service: QuickSearchService, rab: Intake24RestrictedActionBuilder) extends Controller
-    with DatabaseErrorHandler {
+class QuickSearchController @Inject()(service: QuickSearchService,
+                                      foodAuthChecks: FoodAuthChecks,
+                                      rab: Intake24RestrictedActionBuilder) extends Controller
+  with DatabaseErrorHandler {
 
-  def searchFoods(searchTerm: String, locale: String) = rab.restrictToRoles(Roles.superuser) {
+  def searchFoods(searchTerm: String, locale: String) = rab.restrictAccess(foodAuthChecks.canReadFoods(locale)) {
     Future {
       translateDatabaseResult(service.searchFoods(searchTerm, locale))
     }
   }
 
-  def searchCategories(searchTerm: String, locale: String) = rab.restrictToRoles(Roles.superuser) {
+  def searchCategories(searchTerm: String, locale: String) = rab.restrictAccess(foodAuthChecks.canReadFoods(locale)) {
     Future {
       translateDatabaseResult(service.searchCategories(searchTerm, locale))
     }

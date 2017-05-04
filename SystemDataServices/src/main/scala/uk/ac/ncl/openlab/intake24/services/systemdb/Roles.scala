@@ -13,14 +13,14 @@ object Roles {
 
   val staffSuffix = "/staff"
 
+  val foodDatabaseMaintainerPrefix = "fdbm/"
+
   def surveyStaff(surveyId: String) = s"$surveyId$staffSuffix"
 
   def surveySupport(surveyId: String) = s"$surveyId/support"
 
   def surveyRespondent(surveyId: String) = s"$surveyId$respondentSuffix"
 
-  def foodDatabaseMaintainer(localeId: String) = s"fdbm/$localeId"
-
-
+  def foodDatabaseMaintainer(localeId: String) = s"$foodDatabaseMaintainerPrefix/$localeId"
 
 }

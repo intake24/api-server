@@ -29,9 +29,11 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
 import scala.concurrent.Future
 
-class NutrientTablesAdminController @Inject()(service: NutrientTablesAdminService, rab: Intake24RestrictedActionBuilder) extends Controller with DatabaseErrorHandler {
+class NutrientTablesAdminController @Inject()(service: NutrientTablesAdminService,
+                                              foodAuthChecks: FoodAuthChecks,
+                                              rab: Intake24RestrictedActionBuilder) extends Controller with DatabaseErrorHandler {
 
-  def listNutrientTables() = rab.restrictToRoles(Roles.superuser) {
+  def listNutrientTables() = rab.restrictAccess(foodAuthChecks.canReadNutrientTables) {
     Future {
       translateDatabaseResult(service.listNutrientTables())
     }

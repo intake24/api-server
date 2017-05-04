@@ -27,20 +27,21 @@ import play.api.mvc.Controller
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.AssociatedFood
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
-import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
 import scala.concurrent.Future
 
-class AssociatedFoodsAdminController @Inject()(service: AssociatedFoodsAdminService, rab: Intake24RestrictedActionBuilder) extends Controller
+class AssociatedFoodsAdminController @Inject()(service: AssociatedFoodsAdminService,
+                                               foodAuthChecks: FoodAuthChecks,
+                                               rab: Intake24RestrictedActionBuilder) extends Controller
   with DatabaseErrorHandler with JsonUtils {
 
-  def getAssociatedFoods(foodCode: String, locale: String) = rab.restrictToRoles(Roles.superuser) {
+  def getAssociatedFoods(foodCode: String, locale: String) = rab.restrictAccess(foodAuthChecks.canReadFoods(locale)) {
     Future {
       translateDatabaseResult(service.getAssociatedFoods(foodCode, locale))
     }
   }
 
-  def updateAssociatedFoods(foodCode: String, locale: String) = rab.restrictToRoles(Roles.superuser, Roles.foodDatabaseMaintainer(locale))(jsonBodyParser[Seq[AssociatedFood]]) {
+  def updateAssociatedFoods(foodCode: String, locale: String) = rab.restrictAccess(foodAuthChecks.canUpdateLocalFoods(locale))(jsonBodyParser[Seq[AssociatedFood]]) {
     request =>
       Future {
         translateDatabaseResult(service.updateAssociatedFoods(foodCode, request.body, locale))

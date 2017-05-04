@@ -28,34 +28,37 @@ import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.api.shared.NewGuideImageRequest
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{GuideImageAdminService, ImageMapsAdminService, NewGuideImageRecord}
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageAdminService
-import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
 import scala.concurrent.Future
 
-class GuideImageAdminController @Inject()(guideImageAdminService: GuideImageAdminService, imageMapsAdminService: ImageMapsAdminService, imageAdminService: ImageAdminService, rab: Intake24RestrictedActionBuilder) extends Controller
+class GuideImageAdminController @Inject()(guideImageAdminService: GuideImageAdminService,
+                                          imageMapsAdminService: ImageMapsAdminService,
+                                          imageAdminService: ImageAdminService,
+                                          foodAuthChecks: FoodAuthChecks,
+                                          rab: Intake24RestrictedActionBuilder) extends Controller
   with ImageOrDatabaseServiceErrorHandler with JsonUtils {
 
   import ImageAdminService.WrapDatabaseError
 
-  def listGuideImages() = rab.restrictToRoles(Roles.superuser) {
+  def listGuideImages() = rab.restrictAccess(foodAuthChecks.canReadPortionSizeMethods) {
     Future {
       translateDatabaseResult(guideImageAdminService.listGuideImages())
     }
   }
 
-  def getGuideImage(id: String) = rab.restrictToRoles(Roles.superuser) {
+  def getGuideImage(id: String) = rab.restrictAccess(foodAuthChecks.canReadPortionSizeMethods) {
     Future {
       translateDatabaseResult(guideImageAdminService.getGuideImage(id))
     }
   }
 
-  def updateGuideSelectionImage(id: String, selectionImageId: Long) = rab.restrictToRoles(Roles.superuser) {
+  def updateGuideSelectionImage(id: String, selectionImageId: Long) = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods) {
     Future {
       translateDatabaseResult(guideImageAdminService.updateGuideSelectionImage(id, selectionImageId))
     }
   }
 
-  def createGuideImage() = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[NewGuideImageRequest]) {
+  def createGuideImage() = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(jsonBodyParser[NewGuideImageRequest]) {
     request =>
       Future {
 

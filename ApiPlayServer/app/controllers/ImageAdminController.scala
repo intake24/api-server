@@ -18,7 +18,11 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
 import scala.concurrent.Future
 
-class ImageAdminController @Inject()(service: ImageAdminService, databaseService: ImageDatabaseService, storageService: ImageStorageService, rab: Intake24RestrictedActionBuilder)
+class ImageAdminController @Inject()(service: ImageAdminService,
+                                     databaseService: ImageDatabaseService,
+                                     storageService: ImageStorageService,
+                                     foodAuthChecks: FoodAuthChecks,
+                                     rab: Intake24RestrictedActionBuilder)
   extends Controller
     with ImageOrDatabaseServiceErrorHandler
     with JsonUtils {
@@ -59,7 +63,7 @@ class ImageAdminController @Inject()(service: ImageAdminService, databaseService
   }
 
 
-  def uploadSourceImage() = rab.restrictToRoles(Roles.superuser)(BodyParsers.parse.multipartFormData) {
+  def uploadSourceImage() = rab.restrictAccess(foodAuthChecks.canUploadSourceImages)(BodyParsers.parse.multipartFormData) {
     request => uploadImpl(None, request)
   }
 

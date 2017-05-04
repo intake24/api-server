@@ -29,17 +29,19 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
 import scala.concurrent.Future
 
-class FoodGroupsAdminController @Inject()(service: FoodGroupsAdminService, rab: Intake24RestrictedActionBuilder) extends Controller
+class FoodGroupsAdminController @Inject()(service: FoodGroupsAdminService,
+                                          foodAuthChecks: FoodAuthChecks,
+                                          rab: Intake24RestrictedActionBuilder) extends Controller
   with DatabaseErrorHandler {
 
-  def listFoodGroups(locale: String) = rab.restrictToRoles(Roles.superuser) {
+  def listFoodGroups(locale: String) = rab.restrictAccess(foodAuthChecks.canReadFoodGroups) {
     Future {
       // Map keys to Strings to force upickle to use js object serialisation instead of array of arrays
       translateDatabaseResult(service.listFoodGroups(locale).right.map(_.map { case (k, v) => (k.toString, v) }))
     }
   }
 
-  def getFoodGroup(id: Int, locale: String) = rab.restrictToRoles(Roles.superuser) {
+  def getFoodGroup(id: Int, locale: String) = rab.restrictAccess(foodAuthChecks.canReadFoodGroups) {
     Future {
       translateDatabaseResult(service.getFoodGroup(id, locale))
     }

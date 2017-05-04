@@ -381,7 +381,26 @@ object FoodDatabaseMigrations {
     FeedbackDemographicConstraintsFixMigration,
     FeedbackDemographicAlterNutrientRuleType,
     FeedbackDemographicAlterSentimentEnum,
-    UnitFixMigration
+    UnitFixMigration,
+
+    new Migration {
+
+      override val versionFrom: Long = 28
+      override val versionTo: Long = 29l
+      override val description: String = "Add UAE locale"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("INSERT INTO locales VALUES('ar_AE', 'Arabic (UAE)', 'الإمارات العربية المتحدة', 'ar_AE', 'ar', 'ae', 'en_GB')").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    }
+
 
   )
 }
