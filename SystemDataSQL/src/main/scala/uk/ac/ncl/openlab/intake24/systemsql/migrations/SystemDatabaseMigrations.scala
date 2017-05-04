@@ -1076,6 +1076,27 @@ object SystemDatabaseMigrations {
         ???
 
       }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 42l
+      override val versionTo: Long = 43l
+      override val description: String = "Drop first_name user_physical_data"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL(
+          """
+            |ALTER TABLE user_physical_data DROP COLUMN first_name;
+          """.stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
     }
   )
 }

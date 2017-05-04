@@ -234,7 +234,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       createUsersQuery(newUsers)
   }
 
-  def updateUser(userId: Long, update: UserProfileUpdate): Either[UpdateError, Unit] = tryWithConnection {
+  def updateUserProfile(userId: Long, update: UserProfileUpdate): Either[UpdateError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
         tryWithConstraintCheck[UpdateError, Unit]("users_email_unique", e => DuplicateCode(e)) {
@@ -242,11 +242,8 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
             .on('user_id -> userId, 'name -> update.name, 'email -> update.email, 'phone -> update.phone,
               'email_n -> update.emailNotifications, 'sms_n -> update.smsNotifications,
               'simple_name -> update.name.map(StringUtils.stripAccents(_).toLowerCase())).executeUpdate()
-
           if (count == 1) {
-            for (_ <- updateUserRolesById(Seq(RolesForId(userId, update.roles))).right;
-                 _ <- updateCustomDataById(Seq(CustomDataForId(userId, update.customFields))).right)
-              yield ()
+            Right()
           }
           else
             Left(RecordNotFound(new RuntimeException(s"User $userId does not exist")))
@@ -426,6 +423,13 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
         Right(())
   }
 
+  def updateUserRoles(userId: Long, update: UserRolesUpdate): Either[UpdateError, Unit] = tryWithConnection {
+    implicit conn =>
+      withTransaction {
+        updateUserRolesById(Seq(RolesForId(userId, update.roles)))
+      }
+  }
+
   private def getUserRoles(userIds: Seq[Long])(implicit connection: java.sql.Connection): Map[Long, Set[String]] = {
     if (userIds.isEmpty)
       Map()
@@ -516,7 +520,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
 
   private case class UserDataRow(name: String, value: String)
 
-  def getCustomUserData(userId: Long): Either[LookupError, Map[String, String]] = tryWithConnection {
+  def getUserCustomData(userId: Long): Either[LookupError, Map[String, String]] = tryWithConnection {
     implicit conn =>
 
       withTransaction {
@@ -534,7 +538,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
       }
   }
 
-  def updateCustomUserData(userId: Long, data: Map[String, String]): Either[UpdateError, Unit] = tryWithConnection {
+  def updateUserCustomData(userId: Long, data: Map[String, String]): Either[UpdateError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
 

@@ -28,9 +28,8 @@ import play.api.http.ContentTypes
 import play.api.libs.Files
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller, MultipartFormData, Result}
-import security.{Intake24AccessToken, Intake24RestrictedActionBuilder}
+import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.api.shared._
-import uk.ac.ncl.openlab.intake24.errors.AnyError
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.UserPhysicalDataService
@@ -39,6 +38,7 @@ import scala.concurrent.Future
 
 
 class UserAdminController @Inject()(service: UserAdminService,
+                                    userPhysicalData: UserPhysicalDataService,
                                     UsersSupportService: UserPhysicalDataService,
                                     usersSupportService: UsersSupportService,
                                     passwordHasherRegistry: PasswordHasherRegistry,
@@ -91,14 +91,14 @@ class UserAdminController @Inject()(service: UserAdminService,
       }
   }
 
-  def patchUser(userId: Long) = rab.restrictAccessWithDatabaseCheck(authChecks.canPatchUser(userId))(jsonBodyParser[UserProfileUpdate]) {
+  def patchUserProfile(userId: Long) = rab.restrictAccessWithDatabaseCheck(authChecks.canUpdateProfile(userId))(jsonBodyParser[UserProfileUpdate]) {
     request =>
       Future {
-        translateDatabaseResult(service.updateUser(userId, request.body))
+        translateDatabaseResult(service.updateUserProfile(userId, request.body))
       }
   }
 
-  def patchUserPassword(userId: Long) = rab.restrictAccessWithDatabaseCheck(authChecks.canPatchUser(userId))(jsonBodyParser[PatchUserPasswordRequest]) {
+  def patchUserPassword(userId: Long) = rab.restrictAccessWithDatabaseCheck(authChecks.canUpdatePassword(userId))(jsonBodyParser[PatchUserPasswordRequest]) {
     request =>
       Future {
         val pwInfo = passwordHasherRegistry.current.hash(request.body.password)
@@ -106,10 +106,10 @@ class UserAdminController @Inject()(service: UserAdminService,
       }
   }
 
-  def deleteUser(userId: Long) = rab.restrictAccessWithDatabaseCheck(authChecks.canDeleteUser(userId))(BodyParsers.parse.empty) {
+  def patchMe() = rab.restrictToAuthenticated(jsonBodyParser[UserProfileUpdate]) {
     request =>
       Future {
-        translateDatabaseResult(service.deleteUsersById(Seq(userId)))
+        translateDatabaseResult(service.updateUserProfile(request.subject.userId, request.body))
       }
   }
 
@@ -212,5 +212,4 @@ class UserAdminController @Inject()(service: UserAdminService,
         }
       }
   }
-
 }

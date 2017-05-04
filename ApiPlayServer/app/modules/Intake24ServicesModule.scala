@@ -25,6 +25,7 @@ import play.api.db.Database
 import play.api.{Configuration, Environment}
 import play.db.NamedDatabase
 import scheduled.{ErrorDigestSender, ErrorDigestSenderImpl}
+import security.{AclService, AclServiceImpl}
 import sms.{SMSService, TwilioSMSImpl}
 import uk.ac.ncl.openlab.intake24.foodsql.admin._
 import uk.ac.ncl.openlab.intake24.foodsql.demographicGroups._
@@ -183,5 +184,7 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     bind(classOf[SigninLogService]).to(classOf[SigninLogImpl])
 
     bind(classOf[UsersSupportService]).to(classOf[UsersSupportServiceImpl])
+
+    bind(classOf[AclService]).to(classOf[AclServiceImpl])
   }
 }

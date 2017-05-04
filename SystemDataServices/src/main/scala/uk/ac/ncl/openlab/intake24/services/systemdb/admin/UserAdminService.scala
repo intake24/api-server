@@ -1,12 +1,18 @@
 package uk.ac.ncl.openlab.intake24.services.systemdb.admin
 
 import uk.ac.ncl.openlab.intake24.errors._
+import uk.ac.ncl.openlab.intake24.services.systemdb.user.UserPhysicalDataOut
 
 case class NewUserProfile(name: Option[String], email: Option[String], phone: Option[String], roles: Set[String], customFields: Map[String, String])
 
 case class UserProfile(id: Long, name: Option[String], email: Option[String], phone: Option[String], emailNotifications: Boolean, smsNotifications: Boolean, roles: Set[String], customFields: Map[String, String])
 
-case class UserProfileUpdate(name: Option[String], email: Option[String], phone: Option[String], emailNotifications: Boolean, smsNotifications: Boolean, roles: Set[String], customFields: Map[String, String])
+case class UserProfileWithPhysicalData(userProfile: UserProfile,
+                                       physicalData: Option[UserPhysicalDataOut])
+
+case class UserProfileUpdate(name: Option[String], email: Option[String], phone: Option[String], emailNotifications: Boolean, smsNotifications: Boolean)
+
+case class UserRolesUpdate(roles: Set[String])
 
 case class SecurePassword(hashBase64: String, saltBase64: String, hasher: String)
 
@@ -40,7 +46,7 @@ trait UserAdminService {
 
   def createUserWithPassword(newUser: NewUserWithPassword): Either[CreateError, Long]
 
-  def updateUser(userId: Long, update: UserProfileUpdate): Either[UpdateError, Unit]
+  def updateUserProfile(userId: Long, update: UserProfileUpdate): Either[UpdateError, Unit]
 
   def getUserById(userId: Long): Either[LookupError, UserProfile]
 
@@ -68,7 +74,10 @@ trait UserAdminService {
 
   def getUserPasswordByEmail(email: String): Either[LookupError, SecurePassword]
 
+
   def updateUserPassword(userId: Long, update: SecurePassword): Either[UpdateError, Unit]
+
+  def updateUserRoles(userId: Long, update: UserRolesUpdate): Either[UpdateError, Unit]
 
 
   def findUsers(query: String, limit: Int): Either[UnexpectedDatabaseError, Seq[UserProfile]]
@@ -79,9 +88,9 @@ trait UserAdminService {
 
   // Custom data support
 
-  def getCustomUserData(userId: Long): Either[LookupError, Map[String, String]]
+  def getUserCustomData(userId: Long): Either[LookupError, Map[String, String]]
 
-  def updateCustomUserData(userId: Long, customUserData: Map[String, String]): Either[UpdateError, Unit]
+  def updateUserCustomData(userId: Long, customUserData: Map[String, String]): Either[UpdateError, Unit]
 
 
   // Auto generated users support
