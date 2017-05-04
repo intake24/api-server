@@ -120,6 +120,13 @@ class UserAdminController @Inject()(service: UserAdminService,
       }
   }
 
+  def deleteUser(userId: Long) = rab.restrictAccessWithDatabaseCheck(authChecks.canDeleteUser(userId)) {
+    _ =>
+      Future {
+        translateDatabaseResult(service.deleteUsersById(Seq(userId)))
+      }
+  }
+
   def listSurveyStaffUsers(surveyId: String, offset: Int, limit: Int) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
     _ =>
       Future {

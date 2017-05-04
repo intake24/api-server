@@ -11,7 +11,6 @@ DELETE        /:userId                      controllers.system.UserAdminControll
 
 PATCH         /:userId                      controllers.system.UserAdminController.patchUserProfile(userId: Long)
 PATCH         /:userId/password             controllers.system.UserAdminController.patchUserPassword(userId: Long)
-PATCH         /:userId/roles                controllers.system.UserAdminController.patchUserRoles(userId: Long)
 PATCH         /:userId/physical-data        controllers.system.user.UserPhysicalDataController.patchUserPhysicalData(userId: Long)
 
 POST          /delete                       controllers.system.UserAdminController.deleteUsers()
