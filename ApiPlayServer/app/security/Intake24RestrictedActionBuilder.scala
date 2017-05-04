@@ -58,7 +58,7 @@ class Intake24RestrictedActionBuilder @Inject()(val authenticationService: Intak
   def restrictAccessWithDatabaseCheck(check: Intake24AccessToken => Either[AnyError, Boolean]) = new RestrictAccessWithDatabaseCheckAdapter(check)
 
 
-    def restrictToAuthenticated = restrictAccess(_ => true)
+  def restrictToAuthenticated = restrictAccess(_ => true)
 
   def restrictToRoles(roles: String*) = restrictAccess(t => roles.exists(r => t.roles.contains(r)))
 

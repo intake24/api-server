@@ -30,6 +30,7 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller, MultipartFormData, Result}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.api.shared._
+import uk.ac.ncl.openlab.intake24.errors.ErrorUtils
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.UserPhysicalDataService
@@ -197,11 +198,10 @@ class UserAdminController @Inject()(service: UserAdminService,
   def giveAccessToSurvey(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser[UserAccessToSurveySeq]) {
     request =>
       Future {
+
         //        Check that all roles contain surveyId as prefix then perform update for every user
         request.body.containsSurveyId(surveyId) match {
-          case true =>
-            request.body.users.map(userAccess => service.giveAccessToSurvey(userAccess))
-            Ok
+          case true => translateDatabaseResult(ErrorUtils.sequence(request.body.users.map(userAccess => service.giveAccessToSurvey(userAccess))))
           case false => Forbidden
         }
       }
@@ -212,9 +212,7 @@ class UserAdminController @Inject()(service: UserAdminService,
       Future {
         //        Check that all roles contain surveyId as prefix then perform update for every user
         request.body.containsSurveyId(surveyId) match {
-          case true =>
-            request.body.users.map(userAccess => service.withdrawAccessToSurvey(userAccess))
-            Ok
+          case true => translateDatabaseResult(ErrorUtils.sequence(request.body.users.map(userAccess => service.withdrawAccessToSurvey(userAccess))))
           case false => Forbidden
         }
       }
