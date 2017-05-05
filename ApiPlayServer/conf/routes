@@ -153,3 +153,4 @@ POST           /errors/report                                                con
 ->             /user                                                         user.Routes
 ->             /users                                                        users.Routes
 ->             /surveys                                                      surveys.Routes
+->             /help                                                         help.Routes
