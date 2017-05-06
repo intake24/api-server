@@ -25,7 +25,7 @@ class ImageDatabaseServiceSqlImpl @Inject()(@Named("intake24_foods") val dataSou
 
   private lazy val filterSourceImagesQuery = sqlFromResource("admin/filter_source_image_records.sql")
 
-  def createSourceImageRecords(records: Seq[NewSourceImageRecord]): Either[UnexpectedDatabaseError, Seq[Long]] = tryWithConnection {
+  def createSourceImageRecords(records: Seq[NewSourceImageRecord]): Either[UnexpectedDatabaseError, Seq[SourceImageRecord]] = tryWithConnection {
     implicit conn =>
       withTransaction {
         val query = "INSERT INTO source_images(id,path,thumbnail_path,uploader,uploaded_at) VALUES(DEFAULT,{path},{thumbnail_path},{uploader},DEFAULT)"
@@ -49,7 +49,17 @@ class ImageDatabaseServiceSqlImpl @Inject()(@Named("intake24_foods") val dataSou
         if (keywordParams.nonEmpty)
           batchSql(keywordsQuery, keywordParams).execute()
 
-        Right(ids)
+//        Fixme: was copied from the getSourceImageRecords. Should probably be a RETURNING result of previous queries
+        val result = SQL(getSourceImagesQuery).on('ids -> ids).executeQuery().as(Macro.namedParser[SourceImageRecordRow].*).map {
+          row =>
+            row.id -> row.toSourceImageRecord
+        }.toMap
+
+        ids.find(!result.contains(_)) match {
+          case Some(missingKey) => Left(UnexpectedDatabaseError(new RuntimeException(s"Missing source image record: $missingKey")))
+          case None => Right(ids.map(result(_)))
+        }
+
       }
   }
 

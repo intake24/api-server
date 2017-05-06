@@ -11,8 +11,8 @@ import play.api.http.ContentTypes
 import play.api.libs.Files.TemporaryFile
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller, MultipartFormData}
-import security.{Intake24AccessToken, Intake24RestrictedActionBuilder}
 import security.authorization.AuthorizedRequest
+import security.{Intake24AccessToken, Intake24RestrictedActionBuilder}
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
@@ -49,11 +49,11 @@ class ImageAdminController @Inject()(service: ImageAdminService, databaseService
           service.uploadSourceImage(suggestedPath, Paths.get(file.ref.file.getPath), keywords, uploaderName)
       }.toList
 
-      val error = results.find(_.isLeft).map(_.asInstanceOf[Either[ImageServiceOrDatabaseError, Long]])
+      val error = results.find(_.isLeft)
 
       error match {
-        case Some(e) => translateImageServiceAndDatabaseResult(e)
-        case _ => Ok(toJsonString(results.map(_.right.get)))
+        case Some(e) => translateImageServiceAndDatabaseResult(e.right.map(toClientRecord(_)))
+        case _ => Ok(toJsonString(toClientRecords(results.map(_.right.get))))
       }
     }
   }
@@ -71,10 +71,10 @@ class ImageAdminController @Inject()(service: ImageAdminService, databaseService
     request => uploadImpl(Some(originalPath => ImageAdminService.getSourcePathForImageMap(id, originalPath)), request)
   }
 
-  private def toClientRecords(records: Seq[SourceImageRecord]): Seq[ClientSourceImageRecord] = records.map {
-    record =>
-      ClientSourceImageRecord(record.id, storageService.getUrl(record.path), storageService.getUrl(record.thumbnailPath), record.keywords, record.uploader, record.uploadedAt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
-  }
+  private def toClientRecords(records: Seq[SourceImageRecord]): Seq[ClientSourceImageRecord] = records.map(toClientRecord(_))
+
+  private def toClientRecord(record: SourceImageRecord): ClientSourceImageRecord =
+    ClientSourceImageRecord(record.id, storageService.getUrl(record.path), storageService.getUrl(record.thumbnailPath), record.keywords, record.uploader, record.uploadedAt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
 
   def listSourceImages(offset: Int, limit: Int, searchTerm: Option[String]) = rab.restrictToRoles(Roles.superuser) {
     request =>
