@@ -21,18 +21,20 @@ case class PortableAsServedImage(sourcePath: String, sourceThumbnailPath: String
 case class PortableAsServedSet(id: String, description: String, selectionSourcePath: String, selectionImagePath: String, images: Seq[PortableAsServedImage])
 
 trait AsServedSetsAdminService {
-  
+
   def listAsServedSets(): Either[UnexpectedDatabaseError, Map[String, AsServedHeader]]
-  
+
   def getAsServedSetWithPaths(id: String): Either[LookupError, AsServedSetWithPaths]
-  
+
   def getAsServedSetRecord(id: String): Either[LookupError, AsServedSetRecord]
-  
+
+  def deleteAsServedSetRecord(id: String): Either[UnexpectedDatabaseError, Unit]
+
   def getPortableAsServedSet(id: String): Either[LookupError, PortableAsServedSet]
-  
+
   def deleteAllAsServedSets(): Either[UnexpectedDatabaseError, Unit]
 
   def createAsServedSets(sets: Seq[NewAsServedSetRecord]): Either[CreateError, Unit]
-  
+
   def updateAsServedSet(id: String, update: NewAsServedSetRecord): Either[UpdateError, Unit]
 }

@@ -71,6 +71,12 @@ class AsServedSetsAdminController @Inject()(
     }
   }
 
+  def deleteAsServedSet(id: String) = rab.restrictToRoles(Roles.superuser) {
+    Future {
+      translateDatabaseResult(service.deleteAsServedSetRecord(id))
+    }
+  }
+
   def exportAsServedSet(id: String) = rab.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.getPortableAsServedSet(id))
