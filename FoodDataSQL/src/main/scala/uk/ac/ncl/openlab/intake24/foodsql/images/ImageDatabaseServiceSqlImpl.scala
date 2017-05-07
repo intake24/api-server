@@ -81,7 +81,9 @@ class ImageDatabaseServiceSqlImpl @Inject()(@Named("intake24_foods") val dataSou
   def listSourceImageRecords(offset: Int, limit: Int, search: Option[String]): Either[UnexpectedDatabaseError, Seq[SourceImageRecord]] = tryWithConnection {
     implicit conn =>
       val query = search match {
-        case Some(term) if term.nonEmpty => SQL(filterSourceImagesQuery).on('offset -> offset, 'limit -> limit, 'pattern -> s"${term.toLowerCase}%")
+        case Some(term) if term.nonEmpty =>
+          val words = term.replaceAll("[^a-zA-Z0-9 ]", " ").toLowerCase().split("\\s+")
+          SQL(filterSourceImagesQuery).on('offset -> offset, 'limit -> limit, 'pattern -> s"%(${words.mkString("|")})%")
         case _ => SQL(listSourceImagesQuery).on('offset -> offset, 'limit -> limit)
       }
 
