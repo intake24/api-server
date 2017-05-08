@@ -83,7 +83,11 @@ class ImageDatabaseServiceSqlImpl @Inject()(@Named("intake24_foods") val dataSou
       val query = search match {
         case Some(term) if term.nonEmpty =>
           val words = term.replaceAll("[^a-zA-Z0-9 ]", " ").toLowerCase().split("\\s+")
-          SQL(filterSourceImagesQuery).on('offset -> offset, 'limit -> limit, 'pattern -> s"%(${words.mkString("|")})%")
+          SQL(filterSourceImagesQuery)
+            .on('offset -> offset,
+                'limit -> limit,
+                'regex_pattern -> s"%(${words.mkString("|")})%",
+                'aray_pattern -> s"{${words.mkString(",")}}")
         case _ => SQL(listSourceImagesQuery).on('offset -> offset, 'limit -> limit)
       }
 
