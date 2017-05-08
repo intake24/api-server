@@ -7,7 +7,7 @@ import java.util.UUID
 import javax.imageio.ImageIO
 import javax.inject.{Inject, Singleton}
 
-import org.im4java.core.{ConvertCmd, IMOperation}
+import org.im4java.core.{ConvertCmd, IMOperation, ImageCommand}
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
@@ -18,7 +18,7 @@ class ImageProcessorIM @Inject()(val settings: ImageProcessorSettings) extends I
   val logger = LoggerFactory.getLogger(classOf[ImageProcessorIM])
 
   val convertCmd = {
-    val cmd = new ConvertCmd()
+    val cmd = new ImageCommand("magick", "convert")
 
     settings.cmdSearchPath.foreach(cmd.setSearchPath(_))
 

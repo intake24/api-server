@@ -102,8 +102,12 @@ class ImageDatabaseServiceSqlImpl @Inject()(@Named("intake24_foods") val dataSou
             Seq[NamedParameter]('id -> id, 'keyword -> keyword)
         }
 
-        tryWithConstraintCheck[LookupError, Unit]("source_image_keywords_source_image_id_fk", e => RecordNotFound(e)) {
-          batchSql("INSERT INTO source_image_keywords VALUES({id},{keyword})", keywordParams).execute()
+        if (keywordParams.nonEmpty) {
+          tryWithConstraintCheck[LookupError, Unit]("source_image_keywords_source_image_id_fk", e => RecordNotFound(e)) {
+            batchSql("INSERT INTO source_image_keywords VALUES({id},{keyword})", keywordParams).execute()
+            Right(())
+          }
+        } else {
           Right(())
         }
       }
