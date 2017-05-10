@@ -82,7 +82,7 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
   // TODO: if the database operation fails, images need to be deleted from storage.
   // Failing to do that won't break anything, but will result in unused files.
   // Maybe some garbage collection is a better idea?
-  def uploadSourceImage(suggestedPath: String, source: Path, keywords: Seq[String], uploaderName: String): Either[ImageServiceOrDatabaseError, Long] =
+  def uploadSourceImage(suggestedPath: String, source: Path, keywords: Seq[String], uploaderName: String): Either[ImageServiceOrDatabaseError, SourceImageRecord] =
   withTempDir {
     tempDir =>
       val extension = getExtension(source.toString)

@@ -47,7 +47,7 @@ object ProcessedImagePurpose {
 
 trait ImageDatabaseService {
 
-  def createSourceImageRecords(records: Seq[NewSourceImageRecord]): Either[UnexpectedDatabaseError, Seq[Long]]
+  def createSourceImageRecords(records: Seq[NewSourceImageRecord]): Either[UnexpectedDatabaseError, Seq[SourceImageRecord]]
 
   def getSourceImageRecords(ids: Seq[Long]): Either[LookupError, Seq[SourceImageRecord]]
 

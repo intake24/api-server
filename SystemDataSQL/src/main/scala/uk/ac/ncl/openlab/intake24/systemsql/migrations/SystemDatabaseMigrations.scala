@@ -1115,6 +1115,26 @@ object SystemDatabaseMigrations {
         ???
 
       }
+    },
+
+
+    new Migration {
+
+      override val versionFrom: Long = 44l
+      override val versionTo: Long = 45l
+      override val description: String = "Add text_direction to locales"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("ALTER TABLE locales ADD COLUMN text_direction character varying(8) NOT NULL DEFAULT 'ltr'").execute()
+        SQL("UPDATE locales SET text_direction='rtl' WHERE id='ar_AE'").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
     }
 
   )

@@ -14,9 +14,9 @@ class LocalesAdminSuite(service: LocalesAdminService) extends FunSuite {
   def updateLocale(id: String, data: Locale): Either[LocaleError, Unit]
   def deleteLocale(id: String): Either[LocaleError, Unit]*/
 
-  val locale1 = Locale("locale1", "Locale 1", "Великая локаль 1", "en", "en", "gb", None)
-  val locale2 = Locale("locale2", "Locale 2", "Великая локаль 2", "en", "en", "gb", Some("locale1"))
-  val locale3 = Locale("locale3", "Locale 3", "Великая локаль 3", "en", "en", "gb", None)
+  val locale1 = Locale("locale1", "Locale 1", "Великая локаль 1", "en", "en", "gb", None, "ltr")
+  val locale2 = Locale("locale2", "Locale 2", "Великая локаль 2", "en", "en", "gb", Some("locale1"), "ltr")
+  val locale3 = Locale("locale3", "Locale 3", "Великая локаль 3", "en", "en", "gb", None, "ltr")
 
   val allLocales = Map(locale1.id -> locale1, locale2.id -> locale2, locale3.id -> locale3)
 

@@ -72,6 +72,12 @@ class AsServedSetsAdminController @Inject()(
     }
   }
 
+  def deleteAsServedSet(id: String) = rab.restrictToRoles(Roles.superuser) {
+    Future {
+      translateDatabaseResult(service.deleteAsServedSetRecord(id))
+    }
+  }
+
   def exportAsServedSet(id: String) = rab.restrictAccess(foodAuthChecks.canReadPortionSizeMethods) {
     Future {
       translateDatabaseResult(service.getPortableAsServedSet(id))
@@ -90,30 +96,30 @@ class AsServedSetsAdminController @Inject()(
         }
 
         val result = for (
-          sourceIds <- imageDatabase.createSourceImageRecords(sourceImages).right;
+          sources <- imageDatabase.createSourceImageRecords(sourceImages).right;
           mainImageIds <- {
-            val mainImages = set.images.zip(sourceIds).map {
-              case (img, sourceId) =>
-                ProcessedImageRecord(img.mainImagePath, sourceId, ProcessedImagePurpose.AsServedMainImage)
+            val mainImages = set.images.zip(sources).map {
+              case (img, source) =>
+                ProcessedImageRecord(img.mainImagePath, source.id, ProcessedImagePurpose.AsServedMainImage)
             }
 
             imageDatabase.createProcessedImageRecords(mainImages).right
           };
           thumbnailIds <- {
-            val thumbnailImages = set.images.zip(sourceIds).map {
-              case (img, sourceId) =>
-                ProcessedImageRecord(img.thumbnailPath, sourceId, ProcessedImagePurpose.AsServedThumbnail)
+            val thumbnailImages = set.images.zip(sources).map {
+              case (img, source) =>
+                ProcessedImageRecord(img.thumbnailPath, source.id, ProcessedImagePurpose.AsServedThumbnail)
             }
 
             imageDatabase.createProcessedImageRecords(thumbnailImages).right
           };
           selectionImageId <- {
-            val sourceImageId = set.images.zip(sourceIds).find(_._1.sourcePath == set.selectionSourcePath) match {
+            val sourceImage = set.images.zip(sources).find(_._1.sourcePath == set.selectionSourcePath) match {
               case Some((_, id)) => id
               case None => throw new RuntimeException("Selection image source path must be one of the as served images")
             }
 
-            imageDatabase.createProcessedImageRecords(Seq(ProcessedImageRecord(set.selectionImagePath, sourceImageId, ProcessedImagePurpose.PortionSizeSelectionImage))).right.map(_.head).right
+            imageDatabase.createProcessedImageRecords(Seq(ProcessedImageRecord(set.selectionImagePath, sourceImage.id, ProcessedImagePurpose.PortionSizeSelectionImage))).right.map(_.head).right
           };
           _ <- {
             val images = set.images.zip(mainImageIds).zip(thumbnailIds).map {
@@ -201,10 +207,10 @@ class AsServedSetsAdminController @Inject()(
             val description = request.body.dataParts("description").head
 
             val result = for (
-              sourceIds <- sequence(records.map {
+              sources <- sequence(records.map {
                 record => imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForAsServed(setId, record._1.filename), Paths.get(record._1.ref.file.getPath), keywords, uploaderName)
               }).right;
-              result <- createAsServedSetImpl(NewAsServedSet(setId, description, sourceIds.zip(weights).map { case (id, weight) => NewAsServedImage(id, weight) })).right)
+              result <- createAsServedSetImpl(NewAsServedSet(setId, description, sources.zip(weights).map { case (source, weight) => NewAsServedImage(source.id, weight) })).right)
               yield result
 
             translateImageServiceAndDatabaseResult(result)

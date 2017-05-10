@@ -223,7 +223,7 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
     val drinkwareSets = DrinkwareDef.parseXml(XML.load(dataDirectory + File.separator + "drinkware.xml")).values.toSeq
 
     adminService.deleteLocale(defaultLocale)
-    adminService.createLocale(Locale(defaultLocale, "United Kingdom", "United Kingdom", "en_GB", "en", "gb", None))
+    adminService.createLocale(Locale(defaultLocale, "United Kingdom", "United Kingdom", "en_GB", "en", "gb", None, "ltr"))
 
     importCategories(categories)
 

@@ -24,7 +24,6 @@ import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
-
 import parsers.JsonUtils
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.mailer.{Email, MailerClient}
@@ -42,6 +41,8 @@ import scala.concurrent.duration._
 
 case class CallbackRequest(name: String, phone: String)
 
+case class FeedbackMessage(like: Boolean, pageUrl: String, body: String)
+
 class HelpController @Inject()(cache: CacheApi,
                                config: Configuration,
                                system: ActorSystem,
@@ -54,6 +55,10 @@ class HelpController @Inject()(cache: CacheApi,
 
   val callbackRequestRate = config.getInt("intake24.help.callbackRequestRateSeconds").get
 
+  private def getCacheKey(subject: Intake24AccessToken) = {
+    s"reject-callback-${subject.userId.toString}"
+  }
+
   // TODO: captcha to prevent new spam
   // TODO: localise e-mail messages
   def requestCallback(surveyId: String) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(jsonBodyParser[CallbackRequest]) {
@@ -61,7 +66,7 @@ class HelpController @Inject()(cache: CacheApi,
       Future {
         val subject = request.subject
 
-        val cacheKey = s"reject-callback-${subject.userId.toString}"
+        val cacheKey = getCacheKey(subject)
 
         val userName = subject.jwt.loginInfo.providerID match {
           case SurveyAliasProvider.ID => SurveyAliasUtils.fromString(subject.jwt.loginInfo.providerKey).userName
@@ -127,4 +132,48 @@ class HelpController @Inject()(cache: CacheApi,
         }
       }
   }
+
+  def feedback() = rab.restrictToAuthenticated(jsonBodyParser[FeedbackMessage]) {
+    request =>
+      Future {
+        val subject = request.subject
+
+        val cacheKey = getCacheKey(subject)
+
+        val userName = subject.jwt.loginInfo.providerID match {
+          case SurveyAliasProvider.ID => SurveyAliasUtils.fromString(subject.jwt.loginInfo.providerKey).userName
+          case _ => subject.userId.toString
+        }
+
+        if (cache.get[String](cacheKey) != null)
+          TooManyRequests
+        else {
+          cache.set(cacheKey, "t", callbackRequestRate)
+
+          val result = system.scheduler.scheduleOnce(0 seconds) {
+            try {
+              val message = Email(
+                subject = s"Page feedback. ${if (request.body.like) "Liked" else "Disliked"}",
+                bodyText = Some(
+                  s"""
+                     |User: ${userName} \n
+                     |Url: ${request.body.pageUrl} \n
+                     |Experience: ${if (request.body.like) "Liked" else "Disliked"} \n
+                     |${request.body}
+                  """.stripMargin),
+                from = "Intake24 Feedback <support@intake24.co.uk>",
+                to = Seq("Intake24 Feedback <support@intake24.co.uk>")
+              )
+
+              mailer.send(message)
+            } catch {
+              case e: Throwable => Logger.error("Failed to send e-mail message", e)
+            }
+          }
+
+          Ok
+        }
+      }
+  }
+
 }

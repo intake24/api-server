@@ -102,7 +102,7 @@ case class LocalFoodsImport(localeCode: String, englishLocaleName: String, local
   
   logger.info(s"Re-creating locale $localeCode")
   localesAdminService.deleteLocale(localeCode)
-  localesAdminService.createLocale(Locale(localeCode, englishLocaleName, localLocaleName, respondentLanguageCode, adminLanguageCode, flagCode, Some(baseLocaleCode)))
+  localesAdminService.createLocale(Locale(localeCode, englishLocaleName, localLocaleName, respondentLanguageCode, adminLanguageCode, flagCode, Some(baseLocaleCode), "ltr"))
 
   // New local foods
 

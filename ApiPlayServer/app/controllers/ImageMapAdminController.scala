@@ -63,9 +63,9 @@ class ImageMapAdminController @Inject()(
   private def createImageMap(baseImage: FilePart[TemporaryFile], keywords: Seq[String], params: NewImageMapRequest, imageMap: AWTImageMap, uploader: String): Either[Result, Unit] =
     translateImageServiceAndDatabaseError(
       for (
-        baseImageSourceId <- imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForImageMap(params.id, baseImage.filename), Paths.get(baseImage.ref.file.getPath), keywords, uploader).right;
-        processedBaseImageDescriptor <- imageAdmin.processForImageMapBase(params.id, baseImageSourceId).right;
-        overlayDescriptors <- imageAdmin.generateImageMapOverlays(params.id, baseImageSourceId, imageMap).right;
+        baseImageSourceRecord <- imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForImageMap(params.id, baseImage.filename), Paths.get(baseImage.ref.file.getPath), keywords, uploader).right;
+        processedBaseImageDescriptor <- imageAdmin.processForImageMapBase(params.id, baseImageSourceRecord.id).right;
+        overlayDescriptors <- imageAdmin.generateImageMapOverlays(params.id, baseImageSourceRecord.id, imageMap).right;
         _ <- {
 
           val objects = imageMap.outlines.keySet.foldLeft(Map[Int, ImageMapObjectRecord]()) {
