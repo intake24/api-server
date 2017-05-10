@@ -35,6 +35,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.demographicgroups._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
 import uk.ac.ncl.openlab.intake24.services.fooddb.user._
+import uk.ac.ncl.openlab.intake24.services.foodindex.arabic.{FoodIndexImpl_ar_AE, SplitterImpl_ar_AE}
 import uk.ac.ncl.openlab.intake24.services.foodindex.danish.{FoodIndexImpl_da_DK, SplitterImpl_da_DK}
 import uk.ac.ncl.openlab.intake24.services.foodindex.english.{EnglishWordOps, EnglishWordOpsPlingImpl, FoodIndexImpl_en_GB, SplitterImpl_en_GB}
 import uk.ac.ncl.openlab.intake24.services.foodindex.portuguese.{FoodIndexImpl_pt_PT, SplitterImpl_pt_PT}
@@ -52,14 +53,16 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
   def foodIndexes(injector: Injector): Map[String, FoodIndex] =
     Map("en_GB" -> injector.getInstance(classOf[FoodIndexImpl_en_GB]),
       "pt_PT" -> injector.getInstance(classOf[FoodIndexImpl_pt_PT]),
-      "da_DK" -> injector.getInstance(classOf[FoodIndexImpl_da_DK]))
+      "da_DK" -> injector.getInstance(classOf[FoodIndexImpl_da_DK]),
+      "ar_AE" -> injector.getInstance(classOf[FoodIndexImpl_ar_AE]))
 
   @Provides
   @Singleton
   def foodDescriptionSplitters(injector: Injector): Map[String, Splitter] =
     Map("en_GB" -> injector.getInstance(classOf[SplitterImpl_en_GB]),
       "pt_PT" -> injector.getInstance(classOf[SplitterImpl_pt_PT]),
-      "da_DK" -> injector.getInstance(classOf[SplitterImpl_da_DK]))
+      "da_DK" -> injector.getInstance(classOf[SplitterImpl_da_DK]),
+      "ar_AE" -> injector.getInstance(classOf[SplitterImpl_ar_AE]))
 
   @Provides
   @Named("intake24_system")

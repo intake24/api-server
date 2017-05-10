@@ -30,7 +30,6 @@ trait BrandNamesAdminQueries extends SqlDataService {
         Right(())
       }
     } else {
-      logger.debug("createBrandNames request with empty brand names map")
       Right(())
     }
   }

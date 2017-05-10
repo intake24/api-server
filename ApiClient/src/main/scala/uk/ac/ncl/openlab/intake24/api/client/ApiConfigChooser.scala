@@ -10,7 +10,7 @@ object ApiConfigChooser extends JsonParser {
 
   def getDevelopmentApiConfiguration(configDirRelativePath: String = "./api-config") = fromJson[ApiConfiguration](scala.io.Source.fromFile(configDirRelativePath + "/" + "development-api-config.json").mkString).right.get
 
-  def chooseApiConfiguration(message: String = "Please choose the API instance for this operation:", configDirPath: String = "./api-config", options: IndexedSeq[(String, String)] = default): ApiConfiguration = {
+  def chooseApiConfiguration(configDirPath: String = "./api-config", message: String = "Please choose the API instance for this operation:", options: IndexedSeq[(String, String)] = default): ApiConfiguration = {
 
     println()
     println(message)

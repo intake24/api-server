@@ -4,16 +4,19 @@ import uk.ac.ncl.openlab.intake24.api.client.ApiError.{ErrorParseFailed, Request
 
 import scalaj.http.Http
 import io.circe.generic.auto._
+import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.api.shared.{EmailCredentials, RefreshResult, SigninResult}
 
 
 class AuthCacheImpl(val apiBaseUrl: String, val credentials: EmailCredentials) extends AuthCache with JsonParser {
 
+  val logger = LoggerFactory.getLogger(classOf[AuthCacheImpl])
+
   var accessToken: Option[String] = None
   var refreshToken: Option[String] = None
 
   def getRefreshToken(): Unit = {
-    val response = Http(s"$apiBaseUrl/signin").timeout(1000, 30000).postData(toJson(credentials)).asString
+    val response = Http(s"$apiBaseUrl/signin").timeout(1000, 30000).header("Content-Type", "application/json").postData(toJson(credentials)).asString
 
     if (response.code == 200) {
       fromJson[SigninResult](response.body) match {
