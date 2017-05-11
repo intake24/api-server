@@ -14,8 +14,11 @@ class FoodAuthChecks {
   def allowAdmins(subject: Intake24AccessToken) =
     subject.roles.exists(r => r == Roles.superuser || r == Roles.foodsAdmin)
 
+  def allowAnyStaff(subject: Intake24AccessToken) =
+    subject.roles.exists(r => r == Roles.superuser || r == Roles.foodsAdmin || r.startsWith(Roles.foodDatabaseMaintainerPrefix) || r.endsWith(Roles.staffSuffix))
 
-  def canReadLocales(subject: Intake24AccessToken) = allowAnyLocaleMaintainers(subject)
+
+  def canReadLocales(subject: Intake24AccessToken) = allowAnyStaff(subject)
 
 
   def canCheckFoodCodes(subject: Intake24AccessToken) = allowAnyLocaleMaintainers(subject)
