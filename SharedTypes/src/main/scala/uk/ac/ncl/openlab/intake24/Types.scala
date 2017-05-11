@@ -80,7 +80,7 @@ case class NewLocalFoodRecord(localDescription: Option[String], doNotUse: Boolea
                               nutrientTableCodes: Map[String, String], portionSize: Seq[PortionSizeMethod], associatedFoods: Seq[AssociatedFood],
                               brandNames: Seq[String])
 
-case class FoodHeader(code: String, englishDescription: String, localDescription: Option[String], doNotUse: Boolean)
+case class FoodHeader(code: String, englishDescription: String, localDescription: Option[String], excluded: Boolean)
 
 case class UserFoodHeader(code: String, localDescription: String)
 

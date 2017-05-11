@@ -22,7 +22,7 @@ trait FoodBrowsingAdminQueries
   protected def categoryFoodContentsHeadersQuery(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[FoodHeader]] = {
     val result = SQL(categoryFoodContentsHeadersQuery).on('category_code -> code, 'locale_id -> locale).executeQuery()
 
-    parseWithLocaleAndCategoryValidation(code, result, Macro.namedParser[FoodHeaderRow].+)(Seq(FirstRowValidationClause("code", () => Right(List())))).right.map(_.map(_.asFoodHeader))
+    parseWithLocaleAndCategoryValidation(code, result, Macro.namedParser[FoodHeaderRow].+)(Seq(FirstRowValidationClause("code", () => Right(List())))).right.map(_.map(_.asFoodHeader(locale)))
   }
 
   lazy private val categoryFoodContentsCodesQuery = sqlFromResource("admin/category_contents_foods_codes.sql")

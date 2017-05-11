@@ -19,7 +19,7 @@ class QuickSearchAdminImpl @Inject()(@Named("intake24_foods") val dataSource: Da
     implicit conn =>
       val lowerCaseTerm = searchTerm.toLowerCase
 
-      Right(SQL(foodsQuickSearchQuery).on('pattern -> s"%${lowerCaseTerm}%", 'locale_id -> locale).executeQuery().as(Macro.namedParser[FoodHeaderRow].*).map(_.asFoodHeader))
+      Right(SQL(foodsQuickSearchQuery).on('pattern -> s"%${lowerCaseTerm}%", 'locale_id -> locale).executeQuery().as(Macro.namedParser[FoodHeaderRow].*).map(_.asFoodHeader(locale)))
   }
 
   private lazy val categoriesQuickSearchQuery = sqlFromResource("admin/categories_quick_search.sql")
