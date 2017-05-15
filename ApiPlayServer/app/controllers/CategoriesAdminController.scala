@@ -67,7 +67,7 @@ class CategoriesAdminController @Inject()(service: CategoriesAdminService,
     }
   }
 
-  def updateMainCategoryRecord(categoryCode: String) = rab.restrictAccess(foodAuthChecks.canUpdateMainFoods)(jsonBodyParser[MainCategoryRecordUpdate]) {
+  def updateMainCategoryRecord(categoryCode: String) = rab.restrictAccess(foodAuthChecks.canUpdateCategories)(jsonBodyParser[MainCategoryRecordUpdate]) {
     request =>
       Future {
         translateDatabaseResult(service.updateMainCategoryRecord(categoryCode, request.body))

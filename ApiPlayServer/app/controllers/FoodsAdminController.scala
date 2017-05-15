@@ -27,7 +27,7 @@ import play.api.mvc.Controller
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
-import uk.ac.ncl.openlab.intake24.{LocalFoodRecordUpdate, MainFoodRecordUpdate, NewMainFoodRecord}
+import uk.ac.ncl.openlab.intake24.{LocalFoodRecordUpdate, MainFoodRecordUpdate, NewLocalMainFoodRecord, NewMainFoodRecord}
 
 import scala.concurrent.Future
 
@@ -61,6 +61,14 @@ class FoodsAdminController @Inject()(service: FoodsAdminService,
       }
   }
 
+  def createLocalFood(localeId: String) = rab.restrictAccess(foodAuthChecks.canCreateLocalFoods(localeId))(jsonBodyParser[NewLocalMainFoodRecord]) {
+    request =>
+      Future {
+        translateDatabaseResult(service.createFood(NewMainFoodRecord(request.body.code, request.body.englishDescription, request.body.groupCode,
+          request.body.attributes, request.body.parentCategories, Seq(localeId))))
+      }
+  }
+
   def createFoodWithTempCode() = rab.restrictAccess(foodAuthChecks.canCreateMainFoods)(jsonBodyParser[NewMainFoodRecord]) {
     request =>
       Future {
@@ -68,10 +76,13 @@ class FoodsAdminController @Inject()(service: FoodsAdminService,
       }
   }
 
-  def updateMainFoodRecord(foodCode: String) = rab.restrictAccess(foodAuthChecks.canUpdateMainFoods)(jsonBodyParser[MainFoodRecordUpdate]) {
+  def updateMainFoodRecord(foodCode: String) = rab.restrictAccessWithDatabaseCheck(foodAuthChecks.canUpdateMainFood(foodCode))(jsonBodyParser[MainFoodRecordUpdate]) {
     request =>
       Future {
-        translateDatabaseResult(service.updateMainFoodRecord(foodCode, request.body))
+        if (!foodAuthChecks.isFoodsAdmin(request.subject) && !request.body.localeRestrictions.forall(l => foodAuthChecks.isLocaleMaintainer(l, request.subject)))
+          Forbidden
+        else
+          translateDatabaseResult(service.updateMainFoodRecord(foodCode, request.body))
       }
   }
 

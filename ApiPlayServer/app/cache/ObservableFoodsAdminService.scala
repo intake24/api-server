@@ -37,6 +37,8 @@ class ObservableFoodsAdminServiceImpl @Inject()(@BasicImpl service: FoodsAdminSe
 
   def getFoodRecord(code: String, locale: String): Either[LocalLookupError, FoodRecord] = service.getFoodRecord(code, locale)
 
+  def getFoodLocaleRestrictions(code: String): Either[LookupError, Seq[String]] = service.getFoodLocaleRestrictions(code)
+
   def isFoodCodeAvailable(code: String): Either[UnexpectedDatabaseError, Boolean] = service.isFoodCodeAvailable(code)
 
   def isFoodCode(code: String): Either[UnexpectedDatabaseError, Boolean] = service.isFoodCode(code)

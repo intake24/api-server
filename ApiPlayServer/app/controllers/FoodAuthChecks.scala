@@ -1,21 +1,37 @@
 package controllers
 
+import javax.inject.Inject
+
 import security.Intake24AccessToken
+import uk.ac.ncl.openlab.intake24.errors.AnyError
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
-class FoodAuthChecks {
+
+class FoodAuthChecks @Inject()(service: FoodsAdminService) {
+
+  def isFoodsAdmin(subject: Intake24AccessToken) = subject.roles.exists(r => r == Roles.superuser || r == Roles.foodsAdmin)
+
+  def isLocaleMaintainer(localeId: String, subject: Intake24AccessToken) = subject.roles.contains(Roles.foodDatabaseMaintainer(localeId))
+
+  def isAnyLocaleMaintainer(subject: Intake24AccessToken) = subject.roles.exists(r => r.startsWith(Roles.foodDatabaseMaintainerPrefix))
+
 
   def allowAnyLocaleMaintainers(subject: Intake24AccessToken) =
-    subject.roles.exists(r => r == Roles.superuser || r == Roles.foodsAdmin || r.startsWith(Roles.foodDatabaseMaintainerPrefix))
+    isFoodsAdmin(subject) || isAnyLocaleMaintainer(subject)
+
+  def isMaintainerForAllLocales(locales: Seq[String], subject: Intake24AccessToken) =
+    locales.nonEmpty && locales.forall(localeId => isLocaleMaintainer(localeId, subject))
+
 
   def allowLocaleMaintainers(locale: String, subject: Intake24AccessToken) =
-    subject.roles.exists(r => r == Roles.superuser || r == Roles.foodsAdmin || r == Roles.foodDatabaseMaintainer(locale))
+    isFoodsAdmin(subject) || isLocaleMaintainer(locale, subject)
 
   def allowAdmins(subject: Intake24AccessToken) =
-    subject.roles.exists(r => r == Roles.superuser || r == Roles.foodsAdmin)
+    isFoodsAdmin(subject)
 
   def allowAnyStaff(subject: Intake24AccessToken) =
-    subject.roles.exists(r => r == Roles.superuser || r == Roles.foodsAdmin || r.startsWith(Roles.foodDatabaseMaintainerPrefix) || r.endsWith(Roles.staffSuffix))
+    isFoodsAdmin(subject) || isAnyLocaleMaintainer(subject) || subject.roles.exists(r => r.endsWith(Roles.staffSuffix))
 
 
   def canReadLocales(subject: Intake24AccessToken) = allowAnyStaff(subject)
@@ -28,7 +44,25 @@ class FoodAuthChecks {
 
   def canCreateMainFoods(subject: Intake24AccessToken) = allowAdmins(subject)
 
-  def canUpdateMainFoods(subject: Intake24AccessToken) = allowAdmins(subject)
+  def canUpdateMainFood(foodCode: String)(subject: Intake24AccessToken): Either[AnyError, Boolean] = {
+
+    val isAdmin = isFoodsAdmin(subject)
+    val isMaintainer = isAnyLocaleMaintainer(subject)
+
+    // Reject non-admins early
+    if (!isAdmin && !isMaintainer)
+      Right(false)
+    // Allow admins to update any food without database check
+    else if (isAdmin)
+      Right(true)
+    else
+      service.getFoodLocaleRestrictions(foodCode).right.map {
+        restrictions =>
+          isMaintainerForAllLocales(restrictions, subject)
+      }
+  }
+
+  def canUpdateCategories(subject: Intake24AccessToken) = isFoodsAdmin(subject)
 
   def canDeleteFoods(subject: Intake24AccessToken) = allowAdmins(subject)
 

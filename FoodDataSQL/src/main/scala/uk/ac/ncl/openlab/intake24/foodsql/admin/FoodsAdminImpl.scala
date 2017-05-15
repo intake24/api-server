@@ -53,6 +53,11 @@ class FoodsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSour
       ) yield record
   }
 
+  override def getFoodLocaleRestrictions(code: String): Either[LookupError, Seq[String]] = tryWithConnection {
+    implicit conn =>
+      getFoodLocaleRestrictionsQuery(code)
+  }
+
   def isFoodCode(code: String): Either[UnexpectedDatabaseError, Boolean] = tryWithConnection {
     implicit conn =>
       Right(SQL("""SELECT code FROM foods WHERE code={food_code}""").on('food_code -> code).executeQuery().as(SqlParser.str("code").*).nonEmpty)

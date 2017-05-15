@@ -64,6 +64,8 @@ case class NewMainFoodRecord(code: String, englishDescription: String, groupCode
   def toHeader = FoodHeader(code, englishDescription, None, false)
 }
 
+case class NewLocalMainFoodRecord(code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes, parentCategories: Seq[String])
+
 case class NewFoodAutoCode(englishDescription: String, groupCode: Int, attributes: InheritableAttributes)
 
 case class LocalFoodRecord(version: Option[UUID], localDescription: Option[String], doNotUse: Boolean,

@@ -5,6 +5,7 @@ import uk.ac.ncl.openlab.intake24.errors._
 
 trait FoodsAdminService {
   def getFoodRecord(code: String, locale: String): Either[LocalLookupError, FoodRecord]
+  def getFoodLocaleRestrictions(code: String): Either[LookupError, Seq[String]]
   
   def isFoodCodeAvailable(code: String): Either[UnexpectedDatabaseError, Boolean]
   def isFoodCode(code: String): Either[UnexpectedDatabaseError, Boolean]
