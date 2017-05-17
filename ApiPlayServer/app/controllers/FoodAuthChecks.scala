@@ -64,7 +64,9 @@ class FoodAuthChecks @Inject()(service: FoodsAdminService) {
 
   def canUpdateCategories(subject: Intake24AccessToken) = isFoodsAdmin(subject)
 
-  def canDeleteFoods(subject: Intake24AccessToken) = allowAdmins(subject)
+  def canDeleteCategories(subject: Intake24AccessToken) = isFoodsAdmin(subject)
+
+  def canDeleteFood(foodCode: String)(subject: Intake24AccessToken) = canUpdateMainFood(foodCode)(subject)
 
 
   def canCreateLocalFoods(locale: String)(subject: Intake24AccessToken) = allowLocaleMaintainers(locale, subject)

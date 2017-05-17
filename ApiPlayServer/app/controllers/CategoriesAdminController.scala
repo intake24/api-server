@@ -61,7 +61,7 @@ class CategoriesAdminController @Inject()(service: CategoriesAdminService,
       }
   }
 
-  def deleteCategory(categoryCode: String) = rab.restrictAccess(foodAuthChecks.canDeleteFoods) {
+  def deleteCategory(categoryCode: String) = rab.restrictAccess(foodAuthChecks.canDeleteCategories) {
     Future {
       translateDatabaseResult(service.deleteCategory(categoryCode))
     }

@@ -93,7 +93,7 @@ class FoodsAdminController @Inject()(service: FoodsAdminService,
       }
   }
 
-  def deleteFood(code: String) = rab.restrictAccess(foodAuthChecks.canDeleteFoods) {
+  def deleteFood(code: String) = rab.restrictAccessWithDatabaseCheck(foodAuthChecks.canDeleteFood(code)) {
     Future {
       translateDatabaseResult(service.deleteFoods(Seq(code)))
     }
