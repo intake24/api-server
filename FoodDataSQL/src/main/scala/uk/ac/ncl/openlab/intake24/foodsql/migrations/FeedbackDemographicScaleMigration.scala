@@ -18,10 +18,10 @@ object FeedbackDemographicScaleMigration extends Migration {
 
   def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
 
+    // btree_gist must be installed manually because the user performing the migration has no rights to do so
+
     val sqlQuery =
-      """|CREATE EXTENSION btree_gist;
-         |
-         |CREATE TYPE sex_enum AS ENUM ('f', 'm');
+      """|CREATE TYPE sex_enum AS ENUM ('f', 'm');
          |
          |CREATE TYPE sentiment_enum AS ENUM ('highly_negative', 'negative', 'warning',
          |                                    'neutral', 'positive', 'highly_positive');

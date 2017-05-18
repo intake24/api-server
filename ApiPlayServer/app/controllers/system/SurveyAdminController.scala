@@ -102,7 +102,7 @@ class SurveyAdminController @Inject()(service: SurveyAdminService, rab: Intake24
       }
   }
 
-  def deleteSurvey(surveyId: String) = rab.restrictToRoles(Roles.superuser)(BodyParsers.parse.empty) {
+  def deleteSurvey(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin)(BodyParsers.parse.empty) {
     _ =>
       Future {
         translateDatabaseResult(service.deleteSurvey(surveyId))

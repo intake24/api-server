@@ -67,11 +67,11 @@ class ImageAdminController @Inject()(service: ImageAdminService,
     request => uploadImpl(None, request)
   }
 
-  def uploadSourceImageForAsServed(setId: String) = rab.restrictToRoles(Roles.superuser)(BodyParsers.parse.multipartFormData) {
+  def uploadSourceImageForAsServed(setId: String) = rab.restrictToRoles(Roles.superuser, Roles.foodsAdmin)(BodyParsers.parse.multipartFormData) {
     request => uploadImpl(Some(originalPath => ImageAdminService.getSourcePathForAsServed(setId, originalPath)), request)
   }
 
-  def uploadSourceImageForImageMap(id: String) = rab.restrictToRoles(Roles.superuser)(BodyParsers.parse.multipartFormData) {
+  def uploadSourceImageForImageMap(id: String) = rab.restrictToRoles(Roles.superuser, Roles.foodsAdmin)(BodyParsers.parse.multipartFormData) {
     request => uploadImpl(Some(originalPath => ImageAdminService.getSourcePathForImageMap(id, originalPath)), request)
   }
 
@@ -80,7 +80,7 @@ class ImageAdminController @Inject()(service: ImageAdminService,
   private def toClientRecord(record: SourceImageRecord): ClientSourceImageRecord =
     ClientSourceImageRecord(record.id, storageService.getUrl(record.path), storageService.getUrl(record.thumbnailPath), record.keywords, record.uploader, record.uploadedAt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
 
-  def listSourceImages(offset: Int, limit: Int, searchTerm: Option[String]) = rab.restrictToRoles(Roles.superuser) {
+  def listSourceImages(offset: Int, limit: Int, searchTerm: Option[String]) = rab.restrictToRoles(Roles.superuser, Roles.foodsAdmin) {
     request =>
       Future {
         val resolvedRecords = databaseService.listSourceImageRecords(offset, Math.max(Math.min(limit, 100), 0), searchTerm).right.map(toClientRecords)
@@ -89,21 +89,21 @@ class ImageAdminController @Inject()(service: ImageAdminService,
       }
   }
 
-  def updateSourceImage(id: Int) = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[SourceImageRecordUpdate]) {
+  def updateSourceImage(id: Int) = rab.restrictToRoles(Roles.superuser, Roles.foodsAdmin)(jsonBodyParser[SourceImageRecordUpdate]) {
     request =>
       Future {
         translateDatabaseResult(databaseService.updateSourceImageRecord(id, request.body))
       }
   }
 
-  def deleteSourceImages() = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[Seq[Long]]) {
+  def deleteSourceImages() = rab.restrictToRoles(Roles.superuser, Roles.foodsAdmin)(jsonBodyParser[Seq[Long]]) {
     request =>
       Future {
         translateImageServiceAndDatabaseResult(service.deleteSourceImages(request.body))
       }
   }
 
-  def processForSelectionScreen(pathPrefix: String, sourceId: Long) = rab.restrictToRoles(Roles.superuser) {
+  def processForSelectionScreen(pathPrefix: String, sourceId: Long) = rab.restrictToRoles(Roles.superuser, Roles.foodsAdmin) {
     _ =>
       Future {
         translateImageServiceAndDatabaseResult(service.processForSelectionScreen(pathPrefix, sourceId))
