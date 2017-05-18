@@ -418,8 +418,70 @@ object FoodDatabaseMigrations {
         ???
 
       }
-    }
+    },
 
+    new Migration {
+
+      override val versionFrom: Long = 30l
+      override val versionTo: Long = 31l
+      override val description: String = "Rename level_of_physical_activity to physical_activity_level"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL(
+          """
+            |UPDATE demographic_group SET physical_activity_level_id=NULL;
+            |
+            |ALTER TABLE demographic_group DROP CONSTRAINT demographic_group_physical_activity_level_fk;
+            |
+            |DROP TABLE level_of_physical_activity;
+            |
+            |CREATE TABLE physical_activity_levels (
+            |    id serial PRIMARY KEY,
+            |    name character varying(500) NOT NULL,
+            |    coefficient numeric(6,3) NOT NULL
+            |);
+            |
+            |ALTER TABLE demographic_group
+            |ADD  CONSTRAINT demographic_group_physical_activity_level_id_fk FOREIGN KEY (physical_activity_level_id)
+            |REFERENCES physical_activity_levels (id) ON UPDATE CASCADE ON DELETE RESTRICT;
+          """.stripMargin).execute()
+
+        Right(())
+
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 31l
+      override val versionTo: Long = 32l
+      override val description: String = "Add physical activity levels"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL(
+          """
+            |INSERT INTO physical_activity_levels (name, coefficient)
+            |VALUES ('Sedentary or light activity lifestyle', 1.545),
+            |       ('Active or moderately active lifestyle', 1.845),
+            |       ('Vigorous or vigorously active lifestyle', 2.2);
+          """.stripMargin).execute()
+
+        Right(())
+
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    }
 
   )
 }

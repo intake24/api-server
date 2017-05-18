@@ -181,6 +181,8 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     // Demographic service
     bind(classOf[DemographicGroupsService]).to(classOf[DemographicGroupsServiceImpl])
 
+    bind(classOf[PhysicalActivityLevelService]).to(classOf[PhysicalActivityLevelImpl])
+
     bind(classOf[UserPhysicalDataService]).to(classOf[UserPhysicalDataServiceImpl])
 
     bind(classOf[SigninLogService]).to(classOf[SigninLogImpl])

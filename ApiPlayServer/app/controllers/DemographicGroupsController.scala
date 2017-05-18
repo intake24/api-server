@@ -16,6 +16,7 @@ import scala.concurrent.Future
   * Created by Tim Osadchiy on 09/02/2017.
   */
 class DemographicGroupsController @Inject()(dgService: DemographicGroupsService,
+                                            palService: PhysicalActivityLevelService,
                                             rab: Intake24RestrictedActionBuilder)
   extends Controller with ImageOrDatabaseServiceErrorHandler with JsonUtils {
 
@@ -105,6 +106,12 @@ class DemographicGroupsController @Inject()(dgService: DemographicGroupsService,
 
         Ok(toJsonString(result)).as(ContentTypes.JSON)
       }
+  }
+
+  def getPhysicalActivityLevels() = rab.restrictToAuthenticated {
+    _ => Future {
+      translateDatabaseResult(palService.list())
+    }
   }
 
 }
