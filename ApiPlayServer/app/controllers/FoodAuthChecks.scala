@@ -12,6 +12,8 @@ class FoodAuthChecks @Inject()(service: FoodsAdminService) {
 
   def isFoodsAdmin(subject: Intake24AccessToken) = subject.roles.exists(r => r == Roles.superuser || r == Roles.foodsAdmin)
 
+  def isSurveyAdmin(subject: Intake24AccessToken) = subject.roles.contains(Roles.surveyAdmin)
+
   def isLocaleMaintainer(localeId: String, subject: Intake24AccessToken) = subject.roles.contains(Roles.foodDatabaseMaintainer(localeId))
 
   def isAnyLocaleMaintainer(subject: Intake24AccessToken) = subject.roles.exists(r => r.startsWith(Roles.foodDatabaseMaintainerPrefix))
@@ -31,8 +33,7 @@ class FoodAuthChecks @Inject()(service: FoodsAdminService) {
     isFoodsAdmin(subject)
 
   def allowAnyStaff(subject: Intake24AccessToken) =
-    isFoodsAdmin(subject) || isAnyLocaleMaintainer(subject) || subject.roles.exists(r => r.endsWith(Roles.staffSuffix))
-
+    isSurveyAdmin(subject) || isFoodsAdmin(subject) || isAnyLocaleMaintainer(subject) || subject.roles.exists(r => r.endsWith(Roles.staffSuffix))
 
   def canReadLocales(subject: Intake24AccessToken) = allowAnyStaff(subject)
 
