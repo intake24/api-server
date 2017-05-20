@@ -10,11 +10,11 @@ import uk.ac.ncl.openlab.intake24.errors.{ConstraintError, LookupError}
 
 case class UserPhysicalDataOut(userId: Long, sex: Option[String],
                                birthdate: Option[LocalDate], weight: Option[Double], height: Option[Double],
-                               levelOfPhysicalActivityId: Option[Long])
+                               physicalActivityLevelId: Option[Long])
 
 case class UserPhysicalDataIn(sex: Option[String],
                               birthdate: Option[LocalDate], weight: Option[Double],
-                              height: Option[Double], levelOfPhysicalActivityId: Option[Long])
+                              height: Option[Double], physicalActivityLevelId: Option[Long])
 
 trait UserPhysicalDataService {
 
