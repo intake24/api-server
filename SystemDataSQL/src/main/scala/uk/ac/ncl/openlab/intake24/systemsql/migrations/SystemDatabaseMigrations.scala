@@ -1135,6 +1135,39 @@ object SystemDatabaseMigrations {
         ???
 
       }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 45l
+      override val versionTo: Long = 46l
+      override val description: String = "Add target weight"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL(
+          """
+            |ALTER TABLE user_physical_data
+            |ADD COLUMN target_weight_kg numeric(10,3);
+            |
+            |ALTER TABLE user_physical_data
+            |RENAME COLUMN level_of_physical_activity_id TO physical_activity_level_id;
+          """.stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL(
+          """
+            |ALTER TABLE user_physical_data
+            |DROP COLUMN target_weight_kg;
+            |
+            |ALTER TABLE user_physical_data
+            |RENAME COLUMN physical_activity_level_id TO level_of_physical_activity_id;
+          """.stripMargin).execute()
+        Right(())
+      }
     }
 
   )
