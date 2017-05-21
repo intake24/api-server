@@ -1141,14 +1141,16 @@ object SystemDatabaseMigrations {
 
       override val versionFrom: Long = 45l
       override val versionTo: Long = 46l
-      override val description: String = "Add target weight"
+      override val description: String = "Add weight target"
 
       override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
 
         SQL(
           """
+            |CREATE TYPE weight_target_enum AS ENUM ('keep_weight', 'loose_weight', 'gain_weight');
+            |
             |ALTER TABLE user_physical_data
-            |ADD COLUMN target_weight_kg numeric(10,3);
+            |ADD COLUMN weight_target weight_target_enum;
             |
             |ALTER TABLE user_physical_data
             |RENAME COLUMN level_of_physical_activity_id TO physical_activity_level_id;
@@ -1161,10 +1163,12 @@ object SystemDatabaseMigrations {
         SQL(
           """
             |ALTER TABLE user_physical_data
-            |DROP COLUMN target_weight_kg;
+            |DROP COLUMN weight_target;
             |
             |ALTER TABLE user_physical_data
             |RENAME COLUMN physical_activity_level_id TO level_of_physical_activity_id;
+            |
+            |DROP TYPE weight_target_enum;
           """.stripMargin).execute()
         Right(())
       }
