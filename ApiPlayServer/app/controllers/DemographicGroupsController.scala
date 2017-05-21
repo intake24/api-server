@@ -109,12 +109,27 @@ class DemographicGroupsController @Inject()(dgService: DemographicGroupsService,
   }
 
   def getPhysicalActivityLevels() = rab.restrictToAuthenticated {
-    _ => Future {
-      translateDatabaseResult(palService.list())
-    }
+    _ =>
+      Future {
+        translateDatabaseResult(palService.list())
+      }
+  }
+
+  def getWeightTargets() = rab.restrictToAuthenticated {
+    _ =>
+      Future {
+        val result = Seq(
+          WeightTarget("keep_weight", "Keep weight", 0),
+          WeightTarget("loose_weight", "Loose weight", -500),
+          WeightTarget("gain_weight", "Gain weight", 500)
+        )
+        Ok(toJsonString(result)).as(ContentTypes.JSON)
+      }
   }
 
 }
 
 case class HenryCoefficients(sex: String, ageRange: IntRange, weightCoefficient: Double,
                              heightCoefficient: Double, constant: Double)
+
+case class WeightTarget(id: String, description: String, coefficient: Double)

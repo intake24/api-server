@@ -148,6 +148,7 @@ DELETE         /admin/demographic-group-scale-sectors/:id                    con
 
 GET            /admin/henry-coefficients                                     controllers.DemographicGroupsController.getHenryCoefficients()
 GET            /admin/physical-activity-levels                               controllers.DemographicGroupsController.getPhysicalActivityLevels()
+GET            /admin/weight-targets                                         controllers.DemographicGroupsController.getWeightTargets()
 
 # Client-side error logging
 
