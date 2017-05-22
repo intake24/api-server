@@ -481,7 +481,9 @@ object FoodDatabaseMigrations {
         ???
 
       }
-    }
+    },
+
+    NutrientTableDescription
 
   )
 }
