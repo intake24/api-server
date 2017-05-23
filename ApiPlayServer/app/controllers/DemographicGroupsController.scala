@@ -120,7 +120,7 @@ class DemographicGroupsController @Inject()(dgService: DemographicGroupsService,
       Future {
         val result = Seq(
           WeightTarget("keep_weight", "Keep weight", 0),
-          WeightTarget("loose_weight", "Lose weight", -500),
+          WeightTarget("lose_weight", "Lose weight", -500),
           WeightTarget("gain_weight", "Gain weight", 500)
         )
         Ok(toJsonString(result)).as(ContentTypes.JSON)

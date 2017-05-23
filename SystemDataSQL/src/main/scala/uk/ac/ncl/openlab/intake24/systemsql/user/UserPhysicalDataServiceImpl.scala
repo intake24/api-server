@@ -104,7 +104,7 @@ class UserPhysicalDataServiceImpl @Inject()(@Named("intake24_system") val dataSo
       val query =
         """|INSERT INTO user_physical_data (user_id, birthdate, sex, weight_kg, weight_target,
            |                                height_cm, physical_activity_level_id)
-           |VALUES ({user_id}, {birthdate}, {sex}::sex_enum, {weight_kg}, {weight_target},
+           |VALUES ({user_id}, {birthdate}, {sex}::sex_enum, {weight_kg}, {weight_target}::weight_target_enum,
            |        {height_cm}, {physical_activity_level_id})
            |ON CONFLICT (user_id) DO UPDATE
            |SET birthdate = {birthdate},

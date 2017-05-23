@@ -1172,7 +1172,9 @@ object SystemDatabaseMigrations {
           """.stripMargin).execute()
         Right(())
       }
-    }
+    },
+
+    AlterWeightTargetEnum
 
   )
 }
