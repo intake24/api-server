@@ -8,7 +8,7 @@ import com.google.inject.{Inject, Singleton}
 import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound, UnexpectedDatabaseError}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.NutrientTablesAdminService
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
-import uk.ac.ncl.openlab.intake24.{NutrientTable, FoodCompositionRecord}
+import uk.ac.ncl.openlab.intake24.{FoodCompositionRecord, NutrientTable, NutrientTableRecord}
 
 @Singleton
 class NutrientTablesAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends NutrientTablesAdminService with SqlDataService {
@@ -127,4 +127,23 @@ class NutrientTablesAdminImpl @Inject()(@Named("intake24_foods") val dataSource:
         Right(())
       }
   }
+
+  def updateNutrientTableRecordDescriptions(nutrients: Seq[NutrientTableRecord]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
+    implicit conn =>
+      val namedParameters = nutrients.map(n =>
+        Seq[NamedParameter]('id -> n.id, 'nutrient_table_id -> n.nutrientTableId,
+          'english_description -> n.description, 'local_description -> n.localDescription))
+
+      val sqlQuery =
+        """
+          |UPDATE nutrient_table_records
+          |SET english_description = {english_description}, local_description = {local_description}
+          |WHERE id = {id} AND nutrient_table_id = {nutrient_table_id};
+        """.stripMargin
+
+      BatchSql(sqlQuery, namedParameters.head, namedParameters.tail: _*).execute()
+
+      Right(())
+  }
+
 }
