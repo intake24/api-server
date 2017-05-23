@@ -162,7 +162,7 @@ class HelpController @Inject()(cache: CacheApi,
                      |${request.body}
                   """.stripMargin),
                 from = "Intake24 Feedback <support@intake24.co.uk>",
-                to = Seq("Intake24 Feedback <support@intake24.co.uk>")
+                to = Seq("Intake24 Feedback <feedback@intake24.co.uk>")
               )
 
               mailer.send(message)
