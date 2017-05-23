@@ -32,7 +32,7 @@ class UsersSupportServiceImpl @Inject()(@Named("intake24_system") val dataSource
 
             val physicalData = usersWithIds.map {
               case (newUserData, userId) =>
-                (userId, UserPhysicalDataIn(newUserData.sex, newUserData.birthdate, newUserData.weight, None, newUserData.height, None))
+                (userId, UserPhysicalDataIn(newUserData.sex, newUserData.birthdate, newUserData.weight, newUserData.weightTarget, newUserData.height, None))
             }.toMap
 
             for (authTokens <- usersService.createSurveyUserAliasesQuery(surveyId, newUserAliases).right;
