@@ -1174,7 +1174,25 @@ object SystemDatabaseMigrations {
       }
     },
 
-    AlterWeightTargetEnum
+    AlterWeightTargetEnum,
+
+    new Migration {
+
+      override val versionFrom: Long = 47l
+      override val versionTo: Long = 48l
+      override val description: String = "Add New Zealand locale"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("INSERT INTO locales VALUES('en_NZ', 'English (New Zealand)', 'English (New Zealand)', 'en_GB', 'en', 'nz', 'en_GB')").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    }
 
   )
 }
