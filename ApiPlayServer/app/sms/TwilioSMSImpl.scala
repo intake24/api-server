@@ -8,7 +8,6 @@ import play.api.{Configuration, Logger}
 
 @Singleton
 class TwilioSMSImpl @Inject()(config: Configuration) extends SMSService {
-  val logger = Logger(classOf[TwilioSMSImpl])
 
   val accountSid = config.getString("twilio.accountSid")
   val authToken = config.getString("twilio.authToken")
@@ -20,7 +19,7 @@ class TwilioSMSImpl @Inject()(config: Configuration) extends SMSService {
     if (accountSid.isDefined && authToken.isDefined && fromNumber.isDefined)
       false
     else {
-      logger.warn("Twilio configuration missing, falling back to mock implementation")
+      Logger.warn("Twilio configuration missing, falling back to mock implementation")
       true
     }
   }
@@ -32,10 +31,10 @@ class TwilioSMSImpl @Inject()(config: Configuration) extends SMSService {
 
     if (mock) {
       val reason = if (mockSetting.isDefined) "twilio.mock setting is set" else "Twilio configuration is missing"
-      logger.info(s"""Sending mock SMS message "$messageBody" to $to. Twilio SMS service disabled because $reason.""")
+      Logger.info(s"""Sending mock SMS message "$messageBody" to $to. Twilio SMS service disabled because $reason.""")
     } else {
       val message = Message.creator(new PhoneNumber(to), new PhoneNumber(fromNumber.get), messageBody).create()
-      logger.debug(s"Twilio message sent, sid: ${message.getSid()}")
+      Logger.debug(s"Twilio message sent, sid: ${message.getSid()}")
     }
   }
 }
