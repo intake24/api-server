@@ -501,7 +501,9 @@ object FoodDatabaseMigrations {
         ???
 
       }
-    }
+    },
+
+    NutrientTableDescriptionLength
 
   )
 }
