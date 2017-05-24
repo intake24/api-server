@@ -159,10 +159,10 @@ class HelpController @Inject()(cache: CacheApi,
                      |User: ${userName} \n
                      |Url: ${request.body.pageUrl} \n
                      |Experience: ${if (request.body.like) "Liked" else "Disliked"} \n
-                     |${request.body}
+                     |${request.body.body}
                   """.stripMargin),
                 from = "Intake24 Feedback <support@intake24.co.uk>",
-                to = Seq("Intake24 Feedback <support@intake24.co.uk>")
+                to = Seq("Intake24 Feedback <feedback@intake24.co.uk>")
               )
 
               mailer.send(message)

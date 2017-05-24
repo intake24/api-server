@@ -15,6 +15,7 @@ GET         /foods/:locale/:code/with-sources            controllers.food.user.F
 GET         /foods/:locale/:code/brand-names             controllers.food.user.FoodDataController.getBrandNames(code: String, locale: String)
 GET         /foods/:locale/:code/associated-foods        controllers.food.user.FoodDataController.getAssociatedFoodPrompts(code: String, locale: String)
 
+GET         /portion-size/weight                         controllers.food.user.FoodDataController.getWeightPortionSizeMethod()
 GET         /portion-size/as-served/:id                  controllers.food.user.FoodDataController.getAsServedSet(id: String)
 POST        /portion-size/as-served                      controllers.food.user.FoodDataController.getAsServedSets()
 GET         /portion-size/guide-image/:id                controllers.food.user.FoodDataController.getGuideImage(id: String)

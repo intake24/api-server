@@ -190,4 +190,11 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
         translateDatabaseResult(imageMapService.getImageMaps(request.body).right.map(_.map(toImageMapWithUrls)))
       }
   }
+
+  def getWeightPortionSizeMethod() = rab.restrictToAuthenticated {
+    _ =>
+      Future {
+        translateDatabaseResult(Right(PortionSizeMethodForSurvey("weight", "weight", imageStorageService.getUrl("portion/weight.png"), true, Map())))
+      }
+  }
 }
