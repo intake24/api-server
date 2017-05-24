@@ -483,7 +483,25 @@ object FoodDatabaseMigrations {
       }
     },
 
-    NutrientTableDescription
+    NutrientTableDescription,
+
+    new Migration {
+
+      override val versionFrom: Long = 33l
+      override val versionTo: Long = 34l
+      override val description: String = "Add New Zealand locale"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("INSERT INTO locales VALUES('en_NZ', 'English (New Zealand)', 'English (New Zealand)', 'en_GB', 'en', 'nz', 'en_GB')").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    }
 
   )
 }
