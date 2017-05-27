@@ -87,7 +87,7 @@ class ImageDatabaseServiceSqlImpl @Inject()(@Named("intake24_foods") val dataSou
             .on('offset -> offset,
                 'limit -> limit,
                 'regex_pattern -> s"%(${words.mkString("|")})%",
-                'aray_pattern -> s"{${words.mkString(",")}}")
+                'array_pattern -> s"{${words.mkString(",")}}")
         case _ => SQL(listSourceImagesQuery).on('offset -> offset, 'limit -> limit)
       }
 
