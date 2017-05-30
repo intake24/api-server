@@ -247,7 +247,7 @@ trait FoodsAdminQueries extends FoodsAdminService
 
           val rowsAffected = SQL("UPDATE foods_local SET version = {new_version}::uuid, local_description = {local_description}, simple_local_description = {simple_local_description}, do_not_use = {do_not_use} WHERE food_code = {food_code} AND locale_id = {locale_id} AND version = {base_version}::uuid")
             .on('food_code -> foodCode, 'locale_id -> locale, 'base_version -> foodLocal.baseVersion, 'new_version -> UUID.randomUUID(),
-              'local_description -> foodLocal.localDescription, 'simple_local_description -> foodLocal.localDescription.map(d => StringUtils.stripAccents(d)), 'do_not_use -> foodLocal.doNotUse)
+              'local_description -> foodLocal.localDescription.map(d => truncateDescription(d, foodCode)), 'simple_local_description -> foodLocal.localDescription.map(d => truncateDescription(StringUtils.stripAccents(d), foodCode)), 'do_not_use -> foodLocal.doNotUse)
             .executeUpdate()
 
           if (rowsAffected == 1) {
@@ -258,7 +258,7 @@ trait FoodsAdminQueries extends FoodsAdminService
         case None => {
           try {
             SQL(foodLocalInsertQuery)
-              .on('food_code -> foodCode, 'locale_id -> locale, 'local_description -> foodLocal.localDescription, 'simple_local_description -> foodLocal.localDescription.map(d => StringUtils.stripAccents(d)),
+              .on('food_code -> foodCode, 'locale_id -> locale, 'local_description -> foodLocal.localDescription.map(d => truncateDescription(d, foodCode)), 'simple_local_description -> foodLocal.localDescription.map(d => truncateDescription(StringUtils.stripAccents(d), foodCode)),
                 'do_not_use -> foodLocal.doNotUse, 'version -> UUID.randomUUID())
               .execute()
 
