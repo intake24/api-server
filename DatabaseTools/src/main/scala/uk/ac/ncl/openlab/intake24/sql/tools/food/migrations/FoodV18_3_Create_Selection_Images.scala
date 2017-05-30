@@ -1,13 +1,14 @@
 package uk.ac.ncl.openlab.intake24.sql.tools.food.migrations
 
 import org.rogach.scallop.ScallopConf
-import uk.ac.ncl.openlab.intake24.api.client.scalajhttp.{GuideImageAdminClientImpl, ImageAdminClientImpl, ImageMapAdminClientImpl, SigninClientImpl}
+import uk.ac.ncl.openlab.intake24.api.client.portionsize.{GuideImageAdminClientImpl, ImageAdminClientImpl, ImageMapAdminClientImpl}
+
 import uk.ac.ncl.openlab.intake24.api.client.{ApiConfigChooser, ApiConfigurationOptions, ConsoleApiErrorHandler}
 import uk.ac.ncl.openlab.intake24.api.shared.{EmailCredentials, SurveyAliasCredentials}
 import uk.ac.ncl.openlab.intake24.sql.tools._
 
 object FoodV18_3_Create_Selection_Images extends App with MigrationRunner with WarningMessage with ConsoleApiErrorHandler {
-
+/*
   trait Options extends ScallopConf with ApiConfigurationOptions
 
   val options = new ScallopConf(args) with Options
@@ -47,4 +48,5 @@ object FoodV18_3_Create_Selection_Images extends App with MigrationRunner with W
   ) yield result
 
   checkApiError(result)
+  */
 }

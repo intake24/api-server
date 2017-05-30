@@ -3,14 +3,15 @@ package uk.ac.ncl.openlab.intake24.sql.tools.food.migrations
 import java.nio.file.Paths
 
 import org.rogach.scallop.ScallopConf
-import uk.ac.ncl.openlab.intake24.api.client.scalajhttp.{GuideImageAdminClientImpl, ImageMapAdminClientImpl, SigninClientImpl}
+import uk.ac.ncl.openlab.intake24.api.client.portionsize.{GuideImageAdminClientImpl, ImageMapAdminClientImpl}
+
 import uk.ac.ncl.openlab.intake24.api.client.{ApiConfigChooser, ApiConfigurationOptions}
 import uk.ac.ncl.openlab.intake24.api.shared.{EmailCredentials, NewGuideImageRequest, NewImageMapRequest, SurveyAliasCredentials}
 import uk.ac.ncl.openlab.intake24.sql.tools._
 import uk.ac.ncl.openlab.intake24.sql.tools.food.migrations.FoodV18_3_Create_Selection_Images.checkApiError
 
 object FoodV21_Create_DK_Guide_Images extends App with MigrationRunner with WarningMessage {
-
+/*
   def sequence[A, B](s: Seq[Either[A, B]]): Either[A, Seq[B]] =
     s.foldRight(Right(Nil): Either[A, List[B]]) {
       (e, acc) => for (xs <- acc.right; x <- e.right) yield x :: xs
@@ -129,5 +130,5 @@ object FoodV21_Create_DK_Guide_Images extends App with MigrationRunner with Warn
     _ <- sequence(guideImageRequests.filterNot(req => existingGuideImages.exists(_.id == req.id)).map(guideImageAdminClient.createGuideImage(authToken.refreshToken, _))).right)
     yield ()
 
-  checkApiError(result)
+  checkApiError(result)*/
 }

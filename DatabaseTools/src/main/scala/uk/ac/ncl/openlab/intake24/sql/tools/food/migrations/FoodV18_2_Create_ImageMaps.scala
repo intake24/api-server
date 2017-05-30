@@ -6,7 +6,8 @@ import java.util.function.BiPredicate
 
 import org.rogach.scallop.ScallopConf
 import uk.ac.ncl.openlab.intake24.api.client.ApiError.{ErrorParseFailed, RequestFailed}
-import uk.ac.ncl.openlab.intake24.api.client.scalajhttp.{ImageMapAdminClientImpl, SigninClientImpl}
+import uk.ac.ncl.openlab.intake24.api.client.portionsize.ImageMapAdminClientImpl
+import uk.ac.ncl.openlab.intake24.api.client.scalajhttp.SigninClientImpl
 import uk.ac.ncl.openlab.intake24.api.client.{ApiConfigChooser, ApiConfigurationOptions}
 import uk.ac.ncl.openlab.intake24.api.shared.{EmailCredentials, NewImageMapRequest, SigninResult, SurveyAliasCredentials}
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.SVGImageMapParser
@@ -14,7 +15,7 @@ import uk.ac.ncl.openlab.intake24.sql.tools._
 import upickle.default._
 
 object FoodV18_2_Create_ImageMaps extends App with MigrationRunner with WarningMessage {
-
+/*
   trait Options extends ScallopConf with ApiConfigurationOptions {
 
     val sourceImageDir = opt[String](required = true, noshort = true)
@@ -153,5 +154,5 @@ object FoodV18_2_Create_ImageMaps extends App with MigrationRunner with WarningM
     case Left(x)
     => throw new RuntimeException("Sign in failed: " + x.toString)
   }
-
+*/
 }
