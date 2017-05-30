@@ -37,7 +37,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.images._
 import uk.ac.ncl.openlab.intake24.services.fooddb.user._
 import uk.ac.ncl.openlab.intake24.services.foodindex.arabic.{FoodIndexImpl_ar_AE, SplitterImpl_ar_AE}
 import uk.ac.ncl.openlab.intake24.services.foodindex.danish.{FoodIndexImpl_da_DK, SplitterImpl_da_DK}
-import uk.ac.ncl.openlab.intake24.services.foodindex.english.{EnglishWordOps, EnglishWordOpsPlingImpl, FoodIndexImpl_en_GB, SplitterImpl_en_GB}
+import uk.ac.ncl.openlab.intake24.services.foodindex.english._
 import uk.ac.ncl.openlab.intake24.services.foodindex.portuguese.{FoodIndexImpl_pt_PT, SplitterImpl_pt_PT}
 import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, FoodIndexDataService, Splitter}
 import uk.ac.ncl.openlab.intake24.services.nutrition.{DefaultNutrientMappingServiceImpl, FoodCompositionService, NutrientMappingService}
@@ -54,7 +54,8 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     Map("en_GB" -> injector.getInstance(classOf[FoodIndexImpl_en_GB]),
       "pt_PT" -> injector.getInstance(classOf[FoodIndexImpl_pt_PT]),
       "da_DK" -> injector.getInstance(classOf[FoodIndexImpl_da_DK]),
-      "ar_AE" -> injector.getInstance(classOf[FoodIndexImpl_ar_AE]))
+      "ar_AE" -> injector.getInstance(classOf[FoodIndexImpl_ar_AE]),
+      "en_NZ" -> injector.getInstance(classOf[FoodIndexImpl_en_NZ]))
 
   @Provides
   @Singleton
@@ -62,7 +63,8 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     Map("en_GB" -> injector.getInstance(classOf[SplitterImpl_en_GB]),
       "pt_PT" -> injector.getInstance(classOf[SplitterImpl_pt_PT]),
       "da_DK" -> injector.getInstance(classOf[SplitterImpl_da_DK]),
-      "ar_AE" -> injector.getInstance(classOf[SplitterImpl_ar_AE]))
+      "ar_AE" -> injector.getInstance(classOf[SplitterImpl_ar_AE]),
+      "en_NZ" -> injector.getInstance(classOf[SplitterImpl_en_NZ]))
 
   @Provides
   @Named("intake24_system")
