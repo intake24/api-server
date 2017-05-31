@@ -113,6 +113,7 @@ GET            /admin/portion-size/drinkware/:id                             con
 # Nutrient tables
 
 GET            /admin/nutrient-tables                                        controllers.NutrientTablesAdminController.listNutrientTables()
+GET            /admin/nutrient-tables/:nutrientTableId                       controllers.NutrientTablesAdminController.searchNutrientTableRecords(nutrientTableId: String, query: Option[String])
 
 # Nutrient types
 GET            /admin/nutrient-types                                         controllers.NutrientTypesController.list()

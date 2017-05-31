@@ -25,7 +25,6 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.NutrientTablesAdminService
-import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
 import scala.concurrent.Future
 
@@ -38,4 +37,11 @@ class NutrientTablesAdminController @Inject()(service: NutrientTablesAdminServic
       translateDatabaseResult(service.listNutrientTables())
     }
   }
+
+  def searchNutrientTableRecords(nutrientTableId: String, query: Option[String]) = rab.restrictAccess(foodAuthChecks.canReadNutrientTables) {
+    Future {
+      translateDatabaseResult(service.searchNutrientTableRecords(nutrientTableId, query))
+    }
+  }
+
 }

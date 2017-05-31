@@ -2,9 +2,10 @@ package uk.ac.ncl.openlab.intake24.foodsql.admin
 
 import javax.sql.DataSource
 
-import anorm.{BatchSql, Macro, NamedParameter, SQL, sqlToSimple}
+import anorm.{AnormUtil, BatchSql, Macro, NamedParameter, SQL, sqlToSimple}
 import com.google.inject.name.Named
 import com.google.inject.{Inject, Singleton}
+import org.apache.commons.lang3.StringUtils
 import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound, UnexpectedDatabaseError}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.NutrientTablesAdminService
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
@@ -17,12 +18,34 @@ class NutrientTablesAdminImpl @Inject()(@Named("intake24_foods") val dataSource:
     def asNutrientTable = NutrientTable(id, description)
   }
 
+  private case class NutrientTableRecordRow(id: String, nutrient_table_id: String, english_description: String, local_description: Option[String]) {
+    def toNutrientTableRecord = NutrientTableRecord(id, nutrient_table_id, english_description, local_description)
+  }
+
   def listNutrientTables(): Either[UnexpectedDatabaseError, Map[String, NutrientTable]] = tryWithConnection {
     implicit conn =>
       val query = "SELECT id, description FROM nutrient_tables"
       Right(SQL(query).executeQuery().as(Macro.namedParser[NutrientTableDescRow].*).foldLeft(Map[String, NutrientTable]()) {
         (result, row) => result + (row.id -> row.asNutrientTable)
       })
+  }
+
+  def searchNutrientTableRecords(nutrientTableId: String, query: Option[String]): Either[UnexpectedDatabaseError, Seq[NutrientTableRecord]] = tryWithConnection {
+    implicit conn =>
+      val sqlQuery =
+        """
+          |SELECT id, nutrient_table_id, english_description, local_description
+          |FROM nutrient_table_records
+          |WHERE nutrient_table_id = {nutrient_table_id} AND
+          |(id ILIKE {query} OR english_description ILIKE {query} OR local_description ILIKE {query})
+          |ORDER BY id LIMIT {limit};
+        """.stripMargin
+      val result = SQL(sqlQuery).on(
+        'nutrient_table_id -> nutrientTableId,
+        'query -> s"%${AnormUtil.escapeLike(StringUtils.stripAccents(query.getOrElse("")))}%",
+        'limit -> 20
+      ).executeQuery().as(Macro.namedParser[NutrientTableRecordRow].*).map(_.toNutrientTableRecord)
+      Right(result)
   }
 
   def getNutrientTable(id: String): Either[LookupError, NutrientTable] = tryWithConnection {
