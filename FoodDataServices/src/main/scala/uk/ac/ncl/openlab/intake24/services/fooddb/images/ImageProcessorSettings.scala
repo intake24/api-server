@@ -11,11 +11,12 @@ case class SourceImageSettings(thumbnailWidth: Int, thumbnailHeight: Int)
 
 case class ImageMapSettings(baseImageWidth: Int, outlineStrokeWidth: Double, outlineColor: (Double, Double, Double), outlineBlurStrength: Double)
 
-case class ImageProcessorSettings(cmdSearchPath: Option[String], source: SourceImageSettings, selection: SelectionImageSettings, asServed: AsServedImageSettings, imageMap: ImageMapSettings)
+case class ImageProcessorSettings(cmdSearchPath: Option[String], command: Seq[String], source: SourceImageSettings, selection: SelectionImageSettings, asServed: AsServedImageSettings, imageMap: ImageMapSettings)
 
 object ImageProcessorSettings {
   def testSettings() = ImageProcessorSettings(
     Some("/usr/local/bin"),
+    Seq("magick", "convert"),
     SourceImageSettings(768, 432),
     SelectionImageSettings(300, 200),
     AsServedImageSettings(654, 436, 80),

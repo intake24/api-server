@@ -45,7 +45,7 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.{ClientErrorService, FoodPopularityService, SurveyService, UserPhysicalDataService}
 import uk.ac.ncl.openlab.intake24.systemsql.admin._
 import uk.ac.ncl.openlab.intake24.systemsql.user.{ClientErrorServiceImpl, FoodPopularityServiceImpl, SurveyServiceImpl, UserPhysicalDataServiceImpl}
-
+import collection.JavaConverters._
 
 class Intake24ServicesModule(env: Environment, config: Configuration) extends AbstractModule {
   @Provides
@@ -101,7 +101,9 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
 
     val commandSearchPath = configuration.getString("intake24.images.processor.commandSearchPath")
 
-    ImageProcessorSettings(commandSearchPath, source, selection, asServed, imageMaps)
+    val command = configuration.getStringList("intake24.images.processor.command").map(_.asScala).getOrElse(Seq("magick", "convert"))
+
+    ImageProcessorSettings(commandSearchPath, command, source, selection, asServed, imageMaps)
   }
 
   def configure() = {

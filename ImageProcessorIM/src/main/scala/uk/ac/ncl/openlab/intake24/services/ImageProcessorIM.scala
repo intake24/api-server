@@ -18,7 +18,7 @@ class ImageProcessorIM @Inject()(val settings: ImageProcessorSettings) extends I
   val logger = LoggerFactory.getLogger(classOf[ImageProcessorIM])
 
   val convertCmd = {
-    val cmd = new ImageCommand("magick", "convert")
+    val cmd = new ImageCommand(settings.command: _*)
 
     settings.cmdSearchPath.foreach(cmd.setSearchPath(_))
 
