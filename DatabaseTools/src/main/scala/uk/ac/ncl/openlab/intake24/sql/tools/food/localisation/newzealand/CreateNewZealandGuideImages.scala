@@ -6,7 +6,7 @@ import org.rogach.scallop.ScallopConf
 import uk.ac.ncl.openlab.intake24.api.client.{ApiConfigChooser, ApiConfigurationOptions, ConsoleApiErrorHandler, Intake24ApiClient}
 import uk.ac.ncl.openlab.intake24.api.shared.{EmailCredentials, NewGuideImageRequest, NewImageMapRequest}
 
-object CreateNewZealandPortionSizeMethods extends App with ConsoleApiErrorHandler {
+object CreateNewZealandGuideImages extends App with ConsoleApiErrorHandler {
 
   val options = new ScallopConf(args) with ApiConfigurationOptions
 
@@ -45,7 +45,7 @@ object CreateNewZealandPortionSizeMethods extends App with ConsoleApiErrorHandle
           "7" -> 12.0))).right;
 
     _ <- apiClient.guideImages.createGuideImage(
-      NewGuideImageRequest("Gmuffscone", "Mussels and pipis (New Zealand)", "Gmusselpipi",
+      NewGuideImageRequest("Gmuffscone", "Muffins and scones", "Gmuffscone",
         Map("1" -> 122.0,
           "2" -> 68.0,
           "3" -> 32.0,
