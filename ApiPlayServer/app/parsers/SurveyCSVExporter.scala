@@ -73,7 +73,7 @@ object SurveyCSVExporter {
                   val foodGroupLocalDescription = foodGroupRecord.flatMap(_.local.localDescription).getOrElse(noData)
 
                   row.append(foodId.toString, food.searchTerm, food.code, food.englishDescription, food.localDescription.getOrElse(noData),
-                    food.nutrientTableCode, food.nutrientTableCode, food.foodGroupId.toString, foodGroupEnglishDescription, foodGroupLocalDescription,
+                    food.nutrientTableId, food.nutrientTableCode, food.foodGroupId.toString, foodGroupEnglishDescription, foodGroupLocalDescription,
                     food.isReadyMeal.toString, food.brand)
 
                   dataScheme.foodCustomFields.map(_.key).foreach(k => row.append(food.customData.getOrElse(k, noData)))
