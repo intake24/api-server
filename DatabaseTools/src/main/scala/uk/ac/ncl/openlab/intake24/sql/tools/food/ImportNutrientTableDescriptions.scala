@@ -56,7 +56,10 @@ object ImportNutrientTableDescriptions extends App with DatabaseConnection with 
     val dataSource = getDataSource(databaseConfig)
     val nutrientTableService = new NutrientTablesAdminImpl(dataSource)
 
-    nutrientTableService.updateNutrientTableRecordDescriptions(nutrients)
+    nutrientTableService.updateNutrientTableRecordDescriptions(nutrients) match {
+      case Right(()) => ()
+      case Left(e) => throw e.exception
+    }
 
   }
 
