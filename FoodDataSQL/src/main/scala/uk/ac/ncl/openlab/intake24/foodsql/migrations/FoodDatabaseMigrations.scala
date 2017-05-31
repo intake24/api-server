@@ -503,7 +503,45 @@ object FoodDatabaseMigrations {
       }
     },
 
-    NutrientTableDescriptionLength
+    NutrientTableDescriptionLength,
+
+    new Migration {
+
+      override val versionFrom: Long = 35l
+      override val versionTo: Long = 36l
+      override val description: String = "Delete bad nutrient table record rows"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("DELETE FROM nutrient_table_records WHERE id=''").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    },
+
+    // 36 -> 37 should be set by ImportNutrientTableDescriptions
+
+    new Migration {
+
+      override val versionFrom: Long = 37l
+      override val versionTo: Long = 38l
+      override val description: String = "Make nutrient_table_records.english_description not nullable"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("ALTER TABLE nutrient_table_records ALTER COLUMN english_description SET NOT NULL").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    }
 
   )
 }

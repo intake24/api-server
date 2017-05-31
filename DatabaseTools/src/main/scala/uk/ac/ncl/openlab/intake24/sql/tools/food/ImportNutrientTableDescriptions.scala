@@ -2,11 +2,13 @@ package uk.ac.ncl.openlab.intake24.sql.tools.food
 
 import java.io.FileReader
 
+import anorm.{SQL, SqlParser}
 import au.com.bytecode.opencsv.CSVReader
 import org.rogach.scallop.ScallopConf
 import uk.ac.ncl.openlab.intake24.NutrientTableRecord
 import uk.ac.ncl.openlab.intake24.foodsql.admin.NutrientTablesAdminImpl
-import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConfigChooser, DatabaseConnection, WarningMessage}
+import uk.ac.ncl.openlab.intake24.sql.SqlDataService
+import uk.ac.ncl.openlab.intake24.sql.tools._
 
 import scala.collection.JavaConversions._
 
@@ -23,18 +25,17 @@ object ImportNutrientTableDescriptions extends App with DatabaseConnection with 
     ParseParams("DK_DTU", "DK_DTU", 2, 2, 1, Some(0))
   )
 
-  val options = getOptions()
+  val options = new ScallopConf(args) with DatabaseConfigurationOptions {
+    val csvDir = opt[String](required = true)
+  }
+
+  options.verify()
+
+  val databaseConfig = DatabaseConfigChooser.chooseDatabaseConfiguration(options.dbConfigDir())
+  val dataSource = getDataSource(databaseConfig)
+  val nutrientTableService = new NutrientTablesAdminImpl(dataSource)
 
   case class ParseParams(nutrientTableId: String, csvName: String, rowOffset: Int, idCol: Int, descriptionCol: Int, localDescriptionCol: Option[Int])
-
-  private def getOptions() = {
-    val options = new ScallopConf(args) {
-      val dbConfigDir = opt[String](required = true)
-      val csvDir = opt[String](required = true)
-    }
-    options.verify()
-    options
-  }
 
   private def getCsvRows(csvName: String) = {
     val filePath = s"${options.csvDir()}/${csvName}.csv"
@@ -46,23 +47,39 @@ object ImportNutrientTableDescriptions extends App with DatabaseConnection with 
       .map(r => NutrientTableRecord(r.get(params.idCol), params.nutrientTableId, r.get(params.descriptionCol), params.localDescriptionCol.map(i => r.get(i))))
   }
 
-  private def init() = {
-    val rows = queue.flatMap(getNutrients)
-    recordToDb(rows)
-  }
 
-  private def recordToDb(nutrients: Seq[NutrientTableRecord]) = {
-    val databaseConfig = DatabaseConfigChooser.chooseDatabaseConfiguration(options.dbConfigDir())
-    val dataSource = getDataSource(databaseConfig)
-    val nutrientTableService = new NutrientTablesAdminImpl(dataSource)
+  val rows = queue.flatMap(getNutrients)
 
-    nutrientTableService.updateNutrientTableRecordDescriptions(nutrients) match {
+  // Ugly hack but easier than adapting MigrationRunner that expects only raw database operations (without services)
+  // Using services such as NutrientTableService in migrations is generally a bad idea because they will change
+  // and the migration will stop compiling in that case.
+
+  val versionFrom = 36
+  val versionTo = 37
+
+  val conn1 = dataSource.getConnection
+
+  val version = SQL("SELECT version FROM schema_version").executeQuery()(conn1).as(SqlParser.long("version").single)(conn1)
+
+  conn1.close()
+
+  if (version != versionFrom) {
+    throw new RuntimeException(s"Wrong schema version: expected $versionFrom, got $version")
+  } else {
+
+    nutrientTableService.updateNutrientTableRecordDescriptions(rows) match {
       case Right(()) => ()
       case Left(e) => throw e.exception
     }
 
+
+    println("Updating schema version...")
+
+    val conn2 = dataSource.getConnection
+
+    SQL("UPDATE schema_version SET version={version_to} WHERE version={version_from}").on('version_from -> versionFrom, 'version_to -> versionTo)
+      .execute()(conn2)
+
+    conn2.close()
   }
-
-  init()
-
 }
