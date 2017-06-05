@@ -45,7 +45,7 @@ class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex], foodDe
 
   import uk.ac.ncl.openlab.intake24.errors.ErrorUtils._
 
-  def getSplitSuggestion(locale: String, description: String) = rab.restrictToRespondents(BodyParsers.parse.empty) {
+  def getSplitSuggestion(locale: String, description: String) = rab.restrictToAuthenticated(BodyParsers.parse.empty) {
     _ =>
       Future {
         foodDescriptionSplitters.get(locale) match {

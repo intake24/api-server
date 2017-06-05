@@ -9,6 +9,7 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24._
+import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageStorageService
 import uk.ac.ncl.openlab.intake24.services.fooddb.user._
 import uk.ac.ncl.openlab.intake24.services.nutrition.FoodCompositionService
@@ -35,6 +36,10 @@ case class UserGuideImageWithUrls(description: String, imageMap: UserImageMapWit
 case class UserDrinkScaleWithUrls(objectId: Int, baseImageUrl: String, overlayImageUrl: String, width: Int, height: Int, emptyLevel: Int, fullLevel: Int, volumeSamples: Seq[VolumeSample])
 
 case class UserDrinkwareSetWithUrls(guideId: String, scales: Seq[UserDrinkScaleWithUrls])
+
+case class SourceFoodCompositionTable(tableId: String, recordId: String, url: String, copyrightNotice: String)
+
+case class UserFoodNutrientData(source: SourceFoodCompositionTable, nutrients: Map[Long, Double])
 
 class FoodDataController @Inject()(foodDataService: FoodDataService,
                                    foodBrowsingService: FoodBrowsingService,
@@ -91,6 +96,32 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
           foodData.portionSizeMethods.map(forSurvey), associatedFoods, brands, categories)
 
         translateDatabaseResult(result)
+      }
+  }
+
+  def getFoodComposition(code: String, locale: String, weight: Option[Double]) = rab.restrictToAuthenticated {
+    _ =>
+      Future {
+        weight match {
+          case Some(w) if w <= 0 || w > 100000 => BadRequest(toJsonString(ErrorDescription("BadWeight", "Weight must satisfy 0 < w < 100000")))
+          case _ =>
+            val result = for (
+              foodData <- foodDataService.getFoodData(code, locale).right.map(_._1).right;
+              nutrients <- foodCompositionService.getFoodCompositionRecord(foodData.nutrientTableCodes.head._1, foodData.nutrientTableCodes.head._2).right
+            ) yield {
+
+              val weightedNutrients = weight match {
+                case Some(w) => nutrients.mapValues {
+                  v => v * w / 100.0
+                }
+                case None => nutrients
+              }
+
+              UserFoodNutrientData(SourceFoodCompositionTable(foodData.nutrientTableCodes.head._1, foodData.nutrientTableCodes.head._2, "TBD", "TBD"), weightedNutrients)
+            }
+
+            translateDatabaseResult(result)
+        }
       }
   }
 
