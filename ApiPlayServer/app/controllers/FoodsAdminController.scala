@@ -23,13 +23,15 @@ import javax.inject.Inject
 import io.circe.generic.auto._
 import parsers.JsonUtils
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.Controller
+import play.api.mvc.{BodyParsers, Controller}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 import uk.ac.ncl.openlab.intake24.{LocalFoodRecordUpdate, MainFoodRecordUpdate, NewLocalMainFoodRecord, NewMainFoodRecord}
 
 import scala.concurrent.Future
+
+case class CloneFoodResult(clonedFoodCode: String)
 
 class FoodsAdminController @Inject()(service: FoodsAdminService,
                                      foodAuthChecks: FoodAuthChecks,
@@ -58,6 +60,13 @@ class FoodsAdminController @Inject()(service: FoodsAdminService,
     request =>
       Future {
         translateDatabaseResult(service.createFood(request.body))
+      }
+  }
+
+  def cloneFood(code: String, locale: String) = rab.restrictAccess(foodAuthChecks.canCreateMainFoods)(BodyParsers.parse.empty) {
+    _ =>
+      Future {
+        translateDatabaseResult(service.cloneFood(code, locale).right.map(code => CloneFoodResult(code)))
       }
   }
 
