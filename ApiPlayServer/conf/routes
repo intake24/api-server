@@ -46,7 +46,9 @@ GET            /admin/foods/:locale/:code                                    con
 
 POST           /admin/foods/new                                              controllers.FoodsAdminController.createFood()
 POST           /admin/foods/new/:locale                                      controllers.FoodsAdminController.createLocalFood(locale)
+
 POST           /admin/foods/new-with-temp-code                               controllers.FoodsAdminController.createFoodWithTempCode()
+POST           /admin/foods/:locale/:code/clone                              controllers.FoodsAdminController.cloneFood(code, locale)
 POST           /admin/foods/:code                                            controllers.FoodsAdminController.updateMainFoodRecord(code: String)
 POST           /admin/foods/:locale/:code                                    controllers.FoodsAdminController.updateLocalFoodRecord(code: String, locale: String)
 DELETE         /admin/foods/:code                                            controllers.FoodsAdminController.deleteFood(code)
@@ -159,3 +161,4 @@ POST           /errors/report                                                con
 ->             /users                                                        users.Routes
 ->             /surveys                                                      surveys.Routes
 ->             /help                                                         help.Routes
+->             /public                                                       public_.Routes
