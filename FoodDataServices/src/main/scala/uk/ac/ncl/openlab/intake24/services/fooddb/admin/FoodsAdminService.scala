@@ -15,8 +15,6 @@ trait FoodsAdminService {
   def createFoods(newFoods: Seq[NewMainFoodRecord]): Either[DependentCreateError, Unit]
   def createLocalFoodRecords(localFoodRecords: Map[String, NewLocalFoodRecord], locale: String): Either[LocalDependentCreateError, Unit]
 
-  def cloneFood(code: String, locale: String): Either[AnyError, String]
-
   def updateMainFoodRecord(foodCode: String, update: MainFoodRecordUpdate): Either[LocalDependentUpdateError, Unit]
   def updateLocalFoodRecord(foodCode: String, update: LocalFoodRecordUpdate, locale: String): Either[LocalDependentUpdateError, Unit]
 

@@ -541,6 +541,45 @@ object FoodDatabaseMigrations {
         ???
 
       }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 38l
+      override val versionTo: Long = 39l
+      override val description: String = "Make locale names more descriptive"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("UPDATE locales SET english_name='United Kingdom',local_name='United Kingdom' WHERE id='en_GB'").execute()
+        SQL("UPDATE locales SET english_name='Denmark',local_name='Danmark' WHERE id='da_DK'").execute()
+        SQL("UPDATE locales SET english_name='Portugal',local_name='Portugal' WHERE id='pt_PT'").execute()
+        SQL("UPDATE locales SET english_name='United Arab Emirates',local_name='الإمارات العربية المتحدة' WHERE id='ar_AE'").execute()
+        SQL("UPDATE locales SET english_name='New Zealand',local_name='New Zealand' WHERE id='en_NZ'").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 39l
+      override val versionTo: Long = 40l
+      override val description: String = "Add a UK gluten-free foods locale"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("INSERT INTO locales VALUES('en_GB_gf', 'United Kingdom (gluten-free foods)', 'United Kingdom (gluten-free foods)', 'en_GB', 'en', 'gb', 'en_GB')").execute()
+
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
     }
 
   )

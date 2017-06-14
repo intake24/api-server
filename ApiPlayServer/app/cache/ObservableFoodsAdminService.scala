@@ -61,12 +61,6 @@ class ObservableFoodsAdminServiceImpl @Inject()(@BasicImpl service: FoodsAdminSe
       }
   }
 
-  def cloneFood(code: String, locale: String): Either[AnyError, String] = service.cloneFood(code, locale).right.map {
-    code =>
-      observers.foreach(_.onFoodCreated(code))
-      code
-  }
-
   def createLocalFoodRecords(localFoodRecords: Map[String, NewLocalFoodRecord], locale: String): Either[LocalDependentCreateError, Unit] = service.createLocalFoodRecords(localFoodRecords, locale).right.map {
     _ =>
       localFoodRecords.keySet.foreach {

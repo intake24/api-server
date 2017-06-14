@@ -6,6 +6,7 @@ import uk.ac.ncl.openlab.intake24.nutrientsndns.CsvNutrientTableParser.{excelCol
 object DanishNutrientMapping extends CsvNutrientTableMapping(
   2, // first row offset
   2, // record id column offset
+  3,
   Map(
     1l -> col("F"),
     2l -> col("E"),

@@ -109,19 +109,6 @@ class FoodsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSour
       }
   }
 
-  def cloneFood(code: String, locale: String): Either[AnyError, String] =
-    for (
-      sourceFoodRecord <- getFoodRecord(code, locale).right;
-      code <- createFoodWithTempCode(NewMainFoodRecord("TEMP", "Copy of " + sourceFoodRecord.main.englishDescription,
-        sourceFoodRecord.main.groupCode, sourceFoodRecord.main.attributes, sourceFoodRecord.main.parentCategories.map(_.code),
-        sourceFoodRecord.main.localeRestrictions)).right;
-      _ <- updateLocalFoodRecord(code, LocalFoodRecordUpdate(None, sourceFoodRecord.local.localDescription.map("Copy of " + _),
-        sourceFoodRecord.local.doNotUse, sourceFoodRecord.local.nutrientTableCodes, sourceFoodRecord.local.portionSize,
-        sourceFoodRecord.local.associatedFoods.map(_.toAssociatedFood), sourceFoodRecord.local.brandNames), locale).right
-    )
-      yield code
-
-
   def deleteAllFoods(): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
       SQL("DELETE FROM foods").execute()

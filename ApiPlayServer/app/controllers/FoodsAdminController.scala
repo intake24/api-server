@@ -26,14 +26,18 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.{AssociatedFoodsService, BrandNamesService, FoodDataService}
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
-import uk.ac.ncl.openlab.intake24.{LocalFoodRecordUpdate, MainFoodRecordUpdate, NewLocalMainFoodRecord, NewMainFoodRecord}
+import uk.ac.ncl.openlab.intake24._
 
 import scala.concurrent.Future
 
 case class CloneFoodResult(clonedFoodCode: String)
 
 class FoodsAdminController @Inject()(service: FoodsAdminService,
+                                     userService: FoodDataService,
+                                     associatedFoodsService: AssociatedFoodsService,
+                                     brandNamesService: BrandNamesService,
                                      foodAuthChecks: FoodAuthChecks,
                                      rab: Intake24RestrictedActionBuilder) extends Controller
   with DatabaseErrorHandler with JsonUtils {
@@ -66,7 +70,43 @@ class FoodsAdminController @Inject()(service: FoodsAdminService,
   def cloneFood(code: String, locale: String) = rab.restrictAccess(foodAuthChecks.canCreateMainFoods)(BodyParsers.parse.empty) {
     _ =>
       Future {
-        translateDatabaseResult(service.cloneFood(code, locale).right.map(code => CloneFoodResult(code)))
+        val result =
+          for (
+            sourceFoodRecord <- service.getFoodRecord(code, locale).right;
+            code <- service.createFoodWithTempCode(NewMainFoodRecord("TEMP", "Copy of " + sourceFoodRecord.main.englishDescription,
+              sourceFoodRecord.main.groupCode, sourceFoodRecord.main.attributes, sourceFoodRecord.main.parentCategories.map(_.code),
+              sourceFoodRecord.main.localeRestrictions)).right;
+            _ <- service.updateLocalFoodRecord(code, LocalFoodRecordUpdate(None, sourceFoodRecord.local.localDescription.map("Copy of " + _),
+              sourceFoodRecord.local.doNotUse, sourceFoodRecord.local.nutrientTableCodes, sourceFoodRecord.local.portionSize,
+              sourceFoodRecord.local.associatedFoods.map(_.toAssociatedFood), sourceFoodRecord.local.brandNames), locale).right
+          )
+            yield CloneFoodResult(code)
+
+        translateDatabaseResult(result)
+      }
+  }
+
+  def cloneFoodAsLocal(code: String, locale: String) = rab.restrictAccess(foodAuthChecks.canCreateMainFoods)(BodyParsers.parse.empty) {
+    _ =>
+      Future {
+        val result =
+          for (
+            sourceFoodRecord <- service.getFoodRecord(code, locale).right;
+            sourceUserRecord <- userService.getFoodData(code, locale).right.map(_._1).right;
+            assocFoods <- associatedFoodsService.getAssociatedFoods(code, locale).right;
+            brandNames <- brandNamesService.getBrandNames(code, locale).right;
+            code <- service.createFoodWithTempCode(NewMainFoodRecord("TEMP", "Copy of " + sourceFoodRecord.main.englishDescription,
+              sourceFoodRecord.main.groupCode, sourceFoodRecord.main.attributes, sourceFoodRecord.main.parentCategories.map(_.code),
+              Seq(locale))).right;
+
+            _ <- service.updateLocalFoodRecord(code, LocalFoodRecordUpdate(None, Some("Copy of " + sourceUserRecord.localDescription),
+              false, sourceUserRecord.nutrientTableCodes, sourceUserRecord.portionSizeMethods,
+              assocFoods, brandNames), locale).right
+          )
+
+            yield CloneFoodResult(code)
+
+        translateDatabaseResult(result)
       }
   }
 

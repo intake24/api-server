@@ -24,13 +24,9 @@ import au.com.bytecode.opencsv.CSVReader
 import java.io.FileReader
 import scala.collection.JavaConversions._
 
-case class CsvNutrientTableMapping(rowOffset: Int, idColumn: Int, nutrientMapping: Map[Long, Int])
+case class CsvNutrientTableMapping(rowOffset: Int, idColumn: Int, descriptionColumn: Int, nutrientMapping: Map[Long, Int])
 
-/* This is a silly type to work around the issues with Java-based dependency injection in Webapp 
- * The Scala type Map[Nutrient, Double] is compiled to Map<Nutrient, Object> in Java which breaks 
- * the injection.
- * */
-case class NutrientTable(records: Map[String, Map[Long, Double]])
+case class NutrientTableRecord(id: String, description: String, nutrients: Map[Long, Double])
 
 object CsvNutrientTableParser {
   val log = LoggerFactory.getLogger(CsvNutrientTableParser.getClass)
@@ -39,37 +35,32 @@ object CsvNutrientTableParser {
     def r(s: String) = s.foldRight((0, 1)) {
       case (ch, (acc, mul)) => (acc + (ch - 'A' + 1) * mul, mul * 26)
     }
+
     r(colRef)._1
   }
 
-  def parseTable(fileName: String, mapping: CsvNutrientTableMapping): NutrientTable = {
+  def parseTable(fileName: String, mapping: CsvNutrientTableMapping): Seq[NutrientTableRecord] = {
     val rows = new CSVReader(new FileReader(fileName)).readAll().toSeq.map(_.toIndexedSeq)
 
-    def readRow(row: IndexedSeq[String], rowIndex: Int): Map[Long, Double] = mapping.nutrientMapping.foldLeft(Map[Long, Double]()) {
-      case (acc, (nutrientId, colNum)) =>
-        {
-          try {
-              acc + (nutrientId -> row(colNum - 1).toDouble)
-          } catch {
-            case e: Throwable => {
-              if (nutrientId == 1l)
-                log.error(s"Failed to read energy (kcal) in row $rowIndex! This is an essential nutrient column, please check the source table for errors.")
-              else
-                log.warn("Failed to read nutrient type " + nutrientId.toString + " in row " + rowIndex + ", assuming data N/A")
-              acc
-            }
+    def readNutrients(row: IndexedSeq[String], rowIndex: Int): Map[Long, Double] = mapping.nutrientMapping.foldLeft(Map[Long, Double]()) {
+      case (acc, (nutrientId, colNum)) => {
+        try {
+          acc + (nutrientId -> row(colNum - 1).toDouble)
+        } catch {
+          case e: Throwable => {
+            if (nutrientId == 1l)
+              log.error(s"Failed to read energy (kcal) in row $rowIndex! This is an essential nutrient column, please check the source table for errors.")
+            else
+              log.warn("Failed to read nutrient type " + nutrientId.toString + " in row " + rowIndex + ", assuming data N/A")
+            acc
           }
         }
-    }
-
-    val records = rows.zipWithIndex.drop(mapping.rowOffset).foldLeft(Map[String, Map[Long, Double]]()) {
-      case (map, row) => {
-        val (rowSeq, rowIndex) = row
-
-        map + (rowSeq(mapping.idColumn) -> readRow(rowSeq, rowIndex))
       }
     }
-    
-    NutrientTable(records)
+
+    rows.zipWithIndex.drop(mapping.rowOffset).map {
+      case (row, index) =>
+        NutrientTableRecord(row(mapping.idColumn), row(mapping.descriptionColumn), readNutrients(row, index))
+    }
   }
 }

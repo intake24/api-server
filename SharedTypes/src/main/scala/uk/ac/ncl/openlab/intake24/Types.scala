@@ -213,10 +213,10 @@ case class NutrientType(id: Int, description: String)
 
 case class NutrientUnit(id: Int, symbol: String)
 
-case class FoodCompositionRecord(table_id: String, record_id: String, nutrients: Map[Long, Double])
-
 case class NutrientData(nutrient_id: Int, unitsPer100g: Double, unitName: String)
 
 case class Locale(id: String, englishName: String, localName: String, respondentLanguage: String, adminLanguage: String, flagCode: String, prototypeLocale: Option[String], textDirection: String)
 
 case class NutrientTableRecord(id: String, nutrientTableId: String, description: String, localDescription: Option[String])
+
+case class NewNutrientTableRecord(id: String, nutrientTableId: String, description: String, localDescription: Option[String], nutrients: Map[Long, Double])

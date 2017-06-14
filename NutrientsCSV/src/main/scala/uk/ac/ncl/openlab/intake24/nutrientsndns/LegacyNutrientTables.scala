@@ -67,7 +67,7 @@ object LegacyNutrientTables {
       151l -> col("DZ"),
       152l -> col("EB"))
 
-  val ndnsCsvTableMapping = CsvNutrientTableMapping(1, 0, ndnsCsvNutrientMapping)
+  val ndnsCsvTableMapping = CsvNutrientTableMapping(1, 0, 1, ndnsCsvNutrientMapping)
 
   private val nzCsvNutrientMapping: Map[Long, Int] = Map(
     1l -> col("X"),
@@ -152,5 +152,5 @@ object LegacyNutrientTables {
     169l -> col("BZ"),
     173l -> col("V"))
 
-  val nzCsvTableMapping = CsvNutrientTableMapping(3, 0, nzCsvNutrientMapping)
+  val nzCsvTableMapping = CsvNutrientTableMapping(3, 0, 1, nzCsvNutrientMapping)
 }

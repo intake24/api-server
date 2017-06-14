@@ -49,6 +49,7 @@ POST           /admin/foods/new/:locale                                      con
 
 POST           /admin/foods/new-with-temp-code                               controllers.FoodsAdminController.createFoodWithTempCode()
 POST           /admin/foods/:locale/:code/clone                              controllers.FoodsAdminController.cloneFood(code, locale)
+POST           /admin/foods/:locale/:code/clone-as-local                     controllers.FoodsAdminController.cloneFoodAsLocal(code, locale)
 POST           /admin/foods/:code                                            controllers.FoodsAdminController.updateMainFoodRecord(code: String)
 POST           /admin/foods/:locale/:code                                    controllers.FoodsAdminController.updateLocalFoodRecord(code: String, locale: String)
 DELETE         /admin/foods/:code                                            controllers.FoodsAdminController.deleteFood(code)

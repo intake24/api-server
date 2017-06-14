@@ -4,7 +4,7 @@ import org.rogach.scallop.ScallopConf
 import uk.ac.ncl.openlab.intake24.foodsql.admin.NutrientTablesAdminImpl
 import uk.ac.ncl.openlab.intake24.nutrientsndns.{CsvNutrientTableMapping, CsvNutrientTableParser}
 import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConfigurationOptions, DatabaseConnection, WarningMessage}
-import uk.ac.ncl.openlab.intake24.{NutrientTable, FoodCompositionRecord}
+import uk.ac.ncl.openlab.intake24.{NewNutrientTableRecord, NutrientTable}
 
 abstract class CsvNutrientTableImport(nutrientTableId: String, nutrientTableDescription: String, nutrientMapping: CsvNutrientTableMapping) extends App with WarningMessage with DatabaseConnection {
 
@@ -29,12 +29,12 @@ abstract class CsvNutrientTableImport(nutrientTableId: String, nutrientTableDesc
 
   nutrientTableService.createNutrientTable(NutrientTable(nutrientTableId, nutrientTableDescription))
 
-  val table = CsvNutrientTableParser.parseTable(options.csvPath(), nutrientMapping)
+  val records = CsvNutrientTableParser.parseTable(options.csvPath(), nutrientMapping)
 
-  val records = table.records.map {
-    case (code, nmap) =>
-      FoodCompositionRecord(nutrientTableId, code, nmap)
+  val newRecords = records.map {
+    record =>
+      NewNutrientTableRecord(record.id, nutrientTableId, record.description, None, record.nutrients)
   }.toSeq
 
-  nutrientTableService.createNutrientTableRecords(records)
+  nutrientTableService.createNutrientTableRecords(newRecords)
 }

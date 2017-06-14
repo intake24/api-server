@@ -9,7 +9,7 @@ import org.apache.commons.lang3.StringUtils
 import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound, UnexpectedDatabaseError}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.NutrientTablesAdminService
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
-import uk.ac.ncl.openlab.intake24.{FoodCompositionRecord, NutrientTable, NutrientTableRecord}
+import uk.ac.ncl.openlab.intake24.{NewNutrientTableRecord, NutrientTable, NutrientTableRecord}
 
 @Singleton
 class NutrientTablesAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends NutrientTablesAdminService with SqlDataService {
@@ -99,21 +99,21 @@ class NutrientTablesAdminImpl @Inject()(@Named("intake24_foods") val dataSource:
 
   private val nutrientsInsertQuery = "INSERT INTO nutrient_table_records_nutrients VALUES({record_id},{nutrient_table_id},{nutrient_type_id},{units_per_100g})"
 
-  def createNutrientTableRecords(records: Seq[FoodCompositionRecord]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
+  def createNutrientTableRecords(records: Seq[NewNutrientTableRecord]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
 
       withTransaction {
-        val recordQuery = """INSERT INTO nutrient_table_records VALUES({id},{nutrient_table_id})"""
+        val recordQuery = """INSERT INTO nutrient_table_records VALUES({id},{nutrient_table_id},{english_description},{local_description})"""
 
         val recordParams =
-          records.map(r => Seq[NamedParameter]('id -> r.record_id, 'nutrient_table_id -> r.table_id))
+          records.map(r => Seq[NamedParameter]('id -> r.id, 'nutrient_table_id -> r.nutrientTableId, 'english_description -> r.description, 'local_description -> r.localDescription))
 
         val nutrientParams =
           records.flatMap {
             record =>
               record.nutrients.map {
                 case (nutrientType, unitsPer100g) =>
-                  Seq[NamedParameter]('record_id -> record.record_id, 'nutrient_table_id -> record.table_id, 'nutrient_type_id -> nutrientType, 'units_per_100g -> unitsPer100g)
+                  Seq[NamedParameter]('record_id -> record.id, 'nutrient_table_id -> record.nutrientTableId, 'nutrient_type_id -> nutrientType, 'units_per_100g -> unitsPer100g)
               }
           }
 
@@ -124,13 +124,13 @@ class NutrientTablesAdminImpl @Inject()(@Named("intake24_foods") val dataSource:
       }
   }
 
-  def updateNutrientTableRecords(records: Seq[FoodCompositionRecord]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
+  def updateNutrientTableRecords(records: Seq[NewNutrientTableRecord]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
         if (records.nonEmpty) {
           val deleteParams = records.map {
             record =>
-              Seq[NamedParameter]('table_id -> record.table_id, 'record_id -> record.record_id)
+              Seq[NamedParameter]('table_id -> record.nutrientTableId, 'record_id -> record.id)
           }
 
           BatchSql("DELETE FROM nutrient_table_records_nutrients WHERE nutrient_table_id={table_id} AND nutrient_table_record_id={record_id}", deleteParams.head, deleteParams.tail: _*).execute()
@@ -139,7 +139,7 @@ class NutrientTablesAdminImpl @Inject()(@Named("intake24_foods") val dataSource:
             record =>
               record.nutrients.map {
                 case (nutrientType, unitsPer100g) =>
-                  Seq[NamedParameter]('record_id -> record.record_id, 'nutrient_table_id -> record.table_id, 'nutrient_type_id -> nutrientType, 'units_per_100g -> unitsPer100g)
+                  Seq[NamedParameter]('record_id -> record.id, 'nutrient_table_id -> record.nutrientTableId, 'nutrient_type_id -> nutrientType, 'units_per_100g -> unitsPer100g)
               }
           }
 
