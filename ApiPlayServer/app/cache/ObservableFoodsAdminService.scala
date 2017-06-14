@@ -7,7 +7,7 @@ import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
 
 trait FoodsAdminObserver {
-  def onMainFoodRecordUpdated(code: String): Unit
+  def onMainFoodRecordUpdated(originalCode: String, newCode: String): Unit
 
   def onLocalFoodRecordCreated(code: String, locale: String): Unit
 
@@ -69,9 +69,9 @@ class ObservableFoodsAdminServiceImpl @Inject()(@BasicImpl service: FoodsAdminSe
       }
   }
 
-  def updateMainFoodRecord(foodCode: String, foodBase: MainFoodRecordUpdate): Either[LocalDependentUpdateError, Unit] = service.updateMainFoodRecord(foodCode, foodBase).right.map {
+  def updateMainFoodRecord(foodCode: String, update: MainFoodRecordUpdate): Either[LocalDependentUpdateError, Unit] = service.updateMainFoodRecord(foodCode, update).right.map {
     _ =>
-      observers.foreach(_.onMainFoodRecordUpdated(foodCode))
+      observers.foreach(_.onMainFoodRecordUpdated(foodCode, update.code))
   }
 
   def updateLocalFoodRecord(foodCode: String, foodLocal: LocalFoodRecordUpdate, locale: String): Either[LocalDependentUpdateError, Unit] = service.updateLocalFoodRecord(foodCode, foodLocal, locale).right.map {

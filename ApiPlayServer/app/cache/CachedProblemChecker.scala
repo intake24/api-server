@@ -14,14 +14,14 @@ import uk.ac.ncl.openlab.intake24.services.util.Timing
 
 import scala.collection.mutable.Buffer
 
-case class CachedProblemChecker @Inject() (
-  categories: ObservableCategoriesAdminService,
-  foods: ObservableFoodsAdminService,
-  locales: ObservableLocalesAdminService,
-  userFoods: FoodDataService,
-  adminBrowsing: FoodBrowsingAdminService,
-  cache: CacheApi)
-    extends ProblemCheckerService
+case class CachedProblemChecker @Inject()(
+                                           categories: ObservableCategoriesAdminService,
+                                           foods: ObservableFoodsAdminService,
+                                           locales: ObservableLocalesAdminService,
+                                           userFoods: FoodDataService,
+                                           adminBrowsing: FoodBrowsingAdminService,
+                                           cache: CacheApi)
+  extends ProblemCheckerService
     with Timing
     with CacheResult
     with CategoriesAdminObserver
@@ -48,7 +48,9 @@ case class CachedProblemChecker @Inject() (
   val SingleItem = "single_item_in_category"
 
   def foodProblemsCacheKey(code: String, locale: String) = s"CachedProblemChecker.foodProblems.$locale.$code"
+
   def categoryProblemsCacheKey(code: String, locale: String) = s"CachedProblemChecker.categoryProblems.$locale.$code"
+
   def recursiveCategoryProblemsCacheKey(code: String, locale: String) = s"CachedProblemChecker.recursiveCategoryProblems.$locale.$code"
 
 
@@ -157,16 +159,24 @@ case class CachedProblemChecker @Inject() (
     }
 
   def invalidateFood(code: String): Unit = {
-    val allLocales = locales.listLocales().right.get.keySet
-    val parentCodes = adminBrowsing.getFoodAllCategoriesCodes(code).right.get
+    locales.listLocales() match {
+      case Right(locales) =>
+        locales.values.foreach {
+          locale =>
+            removeCached(foodProblemsCacheKey(code, locale.id))
 
-    for (locale <- allLocales) yield {
-      removeCached(foodProblemsCacheKey(code, locale))
-
-      for (categoryCode <- parentCodes) yield {
-        removeCached(categoryProblemsCacheKey(categoryCode, locale))
-        removeCached(recursiveCategoryProblemsCacheKey(categoryCode, locale))
-      }
+            adminBrowsing.getFoodAllCategoriesCodes(code) match {
+              case Right(parentCategories) =>
+                parentCategories.foreach {
+                  categoryCode =>
+                    removeCached(categoryProblemsCacheKey(categoryCode, locale.id))
+                    removeCached(recursiveCategoryProblemsCacheKey(categoryCode, locale.id))
+                }
+              case Left(_) => logger.debug(s"Failed to get super categories for $code, probably due to code having been changed")
+            }
+        }
+      case Left(e) =>
+        logger.error("Failed to get locales list", e)
     }
   }
 
@@ -213,21 +223,21 @@ case class CachedProblemChecker @Inject() (
     invalidateCategory(code)
   }
 
-  //FIXME: Race conditions! This needs to be done AFTER the food has been deleted, but the parents 
-  // can only be read before it is deleted which can result in data being re-cached right before it 
+  //FIXME: Race conditions! This needs to be done AFTER the food has been deleted, but the parents
+  // can only be read before it is deleted which can result in data being re-cached right before it
   // is actually deleted. Low probability, so ignoring for now.
   def onCategoryToBeDeleted(code: String) = {
     invalidateCategory(code)
   }
 
-  def onCategoryDeleted(code: String) = { }
+  def onCategoryDeleted(code: String) = {}
 
   def onLocaleDeleted(id: String) = {
     removeCachedByPredicate {
       k =>
         k.startsWith(foodProblemsCacheKey("", id)) ||
-        k.startsWith(categoryProblemsCacheKey("", id)) ||
-        k.startsWith(recursiveCategoryProblemsCacheKey("", id))
+          k.startsWith(categoryProblemsCacheKey("", id)) ||
+          k.startsWith(recursiveCategoryProblemsCacheKey("", id))
     }
   }
 
@@ -251,14 +261,14 @@ case class CachedProblemChecker @Inject() (
     invalidateFood(code)
   }
 
-  //FIXME: Race conditions! This needs to be done AFTER the food has been deleted, but the parents 
-  // can only be read before it is deleted which can result in data being re-cached right before it 
+  //FIXME: Race conditions! This needs to be done AFTER the food has been deleted, but the parents
+  // can only be read before it is deleted which can result in data being re-cached right before it
   // is actually deleted. Low probability, so ignoring for now.
   def onFoodToBeDeleted(code: String) = {
     invalidateFood(code)
   }
 
-  def onFoodDeleted(code: String) = { }
+  def onFoodDeleted(code: String) = {}
 
   def onLocalFoodRecordCreated(code: String, locale: String) = {
     invalidateFood(code)
@@ -268,8 +278,9 @@ case class CachedProblemChecker @Inject() (
     invalidateFood(code)
   }
 
-  def onMainFoodRecordUpdated(code: String) = {
-    invalidateFood(code)
+  def onMainFoodRecordUpdated(originalCode: String, newCode: String) = {
+    invalidateFood(originalCode)
+    invalidateFood(newCode)
   }
 
   def onLocaleCreated(id: String) = {}
