@@ -6,7 +6,7 @@ WITH t AS (
         LEFT JOIN foods_restrictions ON foods.code = foods_restrictions.food_code
       WHERE 
         (t1.local_description IS NOT NULL OR t2.local_description IS NOT NULL)
-        AND NOT (t1.do_not_use OR (t2.do_not_use IS NOT NULL AND t2.do_not_use))
+        AND NOT (COALESCE(t1.do_not_use, t2.do_not_use, false))
         AND (foods_restrictions.locale_id = {locale_id} OR foods_restrictions.locale_id IS NULL)
     )
 SELECT t.code, t.local_description FROM

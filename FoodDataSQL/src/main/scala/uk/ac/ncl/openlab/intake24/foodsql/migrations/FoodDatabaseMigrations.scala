@@ -580,6 +580,24 @@ object FoodDatabaseMigrations {
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         ???
       }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 40l
+      override val versionTo: Long = 41l
+      override val description: String = "Fix respondent languages"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("UPDATE locales SET respondent_language_id='pt_PT' WHERE id='pt_PT'").execute()
+        SQL("UPDATE locales SET respondent_language_id='da_DK' WHERE id='da_DK'").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
     }
 
   )

@@ -3,7 +3,7 @@ package uk.ac.ncl.openlab.intake24.services.systemdb.user
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.surveydata.NutrientMappedSubmission
 
-case class PublicSurveyParameters(localeId: String, supportEmail: String, originatingURL: Option[String])
+case class PublicSurveyParameters(localeId: String, respondentLanguageId: String, supportEmail: String, originatingURL: Option[String])
 
 case class UserSurveyParameters(schemeId: String, localeId: String, state: String, suspensionReason: Option[String], description: Option[String])
 

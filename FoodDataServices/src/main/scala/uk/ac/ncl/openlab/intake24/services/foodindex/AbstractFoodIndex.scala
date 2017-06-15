@@ -19,16 +19,10 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.services.foodindex
 
 import org.slf4j.LoggerFactory
-import org.workcraft.phrasesearch.CaseInsensitiveString
-import org.workcraft.phrasesearch.InterpretedPhrase
-import org.workcraft.phrasesearch.MatchFewer
-import org.workcraft.phrasesearch.PhoneticEncoder
-import org.workcraft.phrasesearch.PhraseIndex
-import org.workcraft.phrasesearch.WordOps
-
+import org.workcraft.phrasesearch._
 import uk.ac.ncl.openlab.intake24.UserFoodHeader
 
-abstract class AbstractFoodIndex (foodData: FoodIndexDataService, phoneticEncoder: Option[PhoneticEncoder], wordOps: WordOps, indexFilter: Seq[String], nonIndexedWords: Seq[String], localSpecialFoods: LocalSpecialFoodNames, locale: String) extends FoodIndex {
+abstract class AbstractFoodIndex(foodData: FoodIndexDataService, phoneticEncoder: Option[PhoneticEncoder], wordOps: WordOps, indexFilter: Seq[String], nonIndexedWords: Seq[String], localSpecialFoods: LocalSpecialFoodNames, locale: String) extends FoodIndex {
 
   val log = LoggerFactory.getLogger(classOf[AbstractFoodIndex])
 
@@ -38,14 +32,14 @@ abstract class AbstractFoodIndex (foodData: FoodIndexDataService, phoneticEncode
   // FIXME: Error handling
   val indexableFoods = foodData.indexableFoods(locale).right.get ++ localSpecialFoodHeaders
 
-  log.debug(s"Indexable foods loaded in ${System.currentTimeMillis() - ft0} ms")
+  log.debug(s"${indexableFoods.size} indexable foods for $locale loaded in ${System.currentTimeMillis() - ft0} ms")
 
   val ct0 = System.currentTimeMillis()
 
   // FIXME: Error handling
   val indexableCategories = foodData.indexableCategories(locale).right.get
 
-  log.debug(s"Indexable categories loaded in ${System.currentTimeMillis() - ct0} ms")
+  log.debug(s"${indexableCategories.size} indexable categories for $locale loaded in ${System.currentTimeMillis() - ct0} ms")
 
   val indexEntries = indexableFoods.map(f => (f.localDescription, FoodEntry(f))) ++ indexableCategories.map(c => (c.localDescription, CategoryEntry(c)))
 
@@ -64,7 +58,7 @@ abstract class AbstractFoodIndex (foodData: FoodIndexDataService, phoneticEncode
     val t0 = System.currentTimeMillis()
     val (matchedFoods, matchedCategories) = index.lookup(description, maxResults).foldLeft((Seq[MatchedFood](), Seq[MatchedCategory]())) {
       case ((foods, cats), next) => next match {
-        case (FoodEntry(food), cost) => (MatchedFood(food, cost) +: foods, cats)         
+        case (FoodEntry(food), cost) => (MatchedFood(food, cost) +: foods, cats)
         case (CategoryEntry(category), cost) => (foods, MatchedCategory(category, cost) +: cats)
       }
     }
