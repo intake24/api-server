@@ -67,6 +67,15 @@ class NutrientTablesAdminImpl @Inject()(@Named("intake24_foods") val dataSource:
       Right(())
   }
 
+  def createOrUpdateNutrientTable(data: NutrientTable): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
+    implicit conn =>
+      var query = """INSERT INTO nutrient_tables VALUES({id}, {description}) ON CONFLICT ON CONSTRAINT nutrient_tables_pk DO UPDATE SET description=EXCLUDED.description"""
+
+      SQL(query).on('id -> data.id, 'description -> data.description).execute()
+
+      Right(())
+  }
+
   def updateNutrientTable(id: String, data: NutrientTable): Either[LookupError, Unit] = tryWithConnection {
     implicit conn =>
       var query = """UPDATE nutrient_tables SET id={new_id}, description={description} WHERE id = {id}"""
@@ -122,6 +131,45 @@ class NutrientTablesAdminImpl @Inject()(@Named("intake24_foods") val dataSource:
 
         Right(())
       }
+  }
+
+  def createOrUpdateNutrientTableRecords(records: Seq[NewNutrientTableRecord]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
+    implicit conn =>
+
+      if (records.nonEmpty) {
+
+        withTransaction {
+          val recordUpsertQuery =
+            """INSERT INTO nutrient_table_records VALUES({id},{nutrient_table_id},{english_description},{local_description})
+              |ON CONFLICT ON CONSTRAINT nutrient_table_records_pk DO UPDATE SET english_description=EXCLUDED.english_description, local_description=EXCLUDED.local_description""".stripMargin
+
+          val recordParams =
+            records.map(r => Seq[NamedParameter]('id -> r.id, 'nutrient_table_id -> r.nutrientTableId, 'english_description -> r.description, 'local_description -> r.localDescription))
+
+          BatchSql(recordUpsertQuery, recordParams.head, recordParams.tail: _*).execute()
+
+          val nutrientDeleteParams = records.map {
+            record =>
+              Seq[NamedParameter]('table_id -> record.nutrientTableId, 'record_id -> record.id)
+          }
+
+          BatchSql("DELETE FROM nutrient_table_records_nutrients WHERE nutrient_table_id={table_id} AND nutrient_table_record_id={record_id}", nutrientDeleteParams.head, nutrientDeleteParams.tail: _*).execute()
+
+          val nutrientUpdateParams =
+            records.flatMap {
+              record =>
+                record.nutrients.map {
+                  case (nutrientType, unitsPer100g) =>
+                    Seq[NamedParameter]('record_id -> record.id, 'nutrient_table_id -> record.nutrientTableId, 'nutrient_type_id -> nutrientType, 'units_per_100g -> unitsPer100g)
+                }
+            }
+
+
+          BatchSql(nutrientsInsertQuery, nutrientUpdateParams.head, nutrientUpdateParams.tail: _*).execute()
+
+          Right(())
+        }
+      } else Right(())
   }
 
   def updateNutrientTableRecords(records: Seq[NewNutrientTableRecord]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {

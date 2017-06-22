@@ -19,22 +19,20 @@ abstract class CsvNutrientTableImport(nutrientTableId: String, nutrientTableDesc
 
   val dbConfig = chooseDatabaseConfiguration(options)
 
-  displayWarningMessage(s"This will destroy all food records having $nutrientTableId code in ${dbConfig.host}/${dbConfig.database}. Are you sure?")
+  displayWarningMessage(s"This will update $nutrientTableId nutrient records in ${dbConfig.host}/${dbConfig.database}. Are you sure?")
 
   val dataSource = getDataSource(dbConfig)
 
   val nutrientTableService = new NutrientTablesAdminImpl(dataSource)
 
-  nutrientTableService.deleteNutrientTable(nutrientTableId)
-
-  nutrientTableService.createNutrientTable(NutrientTable(nutrientTableId, nutrientTableDescription))
+  nutrientTableService.createOrUpdateNutrientTable(NutrientTable(nutrientTableId, nutrientTableDescription))
 
   val records = CsvNutrientTableParser.parseTable(options.csvPath(), nutrientMapping)
 
   val newRecords = records.map {
     record =>
       NewNutrientTableRecord(record.id, nutrientTableId, record.description, None, record.nutrients)
-  }.toSeq
+  }
 
-  nutrientTableService.createNutrientTableRecords(newRecords)
+  nutrientTableService.createOrUpdateNutrientTableRecords(newRecords)
 }

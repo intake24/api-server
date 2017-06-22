@@ -15,10 +15,14 @@ trait NutrientTablesAdminService {
 
   def updateNutrientTable(id: String, data: NutrientTable): Either[LookupError, Unit]
 
+  def createOrUpdateNutrientTable(data: NutrientTable): Either[UnexpectedDatabaseError, Unit]
+
   def deleteNutrientTable(id: String): Either[LookupError, Unit]
 
   def deleteAllNutrientTables(): Either[UnexpectedDatabaseError, Unit]
 
   def createNutrientTableRecords(records: Seq[NewNutrientTableRecord]): Either[UnexpectedDatabaseError, Unit]
+
+  def createOrUpdateNutrientTableRecords(records: Seq[NewNutrientTableRecord]): Either[UnexpectedDatabaseError, Unit]
 }
 
