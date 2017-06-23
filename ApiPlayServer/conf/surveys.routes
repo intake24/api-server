@@ -17,6 +17,7 @@ DELETE        /:surveyId                                             controllers
 
 GET           /:surveyId/submissions                                 controllers.system.DataExportController.getSurveySubmissions(surveyId, dateFrom: String, dateTo: String, offset: Int, limit: Int)
 GET           /:surveyId/submissions/csv                             controllers.system.DataExportController.getSurveySubmissionsAsCSV(surveyId, dateFrom: String, dateTo: String)
+GET           /:surveyId/submissions/async/csv                       controllers.system.DataExportController.getSurveySubmissionsAsCSVAsync(surveyId, dateFrom: String, dateTo: String)
 # GET            /admin/surveys/:surveyId/submissions/xlsx                     controllers.system.DataExportController.getSurveySubmissionsAsXLSX(surveyId, dateFrom: Long, dateTo: Long, offset: Int, limit: Int)
 
 # Survey info and submissions
