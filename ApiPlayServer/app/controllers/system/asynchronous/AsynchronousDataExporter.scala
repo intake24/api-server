@@ -7,6 +7,7 @@ import javax.inject.{Inject, Singleton}
 
 import akka.actor.{Actor, ActorRef, ActorSystem, PoisonPill, Props}
 import au.com.bytecode.opencsv.CSVWriter
+import controllers.system.asynchronous.AsynchronousDataExporter.ExportTask
 import parsers.SurveyCSVExporter
 import play.api.Logger
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
@@ -32,130 +33,114 @@ object AsynchronousDataExporter {
 
     val queue = mutable.Queue[ExportTask]()
 
-    var currentTask: Option[ExportTask] = None
+    var currentTask: ExportTask = null
 
     var currentOffset = 0
 
-    var file: File = null
+    var fileWriter: ActorRef = null
 
-    var fileWriter: FileWriter = null
 
-    var csvWriter: CSVWriter = null
+    def maybeBeginNextTask() = {
+      if (!queue.isEmpty) {
+        beginTask(queue.dequeue())
+      } else {
+        currentTask = null
+        fileWriter = null
+      }
+    }
+
+    def beginTask(task: ExportTask) = {
+
+      currentTask = task
+
+      currentOffset = 0
+
+      fileWriter = context.system.actorOf(Props(classOf[CsvWriter], currentTask))
+
+      self ! Tick
+    }
 
 
     def receive: Receive = {
 
       case task: ExportTask =>
 
-        Logger.info("Export task queued: " + task + ", queue length: " + (queue.size + 1))
-
-        queue += task
-        self ! Tick
+        if (currentTask == null) {
+          Logger.info("No active task, starting immediately")
+          beginTask(task)
+        } else {
+          Logger.info("Export task queued, queue length: " + (queue.size + 1))
+          queue += task
+        }
 
       case Tick =>
 
-        currentTask match {
-          case None =>
-            if (queue.isEmpty) {
-              Logger.info("Nothing left to do")
+
+        exportService.getSurveySubmissions(currentTask.surveyId, Some(currentTask.dateFrom), Some(currentTask.dateTo), currentOffset, batchSize, None) match {
+          case Right(submissions) => {
+
+            Logger.info(s"Received next batch of ${submissions.size} submissions")
+
+            if (submissions.size > 0) {
+              currentOffset += submissions.size
+              Logger.info(s"Writing ${submissions.size} submissions to file...")
+
+              fileWriter ! WriteNextBatch(submissions)
+
+              context.system.scheduler.scheduleOnce(throttleRateMs milliseconds, self, Tick)
             } else {
-              Logger.info("Starting next task from the queue")
+              Logger.info("All submissions for the curent task processed")
 
-              val task = queue.dequeue()
-
-              currentTask = Some(task)
-
-              file = SurveyCSVExporter.createFile()
-
-              fileWriter = new FileWriter(file)
-
-              csvWriter = new CSVWriter(fileWriter)
-
-              SurveyCSVExporter.writeHeader(fileWriter, csvWriter, task.dataScheme, task.localNutrients, task.insertBOM)
-
-
-              currentOffset = 0
-              self ! Tick
+              fileWriter ! Finalise
             }
+          }
 
-          case Some(task) =>
-            exportService.getSurveySubmissions(task.surveyId, Some(task.dateFrom), Some(task.dateTo), currentOffset, batchSize, None) match {
-              case Right(submissions) => {
-
-                Logger.info(s"Received next batch of ${submissions.size} submissions")
-
-                if (submissions.size > 0) {
-                  currentOffset += submissions.size
-                  Logger.info(s"Writing ${submissions.size} submissions to file...")
-
-
-
-                  SurveyCSVExporter.writeSubmissionsBatch(csvWriter, task.dataScheme, task.foodGroups, task.localNutrients, submissions)
-
-                  throw new IOException("Kotak :(")
-
-                  context.system.scheduler.scheduleOnce(throttleRateMs milliseconds, self, Tick)
-                } else {
-                  Logger.info("All submissions for the curent task processed")
-                  currentTask = None
-
-                  fileWriter.close()
-                  csvWriter.close()
-
-                  Logger.info("Export complete: " + file.getAbsolutePath)
-
-                  file = null
-                  fileWriter = null
-                  csvWriter = null
-
-                  self ! Tick
-                }
-              }
-
-              case Left(e) => {
-                Logger.error("Error :(", e.exception)
-              }
-            }
-
+          case Left(e) => {
+            Logger.error("Error :(", e.exception)
+          }
         }
+
+      case FileReady(file) =>
+        Logger.info("Upload, e-mail, bla bla bla")
+        context.stop(fileWriter)
+        maybeBeginNextTask()
     }
   }
-
-  class CsvWriter(dataScheme: CustomDataScheme, foodGroups: Map[Int, FoodGroupRecord], localNutrients: Seq[LocalNutrientDescription], insertBOM: Boolean) extends Actor {
-
-    val outputFile = SurveyCSVExporter.createFile()
-    outputFile.deleteOnExit()
-
-    val fileWriter = new FileWriter(outputFile)
-    val csvWriter = new CSVWriter(fileWriter)
-
-    SurveyCSVExporter.writeHeader(fileWriter, csvWriter, dataScheme, localNutrients, insertBOM)
-
-    def receive: Receive = {
-
-      case WriteNextBatch(submissions) =>
-        SurveyCSVExporter.writeSubmissionsBatch(csvWriter, dataScheme, foodGroups, localNutrients, submissions)
-
-      case Complete =>
-        fileWriter.close()
-        csvWriter.close()
-
-    }
-  }
-
-  //case class ReportSuccess(taskId: UUID)
-
-  class NotificationManager(mailer: MailerClient) extends Actor {
-    def receive: Receive = ???
-  }
-
 
 }
+
+class CsvWriter(exportTask: ExportTask) extends Actor {
+
+  val outputFile = SurveyCSVExporter.createFile()
+
+  val fileWriter = new FileWriter(outputFile)
+  val csvWriter = new CSVWriter(fileWriter)
+
+  SurveyCSVExporter.writeHeader(fileWriter, csvWriter, exportTask.dataScheme, exportTask.localNutrients, exportTask.insertBOM)
+
+  def receive: Receive = {
+    case WriteNextBatch(submissions) =>
+      SurveyCSVExporter.writeSubmissionsBatch(csvWriter, exportTask.dataScheme, exportTask.foodGroups, exportTask.localNutrients, submissions)
+    case Finalise =>
+      fileWriter.close()
+      csvWriter.close()
+      sender() ! FileReady(outputFile)
+  }
+
+  override def postStop(): Unit = {
+    fileWriter.close()
+    csvWriter.close()
+  }
+}
+
+//case class ReportSuccess(taskId: UUID)
 
 
 case class WriteNextBatch(submissions: Seq[ExportSubmission])
 
 case object Finalise
+
+case class FileReady(file: File)
 
 case object Complete
 
