@@ -6,8 +6,8 @@ import javax.inject.{Inject, Named}
 import javax.sql.DataSource
 
 import anorm._
-import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound}
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, ExportFood, ExportMeal, ExportSubmission}
+import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound, UnexpectedDatabaseError}
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 import uk.ac.ncl.openlab.intake24.surveydata._
 
@@ -105,6 +105,84 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
           }
         } else
           Left(RecordNotFound(new RuntimeException(s"Survey $surveyId does not exist")))
+      }
+  }
+
+  def createExportTask(parameters: ExportTaskParameters): Either[UnexpectedDatabaseError, Long] = tryWithConnection {
+    implicit conn =>
+      Right(SQL("INSERT INTO data_export_tasks(id, survey_id, time_from, time_to, user_id, created_at VALUES(DEFAULT, {survey_id}, {time_from}, {time_to}, {user_id}, NOW())")
+        .on('survey_id -> parameters.surveyId, 'date_from -> parameters.dateFrom, 'date_to -> parameters.dateTo, 'user_id -> parameters.userId)
+        .executeInsert())
+  }
+
+  def updateExportTaskProgress(taskId: Long, progress: Double): Either[LookupError, Unit] = tryWithConnection {
+    implicit conn =>
+      if (SQL("UPDATE data_export_tasks SET progress={progress} WHERE id={task_id}")
+        .on('task_id -> taskId, 'progress -> progress)
+        .executeUpdate() == 1)
+        Right(())
+      else
+        Left(RecordNotFound(new RuntimeException(s"Export task id $taskId does not exist")))
+  }
+
+  def setExportTaskStarted(taskId: Long): Either[LookupError, Unit] = tryWithConnection {
+    implicit conn =>
+      if (SQL("UPDATE data_export_tasks SET started_at=NOW() WHERE id={id}").on('id -> taskId).executeUpdate() == 1)
+        Right(())
+      else
+        Left(RecordNotFound(new RuntimeException(s"Export task id $taskId does not exist")))
+  }
+
+  def setExportTaskSuccess(taskId: Long, downloadUrl: String): Either[LookupError, Unit] = tryWithConnection {
+    implicit conn =>
+      if (SQL("UPDATE data_export_tasks SET successful=true,download_url={url} WHERE id={task_id}")
+        .on('task_id -> taskId, 'url -> downloadUrl)
+        .executeUpdate() == 1)
+        Right(())
+      else
+        Left(RecordNotFound(new RuntimeException(s"Export task id $taskId does not exist")))
+  }
+
+  def setExportTaskFailure(taskId: Long, cause: Throwable): Either[LookupError, Unit] = tryWithConnection {
+    implicit conn =>
+
+      def collectStackTrace(throwable: Throwable, stackTrace: List[String] = List()): List[String] = {
+        if (throwable == null)
+          stackTrace.reverse
+        else {
+          val exceptionDesc = s"${throwable.getClass().getName()}: ${throwable.getMessage()}"
+
+          val withDesc = if (!stackTrace.isEmpty)
+            s"Caused by $exceptionDesc" :: stackTrace
+          else
+            s"Exception $exceptionDesc" :: stackTrace
+
+          val trace = throwable.getStackTrace.foldLeft(withDesc) {
+            (st, ste) => s"  at ${ste.getClassName()}.${ste.getMethodName()}(${ste.getFileName()}:${ste.getLineNumber()})" :: st
+          }
+
+          collectStackTrace(throwable.getCause, trace)
+        }
+      }
+
+      val stackTrace = collectStackTrace(cause)
+
+      if (SQL("UPDATE data_export_tasks SET successful=false,stack_trace={stack_trace},completed_at=NOW() WHERE id={id}")
+        .on('id -> taskId, 'stack_trace -> stackTrace.toArray)
+        .executeUpdate() == 1)
+        Right(())
+      else Left(RecordNotFound(new RuntimeException(s"Export task id $taskId does not exist")))
+  }
+
+  private case class ExportTaskStatusRow(id: Long, progress: Option[Double], successful: Option[Boolean], download_url: Option[String])
+
+  def getExportTaskStatus(taskId: Long): Either[LookupError, ExportTaskStatus] = tryWithConnection {
+    implicit conn =>
+      SQL("SELECT id, progress, successful, download_url FROM data_export_tasks WHERE id={id}")
+        .on('id -> taskId)
+        .as(Macro.namedParser[ExportTaskStatusRow].singleOpt) match {
+        case Some(row) => Right(ExportTaskStatus(row.id, row.progress, row.successful, row.download_url))
+        case None => Left(RecordNotFound(new RuntimeException(s"Export task id $taskId does not exist")))
       }
   }
 }

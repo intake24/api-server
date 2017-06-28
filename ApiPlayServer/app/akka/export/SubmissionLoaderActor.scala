@@ -11,7 +11,7 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, Ex
 
 import scala.concurrent.Future
 
-object SubmissionLoader {
+object SubmissionLoaderActor {
 
   case object GetNextSubmissionBatch
 
@@ -23,9 +23,9 @@ object SubmissionLoader {
 
 }
 
-class SubmissionLoader(exportService: DataExportService, surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime, batchSize: Int) extends Actor {
+class SubmissionLoaderActor(exportService: DataExportService, surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime, batchSize: Int) extends Actor {
 
-  import SubmissionLoader._
+  import SubmissionLoaderActor._
 
   Logger.info(s"SubmissionLoader starting (${self.path})")
 

@@ -5,7 +5,7 @@ import java.util.UUID
 import javax.inject.{Inject, Singleton}
 
 import akka.actor.{Actor, ActorSystem, Props}
-import akka.export.ExportTaskHandler
+import akka.export.ExportTaskActor
 import play.api.Logger
 import play.api.cache.CacheApi
 import uk.ac.ncl.openlab.intake24.FoodGroupRecord
@@ -17,7 +17,7 @@ import scala.collection.mutable
 
 import scala.concurrent.duration._
 
-case class ExportTask(taskId: UUID, surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime, dataScheme: CustomDataScheme,
+case class ExportTask(taskId: Long, surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime, dataScheme: CustomDataScheme,
                       foodGroups: Map[Int, FoodGroupRecord], localNutrients: Seq[LocalNutrientDescription], insertBOM: Boolean)
 
 class ExportManager(exportService: DataExportService, batchSize: Int, throttleRateMs: Int, maxActiveTasks: Int) extends Actor {
@@ -30,7 +30,7 @@ class ExportManager(exportService: DataExportService, batchSize: Int, throttleRa
     if (!queue.isEmpty && activeTasks < maxActiveTasks) {
       activeTasks += 1
       val task = queue.dequeue()
-      context.actorOf(Props(classOf[ExportTaskHandler], exportService, task, batchSize, throttleRateMs))
+      context.actorOf(Props(classOf[ExportTaskActor], exportService, task, batchSize, throttleRateMs))
       Logger.info("Started task, active tasks: " + activeTasks)
     }
   }
@@ -41,7 +41,7 @@ class ExportManager(exportService: DataExportService, batchSize: Int, throttleRa
       Logger.info("Task queued, queue size: " + queue.size)
       maybeStartNextTask()
 
-    case ExportTaskHandler.Complete(file) =>
+    case ExportTaskActor.Complete(file) =>
       Logger.info("Yay, task complete: " + file.getAbsolutePath)
       activeTasks -= 1
       maybeStartNextTask()
@@ -78,15 +78,14 @@ class AsynchronousDataExporter @Inject()(actorSystem: ActorSystem,
 
   val exportManager = actorSystem.actorOf(Props(classOf[ExportManager], exportService, 50, 50, 2), "ExportManager")
 
-  def queueCsvExport(surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime, insertBOM: Boolean): Either[AnyError, UUID] = {
+  def queueCsvExport(userId: Long, surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime, insertBOM: Boolean): Either[AnyError, UUID] = {
     for (
       survey <- surveyAdminService.getSurveyParameters(surveyId).right;
       foodGroups <- foodGroupsAdminService.listFoodGroups(survey.localeId).right;
       dataScheme <- surveyAdminService.getCustomDataScheme(survey.schemeId).right;
-      localNutrients <- surveyAdminService.getLocalNutrientTypes(survey.localeId).right)
+      localNutrients <- surveyAdminService.getLocalNutrientTypes(survey.localeId).right;
+      taskId <- exportService.createExportTask(ExportTaskParameters(userId, surveyId, dateFrom, dateTo)).right)
       yield {
-
-        val taskId = UUID.randomUUID()
 
         exportManager ! ExportTask(taskId, surveyId, dateFrom, dateTo, dataScheme, foodGroups, localNutrients, insertBOM)
 

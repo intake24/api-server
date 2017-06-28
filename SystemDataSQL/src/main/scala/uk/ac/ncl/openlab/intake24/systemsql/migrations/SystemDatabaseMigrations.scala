@@ -1301,6 +1301,40 @@ object SystemDatabaseMigrations {
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         ???
       }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 54l
+      override val versionTo: Long = 55l
+      override val description: String = "Create export_tasks"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("""CREATE TABLE data_export_tasks (
+              |  id           SERIAL PRIMARY KEY,
+              |  survey_id    CHARACTER VARYING(64)    NOT NULL,
+              |  date_from    TIMESTAMP WITH TIME ZONE NOT NULL,
+              |  date_to      TIMESTAMP WITH TIME ZONE NOT NULL,
+              |  user_id      INTEGER                  NOT NULL,
+              |  created_at   TIMESTAMP WITH TIME ZONE NOT NULL,
+              |  started_at   TIMESTAMP WITH TIME ZONE,
+              |  completed_at TIMESTAMP WITH TIME ZONE,
+              |  progress     REAL,
+              |  successful   BOOLEAN,
+              |  download_url CHARACTER VARYING(1024),
+              |  stack_trace  CHARACTER VARYING(256) [],
+              |
+              |  CONSTRAINT data_export_tasks_user_id_fk FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT ON UPDATE CASCADE,
+              |  CONSTRAINT data_export_tasks_survey_id_fk FOREIGN KEY (survey_id) REFERENCES surveys (id) ON DELETE RESTRICT ON UPDATE CASCADE
+              |)""".stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
     }
 
 

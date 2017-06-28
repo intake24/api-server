@@ -13,7 +13,7 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.admin.ExportSubmission
 
 import scala.concurrent.Future
 
-object CSVBuilder {
+object CSVBuilderActor {
 
   case class WriteNextBatch(submissions: Seq[ExportSubmission])
 
@@ -25,9 +25,9 @@ object CSVBuilder {
 
 }
 
-class CSVBuilder(exportTask: ExportTask) extends Actor {
+class CSVBuilderActor(exportTask: ExportTask) extends Actor {
 
-  import CSVBuilder._
+  import CSVBuilderActor._
 
   Logger.info(s"CSVBuilder starting (${self.path})")
 
