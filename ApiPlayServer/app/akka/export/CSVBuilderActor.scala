@@ -33,7 +33,7 @@ class CSVBuilderActor(exportTask: ExportTask) extends Actor {
 
   throw new RuntimeException("BAM! Can't create the file")
 
-  val outputFile = SurveyCSVExporter.createFile()
+  val outputFile = SurveyCSVExporter.createTempFile()
 
   val fileWriter = new FileWriter(outputFile)
   val csvWriter = new CSVWriter(fileWriter)

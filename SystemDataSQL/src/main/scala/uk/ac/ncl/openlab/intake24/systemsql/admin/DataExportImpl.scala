@@ -112,7 +112,7 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
     implicit conn =>
       Right(SQL("INSERT INTO data_export_tasks(id, survey_id, time_from, time_to, user_id, created_at VALUES(DEFAULT, {survey_id}, {time_from}, {time_to}, {user_id}, NOW())")
         .on('survey_id -> parameters.surveyId, 'date_from -> parameters.dateFrom, 'date_to -> parameters.dateTo, 'user_id -> parameters.userId)
-        .executeInsert())
+        .executeInsert(SqlParser.scalar[Long].single))
   }
 
   def updateExportTaskProgress(taskId: Long, progress: Double): Either[LookupError, Unit] = tryWithConnection {

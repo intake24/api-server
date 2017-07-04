@@ -20,7 +20,7 @@ object SurveyCSVExporter {
   val noData = "N/A"
 
   @throws[IOException]
-  def createFile(): File = File.createTempFile("intake24-export-", ".csv")
+  def createTempFile(): File = File.createTempFile("intake24-export-", ".csv")
 
   @throws[IOException]
   def writeHeader(fileWriter: FileWriter, csvWriter: CSVWriter, dataScheme: CustomDataScheme, localNutrients: Seq[LocalNutrientDescription], insertBOM: Boolean): Unit = {
@@ -148,7 +148,7 @@ object SurveyCSVExporter {
     var fileWriter: FileWriter = null
 
     try {
-      val file = createFile()
+      val file = createTempFile()
 
       fileWriter = new FileWriter(file)
       csvWriter = new CSVWriter(fileWriter)
