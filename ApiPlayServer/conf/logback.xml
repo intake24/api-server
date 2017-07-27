@@ -24,6 +24,7 @@
 	<logger name="play" level="INFO" />
 	<logger name="application" level="DEBUG" />
 	<logger name="uk.ac.ncl.openlab.intake24" level="DEBUG" />
+	<logger name="controllers" level="DEBUG" />
 	<logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />
 
 </configuration>

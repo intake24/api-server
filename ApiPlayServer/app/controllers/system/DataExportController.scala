@@ -37,7 +37,7 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
 import scala.concurrent.Future
 
-case class ExportTaskInfo(taskId: UUID)
+case class ExportTaskInfo(taskId: Long)
 
 class DataExportController @Inject()(service: DataExportService,
                                      surveyAdminService: SurveyAdminService,
@@ -119,7 +119,7 @@ class DataExportController @Inject()(service: DataExportService,
           val forceBOM = request.getQueryString("forceBOM").isDefined
 
 
-          translateDatabaseResult(asyncExporter.queueCsvExport(surveyId, parsedFrom, parsedTo, forceBOM).right.map(ExportTaskInfo(_)))
+          translateDatabaseResult(asyncExporter.queueCsvExport(request.subject.userId, surveyId, parsedFrom, parsedTo, forceBOM).right.map(ExportTaskInfo(_)))
 
         } catch {
           case e: DateTimeParseException => BadRequest(toJsonString(ErrorDescription("DateFormat", "Failed to parse date parameter. Expected a UTC date in ISO 8601 format, e.g. '2017-02-15T16:40:30Z'.")))

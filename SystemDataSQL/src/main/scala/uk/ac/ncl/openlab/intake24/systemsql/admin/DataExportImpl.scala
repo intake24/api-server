@@ -6,12 +6,16 @@ import javax.inject.{Inject, Named}
 import javax.sql.DataSource
 
 import anorm._
+import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound, UnexpectedDatabaseError}
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 import uk.ac.ncl.openlab.intake24.surveydata._
 
 class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends DataExportService with SqlDataService with SqlResourceLoader {
+
+  val logger = LoggerFactory.getLogger(classOf[DataExportImpl])
+
 
   lazy val getSurveySubmissionsSql = sqlFromResource("admin/get_survey_submissions.sql")
 
@@ -110,7 +114,7 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
 
   def createExportTask(parameters: ExportTaskParameters): Either[UnexpectedDatabaseError, Long] = tryWithConnection {
     implicit conn =>
-      Right(SQL("INSERT INTO data_export_tasks(id, survey_id, time_from, time_to, user_id, created_at VALUES(DEFAULT, {survey_id}, {time_from}, {time_to}, {user_id}, NOW())")
+      Right(SQL("INSERT INTO data_export_tasks(id, survey_id, date_from, date_to, user_id, created_at) VALUES(DEFAULT, {survey_id}, {date_from}, {date_to}, {user_id}, NOW())")
         .on('survey_id -> parameters.surveyId, 'date_from -> parameters.dateFrom, 'date_to -> parameters.dateTo, 'user_id -> parameters.userId)
         .executeInsert(SqlParser.scalar[Long].single))
   }
