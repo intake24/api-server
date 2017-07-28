@@ -1,0 +1,28 @@
+@(userName: Option[String], surveyId: String, downloadUrl: String, urlExpirationTimeHours: Int)
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Intake24 Notification</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  </head>
+
+  <body>
+    <p>@{
+      userName match {
+        case Some(name) => s"Hello $name!"
+        case None => "Hello,"
+      }
+    }</p>
+
+    <p>The data from your survey (@surveyId) is now available for download:</p>
+
+    <p><a href="@downloadUrl">Download</a></p>
+
+    <p>Please note that the link above will expire in @urlExpirationTimeHours hours.</p>
+
+    <p>Have a nice day :)</p>
+    <p>Intake24</p>
+  </body>
+</html>

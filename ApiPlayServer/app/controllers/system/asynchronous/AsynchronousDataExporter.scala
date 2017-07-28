@@ -1,27 +1,31 @@
 package controllers.system.asynchronous
 
 import java.io.{File, FileWriter, IOException}
-import java.time.ZonedDateTime
-import java.util.UUID
+import java.time.format.DateTimeFormatter
+import java.time.{Clock, LocalDateTime, ZoneId, ZonedDateTime}
+import java.util.{Date, UUID}
 import javax.inject.{Inject, Singleton}
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import au.com.bytecode.opencsv.CSVWriter
-import com.amazonaws.services.s3.{AmazonS3Client, AmazonS3ClientBuilder}
+import com.amazonaws.HttpMethod
+import com.amazonaws.services.s3.{AmazonS3, AmazonS3Client, AmazonS3ClientBuilder}
 import controllers.system.asynchronous.ExportManager.TaskFinished
 import org.slf4j.LoggerFactory
 import parsers.SurveyCSVExporter
+import play.api.libs.mailer.{Email, MailerClient}
 import play.api.{Configuration, Logger}
 import uk.ac.ncl.openlab.intake24.FoodGroupRecord
 import uk.ac.ncl.openlab.intake24.errors.AnyError
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
+import views.html.DataExportNotification
 
 import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 
-case class ExportTask(taskId: Long, surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime, dataScheme: CustomDataScheme,
+case class ExportTask(taskId: Long, userName: Option[String], userEmail: Option[String], surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime, dataScheme: CustomDataScheme,
                       foodGroups: Map[Int, FoodGroupRecord], localNutrients: Seq[LocalNutrientDescription], insertBOM: Boolean)
 
 
@@ -38,16 +42,15 @@ case class ExportManagerConfig(
                                 throttleRateMs: Int,
                                 maxActiveTasks: Int,
                                 s3BucketName: String,
-                                s3PathPrefix: String
+                                s3PathPrefix: String,
+                                s3UrlExpirationTimeMinutes: Long
                               )
 
-class ExportManager(exportService: DataExportService, config: ExportManagerConfig) extends Actor {
+class ExportManager(exportService: DataExportService, s3Client: AmazonS3, mailer: MailerClient, config: ExportManagerConfig) extends Actor {
 
   case class CSVFileHandles(file: File, fileWriter: FileWriter, csvWriter: CSVWriter)
 
   val logger = LoggerFactory.getLogger(classOf[ExportManager])
-
-  val s3client = AmazonS3ClientBuilder.defaultClient()
 
   val scheduler = new ThrottlingScheduler {
     def run(f: => Unit): Unit = context.system.scheduler.scheduleOnce(config.throttleRateMs milliseconds)(f)(play.api.libs.concurrent.Execution.defaultContext)
@@ -166,12 +169,43 @@ class ExportManager(exportService: DataExportService, config: ExportManagerConfi
           }
     }
 
+  def deleteFile(taskId: Long, handles: CSVFileHandles): ThrottledTask[Unit] = ThrottledTask {
+
+    logger.debug(s"[${taskId}] deleting CSV file")
+
+    handles.file.delete()
+  }
+
   def uploadToS3(task: ExportTask, handles: CSVFileHandles): ThrottledTask[String] = ThrottledTask {
 
     logger.debug(s"[${task.taskId}] uploading CSV to S3")
 
-    s3client.putObject("test", "export/test.csv", handles.file)
-    s3client.getUrl("test", "export/test.csv").toString
+    val dateFromString = DateTimeFormatter.ISO_DATE.format(task.dateFrom).replaceAll("Z", "")
+
+    val dateToString = DateTimeFormatter.ISO_DATE.format(task.dateTo).replaceAll("Z", "")
+
+    val fileName = s"${config.s3PathPrefix}/intake24-${task.surveyId}-data-${task.taskId}-$dateFromString-$dateToString.csv"
+
+    s3Client.putObject(config.s3BucketName, fileName, handles.file)
+
+    val expiration = new Date()
+    //expiration.setTime(expiration.getTime + config.s3UrlExpirationTimeMinutes * 60 * 1000)
+    s3Client.generatePresignedUrl(config.s3BucketName, fileName, expiration, HttpMethod.GET).toString
+  }
+
+  def notifySuccessful(task: ExportTask, downloadUrl: String): ThrottledTask[Unit] = ThrottledTask {
+
+
+    task.userEmail match {
+      case Some(email) =>
+
+        val body = DataExportNotification(task.userName, task.surveyId, downloadUrl, config.s3UrlExpirationTimeMinutes.toInt / 60)
+
+        val message = Email(s"Your Intake24 survey (${task.surveyId}) data is available for download", "Intake24 <support@intake24.co.uk>", Seq(email), None, Some(body.toString()))
+        mailer.send(message)
+      case None =>
+        logger.warn(s"[${task.taskId}] exporting user has no e-mail address")
+    }
   }
 
   def runExport(task: ExportTask): Unit = {
@@ -182,9 +216,10 @@ class ExportManager(exportService: DataExportService, config: ExportManagerConfi
       _ <- exportRemaining(task, handles);
       _ <- closeFile(task.taskId, handles);
       url <- uploadToS3(task, handles);
-      _ <- dbSetSuccessful(task.taskId, url)
+      _ <- dbSetSuccessful(task.taskId, url);
+      _ <- notifySuccessful(task, url);
+      _ <- deleteFile(task.taskId, handles)
     ) yield url
-
 
     throttledTask.run(scheduler) {
       result =>
@@ -234,6 +269,9 @@ class AsynchronousDataExporter @Inject()(actorSystem: ActorSystem,
                                          configuration: Configuration,
                                          exportService: DataExportService,
                                          surveyAdminService: SurveyAdminService,
+                                         mailer: MailerClient,
+                                         s3Client: AmazonS3,
+                                         userAdminService: UserAdminService,
                                          foodGroupsAdminService: FoodGroupsAdminService) {
 
   val logger = LoggerFactory.getLogger(classOf[AsynchronousDataExporter])
@@ -245,10 +283,11 @@ class AsynchronousDataExporter @Inject()(actorSystem: ActorSystem,
     configuration.getInt(s"$configSection.throttleRateMs").get,
     configuration.getInt(s"$configSection.maxConcurrentTasks").get,
     configuration.getString(s"$configSection.s3.bucketName").get,
-    configuration.getString(s"$configSection.s3.pathPrefix").get
+    configuration.getString(s"$configSection.s3.pathPrefix").get,
+    configuration.getLong(s"$configSection.s3.urlExpirationTimeMinutes").get
   )
 
-  val exportManager = actorSystem.actorOf(Props(classOf[ExportManager], exportService, exportManagerConfig), "ExportManager")
+  val exportManager = actorSystem.actorOf(Props(classOf[ExportManager], exportService, s3Client, mailer, exportManagerConfig), "ExportManager")
 
   def unwrapAnyError[T](r: Either[AnyError, T]): Either[Throwable, T] = r.left.map(_.exception)
 
@@ -261,13 +300,14 @@ class AsynchronousDataExporter @Inject()(actorSystem: ActorSystem,
   def queueCsvExport(userId: Long, surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime, insertBOM: Boolean): Either[AnyError, Long] = {
     for (
       survey <- surveyAdminService.getSurveyParameters(surveyId).right;
+      userProfile <- userAdminService.getUserById(userId).right;
       foodGroups <- foodGroupsAdminService.listFoodGroups(survey.localeId).right;
       dataScheme <- surveyAdminService.getCustomDataScheme(survey.schemeId).right;
       localNutrients <- surveyAdminService.getLocalNutrientTypes(survey.localeId).right;
       taskId <- exportService.createExportTask(ExportTaskParameters(userId, surveyId, dateFrom, dateTo)).right)
       yield {
 
-        exportManager ! ExportManager.QueueTask(ExportTask(taskId, surveyId, dateFrom, dateTo, dataScheme, foodGroups, localNutrients, insertBOM))
+        exportManager ! ExportManager.QueueTask(ExportTask(taskId, userProfile.name.map(_.split("\\s+").head), userProfile.email, surveyId, dateFrom, dateTo, dataScheme, foodGroups, localNutrients, insertBOM))
 
         taskId
       }
