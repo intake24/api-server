@@ -1335,6 +1335,24 @@ object SystemDatabaseMigrations {
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         ???
       }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 55l
+      override val versionTo: Long = 56l
+      override val description: String = "Add download_url_expires_at to export_tasks"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE data_export_tasks ADD COLUMN download_url_expires_at TIMESTAMP WITH TIME ZONE").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
     }
 
 

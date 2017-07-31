@@ -142,7 +142,11 @@ class ExportManager(exportService: DataExportService, s3Client: AmazonS3, mailer
       handles.fileWriter.close()
   })
 
-  def exportNextBatch(task: ExportTask, handles: CSVFileHandles, offset: Int): ThrottledTask[Boolean] = ThrottledTask.fromTry({
+  def getTotalSubmissionCount(task: ExportTask): ThrottledTask[Int] = ThrottledTask.fromAnyError {
+    exportService.getSurveySubmissionCount(task.surveyId, task.dateFrom, task.dateTo)
+  }
+
+  def exportNextBatch(task: ExportTask, handles: CSVFileHandles, offset: Int): ThrottledTask[Int] = ThrottledTask.fromTry({
 
     logger.debug(s"[${task.taskId}] exporting next submissions batch using offset $offset")
 
@@ -151,22 +155,43 @@ class ExportManager(exportService: DataExportService, s3Client: AmazonS3, mailer
         tryWithHandles(handles) {
           handles =>
             SurveyCSVExporter.writeSubmissionsBatch(handles.csvWriter, task.dataScheme, task.foodGroups, task.localNutrients, submissions)
-            true
+            submissions.size
         }
-      case Right(_) => Success(false)
+      case Right(_) => Success(0)
       case Left(error) => Failure(error.exception)
     }
   })
 
-  def exportRemaining(task: ExportTask, handles: CSVFileHandles, currentOffset: Int = 0): ThrottledTask[Unit] =
-    exportNextBatch(task, handles, currentOffset).flatMap {
-      hasMore =>
-        if (hasMore)
-          exportRemaining(task, handles, currentOffset + config.batchSize)
-        else
-          ThrottledTask {
-            ()
+  def dbUpdateProgress(taskId: Long, progress: Double): ThrottledTask[Unit] = ThrottledTask.fromAnyError {
+
+    logger.debug(s"[${taskId}] updating progress to $progress")
+
+    exportService.updateExportTaskProgress(taskId, progress)
+  }
+
+  def exportRemaining(task: ExportTask, handles: CSVFileHandles, totalCount: Int, currentOffset: Int = 0): ThrottledTask[Unit] =
+    if (totalCount == 0) {
+      logger.debug(s"[${task.taskId}] expected total count is 0, skipping export steps")
+
+      ThrottledTask {
+        ()
+      }
+    }
+    else {
+      logger.debug(s"[${task.taskId}] expected total count is $totalCount")
+
+      exportNextBatch(task, handles, currentOffset).flatMap {
+        submissionsInLastBatch =>
+          if (submissionsInLastBatch > 0) {
+            val newOffset = currentOffset + config.batchSize
+            val progress = (currentOffset + submissionsInLastBatch).toDouble / totalCount.toDouble
+
+            for (_ <- dbUpdateProgress(task.taskId, progress);
+                 _ <- exportRemaining(task, handles, totalCount, newOffset)) yield ()
           }
+          else
+            dbUpdateProgress(task.taskId, 1.0)
+      }
     }
 
   def deleteFile(taskId: Long, handles: CSVFileHandles): ThrottledTask[Unit] = ThrottledTask {
@@ -213,7 +238,8 @@ class ExportManager(exportService: DataExportService, s3Client: AmazonS3, mailer
     val throttledTask = for (
       handles <- prepareFile(task);
       _ <- dbSetStarted(task.taskId);
-      _ <- exportRemaining(task, handles);
+      count <- getTotalSubmissionCount(task);
+      _ <- exportRemaining(task, handles, count);
       _ <- closeFile(task.taskId, handles);
       url <- uploadToS3(task, handles);
       _ <- dbSetSuccessful(task.taskId, url);

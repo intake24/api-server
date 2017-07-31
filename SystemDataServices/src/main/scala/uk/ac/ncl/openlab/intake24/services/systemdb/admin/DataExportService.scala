@@ -24,11 +24,13 @@ case class ExportTaskSuccess(id: Long, downloadUrl: String)
 case class ExportTaskFailure(id: Long, cause: Throwable)
 
 
-case class ExportTaskStatus(id: Long, progress: Option[Double], status: Option[Boolean], downloadUrl: Option[String])
+case class ExportTaskStatus(id: Long, progress: Option[Double], status: Option[Boolean], downloadUrl: Option[String], downloadUrlExpiresAt: Option[ZonedDateTime])
 
 trait DataExportService {
 
   def getSurveySubmissions(surveyId: String, dateFrom: Option[ZonedDateTime], dateTo: Option[ZonedDateTime], offset: Int, limit: Int, respondentId: Option[Long]): Either[LookupError, Seq[ExportSubmission]]
+
+  def getSurveySubmissionCount(surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime): Either[LookupError, Int]
 
   def createExportTask(parameters: ExportTaskParameters): Either[UnexpectedDatabaseError, Long]
 
@@ -40,7 +42,7 @@ trait DataExportService {
 
   def setExportTaskFailure(taskId: Long, cause: Throwable): Either[LookupError, Unit]
 
-  def getExportTaskStatus(taskId: Long): Either[LookupError, ExportTaskStatus]
+  def getActiveExportTasks(surveyId: String, userId: Long): Either[LookupError, Seq[ExportTaskStatus]]
 
   //def getSurveySubmissionsAsCSV()
 
@@ -48,4 +50,3 @@ trait DataExportService {
 
   //def getActivityReportAsCSV()
 }
-

@@ -112,6 +112,28 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
       }
   }
 
+  def getSurveySubmissionCount(surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime): Either[LookupError, Int] = tryWithConnection {
+    implicit conn =>
+      withTransaction {
+        val surveyExists = SQL("SELECT 1 FROM surveys WHERE id={survey_id}").on('survey_id -> surveyId).executeQuery().as(SqlParser.long(1).singleOpt).isDefined
+
+        if (surveyExists) {
+
+          val countQuery =
+            """SELECT count(*) FROM survey_submissions AS ss
+              |WHERE ss.survey_id={survey_id}
+              |  AND ({time_from}::timestamp with time zone IS NULL OR start_time>{time_from})
+              |  AND ({time_to}::timestamp with time zone IS NULL OR end_time<{time_to})
+              |""".stripMargin
+
+          Right(SQL(countQuery).on('survey_id -> surveyId, 'time_from -> dateFrom, 'time_to -> dateTo).executeQuery().as(SqlParser.int(1).single))
+
+        } else
+          Left(RecordNotFound(new RuntimeException(s"Survey $surveyId does not exist")))
+
+      }
+  }
+
   def createExportTask(parameters: ExportTaskParameters): Either[UnexpectedDatabaseError, Long] = tryWithConnection {
     implicit conn =>
       Right(SQL("INSERT INTO data_export_tasks(id, survey_id, date_from, date_to, user_id, created_at) VALUES(DEFAULT, {survey_id}, {date_from}, {date_to}, {user_id}, NOW())")
@@ -178,15 +200,13 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
       else Left(RecordNotFound(new RuntimeException(s"Export task id $taskId does not exist")))
   }
 
-  private case class ExportTaskStatusRow(id: Long, progress: Option[Double], successful: Option[Boolean], download_url: Option[String])
+  private case class ExportTaskStatusRow(id: Long, progress: Option[Double], successful: Option[Boolean], download_url: Option[String], download_url_expires_at: Option[ZonedDateTime])
 
-  def getExportTaskStatus(taskId: Long): Either[LookupError, ExportTaskStatus] = tryWithConnection {
+  def getActiveExportTasks(surveyId: String, userId: Long): Either[LookupError, Seq[ExportTaskStatus]] = tryWithConnection {
     implicit conn =>
-      SQL("SELECT id, progress, successful, download_url FROM data_export_tasks WHERE id={id}")
-        .on('id -> taskId)
-        .as(Macro.namedParser[ExportTaskStatusRow].singleOpt) match {
-        case Some(row) => Right(ExportTaskStatus(row.id, row.progress, row.successful, row.download_url))
-        case None => Left(RecordNotFound(new RuntimeException(s"Export task id $taskId does not exist")))
-      }
+      Right(SQL("SELECT id, progress, successful, download_url, download_url_expires_at FROM data_export_tasks WHERE user_id={user_id} AND survey_id={survey_id} AND created_at > (now() - interval '1 day')")
+        .on('user_id -> userId, 'survey_id -> surveyId)
+        .as(Macro.namedParser[ExportTaskStatusRow].*)
+        .map(row => ExportTaskStatus(row.id, row.progress, row.successful, row.download_url, row.download_url_expires_at)))
   }
 }

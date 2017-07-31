@@ -28,11 +28,12 @@ import controllers.system.asynchronous.AsynchronousDataExporter
 import parsers.{JsonUtils, SurveyCSVExporter}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller}
-import security.Intake24RestrictedActionBuilder
+import security.{Intake24AccessToken, Intake24RestrictedActionBuilder}
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, SurveyAdminService}
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, ExportTaskStatus, SurveyAdminService}
 import io.circe.generic.auto._
+import uk.ac.ncl.openlab.intake24.errors.AnyError
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
 import scala.concurrent.Future
@@ -124,6 +125,16 @@ class DataExportController @Inject()(service: DataExportService,
         } catch {
           case e: DateTimeParseException => BadRequest(toJsonString(ErrorDescription("DateFormat", "Failed to parse date parameter. Expected a UTC date in ISO 8601 format, e.g. '2017-02-15T16:40:30Z'.")))
         }
+      }
+  }
+
+
+  case class GetExportTaskStatusResult(activeTasks: Seq[ExportTaskStatus])
+
+  def getExportTaskStatus(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
+    request =>
+      Future {
+        translateDatabaseResult(service.getActiveExportTasks(surveyId, request.subject.userId).right.map(GetExportTaskStatusResult(_)))
       }
   }
 }
