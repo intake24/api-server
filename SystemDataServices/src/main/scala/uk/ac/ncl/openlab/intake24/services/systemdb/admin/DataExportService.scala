@@ -24,7 +24,17 @@ case class ExportTaskSuccess(id: Long, downloadUrl: String)
 case class ExportTaskFailure(id: Long, cause: Throwable)
 
 
-case class ExportTaskStatus(id: Long, progress: Option[Double], status: Option[Boolean], downloadUrl: Option[String], downloadUrlExpiresAt: Option[ZonedDateTime])
+sealed trait ExportTaskStatus
+
+object ExportTaskStatus {
+  case object Pending extends ExportTaskStatus
+  case object Failed extends ExportTaskStatus
+  case object Expired extends ExportTaskStatus
+  case class InProgress(progress: Double) extends ExportTaskStatus
+  case class Completed(downloadUrl: String) extends ExportTaskStatus
+}
+
+case class ExportTaskInfo(id: Long, createdAt: ZonedDateTime, dateFrom: ZonedDateTime, dateTo: ZonedDateTime, status: ExportTaskStatus)
 
 trait DataExportService {
 
@@ -38,11 +48,11 @@ trait DataExportService {
 
   def updateExportTaskProgress(taskId: Long, progress: Double): Either[LookupError, Unit]
 
-  def setExportTaskSuccess(taskId: Long, downloadUrl: String): Either[LookupError, Unit]
+  def setExportTaskSuccess(taskId: Long, downloadUrl: String, downloadUrlExpiresAt: ZonedDateTime): Either[LookupError, Unit]
 
   def setExportTaskFailure(taskId: Long, cause: Throwable): Either[LookupError, Unit]
 
-  def getActiveExportTasks(surveyId: String, userId: Long): Either[LookupError, Seq[ExportTaskStatus]]
+  def getActiveExportTasks(surveyId: String, userId: Long): Either[LookupError, Seq[ExportTaskInfo]]
 
   //def getSurveySubmissionsAsCSV()
 

@@ -58,6 +58,6 @@ javaOptions in Universal ++= Seq(
 
 routesGenerator := InjectedRoutesGenerator
 
-EclipseKeys.withSource := true
+// EclipseKeys.withSource := true
 
-EclipseKeys.preTasks := Seq(compile in Compile)
+// EclipseKeys.preTasks := Seq(compile in Compile)

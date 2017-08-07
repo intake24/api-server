@@ -159,10 +159,10 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
         Left(RecordNotFound(new RuntimeException(s"Export task id $taskId does not exist")))
   }
 
-  def setExportTaskSuccess(taskId: Long, downloadUrl: String): Either[LookupError, Unit] = tryWithConnection {
+  def setExportTaskSuccess(taskId: Long, downloadUrl: String, downloadUrlExpiresAt: ZonedDateTime): Either[LookupError, Unit] = tryWithConnection {
     implicit conn =>
-      if (SQL("UPDATE data_export_tasks SET successful=true,download_url={url} WHERE id={task_id}")
-        .on('task_id -> taskId, 'url -> downloadUrl)
+      if (SQL("UPDATE data_export_tasks SET successful=true,download_url={url},download_url_expires_at={expires_at} WHERE id={task_id}")
+        .on('task_id -> taskId, 'url -> downloadUrl, 'expires_at -> downloadUrlExpiresAt)
         .executeUpdate() == 1)
         Right(())
       else
@@ -200,13 +200,34 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
       else Left(RecordNotFound(new RuntimeException(s"Export task id $taskId does not exist")))
   }
 
-  private case class ExportTaskStatusRow(id: Long, progress: Option[Double], successful: Option[Boolean], download_url: Option[String], download_url_expires_at: Option[ZonedDateTime])
+  private case class ExportTaskStatusRow(id: Long, created_at: ZonedDateTime, date_from: ZonedDateTime,
+                                         date_to: ZonedDateTime, progress: Option[Double], successful: Option[Boolean],
+                                         download_url: Option[String], download_url_expires_at: Option[ZonedDateTime])
 
-  def getActiveExportTasks(surveyId: String, userId: Long): Either[LookupError, Seq[ExportTaskStatus]] = tryWithConnection {
+  def getActiveExportTasks(surveyId: String, userId: Long): Either[LookupError, Seq[ExportTaskInfo]] = tryWithConnection {
     implicit conn =>
-      Right(SQL("SELECT id, progress, successful, download_url, download_url_expires_at FROM data_export_tasks WHERE user_id={user_id} AND survey_id={survey_id} AND created_at > (now() - interval '1 day')")
+      Right(SQL("SELECT id, created_at, date_from, date_to, progress, successful, download_url, download_url_expires_at FROM data_export_tasks WHERE user_id={user_id} AND survey_id={survey_id} AND created_at > (now() - interval '1 day') ORDER BY created_at DESC")
         .on('user_id -> userId, 'survey_id -> surveyId)
         .as(Macro.namedParser[ExportTaskStatusRow].*)
-        .map(row => ExportTaskStatus(row.id, row.progress, row.successful, row.download_url, row.download_url_expires_at)))
+        .map {
+          row =>
+
+            val status = row.successful match {
+              case Some(true) =>
+                if (row.download_url_expires_at.get.isBefore(ZonedDateTime.now()))
+                  ExportTaskStatus.Expired
+                else
+                  ExportTaskStatus.Completed(row.download_url.get)
+              case Some(false) =>
+                ExportTaskStatus.Failed
+              case None =>
+                row.progress match {
+                  case Some(progress) => ExportTaskStatus.InProgress(progress)
+                  case None => ExportTaskStatus.Pending
+                }
+            }
+
+            ExportTaskInfo(row.id, row.created_at, row.date_from, row.date_to, status)
+        })
   }
 }

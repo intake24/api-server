@@ -2,6 +2,7 @@ package controllers.system.asynchronous
 
 import java.io.{File, FileWriter, IOException}
 import java.time.format.DateTimeFormatter
+import java.time.temporal.{ChronoUnit, TemporalUnit}
 import java.time.{Clock, LocalDateTime, ZoneId, ZonedDateTime}
 import java.util.{Date, UUID}
 import javax.inject.{Inject, Singleton}
@@ -65,8 +66,8 @@ class ExportManager(exportService: DataExportService, s3Client: AmazonS3, mailer
     exportService.setExportTaskStarted(taskId)
   }
 
-  def dbSetSuccessful(taskId: Long, downloadUrl: String): ThrottledTask[Unit] = ThrottledTask.fromAnyError {
-    exportService.setExportTaskSuccess(taskId, downloadUrl)
+  def dbSetSuccessful(taskId: Long, downloadUrl: String, urlExpiresAt: ZonedDateTime): ThrottledTask[Unit] = ThrottledTask.fromAnyError {
+    exportService.setExportTaskSuccess(taskId, downloadUrl, urlExpiresAt)
   }
 
   def dbSetFailed(taskId: Long, cause: Throwable): ThrottledTask[Unit] = ThrottledTask.fromAnyError {
@@ -201,7 +202,7 @@ class ExportManager(exportService: DataExportService, s3Client: AmazonS3, mailer
     handles.file.delete()
   }
 
-  def uploadToS3(task: ExportTask, handles: CSVFileHandles): ThrottledTask[String] = ThrottledTask {
+  def uploadToS3(task: ExportTask, urlExpirationDate: ZonedDateTime, handles: CSVFileHandles): ThrottledTask[String] = ThrottledTask {
 
     logger.debug(s"[${task.taskId}] uploading CSV to S3")
 
@@ -213,9 +214,7 @@ class ExportManager(exportService: DataExportService, s3Client: AmazonS3, mailer
 
     s3Client.putObject(config.s3BucketName, fileName, handles.file)
 
-    val expiration = new Date()
-    //expiration.setTime(expiration.getTime + config.s3UrlExpirationTimeMinutes * 60 * 1000)
-    s3Client.generatePresignedUrl(config.s3BucketName, fileName, expiration, HttpMethod.GET).toString
+    s3Client.generatePresignedUrl(config.s3BucketName, fileName, Date.from(urlExpirationDate.toInstant()), HttpMethod.GET).toString
   }
 
   def notifySuccessful(task: ExportTask, downloadUrl: String): ThrottledTask[Unit] = ThrottledTask {
@@ -233,6 +232,10 @@ class ExportManager(exportService: DataExportService, s3Client: AmazonS3, mailer
     }
   }
 
+  def getUrlExpirationTime() = ThrottledTask {
+      ZonedDateTime.now().plus(config.s3UrlExpirationTimeMinutes, ChronoUnit.MINUTES)
+  }
+
   def runExport(task: ExportTask): Unit = {
 
     val throttledTask = for (
@@ -241,8 +244,9 @@ class ExportManager(exportService: DataExportService, s3Client: AmazonS3, mailer
       count <- getTotalSubmissionCount(task);
       _ <- exportRemaining(task, handles, count);
       _ <- closeFile(task.taskId, handles);
-      url <- uploadToS3(task, handles);
-      _ <- dbSetSuccessful(task.taskId, url);
+      urlExpiresAt <- getUrlExpirationTime();
+      url <- uploadToS3(task, urlExpiresAt, handles);
+      _ <- dbSetSuccessful(task.taskId, url, urlExpiresAt);
       _ <- notifySuccessful(task, url);
       _ <- deleteFile(task.taskId, handles)
     ) yield url
