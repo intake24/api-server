@@ -61,7 +61,7 @@ lazy val imageProcessorIM = Project(id = "imageProcessorIM", base = file("ImageP
 
 lazy val apiShared = Project(id = "apiShared", base = file("ApiShared")).dependsOn(foodDataServices, systemDataServices).settings(commonSettings: _*)
 
-lazy val apiPlayServer = Project(id = "apiPlayServer", base = file("ApiPlayServer")).enablePlugins(PlayScala, SystemdPlugin).dependsOn(foodDataSql, systemDataSql, apiShared, imageStorageLocal, imageProcessorIM).settings(commonSettings: _*)
+lazy val apiPlayServer = Project(id = "apiPlayServer", base = file("ApiPlayServer")).enablePlugins(PlayScala, SystemdPlugin, JDebPackaging).dependsOn(foodDataSql, systemDataSql, apiShared, imageStorageLocal, imageProcessorIM).settings(commonSettings: _*)
 
 lazy val apiClient = Project(id = "apiClient", base = file("ApiClient")).dependsOn(apiShared).settings(commonSettings: _*)
 
