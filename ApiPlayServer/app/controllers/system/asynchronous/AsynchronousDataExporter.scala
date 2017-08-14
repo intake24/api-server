@@ -258,6 +258,13 @@ class ExportManager(exportService: DataExportService, s3Client: AmazonS3, mailer
             logger.debug(s"Export task ${task.taskId} successful, download URL is $url")
           case Failure(e) =>
             logger.error(s"Export task ${task.taskId} failed", e)
+
+            dbSetFailed(task.taskId, e).run(scheduler) {
+              case Success(_) =>
+                logger.debug(s"Set export task ${task.taskId} status to failed in the database")
+              case Failure(e) =>
+                logger.error(s"Failed to set export task ${task.taskId} status to failed in the database", e)
+            }
         }
 
         self ! TaskFinished
