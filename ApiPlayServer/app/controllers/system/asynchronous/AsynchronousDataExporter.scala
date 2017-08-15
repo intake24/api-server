@@ -326,14 +326,6 @@ class AsynchronousDataExporter @Inject()(actorSystem: ActorSystem,
 
   val exportManager = actorSystem.actorOf(Props(classOf[ExportManager], exportService, s3Client, mailer, exportManagerConfig), "ExportManager")
 
-  def unwrapAnyError[T](r: Either[AnyError, T]): Either[Throwable, T] = r.left.map(_.exception)
-
-  def logFailureAndNotifyManager(taskId: Long, cause: Throwable, manager: ActorRef) = {
-    exportService.setExportTaskFailure(taskId, cause) match {
-      case Right(()) => manager
-    }
-  }
-
   def queueCsvExport(userId: Long, surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime, insertBOM: Boolean): Either[AnyError, Long] = {
     for (
       survey <- surveyAdminService.getSurveyParameters(surveyId).right;

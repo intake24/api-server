@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-name := """api-play-server"""
+name := """intake24-api-server"""
 
 description := "Intake24 Play Framework API server"
 
