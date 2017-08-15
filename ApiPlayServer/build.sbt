@@ -41,20 +41,32 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" % "play-integration-test_2.11" % "2.5.9" % "test"
 )
 
+// These are the default Java settings that go into conf/application.ini and are read by the start up
+// script. application.ini is overriden by the deployment script.
+
 javaOptions in Universal ++= Seq(
-  // JVM memory tuning
   "-J-Xmx320m",
   "-J-Xms128m",
 
-  // Since play uses separate pidfile we have to provide it with a proper path
+  // Process is managed by systemd, play's pid was causing issues
   s"-Dpidfile.path=/dev/null",
 
-  // Use separate configuration file for production environment
-  s"-Dconfig.file=/usr/share/${packageName.value}/conf/production.conf",
+  s"-Dconfig.file=/usr/share/${packageName.value}/conf/application-default.conf",
 
   // Use separate logger configuration file for production environment
-  s"-Dlogger.file=/usr/share/${packageName.value}/conf/production-logger.xml"
+  s"-Dlogger.file=/usr/share/${packageName.value}/conf/logger-default.xml"
 )
+
+// Exclude local (development) config files from .deb
+
+val excludeFromDeb = Seq("application.conf", "logback.xml")
+
+linuxPackageMappings ~= {
+  _.map {
+    m =>
+      m.copy(mappings = m.mappings.filterNot(f => excludeFromDeb.contains(f._1.getName())))
+  }.filter(_.mappings.nonEmpty)
+}
 
 routesGenerator := InjectedRoutesGenerator
 

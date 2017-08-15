@@ -19,3 +19,5 @@ dist
 /.settings
 /.sbtserver
 /bin/
+/conf/logback.xml
+/conf/application.conf
