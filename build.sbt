@@ -56,12 +56,14 @@ lazy val databaseTools = Project(id = "databaseTools", base = file("DatabaseTool
 
 lazy val imageStorageLocal = Project(id = "imageStorageLocal", base = file("ImageStorageLocal")).dependsOn(foodDataServices).settings(commonSettings: _*)
 
+lazy val imageStorageS3 = Project(id = "imageStorageS3", base = file("ImageStorageS3")).dependsOn(foodDataServices).settings(commonSettings: _*)
+
 lazy val imageProcessorIM = Project(id = "imageProcessorIM", base = file("ImageProcessorIM")).dependsOn(foodDataServices).settings(commonSettings: _*)
 
 
 lazy val apiShared = Project(id = "apiShared", base = file("ApiShared")).dependsOn(foodDataServices, systemDataServices).settings(commonSettings: _*)
 
-lazy val apiPlayServer = Project(id = "apiPlayServer", base = file("ApiPlayServer")).enablePlugins(PlayScala, SystemdPlugin, JDebPackaging).dependsOn(foodDataSql, systemDataSql, apiShared, imageStorageLocal, imageProcessorIM).settings(commonSettings: _*)
+lazy val apiPlayServer = Project(id = "apiPlayServer", base = file("ApiPlayServer")).enablePlugins(PlayScala, SystemdPlugin, JDebPackaging).dependsOn(foodDataSql, systemDataSql, apiShared, imageStorageLocal, imageStorageS3, imageProcessorIM).settings(commonSettings: _*)
 
 lazy val apiClient = Project(id = "apiClient", base = file("ApiClient")).dependsOn(apiShared).settings(commonSettings: _*)
 

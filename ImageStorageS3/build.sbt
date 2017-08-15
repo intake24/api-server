@@ -16,19 +16,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-name := "common-sql"
+name := "image-storage-s3"
 
-organization := "uk.ac.ncl.openlab.intake24"
-
-description := "Intake24 shared SQL code"
-
-version := "2.0.0-SNAPSHOT"
-
-scalaVersion := "2.11.8"
+description := "Intake24 S3 image storage implementation"
 
 libraryDependencies ++= Seq(
-  "org.postgresql" % "postgresql" % "9.4.1211.jre7",
-  "org.postgresql" % "postgresql" % "9.4.1211.jre7" % "test",
-  "com.typesafe.play" %% "anorm" % "2.5.2",
-  "org.slf4j" % "slf4j-api" % "1.7.21"
+  "org.slf4j" % "slf4j-api" % "1.7.21",
+  "com.amazonaws" % "aws-java-sdk" % "1.11.155",
+  "commons-io" % "commons-io" % "2.5"
 )
