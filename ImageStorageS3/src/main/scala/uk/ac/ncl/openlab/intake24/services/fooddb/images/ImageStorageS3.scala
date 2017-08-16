@@ -15,7 +15,7 @@ class ImageStorageS3 @Inject()(s3client: AmazonS3,
 
   val logger = LoggerFactory.getLogger(classOf[ImageStorageS3])
 
-  val configSection = "intake24.images.s3storage"
+  val configSection = "intake24.images.S3Storage"
 
   def deleteImage(path: String): Either[ImageStorageError, Unit] =
     try {

@@ -28,8 +28,8 @@ class S3StorageModule extends AbstractModule {
   @Singleton
   def settings(configuration: Configuration): S3ImageStorageSettings =
     S3ImageStorageSettings(
-      configuration.getString("intake24.images.s3storage.bucketName").get,
-      configuration.getString("intake24.images.s3storage.pathPrefix").get)
+      configuration.getString("intake24.images.S3Storage.bucketName").get,
+      configuration.getString("intake24.images.S3Storage.pathPrefix").get)
 
   def configure() = {
     bind(classOf[ImageStorageService]).to(classOf[ImageStorageS3])
