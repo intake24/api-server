@@ -7,9 +7,10 @@ import org.rogach.scallop.ScallopConf
 
 import scala.collection.JavaConverters._
 
-abstract class GenerateCsvMappingFromMasterList(rowOffset: Int) extends App {
+object GenerateCsvMappingFromMasterList extends App {
 
   val options = new ScallopConf(args) {
+    val rowOffset = opt[Int](required = true)
     val nutrientsList = opt[String](required = true)
   }
 
@@ -27,7 +28,7 @@ abstract class GenerateCsvMappingFromMasterList(rowOffset: Int) extends App {
 
   val nutrientNames = lines(0).tail.map(_.trim())
   val units = lines(1).tail.map(_.trim())
-  val localColNames = lines(rowOffset).tail.map(_.trim())
+  val localColNames = lines(options.rowOffset()).tail.map(_.trim())
 
   private val rows = nutrientNames.zip(localColNames).zip(units).zipWithIndex.map {
     case (((desc, col), unit), index) => Row(index + 1, desc, unit, col)

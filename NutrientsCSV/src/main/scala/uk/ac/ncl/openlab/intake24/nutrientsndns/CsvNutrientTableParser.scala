@@ -24,9 +24,9 @@ import au.com.bytecode.opencsv.CSVReader
 import java.io.FileReader
 import scala.collection.JavaConversions._
 
-case class CsvNutrientTableMapping(rowOffset: Int, idColumn: Int, descriptionColumn: Int, nutrientMapping: Map[Long, Int])
+case class CsvNutrientTableMapping(rowOffset: Int, idColumn: Int, descriptionColumn: Int, localDescriptionColumn: Option[Int], nutrientMapping: Map[Long, Int])
 
-case class NutrientTableRecord(id: String, description: String, nutrients: Map[Long, Double])
+case class NutrientTableRecord(id: String, description: String, localDescription: Option[String], nutrients: Map[Long, Double])
 
 object CsvNutrientTableParser {
   val log = LoggerFactory.getLogger(CsvNutrientTableParser.getClass)
@@ -39,7 +39,23 @@ object CsvNutrientTableParser {
     r(colRef)._1
   }
 
+  val letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray
+
+  def offsetToExcelColumn(offset: Int, acc: String = ""): String = {
+
+    if (offset < letters.length)
+      letters(offset) + acc
+    else {
+      val d = offset / letters.length - 1
+      val rem = offset % letters.length
+
+      letters(rem) + acc + offsetToExcelColumn(d)
+    }
+  }
+
   def parseTable(fileName: String, mapping: CsvNutrientTableMapping): Seq[NutrientTableRecord] = {
+    println(s"Parsing $fileName")
+
     val rows = new CSVReader(new FileReader(fileName)).readAll().toSeq.map(_.toIndexedSeq)
 
     def readNutrients(row: IndexedSeq[String], rowIndex: Int): Map[Long, Double] = mapping.nutrientMapping.foldLeft(Map[Long, Double]()) {
@@ -48,10 +64,12 @@ object CsvNutrientTableParser {
           acc + (nutrientId -> row(colNum - 1).toDouble)
         } catch {
           case e: Throwable => {
+            val cell = s"${row(mapping.descriptionColumn)} (row ${rowIndex + 1}, column ${offsetToExcelColumn(colNum - 1).reverse})"
+
             if (nutrientId == 1l)
-              log.error(s"Failed to read energy (kcal) in row $rowIndex! This is an essential nutrient column, please check the source table for errors.")
+              println(s"Failed to read energy (kcal) for $cell! This is an essential nutrient column, please check the source table for errors.")
             else
-              log.warn("Failed to read nutrient type " + nutrientId.toString + " in row " + rowIndex + ", assuming data N/A")
+              println(s"Failed to read nutrient type ${nutrientId.toString} for $cell, assuming data N/A")
             acc
           }
         }
@@ -60,7 +78,7 @@ object CsvNutrientTableParser {
 
     rows.zipWithIndex.drop(mapping.rowOffset).map {
       case (row, index) =>
-        NutrientTableRecord(row(mapping.idColumn), row(mapping.descriptionColumn), readNutrients(row, index))
+        NutrientTableRecord(row(mapping.idColumn), row(mapping.descriptionColumn), mapping.localDescriptionColumn.map(row(_)), readNutrients(row, index))
     }
   }
 }
