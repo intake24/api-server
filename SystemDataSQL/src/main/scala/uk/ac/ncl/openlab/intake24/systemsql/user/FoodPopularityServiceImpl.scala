@@ -4,6 +4,7 @@ import javax.inject.{Inject, Named}
 import javax.sql.DataSource
 
 import anorm._
+import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.FoodPopularityService
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
@@ -38,4 +39,18 @@ class FoodPopularityServiceImpl @Inject()(@Named("intake24_system") val dataSour
 
       Right(())
   }
+
+  def setPopularityCounters(counters: Map[String, Int]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
+    implicit conn =>
+      val updateParams = counters.toSeq.map {
+        case (code, count) => Seq[NamedParameter]('food_code -> code, 'counter -> count)
+      }
+
+      if (!updateParams.isEmpty) {
+        BatchSql("UPDATE popularity_counters SET counter={counter} WHERE food_code={food_code}", updateParams.head, updateParams.tail: _*).execute()
+      }
+
+      Right(())
+  }
+
 }

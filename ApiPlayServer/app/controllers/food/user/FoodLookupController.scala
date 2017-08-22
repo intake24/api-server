@@ -21,17 +21,17 @@ package controllers.food.user
 import javax.inject.Inject
 
 import controllers.DatabaseErrorHandler
+import io.circe.generic.auto._
+import parsers.JsonUtils
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{BodyParsers, Controller}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound}
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodBrowsingService
-import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, MatchedFood, Splitter}
+import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, Splitter}
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.FoodPopularityService
 import uk.ac.ncl.openlab.intake24.{UserCategoryHeader, UserFoodHeader}
-import io.circe.generic.auto._
-import parsers.JsonUtils
 
 import scala.concurrent.Future
 
@@ -63,10 +63,15 @@ class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex], foodDe
         foodPopularityService.getPopularityCount(lookupResult.foods.map(_.food.code)).right.map {
           popularityCounters =>
 
-            def adjustedPopularity(f: MatchedFood) = (popularityCounters(f.food.code) + 1.0) / (f.matchCost + 1.0)
-
             val sortedFoods = lookupResult.foods.sortWith {
-              (f1, f2) => adjustedPopularity(f1) > adjustedPopularity(f2)
+              (f1, f2) =>
+                val pop1 = popularityCounters(f1.food.code)
+                val pop2 = popularityCounters(f2.food.code)
+
+                if (pop1 == pop2)
+                  f1.matchCost < f2.matchCost
+                else
+                  pop1 > pop2
             }
 
             val sortedFoodHeaders = sortedFoods.map(_.food)

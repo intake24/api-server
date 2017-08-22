@@ -1353,6 +1353,24 @@ object SystemDatabaseMigrations {
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         ???
       }
+    },
+
+    new Migration {
+      override val versionFrom: Long = 56l
+      override val versionTo: Long = 57l
+      override val description: String = "Fix type of food_code in popularity_counters"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE popularity_counters ALTER COLUMN food_code TYPE VARCHAR(8)").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+
     }
 
 

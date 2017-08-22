@@ -32,7 +32,7 @@ import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.UserAdminService
-import uk.ac.ncl.openlab.intake24.services.systemdb.user.SurveyService
+import uk.ac.ncl.openlab.intake24.services.systemdb.user.{FoodPopularityService, SurveyService}
 import uk.ac.ncl.openlab.intake24.surveydata.SurveySubmission
 
 import scala.concurrent.Future
@@ -41,6 +41,7 @@ import scala.concurrent.duration._
 class SurveyController @Inject()(service: SurveyService,
                                  userService: UserAdminService,
                                  nutrientMappingService: NutrientMappingService,
+                                 foodPopularityService: FoodPopularityService,
                                  actorSystem: ActorSystem,
                                  rab: Intake24RestrictedActionBuilder) extends Controller
   with DatabaseErrorHandler with JsonUtils {
@@ -94,9 +95,17 @@ class SurveyController @Inject()(service: SurveyService,
               // database errors to the user is not helpful at this point.
               // Schedule submission asynchronously to release the request immediately and log errors server-side instead.
               actorSystem.scheduler.scheduleOnce(0 seconds) {
-                val result = for (nutrientMappedSubmission <- nutrientMappingService.mapSurveySubmission(request.body, params.localeId).right;
-                                  _ <- service.createSubmission(userId, surveyId, nutrientMappedSubmission).right) yield ()
 
+                val foodCodes = request.body.meals.foldLeft(List[String]()) {
+                  (acc, meal) =>
+                    meal.foods.foldLeft(acc) {
+                      (acc, food) => food.code :: acc
+                    }
+                }
+
+                val result = for (nutrientMappedSubmission <- nutrientMappingService.mapSurveySubmission(request.body, params.localeId).right;
+                                  _ <- service.createSubmission(userId, surveyId, nutrientMappedSubmission).right;
+                                  _ <- foodPopularityService.incrementPopularityCount(foodCodes).right) yield ()
                 result match {
                   case Right(()) => ()
                   case Left(e) => Logger.error("Failed to process survey submission", e.exception)
