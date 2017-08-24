@@ -18,11 +18,9 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.services.foodindex.english
 
-import com.google.inject.Singleton
-import com.google.inject.Inject
-
+import com.google.inject.{Inject, Singleton}
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
 
 // FIXME: Error handling
 @Singleton
-class SplitterImpl_en_GB_gf @Inject()(foodData: FoodIndexDataService) extends EnglishSplitter(foodData.splitList("en_GB").right.get)
+class SplitterImpl_en_IN @Inject()(foodData: FoodIndexDataService) extends EnglishSplitter(foodData.splitList("en_GB").right.get)

@@ -56,7 +56,8 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
       "da_DK" -> injector.getInstance(classOf[FoodIndexImpl_da_DK]),
       "ar_AE" -> injector.getInstance(classOf[FoodIndexImpl_ar_AE]),
       "en_NZ" -> injector.getInstance(classOf[FoodIndexImpl_en_NZ]),
-      "en_GB_gf" -> injector.getInstance(classOf[FoodIndexImpl_en_GB_gf]))
+      "en_GB_gf" -> injector.getInstance(classOf[FoodIndexImpl_en_GB_gf]),
+      "en_IN" -> injector.getInstance(classOf[FoodIndexImpl_en_IN]))
 
   @Provides
   @Singleton
@@ -66,7 +67,8 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
       "da_DK" -> injector.getInstance(classOf[SplitterImpl_da_DK]),
       "ar_AE" -> injector.getInstance(classOf[SplitterImpl_ar_AE]),
       "en_NZ" -> injector.getInstance(classOf[SplitterImpl_en_NZ]),
-      "en_GB_gf" -> injector.getInstance(classOf[SplitterImpl_en_GB_gf]))
+      "en_GB_gf" -> injector.getInstance(classOf[SplitterImpl_en_GB_gf]),
+      "en_IN" -> injector.getInstance(classOf[SplitterImpl_en_IN]))
 
   @Provides
   @Named("intake24_system")

@@ -1371,7 +1371,44 @@ object SystemDatabaseMigrations {
         ???
       }
 
+
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 57l
+      override val versionTo: Long = 58l
+      override val description: String = "Add India (English) locale"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("INSERT INTO locales VALUES('en_IN', 'India (English)', 'India (English)', 'en_GB', 'en', 'in', 'en_GB')").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 58l
+      override val versionTo: Long = 59l
+      override val description: String = "Create en_IN local nutrients list from en_GB"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("INSERT INTO local_nutrient_types(locale_id, nutrient_type_id) SELECT 'en_IN', nutrient_type_id FROM local_nutrient_types WHERE locale_id='en_GB'").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
     }
+
 
 
   )
