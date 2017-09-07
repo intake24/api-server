@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.5.9")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.6.3")
 
 addSbtPlugin("com.lihaoyi" % "scalatex-sbt-plugin" % "0.3.7")
 

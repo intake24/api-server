@@ -33,6 +33,7 @@ import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, ExportTaskInfo, ExportTaskStatus, SurveyAdminService}
 import io.circe.generic.auto._
+import play.api.http.FileMimeTypes
 import uk.ac.ncl.openlab.intake24.errors.AnyError
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
@@ -44,6 +45,7 @@ class DataExportController @Inject()(service: DataExportService,
                                      surveyAdminService: SurveyAdminService,
                                      foodGroupsAdminService: FoodGroupsAdminService,
                                      asyncExporter: AsynchronousDataExporter,
+                                     implicit val fileMimeTypes: FileMimeTypes,
                                      rab: Intake24RestrictedActionBuilder) extends Controller
   with DatabaseErrorHandler with JsonUtils {
 

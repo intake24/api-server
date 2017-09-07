@@ -18,16 +18,17 @@ limitations under the License.
 
 lazy val commonSettings = Seq(
   organization := "uk.ac.ncl.openlab.intake24",
-  version := "2.35.0-SNAPSHOT",
-  scalaVersion := "2.11.8",
-  publishArtifact in (Compile, packageDoc) := false
+  version := "3.0.0-SNAPSHOT",
+  scalaVersion := "2.12.3",
+  publishArtifact in(Compile, packageDoc) := false,
+  scalacOptions ++= Seq("-unchecked", "-deprecation")
 )
 
 lazy val sharedTypes = Project(id = "sharedTypes", base = file("SharedTypes")).settings(commonSettings: _*)
 
-lazy val infiauto = Project(id = "infiauto", base = file ("infiauto")).settings(commonSettings: _*)
+lazy val infiauto = Project(id = "infiauto", base = file("infiauto")).settings(commonSettings: _*)
 
-lazy val phraseSearch = Project(id = "phrasesearch", base = file ("PhraseSearch")).dependsOn(infiauto).settings(commonSettings: _*)
+lazy val phraseSearch = Project(id = "phrasesearch", base = file("PhraseSearch")).dependsOn(infiauto).settings(commonSettings: _*)
 
 lazy val gwtShared = Project(id = "gwtShared", base = file("ClientShared")).settings(commonSettings: _*)
 
@@ -75,8 +76,8 @@ lazy val apiDocs = scalatex.ScalatexReadme(
   source = "ApiDocs",
   autoResources = List("apidocs-styles.css")
 ).settings(
-  scalaVersion := "2.11.8",
-  libraryDependencies ++= Seq (
+  scalaVersion := "2.12.3",
+  libraryDependencies ++= Seq(
     "com.lihaoyi" %% "upickle" % "0.4.3",
     "com.google.code.gson" % "gson" % "2.3.1" // for JSON pretty-printing
   )

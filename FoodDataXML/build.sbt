@@ -21,9 +21,9 @@ name := "food-data-xml"
 description := "Intake24 XML based food database"
 
 libraryDependencies ++= Seq(
-  "org.scala-lang.modules" % "scala-xml_2.11" % "1.0.5",
+  "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
   "net.sf.opencsv" % "opencsv" % "2.1",
   "org.slf4j" % "slf4j-api" % "1.7.12",
-  "org.scalatest" %% "scalatest" % "2.2.5" % "test",
+  "org.scalatest" %% "scalatest" % "3.0.1" % "test",
   "net.codingwell" %% "scala-guice" % "4.1.0"
 )
