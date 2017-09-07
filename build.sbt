@@ -21,7 +21,7 @@ lazy val commonSettings = Seq(
   version := "3.0.0-SNAPSHOT",
   scalaVersion := "2.12.3",
   publishArtifact in(Compile, packageDoc) := false,
-  scalacOptions ++= Seq("-unchecked", "-deprecation")
+  scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
 )
 
 lazy val sharedTypes = Project(id = "sharedTypes", base = file("SharedTypes")).settings(commonSettings: _*)

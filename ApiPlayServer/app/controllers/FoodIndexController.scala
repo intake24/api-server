@@ -23,16 +23,17 @@ import javax.inject.Inject
 import io.circe.generic.auto._
 import parsers.JsonUtils
 import play.api.http.ContentTypes
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.Controller
+import play.api.mvc.{BaseController, ControllerComponents}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class FoodIndexController @Inject()(foodIndexes: Map[String, FoodIndex],
-                                    rab: Intake24RestrictedActionBuilder) extends Controller with JsonUtils {
+                                    rab: Intake24RestrictedActionBuilder,
+                                    val controllerComponents: ControllerComponents,
+                                    implicit val executionContext: ExecutionContext) extends BaseController with JsonUtils {
   def lookup(locale: String, term: String) = rab.restrictToRoles(Roles.superuser) {
     Future {
       foodIndexes.get(locale) match {

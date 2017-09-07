@@ -1,10 +1,10 @@
 package cache
 
-import play.api.cache.CacheApi
+import play.api.cache.SyncCacheApi
 
 trait AssociatedFoodsCache {
   
-  val cache: CacheApi
+  val cache: SyncCacheApi
   
   def associatedFoodsWithInheritedCacheKey(code: String, locale: String) = s"AssociatedFoods.withInherited.$locale.$code"
   def associatedFoodsCacheKey(code: String, locale: String) = s"AssociatedFoods.$locale.$code"

@@ -6,11 +6,12 @@ import com.mohiva.play.silhouette.impl.authenticators.JWTAuthenticator
 import play.api.mvc.Request
 import security.authorization.AuthenticationService
 
-import scala.concurrent.Future
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import scala.concurrent.{ExecutionContext, Future}
+
 
 @Singleton
-class Intake24JWTAuthenticationService @Inject()(silhouette: Environment[Intake24ApiEnv]) extends AuthenticationService[Intake24AuthenticationToken] {
+class Intake24JWTAuthenticationService @Inject()(silhouette: Environment[Intake24ApiEnv],
+                                                 implicit val executionContext: ExecutionContext) extends AuthenticationService[Intake24AuthenticationToken] {
 
   def parseAuthenticationToken(jwtAuthenticator: Option[JWTAuthenticator]): Option[Intake24AuthenticationToken] =
     jwtAuthenticator.flatMap {

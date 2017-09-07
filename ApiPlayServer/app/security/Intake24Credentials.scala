@@ -23,6 +23,8 @@ import com.mohiva.play.silhouette.api.util.Credentials
 import uk.ac.ncl.openlab.intake24.api.shared.{SurveyAliasCredentials => Intake24Credentials}
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.SurveyUserAlias
 
+import scala.language.implicitConversions
+
 object SurveyAliasUtils {
   private val separatorChar = '#'
 

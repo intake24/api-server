@@ -22,13 +22,14 @@ import javax.inject.Inject
 
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.{Action, Controller}
+import play.api.mvc.{BaseController, ControllerComponents}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.LocalesAdminService
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class PublicToolsController @Inject()(service: LocalesAdminService) extends Controller with DatabaseErrorHandler {
+class PublicToolsController @Inject()(service: LocalesAdminService,
+                                      val controllerComponents: ControllerComponents,
+                                      implicit val executionContext: ExecutionContext) extends BaseController with DatabaseErrorHandler {
 
   def listLocales() = Action.async {
     _ =>

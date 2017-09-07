@@ -18,22 +18,19 @@ limitations under the License.
 
 package controllers
 
-import java.nio.file.Paths
 import javax.inject.Inject
 
 import io.circe.generic.auto._
 import parsers.FormDataUtil
 import play.api.libs.Files.TemporaryFile
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.MultipartFormData.FilePart
-import play.api.mvc.{Controller, Result}
+import play.api.mvc.{BaseController, ControllerComponents, Result}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.api.shared.{ErrorDescription, NewImageMapRequest}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
-import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class ImageMapAdminController @Inject()(
                                          imageMaps: ImageMapsAdminService,
@@ -41,7 +38,9 @@ class ImageMapAdminController @Inject()(
                                          imageAdmin: ImageAdminService,
                                          imageStorage: ImageStorageService,
                                          foodAuthChecks: FoodAuthChecks,
-                                         rab: Intake24RestrictedActionBuilder) extends Controller
+                                         rab: Intake24RestrictedActionBuilder,
+                                         val controllerComponents: ControllerComponents,
+                                         implicit val executionContext: ExecutionContext) extends BaseController
   with ImageOrDatabaseServiceErrorHandler with FormDataUtil {
 
   import ImageAdminService.WrapDatabaseError
@@ -63,7 +62,7 @@ class ImageMapAdminController @Inject()(
   private def createImageMap(baseImage: FilePart[TemporaryFile], keywords: Seq[String], params: NewImageMapRequest, imageMap: AWTImageMap, uploader: String): Either[Result, Unit] =
     translateImageServiceAndDatabaseError(
       for (
-        baseImageSourceRecord <- imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForImageMap(params.id, baseImage.filename), Paths.get(baseImage.ref.file.getPath), keywords, uploader).right;
+        baseImageSourceRecord <- imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForImageMap(params.id, baseImage.filename), baseImage.ref.path, keywords, uploader).right;
         processedBaseImageDescriptor <- imageAdmin.processForImageMapBase(params.id, baseImageSourceRecord.id).right;
         overlayDescriptors <- imageAdmin.generateImageMapOverlays(params.id, baseImageSourceRecord.id, imageMap).right;
         _ <- {
@@ -100,7 +99,7 @@ class ImageMapAdminController @Inject()(
           svgImage <- getFile("svg", request.body).right;
           sourceKeywords <- getOptionalMultipleData("baseImageKeywords", request.body).right;
           params <- getParsedData[NewImageMapRequest]("imageMapParameters", request.body).right;
-          imageMap <- (svgParser.parseImageMap(svgImage.ref.file.getPath) match {
+          imageMap <- (svgParser.parseImageMap(svgImage.ref.path.toString) match {
             case Left(e) => Left(BadRequest(toJsonString(ErrorDescription("InvalidParameter", s"Failed to parse the SVG image map: ${e.getClass.getName}: ${e.getMessage}"))))
             case Right(m) => Right(m)
           }).right;

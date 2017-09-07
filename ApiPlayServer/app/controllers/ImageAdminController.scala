@@ -1,31 +1,32 @@
 package controllers
 
-import java.nio.file.Paths
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 import io.circe.generic.auto._
 import org.slf4j.LoggerFactory
-import parsers.JsonUtils
+import parsers.{JsonBodyParser, JsonUtils}
 import play.api.http.ContentTypes
 import play.api.libs.Files.TemporaryFile
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.{BodyParsers, Controller, MultipartFormData}
+import play.api.mvc._
 import security.authorization.AuthorizedRequest
 import security.{Intake24AccessToken, Intake24RestrictedActionBuilder}
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class ImageAdminController @Inject()(service: ImageAdminService,
                                      databaseService: ImageDatabaseService,
                                      storageService: ImageStorageService,
                                      foodAuthChecks: FoodAuthChecks,
-                                     rab: Intake24RestrictedActionBuilder)
-  extends Controller
-    with ImageOrDatabaseServiceErrorHandler
-    with JsonUtils {
+                                     rab: Intake24RestrictedActionBuilder,
+                                     playBodyParsers: PlayBodyParsers,
+                                     jsonBodyParser: JsonBodyParser,
+                                     val controllerComponents: ControllerComponents,
+                                     implicit val executionContext: ExecutionContext) extends BaseController
+  with ImageOrDatabaseServiceErrorHandler
+  with JsonUtils {
 
   private val logger = LoggerFactory.getLogger(classOf[ImageAdminController])
 
@@ -50,7 +51,7 @@ class ImageAdminController @Inject()(service: ImageAdminService,
             case None => file.filename
           }
 
-          service.uploadSourceImage(suggestedPath, Paths.get(file.ref.file.getPath), keywords, uploaderName)
+          service.uploadSourceImage(suggestedPath, file.ref.path, keywords, uploaderName)
       }.toList
 
       val error = results.find(_.isLeft)
@@ -63,15 +64,15 @@ class ImageAdminController @Inject()(service: ImageAdminService,
   }
 
 
-  def uploadSourceImage() = rab.restrictAccess(foodAuthChecks.canUploadSourceImages)(BodyParsers.parse.multipartFormData) {
+  def uploadSourceImage() = rab.restrictAccess(foodAuthChecks.canUploadSourceImages)(playBodyParsers.multipartFormData) {
     request => uploadImpl(None, request)
   }
 
-  def uploadSourceImageForAsServed(setId: String) = rab.restrictToRoles(Roles.superuser, Roles.foodsAdmin)(BodyParsers.parse.multipartFormData) {
+  def uploadSourceImageForAsServed(setId: String) = rab.restrictToRoles(Roles.superuser, Roles.foodsAdmin)(playBodyParsers.multipartFormData) {
     request => uploadImpl(Some(originalPath => ImageAdminService.getSourcePathForAsServed(setId, originalPath)), request)
   }
 
-  def uploadSourceImageForImageMap(id: String) = rab.restrictToRoles(Roles.superuser, Roles.foodsAdmin)(BodyParsers.parse.multipartFormData) {
+  def uploadSourceImageForImageMap(id: String) = rab.restrictToRoles(Roles.superuser, Roles.foodsAdmin)(playBodyParsers.multipartFormData) {
     request => uploadImpl(Some(originalPath => ImageAdminService.getSourcePathForImageMap(id, originalPath)), request)
   }
 
@@ -89,14 +90,14 @@ class ImageAdminController @Inject()(service: ImageAdminService,
       }
   }
 
-  def updateSourceImage(id: Int) = rab.restrictToRoles(Roles.superuser, Roles.foodsAdmin)(jsonBodyParser[SourceImageRecordUpdate]) {
+  def updateSourceImage(id: Int) = rab.restrictToRoles(Roles.superuser, Roles.foodsAdmin)(jsonBodyParser.parse[SourceImageRecordUpdate]) {
     request =>
       Future {
         translateDatabaseResult(databaseService.updateSourceImageRecord(id, request.body))
       }
   }
 
-  def deleteSourceImages() = rab.restrictToRoles(Roles.superuser, Roles.foodsAdmin)(jsonBodyParser[Seq[Long]]) {
+  def deleteSourceImages() = rab.restrictToRoles(Roles.superuser, Roles.foodsAdmin)(jsonBodyParser.parse[Seq[Long]]) {
     request =>
       Future {
         translateImageServiceAndDatabaseResult(service.deleteSourceImages(request.body))

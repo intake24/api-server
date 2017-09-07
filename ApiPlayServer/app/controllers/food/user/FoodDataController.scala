@@ -4,9 +4,8 @@ import javax.inject.Inject
 
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
-import parsers.JsonUtils
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.Controller
+import parsers.{JsonBodyParser, JsonUtils}
+import play.api.mvc.{BaseController, ControllerComponents}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24._
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
@@ -14,7 +13,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageStorageService
 import uk.ac.ncl.openlab.intake24.services.fooddb.user._
 import uk.ac.ncl.openlab.intake24.services.nutrition.FoodCompositionService
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class PortionSizeMethodForSurvey(method: String, description: String, imageUrl: String, useForRecipes: Boolean, parameters: Map[String, String])
 
@@ -51,7 +50,10 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
                                    imageMapService: ImageMapService,
                                    foodCompositionService: FoodCompositionService,
                                    imageStorageService: ImageStorageService,
-                                   rab: Intake24RestrictedActionBuilder) extends Controller with DatabaseErrorHandler with JsonUtils {
+                                   jsonBodyParser: JsonBodyParser,
+                                   rab: Intake24RestrictedActionBuilder,
+                                   val controllerComponents: ControllerComponents,
+                                   implicit val executionContext: ExecutionContext) extends BaseController with DatabaseErrorHandler with JsonUtils {
 
   import uk.ac.ncl.openlab.intake24.errors.ErrorUtils._
 
@@ -162,7 +164,7 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
       }
   }
 
-  def getAsServedSets() = rab.restrictToAuthenticated(jsonBodyParser[Seq[String]]) {
+  def getAsServedSets() = rab.restrictToAuthenticated(jsonBodyParser.parse[Seq[String]]) {
     request =>
       Future {
         translateDatabaseResult(sequence(request.body.map(asServedImageService.getAsServedSet(_))).right.map(_.map(toAsServedSetWithUrls)))
@@ -215,7 +217,7 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
       }
   }
 
-  def getImageMaps() = rab.restrictToAuthenticated(jsonBodyParser[Seq[String]]) {
+  def getImageMaps() = rab.restrictToAuthenticated(jsonBodyParser.parse[Seq[String]]) {
     request =>
       Future {
         translateDatabaseResult(imageMapService.getImageMaps(request.body).right.map(_.map(toImageMapWithUrls)))

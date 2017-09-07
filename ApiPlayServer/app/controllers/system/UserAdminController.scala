@@ -23,11 +23,10 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
-import parsers.{JsonUtils, UserRecordsCSVParser}
+import parsers.{JsonBodyParser, JsonUtils, UserRecordsCSVParser}
 import play.api.http.ContentTypes
 import play.api.libs.Files
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.{BodyParsers, Controller, MultipartFormData, Result}
+import play.api.mvc._
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.api.shared._
 import uk.ac.ncl.openlab.intake24.errors.ErrorUtils
@@ -35,7 +34,7 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.UserPhysicalDataService
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 
 class UserAdminController @Inject()(service: UserAdminService,
@@ -44,7 +43,11 @@ class UserAdminController @Inject()(service: UserAdminService,
                                     usersSupportService: UsersSupportService,
                                     passwordHasherRegistry: PasswordHasherRegistry,
                                     rab: Intake24RestrictedActionBuilder,
-                                    authChecks: UserAuthChecks) extends Controller
+                                    authChecks: UserAuthChecks,
+                                    playBodyParsers: PlayBodyParsers,
+                                    jsonBodyParser: JsonBodyParser,
+                                    val controllerComponents: ControllerComponents,
+                                    implicit val executionContext: ExecutionContext) extends BaseController
   with DatabaseErrorHandler with JsonUtils {
 
   private def doCreateOrUpdate(surveyId: String, roles: Set[String], userRecords: Seq[NewRespondent]): Result = {
@@ -67,7 +70,7 @@ class UserAdminController @Inject()(service: UserAdminService,
     if (formData.files.length != 1)
       BadRequest(toJsonString(ErrorDescription("BadRequest", s"Expected exactly one file attachment, got ${formData.files.length}"))).as(ContentTypes.JSON)
     else {
-      UserRecordsCSVParser.parseFile(formData.files(0).ref.file) match {
+      UserRecordsCSVParser.parseFile(formData.files(0).ref.path.toFile) match {
         case Right(csvRecords) =>
           doCreateOrUpdate(surveyId, roles, csvRecords)
         case Left(error) =>
@@ -83,7 +86,7 @@ class UserAdminController @Inject()(service: UserAdminService,
       }
   }
 
-  def createUser() = rab.restrictAccess(authChecks.canCreateUser)(jsonBodyParser[CreateUserRequest]) {
+  def createUser() = rab.restrictAccess(authChecks.canCreateUser)(jsonBodyParser.parse[CreateUserRequest]) {
     request =>
       Future {
         val pwInfo = passwordHasherRegistry.current.hash(request.body.password)
@@ -92,14 +95,14 @@ class UserAdminController @Inject()(service: UserAdminService,
       }
   }
 
-  def patchUserProfile(userId: Long) = rab.restrictAccessWithDatabaseCheck(authChecks.canUpdateProfile(userId))(jsonBodyParser[UserProfileUpdate]) {
+  def patchUserProfile(userId: Long) = rab.restrictAccessWithDatabaseCheck(authChecks.canUpdateProfile(userId))(jsonBodyParser.parse[UserProfileUpdate]) {
     request =>
       Future {
         translateDatabaseResult(service.updateUserProfile(userId, request.body))
       }
   }
 
-  def patchUserPassword(userId: Long) = rab.restrictAccessWithDatabaseCheck(authChecks.canUpdatePassword(userId))(jsonBodyParser[PatchUserPasswordRequest]) {
+  def patchUserPassword(userId: Long) = rab.restrictAccessWithDatabaseCheck(authChecks.canUpdatePassword(userId))(jsonBodyParser.parse[PatchUserPasswordRequest]) {
     request =>
       Future {
         val pwInfo = passwordHasherRegistry.current.hash(request.body.password)
@@ -107,14 +110,14 @@ class UserAdminController @Inject()(service: UserAdminService,
       }
   }
 
-  def patchMe() = rab.restrictToAuthenticated(jsonBodyParser[UserProfileUpdate]) {
+  def patchMe() = rab.restrictToAuthenticated(jsonBodyParser.parse[UserProfileUpdate]) {
     request =>
       Future {
         translateDatabaseResult(service.updateUserProfile(request.subject.userId, request.body))
       }
   }
 
-  def deleteUsers() = rab.restrictAccess(authChecks.canCreateUser)(jsonBodyParser[DeleteUsersRequest]) {
+  def deleteUsers() = rab.restrictAccess(authChecks.canCreateUser)(jsonBodyParser.parse[DeleteUsersRequest]) {
     request =>
       Future {
         translateDatabaseResult(service.deleteUsersById(request.body.userIds))
@@ -128,14 +131,14 @@ class UserAdminController @Inject()(service: UserAdminService,
       }
   }
 
-  def listSurveyStaffUsers(surveyId: String, offset: Int, limit: Int) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
+  def listSurveyStaffUsers(surveyId: String, offset: Int, limit: Int) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
     _ =>
       Future {
         translateDatabaseResult(service.listUsersByRole(Roles.surveyStaff(surveyId), offset, limit))
       }
   }
 
-  def createOrUpdateSurveyStaff(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser[CreateOrUpdateSurveyUsersRequest]) {
+  def createOrUpdateSurveyStaff(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser.parse[CreateOrUpdateSurveyUsersRequest]) {
     request =>
       Future {
         doCreateOrUpdate(surveyId, Set(Roles.surveyStaff(surveyId)), request.body.users)
@@ -149,7 +152,7 @@ class UserAdminController @Inject()(service: UserAdminService,
     *
     * This is because client-side user presentation currently does not make sense without a user name.
     */
-  def listSurveyRespondentUsers(surveyId: String, offset: Int, limit: Int) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
+  def listSurveyRespondentUsers(surveyId: String, offset: Int, limit: Int) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
     _ =>
       Future {
         val result =
@@ -165,28 +168,28 @@ class UserAdminController @Inject()(service: UserAdminService,
       }
   }
 
-  def createOrUpdateSurveyRespondents(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser[CreateOrUpdateSurveyUsersRequest]) {
+  def createOrUpdateSurveyRespondents(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser.parse[CreateOrUpdateSurveyUsersRequest]) {
     request =>
       Future {
         doCreateOrUpdate(surveyId, Set(Roles.surveyRespondent(surveyId)), request.body.users)
       }
   }
 
-  def uploadSurveyRespondentsCSV(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(BodyParsers.parse.multipartFormData) {
+  def uploadSurveyRespondentsCSV(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.multipartFormData) {
     request =>
       Future {
         uploadCSV(request.body, surveyId, Set(Roles.surveyRespondent(surveyId)))
       }
   }
 
-  def deleteSurveyUsers(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser[DeleteSurveyUsersRequest]) {
+  def deleteSurveyUsers(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser.parse[DeleteSurveyUsersRequest]) {
     request =>
       Future {
         translateDatabaseResult(service.deleteUsersByAlias(request.body.userNames.map(n => SurveyUserAlias(surveyId, n))))
       }
   }
 
-  def createRespondentsWithPhysicalData(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser[CreateRespondentsWithPhysicalDataRequest]) {
+  def createRespondentsWithPhysicalData(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser.parse[CreateRespondentsWithPhysicalDataRequest]) {
     request =>
       Future {
         translateDatabaseResult(usersSupportService.createRespondentsWithPhysicalData(surveyId, request.body.users).right.map {
@@ -195,7 +198,7 @@ class UserAdminController @Inject()(service: UserAdminService,
       }
   }
 
-  def giveAccessToSurvey(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser[UserAccessToSurveySeq]) {
+  def giveAccessToSurvey(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser.parse[UserAccessToSurveySeq]) {
     request =>
       Future {
 
@@ -207,7 +210,7 @@ class UserAdminController @Inject()(service: UserAdminService,
       }
   }
 
-  def withdrawAccessToSurvey(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser[UserAccessToSurveySeq]) {
+  def withdrawAccessToSurvey(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser.parse[UserAccessToSurveySeq]) {
     request =>
       Future {
         //        Check that all roles contain surveyId as prefix then perform update for every user

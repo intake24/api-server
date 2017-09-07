@@ -23,13 +23,13 @@ import javax.inject.Inject
 import _root_.models.Intake24User
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import uk.ac.ncl.openlab.intake24.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.UserAdminService
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class IdentityServiceImpl @Inject()(val userAdminService: UserAdminService) extends IdentityService[Intake24User] {
+class IdentityServiceImpl @Inject()(val userAdminService: UserAdminService,
+                                    implicit val executionContext: ExecutionContext) extends IdentityService[Intake24User] {
 
   def retrieve(loginInfo: LoginInfo): Future[Option[Intake24User]] = Future {
 

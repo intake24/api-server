@@ -83,29 +83,29 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
   def imageProcessorSettings(configuration: Configuration): ImageProcessorSettings = {
 
     val source = SourceImageSettings(
-      configuration.getInt("intake24.images.processor.source.thumbnailWidth").get,
-      configuration.getInt("intake24.images.processor.source.thumbnailHeight").get)
+      configuration.get[Int]("intake24.images.processor.source.thumbnailWidth"),
+      configuration.get[Int]("intake24.images.processor.source.thumbnailHeight"))
 
     val asServed = AsServedImageSettings(
-      configuration.getInt("intake24.images.processor.asServed.mainImageWidth").get,
-      configuration.getInt("intake24.images.processor.asServed.mainImageHeight").get,
-      configuration.getInt("intake24.images.processor.asServed.thumbnailWidth").get)
+      configuration.get[Int]("intake24.images.processor.asServed.mainImageWidth"),
+      configuration.get[Int]("intake24.images.processor.asServed.mainImageHeight"),
+      configuration.get[Int]("intake24.images.processor.asServed.thumbnailWidth"))
 
     val selection = SelectionImageSettings(
-      configuration.getInt("intake24.images.processor.selectionScreen.width").get,
-      configuration.getInt("intake24.images.processor.selectionScreen.height").get)
+      configuration.get[Int]("intake24.images.processor.selectionScreen.width"),
+      configuration.get[Int]("intake24.images.processor.selectionScreen.height"))
 
     val imageMaps = ImageMapSettings(
-      configuration.getInt("intake24.images.processor.imageMaps.baseImageWidth").get,
-      configuration.getDouble("intake24.images.processor.imageMaps.outlineStrokeWidth").get,
-      (configuration.getDouble("intake24.images.processor.imageMaps.outlineColor.r").get,
-        configuration.getDouble("intake24.images.processor.imageMaps.outlineColor.g").get,
-        configuration.getDouble("intake24.images.processor.imageMaps.outlineColor.b").get),
-      configuration.getDouble("intake24.images.processor.imageMaps.outlineBlurStrength").get)
+      configuration.get[Int]("intake24.images.processor.imageMaps.baseImageWidth"),
+      configuration.get[Double]("intake24.images.processor.imageMaps.outlineStrokeWidth"),
+      (configuration.get[Double]("intake24.images.processor.imageMaps.outlineColor.r"),
+        configuration.get[Double]("intake24.images.processor.imageMaps.outlineColor.g"),
+        configuration.get[Double]("intake24.images.processor.imageMaps.outlineColor.b")),
+      configuration.get[Double]("intake24.images.processor.imageMaps.outlineBlurStrength"))
 
-    val commandSearchPath = configuration.getString("intake24.images.processor.commandSearchPath")
+    val commandSearchPath = configuration.getOptional[String]("intake24.images.processor.commandSearchPath")
 
-    val command = configuration.getStringList("intake24.images.processor.command").map(_.asScala).getOrElse(Seq("magick", "convert"))
+    val command = configuration.getOptional[Seq[String]]("intake24.images.processor.command").getOrElse(Seq("magick", "convert"))
 
     ImageProcessorSettings(commandSearchPath, command, source, selection, asServed, imageMaps)
   }

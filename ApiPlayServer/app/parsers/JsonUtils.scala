@@ -1,24 +1,17 @@
 package parsers
 
-import java.time.{LocalDate, ZonedDateTime}
 import java.time.format.DateTimeFormatter
+import java.time.{LocalDate, ZonedDateTime}
 
 import cats.syntax.either._
 import io.circe._
+import io.circe.generic.auto._
 import io.circe.parser._
 import io.circe.syntax._
-import io.circe.generic.auto._
-import play.api.http.ContentTypes
-import play.api.mvc.{BodyParser, BodyParsers, Result, Results}
+import play.api.mvc._
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-
 trait JsonUtils {
-
-  import BodyParsers.parse._
-
 
   implicit val offsetDateTimeEncoder = new Encoder[ZonedDateTime] {
     def apply(a: ZonedDateTime): Json = Json.fromString(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(a))
@@ -94,16 +87,4 @@ trait JsonUtils {
       case Left(errorResult) => errorResult
     }
 
-  def jsonBodyParser[T](implicit dec: Decoder[T]): BodyParser[T] =
-    when(
-      request => request.contentType.exists(_.equalsIgnoreCase(ContentTypes.JSON)),
-      raw,
-      _ => Future.successful(Results.UnsupportedMediaType)
-    ).validate {
-      rawBuffer =>
-        rawBuffer.asBytes() match {
-          case Some(byteString) => parseJson[T](byteString.utf8String)
-          case None => Left(Results.EntityTooLarge)
-        }
-    }
 }

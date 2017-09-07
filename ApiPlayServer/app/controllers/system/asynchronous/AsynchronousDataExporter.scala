@@ -1,21 +1,21 @@
 package controllers.system.asynchronous
 
 import java.io.{File, FileWriter, IOException}
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import java.time.temporal.{ChronoUnit, TemporalUnit}
-import java.time.{Clock, LocalDateTime, ZoneId, ZonedDateTime}
+import java.time.temporal.ChronoUnit
 import java.util.{Date, UUID}
 import javax.inject.{Inject, Singleton}
 
-import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import akka.actor.{Actor, ActorSystem, Props}
 import au.com.bytecode.opencsv.CSVWriter
 import com.amazonaws.HttpMethod
-import com.amazonaws.services.s3.{AmazonS3, AmazonS3Client, AmazonS3ClientBuilder}
+import com.amazonaws.services.s3.AmazonS3
 import controllers.system.asynchronous.ExportManager.TaskFinished
 import org.slf4j.LoggerFactory
 import parsers.SurveyCSVExporter
+import play.api.Configuration
 import play.api.libs.mailer.{Email, MailerClient}
-import play.api.{Configuration, Logger}
 import uk.ac.ncl.openlab.intake24.FoodGroupRecord
 import uk.ac.ncl.openlab.intake24.errors.AnyError
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
@@ -23,6 +23,7 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import views.html.DataExportNotification
 
 import scala.collection.mutable
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 
@@ -47,14 +48,18 @@ case class ExportManagerConfig(
                                 s3UrlExpirationTimeMinutes: Long
                               )
 
-class ExportManager(exportService: DataExportService, s3Client: AmazonS3, mailer: MailerClient, config: ExportManagerConfig) extends Actor {
+class ExportManager(exportService: DataExportService,
+                    s3Client: AmazonS3,
+                    mailer: MailerClient,
+                    config: ExportManagerConfig,
+                    implicit val executionContext: ExecutionContext) extends Actor {
 
   case class CSVFileHandles(file: File, fileWriter: FileWriter, csvWriter: CSVWriter)
 
   val logger = LoggerFactory.getLogger(classOf[ExportManager])
 
   val scheduler = new ThrottlingScheduler {
-    def run(f: => Unit): Unit = context.system.scheduler.scheduleOnce(config.throttleRateMs milliseconds)(f)(play.api.libs.concurrent.Execution.defaultContext)
+    def run(f: => Unit): Unit = context.system.scheduler.scheduleOnce(config.throttleRateMs.milliseconds)(f)
   }
 
   val queue = mutable.Queue[ExportTask]()
@@ -233,7 +238,7 @@ class ExportManager(exportService: DataExportService, s3Client: AmazonS3, mailer
   }
 
   def getUrlExpirationTime() = ThrottledTask {
-      ZonedDateTime.now().plus(config.s3UrlExpirationTimeMinutes, ChronoUnit.MINUTES)
+    ZonedDateTime.now().plus(config.s3UrlExpirationTimeMinutes, ChronoUnit.MINUTES)
   }
 
   def runExport(task: ExportTask): Unit = {
@@ -316,12 +321,12 @@ class AsynchronousDataExporter @Inject()(actorSystem: ActorSystem,
   val configSection = "intake24.asyncDataExporter"
 
   val exportManagerConfig = ExportManagerConfig(
-    configuration.getInt(s"$configSection.batchSize").get,
-    configuration.getInt(s"$configSection.throttleRateMs").get,
-    configuration.getInt(s"$configSection.maxConcurrentTasks").get,
-    configuration.getString(s"$configSection.s3.bucketName").get,
-    configuration.getString(s"$configSection.s3.pathPrefix").get,
-    configuration.getLong(s"$configSection.s3.urlExpirationTimeMinutes").get
+    configuration.get[Int](s"$configSection.batchSize"),
+    configuration.get[Int](s"$configSection.throttleRateMs"),
+    configuration.get[Int](s"$configSection.maxConcurrentTasks"),
+    configuration.get[String](s"$configSection.s3.bucketName"),
+    configuration.get[String](s"$configSection.s3.pathPrefix"),
+    configuration.get[Long](s"$configSection.s3.urlExpirationTimeMinutes")
   )
 
   val exportManager = actorSystem.actorOf(Props(classOf[ExportManager], exportService, s3Client, mailer, exportManagerConfig), "ExportManager")
