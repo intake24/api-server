@@ -111,7 +111,7 @@ class AsServedSetsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: D
   def deleteAsServedSetRecord(id: String): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
       SQL("DELETE FROM as_served_sets WHERE id={id};").on('id -> id).execute()
-      Right()
+      Right(())
   }
 
   private case class PortableAsServedImageRow(weight: Double, source_path: String, source_thumbnail_path: String, keywords: Array[String], image_path: String, thumbnail_image_path: String)

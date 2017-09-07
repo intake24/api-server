@@ -20,7 +20,7 @@ package uk.ac.ncl.openlab.intake24.foodxml.scripts
 
 import au.com.bytecode.opencsv.CSVReader
 import java.io.FileReader
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.xml.XML
 import uk.ac.ncl.openlab.intake24.foodxml.FoodDef
 import uk.ac.ncl.openlab.intake24.foodxml.Util
@@ -32,7 +32,7 @@ object AppendFoodGroups {
 
     // scran code | group code																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																									
 
-    val codes = new CSVReader(new FileReader(sourcePath)).readAll().toList.map(_.toSeq).tail.distinct.map ( row => (row(0), row(1).toInt)).toMap
+    val codes = new CSVReader(new FileReader(sourcePath)).readAll().asScala.map(_.toSeq).tail.distinct.map ( row => (row(0), row(1).toInt)).toMap
     
     val foods = FoodDef.parseXml(XML.load("D:\\SCRAN24\\Data\\foods.xml")).map( food => {
       codes.get(food.code) match {

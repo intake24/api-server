@@ -150,7 +150,7 @@ object SystemDatabaseMigrations {
              |)""".stripMargin).execute()
 
         val localeParams = Seq(
-          Seq[NamedParameter]('id -> "en_GB", 'english_name -> "English (United Kingdom)", 'local_name -> "English (United Kingdom)", 'respondent_language_id -> "en_GB", 'admin_language_id -> "en", 'country_flag_code -> "gb", 'prototype_locale_id -> None),
+          Seq[NamedParameter]('id -> "en_GB", 'english_name -> "English (United Kingdom)", 'local_name -> "English (United Kingdom)", 'respondent_language_id -> "en_GB", 'admin_language_id -> "en", 'country_flag_code -> "gb", 'prototype_locale_id -> Option.empty[String]),
           Seq[NamedParameter]('id -> "da_DK", 'english_name -> "Danish (Denmark)", 'local_name -> "Dansk (Danmark)", 'respondent_language_id -> "da", 'admin_language_id -> "da", 'country_flag_code -> "dk", 'prototype_locale_id -> Some("en_GB")),
           Seq[NamedParameter]('id -> "pt_PT", 'english_name -> "Portuguese (Portugal)", 'local_name -> "Português (Portugal)", 'respondent_language_id -> "pt", 'admin_language_id -> "pt", 'country_flag_code -> "pt", 'prototype_locale_id -> Some("en_GB")),
           Seq[NamedParameter]('id -> "en_NZ", 'english_name -> "English (New Zealand)", 'local_name -> "English (New Zealand)", 'respondent_language_id -> "en_NZ", 'admin_language_id -> "en", 'country_flag_code -> "nz", 'prototype_locale_id -> Some("en_GB"))
@@ -732,7 +732,7 @@ object SystemDatabaseMigrations {
             |DROP TABLE user_info;
             |DROP TYPE sex_enum;
           """.stripMargin).execute()
-        Right()
+        Right(())
       }
     },
 

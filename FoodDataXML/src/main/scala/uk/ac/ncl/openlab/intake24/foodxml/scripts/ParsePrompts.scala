@@ -19,8 +19,7 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.foodxml.scripts
 
 import java.io.FileReader
-import scala.collection.JavaConversions.asScalaBuffer
-import scala.collection.JavaConversions.seqAsJavaList
+import scala.collection.JavaConverters._
 import au.com.bytecode.opencsv.CSVReader
 
 import scala.xml.XML
@@ -35,7 +34,7 @@ object ParseAssociatedFoods {
 
     // short_code | is main | associated food code | prompt text ...																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																									
 
-    val rows = new CSVReader(new FileReader(sourcePath)).readAll().toList.map(_.toSeq)
+    val rows = new CSVReader(new FileReader(sourcePath)).readAll().asScala.map(_.toSeq)
 
     val foods = FoodDef.parseXml(XML.load("/home/ivan/Projects/Intake24/intake24-data/foods.xml"))
     val cats = CategoryDef.parseXml(XML.load("/home/ivan/Projects/Intake24/intake24-data/categories.xml"))

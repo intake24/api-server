@@ -2,6 +2,8 @@ package uk.ac.ncl.openlab.intake24.sql.tools.food.localisation.newzealand
 
 import org.rogach.scallop.ScallopConf
 
+import scala.language.reflectiveCalls
+
 object GenerateStandardUnitsList extends App {
 
   val options = new ScallopConf(args) {

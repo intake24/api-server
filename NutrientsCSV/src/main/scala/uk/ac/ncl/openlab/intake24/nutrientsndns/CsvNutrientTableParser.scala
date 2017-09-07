@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory
 
 import au.com.bytecode.opencsv.CSVReader
 import java.io.FileReader
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 case class CsvNutrientTableMapping(rowOffset: Int, idColumn: Int, descriptionColumn: Int, localDescriptionColumn: Option[Int], nutrientMapping: Map[Long, Int])
 
@@ -56,7 +56,7 @@ object CsvNutrientTableParser {
   def parseTable(fileName: String, mapping: CsvNutrientTableMapping): Seq[NutrientTableRecord] = {
     println(s"Parsing $fileName")
 
-    val rows = new CSVReader(new FileReader(fileName)).readAll().toSeq.map(_.toIndexedSeq)
+    val rows = new CSVReader(new FileReader(fileName)).readAll().asScala.map(_.toIndexedSeq)
 
     def readNutrients(row: IndexedSeq[String], rowIndex: Int): Map[Long, Double] = mapping.nutrientMapping.foldLeft(Map[Long, Double]()) {
       case (acc, (nutrientId, colNum)) => {

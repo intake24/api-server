@@ -22,7 +22,7 @@ import java.io.File
 import java.io.FileFilter
 import au.com.bytecode.opencsv.CSVReader
 import java.io.FileReader
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import uk.ac.ncl.openlab.intake24.AsServedSetV1
 import uk.ac.ncl.openlab.intake24.AsServedImageV1
 import scala.xml.XML
@@ -45,7 +45,7 @@ object CerealAsServedImages extends App {
   val dstSets = "D:\\SCRAN24\\Data\\as-served-cereal.xml"
 
   // FOOD (for reference) PHOTO TYPE	WEIGHT (g)	photo code	food code(s) linked to																																															
-  val rows = new CSVReader(new FileReader(sourcePath)).readAll().toSeq.map(_.toSeq)
+  val rows = new CSVReader(new FileReader(sourcePath)).readAll().asScala.map(_.toSeq)
 
   val weights = rows.map(r => (r(3), r(2).toDouble)).toMap
   val photoType = rows.map(r => (r(3), r(1))).toMap

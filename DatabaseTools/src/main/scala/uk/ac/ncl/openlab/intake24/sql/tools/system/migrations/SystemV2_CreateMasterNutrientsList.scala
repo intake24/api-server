@@ -8,6 +8,7 @@ import org.rogach.scallop.ScallopConf
 import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConfigurationOptions, MigrationRunner}
 
 import scala.collection.JavaConverters._
+import scala.language.reflectiveCalls
 
 object SystemV2_CreateMasterNutrientsList extends App with MigrationRunner {
 

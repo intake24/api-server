@@ -142,9 +142,9 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
           |  ON CONFLICT(user_id) DO UPDATE SET password_hash=excluded.password_hash,password_salt=excluded.password_salt,password_hasher=excluded.password_hasher""".stripMargin,
         params.head, params.tail: _*).execute()
 
-      Right()
+      Right(())
     } else
-      Right()
+      Right(())
   }
 
   private lazy val createOrUpdateUserByAliasQuery = sqlFromResource("admin/users/create_or_update_user_by_alias.sql")
@@ -243,7 +243,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
               'email_n -> update.emailNotifications, 'sms_n -> update.smsNotifications,
               'simple_name -> update.name.map(StringUtils.stripAccents(_).toLowerCase())).executeUpdate()
           if (count == 1) {
-            Right()
+            Right(())
           }
           else
             Left(RecordNotFound(new RuntimeException(s"User $userId does not exist")))
@@ -362,7 +362,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
         'role -> userAccessToSurvey.role
       ).execute()
 
-      Right()
+      Right(())
   }
 
   def withdrawAccessToSurvey(userAccessToSurvey: UserAccessToSurvey): Either[UpdateError, Unit] = tryWithConnection {
@@ -378,7 +378,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
         'role -> userAccessToSurvey.role
       ).execute()
 
-      Right()
+      Right(())
   }
 
   def getUserPasswordById(userId: Long): Either[LookupError, SecurePassword] = tryWithConnection {

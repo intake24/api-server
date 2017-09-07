@@ -19,16 +19,12 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.foodxml.scripts
 
 import java.io.FileWriter
-import scala.collection.JavaConversions.seqAsJavaList
-import scala.xml.XML
+
 import au.com.bytecode.opencsv.CSVWriter
-import au.com.bytecode.opencsv.CSVReader
-import java.io.FileReader
-import java.io.File
-import scala.collection.JavaConversions._
-import uk.ac.ncl.openlab.intake24.foodxml.FoodGroupDef
-import uk.ac.ncl.openlab.intake24.foodxml.FoodDef
 import uk.ac.ncl.openlab.intake24.foodxml.CategoryDef
+
+import scala.collection.JavaConverters._
+import scala.xml.XML
 
 object FoodRecodingCategories extends App {
 
@@ -37,9 +33,9 @@ object FoodRecodingCategories extends App {
 
   writer.writeNext(Array("Intake24 category code", "English description"))
 
-  writer.writeAll(categories.map {
+  writer.writeAll((categories.map {
     category => Array(category.code, category.description)
-  })
+  }).asJava)
 
   writer.close
 }

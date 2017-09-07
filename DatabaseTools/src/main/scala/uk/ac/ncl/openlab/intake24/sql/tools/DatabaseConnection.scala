@@ -1,15 +1,16 @@
 package uk.ac.ncl.openlab.intake24.sql.tools
 
-import java.sql.DriverManager
-import com.zaxxer.hikari.HikariDataSource
-import com.zaxxer.hikari.HikariConfig
-import java.util.Properties
 import java.io.PrintWriter
+import java.sql.DriverManager
+import java.util.Properties
+import javax.sql.DataSource
+
+import anorm.{SQL, SqlParser}
+import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import org.rogach.scallop.ScallopConf
 import org.slf4j.Logger
-import anorm.SQL
-import anorm.SqlParser
-import javax.sql.DataSource
+
+import scala.language.reflectiveCalls
 
 trait DatabaseOptions extends ScallopConf {
   val pgHost = opt[String](required = true, noshort = true)
@@ -17,8 +18,8 @@ trait DatabaseOptions extends ScallopConf {
   val pgUser = opt[String](required = true, noshort = true)
   val pgPassword = opt[String](noshort = true)
   val pgUseSsl = opt[Boolean](noshort = true)
-  
-  def databaseConfig = DatabaseConfiguration(pgHost(), pgUseSsl(), pgDatabase(), pgUser(), pgPassword.get) 
+
+  def databaseConfig = DatabaseConfiguration(pgHost(), pgUseSsl(), pgDatabase(), pgUser(), pgPassword.toOption)
 }
 
 trait DatabaseConfigurationOptions extends ScallopConf {
@@ -30,7 +31,7 @@ case class DatabaseConfiguration(host: String, useSsl: Boolean, database: String
 
 trait DatabaseConnection {
 
-  def chooseDatabaseConfiguration(options: DatabaseConfigurationOptions) =DatabaseConfigChooser.chooseDatabaseConfiguration(options.dbConfigDir())
+  def chooseDatabaseConfiguration(options: DatabaseConfigurationOptions) = DatabaseConfigChooser.chooseDatabaseConfiguration(options.dbConfigDir())
 
   def getDataSource(options: DatabaseOptions): DataSource = getDataSource(options.databaseConfig)
 
@@ -43,7 +44,7 @@ trait DatabaseConnection {
     dbConnectionProps.setProperty("dataSource.user", config.user)
     dbConnectionProps.setProperty("dataSource.databaseName", config.database)
     dbConnectionProps.setProperty("dataSource.serverName", config.host)
-    dbConnectionProps.put("dataSource.logWriter", new PrintWriter(System.out))    
+    dbConnectionProps.put("dataSource.logWriter", new PrintWriter(System.out))
     dbConnectionProps.put("maximumPoolSize", "1")
 
     config.password.foreach(pw => dbConnectionProps.setProperty("dataSource.password", pw))

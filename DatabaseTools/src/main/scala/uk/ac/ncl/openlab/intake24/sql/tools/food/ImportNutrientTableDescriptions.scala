@@ -7,10 +7,11 @@ import au.com.bytecode.opencsv.CSVReader
 import org.rogach.scallop.ScallopConf
 import uk.ac.ncl.openlab.intake24.NutrientTableRecord
 import uk.ac.ncl.openlab.intake24.foodsql.admin.NutrientTablesAdminImpl
-import uk.ac.ncl.openlab.intake24.sql.SqlDataService
 import uk.ac.ncl.openlab.intake24.sql.tools._
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
+import scala.language.reflectiveCalls
+
 
 /**
   * Created by Tim Osadchiy on 22/05/2017.
@@ -39,12 +40,12 @@ object ImportNutrientTableDescriptions extends App with DatabaseConnection with 
 
   private def getCsvRows(csvName: String) = {
     val filePath = s"${options.csvDir()}/${csvName}.csv"
-    new CSVReader(new FileReader(filePath)).readAll().toSeq.map(_.toIndexedSeq)
+    new CSVReader(new FileReader(filePath)).readAll().asScala.map(_.toIndexedSeq)
   }
 
   private def getNutrients(params: ParseParams): Seq[NutrientTableRecord] = {
     getCsvRows(params.csvName).drop(params.rowOffset)
-      .map(r => NutrientTableRecord(r.get(params.idCol), params.nutrientTableId, r.get(params.descriptionCol), params.localDescriptionCol.map(i => r.get(i))))
+      .map(r => NutrientTableRecord(r(params.idCol), params.nutrientTableId, r(params.descriptionCol), params.localDescriptionCol.map(i => r(i))))
   }
 
 

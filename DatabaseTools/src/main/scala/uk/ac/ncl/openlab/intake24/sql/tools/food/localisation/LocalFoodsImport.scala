@@ -112,7 +112,7 @@ case class LocalFoodsImport(localeCode: String, englishLocaleName: String, local
 
   // Recoded local foods
 
-  val recodedLocalFoodRecords = buildRecodedLocalFoodRecords(options.logPath.get, englishLocaleName,
+  val recodedLocalFoodRecords = buildRecodedLocalFoodRecords(options.logPath.toOption, englishLocaleName,
     localNutrientTableId, indexableFoods, recodingTable, associatedFoodTranslations)
 
   // Apply PSM from PSM tables and create local foods

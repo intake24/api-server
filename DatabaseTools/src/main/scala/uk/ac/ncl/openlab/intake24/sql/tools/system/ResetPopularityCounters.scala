@@ -9,6 +9,7 @@ import uk.ac.ncl.openlab.intake24.systemsql.admin.{DataExportImpl, SurveyAdminIm
 import uk.ac.ncl.openlab.intake24.systemsql.user.FoodPopularityServiceImpl
 
 import scala.collection.mutable
+import scala.language.reflectiveCalls
 
 object ResetPopularityCounters extends App with DatabaseConnection with WarningMessage with ErrorHandler {
 

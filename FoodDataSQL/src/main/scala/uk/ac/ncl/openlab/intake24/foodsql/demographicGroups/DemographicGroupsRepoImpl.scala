@@ -538,7 +538,7 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
   override def deleteDemographicGroup(id: Int): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
       DemographicGroupDbQueryRow.getSqlDelete(id).execute()
-      Right()
+      Right(())
   }
 
   override def createDemographicScaleSector(demographicGroupId: Int,
@@ -572,7 +572,7 @@ class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSo
   override def deleteDemographicScaleSector(id: Int): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
       DemographicGroupsScaleSectorDbQueryRow.getSqlDelete(id).execute()
-      Right()
+      Right(())
   }
 
   override def getDemographicScaleSectorSentimentTypes(): Seq[String] = {

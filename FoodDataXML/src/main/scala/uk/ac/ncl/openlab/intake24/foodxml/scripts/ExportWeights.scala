@@ -18,36 +18,34 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodxml.scripts
 
-import java.io.File
-import java.io.PrintWriter
-import scala.xml.XML
-import au.com.bytecode.opencsv.CSVWriter
 import java.io.FileWriter
-import scala.collection.JavaConversions._
+
+import au.com.bytecode.opencsv.CSVWriter
 import uk.ac.ncl.openlab.intake24.AsServedSetV1
-import uk.ac.ncl.openlab.intake24.GuideImageWeightRecord
-import uk.ac.ncl.openlab.intake24.foodxml.GuideImageDef
-import uk.ac.ncl.openlab.intake24.foodxml.AsServedDef
+import uk.ac.ncl.openlab.intake24.foodxml.{AsServedDef, GuideImageDef}
+
+import scala.collection.JavaConverters._
+import scala.xml.XML
 
 
 object ExportWeights extends App {
   val asServedSets = AsServedDef.parseXml(XML.load("/home/ivan/Projects/Intake24/intake24-data/as-served.xml"))
   val writer = new CSVWriter(new FileWriter("/home/ivan/tmp/scran24_asw.csv"))
-  
-  val guide = GuideImageDef.parseXml(XML.load("/home/ivan/Projects/Intake24/intake24-data/guide.xml")) 
+
+  val guide = GuideImageDef.parseXml(XML.load("/home/ivan/Projects/Intake24/intake24-data/guide.xml"))
 
   def toCSV(set: AsServedSetV1) =
     set.images.map(ps => Array(set.description, ps.url, ps.url.replaceAll(".jpg", ""), ps.weight.toString))
 
-  writer.writeAll(Array("Description", "Image URL", "Image ID", "Weight, g") +: asServedSets.values.toSeq.sortBy(_.description).flatMap(toCSV(_)))
+  writer.writeAll((Array("Description", "Image URL", "Image ID", "Weight, g") +: asServedSets.values.toSeq.sortBy(_.description).flatMap(toCSV(_))).asJava)
 
   writer.close
-  
-  val guideCSV = guide.keys.toSeq.sorted.flatMap ( k => 
-   guide(k).weights.map( r => Array(r.description, k, r.objectId.toString, r.weight.toString)) )
-   
+
+  val guideCSV = guide.keys.toSeq.sorted.flatMap(k =>
+    guide(k).weights.map(r => Array(r.description, k, r.objectId.toString, r.weight.toString)))
+
   val guideWriter = new CSVWriter(new FileWriter("/home/ivan/tmp/scran24_gw.csv"))
-  guideWriter.writeAll(Array("Description", "Guide image ID", "Object ID", "Weight, g") +: guideCSV)
+  guideWriter.writeAll((Array("Description", "Guide image ID", "Object ID", "Weight, g") +: guideCSV).asJava)
   guideWriter.close
 
 }

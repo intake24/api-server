@@ -9,6 +9,8 @@ import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl
 import uk.ac.ncl.openlab.intake24.foodsql.user.FoodDataServiceImpl
 import uk.ac.ncl.openlab.intake24.sql.tools._
 
+import scala.language.reflectiveCalls
+
 object FoodListExport extends App with DatabaseConnection with WarningMessage {
 
   val options = new ScallopConf(args) {

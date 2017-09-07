@@ -20,7 +20,7 @@ package uk.ac.ncl.openlab.intake24.foodxml.scripts
 
 import java.io.FileReader
 
-import scala.collection.JavaConversions.asScalaBuffer
+import scala.collection.JavaConverters._
 
 import au.com.bytecode.opencsv.CSVReader
 
@@ -29,7 +29,7 @@ object ParseTblCodeDescription {
     val sourcePath = "D:\\SCRAN24\\ExtractedDB\\tblCode_Descriptions.txt"
 
     // header: "id","ipsas_code","food_name","diff","food","mw_code"
-    val rows = new CSVReader(new FileReader(sourcePath)).readAll().toList.map(_.toSeq).tail
+    val rows = new CSVReader(new FileReader(sourcePath)).readAll().asScala.map(_.toSeq).tail
 
     val codes = rows.map(r => (r(1), r(9))).toMap
 

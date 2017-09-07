@@ -1,19 +1,19 @@
 package uk.ac.ncl.openlab.intake24.sql.tools.food.localisation.newzealand
 
-import java.io.{BufferedReader, FileReader, InputStreamReader, OutputStreamWriter}
+import java.io.FileReader
 
-import com.opencsv.{CSVReader, CSVWriter}
+import com.opencsv.CSVReader
 import org.rogach.scallop.ScallopConf
 import uk.ac.ncl.openlab.intake24._
-import uk.ac.ncl.openlab.intake24.errors.{ParentRecordNotFound, RecordNotFound, UnexpectedDatabaseError}
-import uk.ac.ncl.openlab.intake24.foodxml.{Categories, CategoryDef, FoodDef}
-import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConfigChooser, DatabaseConnection, WarningMessage}
+import uk.ac.ncl.openlab.intake24.errors.{RecordNotFound, UnexpectedDatabaseError}
 import uk.ac.ncl.openlab.intake24.foodsql.admin.{AsServedSetsAdminImpl, FoodsAdminImpl, GuideImageAdminImpl}
 import uk.ac.ncl.openlab.intake24.foodsql.user.{AsServedSetsServiceImpl, GuideImageServiceImpl}
-import uk.ac.ncl.openlab.intake24.sql.tools.food.ImportNutrientTableDescriptions.{getDataSource, options}
+import uk.ac.ncl.openlab.intake24.foodxml.{Categories, CategoryDef, FoodDef}
+import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConfigChooser, DatabaseConnection, WarningMessage}
 
-import scala.xml.XML
 import scala.collection.JavaConverters._
+import scala.language.reflectiveCalls
+import scala.xml.XML
 
 object ImportNewZealandFoods extends App with DatabaseConnection with WarningMessage {
 
@@ -130,13 +130,13 @@ object ImportNewZealandFoods extends App with DatabaseConnection with WarningMes
     params.filter(_.name.matches("unit[0-9]+-name")).map(_.value).foreach {
       name =>
         if (!knownStandardUnits.contains(name))
-          println(s"    \033[101mUndefined standard unit: $name \033[39m")
+          println(s"    \u001b[101mUndefined standard unit: $name \u001b[39m")
     }
 
   def verifyAsServed(params: Seq[PortionSizeMethodParameter]) = {
     def checkSet(id: String) =
       if (!knownAsServedSets.contains(id))
-        println(s"    \033[101mUndefined as served set: $id \033[39m")
+        println(s"    \u001b[101mUndefined as served set: $id \u001b[39m")
 
 
     val servingSet = params.find(_.name == "serving-image-set").get.value
@@ -155,7 +155,7 @@ object ImportNewZealandFoods extends App with DatabaseConnection with WarningMes
     val id = params.find(_.name == "guide-image-id").get.value
 
     if (!knownGuideImages.contains(id))
-      println(s"    \033[101mUndefined guide image: $id \033[39m")
+      println(s"    \u001b[101mUndefined guide image: $id \u001b[39m")
   }
 
 
@@ -266,7 +266,7 @@ object ImportNewZealandFoods extends App with DatabaseConnection with WarningMes
 
       foodsAdminService.getFoodRecord(nzFood.code, "en_NZ") match {
         case Right(existingNzFood) if (existingNzFood.local.version.isDefined) =>
-          println("\033[33mSKIPPING: food already updated\033[39m")
+          println("\u001b[33mSKIPPING: food already updated\u001b[39m")
           println()
         case Left(UnexpectedDatabaseError(e)) => throw e
         case _ =>
@@ -295,7 +295,7 @@ object ImportNewZealandFoods extends App with DatabaseConnection with WarningMes
                 println("  portion size methods match")
                 Seq[PortionSizeMethod]()
               } else {
-                println("  \033[33mportion size methods do not match -- using UK methods\033[39m")
+                println("  \u001b[33mportion size methods do not match -- using UK methods\u001b[39m")
 
                 println("  NZ methods:")
                 nzFood.portionSizeMethods.foreach(m => println("    " + m.toString))
@@ -313,10 +313,10 @@ object ImportNewZealandFoods extends App with DatabaseConnection with WarningMes
                   foodsAdminService.updateLocalFoodRecord(nzFood.code, LocalFoodRecordUpdate(existingRecord.local.version, None, false, nutrientTableCodes, Seq(), Seq(), Seq()), "en_NZ")
               } match {
                 case Right(()) =>
-                  println("\033[32mOK\033[39m")
+                  println("\u001b[32mOK\u001b[39m")
                   println()
                 case Left(e) =>
-                  println("\033[101mERROR: " + e.exception.getMessage + "\033[39m")
+                  println("\u001b[101mERROR: " + e.exception.getMessage + "\u001b[39m")
                   println()
               }
 
@@ -338,15 +338,15 @@ object ImportNewZealandFoods extends App with DatabaseConnection with WarningMes
 
               result match {
                 case Right(()) =>
-                  println("\033[32mOK\033[39m")
+                  println("\u001b[32mOK\u001b[39m")
                   println()
                 case Left(e) =>
-                  println("\033[101mERROR: " + e.exception.getMessage + "\033[39m")
+                  println("\u001b[101mERROR: " + e.exception.getMessage + "\u001b[39m")
                   println()
               }
 
             /* case x => {
-               println(s"\033[101mSKIPPING: undefined standard units: ${x.mkString(", ")}, fix this and retry!\033[39m")
+               println(s"\u001b[101mSKIPPING: undefined standard units: ${x.mkString(", ")}, fix this and retry!\u001b[39m")
                undefinedStandardUnits ++= x.map {
                  unitId =>
                    UndefinedStandardUnitRow(nzFood.code, nzFood.description, unitId)

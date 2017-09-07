@@ -5,6 +5,8 @@ import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.sql.migrations.{DatabaseError, MigrationFailed, MigrationsImpl}
 import uk.ac.ncl.openlab.intake24.sql.tools._
 
+import scala.language.reflectiveCalls
+
 object MigrateSystemDatabase extends App with DatabaseConnection with WarningMessage {
 
   val logger = LoggerFactory.getLogger(getClass)

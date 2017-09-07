@@ -19,23 +19,23 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.foodxml.scripts
 
 import java.io.FileWriter
-import scala.collection.JavaConversions.seqAsJavaList
-import scala.xml.XML
+
 import au.com.bytecode.opencsv.CSVWriter
-import uk.ac.ncl.openlab.intake24.foodxml.FoodDefOld
-import uk.ac.ncl.openlab.intake24.foodxml.Util
+import uk.ac.ncl.openlab.intake24.foodxml.{FoodDefOld, Util}
+
+import scala.collection.JavaConverters._
+import scala.xml.XML
 
 object FlatFoodTable {
 
   def main(args: Array[String]): Unit = {
     val foods = FoodDefOld.parseXml(XML.load("D:\\SCRAN24\\Data\\foods.xml"))
     val writer = new CSVWriter(new FileWriter("D:\\scratch\\scran24_flat_foods.csv"))
-    
+
     val lines = Util.flatten(foods, identity).sortBy(_.code).map(f => Array(f.code, f.description, f.ndnsCode.toString))
-    
-    writer.writeAll(lines)
+
+    writer.writeAll(lines.asJava)
 
     writer.close
   }
-
 }
