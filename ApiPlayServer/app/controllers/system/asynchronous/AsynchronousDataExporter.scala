@@ -314,6 +314,7 @@ class AsynchronousDataExporter @Inject()(actorSystem: ActorSystem,
                                          mailer: MailerClient,
                                          s3Client: AmazonS3,
                                          userAdminService: UserAdminService,
+                                         executionContext: ExecutionContext,
                                          foodGroupsAdminService: FoodGroupsAdminService) {
 
   val logger = LoggerFactory.getLogger(classOf[AsynchronousDataExporter])
@@ -329,7 +330,7 @@ class AsynchronousDataExporter @Inject()(actorSystem: ActorSystem,
     configuration.get[Long](s"$configSection.s3.urlExpirationTimeMinutes")
   )
 
-  val exportManager = actorSystem.actorOf(Props(classOf[ExportManager], exportService, s3Client, mailer, exportManagerConfig), "ExportManager")
+  val exportManager = actorSystem.actorOf(Props(classOf[ExportManager], exportService, s3Client, mailer, exportManagerConfig, executionContext), "ExportManager")
 
   def queueCsvExport(userId: Long, surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime, insertBOM: Boolean): Either[AnyError, Long] = {
     for (
