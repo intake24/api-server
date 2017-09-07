@@ -2,12 +2,12 @@ package cache
 
 import com.google.inject.Inject
 import modules.BasicImpl
-import play.api.cache.CacheApi
+import play.api.cache.SyncCacheApi
 import uk.ac.ncl.openlab.intake24.errors.{LocalLookupError, LocaleOrParentError, UnexpectedDatabaseError}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
 import uk.ac.ncl.openlab.intake24.{AssociatedFood, AssociatedFoodWithHeader}
 
-case class CachedAssociatedFoodsAdminService @Inject()(@BasicImpl service: AssociatedFoodsAdminService, cache: CacheApi)
+case class CachedAssociatedFoodsAdminService @Inject()(@BasicImpl service: AssociatedFoodsAdminService, cache: SyncCacheApi)
   extends AssociatedFoodsAdminService
     with CacheResult {
 

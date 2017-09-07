@@ -1,16 +1,20 @@
 package security
 
 import com.google.inject.{Inject, Singleton}
-import play.api.mvc.{Action, BodyParser, BodyParsers, Result}
+import play.api.mvc._
 import security.authorization.{AuthorizedRequest, RestrictedActionBuilder}
 import uk.ac.ncl.openlab.intake24.errors.AnyError
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
-import scala.concurrent.Future
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import scala.concurrent.{ExecutionContext, Future}
+
 
 @Singleton
-class Intake24RestrictedActionBuilder @Inject()(val authenticationService: Intake24JWTAuthenticationService, val failureHandler: Intake24AuthorizationFailureHandler) extends RestrictedActionBuilder[Intake24AuthenticationToken, AnyError] {
+class Intake24RestrictedActionBuilder @Inject()(val authenticationService: Intake24JWTAuthenticationService,
+                                                val failureHandler: Intake24AuthorizationFailureHandler,
+                                                val playBodyParsers: PlayBodyParsers,
+                                                val actionBuilder: DefaultActionBuilder,
+                                                implicit val executionContext: ExecutionContext) extends RestrictedActionBuilder[Intake24AuthenticationToken, AnyError] {
 
   private def checkIfAccessToken(token: Intake24AuthenticationToken, check: Intake24AccessToken => Boolean) = token match {
     case t: Intake24AccessToken => if (check(t)) Some(t) else None
@@ -33,10 +37,10 @@ class Intake24RestrictedActionBuilder @Inject()(val authenticationService: Intak
       restrictedActionWithDatabaseCheck[A, Intake24AccessToken](t => dbCheckIfAccessToken(t, check), bodyParser, block)
 
     def apply(block: AuthorizedRequest[Unit, Intake24AccessToken] => Future[Result]) =
-      restrictedActionWithDatabaseCheck[Unit, Intake24AccessToken](t => dbCheckIfAccessToken(t, check), BodyParsers.parse.empty, block)
+      restrictedActionWithDatabaseCheck[Unit, Intake24AccessToken](t => dbCheckIfAccessToken(t, check), playBodyParsers.empty, block)
 
     def apply(block: => Future[Result]) =
-      restrictedActionWithDatabaseCheck[Unit, Intake24AccessToken](t => dbCheckIfAccessToken(t, check), BodyParsers.parse.empty, _ => block)
+      restrictedActionWithDatabaseCheck[Unit, Intake24AccessToken](t => dbCheckIfAccessToken(t, check), playBodyParsers.empty, _ => block)
   }
 
   class RestrictAccessAdapter(check: Intake24AccessToken => Boolean) {
@@ -44,14 +48,14 @@ class Intake24RestrictedActionBuilder @Inject()(val authenticationService: Intak
       restrictedAction[A, Intake24AccessToken](t => checkIfAccessToken(t, check), bodyParser, block)
 
     def apply(block: AuthorizedRequest[Unit, Intake24AccessToken] => Future[Result]) =
-      restrictedAction[Unit, Intake24AccessToken](t => checkIfAccessToken(t, check), BodyParsers.parse.empty, block)
+      restrictedAction[Unit, Intake24AccessToken](t => checkIfAccessToken(t, check), playBodyParsers.empty, block)
 
     def apply(block: => Future[Result]) =
-      restrictedAction[Unit, Intake24AccessToken](t => checkIfAccessToken(t, check), BodyParsers.parse.empty, _ => block)
+      restrictedAction[Unit, Intake24AccessToken](t => checkIfAccessToken(t, check), playBodyParsers.empty, _ => block)
   }
 
   def restrictRefresh(block: AuthorizedRequest[Unit, Intake24RefreshToken] => Future[Result]) =
-    restrictedAction[Unit, Intake24RefreshToken](t => checkIfRefreshToken(t, _ => true), BodyParsers.parse.empty, block)
+    restrictedAction[Unit, Intake24RefreshToken](t => checkIfRefreshToken(t, _ => true), playBodyParsers.empty, block)
 
   def restrictAccess(check: Intake24AccessToken => Boolean) = new RestrictAccessAdapter(check)
 

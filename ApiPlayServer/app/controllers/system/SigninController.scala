@@ -21,25 +21,23 @@ package controllers.system
 import javax.inject.Inject
 
 import akka.actor.ActorSystem
-import com.google.inject.name.Named
 import com.mohiva.play.silhouette.api.util.Credentials
 import com.mohiva.play.silhouette.api.{Environment, LoginInfo}
 import com.mohiva.play.silhouette.impl.exceptions.{IdentityNotFoundException, InvalidPasswordException}
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
-import parsers.JsonUtils
-import play.api.{Configuration, Logger}
+import parsers.{JsonBodyParser, JsonUtils}
 import play.api.http.ContentTypes
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
-import play.api.mvc.{Action, Controller, RequestHeader, Result}
+import play.api.mvc._
+import play.api.{Configuration, Logger}
 import security._
 import uk.ac.ncl.openlab.intake24.api.shared._
 import uk.ac.ncl.openlab.intake24.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{SigninAttempt, SigninLogService, SurveyUserAlias}
 
-import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
 class SigninController @Inject()(silhouette: Environment[Intake24ApiEnv],
                                  emailProvider: EmailProvider,
@@ -48,14 +46,16 @@ class SigninController @Inject()(silhouette: Environment[Intake24ApiEnv],
                                  signinLogService: SigninLogService,
                                  actorSystem: ActorSystem,
                                  rab: Intake24RestrictedActionBuilder,
-                                 configuration: Configuration)
-  extends Controller with JsonUtils with DatabaseErrorHandler {
+                                 configuration: Configuration,
+                                 jsonBodyParser: JsonBodyParser,
+                                 val controllerComponents: ControllerComponents,
+                                 implicit val executionContext: ExecutionContext) extends BaseController with JsonUtils with DatabaseErrorHandler {
 
-  val accessTokenExpiryPeriod = configuration.getInt("intake24.security.accessTokenExpiryMinutes").getOrElse(10).minutes
-  val refreshTokenExpiryPeriod = configuration.getInt("intake24.security.refreshTokenExpiryDays").getOrElse(1825).days
+  val accessTokenExpiryPeriod = configuration.get[Int]("intake24.security.accessTokenExpiryMinutes").minutes
+  val refreshTokenExpiryPeriod = configuration.get[Int]("intake24.security.refreshTokenExpiryDays").days
 
   def logAttemptAsync(event: SigninAttempt) = {
-    actorSystem.scheduler.scheduleOnce(0 seconds) {
+    actorSystem.scheduler.scheduleOnce(0.seconds) {
       signinLogService.logSigninAttempt(event) match {
         case Right(()) => ()
         case Left(UnexpectedDatabaseError(e)) => Logger.error("Failed to log sign in attempt", e)
@@ -112,7 +112,7 @@ class SigninController @Inject()(silhouette: Environment[Intake24ApiEnv],
     }
   }
 
-  def signinWithAlias = Action.async(jsonBodyParser[SurveyAliasCredentials]) {
+  def signinWithAlias = Action.async(jsonBodyParser.parse[SurveyAliasCredentials]) {
     implicit request =>
 
       val credentials = request.body
@@ -124,7 +124,7 @@ class SigninController @Inject()(silhouette: Environment[Intake24ApiEnv],
       handleAuthResult(SurveyAliasProvider.ID, providerKey, authResult)
   }
 
-  def signinWithEmail = Action.async(jsonBodyParser[EmailCredentials]) {
+  def signinWithEmail = Action.async(jsonBodyParser.parse[EmailCredentials]) {
     implicit request =>
 
       val credentials = request.body

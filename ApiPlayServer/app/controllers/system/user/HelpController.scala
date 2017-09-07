@@ -24,36 +24,38 @@ import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
-import parsers.JsonUtils
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import parsers.{JsonBodyParser, JsonUtils}
 import play.api.libs.mailer.{Email, MailerClient}
 import play.api.mvc._
 import play.api.{Configuration, Logger}
-import play.cache.CacheApi
+import play.cache.SyncCacheApi
 import security._
 import sms.SMSService
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.UserAdminService
 
-import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
 
 case class CallbackRequest(name: String, phone: String)
 
 case class FeedbackMessage(like: Boolean, pageUrl: String, body: String)
 
-class HelpController @Inject()(cache: CacheApi,
+class HelpController @Inject()(cache: SyncCacheApi,
                                config: Configuration,
                                system: ActorSystem,
                                mailer: MailerClient,
                                smsService: SMSService,
                                userAdminService: UserAdminService,
                                passwordHasherRegistry: PasswordHasherRegistry,
-                               rab: Intake24RestrictedActionBuilder) extends Controller
+                               rab: Intake24RestrictedActionBuilder,
+                               jsonBodyParser: JsonBodyParser,
+                               val controllerComponents: ControllerComponents,
+                               implicit val executionContext: ExecutionContext) extends BaseController
   with DatabaseErrorHandler with JsonUtils {
 
-  val callbackRequestRate = config.getInt("intake24.help.callbackRequestRateSeconds").get
+  val callbackRequestRate = config.get[Int]("intake24.help.callbackRequestRateSeconds")
 
   private def getCacheKey(subject: Intake24AccessToken) = {
     s"reject-callback-${subject.userId.toString}"
@@ -61,7 +63,7 @@ class HelpController @Inject()(cache: CacheApi,
 
   // TODO: captcha to prevent new spam
   // TODO: localise e-mail messages
-  def requestCallback(surveyId: String) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(jsonBodyParser[CallbackRequest]) {
+  def requestCallback(surveyId: String) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(jsonBodyParser.parse[CallbackRequest]) {
     request =>
       Future {
         val subject = request.subject
@@ -96,7 +98,7 @@ class HelpController @Inject()(cache: CacheApi,
               if (emailAddresses.isEmpty)
                 Logger.error(s"No support e-mail addresses are available for survey $surveyId: support user list is empty, none of support users have an e-mail address set, or all available support users have e-mail notifications disabled")
               else
-                system.scheduler.scheduleOnce(0 seconds) {
+                system.scheduler.scheduleOnce(0.seconds) {
                   try {
                     val message = Email(
                       subject = s"Someone needs help completing their Intake24 survey ($surveyId)",
@@ -114,7 +116,7 @@ class HelpController @Inject()(cache: CacheApi,
               if (phoneNumbers.isEmpty)
                 Logger.warn(s"No support phone numbers are available for survey $surveyId: support user list is empty, none of support users have a phone number set, or all available support users have SMS notifiactions disabled")
               else
-                system.scheduler.scheduleOnce(0 seconds) {
+                system.scheduler.scheduleOnce(0.seconds) {
                   phoneNumbers.foreach {
                     toNumber =>
                       try {
@@ -133,7 +135,7 @@ class HelpController @Inject()(cache: CacheApi,
       }
   }
 
-  def feedback() = rab.restrictToAuthenticated(jsonBodyParser[FeedbackMessage]) {
+  def feedback() = rab.restrictToAuthenticated(jsonBodyParser.parse[FeedbackMessage]) {
     request =>
       Future {
         val subject = request.subject
@@ -150,7 +152,7 @@ class HelpController @Inject()(cache: CacheApi,
         else {
           cache.set(cacheKey, "t", callbackRequestRate)
 
-          val result = system.scheduler.scheduleOnce(0 seconds) {
+          val result = system.scheduler.scheduleOnce(0.seconds) {
             try {
               val message = Email(
                 subject = s"Page feedback. ${if (request.body.like) "Liked" else "Disliked"}",

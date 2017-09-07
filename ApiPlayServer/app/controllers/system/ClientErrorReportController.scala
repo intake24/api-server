@@ -22,20 +22,22 @@ import java.time.Instant
 import javax.inject.Inject
 
 import controllers.DatabaseErrorHandler
-import parsers.JsonUtils
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import io.circe.generic.auto._
+import parsers.{JsonBodyParser, JsonUtils}
 import play.api.mvc._
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.{ClientErrorService, NewClientErrorReport}
-import io.circe.generic.auto._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class ClientErrorReportController @Inject()(service: ClientErrorService) extends Controller with DatabaseErrorHandler with JsonUtils {
+class ClientErrorReportController @Inject()(service: ClientErrorService,
+                                            jsonBodyParser: JsonBodyParser,
+                                            val controllerComponents: ControllerComponents,
+                                            implicit val executionContext: ExecutionContext) extends BaseController with DatabaseErrorHandler with JsonUtils {
 
   case class ForwardErrorReport(userId: Option[String], surveyId: Option[String], stackTrace: Seq[String], surveyStateJSON: String)
 
   // TODO: only allow requests from the frontend servers
-  def reportError() = Action.async(jsonBodyParser[ForwardErrorReport]) {
+  def reportError() = Action.async(jsonBodyParser.parse[ForwardErrorReport]) {
     request =>
       Future {
         translateDatabaseResult(service.submitErrorReport(NewClientErrorReport(request.body.userId, request.body.surveyId, Instant.now(), request.body.stackTrace, request.body.surveyStateJSON)))

@@ -21,18 +21,20 @@ package controllers
 import javax.inject.Inject
 
 import io.circe.generic.auto._
-import parsers.JsonUtils
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.Controller
+import parsers.{JsonBodyParser, JsonUtils}
+import play.api.mvc.{BaseController, ControllerComponents}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.AssociatedFood
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class AssociatedFoodsAdminController @Inject()(service: AssociatedFoodsAdminService,
                                                foodAuthChecks: FoodAuthChecks,
-                                               rab: Intake24RestrictedActionBuilder) extends Controller
+                                               rab: Intake24RestrictedActionBuilder,
+                                               jsonBodyParser: JsonBodyParser,
+                                               implicit val controllerComponents: ControllerComponents,
+                                               implicit val executionContext: ExecutionContext) extends BaseController
   with DatabaseErrorHandler with JsonUtils {
 
   def getAssociatedFoods(foodCode: String, locale: String) = rab.restrictAccess(foodAuthChecks.canReadFoods(locale)) {
@@ -41,7 +43,7 @@ class AssociatedFoodsAdminController @Inject()(service: AssociatedFoodsAdminServ
     }
   }
 
-  def updateAssociatedFoods(foodCode: String, locale: String) = rab.restrictAccess(foodAuthChecks.canUpdateLocalFoods(locale))(jsonBodyParser[Seq[AssociatedFood]]) {
+  def updateAssociatedFoods(foodCode: String, locale: String) = rab.restrictAccess(foodAuthChecks.canUpdateLocalFoods(locale))(jsonBodyParser.parse[Seq[AssociatedFood]]) {
     request =>
       Future {
         translateDatabaseResult(service.updateAssociatedFoods(foodCode, request.body, locale))

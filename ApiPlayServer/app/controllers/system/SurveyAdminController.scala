@@ -22,18 +22,21 @@ import javax.inject.Inject
 
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
-
-import parsers.{HtmlSanitisePolicy, JsonUtils}
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.{BodyParsers, Controller}
+import parsers.{HtmlSanitisePolicy, JsonBodyParser, JsonUtils}
+import play.api.mvc.{BaseController, BodyParsers, ControllerComponents, PlayBodyParsers}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{StaffSurveyUpdate, SurveyAdminService, SurveyParametersIn}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 
-class SurveyAdminController @Inject()(service: SurveyAdminService, rab: Intake24RestrictedActionBuilder) extends Controller
+class SurveyAdminController @Inject()(service: SurveyAdminService,
+                                      rab: Intake24RestrictedActionBuilder,
+                                      playBodyParsers: PlayBodyParsers,
+                                      jsonBodyParser: JsonBodyParser,
+                                      val controllerComponents: ControllerComponents,
+                                      implicit val executionContext: ExecutionContext) extends BaseController
   with DatabaseErrorHandler with JsonUtils with SurveyAuthChecks {
 
   private def sanitiseSurvey(surveyParametersIn: SurveyParametersIn, strict: Boolean = true): SurveyParametersIn = {
@@ -46,14 +49,14 @@ class SurveyAdminController @Inject()(service: SurveyAdminService, rab: Intake24
       surveyParametersIn.supportEmail, description)
   }
 
-  def createSurvey() = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin)(jsonBodyParser[SurveyParametersIn]) {
+  def createSurvey() = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin)(jsonBodyParser.parse[SurveyParametersIn]) {
     request =>
       Future {
         translateDatabaseResult(service.createSurvey(sanitiseSurvey(request.body, false)))
       }
   }
 
-  def updateSurvey(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser[SurveyParametersIn]) {
+  def updateSurvey(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser.parse[SurveyParametersIn]) {
     request =>
       Future {
 
@@ -74,7 +77,7 @@ class SurveyAdminController @Inject()(service: SurveyAdminService, rab: Intake24
       }
   }
 
-  def validateSurveyId(id: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin)(BodyParsers.parse.empty) {
+  def validateSurveyId(id: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin)(playBodyParsers.empty) {
     _ =>
       Future {
         translateDatabaseResult(service.validateSurveyId(id))
@@ -95,14 +98,14 @@ class SurveyAdminController @Inject()(service: SurveyAdminService, rab: Intake24
       }
   }
 
-  def getSurvey(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
+  def getSurvey(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
     _ =>
       Future {
         translateDatabaseResult(service.getSurvey(surveyId))
       }
   }
 
-  def deleteSurvey(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin)(BodyParsers.parse.empty) {
+  def deleteSurvey(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin)(playBodyParsers.empty) {
     _ =>
       Future {
         translateDatabaseResult(service.deleteSurvey(surveyId))

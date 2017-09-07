@@ -33,7 +33,7 @@ libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-simple" % "1.7.21",
   "com.zaxxer" % "HikariCP" % "2.5.1",
   "org.apache.poi" % "poi-ooxml" % "3.9",
-  "com.lihaoyi" %% "upickle" % "0.4.1",
+  "com.lihaoyi" %% "upickle" % "0.4.4",
   "org.rogach" %% "scallop" % "2.0.5",
   "commons-io" % "commons-io" % "2.5"
 )

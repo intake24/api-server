@@ -23,8 +23,7 @@ import javax.inject.Inject
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
 import parsers.JsonUtils
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.{BodyParsers, Controller}
+import play.api.mvc.{BaseController, BodyParsers, ControllerComponents, PlayBodyParsers}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound}
@@ -33,7 +32,7 @@ import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, Splitter}
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.FoodPopularityService
 import uk.ac.ncl.openlab.intake24.{UserCategoryHeader, UserFoodHeader}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class SplitSuggestion(parts: Seq[String])
 
@@ -41,11 +40,14 @@ case class LookupResult(foods: Seq[UserFoodHeader], categories: Seq[UserCategory
 
 class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex], foodDescriptionSplitters: Map[String, Splitter],
                                      foodBrowsingService: FoodBrowsingService, foodPopularityService: FoodPopularityService,
-                                     rab: Intake24RestrictedActionBuilder) extends Controller with DatabaseErrorHandler with JsonUtils {
+                                     rab: Intake24RestrictedActionBuilder,
+                                     playBodyParsers: PlayBodyParsers,
+                                     val controllerComponents: ControllerComponents,
+                                     implicit val executionContext: ExecutionContext) extends BaseController with DatabaseErrorHandler with JsonUtils {
 
   import uk.ac.ncl.openlab.intake24.errors.ErrorUtils._
 
-  def getSplitSuggestion(locale: String, description: String) = rab.restrictToAuthenticated(BodyParsers.parse.empty) {
+  def getSplitSuggestion(locale: String, description: String) = rab.restrictToAuthenticated(playBodyParsers.empty) {
     _ =>
       Future {
         foodDescriptionSplitters.get(locale) match {

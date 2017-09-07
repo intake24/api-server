@@ -29,16 +29,18 @@ resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases/"
 libraryDependencies ++= Seq(
   jdbc,
   cache,
+  guice,
   "net.codingwell" %% "scala-guice" % "4.1.0",
-  "com.mohiva" %% "play-silhouette" % "4.0.0",
+  "com.mohiva" %% "play-silhouette" % "5.0.0",
   "io.circe" %% "circe-core" % "0.7.0",
   "io.circe" %% "circe-generic" % "0.7.0",
   "io.circe" %% "circe-parser" % "0.7.0",
-  "com.typesafe.play" %% "play-mailer" % "5.0.0",
+  "com.typesafe.play" %% "play-mailer" % "6.0.1",
+  "com.typesafe.play" %% "play-mailer-guice" % "6.0.1",
   "com.twilio.sdk" % "twilio" % "7.7.0",
   "com.amazonaws" % "aws-java-sdk" % "1.11.155",
   "org.apache.shiro" % "shiro-core" % "1.2.3", // for v1.0 authentication support
-  "com.typesafe.play" % "play-integration-test_2.11" % "2.5.9" % "test"
+  "com.typesafe.play" %% "play-integration-test" % "2.6.3" % "test"
 )
 
 // These are the default Java settings that go into conf/application.ini and are read by the start up

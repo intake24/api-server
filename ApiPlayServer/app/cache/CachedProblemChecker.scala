@@ -5,7 +5,7 @@ import javax.inject.Inject
 import models.{CategoryProblem, FoodProblem, RecursiveCategoryProblems}
 import modules.ProblemCheckerService
 import org.slf4j.LoggerFactory
-import play.api.cache.CacheApi
+import play.api.cache.SyncCacheApi
 import uk.ac.ncl.openlab.intake24._
 import uk.ac.ncl.openlab.intake24.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodBrowsingAdminService
@@ -20,7 +20,7 @@ case class CachedProblemChecker @Inject()(
                                            locales: ObservableLocalesAdminService,
                                            userFoods: FoodDataService,
                                            adminBrowsing: FoodBrowsingAdminService,
-                                           cache: CacheApi)
+                                           cache: SyncCacheApi)
   extends ProblemCheckerService
     with Timing
     with CacheResult

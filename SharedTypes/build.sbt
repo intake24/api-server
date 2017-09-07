@@ -19,5 +19,3 @@ limitations under the License.
 name := "shared-types"
 
 description := "Intake24 API shared types"
-
-libraryDependencies += "ca.mrvisser" %% "sealerate" % "0.0.4"

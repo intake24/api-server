@@ -20,23 +20,21 @@ package controllers.system
 
 import java.time._
 import java.time.format.{DateTimeFormatter, DateTimeParseException}
-import java.util.UUID
 import javax.inject.Inject
 
 import controllers.DatabaseErrorHandler
 import controllers.system.asynchronous.AsynchronousDataExporter
+import io.circe.generic.auto._
 import parsers.{JsonUtils, SurveyCSVExporter}
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.{BodyParsers, Controller}
-import security.{Intake24AccessToken, Intake24RestrictedActionBuilder}
+import play.api.http.FileMimeTypes
+import play.api.mvc.{BaseController, BodyParsers, ControllerComponents, PlayBodyParsers}
+import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, ExportTaskInfo, ExportTaskStatus, SurveyAdminService}
-import io.circe.generic.auto._
-import uk.ac.ncl.openlab.intake24.errors.AnyError
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, ExportTaskInfo, SurveyAdminService}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class NewExportTaskInfo(taskId: Long)
 
@@ -44,10 +42,13 @@ class DataExportController @Inject()(service: DataExportService,
                                      surveyAdminService: SurveyAdminService,
                                      foodGroupsAdminService: FoodGroupsAdminService,
                                      asyncExporter: AsynchronousDataExporter,
-                                     rab: Intake24RestrictedActionBuilder) extends Controller
+                                     rab: Intake24RestrictedActionBuilder,
+                                     playBodyParsers: PlayBodyParsers,
+                                     val controllerComponents: ControllerComponents,
+                                     implicit val executionContext: ExecutionContext) extends BaseController
   with DatabaseErrorHandler with JsonUtils {
 
-  def getSurveySubmissions(surveyId: String, dateFrom: String, dateTo: String, offset: Int, limit: Int) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
+  def getSurveySubmissions(surveyId: String, dateFrom: String, dateTo: String, offset: Int, limit: Int) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
     _ =>
       Future {
 
@@ -62,7 +63,7 @@ class DataExportController @Inject()(service: DataExportService,
       }
   }
 
-  def getMySurveySubmissions(surveyId: String) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(BodyParsers.parse.empty) {
+  def getMySurveySubmissions(surveyId: String) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(playBodyParsers.empty) {
     request =>
       Future {
 
@@ -76,7 +77,7 @@ class DataExportController @Inject()(service: DataExportService,
       }
   }
 
-  def getSurveySubmissionsAsCSV(surveyId: String, dateFrom: String, dateTo: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
+  def getSurveySubmissionsAsCSV(surveyId: String, dateFrom: String, dateTo: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
     request =>
       Future {
 
@@ -110,7 +111,7 @@ class DataExportController @Inject()(service: DataExportService,
       }
   }
 
-  def getSurveySubmissionsAsCSVAsync(surveyId: String, dateFrom: String, dateTo: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
+  def getSurveySubmissionsAsCSVAsync(surveyId: String, dateFrom: String, dateTo: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
     request =>
       Future {
 
@@ -131,7 +132,7 @@ class DataExportController @Inject()(service: DataExportService,
 
   case class GetExportTaskStatusResult(activeTasks: Seq[ExportTaskInfo])
 
-  def getExportTaskStatus(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
+  def getExportTaskStatus(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
     request =>
       Future {
         translateDatabaseResult(service.getActiveExportTasks(surveyId, request.subject.userId).right.map(GetExportTaskStatusResult(_)))

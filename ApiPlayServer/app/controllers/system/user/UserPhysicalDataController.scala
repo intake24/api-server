@@ -4,16 +4,15 @@ import javax.inject.Inject
 
 import controllers.DatabaseErrorHandler
 import controllers.system.UserAuthChecks
-import parsers.JsonUtils
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.{Controller, Result}
 import io.circe.generic.auto._
+import parsers.{JsonBodyParser, JsonUtils}
+import play.api.mvc.{BaseController, ControllerComponents, Result}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.errors.{AnyError, RecordNotFound}
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{UserAdminService, UserProfileWithPhysicalData}
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.{UserPhysicalDataIn, UserPhysicalDataService}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Left, Right}
 
 /**
@@ -22,8 +21,10 @@ import scala.util.{Left, Right}
 class UserPhysicalDataController @Inject()(service: UserPhysicalDataService,
                                            userAdminService: UserAdminService,
                                            userAuthChecks: UserAuthChecks,
-                                           rab: Intake24RestrictedActionBuilder)
-  extends Controller with DatabaseErrorHandler with JsonUtils {
+                                           rab: Intake24RestrictedActionBuilder,
+                                           jsonBodyParser: JsonBodyParser,
+                                           val controllerComponents: ControllerComponents,
+                                           implicit val executionContext: ExecutionContext) extends BaseController with DatabaseErrorHandler with JsonUtils {
 
   private def doWithDatabaseCheck(check: Either[AnyError, Boolean])(block: => Result): Result =
     check match {
@@ -50,7 +51,7 @@ class UserPhysicalDataController @Inject()(service: UserPhysicalDataService,
       }
   }
 
-  def updateMyPhysicalData() = rab.restrictToAuthenticated(jsonBodyParser[UserPhysicalDataIn]) {
+  def updateMyPhysicalData() = rab.restrictToAuthenticated(jsonBodyParser.parse[UserPhysicalDataIn]) {
     request =>
       Future {
         val userId = request.subject.userId
@@ -59,7 +60,7 @@ class UserPhysicalDataController @Inject()(service: UserPhysicalDataService,
       }
   }
 
-  def patchUserPhysicalData(userId: Long) = rab.restrictAccessWithDatabaseCheck(userAuthChecks.canUpdateProfile(userId))(jsonBodyParser[UserPhysicalDataIn]) {
+  def patchUserPhysicalData(userId: Long) = rab.restrictAccessWithDatabaseCheck(userAuthChecks.canUpdateProfile(userId))(jsonBodyParser.parse[UserPhysicalDataIn]) {
     request =>
       Future {
         translateDatabaseResult(service.update(userId, request.body))

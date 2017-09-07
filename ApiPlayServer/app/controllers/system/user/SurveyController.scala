@@ -23,10 +23,9 @@ import javax.inject.Inject
 import akka.actor.ActorSystem
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
-import parsers.JsonUtils
+import parsers.{JsonBodyParser, JsonUtils}
 import play.Logger
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.{Action, BodyParsers, Controller}
+import play.api.mvc._
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService
@@ -35,29 +34,33 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.admin.UserAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.{FoodPopularityService, SurveyService}
 import uk.ac.ncl.openlab.intake24.surveydata.SurveySubmission
 
-import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
 class SurveyController @Inject()(service: SurveyService,
                                  userService: UserAdminService,
                                  nutrientMappingService: NutrientMappingService,
                                  foodPopularityService: FoodPopularityService,
                                  actorSystem: ActorSystem,
-                                 rab: Intake24RestrictedActionBuilder) extends Controller
+                                 rab: Intake24RestrictedActionBuilder,
+                                 playBodyParsers: PlayBodyParsers,
+                                 jsonBodyParser: JsonBodyParser,
+                                 val controllerComponents: ControllerComponents,
+                                 implicit val executionContext: ExecutionContext) extends BaseController
   with DatabaseErrorHandler with JsonUtils {
 
   def getPublicSurveyParameters(surveyId: String) = Action {
     translateDatabaseResult(service.getPublicSurveyParameters(surveyId))
   }
 
-  def getSurveyParameters(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId), Roles.surveyRespondent(surveyId))(BodyParsers.parse.empty) {
+  def getSurveyParameters(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId), Roles.surveyRespondent(surveyId))(playBodyParsers.empty) {
     _ =>
       Future {
         translateDatabaseResult(service.getSurveyParameters(surveyId))
       }
   }
 
-  def getSurveyFollowUp(surveyId: String) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(BodyParsers.parse.empty) {
+  def getSurveyFollowUp(surveyId: String) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(playBodyParsers.empty) {
     request =>
       Future {
         val userId = request.subject.userId
@@ -81,7 +84,7 @@ class SurveyController @Inject()(service: SurveyService,
       }
   }
 
-  def submitSurvey(surveyId: String) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(jsonBodyParser[SurveySubmission]) {
+  def submitSurvey(surveyId: String) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(jsonBodyParser.parse[SurveySubmission]) {
     request =>
       Future {
         service.getSurveyParameters(surveyId) match {
@@ -94,7 +97,7 @@ class SurveyController @Inject()(service: SurveyService,
               // No reason to keep the user waiting for the database result because reporting nutrient mapping or
               // database errors to the user is not helpful at this point.
               // Schedule submission asynchronously to release the request immediately and log errors server-side instead.
-              actorSystem.scheduler.scheduleOnce(0 seconds) {
+              actorSystem.scheduler.scheduleOnce(0.seconds) {
 
                 val foodCodes = request.body.meals.foldLeft(List[String]()) {
                   (acc, meal) =>
