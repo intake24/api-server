@@ -18,7 +18,7 @@ limitations under the License.
 
 lazy val commonSettings = Seq(
   organization := "uk.ac.ncl.openlab.intake24",
-  version := "2.35.0-SNAPSHOT",
+  version := "2.35.0",
   scalaVersion := "2.11.8",
   publishArtifact in (Compile, packageDoc) := false
 )
