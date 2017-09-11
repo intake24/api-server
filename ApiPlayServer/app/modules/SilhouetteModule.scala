@@ -61,7 +61,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
       requestParts = Some(Seq(RequestPart.Headers)),
       authenticatorIdleTimeout = None,
       authenticatorExpiry = 0.minutes, // Will be overriden when the token is created
-      sharedSecret = configuration.get[String]("play.crypto.secret"))
+      sharedSecret = configuration.get[String]("play.http.secret.key"))
 
     new JWTAuthenticatorService(settings, None, new Base64AuthenticatorEncoder(), idGenerator, clock)(executionContext)
   }
