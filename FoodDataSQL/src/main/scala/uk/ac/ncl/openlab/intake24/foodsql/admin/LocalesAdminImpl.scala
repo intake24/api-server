@@ -24,6 +24,7 @@ import anorm.NamedParameter.symbol
 import anorm.{Macro, SQL, sqlToSimple}
 import com.google.inject.name.Named
 import com.google.inject.{Inject, Singleton}
+import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.Locale
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.foodsql.modular.LocaleQueries
@@ -35,12 +36,12 @@ class LocalesAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSo
 
   def listLocales(): Either[UnexpectedDatabaseError, Map[String, Locale]] = tryWithConnection {
     implicit conn =>
-      listLocales()
+      listLocalesQuery()
   }
 
   def getLocale(id: String): Either[LookupError, Locale] = tryWithConnection {
     implicit conn =>
-      getLocale(id)
+      getLocaleQuery(id)
   }
 
   def createLocale(data: Locale): Either[CreateError, Unit] = tryWithConnection {
