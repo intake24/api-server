@@ -18,24 +18,31 @@ limitations under the License.
 
 package controllers.system
 
+import java.security.SecureRandom
+import java.util.Base64
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
 import parsers.{JsonBodyParser, JsonUtils, UserRecordsCSVParser}
+import play.api.Configuration
+import play.api.cache.SyncCacheApi
 import play.api.http.ContentTypes
 import play.api.libs.Files
+import play.api.libs.mailer.{Email, MailerClient}
 import play.api.mvc._
 import security.Intake24RestrictedActionBuilder
+import security.captcha.AsyncCaptchaService
 import uk.ac.ncl.openlab.intake24.api.shared._
-import uk.ac.ncl.openlab.intake24.errors.ErrorUtils
+import uk.ac.ncl.openlab.intake24.errors.{ErrorUtils, RecordNotFound}
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.UserPhysicalDataService
+import views.html.PasswordResetLink
 
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-
 
 class UserAdminController @Inject()(service: UserAdminService,
                                     userPhysicalData: UserPhysicalDataService,
@@ -46,9 +53,27 @@ class UserAdminController @Inject()(service: UserAdminService,
                                     authChecks: UserAuthChecks,
                                     playBodyParsers: PlayBodyParsers,
                                     jsonBodyParser: JsonBodyParser,
+                                    mailerClient: MailerClient,
+                                    syncCacheApi: SyncCacheApi,
+                                    captchaService: AsyncCaptchaService,
+                                    configuration: Configuration,
                                     val controllerComponents: ControllerComponents,
                                     implicit val executionContext: ExecutionContext) extends BaseController
   with DatabaseErrorHandler with JsonUtils {
+
+
+  private lazy val random = new SecureRandom()
+  private lazy val base64Encoder = Base64.getUrlEncoder()
+
+  private lazy val adminFrontendUrl = {
+    val setting = configuration.get[String]("intake24.adminFrontendUrl")
+
+    if (!setting.endsWith("/"))
+      setting + "/"
+    else
+      setting
+  }
+
 
   private def doCreateOrUpdate(surveyId: String, roles: Set[String], userRecords: Seq[NewRespondent]): Result = {
     val hasher = passwordHasherRegistry.current
@@ -217,6 +242,66 @@ class UserAdminController @Inject()(service: UserAdminService,
         request.body.containsSurveyId(surveyId) match {
           case true => translateDatabaseResult(ErrorUtils.sequence(request.body.users.map(userAccess => service.withdrawAccessToSurvey(userAccess))))
           case false => Forbidden
+        }
+      }
+  }
+
+  private def passwordResetTokenCacheKey(token: String) = s"UserAdminController.passwordReset.$token"
+
+  def passwordResetRequest() = Action.async(jsonBodyParser.parse[PasswordResetRequest]) {
+    request =>
+
+      captchaService.verify(request.body.recaptchaResponse, request.remoteAddress).flatMap {
+        case Some(true) =>
+          Future {
+
+            val bytes = new Array[Byte](33) // 256 bit + extra char to prevent base64 padding
+            random.nextBytes(bytes)
+
+            val token = base64Encoder.encodeToString(bytes)
+
+            service.getUserByEmail(request.body.email) match {
+              case Right(profile) =>
+                syncCacheApi.set(passwordResetTokenCacheKey(token), profile.id, 4.hours)
+
+                val passwordResetUrl = adminFrontendUrl + "password-reset/#?token=" + token
+
+                profile.email match {
+                  case Some(address) =>
+                    val body = PasswordResetLink(profile.name, passwordResetUrl, 4)
+                    val email = Email("Intake24 password reset link", "Intake24 <support@intake24.co.uk>", Seq(address), None, Some(body.toString()))
+                    mailerClient.send(email)
+                    Ok
+                  case None => Ok
+                }
+
+              case Left(RecordNotFound(e)) => Ok
+              case Left(error) => translateDatabaseError(error)
+            }
+          }
+
+        case Some(false) => Future.successful(Forbidden)
+
+        case None => Future.successful(InternalServerError)
+      }
+  }
+
+  def resetPassword() = Action.async(jsonBodyParser.parse[PasswordResetConfirmation]) {
+    request =>
+      Future {
+        syncCacheApi.get[Long](passwordResetTokenCacheKey(request.body.token)) match {
+          case Some(userId) =>
+
+            if (request.body.newPassword.length < 8)
+              BadRequest(toJsonString(ErrorDescription("InvalidPassword", "Password must be at least 8 characters long")))
+            else {
+              syncCacheApi.remove(passwordResetTokenCacheKey(request.body.token))
+
+              val pwInfo = passwordHasherRegistry.current.hash(request.body.newPassword)
+              translateDatabaseResult(service.updateUserPassword(userId, SecurePassword(pwInfo.password, pwInfo.salt.get, pwInfo.hasher)))
+            }
+          case None =>
+            Forbidden(toJsonString(ErrorDescription("InvalidToken", "Password reset token is invalid or has expired")))
         }
       }
   }

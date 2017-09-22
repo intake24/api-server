@@ -25,6 +25,7 @@ import play.api.db.Database
 import play.api.{Configuration, Environment}
 import play.db.NamedDatabase
 import scheduled.{ErrorDigestSender, ErrorDigestSenderImpl}
+import security.captcha.{AsyncCaptchaService, GoogleRecaptchaImpl}
 import sms.{SMSService, TwilioSMSImpl}
 import uk.ac.ncl.openlab.intake24.foodsql.admin._
 import uk.ac.ncl.openlab.intake24.foodsql.demographicGroups._
@@ -45,6 +46,7 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.{ClientErrorService, FoodPopularityService, SurveyService, UserPhysicalDataService}
 import uk.ac.ncl.openlab.intake24.systemsql.admin._
 import uk.ac.ncl.openlab.intake24.systemsql.user.{ClientErrorServiceImpl, FoodPopularityServiceImpl, SurveyServiceImpl, UserPhysicalDataServiceImpl}
+
 import collection.JavaConverters._
 
 class Intake24ServicesModule(env: Environment, config: Configuration) extends AbstractModule {
@@ -181,6 +183,10 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     // SMS serviceUser
 
     bind(classOf[SMSService]).to(classOf[TwilioSMSImpl])
+
+    // Captcha
+
+    bind(classOf[AsyncCaptchaService]).to(classOf[GoogleRecaptchaImpl])
 
     // Error digest service
 
