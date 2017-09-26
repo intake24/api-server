@@ -15,6 +15,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
 
 @Singleton
 class FoodsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends FoodsAdminService
+  with FoodQueries
   with FoodsAdminQueries
   with BrandNamesAdminQueries
   with FoodBrowsingAdminQueries
@@ -60,7 +61,7 @@ class FoodsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSour
 
   def isFoodCode(code: String): Either[UnexpectedDatabaseError, Boolean] = tryWithConnection {
     implicit conn =>
-      Right(SQL("""SELECT code FROM foods WHERE code={food_code}""").on('food_code -> code).executeQuery().as(SqlParser.str("code").*).nonEmpty)
+      foodCodeExistsQuery(code)
   }
 
   def isFoodCodeAvailable(code: String): Either[UnexpectedDatabaseError, Boolean] = isFoodCode(code).right.map(!_)

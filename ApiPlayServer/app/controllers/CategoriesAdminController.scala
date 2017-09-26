@@ -21,19 +21,20 @@ package controllers
 import javax.inject.Inject
 
 import io.circe.generic.auto._
-import parsers.JsonUtils
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.Controller
+import parsers.{JsonBodyParser, JsonUtils}
+import play.api.mvc.{BaseController, ControllerComponents}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoriesAdminService
-import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 import uk.ac.ncl.openlab.intake24.{LocalCategoryRecordUpdate, MainCategoryRecordUpdate, NewLocalCategoryRecord, NewMainCategoryRecord}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class CategoriesAdminController @Inject()(service: CategoriesAdminService,
                                           foodAuthChecks: FoodAuthChecks,
-                                          rab: Intake24RestrictedActionBuilder) extends Controller
+                                          rab: Intake24RestrictedActionBuilder,
+                                          jsonBodyParser: JsonBodyParser,
+                                          val controllerComponents: ControllerComponents,
+                                          implicit val executionContext: ExecutionContext) extends BaseController
   with DatabaseErrorHandler with JsonUtils {
 
   def getCategoryRecord(code: String, locale: String) = rab.restrictAccess(foodAuthChecks.canReadFoods(locale)) {
@@ -54,7 +55,7 @@ class CategoriesAdminController @Inject()(service: CategoriesAdminService,
     }
   }
 
-  def createMainCategoryRecord() = rab.restrictAccess(foodAuthChecks.canCreateMainFoods)(jsonBodyParser[NewMainCategoryRecord]) {
+  def createMainCategoryRecord() = rab.restrictAccess(foodAuthChecks.canCreateMainFoods)(jsonBodyParser.parse[NewMainCategoryRecord]) {
     request =>
       Future {
         translateDatabaseResult(service.createMainCategoryRecords(Seq(request.body)))
@@ -67,14 +68,14 @@ class CategoriesAdminController @Inject()(service: CategoriesAdminService,
     }
   }
 
-  def updateMainCategoryRecord(categoryCode: String) = rab.restrictAccess(foodAuthChecks.canUpdateCategories)(jsonBodyParser[MainCategoryRecordUpdate]) {
+  def updateMainCategoryRecord(categoryCode: String) = rab.restrictAccess(foodAuthChecks.canUpdateCategories)(jsonBodyParser.parse[MainCategoryRecordUpdate]) {
     request =>
       Future {
         translateDatabaseResult(service.updateMainCategoryRecord(categoryCode, request.body))
       }
   }
 
-  def updateLocalCategoryRecord(categoryCode: String, locale: String) = rab.restrictAccess(foodAuthChecks.canUpdateLocalFoods(locale))(jsonBodyParser[LocalCategoryRecordUpdate]) {
+  def updateLocalCategoryRecord(categoryCode: String, locale: String) = rab.restrictAccess(foodAuthChecks.canUpdateLocalFoods(locale))(jsonBodyParser.parse[LocalCategoryRecordUpdate]) {
     request =>
       Future {
         val req = request.body

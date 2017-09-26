@@ -21,17 +21,17 @@ package controllers
 import javax.inject.Inject
 
 import io.circe.generic.auto._
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.Controller
+import play.api.mvc.{BaseController, ControllerComponents}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.LocalesAdminService
-import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class LocalesAdminController @Inject()(service: LocalesAdminService,
                                        foodAuthChecks: FoodAuthChecks,
-                                       rab: Intake24RestrictedActionBuilder) extends Controller with DatabaseErrorHandler {
+                                       rab: Intake24RestrictedActionBuilder,
+                                       val controllerComponents: ControllerComponents,
+                                       implicit val executionContext: ExecutionContext) extends BaseController with DatabaseErrorHandler {
 
   def listLocales() = rab.restrictAccess(foodAuthChecks.canReadLocales) {
     _ =>

@@ -18,15 +18,16 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodsql.test
 
-import org.scalatest.{BeforeAndAfterAll, ConfigMap, SequentialNestedSuiteExecution, Spec}
+import org.scalatest.refspec.RefSpec
+import org.scalatest.{BeforeAndAfterAll, SequentialNestedSuiteExecution}
 
-class FoodDatabaseAdminTest extends Spec with SequentialNestedSuiteExecution with BeforeAndAfterAll with TestFoodDatabase {
+class FoodDatabaseAdminTest extends RefSpec with SequentialNestedSuiteExecution with BeforeAndAfterAll with TestFoodDatabase {
 
-  override def beforeAll(configMap: ConfigMap) {
+  override def beforeAll() {
     resetTestDatabase()
   }
 
-  override def afterAll(configMap: ConfigMap) {
+  override def afterAll() {
 
   }
 

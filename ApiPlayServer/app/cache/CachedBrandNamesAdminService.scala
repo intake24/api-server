@@ -2,11 +2,11 @@ package cache
 
 import com.google.inject.Inject
 import modules.BasicImpl
-import play.api.cache.CacheApi
+import play.api.cache.SyncCacheApi
 import uk.ac.ncl.openlab.intake24.errors.{LocalDependentCreateError, LocalLookupError, LocaleError}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.BrandNamesAdminService
 
-case class CachedBrandNamesAdminService @Inject()(@BasicImpl service: BrandNamesAdminService, cache: CacheApi)
+case class CachedBrandNamesAdminService @Inject()(@BasicImpl service: BrandNamesAdminService, cache: SyncCacheApi)
   extends BrandNamesAdminService
     with CacheResult {
 

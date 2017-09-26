@@ -19,3 +19,7 @@ case class UserInfoWithSurveyUserName(id: Long, userName: String, name: Option[S
 case class CreateRespondentsWithPhysicalDataRequest(users: Seq[NewRespondentWithPhysicalData])
 
 case class CreateRespondentsWithPhysicalDataResponse(userKeys: Seq[NewRespondentIds])
+
+case class PasswordResetRequest(email: String, recaptchaResponse: String)
+
+case class PasswordResetConfirmation(token: String, newPassword: String)

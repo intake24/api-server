@@ -22,16 +22,15 @@ import java.nio.file.Paths
 import javax.inject.Inject
 
 import play.api.Logger
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.Controller
+import play.api.mvc.{BaseController, ControllerComponents}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
 import io.circe.generic.auto._
-import parsers.JsonUtils
+import parsers.{JsonBodyParser, JsonUtils}
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class AsServedImageWithUrls(sourceId: Long, imageUrl: String, thumbnailUrl: String, weight: Double)
 
@@ -49,8 +48,11 @@ class AsServedSetsAdminController @Inject()(
                                              imageAdmin: ImageAdminService,
                                              imageStorage: ImageStorageService,
                                              foodAuthChecks: FoodAuthChecks,
-                                             rab: Intake24RestrictedActionBuilder) extends Controller
-  with ImageOrDatabaseServiceErrorHandler with JsonUtils {
+                                             jsonBodyParser: JsonBodyParser,
+                                             rab: Intake24RestrictedActionBuilder,
+                                             implicit val ec: ExecutionContext,
+                                             val controllerComponents: ControllerComponents) extends BaseController
+  with ImageOrDatabaseServiceErrorHandler {
 
   import ImageAdminService.WrapDatabaseError
   import uk.ac.ncl.openlab.intake24.errors.ErrorUtils.sequence
@@ -84,7 +86,7 @@ class AsServedSetsAdminController @Inject()(
     }
   }
 
-  def importAsServedSet() = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(jsonBodyParser[PortableAsServedSet]) {
+  def importAsServedSet() = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(jsonBodyParser.parse[PortableAsServedSet]) {
     request =>
       Future {
 
@@ -159,7 +161,7 @@ class AsServedSetsAdminController @Inject()(
       res <- service.getAsServedSetWithPaths(newSet.id).wrapped.right
     ) yield res
 
-  def createAsServedSetFromSource() = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(jsonBodyParser[NewAsServedSet]) {
+  def createAsServedSetFromSource() = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(jsonBodyParser.parse[NewAsServedSet]) {
     request =>
       Future {
         val newSet = request.body
@@ -208,7 +210,7 @@ class AsServedSetsAdminController @Inject()(
 
             val result = for (
               sources <- sequence(records.map {
-                record => imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForAsServed(setId, record._1.filename), Paths.get(record._1.ref.file.getPath), keywords, uploaderName)
+                record => imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForAsServed(setId, record._1.filename), record._1.ref.path, keywords, uploaderName)
               }).right;
               result <- createAsServedSetImpl(NewAsServedSet(setId, description, sources.zip(weights).map { case (source, weight) => NewAsServedImage(source.id, weight) })).right)
               yield result
@@ -231,7 +233,7 @@ class AsServedSetsAdminController @Inject()(
     }
   }
 
-  def updateAsServedSet(id: String) = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(jsonBodyParser[NewAsServedSet]) {
+  def updateAsServedSet(id: String) = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(jsonBodyParser.parse[NewAsServedSet]) {
     request =>
       Future {
         val update = request.body

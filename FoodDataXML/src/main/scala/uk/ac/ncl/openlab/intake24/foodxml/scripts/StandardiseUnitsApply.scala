@@ -8,7 +8,7 @@ import java.io.File
 import java.io.FileWriter
 import au.com.bytecode.opencsv.CSVReader
 import java.io.FileReader
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import uk.ac.ncl.openlab.intake24.foodxml.Util
 import java.io.PrintWriter
 
@@ -27,32 +27,32 @@ object StandardiseUnitsApply extends App {
   val foods = FoodDef.parseXml(XML.load(dataDir + "/foods.xml"))
 
   val reader = new CSVReader(new FileReader(new File(csvPath)))
-  
-  
-  def convertToIdentifier(s: String) = s.replaceAll(" ", "_").replaceAll("\\(", "").replaceAll("\\)", "").replaceAll("\\/", "_").replaceAll("-","_").replaceAll("^1", "one")
 
-  val unitMap = reader.readAll().toSeq.foldLeft(Map[String, ReplacementUnit]()) {
+
+  def convertToIdentifier(s: String) = s.replaceAll(" ", "_").replaceAll("\\(", "").replaceAll("\\)", "").replaceAll("\\/", "_").replaceAll("-", "_").replaceAll("^1", "one")
+
+  val unitMap = reader.readAll().asScala.foldLeft(Map[String, ReplacementUnit]()) {
     (acc, row) =>
       if (row(1).isEmpty)
         acc
       else
         acc + (row(0) -> ReplacementUnit(row(1), row(2) == "Y"))
   }.toMap
-  
+
   reader.close()
-  
-  
+
+
   val unique_ids = unitMap.values.toSeq.map(_.unit_id).distinct
-  
+
   val w1 = new CSVWriter(new FileWriter(new File("/home/ivan/tmp/standard_unit_translation.csv")))
   val w2 = new PrintWriter(new File("/home/ivan/tmp/standard_unit_java_template.java"));
   val w3 = new PrintWriter(new File("/home/ivan/tmp/standard_unit_properties.properties"));
-  
+
   w1.writeNext(Array("Unit identifier", "English unit name", "Translated unit name, locative", "Translated unit name, genitive"))
   w1.writeNext(Array("", "", "E.g.: estimate in small bags", "E.g.: how many small bags"))
-  
-  unique_ids.sorted.foreach { 
-    x => 
+
+  unique_ids.sorted.foreach {
+    x =>
       val id = convertToIdentifier(x)
       w1.writeNext(Array(id, x, "", ""))
       w2.println(s"public String ${id}_estimate_in();")
@@ -62,11 +62,11 @@ object StandardiseUnitsApply extends App {
       w3.println(s"${id}_how_many = How many $x")
       w3.println()
   }
-  
+
   w1.close()
   w2.close()
   w3.close()
-  
+
   def replaceUnits(params: Seq[PortionSizeMethodParameter]) = {
     val count = params.find(_.name == "units-count").get.value.toInt
 
@@ -114,7 +114,7 @@ object StandardiseUnitsApply extends App {
       }
       food.copy(portionSizeMethods = newPsm)
   }
-  
-   Util.writeXml(FoodDef.toXml(newFoods), dataDir + "/foods-new.xml")
-      
+
+  Util.writeXml(FoodDef.toXml(newFoods), dataDir + "/foods-new.xml")
+
 }

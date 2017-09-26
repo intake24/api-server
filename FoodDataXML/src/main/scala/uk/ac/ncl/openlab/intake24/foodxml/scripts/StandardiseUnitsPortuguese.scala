@@ -1,13 +1,10 @@
 package uk.ac.ncl.openlab.intake24.foodxml.scripts
 
-import java.io.File
-import java.io.FileReader
+import java.io.{File, FileReader, PrintWriter}
 
 import au.com.bytecode.opencsv.CSVReader
-import au.com.bytecode.opencsv.CSVWriter
-import java.io.FileWriter
-import scala.collection.JavaConversions._
-import java.io.PrintWriter
+
+import scala.collection.JavaConverters._
 
 object StandardiseUnitsPortuguese extends App {
 
@@ -20,7 +17,7 @@ object StandardiseUnitsPortuguese extends App {
 
   case class Row(unit_id: String, estimate_in: String, how_many: String)
 
-  val rows = reader.readAll().tail.map {
+  val rows = reader.readAll().asScala.tail.map {
     row => Row(row(0), row(2), row(4))
   }
 

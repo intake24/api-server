@@ -24,20 +24,22 @@ import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
 import parsers.JsonUtils
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc._
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
 case class GeneratedCredentials(userName: String, password: String)
 
 class GeneratedUsersController @Inject()(userAdminService: UserAdminService,
                                          surveyAdminService: SurveyAdminService,
-                                         passwordHasherRegistry: PasswordHasherRegistry) extends Controller
+                                         passwordHasherRegistry: PasswordHasherRegistry,
+                                         playBodyParsers: PlayBodyParsers,
+                                         val controllerComponents: ControllerComponents,
+                                         implicit val executionContext: ExecutionContext) extends BaseController
   with DatabaseErrorHandler with JsonUtils {
 
   private def generateCredentials(surveyId: String, counter: Int): GeneratedCredentials = {
@@ -58,7 +60,7 @@ class GeneratedUsersController @Inject()(userAdminService: UserAdminService,
   }
 
   // TODO: captcha to prevent new user spam
-  def generateUser(surveyId: String) = Action.async(BodyParsers.parse.empty) {
+  def generateUser(surveyId: String) = Action.async(playBodyParsers.empty) {
     request =>
       Future {
         surveyAdminService.getSurveyParameters(surveyId) match {

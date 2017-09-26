@@ -21,16 +21,14 @@ package controllers
 import javax.inject.Inject
 
 import io.circe.generic.auto._
-import parsers.JsonUtils
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.{BodyParsers, Controller}
+import parsers.{JsonBodyParser, JsonUtils}
+import play.api.mvc.{BaseController, BodyParsers, ControllerComponents, PlayBodyParsers}
 import security.Intake24RestrictedActionBuilder
+import uk.ac.ncl.openlab.intake24._
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.{AssociatedFoodsService, BrandNamesService, FoodDataService}
-import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
-import uk.ac.ncl.openlab.intake24._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 case class CloneFoodResult(clonedFoodCode: String)
 
@@ -39,7 +37,11 @@ class FoodsAdminController @Inject()(service: FoodsAdminService,
                                      associatedFoodsService: AssociatedFoodsService,
                                      brandNamesService: BrandNamesService,
                                      foodAuthChecks: FoodAuthChecks,
-                                     rab: Intake24RestrictedActionBuilder) extends Controller
+                                     rab: Intake24RestrictedActionBuilder,
+                                     bodyParsers: PlayBodyParsers,
+                                     jsonBodyParser: JsonBodyParser,
+                                     val controllerComponents: ControllerComponents,
+                                     implicit val executionContext: ExecutionContext) extends BaseController
   with DatabaseErrorHandler with JsonUtils {
 
   def getFoodRecord(code: String, locale: String) = rab.restrictAccess(foodAuthChecks.canReadFoods(locale)) {
@@ -60,14 +62,14 @@ class FoodsAdminController @Inject()(service: FoodsAdminService,
     }
   }
 
-  def createFood() = rab.restrictAccess(foodAuthChecks.canCreateMainFoods)(jsonBodyParser[NewMainFoodRecord]) {
+  def createFood() = rab.restrictAccess(foodAuthChecks.canCreateMainFoods)(jsonBodyParser.parse[NewMainFoodRecord]) {
     request =>
       Future {
         translateDatabaseResult(service.createFood(request.body))
       }
   }
 
-  def cloneFood(code: String, locale: String) = rab.restrictAccess(foodAuthChecks.canCreateMainFoods)(BodyParsers.parse.empty) {
+  def cloneFood(code: String, locale: String) = rab.restrictAccess(foodAuthChecks.canCreateMainFoods)(bodyParsers.empty) {
     _ =>
       Future {
         val result =
@@ -86,7 +88,7 @@ class FoodsAdminController @Inject()(service: FoodsAdminService,
       }
   }
 
-  def cloneFoodAsLocal(code: String, locale: String) = rab.restrictAccess(foodAuthChecks.canCreateMainFoods)(BodyParsers.parse.empty) {
+  def cloneFoodAsLocal(code: String, locale: String) = rab.restrictAccess(foodAuthChecks.canCreateMainFoods)(bodyParsers.empty) {
     _ =>
       Future {
         val result =
@@ -110,7 +112,7 @@ class FoodsAdminController @Inject()(service: FoodsAdminService,
       }
   }
 
-  def createLocalFood(localeId: String) = rab.restrictAccess(foodAuthChecks.canCreateLocalFoods(localeId))(jsonBodyParser[NewLocalMainFoodRecord]) {
+  def createLocalFood(localeId: String) = rab.restrictAccess(foodAuthChecks.canCreateLocalFoods(localeId))(jsonBodyParser.parse[NewLocalMainFoodRecord]) {
     request =>
       Future {
         translateDatabaseResult(service.createFood(NewMainFoodRecord(request.body.code, request.body.englishDescription, request.body.groupCode,
@@ -118,14 +120,14 @@ class FoodsAdminController @Inject()(service: FoodsAdminService,
       }
   }
 
-  def createFoodWithTempCode() = rab.restrictAccess(foodAuthChecks.canCreateMainFoods)(jsonBodyParser[NewMainFoodRecord]) {
+  def createFoodWithTempCode() = rab.restrictAccess(foodAuthChecks.canCreateMainFoods)(jsonBodyParser.parse[NewMainFoodRecord]) {
     request =>
       Future {
         translateDatabaseResult(service.createFoodWithTempCode(request.body))
       }
   }
 
-  def updateMainFoodRecord(foodCode: String) = rab.restrictAccessWithDatabaseCheck(foodAuthChecks.canUpdateMainFood(foodCode))(jsonBodyParser[MainFoodRecordUpdate]) {
+  def updateMainFoodRecord(foodCode: String) = rab.restrictAccessWithDatabaseCheck(foodAuthChecks.canUpdateMainFood(foodCode))(jsonBodyParser.parse[MainFoodRecordUpdate]) {
     request =>
       Future {
         if (!foodAuthChecks.isFoodsAdmin(request.subject) && !request.body.localeRestrictions.forall(l => foodAuthChecks.isLocaleMaintainer(l, request.subject)))
@@ -135,7 +137,7 @@ class FoodsAdminController @Inject()(service: FoodsAdminService,
       }
   }
 
-  def updateLocalFoodRecord(foodCode: String, locale: String) = rab.restrictAccess(foodAuthChecks.canUpdateLocalFoods(locale))(jsonBodyParser[LocalFoodRecordUpdate]) {
+  def updateLocalFoodRecord(foodCode: String, locale: String) = rab.restrictAccess(foodAuthChecks.canUpdateLocalFoods(locale))(jsonBodyParser.parse[LocalFoodRecordUpdate]) {
     request =>
       Future {
         translateDatabaseResult(service.updateLocalFoodRecord(foodCode, request.body, locale))

@@ -24,15 +24,15 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.util.PasswordInfo
 import play.api.Logger
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import uk.ac.ncl.openlab.intake24.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.UserAdminService
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 
 @Singleton
-class AuthInfoServiceImpl @Inject()(userAdminService: UserAdminService) extends AuthInfoRepository {
+class AuthInfoServiceImpl @Inject()(userAdminService: UserAdminService,
+                                    implicit val executionContext: ExecutionContext) extends AuthInfoRepository {
 
   def find[T](loginInfo: LoginInfo)(implicit tag: ClassTag[T]): Future[Option[T]] = Future {
     val databaseResult = loginInfo.providerID match {

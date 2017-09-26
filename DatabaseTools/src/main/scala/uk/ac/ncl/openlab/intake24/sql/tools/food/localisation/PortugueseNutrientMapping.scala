@@ -6,7 +6,8 @@ import uk.ac.ncl.openlab.intake24.nutrientsndns.CsvNutrientTableParser.{excelCol
 object PortugueseNutrientMapping extends CsvNutrientTableMapping(
   3, // first row offset
   0, // record id column offset
-  1,
+  3,
+  Some(2),
   Map(
     1l -> col("E"),
     2l -> col("F"),

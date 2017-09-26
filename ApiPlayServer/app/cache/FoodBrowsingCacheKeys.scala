@@ -1,10 +1,10 @@
 package cache
 
-import play.api.cache.CacheApi
+import play.api.cache.SyncCacheApi
 
 trait FoodBrowsingCacheKeys {
   
-  val cache: CacheApi
+  val cache: SyncCacheApi
   
   def rootCategoriesCacheKey(locale: String) = s"CachedFoodBrowsingAdminDataService.rootCategories.$locale"
 

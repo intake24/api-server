@@ -4,7 +4,7 @@ import uk.ac.ncl.openlab.intake24.foodxml.FoodDef
 import scala.xml.XML
 import au.com.bytecode.opencsv.CSVReader
 import java.io.FileReader
-import collection.JavaConversions._
+import collection.JavaConverters._
 
 object AddNZFoodCodes extends App {
 
@@ -19,7 +19,7 @@ object AddNZFoodCodes extends App {
   val lines2 = reader2.readAll()
   reader2.close()
 
-  val map = lines1.toSeq.tail.map(row => (row(0), row(1))).toMap ++ lines2.toSeq.tail.map(row => (row(0), row(1))).toMap
+  val map = lines1.asScala.tail.map(row => (row(0), row(1))).toMap ++ lines2.asScala.tail.map(row => (row(0), row(1))).toMap
 
   val updated = foods.map {
     food =>

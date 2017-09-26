@@ -26,11 +26,11 @@ class LocalStorageModule extends AbstractModule {
 
   @Provides
   @Singleton
-  def settings(configuration: Configuration): LocalImageStorageSettings = 
+  def settings(configuration: Configuration): LocalImageStorageSettings =
     LocalImageStorageSettings(
-        configuration.getString("intake24.images.localStorage.baseDirectory").get,
-        configuration.getString("intake24.images.localStorage.urlPrefix").get) 
-  
+      configuration.get[String]("intake24.images.localStorage.baseDirectory"),
+      configuration.get[String]("intake24.images.localStorage.urlPrefix"))
+
   def configure() = {
     bind(classOf[ImageStorageService]).to(classOf[ImageStorageLocal])
   }

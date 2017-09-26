@@ -22,6 +22,6 @@ description := "Intake24 CSV file based NDNS and NZ nutrients"
 
 libraryDependencies ++= Seq(
   "net.codingwell" %% "scala-guice" % "4.1.0",
-  "org.scalatest" %% "scalatest" % "2.2.5" % "test",
+  "org.scalatest" %% "scalatest" % "3.0.1" % "test",
   "net.sf.opencsv" % "opencsv" % "2.1"
 )

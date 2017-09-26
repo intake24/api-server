@@ -28,7 +28,7 @@ package org.workcraft.phrasesearch
 
 import com.infiauto.datastr.auto.LevenshteinAutomaton
 import com.infiauto.datastr.auto.DictionaryAutomaton
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 sealed trait MatchStrategy
 
@@ -36,7 +36,7 @@ case object MatchFewer extends MatchStrategy
 case object MatchMore extends MatchStrategy
 
 class RichDictionary(val words: Set[CaseInsensitiveString], val phoneticEncoder: Option[PhoneticEncoder], val synsets: Seq[Set[CaseInsensitiveString]]) {
-  private val dictAuto = new DictionaryAutomaton(scala.collection.JavaConversions.seqAsJavaList(words.toSeq.map(_.lowerCase)))
+  private val dictAuto = new DictionaryAutomaton(words.toSeq.map(_.lowerCase).asJava)
   private val lev1Auto = new LevenshteinAutomaton(1)
   private val lev2Auto = new LevenshteinAutomaton(2)
 
@@ -66,8 +66,8 @@ class RichDictionary(val words: Set[CaseInsensitiveString], val phoneticEncoder:
     case None => Seq()
   }
 
-  def lev1Match(word: CaseInsensitiveString) = lev1Auto.recognize(word.lowerCase, dictAuto).map(CaseInsensitiveString(_)).toSet
-  def lev2Match(word: CaseInsensitiveString) = lev2Auto.recognize(word.lowerCase, dictAuto).map(CaseInsensitiveString(_)).toSet
+  def lev1Match(word: CaseInsensitiveString) = lev1Auto.recognize(word.lowerCase, dictAuto).asScala.map(CaseInsensitiveString(_)).toSet
+  def lev2Match(word: CaseInsensitiveString) = lev2Auto.recognize(word.lowerCase, dictAuto).asScala.map(CaseInsensitiveString(_)).toSet
 
   def transpose[A](xs: IndexedSeq[IndexedSeq[A]]): IndexedSeq[IndexedSeq[A]] = {
     val ne = xs.filter(_.nonEmpty)

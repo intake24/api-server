@@ -18,16 +18,16 @@ limitations under the License.
 
 package filters
 
-import scala.concurrent.Future
-
+import scala.concurrent.{ExecutionContext, Future}
 import akka.stream.Materializer
 import javax.inject.Inject
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
+
 import play.api.mvc.Filter
 import play.api.mvc.RequestHeader
 import play.api.mvc.Result
 
-class CorsFilter @Inject() (implicit val mat: Materializer) extends Filter {
+class CorsFilter @Inject()(implicit val mat: Materializer,
+                           implicit val executionContext: ExecutionContext) extends Filter {
   def apply(next: RequestHeader => Future[Result])(rh: RequestHeader): Future[Result] = {
     next.apply(rh).map(_.withHeaders("Access-Control-Allow-Origin" -> "*"))
   }

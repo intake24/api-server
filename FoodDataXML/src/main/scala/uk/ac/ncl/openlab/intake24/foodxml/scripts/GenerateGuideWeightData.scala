@@ -22,7 +22,7 @@ import java.io.File
 import java.io.FilenameFilter
 import au.com.bytecode.opencsv.CSVReader
 import java.io.FileReader
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.xml.Attribute
 import scala.xml.Text
 import scala.xml.Null
@@ -39,9 +39,9 @@ object GenerateGuideWeightData {
     }).map(f => f.getName().substring(0, f.getName().length - 4)).sorted
 
     // header: "description","?","photo_id","weight"
-    val rows = new CSVReader(new FileReader(sourcePath)).readAll().toList.map(_.toSeq)
+    val rows = new CSVReader(new FileReader(sourcePath)).readAll().asScala.map(_.toSeq)
     
-    val oldrows = new CSVReader(new FileReader(oldData)).readAll().toList.map(_.toSeq)
+    val oldrows = new CSVReader(new FileReader(oldData)).readAll().asScala.map(_.toSeq)
 
     val weightTable = rows.map(r => (r(2), r(3).toDouble, r(0)))
     

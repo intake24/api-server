@@ -6,6 +6,7 @@ import au.com.bytecode.opencsv.CSVReader
 import org.rogach.scallop.ScallopConf
 
 import scala.collection.JavaConverters._
+import scala.language.reflectiveCalls
 
 object MasterNutrientListLegacyDescriptions extends App {
 

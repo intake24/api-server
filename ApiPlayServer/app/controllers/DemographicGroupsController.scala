@@ -2,23 +2,25 @@ package controllers
 
 import com.google.inject.Inject
 import io.circe.generic.auto._
-import parsers.{HtmlSanitisePolicy, JsonUtils}
+import parsers.{HtmlSanitisePolicy, JsonBodyParser, JsonUtils}
 import play.api.http.ContentTypes
-import play.api.libs.concurrent.Execution.Implicits._
-import play.mvc.Controller
+import play.api.mvc.{BaseController, ControllerComponents}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.services.fooddb.demographicgroups._
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
   * Created by Tim Osadchiy on 09/02/2017.
   */
 class DemographicGroupsController @Inject()(dgService: DemographicGroupsService,
                                             palService: PhysicalActivityLevelService,
-                                            rab: Intake24RestrictedActionBuilder)
-  extends Controller with ImageOrDatabaseServiceErrorHandler with JsonUtils {
+                                            rab: Intake24RestrictedActionBuilder,
+                                            jsonBodyParser: JsonBodyParser,
+                                            val controllerComponents: ControllerComponents,
+                                            implicit val executionContext: ExecutionContext) extends BaseController
+  with ImageOrDatabaseServiceErrorHandler with JsonUtils {
 
   private def sanitiseDemographicScaleSector(demographicScaleSectorIn: DemographicScaleSectorIn): DemographicScaleSectorIn = {
     DemographicScaleSectorIn(HtmlSanitisePolicy.sanitise(demographicScaleSectorIn.name),
@@ -33,14 +35,14 @@ class DemographicGroupsController @Inject()(dgService: DemographicGroupsService,
       }
   }
 
-  def createDemographicGroup() = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[DemographicGroupRecordIn]) {
+  def createDemographicGroup() = rab.restrictToRoles(Roles.superuser)(jsonBodyParser.parse[DemographicGroupRecordIn]) {
     request =>
       Future {
         translateDatabaseResult(dgService.createDemographicGroup(request.body))
       }
   }
 
-  def patchDemographicGroup(id: Int) = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[DemographicGroupRecordIn]) {
+  def patchDemographicGroup(id: Int) = rab.restrictToRoles(Roles.superuser)(jsonBodyParser.parse[DemographicGroupRecordIn]) {
     request =>
       Future {
         translateDatabaseResult(dgService.patchDemographicGroup(id, request.body))
@@ -61,7 +63,7 @@ class DemographicGroupsController @Inject()(dgService: DemographicGroupsService,
       }
   }
 
-  def createDemographicGroupScaleSector(demographicGroupId: Int) = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[DemographicScaleSectorIn]) {
+  def createDemographicGroupScaleSector(demographicGroupId: Int) = rab.restrictToRoles(Roles.superuser)(jsonBodyParser.parse[DemographicScaleSectorIn]) {
     request =>
       Future {
         val sanitised = sanitiseDemographicScaleSector(request.body)
@@ -69,7 +71,7 @@ class DemographicGroupsController @Inject()(dgService: DemographicGroupsService,
       }
   }
 
-  def patchDemographicGroupScaleSector(id: Int) = rab.restrictToRoles(Roles.superuser)(jsonBodyParser[DemographicScaleSectorIn]) {
+  def patchDemographicGroupScaleSector(id: Int) = rab.restrictToRoles(Roles.superuser)(jsonBodyParser.parse[DemographicScaleSectorIn]) {
     request =>
       Future {
         val sanitised = sanitiseDemographicScaleSector(request.body)

@@ -31,5 +31,5 @@ libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % "1.7.21",
   "net.codingwell" %% "scala-guice" % "4.1.0",
   "org.apache.commons" % "commons-lang3" % "3.4",
-  "org.scalatest" %% "scalatest" % "2.2.5" % "test"
+  "org.scalatest" %% "scalatest" % "3.0.1" % "test"
 )

@@ -19,7 +19,7 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.foodxml.scripts
 
 import java.io.FileReader
-import scala.collection.JavaConversions.asScalaBuffer
+import scala.collection.JavaConverters._
 import au.com.bytecode.opencsv.CSVReader
 import uk.ac.ncl.openlab.intake24.foodxml.Util
 
@@ -30,7 +30,7 @@ object ParseNewFoods {
   def main(args: Array[String]): Unit = {
     val sourcePath = "D:\\SCRAN24\\Notes\\new_foods.csv"
 
-    val rows = new CSVReader(new FileReader(sourcePath)).readAll().toList.map(_.toSeq)
+    val rows = new CSVReader(new FileReader(sourcePath)).readAll().asScala.map(_.toSeq)
 
     val parsedRows = rows.tail.map(r => Row(r(0), r(1), r(2).toInt))
 

@@ -24,34 +24,24 @@ import anorm.NamedParameter.symbol
 import anorm.{Macro, SQL, sqlToSimple}
 import com.google.inject.name.Named
 import com.google.inject.{Inject, Singleton}
+import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.Locale
 import uk.ac.ncl.openlab.intake24.errors._
+import uk.ac.ncl.openlab.intake24.foodsql.modular.LocaleQueries
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.LocalesAdminService
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
 
 @Singleton
-class LocalesAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends LocalesAdminService with SqlDataService {
-
-  private case class LocaleRow(id: String, english_name: String, local_name: String, respondent_language_id: String, admin_language_id: String, country_flag_code: String, prototype_locale_id: Option[String], text_direction: String) {
-    def mkLocale = Locale(id, english_name, local_name, respondent_language_id, admin_language_id, country_flag_code, prototype_locale_id, text_direction)
-  }
+class LocalesAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends LocalesAdminService with SqlDataService with LocaleQueries {
 
   def listLocales(): Either[UnexpectedDatabaseError, Map[String, Locale]] = tryWithConnection {
     implicit conn =>
-
-      var query = """SELECT id, english_name, local_name, respondent_language_id, admin_language_id, country_flag_code, prototype_locale_id, text_direction FROM locales ORDER BY english_name"""
-
-      Right(SQL(query).executeQuery().as(Macro.namedParser[LocaleRow].*).map(row => (row.id -> row.mkLocale)).toMap)
+      listLocalesQuery()
   }
 
   def getLocale(id: String): Either[LookupError, Locale] = tryWithConnection {
     implicit conn =>
-      var query = """SELECT id, english_name, local_name, respondent_language_id, admin_language_id, country_flag_code, prototype_locale_id, text_direction FROM locales WHERE id = {locale_id} ORDER BY english_name"""
-
-      SQL(query).on('locale_id -> id).executeQuery().as(Macro.namedParser[LocaleRow].singleOpt).map(_.mkLocale) match {
-        case Some(locale) => Right(locale)
-        case None => Left(RecordNotFound(new RuntimeException(id)))
-      }
+      getLocaleQuery(id)
   }
 
   def createLocale(data: Locale): Either[CreateError, Unit] = tryWithConnection {
@@ -96,15 +86,8 @@ class LocalesAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSo
     * Is translation for descriptions, associated food prompts etc. strictly required for this locale
     * (false if it can be inherited from the prototype locale)
     */
-  def isTranslationRequired(id: String): Either[LookupError, Boolean] =
-    getLocale(id).right.flatMap {
-      currentLocale =>
-        currentLocale.prototypeLocale match {
-          case Some(prototypeLocaleCode) => getLocale(prototypeLocaleCode).right.map {
-            prototypeLocale =>
-              currentLocale.respondentLanguage != prototypeLocale.respondentLanguage
-          }
-          case None => Right(true)
-        }
-    }
+  def isTranslationRequired(id: String): Either[LookupError, Boolean] = tryWithConnection {
+    implicit conn =>
+      isTranslationRequiredQuery(id)
+  }
 }

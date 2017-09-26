@@ -29,9 +29,9 @@ import com.mohiva.play.silhouette.impl.util.{DefaultFingerprintGenerator, Secure
 import models.Intake24User
 import net.codingwell.scalaguice.ScalaModule
 import play.api.Configuration
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import security.{AuthInfoServiceImpl, IdentityServiceImpl, Intake24ApiEnv, ShiroPasswordHasher}
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 
@@ -39,17 +39,20 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
 
   def configure() {
     bind[IdentityService[Intake24User]].to[IdentityServiceImpl]
-    bind[IDGenerator].toInstance(new SecureRandomIDGenerator())
     bind[FingerprintGenerator].toInstance(new DefaultFingerprintGenerator(false))
     bind[Clock].toInstance(Clock())
     bind[AuthInfoRepository].to[AuthInfoServiceImpl]
   }
 
   @Provides
+  def provideIDGenerator(executionContext: ExecutionContext): IDGenerator = new SecureRandomIDGenerator()(executionContext)
+
+  @Provides
   @Singleton
   def provideAuthenticatorService(fingerprintGenerator: FingerprintGenerator,
                                   idGenerator: IDGenerator,
                                   configuration: Configuration,
+                                  executionContext: ExecutionContext,
                                   clock: Clock): AuthenticatorService[JWTAuthenticator] = {
 
     val settings = JWTAuthenticatorSettings(
@@ -58,22 +61,23 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
       requestParts = Some(Seq(RequestPart.Headers)),
       authenticatorIdleTimeout = None,
       authenticatorExpiry = 0.minutes, // Will be overriden when the token is created
-      sharedSecret = configuration.getString("play.crypto.secret").get)
+      sharedSecret = configuration.get[String]("play.http.secret.key"))
 
-    new JWTAuthenticatorService(settings, None, new Base64AuthenticatorEncoder(), idGenerator, clock)
+    new JWTAuthenticatorService(settings, None, new Base64AuthenticatorEncoder(), idGenerator, clock)(executionContext)
   }
 
   @Provides
   @Singleton
   def provideSilhouetteEnvironment(identityService: IdentityService[Intake24User],
                                    authenticatorService: AuthenticatorService[JWTAuthenticator],
+                                   executionContext: ExecutionContext,
                                    eventBus: EventBus): Environment[Intake24ApiEnv] = {
     Environment[Intake24ApiEnv](
       identityService,
       authenticatorService,
       Seq(),
       eventBus
-    )
+    )(executionContext)
   }
 
 

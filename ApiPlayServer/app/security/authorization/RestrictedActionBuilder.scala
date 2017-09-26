@@ -2,11 +2,13 @@ package security.authorization
 
 import play.api.mvc._
 
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import scala.concurrent.{ExecutionContext, Future}
 
-import scala.concurrent.Future
+trait RestrictedActionBuilder[SubjT, DBErrT] extends Results {
 
-trait RestrictedActionBuilder[SubjT, DBErrT] extends Results with BodyParsers {
+  val actionBuilder: DefaultActionBuilder
+
+  implicit val executionContext: ExecutionContext
 
   def authenticationService: AuthenticationService[SubjT]
 
@@ -15,7 +17,7 @@ trait RestrictedActionBuilder[SubjT, DBErrT] extends Results with BodyParsers {
   protected def restrictedAction[BodyT, T](authorizationCheck: SubjT => Option[T],
                                            bodyParser: BodyParser[BodyT],
                                            block: AuthorizedRequest[BodyT, T] => Future[Result]): Action[BodyT] =
-    Action.async(bodyParser) {
+    actionBuilder.async(bodyParser) {
       request =>
         authenticationService.getSubject(request).flatMap {
           _ match {
@@ -30,7 +32,7 @@ trait RestrictedActionBuilder[SubjT, DBErrT] extends Results with BodyParsers {
     }
 
   protected def restrictedActionWithDatabaseCheck[BodyT, T](authorizationCheck: SubjT => Either[DBErrT, Option[T]], bodyParser: BodyParser[BodyT], block: AuthorizedRequest[BodyT, T] => Future[Result]): Action[BodyT] =
-    Action.async(bodyParser) {
+    actionBuilder.async(bodyParser) {
       request =>
         authenticationService.getSubject(request).flatMap {
           _ match {

@@ -20,7 +20,7 @@ package uk.ac.ncl.openlab.intake24.foodxml.scripts
 
 import au.com.bytecode.opencsv.CSVReader
 import java.io.FileReader
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.xml.XML
 import scala.xml.PrettyPrinter
 import java.io.PrintWriter
@@ -39,7 +39,7 @@ object ParseNewCategories {
     //  val asServedDef = AsServedDef.parseXml(XML.load(asServedPath))
     //  header: SCRAN code	Description	Sub categories 	Description	Sub-sub categories	Description	Foods
 
-    val rows = new CSVReader(new FileReader(sourcePath)).readAll().toList.map(_.toSeq)
+    val rows = new CSVReader(new FileReader(sourcePath)).readAll().asScala.map(_.toSeq)
 
     val parsedRows = rows.tail.map(r => Row(r(0), r(1), r(2), r(3), r(4), r(5), r.drop(6).filterNot(_.isEmpty()))).filterNot(_.scranCode.isEmpty())
 

@@ -37,9 +37,6 @@ Webapp/www-test
 
 Webapp/war
 
-ApiPlayServer/conf/production.conf
-ApiPlayServer/conf/application.conf
-
 /DatabaseTools/migrateConfig.json
 /DatabaseTools/src/main/scala/uk/ac/ncl/openlab/intake24/sql/tools/food/development-database-config.json
 /DatabaseTools/src/main/scala/uk/ac/ncl/openlab/intake24/sql/tools/food/test-database-config.json

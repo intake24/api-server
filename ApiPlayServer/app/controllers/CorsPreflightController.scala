@@ -18,9 +18,11 @@ limitations under the License.
 
 package controllers
 
+import javax.inject.Inject
+
 import play.api.mvc._
 
-class CorsPreflightController extends Controller {
+class CorsPreflightController @Inject()(val controllerComponents: ControllerComponents) extends BaseController {
   def corsPreflight(dontcare: String) = Action {
     Ok.withHeaders(
     "Access-Control-Allow-Origin" -> "*",

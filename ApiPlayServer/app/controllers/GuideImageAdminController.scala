@@ -21,22 +21,24 @@ package controllers
 import javax.inject.Inject
 
 import io.circe.generic.auto._
-import parsers.JsonUtils
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.Controller
+import parsers.JsonBodyParser
+import play.api.mvc.{BaseController, ControllerComponents}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.api.shared.NewGuideImageRequest
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{GuideImageAdminService, ImageMapsAdminService, NewGuideImageRecord}
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageAdminService
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class GuideImageAdminController @Inject()(guideImageAdminService: GuideImageAdminService,
                                           imageMapsAdminService: ImageMapsAdminService,
                                           imageAdminService: ImageAdminService,
                                           foodAuthChecks: FoodAuthChecks,
-                                          rab: Intake24RestrictedActionBuilder) extends Controller
-  with ImageOrDatabaseServiceErrorHandler with JsonUtils {
+                                          rab: Intake24RestrictedActionBuilder,
+                                          jsonBodyParser: JsonBodyParser,
+                                          val controllerComponents: ControllerComponents,
+                                          implicit val executionContext: ExecutionContext) extends BaseController
+  with ImageOrDatabaseServiceErrorHandler {
 
   import ImageAdminService.WrapDatabaseError
 
@@ -58,7 +60,7 @@ class GuideImageAdminController @Inject()(guideImageAdminService: GuideImageAdmi
     }
   }
 
-  def createGuideImage() = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(jsonBodyParser[NewGuideImageRequest]) {
+  def createGuideImage() = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(jsonBodyParser.parse[NewGuideImageRequest]) {
     request =>
       Future {
 

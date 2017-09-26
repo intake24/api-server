@@ -59,10 +59,10 @@ object DemographicGroupRecord {
               new RuntimeException(s"${demographicGroupRecordIn.nutrientRuleType} requires nutrientTypeKCalPerUnit " +
                 s"being defined")))
           case Some(v) =>
-            Right()
+            Right(())
         }
       case NUTRIENT_RULE_TYPE_ENERGY_DIVIDED_BY_BMR | NUTRIENT_RULE_TYPE_RANGE | NUTRIENT_RULE_TYPE_PER_UNIT_OF_WEIGHT =>
-        Right()
+        Right(())
       case _ =>
         Left(new ConstraintViolation("nutrient_rule_type_invalid",
           new RuntimeException("nutrientRuleType is not valid")))

@@ -23,23 +23,32 @@ import java.time.format.{DateTimeFormatter, DateTimeParseException}
 import javax.inject.Inject
 
 import controllers.DatabaseErrorHandler
+import controllers.system.asynchronous.AsynchronousDataExporter
+import io.circe.generic.auto._
 import parsers.{JsonUtils, SurveyCSVExporter}
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.{BodyParsers, Controller}
+import play.api.http.FileMimeTypes
+import play.api.mvc.{BaseController, BodyParsers, ControllerComponents, PlayBodyParsers}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, SurveyAdminService}
-import io.circe.generic.auto._
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, ExportTaskInfo, SurveyAdminService}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
+case class NewExportTaskInfo(taskId: Long)
 
-class DataExportController @Inject()(service: DataExportService, surveyAdminService: SurveyAdminService, foodGroupsAdminService: FoodGroupsAdminService, rab: Intake24RestrictedActionBuilder) extends Controller
+class DataExportController @Inject()(service: DataExportService,
+                                     surveyAdminService: SurveyAdminService,
+                                     foodGroupsAdminService: FoodGroupsAdminService,
+                                     asyncExporter: AsynchronousDataExporter,
+                                     rab: Intake24RestrictedActionBuilder,
+                                     playBodyParsers: PlayBodyParsers,
+                                     val controllerComponents: ControllerComponents,
+                                     implicit val executionContext: ExecutionContext) extends BaseController
   with DatabaseErrorHandler with JsonUtils {
 
-  def getSurveySubmissions(surveyId: String, dateFrom: String, dateTo: String, offset: Int, limit: Int) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
+  def getSurveySubmissions(surveyId: String, dateFrom: String, dateTo: String, offset: Int, limit: Int) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
     _ =>
       Future {
 
@@ -54,7 +63,7 @@ class DataExportController @Inject()(service: DataExportService, surveyAdminServ
       }
   }
 
-  def getMySurveySubmissions(surveyId: String) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(BodyParsers.parse.empty) {
+  def getMySurveySubmissions(surveyId: String) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(playBodyParsers.empty) {
     request =>
       Future {
 
@@ -68,7 +77,7 @@ class DataExportController @Inject()(service: DataExportService, surveyAdminServ
       }
   }
 
-  def getSurveySubmissionsAsCSV(surveyId: String, dateFrom: String, dateTo: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(BodyParsers.parse.empty) {
+  def getSurveySubmissionsAsCSV(surveyId: String, dateFrom: String, dateTo: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
     request =>
       Future {
 
@@ -85,7 +94,7 @@ class DataExportController @Inject()(service: DataExportService, surveyAdminServ
 
           data match {
             case Right((localNutrients, dataScheme, foodGroups, submissions)) =>
-              SurveyCSVExporter.exportSurveySubmissions(dataScheme, foodGroups, localNutrients, submissions, forceBOM ) match {
+              SurveyCSVExporter.exportSurveySubmissions(dataScheme, foodGroups, localNutrients, submissions, forceBOM) match {
                 case Right(csvFile) =>
                   val dateStamp = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.ofInstant(Clock.systemUTC().instant(), ZoneId.systemDefault).withNano(0)).replace(":", "-").replace("T", "-")
 
@@ -99,6 +108,34 @@ class DataExportController @Inject()(service: DataExportService, surveyAdminServ
         } catch {
           case e: DateTimeParseException => BadRequest(toJsonString(ErrorDescription("DateFormat", "Failed to parse date parameter. Expected a UTC date in ISO 8601 format, e.g. '2017-02-15T16:40:30Z'.")))
         }
+      }
+  }
+
+  def getSurveySubmissionsAsCSVAsync(surveyId: String, dateFrom: String, dateTo: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
+    request =>
+      Future {
+
+        try {
+          val parsedFrom = ZonedDateTime.parse(dateFrom)
+          val parsedTo = ZonedDateTime.parse(dateTo)
+          val forceBOM = request.getQueryString("forceBOM").isDefined
+
+
+          translateDatabaseResult(asyncExporter.queueCsvExport(request.subject.userId, surveyId, parsedFrom, parsedTo, forceBOM).right.map(NewExportTaskInfo(_)))
+
+        } catch {
+          case e: DateTimeParseException => BadRequest(toJsonString(ErrorDescription("DateFormat", "Failed to parse date parameter. Expected a UTC date in ISO 8601 format, e.g. '2017-02-15T16:40:30Z'.")))
+        }
+      }
+  }
+
+
+  case class GetExportTaskStatusResult(activeTasks: Seq[ExportTaskInfo])
+
+  def getExportTaskStatus(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
+    request =>
+      Future {
+        translateDatabaseResult(service.getActiveExportTasks(surveyId, request.subject.userId).right.map(GetExportTaskStatusResult(_)))
       }
   }
 }

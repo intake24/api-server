@@ -1,16 +1,19 @@
 # User management
 
-GET           /                             controllers.system.UserAdminController.findUsers(q: String, limit: Int)
-POST          /                             controllers.system.UserAdminController.createUser()
+GET           /                              controllers.system.UserAdminController.findUsers(q: String, limit: Int)
+POST          /                              controllers.system.UserAdminController.createUser()
 
-PATCH         /my-profile                   controllers.system.UserAdminController.patchMe()
-GET           /my-physical-data             controllers.system.user.UserPhysicalDataController.getMyPhysicalData()
-PATCH         /my-physical-data             controllers.system.user.UserPhysicalDataController.updateMyPhysicalData()
+PATCH         /my-profile                    controllers.system.UserAdminController.patchMe()
+GET           /my-physical-data              controllers.system.user.UserPhysicalDataController.getMyPhysicalData()
+PATCH         /my-physical-data              controllers.system.user.UserPhysicalDataController.updateMyPhysicalData()
 
-DELETE        /:userId                      controllers.system.UserAdminController.deleteUser(userId: Long)
+DELETE        /:userId                       controllers.system.UserAdminController.deleteUser(userId: Long)
 
-PATCH         /:userId                      controllers.system.UserAdminController.patchUserProfile(userId: Long)
-PATCH         /:userId/password             controllers.system.UserAdminController.patchUserPassword(userId: Long)
-PATCH         /:userId/physical-data        controllers.system.user.UserPhysicalDataController.patchUserPhysicalData(userId: Long)
+PATCH         /:userId                       controllers.system.UserAdminController.patchUserProfile(userId: Long)
+PATCH         /:userId/password              controllers.system.UserAdminController.patchUserPassword(userId: Long)
+PATCH         /:userId/physical-data         controllers.system.user.UserPhysicalDataController.patchUserPhysicalData(userId: Long)
 
-POST          /delete                       controllers.system.UserAdminController.deleteUsers()
+POST          /delete                        controllers.system.UserAdminController.deleteUsers()
+
+POST          /password-reset-request        controllers.system.UserAdminController.passwordResetRequest()
+POST          /reset-password                controllers.system.UserAdminController.resetPassword()

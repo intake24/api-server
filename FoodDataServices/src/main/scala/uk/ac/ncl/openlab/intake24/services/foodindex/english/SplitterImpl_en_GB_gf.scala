@@ -25,4 +25,4 @@ import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
 
 // FIXME: Error handling
 @Singleton
-class SplitterImpl_en_GB_gf @Inject()(foodData: FoodIndexDataService) extends EnglishSplitter(foodData.splitList("en_GB_gf").right.get)
+class SplitterImpl_en_GB_gf @Inject()(foodData: FoodIndexDataService) extends EnglishSplitter(foodData.splitList("en_GB").right.get)

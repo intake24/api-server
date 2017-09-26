@@ -25,6 +25,7 @@ import play.api.db.Database
 import play.api.{Configuration, Environment}
 import play.db.NamedDatabase
 import scheduled.{ErrorDigestSender, ErrorDigestSenderImpl}
+import security.captcha.{AsyncCaptchaService, GoogleRecaptchaImpl}
 import sms.{SMSService, TwilioSMSImpl}
 import uk.ac.ncl.openlab.intake24.foodsql.admin._
 import uk.ac.ncl.openlab.intake24.foodsql.demographicGroups._
@@ -45,6 +46,7 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.{ClientErrorService, FoodPopularityService, SurveyService, UserPhysicalDataService}
 import uk.ac.ncl.openlab.intake24.systemsql.admin._
 import uk.ac.ncl.openlab.intake24.systemsql.user.{ClientErrorServiceImpl, FoodPopularityServiceImpl, SurveyServiceImpl, UserPhysicalDataServiceImpl}
+
 import collection.JavaConverters._
 
 class Intake24ServicesModule(env: Environment, config: Configuration) extends AbstractModule {
@@ -56,7 +58,8 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
       "da_DK" -> injector.getInstance(classOf[FoodIndexImpl_da_DK]),
       "ar_AE" -> injector.getInstance(classOf[FoodIndexImpl_ar_AE]),
       "en_NZ" -> injector.getInstance(classOf[FoodIndexImpl_en_NZ]),
-      "en_GB_gf" -> injector.getInstance(classOf[FoodIndexImpl_en_GB_gf]))
+      "en_GB_gf" -> injector.getInstance(classOf[FoodIndexImpl_en_GB_gf]),
+      "en_IN" -> injector.getInstance(classOf[FoodIndexImpl_en_IN]))
 
   @Provides
   @Singleton
@@ -66,7 +69,8 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
       "da_DK" -> injector.getInstance(classOf[SplitterImpl_da_DK]),
       "ar_AE" -> injector.getInstance(classOf[SplitterImpl_ar_AE]),
       "en_NZ" -> injector.getInstance(classOf[SplitterImpl_en_NZ]),
-      "en_GB_gf" -> injector.getInstance(classOf[SplitterImpl_en_GB_gf]))
+      "en_GB_gf" -> injector.getInstance(classOf[SplitterImpl_en_GB_gf]),
+      "en_IN" -> injector.getInstance(classOf[SplitterImpl_en_IN]))
 
   @Provides
   @Named("intake24_system")
@@ -81,29 +85,29 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
   def imageProcessorSettings(configuration: Configuration): ImageProcessorSettings = {
 
     val source = SourceImageSettings(
-      configuration.getInt("intake24.images.processor.source.thumbnailWidth").get,
-      configuration.getInt("intake24.images.processor.source.thumbnailHeight").get)
+      configuration.get[Int]("intake24.images.processor.source.thumbnailWidth"),
+      configuration.get[Int]("intake24.images.processor.source.thumbnailHeight"))
 
     val asServed = AsServedImageSettings(
-      configuration.getInt("intake24.images.processor.asServed.mainImageWidth").get,
-      configuration.getInt("intake24.images.processor.asServed.mainImageHeight").get,
-      configuration.getInt("intake24.images.processor.asServed.thumbnailWidth").get)
+      configuration.get[Int]("intake24.images.processor.asServed.mainImageWidth"),
+      configuration.get[Int]("intake24.images.processor.asServed.mainImageHeight"),
+      configuration.get[Int]("intake24.images.processor.asServed.thumbnailWidth"))
 
     val selection = SelectionImageSettings(
-      configuration.getInt("intake24.images.processor.selectionScreen.width").get,
-      configuration.getInt("intake24.images.processor.selectionScreen.height").get)
+      configuration.get[Int]("intake24.images.processor.selectionScreen.width"),
+      configuration.get[Int]("intake24.images.processor.selectionScreen.height"))
 
     val imageMaps = ImageMapSettings(
-      configuration.getInt("intake24.images.processor.imageMaps.baseImageWidth").get,
-      configuration.getDouble("intake24.images.processor.imageMaps.outlineStrokeWidth").get,
-      (configuration.getDouble("intake24.images.processor.imageMaps.outlineColor.r").get,
-        configuration.getDouble("intake24.images.processor.imageMaps.outlineColor.g").get,
-        configuration.getDouble("intake24.images.processor.imageMaps.outlineColor.b").get),
-      configuration.getDouble("intake24.images.processor.imageMaps.outlineBlurStrength").get)
+      configuration.get[Int]("intake24.images.processor.imageMaps.baseImageWidth"),
+      configuration.get[Double]("intake24.images.processor.imageMaps.outlineStrokeWidth"),
+      (configuration.get[Double]("intake24.images.processor.imageMaps.outlineColor.r"),
+        configuration.get[Double]("intake24.images.processor.imageMaps.outlineColor.g"),
+        configuration.get[Double]("intake24.images.processor.imageMaps.outlineColor.b")),
+      configuration.get[Double]("intake24.images.processor.imageMaps.outlineBlurStrength"))
 
-    val commandSearchPath = configuration.getString("intake24.images.processor.commandSearchPath")
+    val commandSearchPath = configuration.getOptional[String]("intake24.images.processor.commandSearchPath")
 
-    val command = configuration.getStringList("intake24.images.processor.command").map(_.asScala).getOrElse(Seq("magick", "convert"))
+    val command = configuration.getOptional[Seq[String]]("intake24.images.processor.command").getOrElse(Seq("magick", "convert"))
 
     ImageProcessorSettings(commandSearchPath, command, source, selection, asServed, imageMaps)
   }
@@ -179,6 +183,10 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     // SMS serviceUser
 
     bind(classOf[SMSService]).to(classOf[TwilioSMSImpl])
+
+    // Captcha
+
+    bind(classOf[AsyncCaptchaService]).to(classOf[GoogleRecaptchaImpl])
 
     // Error digest service
 

@@ -3,7 +3,7 @@ package uk.ac.ncl.openlab.intake24.services.systemdb.admin
 import java.time.{Instant, ZonedDateTime}
 import java.util.UUID
 
-import uk.ac.ncl.openlab.intake24.errors.LookupError
+import uk.ac.ncl.openlab.intake24.errors.{LookupError, UnexpectedDatabaseError}
 import uk.ac.ncl.openlab.intake24.surveydata.{MealTime, MissingFood, PortionSize}
 
 
@@ -14,9 +14,45 @@ case class ExportMeal(name: String, time: MealTime, customData: Map[String, Stri
 case class ExportFood(code: String, englishDescription: String, localDescription: Option[String], searchTerm: String, nutrientTableId: String, nutrientTableCode: String, isReadyMeal: Boolean,
                       portionSize: PortionSize, reasonableAmount: Boolean, foodGroupId: Int, brand: String, nutrients: Map[Int, Double], customData: Map[String, String])
 
+
+case class ExportTaskParameters(userId: Long, surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime)
+
+case class ExportTaskProgressUpdate(id: Long, progress: Double)
+
+case class ExportTaskSuccess(id: Long, downloadUrl: String)
+
+case class ExportTaskFailure(id: Long, cause: Throwable)
+
+
+sealed trait ExportTaskStatus
+
+object ExportTaskStatus {
+  case object Pending extends ExportTaskStatus
+  case object Failed extends ExportTaskStatus
+  case object Expired extends ExportTaskStatus
+  case class InProgress(progress: Double) extends ExportTaskStatus
+  case class Completed(downloadUrl: String) extends ExportTaskStatus
+}
+
+case class ExportTaskInfo(id: Long, createdAt: ZonedDateTime, dateFrom: ZonedDateTime, dateTo: ZonedDateTime, status: ExportTaskStatus)
+
 trait DataExportService {
 
   def getSurveySubmissions(surveyId: String, dateFrom: Option[ZonedDateTime], dateTo: Option[ZonedDateTime], offset: Int, limit: Int, respondentId: Option[Long]): Either[LookupError, Seq[ExportSubmission]]
+
+  def getSurveySubmissionCount(surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime): Either[LookupError, Int]
+
+  def createExportTask(parameters: ExportTaskParameters): Either[UnexpectedDatabaseError, Long]
+
+  def setExportTaskStarted(taskId: Long): Either[LookupError, Unit]
+
+  def updateExportTaskProgress(taskId: Long, progress: Double): Either[LookupError, Unit]
+
+  def setExportTaskSuccess(taskId: Long, downloadUrl: String, downloadUrlExpiresAt: ZonedDateTime): Either[LookupError, Unit]
+
+  def setExportTaskFailure(taskId: Long, cause: Throwable): Either[LookupError, Unit]
+
+  def getActiveExportTasks(surveyId: String, userId: Long): Either[LookupError, Seq[ExportTaskInfo]]
 
   //def getSurveySubmissionsAsCSV()
 
@@ -24,4 +60,3 @@ trait DataExportService {
 
   //def getActivityReportAsCSV()
 }
-

@@ -20,10 +20,10 @@ package uk.ac.ncl.openlab.intake24.foodxml.scripts
 
 import java.io.FileReader
 
-import scala.collection.JavaConversions.asScalaBuffer
-
 import au.com.bytecode.opencsv.CSVReader
 import uk.ac.ncl.openlab.intake24.foodxml.Util
+
+import scala.collection.JavaConverters._
 
 object ParseBrandNames {
   def main(args: Array[String]): Unit = {
@@ -32,18 +32,14 @@ object ParseBrandNames {
     // header
     // code | list of brands ...
 
-    val rows = new CSVReader(new FileReader(sourcePath)).readAll().toList.tail.map(_.toSeq)
+    val rows = new CSVReader(new FileReader(sourcePath)).readAll().asScala.tail.map(_.toSeq)
 
     val xml = <brand-names>
-                {
-                  rows.map(r =>
-                    <food code={ r(0) }>
-                      {
-                        (r.tail.tail.filter(_.nonEmpty) :+ "I don't know") .map(n => <brand name={ n }/>)
-                      }
-                    </food>)
-                }
-              </brand-names>
+      {rows.map(r =>
+        <food code={r(0)}>
+          {(r.tail.tail.filter(_.nonEmpty) :+ "I don't know").map(n => <brand name={n}/>)}
+        </food>)}
+    </brand-names>
 
     Util.writeXml(xml, "D:\\SCRAN24\\Data\\brands.xml")
   }

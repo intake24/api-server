@@ -27,5 +27,5 @@ resolvers += Resolver.mavenLocal // for InfiAuto library
 libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % "1.7.21",
   "com.infiauto" % "infiauto-datastr" % "0.3.3",
-  "org.scalatest" %% "scalatest" % "2.2.5" % "test"
+  "org.scalatest" %% "scalatest" % "3.0.1" % "test"
 )

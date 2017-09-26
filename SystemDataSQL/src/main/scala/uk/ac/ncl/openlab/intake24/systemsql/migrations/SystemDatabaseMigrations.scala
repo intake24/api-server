@@ -150,7 +150,7 @@ object SystemDatabaseMigrations {
              |)""".stripMargin).execute()
 
         val localeParams = Seq(
-          Seq[NamedParameter]('id -> "en_GB", 'english_name -> "English (United Kingdom)", 'local_name -> "English (United Kingdom)", 'respondent_language_id -> "en_GB", 'admin_language_id -> "en", 'country_flag_code -> "gb", 'prototype_locale_id -> None),
+          Seq[NamedParameter]('id -> "en_GB", 'english_name -> "English (United Kingdom)", 'local_name -> "English (United Kingdom)", 'respondent_language_id -> "en_GB", 'admin_language_id -> "en", 'country_flag_code -> "gb", 'prototype_locale_id -> Option.empty[String]),
           Seq[NamedParameter]('id -> "da_DK", 'english_name -> "Danish (Denmark)", 'local_name -> "Dansk (Danmark)", 'respondent_language_id -> "da", 'admin_language_id -> "da", 'country_flag_code -> "dk", 'prototype_locale_id -> Some("en_GB")),
           Seq[NamedParameter]('id -> "pt_PT", 'english_name -> "Portuguese (Portugal)", 'local_name -> "Português (Portugal)", 'respondent_language_id -> "pt", 'admin_language_id -> "pt", 'country_flag_code -> "pt", 'prototype_locale_id -> Some("en_GB")),
           Seq[NamedParameter]('id -> "en_NZ", 'english_name -> "English (New Zealand)", 'local_name -> "English (New Zealand)", 'respondent_language_id -> "en_NZ", 'admin_language_id -> "en", 'country_flag_code -> "nz", 'prototype_locale_id -> Some("en_GB"))
@@ -732,7 +732,7 @@ object SystemDatabaseMigrations {
             |DROP TABLE user_info;
             |DROP TYPE sex_enum;
           """.stripMargin).execute()
-        Right()
+        Right(())
       }
     },
 
@@ -1301,7 +1301,114 @@ object SystemDatabaseMigrations {
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         ???
       }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 54l
+      override val versionTo: Long = 55l
+      override val description: String = "Create export_tasks"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("""CREATE TABLE data_export_tasks (
+              |  id           SERIAL PRIMARY KEY,
+              |  survey_id    CHARACTER VARYING(64)    NOT NULL,
+              |  date_from    TIMESTAMP WITH TIME ZONE NOT NULL,
+              |  date_to      TIMESTAMP WITH TIME ZONE NOT NULL,
+              |  user_id      INTEGER                  NOT NULL,
+              |  created_at   TIMESTAMP WITH TIME ZONE NOT NULL,
+              |  started_at   TIMESTAMP WITH TIME ZONE,
+              |  completed_at TIMESTAMP WITH TIME ZONE,
+              |  progress     REAL,
+              |  successful   BOOLEAN,
+              |  download_url CHARACTER VARYING(1024),
+              |  stack_trace  CHARACTER VARYING(256) [],
+              |
+              |  CONSTRAINT data_export_tasks_user_id_fk FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT ON UPDATE CASCADE,
+              |  CONSTRAINT data_export_tasks_survey_id_fk FOREIGN KEY (survey_id) REFERENCES surveys (id) ON DELETE RESTRICT ON UPDATE CASCADE
+              |)""".stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 55l
+      override val versionTo: Long = 56l
+      override val description: String = "Add download_url_expires_at to export_tasks"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE data_export_tasks ADD COLUMN download_url_expires_at TIMESTAMP WITH TIME ZONE").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    },
+
+    new Migration {
+      override val versionFrom: Long = 56l
+      override val versionTo: Long = 57l
+      override val description: String = "Fix type of food_code in popularity_counters"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE popularity_counters ALTER COLUMN food_code TYPE VARCHAR(8)").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+
+
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 57l
+      override val versionTo: Long = 58l
+      override val description: String = "Add India (English) locale"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("INSERT INTO locales VALUES('en_IN', 'India (English)', 'India (English)', 'en_GB', 'en', 'in', 'en_GB')").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 58l
+      override val versionTo: Long = 59l
+      override val description: String = "Create en_IN local nutrients list from en_GB"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("INSERT INTO local_nutrient_types(locale_id, nutrient_type_id) SELECT 'en_IN', nutrient_type_id FROM local_nutrient_types WHERE locale_id='en_GB'").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
     }
+
 
 
   )

@@ -1,6 +1,3 @@
-<!-- ~ Copyright (C) 2009-2016 Lightbend Inc. <https://www.lightbend.com> -->
-<!-- The default logback configuration that Play uses if no other configuration 
-	is provided -->
 <configuration>
 
 	<conversionRule conversionWord="coloredLevel"
@@ -24,6 +21,7 @@
 	<logger name="play" level="INFO" />
 	<logger name="application" level="DEBUG" />
 	<logger name="uk.ac.ncl.openlab.intake24" level="DEBUG" />
+	<logger name="controllers" level="DEBUG" />
 	<logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />
 
 </configuration>

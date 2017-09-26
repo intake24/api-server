@@ -9,11 +9,11 @@ import play.api.{Configuration, Logger}
 @Singleton
 class TwilioSMSImpl @Inject()(config: Configuration) extends SMSService {
 
-  val accountSid = config.getString("twilio.accountSid")
-  val authToken = config.getString("twilio.authToken")
-  val fromNumber = config.getString("twilio.fromNumber")
+  val accountSid = config.getOptional[String]("twilio.accountSid")
+  val authToken = config.getOptional[String]("twilio.authToken")
+  val fromNumber = config.getOptional[String]("twilio.fromNumber")
 
-  val mockSetting = config.getString("twilio.mock")
+  val mockSetting = config.getOptional[String]("twilio.mock")
 
   val mock = mockSetting.isDefined || {
     if (accountSid.isDefined && authToken.isDefined && fromNumber.isDefined)

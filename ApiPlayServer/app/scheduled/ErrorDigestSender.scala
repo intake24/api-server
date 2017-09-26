@@ -5,11 +5,11 @@ import java.time.{ZoneId, ZonedDateTime}
 
 import akka.actor.ActorSystem
 import com.google.inject.{Inject, Singleton}
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.mailer.{Email, MailerClient}
 import play.api.{Configuration, Logger}
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.{ClientErrorReport, ClientErrorService}
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 trait ErrorDigestSender
@@ -18,13 +18,14 @@ trait ErrorDigestSender
 class ErrorDigestSenderImpl @Inject()(config: Configuration,
                                       system: ActorSystem,
                                       errorService: ClientErrorService,
-                                      mailer: MailerClient
+                                      mailer: MailerClient,
+                                      implicit val executionContext: ExecutionContext,
                                      ) extends ErrorDigestSender {
 
 
-  val frequency = config.getInt("intake24.errorDigest.frequencyMinutes").get
+  val frequency = config.get[Int]("intake24.errorDigest.frequencyMinutes")
 
-  system.scheduler.schedule(0 minutes, frequency minutes) {
+  system.scheduler.schedule(0.minutes, frequency.minutes) {
 
     def formatReport(report: ClientErrorReport) = {
       val sb = new StringBuilder

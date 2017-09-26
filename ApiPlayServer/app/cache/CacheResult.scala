@@ -1,10 +1,10 @@
 package cache
 
-import play.api.cache.CacheApi
+import play.api.cache.SyncCacheApi
 
 trait CacheResult {
   
-  val cache: CacheApi
+  val cache: SyncCacheApi
   
   var knownCacheKeys: Set[String]
 

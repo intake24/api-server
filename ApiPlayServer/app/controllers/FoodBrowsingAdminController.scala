@@ -21,16 +21,17 @@ package controllers
 import javax.inject.Inject
 
 import io.circe.generic.auto._
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.mvc.Controller
+import play.api.mvc.{BaseController, ControllerComponents}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodBrowsingAdminService
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class FoodBrowsingAdminController @Inject()(service: FoodBrowsingAdminService,
                                             foodAuthChecks: FoodAuthChecks,
-                                            rab: Intake24RestrictedActionBuilder) extends Controller
+                                            rab: Intake24RestrictedActionBuilder,
+                                            val controllerComponents: ControllerComponents,
+                                            implicit val executionContext: ExecutionContext) extends BaseController
   with DatabaseErrorHandler {
 
   def getUncategorisedFoods(locale: String) = rab.restrictAccess(foodAuthChecks.canReadFoods(locale)) {
