@@ -3,6 +3,8 @@ package uk.ac.ncl.openlab.intake24.services.fooddb.admin
 import uk.ac.ncl.openlab.intake24.errors.{LookupError, UnexpectedDatabaseError}
 import uk.ac.ncl.openlab.intake24.{NewNutrientTableRecord, NutrientTable, NutrientTableRecord}
 
+case class SingleNutrientTypeUpdate(nutrientTableRecordId: String, newValue: Option[Double])
+
 trait NutrientTablesAdminService {
 
   def listNutrientTables(): Either[UnexpectedDatabaseError, Map[String, NutrientTable]]
@@ -24,5 +26,10 @@ trait NutrientTablesAdminService {
   def createNutrientTableRecords(records: Seq[NewNutrientTableRecord]): Either[UnexpectedDatabaseError, Unit]
 
   def createOrUpdateNutrientTableRecords(records: Seq[NewNutrientTableRecord]): Either[UnexpectedDatabaseError, Unit]
+
+  def updateSingleNutrientType(nutrientTableId: String, nutrientTypeId: Long, updates: Seq[SingleNutrientTypeUpdate]): Either[UnexpectedDatabaseError, Unit]
+
+  def getNutrientTableRecordIds(nutrientTableId: String): Either[UnexpectedDatabaseError, Seq[String]]
+
 }
 
