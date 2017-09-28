@@ -1464,7 +1464,7 @@ object SystemDatabaseMigrations {
 
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         SQL("ALTER TABLE surveys DROP COLUMN feedback_style;").execute()
-        Right()
+        Right(())
       }
     },
 
