@@ -616,6 +616,24 @@ object FoodDatabaseMigrations {
         ???
 
       }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 42l
+      override val versionTo: Long = 43l
+      override val description: String = "Add CO2 emissions nutrient type"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("INSERT INTO nutrient_types VALUES(228, 'CO₂ emissions', 1)").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
     }
 
   )

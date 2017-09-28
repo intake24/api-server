@@ -2,12 +2,12 @@ package uk.ac.ncl.openlab.intake24.foodsql.admin
 
 import javax.sql.DataSource
 
-import anorm.{AnormUtil, BatchSql, Macro, NamedParameter, SQL, sqlToSimple}
+import anorm.{AnormUtil, BatchSql, Macro, NamedParameter, SQL, SqlParser, sqlToSimple}
 import com.google.inject.name.Named
 import com.google.inject.{Inject, Singleton}
 import org.apache.commons.lang3.StringUtils
 import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound, UnexpectedDatabaseError}
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.NutrientTablesAdminService
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{NutrientTablesAdminService, SingleNutrientTypeUpdate}
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
 import uk.ac.ncl.openlab.intake24.{NewNutrientTableRecord, NutrientTable, NutrientTableRecord}
 
@@ -172,6 +172,43 @@ class NutrientTablesAdminImpl @Inject()(@Named("intake24_foods") val dataSource:
       } else Right(())
   }
 
+
+  def updateSingleNutrientType(nutrientTableId: String, nutrientTypeId: Long, updates: Seq[SingleNutrientTypeUpdate]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
+    implicit conn =>
+
+      withTransaction {
+
+        val (update, delete) = updates.partition(_.newValue.isDefined)
+
+        val deleteParams = delete.map {
+          record =>
+            Seq[NamedParameter]('table_id -> nutrientTableId, 'nutrient_type_id -> nutrientTypeId, 'record_id -> record.nutrientTableRecordId)
+        }
+
+        if (deleteParams.nonEmpty) {
+          val deleteQuery = "DELETE FROM nutrient_table_records_nutrients WHERE nutrient_table_id={table_id} AND nutrient_table_record_id={record_id} AND nutrient_type_id={nutrient_type_id}"
+
+          BatchSql(deleteQuery, deleteParams.head, deleteParams.tail: _*).execute()
+        }
+
+        val updateParams = update.map {
+          record =>
+            Seq[NamedParameter]('table_id -> nutrientTableId, 'nutrient_type_id -> nutrientTypeId, 'record_id -> record.nutrientTableRecordId, 'units_per_100g -> record.newValue.get)
+        }
+
+        if (updateParams.nonEmpty) {
+
+          val nutrientUpsertQuery =
+            """INSERT INTO nutrient_table_records_nutrients VALUES({record_id}, {table_id}, {nutrient_type_id}, {units_per_100g})
+              |ON CONFLICT ON CONSTRAINT nutrient_table_records_nutrients_pk DO UPDATE SET units_per_100g=EXCLUDED.units_per_100g""".stripMargin
+
+          BatchSql(nutrientUpsertQuery, updateParams.head, updateParams.tail: _*).execute()
+        }
+
+        Right(())
+      }
+  }
+
   def updateNutrientTableRecords(records: Seq[NewNutrientTableRecord]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
@@ -217,4 +254,10 @@ class NutrientTablesAdminImpl @Inject()(@Named("intake24_foods") val dataSource:
       Right(())
   }
 
+  def getNutrientTableRecordIds(nutrientTableId: String): Either[UnexpectedDatabaseError, Seq[String]] = tryWithConnection {
+    implicit conn =>
+      Right(SQL("SELECT id FROM nutrient_table_records WHERE nutrient_table_id={nutrient_table_id}")
+        .on('nutrient_table_id -> nutrientTableId)
+        .as(SqlParser.str("id").*))
+  }
 }

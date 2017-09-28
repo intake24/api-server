@@ -1414,6 +1414,42 @@ object SystemDatabaseMigrations {
 
       override val versionFrom: Long = 59l
       override val versionTo: Long = 60l
+      override val description: String = "Add CO2 emissions nutrient type"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("INSERT INTO nutrient_types VALUES(228, 'CO₂ emissions', 1)").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 60l
+      override val versionTo: Long = 61l
+      override val description: String = "Add CO2 to UK local nutrient list"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("INSERT INTO local_nutrient_types VALUES(DEFAULT, 'en_GB', 228)").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 61l
+      override val versionTo: Long = 62l
       override val description: String = "ALTER TABLE surveys ADD COLUMN"
 
       override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
@@ -1427,9 +1463,10 @@ object SystemDatabaseMigrations {
       }
 
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
-        ???
+        SQL("ALTER TABLE surveys DROP COLUMN feedback_style;").execute()
+        Right()
       }
-    }
+    },
 
 
   )
