@@ -6,7 +6,7 @@ import javax.sql.DataSource
 import anorm._
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.SurveyState
-import uk.ac.ncl.openlab.intake24.services.systemdb.user.{PublicSurveyParameters, SurveyFollowUp, SurveyService, UserSurveyParameters}
+import uk.ac.ncl.openlab.intake24.services.systemdb.user._
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 import uk.ac.ncl.openlab.intake24.surveydata.NutrientMappedSubmission
 
@@ -26,6 +26,15 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
         case None =>
           Left(RecordNotFound(new RuntimeException(s"Survey $surveyId does not exist")))
       }
+  }
+
+  override def getSurveyFeedbackStyle(surveyId: String): Either[LookupError, SurveyFeedbackStyle] = tryWithConnection {
+    implicit conn =>
+      val s = SQL("SELECT feedback_style FROM surveys WHERE surveys.id={survey_id};")
+        .on('survey_id -> surveyId)
+        .executeQuery()
+        .as(SqlParser.str("feedback_style").single)
+      Right(SurveyFeedbackStyle(s))
   }
 
   override def getSurveyParameters(surveyId: String): Either[LookupError, UserSurveyParameters] = tryWithConnection {

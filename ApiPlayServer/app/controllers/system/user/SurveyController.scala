@@ -53,6 +53,12 @@ class SurveyController @Inject()(service: SurveyService,
     translateDatabaseResult(service.getPublicSurveyParameters(surveyId))
   }
 
+  def getSurveyFeedbackStyle(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId), Roles.surveyRespondent(surveyId))(playBodyParsers.empty) {
+    _ => Future {
+      translateDatabaseResult(service.getSurveyFeedbackStyle(surveyId))
+    }
+  }
+
   def getSurveyParameters(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId), Roles.surveyRespondent(surveyId))(playBodyParsers.empty) {
     _ =>
       Future {
