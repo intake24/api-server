@@ -40,7 +40,7 @@ libraryDependencies ++= Seq(
   "com.twilio.sdk" % "twilio" % "7.7.0",
   "com.amazonaws" % "aws-java-sdk" % "1.11.155",
   "org.apache.shiro" % "shiro-core" % "1.2.3", // for v1.0 authentication support
-  "com.typesafe.play" %% "play-integration-test" % "2.6.3" % "test"
+  "com.typesafe.play" %% "play-integration-test" % "2.6.5" % "test"
 )
 
 // These are the default Java settings that go into conf/application.ini and are read by the start up
