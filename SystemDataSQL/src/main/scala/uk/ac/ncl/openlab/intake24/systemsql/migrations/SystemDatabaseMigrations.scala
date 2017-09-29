@@ -1468,6 +1468,8 @@ object SystemDatabaseMigrations {
       }
     },
 
+    PairwiseAssociationsMigration
+
 
   )
 
