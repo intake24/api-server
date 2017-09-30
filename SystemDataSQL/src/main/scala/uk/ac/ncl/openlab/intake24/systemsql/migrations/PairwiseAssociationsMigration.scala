@@ -1,6 +1,7 @@
 package uk.ac.ncl.openlab.intake24.systemsql.migrations
 
 import java.sql.Connection
+import java.util.UUID
 
 import org.slf4j.Logger
 import uk.ac.ncl.openlab.intake24.sql.migrations.{Migration, MigrationFailed}
@@ -11,8 +12,8 @@ import anorm.{BatchSql, Macro, NamedParameter, SQL, SqlParser}
   */
 object PairwiseAssociationsMigration extends Migration {
 
-  override val versionFrom: Long = 61l
-  override val versionTo: Long = 62l
+  override val versionFrom: Long = 62l
+  override val versionTo: Long = 63l
 
   override val description: String = "Creating and filling table for Pairwise Associations"
 
@@ -39,6 +40,7 @@ object PairwiseAssociationsMigration extends Migration {
 
   private def fillTable()(implicit connection: Connection) = {
     val graph = getOccurrenceGraph()
+    println("Updating db...")
     val updateParams = graph.flatMap { localeNode =>
       localeNode._2.flatMap { ocNode =>
         ocNode._2.map { consItemNode =>
@@ -54,16 +56,20 @@ object PairwiseAssociationsMigration extends Migration {
           |VALUES ({locale}, {antecedent_food}, {consequent_food}, {occurrences});
         """.stripMargin, updateParams.head, updateParams.tail: _*).execute()
     }
+    println("Done")
   }
 
   private def getOccurrenceGraph()(implicit connection: Connection) = {
     val batchSize = 50
-    val occurrenceGraph = Map[String, Map[String, Map[String, Int]]]().withDefaultValue(Map().withDefaultValue(Map().withDefaultValue(0)))
+    val occurrenceGraph: Map[String, Map[String, Map[String, Int]]] = Map[String, Map[String, Map[String, Int]]]().withDefaultValue(Map().withDefaultValue(Map().withDefaultValue(0)))
 
     getSurveyIds().foldLeft(occurrenceGraph) { (ocMp, surveyId) =>
+      println(s"Processing survey $surveyId")
       val submissionCount = countSurveySubmissions(surveyId)
       Range(0, submissionCount, batchSize).foldLeft(ocMp) { (ocMp, offset) =>
-        getSubmission(surveyId, offset).foldLeft(ocMp) { case (a, b) => addSubmissionToOccurrenceGraph(a,b) }
+        val subs = getSubmissions(surveyId, offset).foldLeft(ocMp)(addSubmissionToOccurrenceGraph)
+        println(s"  processed ${offset + subs.size} out of $submissionCount")
+        subs
       }
     }
 
@@ -98,11 +104,15 @@ object PairwiseAssociationsMigration extends Migration {
     SQL(countQuery).on('survey_id -> surveyId).executeQuery().as(SqlParser.int(1).single)
   }
 
-  private def getSubmission(surveyId: String, offset: Int)(implicit connection: Connection): List[Submission] = {
-    getSubmissionIds(surveyId, offset).map { submissionId =>
-      val meals = getSubmittedFoods(submissionId).groupBy(_.meal_id)
-      val mealPairs = meals.flatMap(m => pairs(m._2.map(_.food_code))).toSeq
-      Submission(meals.head._2.head.locale, mealPairs)
+  private def getSubmissions(surveyId: String, offset: Int)(implicit connection: Connection): List[Submission] = {
+    getSubmissionIds(surveyId, offset).foldLeft(List[Submission]()) {
+      (acc, submissionId) =>
+        getSubmittedFoods(submissionId) match {
+          case Nil => acc
+          case l =>
+            val mealPairs = l.groupBy(_.meal_id).flatMap(m => pairs(m._2.map(_.food_code))).toSeq
+            Submission(l.head.locale, mealPairs) :: acc
+        }
     }
   }
 
@@ -112,14 +122,14 @@ object PairwiseAssociationsMigration extends Migration {
         |SELECT survey_submissions.id
         |FROM survey_submissions
         |  JOIN surveys ON surveys.id = survey_submissions.survey_id
+        |WHERE surveys.id = {survey_id}
         |ORDER BY survey_submissions.end_time ASC
         |OFFSET {offset}
-        |WHERE surveys.id = {survey_id}
       """.stripMargin
-    SQL(q).on('survey_id -> surveyId, 'offset -> offset).executeQuery().as(SqlParser.str(1).*)
+    SQL(q).on('survey_id -> surveyId, 'offset -> offset).executeQuery().as(SqlParser.scalar(anorm.Column.columnToUUID).*)
   }
 
-  private def getSubmittedFoods(submissionId: String)(implicit connection: Connection) = {
+  private def getSubmittedFoods(submissionId: UUID)(implicit connection: Connection) = {
     val q =
       """|SELECT
          |  surveys.locale                      AS locale,
@@ -129,7 +139,7 @@ object PairwiseAssociationsMigration extends Migration {
          |  JOIN survey_submissions ON surveys.id = survey_submissions.survey_id
          |  JOIN survey_submission_meals ON survey_submission_meals.survey_submission_id = survey_submissions.id
          |  JOIN survey_submission_foods ON survey_submission_foods.meal_id = survey_submission_meals.id
-         |WHERE survey_submissions.id = {submission_id};""".stripMargin
+         |WHERE survey_submissions.id = {submission_id}::uuid""".stripMargin
     SQL(q).on('submission_id -> submissionId).executeQuery().as(Macro.namedParser[SubmittedFoodRow].*)
 
 
