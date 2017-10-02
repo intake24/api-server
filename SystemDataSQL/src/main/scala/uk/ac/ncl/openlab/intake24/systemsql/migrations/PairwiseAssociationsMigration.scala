@@ -19,39 +19,53 @@ object PairwiseAssociationsMigration extends Migration {
   override val description: String = "Creating and filling table for Pairwise Associations"
 
   override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
-    createTable()
-    fillTable()
+    createTables()
+    fillTables()
     Right(())
   }
 
   override def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
     SQL(
       """
-        |DROP TABLE pairwise_associations;
+        |DROP TABLE pairwise_associations_occurrence_map;
+        |DROP TABLE pairwise_associations_co_occurrences;
+        |DROP TABLE pairwise_associations_transactions_count;
       """.stripMargin).execute()
     Right(())
   }
 
-  private def createTable()(implicit connection: Connection) = {
+  private def createTables()(implicit connection: Connection) = {
     SQL(
       """
-        |CREATE TABLE pairwise_associations (
+        |CREATE TABLE pairwise_associations_occurrence_map (
+        |  locale      CHARACTER VARYING(64) NOT NULL,
+        |  food_code   CHARACTER VARYING(50) NOT NULL,
+        |  occurrences INTEGER               NOT NULL,
+        |  PRIMARY KEY (locale, food_code)
+        |);
+        |
+        |CREATE TABLE pairwise_associations_co_occurrences (
         |  locale          CHARACTER VARYING(64) NOT NULL,
-        |  antecedent_food CHARACTER VARYING(50) NOT NULL,
-        |  consequent_food CHARACTER VARYING(50) NOT NULL,
+        |  antecedent_food_code CHARACTER VARYING(50) NOT NULL,
+        |  consequent_food_code CHARACTER VARYING(50) NOT NULL,
         |  occurrences     INTEGER               NOT NULL,
-        |  PRIMARY KEY (locale, antecedent_food, consequent_food)
+        |  PRIMARY KEY (locale, antecedent_food_code, consequent_food_code)
+        |);
+        |
+        |CREATE TABLE pairwise_associations_transactions_count (
+        |  locale             CHARACTER VARYING(64) PRIMARY KEY,
+        |  transactions_count INTEGER NOT NULL
         |);
       """.stripMargin).execute()
   }
 
-  private def fillTable()(implicit connection: Connection) = {
+  private def fillTables()(implicit connection: Connection) = {
     val graph = getOccurrenceGraph()
     println("Updating db...")
     val updateParams = graph.flatMap { localeNode =>
       localeNode._2.getCoOccurrences().flatMap { ocNode =>
         ocNode._2.map { consItemNode =>
-          Seq[NamedParameter]('locale -> localeNode._1, 'antecedent_food -> ocNode._1, 'consequent_food -> consItemNode._1, 'occurrences -> consItemNode._2)
+          Seq[NamedParameter]('locale -> localeNode._1, 'antecedent_food_code -> ocNode._1, 'consequent_food_code -> consItemNode._1, 'occurrences -> consItemNode._2)
         }
       }
     }.toSeq
@@ -59,8 +73,8 @@ object PairwiseAssociationsMigration extends Migration {
     if (updateParams.nonEmpty) {
       BatchSql(
         """
-          |INSERT INTO pairwise_associations (locale, antecedent_food, consequent_food, occurrences)
-          |VALUES ({locale}, {antecedent_food}, {consequent_food}, {occurrences});
+          |INSERT INTO pairwise_associations_co_occurrences (locale, antecedent_food_code, consequent_food_code, occurrences)
+          |VALUES ({locale}, {antecedent_food_code}, {consequent_food_code}, {occurrences});
         """.stripMargin, updateParams.head, updateParams.tail: _*).execute()
     }
     println("Done")
@@ -69,7 +83,7 @@ object PairwiseAssociationsMigration extends Migration {
   private def getOccurrenceGraph()(implicit connection: Connection) = {
     val minSubmissionCount = 50
     val batchSize = 50
-    val occurrenceGraph = Map[String, PairwiseAssociationRules]().withDefaultValue(PairwiseAssociationRules(Seq()))
+    val occurrenceGraph = Map[String, PairwiseAssociationRules]().withDefaultValue(PairwiseAssociationRules(None))
 
     getSurveyIds().foldLeft(occurrenceGraph) { (ocMp, surveyId) =>
       if (surveyId.toLowerCase().contains("test")) {

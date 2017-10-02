@@ -37,7 +37,7 @@ lazy val commonSql = Project(id = "commonSql", base = file("CommonSQL")).setting
 
 lazy val pairwiseAssociationRules = Project(id = "pairwiseAssociationRules", base = file("pairwise-association-rules")).settings(commonSettings: _*)
 
-lazy val systemDataServices = Project(id = "systemDataServices", base = file("SystemDataServices")).dependsOn(gwtShared, sharedTypes).settings(commonSettings: _*)
+lazy val systemDataServices = Project(id = "systemDataServices", base = file("SystemDataServices")).dependsOn(gwtShared, sharedTypes, pairwiseAssociationRules).settings(commonSettings: _*)
 
 lazy val systemDataSql = Project(id = "systemDataSql", base = file("SystemDataSQL")).dependsOn(commonSql, systemDataServices % "compile->compile;test->test", pairwiseAssociationRules).settings(commonSettings: _*)
 
