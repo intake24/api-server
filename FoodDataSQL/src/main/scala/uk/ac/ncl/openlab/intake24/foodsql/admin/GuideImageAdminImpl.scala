@@ -3,25 +3,44 @@ package uk.ac.ncl.openlab.intake24.foodsql.admin
 import javax.inject.Named
 import javax.sql.DataSource
 
-import anorm.{Macro, NamedParameter}
+import anorm.{Macro, NamedParameter, SQL}
 import com.google.inject.{Inject, Singleton}
 import org.postgresql.util.PSQLException
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.GuideHeader
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{GuideImageAdminService, NewGuideImageRecord}
-import anorm.SQL
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageStorageService
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.GuideImageService
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
+import uk.ac.ncl.openlab.intake24.{GuideHeader, GuideImageFull, GuideImageMapObject}
 
 @Singleton
-class GuideImageAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource, guideImageService: GuideImageService) extends GuideImageAdminService with SqlDataService {
+class GuideImageAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource, guideImageService: GuideImageService, imageStorage: ImageStorageService) extends GuideImageAdminService with SqlDataService {
+
+  private case class GuidedImageObjectRow(id: String,
+                                          description: String,
+                                          image_map_id: String,
+                                          path: String,
+                                          image_map_object_id: Int,
+                                          weight: Double,
+                                          image_map_object_description: String,
+                                          outline_coordinates: Array[Double])
 
   private val logger = LoggerFactory.getLogger(classOf[GuideImageAdminImpl])
 
   def listGuideImages(): Either[UnexpectedDatabaseError, Seq[GuideHeader]] = tryWithConnection {
     implicit conn =>
-      val headers = SQL("""SELECT id, description from guide_images ORDER BY description ASC""").executeQuery().as(Macro.namedParser[GuideHeader].*)
+      val headers = SQL(
+        """
+          |SELECT
+          |  guide_images.id,
+          |  guide_images.description,
+          |  processed_images.path
+          |FROM guide_images
+          |  JOIN image_maps ON guide_images.image_map_id = image_maps.id
+          |  JOIN processed_images ON image_maps.base_image_id = processed_images.id
+          |ORDER BY guide_images.id ASC;
+        """.stripMargin).executeQuery().as(Macro.namedParser[GuideHeader].*)
       Right(headers)
   }
 
@@ -85,6 +104,40 @@ class GuideImageAdminImpl @Inject()(@Named("intake24_foods") val dataSource: Dat
       else {
         logger.debug("createGuideImages request with empty guide image list")
         Right(())
+      }
+  }
+
+  def getFullGuideImage(id: String) = tryWithConnection {
+    implicit conn =>
+
+      val q =
+        """|SELECT
+           |  gi.id,
+           |  gi.description,
+           |  gi.image_map_id,
+           |  pi.path,
+           |  gio.image_map_object_id,
+           |  gio.weight,
+           |  imo.description AS image_map_object_description,
+           |  imo.outline_coordinates
+           |FROM guide_images AS gi
+           |  JOIN image_maps ON gi.image_map_id = image_maps.id
+           |  JOIN processed_images AS pi ON image_maps.base_image_id = pi.id
+           |  JOIN image_map_objects AS imo ON imo.image_map_id = image_maps.id
+           |  JOIN guide_image_objects AS gio ON imo.id = gio.image_map_object_id
+           |                                  AND gio.guide_image_id = gi.id
+           |WHERE gi.id = {id}""".stripMargin
+
+      withTransaction {
+        val imageResult = SQL(q).on('id -> id).executeQuery().as(Macro.namedParser[GuidedImageObjectRow].*)
+
+        imageResult match {
+          case Nil => Left(RecordNotFound(new RuntimeException(s"Guide image $id not found")))
+          case l =>
+            val gi = l.head
+            val imageMapObjects = l.map { io => GuideImageMapObject(io.image_map_object_id, io.weight, io.image_map_object_description, io.outline_coordinates) }
+            Right(GuideImageFull(gi.id, gi.description, imageStorage.getUrl(gi.path), imageMapObjects))
+        }
       }
   }
 

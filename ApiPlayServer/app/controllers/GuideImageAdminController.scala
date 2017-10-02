@@ -26,13 +26,14 @@ import play.api.mvc.{BaseController, ControllerComponents}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.api.shared.NewGuideImageRequest
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{GuideImageAdminService, ImageMapsAdminService, NewGuideImageRecord}
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageAdminService
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.{ImageAdminService, ImageStorageService}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class GuideImageAdminController @Inject()(guideImageAdminService: GuideImageAdminService,
                                           imageMapsAdminService: ImageMapsAdminService,
                                           imageAdminService: ImageAdminService,
+                                          imageStorage: ImageStorageService,
                                           foodAuthChecks: FoodAuthChecks,
                                           rab: Intake24RestrictedActionBuilder,
                                           jsonBodyParser: JsonBodyParser,
@@ -44,13 +45,21 @@ class GuideImageAdminController @Inject()(guideImageAdminService: GuideImageAdmi
 
   def listGuideImages() = rab.restrictAccess(foodAuthChecks.canReadPortionSizeMethods) {
     Future {
-      translateDatabaseResult(guideImageAdminService.listGuideImages())
+      translateDatabaseResult(guideImageAdminService.listGuideImages().map { images =>
+        images.map(img => img.copy(path = imageStorage.getUrl(img.path)))
+      })
     }
   }
 
   def getGuideImage(id: String) = rab.restrictAccess(foodAuthChecks.canReadPortionSizeMethods) {
     Future {
       translateDatabaseResult(guideImageAdminService.getGuideImage(id))
+    }
+  }
+
+  def getGuideImageFull(id: String) = rab.restrictAccess(foodAuthChecks.canReadPortionSizeMethods) {
+    Future {
+      translateDatabaseResult(guideImageAdminService.getFullGuideImage(id))
     }
   }
 

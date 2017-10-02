@@ -1,6 +1,6 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.admin
 
-import uk.ac.ncl.openlab.intake24.GuideHeader
+import uk.ac.ncl.openlab.intake24.{GuideHeader, GuideImageFull}
 import uk.ac.ncl.openlab.intake24.errors.{DependentCreateError, DependentUpdateError, UnexpectedDatabaseError}
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.GuideImageService
 
@@ -15,4 +15,6 @@ trait GuideImageAdminService extends GuideImageService {
   def createGuideImages(guideImages: Seq[NewGuideImageRecord]): Either[DependentCreateError, Unit]
 
   def updateGuideSelectionImage(id: String, selectionImageId: Long): Either[DependentUpdateError, Unit]
+
+  def getFullGuideImage(id: String): Either[DependentUpdateError, GuideImageFull]
 }
