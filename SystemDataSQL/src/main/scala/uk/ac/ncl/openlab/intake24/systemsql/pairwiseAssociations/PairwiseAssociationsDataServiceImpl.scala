@@ -7,6 +7,7 @@ import uk.ac.ncl.openlab.intake24.pairwiseAssociationRules.PairwiseAssociationRu
 import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.PairwiseAssociationsDataService
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
 import anorm.{Macro, SQL}
+import uk.ac.ncl.openlab.intake24.errors.RecordNotFound
 
 /**
   * Created by Tim Osadchiy on 02/10/2017.
@@ -26,12 +27,16 @@ class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") va
 
   private case class PairwiseAssociationRow(locale: String, antecedent_food: String, consequent_food: String, occurrences: Int)
 
-  override def getAssociations(locales: Seq[String]): Map[String, PairwiseAssociationRules] = {
-    val rows = SQL(pairwiseAssociationQuery).on('locales -> locales).executeQuery().as(Macro.namedParser[PairwiseAssociationRow].*)
-    rows.groupBy(_.locale).map { localeNode =>
-      localeNode._1 -> localeNode._2.groupBy(_.antecedent_food)
-    }
-  }
+//  override def getAssociations(locales: Seq[String]): Map[String, PairwiseAssociationRules] = tryWithConnection {
+//    implicit conn =>
+//      SQL(pairwiseAssociationQuery).on('locales -> locales).executeQuery().as(Macro.namedParser[PairwiseAssociationRow].*) match {
+//        case Nil => Left(RecordNotFound(new RuntimeException("No records were found for")))
+//        case rows => rows.groupBy(_.locale).map { localeNode =>
+//          localeNode._1 -> localeNode._2.groupBy(_.antecedent_food)
+//        }
+//      }
+//  }
 
+  override def getAssociations(locales: Seq[String]): Map[String, PairwiseAssociationRules] = ???
   override def addTransactions(transactions: Seq[Seq[String]]): Unit = ???
 }

@@ -27,7 +27,7 @@ object PairwiseAssociationsMigration extends Migration {
   override def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
     SQL(
       """
-        |DROP TABLE pairwise_associations_occurrence_map;
+        |DROP TABLE pairwise_associations_occurrence;
         |DROP TABLE pairwise_associations_co_occurrences;
         |DROP TABLE pairwise_associations_transactions_count;
       """.stripMargin).execute()
@@ -37,7 +37,7 @@ object PairwiseAssociationsMigration extends Migration {
   private def createTables()(implicit connection: Connection) = {
     SQL(
       """
-        |CREATE TABLE pairwise_associations_occurrence_map (
+        |CREATE TABLE pairwise_associations_occurrences (
         |  locale      CHARACTER VARYING(64) NOT NULL,
         |  food_code   CHARACTER VARYING(50) NOT NULL,
         |  occurrences INTEGER               NOT NULL,
@@ -62,20 +62,40 @@ object PairwiseAssociationsMigration extends Migration {
   private def fillTables()(implicit connection: Connection) = {
     val graph = getOccurrenceGraph()
     println("Updating db...")
-    val updateParams = graph.flatMap { localeNode =>
-      localeNode._2.getCoOccurrences().flatMap { ocNode =>
+    val occurrenceUpdateParams = graph.flatMap { localeNode =>
+      localeNode._2.getParams().occurrences.map { ocNode =>
+        Seq[NamedParameter]('locale -> localeNode._1, 'food_code -> ocNode._1, 'occurrences -> ocNode._2)
+      }
+    }.toSeq
+    val coOccurrenceUpdateParams = graph.flatMap { localeNode =>
+      localeNode._2.getParams().coOccurrences.flatMap { ocNode =>
         ocNode._2.map { consItemNode =>
           Seq[NamedParameter]('locale -> localeNode._1, 'antecedent_food_code -> ocNode._1, 'consequent_food_code -> consItemNode._1, 'occurrences -> consItemNode._2)
         }
       }
     }.toSeq
+    val transactionsUpdateParams = graph.map { localeNode =>
+      Seq[NamedParameter]('locale -> localeNode._1, 'transactions_count -> localeNode._2.getParams().numberOfTransactions)
+    }.toSeq
 
-    if (updateParams.nonEmpty) {
+    if (occurrenceUpdateParams.nonEmpty && coOccurrenceUpdateParams.nonEmpty && transactionsUpdateParams.nonEmpty) {
+      BatchSql(
+        """
+          |INSERT INTO pairwise_associations_occurrences (locale, food_code, occurrences)
+          |VALUES ({locale}, {food_code}, {occurrences});
+        """.stripMargin, occurrenceUpdateParams.head, occurrenceUpdateParams.tail: _*).execute()
+
       BatchSql(
         """
           |INSERT INTO pairwise_associations_co_occurrences (locale, antecedent_food_code, consequent_food_code, occurrences)
           |VALUES ({locale}, {antecedent_food_code}, {consequent_food_code}, {occurrences});
-        """.stripMargin, updateParams.head, updateParams.tail: _*).execute()
+        """.stripMargin, coOccurrenceUpdateParams.head, coOccurrenceUpdateParams.tail: _*).execute()
+
+      BatchSql(
+        """
+          |INSERT INTO pairwise_associations_transactions_count (locale, transactions_count)
+          |VALUES ({locale}, {transactions_count});
+        """.stripMargin, transactionsUpdateParams.head, transactionsUpdateParams.tail: _*).execute()
     }
     println("Done")
   }
@@ -104,7 +124,6 @@ object PairwiseAssociationsMigration extends Migration {
         }
       }
     }
-
   }
 
   private def addSubmissionToOccurrenceGraph(graph: Map[String, PairwiseAssociationRules], submission: Submission): Map[String, PairwiseAssociationRules] =
