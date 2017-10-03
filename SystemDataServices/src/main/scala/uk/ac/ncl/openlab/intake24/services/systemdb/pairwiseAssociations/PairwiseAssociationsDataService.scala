@@ -7,7 +7,7 @@ import uk.ac.ncl.openlab.intake24.pairwiseAssociationRules.PairwiseAssociationRu
   */
 
 trait PairwiseAssociationsDataService {
-  def getAssociations(locales: Seq[String]): Map[String, PairwiseAssociationRules]
+  def getAssociations(): Map[String, PairwiseAssociationRules]
 
-  def addTransactions(transactions: Seq[Seq[String]])
+  def addTransactions(locale: String, transactions: Seq[Seq[String]])
 }
