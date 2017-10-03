@@ -18,25 +18,35 @@ class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") va
     """
       |SELECT
       |  locale,
-      |  antecedent_food,
-      |  consequent_food,
+      |  antecedent_food_code,
+      |  consequent_food_code,
       |  occurrences
-      |FROM pairwise_associations
+      |FROM pairwise_associations_co_occurrences
       |WHERE locale IN ({locales});
     """.stripMargin
 
-  private case class PairwiseAssociationRow(locale: String, antecedent_food: String, consequent_food: String, occurrences: Int)
+  private val occurrencesQuery =
+    """
+      |SELECT
+      |  locale,
+      |  food_code,
+      |  occurrences
+      |FROM pairwise_associations_occurrences
+      |WHERE locale IN ({locales});
+    """.stripMargin
 
-//  override def getAssociations(locales: Seq[String]): Map[String, PairwiseAssociationRules] = tryWithConnection {
-//    implicit conn =>
-//      SQL(pairwiseAssociationQuery).on('locales -> locales).executeQuery().as(Macro.namedParser[PairwiseAssociationRow].*) match {
-//        case Nil => Left(RecordNotFound(new RuntimeException("No records were found for")))
-//        case rows => rows.groupBy(_.locale).map { localeNode =>
-//          localeNode._1 -> localeNode._2.groupBy(_.antecedent_food)
-//        }
-//      }
-//  }
+  private case class PairwiseAssociationRow(locale: String, antecedent_food_code: String, consequent_food_code: String, occurrences: Int)
 
-  override def getAssociations(locales: Seq[String]): Map[String, PairwiseAssociationRules] = ???
+  private case class OccurrenceRow(locale: String, food_code: String, occurrences: Int)
+
+  override def getAssociations(locales: Seq[String]): Map[String, PairwiseAssociationRules] = tryWithConnection {
+    implicit conn =>
+      SQL(pairwiseAssociationQuery).on('locales -> locales).executeQuery().as(Macro.namedParser[PairwiseAssociationRow].*) match {
+        case Nil => Left(RecordNotFound(new RuntimeException("No records were found for")))
+        case rows => rows.groupBy(_.locale).map { localeNode =>
+          localeNode._1 -> localeNode._2.groupBy(_.antecedent_food)
+        }
+      }
+  }
   override def addTransactions(transactions: Seq[Seq[String]]): Unit = ???
 }
