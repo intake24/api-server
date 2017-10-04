@@ -43,6 +43,7 @@ import uk.ac.ncl.openlab.intake24.services.foodindex.portuguese.{FoodIndexImpl_p
 import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, FoodIndexDataService, Splitter}
 import uk.ac.ncl.openlab.intake24.services.nutrition.{DefaultNutrientMappingServiceImpl, FoodCompositionService, NutrientMappingService}
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
+import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.PairwiseAssociationsServiceConfiguration
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.{ClientErrorService, FoodPopularityService, SurveyService, UserPhysicalDataService}
 import uk.ac.ncl.openlab.intake24.systemsql.admin._
 import uk.ac.ncl.openlab.intake24.systemsql.user.{ClientErrorServiceImpl, FoodPopularityServiceImpl, SurveyServiceImpl, UserPhysicalDataServiceImpl}
@@ -110,6 +111,15 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     val command = configuration.getOptional[Seq[String]]("intake24.images.processor.command").getOrElse(Seq("magick", "convert"))
 
     ImageProcessorSettings(commandSearchPath, command, source, selection, asServed, imageMaps)
+  }
+
+  @Provides
+  @Singleton
+  def pairwiseAssociationsServiceSettings(configuration: Configuration): PairwiseAssociationsServiceConfiguration = {
+    val minimumNumberOfSurveySubmissions = configuration.get[Int]("intake24.pairwiseAssociations.minimumNumberOfSurveySubmissions")
+    val ignoreSurveysContaining = configuration.get[Seq[String]]("intake24.pairwiseAssociations.ignoreSurveysContaining")
+    val useAfterNumberOfTransactions = configuration.get[Int]("intake24.pairwiseAssociations.useAfterNumberOfTransactions")
+    PairwiseAssociationsServiceConfiguration(minimumNumberOfSurveySubmissions, ignoreSurveysContaining, useAfterNumberOfTransactions)
   }
 
   def configure() = {

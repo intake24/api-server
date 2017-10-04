@@ -1,5 +1,6 @@
 package uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations
 
+import uk.ac.ncl.openlab.intake24.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.pairwiseAssociationRules.PairwiseAssociationRules
 
 /**
@@ -7,7 +8,7 @@ import uk.ac.ncl.openlab.intake24.pairwiseAssociationRules.PairwiseAssociationRu
   */
 
 trait PairwiseAssociationsDataService {
-  def getAssociations(): Map[String, PairwiseAssociationRules]
+  def getAssociations(): Either[UnexpectedDatabaseError, Map[String, PairwiseAssociationRules]]
 
-  def addTransactions(locale: String, transactions: Seq[Seq[String]])
+  def addTransactions(locale: String, transactions: Seq[Seq[String]]): Either[UnexpectedDatabaseError, Unit]
 }
