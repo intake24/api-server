@@ -7,12 +7,12 @@ import anorm.{Macro, NamedParameter, SQL}
 import com.google.inject.{Inject, Singleton}
 import org.postgresql.util.PSQLException
 import org.slf4j.LoggerFactory
+import uk.ac.ncl.openlab.intake24.GuideHeader
 import uk.ac.ncl.openlab.intake24.errors._
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{GuideImageAdminService, NewGuideImageRecord}
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageStorageService
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.GuideImageService
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
-import uk.ac.ncl.openlab.intake24.{GuideHeader, GuideImageFull, GuideImageMapObject}
 
 @Singleton
 class GuideImageAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource, guideImageService: GuideImageService, imageStorage: ImageStorageService) extends GuideImageAdminService with SqlDataService {
@@ -25,6 +25,10 @@ class GuideImageAdminImpl @Inject()(@Named("intake24_foods") val dataSource: Dat
                                           weight: Double,
                                           image_map_object_description: String,
                                           outline_coordinates: Array[Double])
+
+  private case class GuideImageMetaRow(id: String, description: String) {
+    def toGuideImageMeta = GuideImageMeta(id, description)
+  }
 
   private val logger = LoggerFactory.getLogger(classOf[GuideImageAdminImpl])
 
@@ -136,10 +140,27 @@ class GuideImageAdminImpl @Inject()(@Named("intake24_foods") val dataSource: Dat
           case l =>
             val gi = l.head
             val imageMapObjects = l.map { io => GuideImageMapObject(io.image_map_object_id, io.weight, io.image_map_object_description, io.outline_coordinates) }
-            Right(GuideImageFull(gi.id, gi.description, imageStorage.getUrl(gi.path), imageMapObjects))
+            val imageMeta = GuideImageMeta(gi.id, gi.description)
+            Right(GuideImageFull(imageMeta, imageStorage.getUrl(gi.path), imageMapObjects))
         }
       }
   }
 
   def getGuideImage(id: String) = guideImageService.getGuideImage(id)
+
+  override def patchGuideImageMeta(id: String, meta: GuideImageMeta): Either[UpdateError, GuideImageMeta] = tryWithConnection {
+    implicit conn =>
+      val q =
+        """
+          |UPDATE guide_images
+          |SET id = {new_id}, description = {new_description}
+          |WHERE id = {id}
+          |RETURNING id, description;
+        """.stripMargin
+      SQL(q).on('new_id -> meta.id, 'new_description -> meta.description, 'id -> id)
+        .executeQuery().as(Macro.namedParser[GuideImageMetaRow].singleOpt) match {
+        case None => Left(RecordNotFound(new RuntimeException(s"No guide image with id: $id was found")))
+        case Some(row) => Right(row.toGuideImageMeta)
+      }
+  }
 }

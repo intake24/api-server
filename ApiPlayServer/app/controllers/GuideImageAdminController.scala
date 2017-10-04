@@ -25,7 +25,7 @@ import parsers.JsonBodyParser
 import play.api.mvc.{BaseController, ControllerComponents}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.api.shared.NewGuideImageRequest
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{GuideImageAdminService, ImageMapsAdminService, NewGuideImageRecord}
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{GuideImageAdminService, GuideImageMeta, ImageMapsAdminService, NewGuideImageRecord}
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.{ImageAdminService, ImageStorageService}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -61,6 +61,13 @@ class GuideImageAdminController @Inject()(guideImageAdminService: GuideImageAdmi
     Future {
       translateDatabaseResult(guideImageAdminService.getFullGuideImage(id))
     }
+  }
+
+  def patchGuideImageMeta(id: String) = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(jsonBodyParser.parse[GuideImageMeta]) {
+    request =>
+      Future {
+        translateDatabaseResult(guideImageAdminService.patchGuideImageMeta(id, request.body))
+      }
   }
 
   def updateGuideSelectionImage(id: String, selectionImageId: Long) = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods) {

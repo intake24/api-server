@@ -142,10 +142,6 @@ case class GuideHeader(id: String, description: String, path: String)
 
 case class GuideImage(id: String, description: String, weights: Seq[GuideImageWeightRecord])
 
-case class GuideImageFull(id: String, description: String, path: String, objects: Seq[GuideImageMapObject])
-
-case class GuideImageMapObject(id: Long, weight: Double, description: String, outlineCoordinates: Seq[Double])
-
 case class GuideImageWeightRecord(description: String, objectId: Int, weight: Double)
 
 case class VolumeFunction(samples: Seq[(Double, Double)]) {
