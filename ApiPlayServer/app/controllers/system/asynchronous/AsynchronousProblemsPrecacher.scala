@@ -1,14 +1,14 @@
 package controllers.system.asynchronous
 
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.AtomicBoolean
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 
 import akka.actor.ActorSystem
 import modules.ProblemCheckerService
 import org.slf4j.LoggerFactory
 import play.api.Configuration
-import uk.ac.ncl.openlab.intake24.errors.{AnyError, UnexpectedDatabaseError}
+import uk.ac.ncl.openlab.intake24.errors.AnyError
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{FoodBrowsingAdminService, LocalesAdminService}
 
 import scala.concurrent.ExecutionContext
@@ -21,7 +21,7 @@ class AsynchronousProblemsPrecacher @Inject()(localesService: LocalesAdminServic
                                               problemCheckerService: ProblemCheckerService,
                                               actorSystem: ActorSystem,
                                               configuration: Configuration,
-                                              context: ExecutionContext) {
+                                              implicit val executionContext: ExecutionContext) {
 
   private val throttleRateMs = configuration.get[Int](s"intake24.asyncProblemsPrecacher.throttleRateMs")
   private val maxConcurrentTasks = configuration.get[Int](s"intake24.asyncProblemsPrecacher.maxConcurrentTasks")
@@ -37,81 +37,83 @@ class AsynchronousProblemsPrecacher @Inject()(localesService: LocalesAdminServic
 
   private case class QueryCategory(localeId: String, foodCode: String) extends Task
 
-  private val queue = new ConcurrentLinkedQueue[Task]()
+  private val queue = new ConcurrentLinkedDeque[Task]()
 
   private val logger = LoggerFactory.getLogger(classOf[AsynchronousProblemsPrecacher])
 
   private val finished = new AtomicBoolean(false)
 
-  /*private val scheduler = new ThrottlingScheduler {
-    def run(f: => Unit): Unit = actorSystem.scheduler.scheduleOnce(throttleRateMs.milliseconds)(f)
-  }*/
-
   private def logErrors[T](result: Either[AnyError, T])(block: T => Unit): Unit = {
     result match {
       case Right(v) => block(v)
-      case Left(error) => logger.error(s"Database error", error.exception)
+      case Left(error) => logger.error(s"Database error: ${error.toString}", error.exception)
     }
   }
 
-  private def processNextTask(): Unit = {
+  private def processNextTask(workerId: Int): Unit = {
 
-    val nextTask = queue.poll()
+    val nextTask = queue.pollLast()
 
-    if (nextTask == null)
+    if (nextTask == null) {
+      logger.debug(s"[$workerId] Finished!")
       finished.set(true)
+    }
     else {
+      logger.debug(s"[$workerId] Next task: $nextTask")
+
       nextTask match {
         case VisitLocale(localeId) =>
+
           logErrors(foodBrowsingAdminService.getRootCategories(localeId)) {
             categories =>
               categories.foreach {
                 categoryHeader =>
                   queue.add(VisitCategory(localeId, categoryHeader.code))
-                  logger.debug(s"Queued root category visit: ${categoryHeader.code} (${categoryHeader.englishDescription})")
+                  logger.debug(s"[$workerId] Queued root category visit: ${categoryHeader.code} (${categoryHeader.englishDescription})")
               }
           }
 
         case VisitCategory(localeId, categoryCode) =>
-          logErrors(foodBrowsingAdminService.getCategoryContents(localeId, categoryCode)) {
+
+          queue.add(QueryCategory(localeId, categoryCode))
+          logger.debug(s"[$workerId] Queued category query: $categoryCode")
+
+
+          logErrors(foodBrowsingAdminService.getCategoryContents(categoryCode, localeId)) {
             contents =>
               contents.foods.foreach {
                 foodHeader =>
                   queue.add(QueryFood(localeId, foodHeader.code))
-                  logger.debug(s"Queued food query: ${foodHeader.code} (${foodHeader.englishDescription})")
+                  logger.debug(s"[$workerId] Queued food query: ${foodHeader.code} (${foodHeader.englishDescription})")
               }
 
               contents.subcategories.foreach {
                 categoryHeader =>
                   queue.add(VisitCategory(localeId, categoryHeader.code))
-                  logger.debug(s"Queued subcategory visit: ${categoryHeader.code} (${categoryHeader.englishDescription})")
+                  logger.debug(s"[$workerId] Queued subcategory visit: ${categoryHeader.code} (${categoryHeader.englishDescription})")
               }
           }
 
-          queue.add(QueryCategory(localeId, categoryCode))
-          logger.debug(s"Queued category query: $categoryCode")
-
-
         case QueryFood(localeId, foodCode) => logErrors(problemCheckerService.getFoodProblems(foodCode, localeId)) {
           _ =>
-            logger.debug(s"Cached food $localeId/$foodCode")
+            logger.debug(s"[$workerId] Queried food $localeId/$foodCode")
         }
 
         case QueryCategory(localeId, categoryCode) => logErrors(problemCheckerService.getRecursiveCategoryProblems(categoryCode, localeId, maxRecursiveResults)) {
           _ =>
-            logger.debug(s"Cached category $localeId/$categoryCode")
+            logger.debug(s"[$workerId] Queried category $localeId/$categoryCode")
         }
       }
 
       actorSystem.scheduler.scheduleOnce(throttleRateMs.milliseconds) {
-        processNextTask()
+        processNextTask(workerId)
       }
     }
   }
 
 
-  localesService.listLocales() match {
-    case Right(locales) =>
+  logErrors(localesService.listLocales()) {
+    locales =>
       locales.foreach {
         l =>
           val id = l._1
@@ -120,7 +122,12 @@ class AsynchronousProblemsPrecacher @Inject()(localesService: LocalesAdminServic
       }
   }
 
-  Range(0, maxConcurrentTasks).foreach { _ => actorSystem.scheduler.scheduleOnce(0.milliseconds) { processNextTask() } }
+  Range(0, maxConcurrentTasks).foreach {
+    threadId =>
+      actorSystem.scheduler.scheduleOnce(0.milliseconds) {
+        processNextTask(threadId)
+      }
+  }
 
   def precacheFinished(): Boolean = finished.get()
 

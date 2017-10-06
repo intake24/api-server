@@ -121,6 +121,9 @@ case class CachedProblemChecker @Inject()(
         if (rem.isEmpty || slots <= 0)
           problems
         else {
+          if (cache.get(recursiveCategoryProblemsCacheKey(rem.head.code, locale)).isEmpty)
+            logger.warn(s"Querying uncached subcategory problems ($locale/${rem.head.code})! Check the precacher.")
+
           getRecursiveCategoryProblems(rem.head.code, locale, slots).right.flatMap {
             p =>
               collectSubcategoryProblems(rem.tail, problems.right.map(_ ++ p), slots - p.count)
