@@ -17,7 +17,7 @@ limitations under the License.
 */
 
 lazy val commonSettings = Seq(
-  version := "3.0.0-SNAPSHOT",
+  version := "3.4.1-SNAPSHOT",
   scalaVersion := "2.12.3",
   publishArtifact in(Compile, packageDoc) := false,
   scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
