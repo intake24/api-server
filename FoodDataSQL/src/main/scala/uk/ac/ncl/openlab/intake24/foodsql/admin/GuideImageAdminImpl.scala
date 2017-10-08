@@ -23,6 +23,7 @@ class GuideImageAdminImpl @Inject()(@Named("intake24_foods") val dataSource: Dat
                                           path: String,
                                           image_map_object_id: Int,
                                           weight: Double,
+                                          navigation_index: Int,
                                           image_map_object_description: String,
                                           outline_coordinates: Array[Double])
 
@@ -122,6 +123,7 @@ class GuideImageAdminImpl @Inject()(@Named("intake24_foods") val dataSource: Dat
            |  pi.path,
            |  gio.image_map_object_id,
            |  gio.weight,
+           |  imo.navigation_index,
            |  imo.description AS image_map_object_description,
            |  imo.outline_coordinates
            |FROM guide_images AS gi
@@ -139,7 +141,10 @@ class GuideImageAdminImpl @Inject()(@Named("intake24_foods") val dataSource: Dat
           case Nil => Left(RecordNotFound(new RuntimeException(s"Guide image $id not found")))
           case l =>
             val gi = l.head
-            val imageMapObjects = l.map { io => GuideImageMapObject(io.image_map_object_id, io.weight, io.image_map_object_description, io.outline_coordinates) }
+            val imageMapObjects = l.map { io =>
+              GuideImageMapObject(io.image_map_object_id, io.weight,
+                io.image_map_object_description, io.navigation_index, io.outline_coordinates)
+            }
             val imageMeta = GuideImageMeta(gi.id, gi.description)
             Right(GuideImageFull(imageMeta, imageStorage.getUrl(gi.path), imageMapObjects))
         }

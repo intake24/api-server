@@ -10,7 +10,7 @@ case class GuideImageFull(meta: GuideImageMeta, path: String, objects: Seq[Guide
 
 case class GuideImageMeta(id: String, description: String)
 
-case class GuideImageMapObject(id: Long, weight: Double, description: String, outlineCoordinates: Seq[Double])
+case class GuideImageMapObject(id: Long, weight: Double, description: String, navigationIndex: Int, outlineCoordinates: Seq[Double])
 
 trait GuideImageAdminService extends GuideImageService {
 
