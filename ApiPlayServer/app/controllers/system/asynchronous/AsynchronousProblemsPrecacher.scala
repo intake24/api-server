@@ -13,6 +13,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{FoodBrowsingAdminServic
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
+import scala.util.Random
 
 
 @Singleton
@@ -69,39 +70,38 @@ class AsynchronousProblemsPrecacher @Inject()(localesService: LocalesAdminServic
               categories.foreach {
                 categoryHeader =>
                   queue.add(VisitCategory(localeId, categoryHeader.code))
-                  logger.debug(s"[$workerId] Queued root category visit: ${categoryHeader.code} (${categoryHeader.englishDescription})")
+                  // logger.debug(s"[$workerId] Queued root category visit: ${categoryHeader.code} (${categoryHeader.englishDescription})")
               }
           }
 
         case VisitCategory(localeId, categoryCode) =>
 
           queue.add(QueryCategory(localeId, categoryCode))
-          logger.debug(s"[$workerId] Queued category query: $categoryCode")
-
+          // logger.debug(s"[$workerId] Queued category query: $categoryCode")
 
           logErrors(foodBrowsingAdminService.getCategoryContents(categoryCode, localeId)) {
             contents =>
               contents.foods.foreach {
                 foodHeader =>
                   queue.add(QueryFood(localeId, foodHeader.code))
-                  logger.debug(s"[$workerId] Queued food query: ${foodHeader.code} (${foodHeader.englishDescription})")
+                  // logger.debug(s"[$workerId] Queued food query: ${foodHeader.code} (${foodHeader.englishDescription})")
               }
 
               contents.subcategories.foreach {
                 categoryHeader =>
                   queue.add(VisitCategory(localeId, categoryHeader.code))
-                  logger.debug(s"[$workerId] Queued subcategory visit: ${categoryHeader.code} (${categoryHeader.englishDescription})")
+                  // logger.debug(s"[$workerId] Queued subcategory visit: ${categoryHeader.code} (${categoryHeader.englishDescription})")
               }
           }
 
         case QueryFood(localeId, foodCode) => logErrors(problemCheckerService.getFoodProblems(foodCode, localeId)) {
           _ =>
-            logger.debug(s"[$workerId] Queried food $localeId/$foodCode")
+            //logger.debug(s"[$workerId] Queried food $localeId/$foodCode")
         }
 
         case QueryCategory(localeId, categoryCode) => logErrors(problemCheckerService.getRecursiveCategoryProblems(categoryCode, localeId, maxRecursiveResults)) {
           _ =>
-            logger.debug(s"[$workerId] Queried category $localeId/$categoryCode")
+            //logger.debug(s"[$workerId] Queried category $localeId/$categoryCode")
         }
       }
 
@@ -118,13 +118,13 @@ class AsynchronousProblemsPrecacher @Inject()(localesService: LocalesAdminServic
         l =>
           val id = l._1
           queue.add(VisitLocale(l._1))
-          logger.debug(s"Queued locale $id")
+          //logger.debug(s"Queued locale $id")
       }
   }
 
   Range(0, maxConcurrentTasks).foreach {
     threadId =>
-      actorSystem.scheduler.scheduleOnce(0.milliseconds) {
+      actorSystem.scheduler.scheduleOnce((Random.nextInt(throttleRateMs * maxConcurrentTasks)).milliseconds) {
         processNextTask(threadId)
       }
   }
