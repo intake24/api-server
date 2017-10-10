@@ -8,7 +8,7 @@ import uk.ac.ncl.openlab.intake24.pairwiseAssociationRules.PairwiseAssociationRu
   */
 
 trait PairwiseAssociationsDataService {
-  def getAssociations(): Either[UnexpectedDatabaseError, Map[String, PairwiseAssociationRules]]
+  def getAssociationsByLocale(): Either[UnexpectedDatabaseError, Map[String, PairwiseAssociationRules]]
 
   def addTransactions(locale: String, transactions: Seq[Seq[String]]): Either[UnexpectedDatabaseError, Unit]
 }

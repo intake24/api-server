@@ -119,7 +119,8 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     val minimumNumberOfSurveySubmissions = configuration.get[Int]("intake24.pairwiseAssociations.minimumNumberOfSurveySubmissions")
     val ignoreSurveysContaining = configuration.get[Seq[String]]("intake24.pairwiseAssociations.ignoreSurveysContaining")
     val useAfterNumberOfTransactions = configuration.get[Int]("intake24.pairwiseAssociations.useAfterNumberOfTransactions")
-    PairwiseAssociationsServiceConfiguration(minimumNumberOfSurveySubmissions, ignoreSurveysContaining, useAfterNumberOfTransactions)
+    val rulesUpdateBatchSize = configuration.get[Int]("intake24.pairwiseAssociations.rulesUpdateBatchSize")
+    PairwiseAssociationsServiceConfiguration(minimumNumberOfSurveySubmissions, ignoreSurveysContaining, useAfterNumberOfTransactions, rulesUpdateBatchSize)
   }
 
   def configure() = {
