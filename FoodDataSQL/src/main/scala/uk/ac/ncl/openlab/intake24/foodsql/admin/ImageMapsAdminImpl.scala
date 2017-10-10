@@ -53,7 +53,8 @@ class ImageMapsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: Data
         }
 
         tryWithConstraintCheck("image_maps_pkey", e => DuplicateCode(e)) {
-          BatchSql("INSERT INTO image_maps VALUES({id},{description},{base_image_id})", imageMapParams.head, imageMapParams.tail: _*).execute()
+          BatchSql("INSERT INTO image_maps VALUES({id},{description},{base_image_id})", imageMapParams.head, imageMapParams.tail: _*)
+            .execute()
 
           val imageMapObjectParams = imageMaps.flatMap {
             imageMap =>

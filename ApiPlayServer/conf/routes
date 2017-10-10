@@ -102,6 +102,7 @@ DELETE         /admin/portion-size/as-served/:id                             con
 GET            /admin/portion-size/image-map                                 controllers.ImageMapAdminController.listImageMaps()
 GET            /admin/portion-size/image-map/:id/base-image-source-id        controllers.ImageMapAdminController.getImageMapBaseImageSourceId(id)
 POST           /admin/portion-size/image-map/new-from-svg                    controllers.ImageMapAdminController.createImageMapFromSVG()
+POST           /admin/portion-size/image-map                                 controllers.ImageMapAdminController.uploadImageMap()
 
 GET            /admin/portion-size/guide-image                               controllers.GuideImageAdminController.listGuideImages()
 GET            /admin/portion-size/guide-image/:id                           controllers.GuideImageAdminController.getGuideImage(id: String)

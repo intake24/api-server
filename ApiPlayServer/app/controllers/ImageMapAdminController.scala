@@ -22,11 +22,12 @@ import javax.inject.Inject
 
 import io.circe.generic.auto._
 import parsers.FormDataUtil
+import play.api.http.ContentTypes
 import play.api.libs.Files.TemporaryFile
 import play.api.mvc.MultipartFormData.FilePart
 import play.api.mvc.{BaseController, ControllerComponents, Result}
 import security.Intake24RestrictedActionBuilder
-import uk.ac.ncl.openlab.intake24.api.shared.{ErrorDescription, NewImageMapWithObjectsRequest}
+import uk.ac.ncl.openlab.intake24.api.shared.{ErrorDescription, ImageMapResponse, NewImageMapRequest, NewImageMapWithObjectsRequest}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
 
@@ -77,6 +78,14 @@ class ImageMapAdminController @Inject()(
 
       ) yield ())
 
+  private def createImageMapWithoutObjects(baseImage: FilePart[TemporaryFile], keywords: Seq[String], params: NewImageMapRequest, uploader: String): Either[Result, ImageMapResponse] =
+    translateImageServiceAndDatabaseError(
+      for (
+        baseImageSourceRecord <- imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForImageMap(params.id, baseImage.filename), baseImage.ref.path, keywords, uploader).right;
+        processedBaseImageDescriptor <- imageAdmin.processForImageMapBase(params.id, baseImageSourceRecord.id).right;
+        _ <- imageMaps.createImageMaps(Seq(NewImageMapRecord(params.id, params.description, processedBaseImageDescriptor.id, Nil, Map.empty))).wrapped.right
+      ) yield ImageMapResponse(params.id, params.description, baseImageSourceRecord.path))
+
   def listImageMaps() = rab.restrictAccess(foodAuthChecks.canReadPortionSizeMethods) {
     _ =>
       Future {
@@ -110,6 +119,23 @@ class ImageMapAdminController @Inject()(
         result match {
           case Left(badResult) => badResult
           case Right(()) => Ok
+        }
+      }
+  }
+
+  def uploadImageMap() = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(parse.multipartFormData) {
+    request =>
+      Future {
+        val result = for (
+          baseImage <- getFile("baseImage", request.body).right;
+          sourceKeywords <- getOptionalMultipleData("baseImageKeywords", request.body).right;
+          params <- getParsedData[NewImageMapRequest]("imageMapParameters", request.body).right;
+          imgMap <- createImageMapWithoutObjects(baseImage, sourceKeywords, params, request.subject.userId.toString).right // FIXME: better uploader string
+        ) yield imgMap
+
+        result match {
+          case Left(badResult) => badResult
+          case Right(r) => Ok(toJsonString(r)).as(ContentTypes.JSON)
         }
       }
   }
