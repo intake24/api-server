@@ -1,6 +1,6 @@
 package controllers.system.asynchronous
 
-import java.util.concurrent.ConcurrentLinkedDeque
+import java.util.concurrent.{ConcurrentLinkedDeque, ConcurrentLinkedQueue, CountDownLatch}
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.{Inject, Singleton}
 
@@ -11,6 +11,7 @@ import play.api.Configuration
 import uk.ac.ncl.openlab.intake24.errors.AnyError
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{FoodBrowsingAdminService, LocalesAdminService}
 
+import scala.collection.immutable.Stack
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.util.Random
@@ -38,97 +39,104 @@ class AsynchronousProblemsPrecacher @Inject()(localesService: LocalesAdminServic
 
   private case class QueryCategory(localeId: String, foodCode: String) extends Task
 
-  private val queue = new ConcurrentLinkedDeque[Task]()
-
   private val logger = LoggerFactory.getLogger(classOf[AsynchronousProblemsPrecacher])
 
-  private val finished = new AtomicBoolean(false)
+  private var countDownLatch: CountDownLatch = null
 
-  private def logErrors[T](result: Either[AnyError, T])(block: T => Unit): Unit = {
-    result match {
-      case Right(v) => block(v)
-      case Left(error) => logger.error(s"Database error: ${error.toString}", error.exception)
-    }
-  }
+  private def logError(error: AnyError): Unit = logger.error(s"Database error: ${error.toString}", error.exception)
 
-  private def processNextTask(workerId: Int): Unit = {
+  private def processNextTask(workerInfo: String, startTime: Long, queue: List[Task], cachedCategories: Set[String]): Unit =
+    queue match {
+      case Nil =>
+        countDownLatch.countDown()
+        val time = (System.currentTimeMillis() - startTime).milliseconds
+        logger.info(s"[$workerInfo] finished in ${time.toMinutes} minutes")
 
-    val nextTask = queue.pollLast()
+      case task :: tasks =>
 
-    if (nextTask == null) {
-      logger.debug(s"[$workerId] Finished!")
-      finished.set(true)
-    }
-    else {
-      logger.debug(s"[$workerId] Next task: $nextTask")
+        // logger.debug(queue.mkString(", "))
 
-      nextTask match {
-        case VisitLocale(localeId) =>
+        val cc = scala.collection.mutable.Set[String]()
+        cc ++= cachedCategories
 
-          logErrors(foodBrowsingAdminService.getRootCategories(localeId)) {
-            categories =>
-              categories.foreach {
-                categoryHeader =>
-                  queue.add(VisitCategory(localeId, categoryHeader.code))
-                  // logger.debug(s"[$workerId] Queued root category visit: ${categoryHeader.code} (${categoryHeader.englishDescription})")
-              }
-          }
 
-        case VisitCategory(localeId, categoryCode) =>
+        val newQueue = task match {
+          case VisitLocale(localeId) =>
 
-          queue.add(QueryCategory(localeId, categoryCode))
-          // logger.debug(s"[$workerId] Queued category query: $categoryCode")
+            //logger.debug(s"[$workerInfo] Visit locale: $localeId")
 
-          logErrors(foodBrowsingAdminService.getCategoryContents(categoryCode, localeId)) {
-            contents =>
-              contents.foods.foreach {
-                foodHeader =>
-                  queue.add(QueryFood(localeId, foodHeader.code))
-                  // logger.debug(s"[$workerId] Queued food query: ${foodHeader.code} (${foodHeader.englishDescription})")
-              }
+            foodBrowsingAdminService.getRootCategories(localeId) match {
+              case Right(categories) =>
 
-              contents.subcategories.foreach {
-                categoryHeader =>
-                  queue.add(VisitCategory(localeId, categoryHeader.code))
-                  // logger.debug(s"[$workerId] Queued subcategory visit: ${categoryHeader.code} (${categoryHeader.englishDescription})")
-              }
-          }
+                categories.foldLeft(tasks) {
+                  (acc, h) => VisitCategory(localeId, h.code) :: acc
+                }
 
-        case QueryFood(localeId, foodCode) => logErrors(problemCheckerService.getFoodProblems(foodCode, localeId)) {
-          _ =>
-            //logger.debug(s"[$workerId] Queried food $localeId/$foodCode")
+              case Left(e) =>
+                logError(e)
+                tasks
+            }
+
+          case VisitCategory(localeId, categoryCode) =>
+
+            // logger.debug(s"[$workerInfo] Visit category: $categoryCode")
+
+            foodBrowsingAdminService.getCategoryContents(categoryCode, localeId) match {
+              case Right(contents) =>
+
+                val q = contents.subcategories.foldLeft(QueryCategory(localeId, categoryCode) :: tasks) {
+                  (acc, h) => VisitCategory(localeId, h.code) :: acc
+                }
+
+                contents.foods.foldLeft(q) {
+                  (acc, h) => QueryFood(localeId, h.code) :: acc
+                }
+
+              case Left(e) =>
+                logError(e)
+                tasks
+            }
+
+          case QueryFood(localeId, foodCode) =>
+            // logger.debug(s"[$workerInfo] Query food: $foodCode")
+            problemCheckerService.getFoodProblems(foodCode, localeId) match {
+              case Right(_) => tasks
+              case Left(e) =>
+                logError(e)
+                tasks
+            }
+
+          case QueryCategory(localeId, categoryCode) =>
+            // logger.debug(s"[$workerInfo] Query category: $categoryCode")
+            problemCheckerService.getRecursiveCategoryProblems(categoryCode, localeId, maxRecursiveResults) match {
+              case Right(_) =>
+                cc += categoryCode
+                tasks
+              case Left(e) =>
+                logError(e)
+                tasks
+            }
         }
 
-        case QueryCategory(localeId, categoryCode) => logErrors(problemCheckerService.getRecursiveCategoryProblems(categoryCode, localeId, maxRecursiveResults)) {
-          _ =>
-            //logger.debug(s"[$workerId] Queried category $localeId/$categoryCode")
+        //actorSystem.scheduler.scheduleOnce(throttleRateMs.milliseconds) {
+        processNextTask(workerInfo, startTime, newQueue, cc.toSet)
+      //}
+    }
+
+  localesService.listLocales() match {
+    case Right(locales) =>
+      logger.debug(locales.keySet.toSeq.sorted.mkString(", "))
+      locales.keySet.toSeq.sorted.foreach {
+        case id => actorSystem.scheduler.scheduleOnce(Random.nextInt(throttleRateMs * 4).milliseconds) {
+          logger.info(s"[$id] Started")
+          processNextTask(s"$id", System.currentTimeMillis(), List(VisitLocale(id)), Set())
         }
       }
-
-      actorSystem.scheduler.scheduleOnce(throttleRateMs.milliseconds) {
-        processNextTask(workerId)
-      }
-    }
+      countDownLatch = new CountDownLatch(locales.size)
+    case Left(e) =>
+      logError(e)
   }
 
-
-  logErrors(localesService.listLocales()) {
-    locales =>
-      locales.foreach {
-        l =>
-          val id = l._1
-          queue.add(VisitLocale(l._1))
-          //logger.debug(s"Queued locale $id")
-      }
-  }
-
-  Range(0, maxConcurrentTasks).foreach {
-    threadId =>
-      actorSystem.scheduler.scheduleOnce((Random.nextInt(throttleRateMs * maxConcurrentTasks)).milliseconds) {
-        processNextTask(threadId)
-      }
-  }
-
-  def precacheFinished(): Boolean = finished.get()
+  def precacheFinished(): Boolean = countDownLatch != null && countDownLatch.getCount == 0
 
 }
