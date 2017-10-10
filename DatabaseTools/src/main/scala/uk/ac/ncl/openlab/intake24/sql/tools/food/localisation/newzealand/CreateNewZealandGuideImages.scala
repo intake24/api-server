@@ -4,7 +4,7 @@ import java.nio.file.Paths
 
 import org.rogach.scallop.ScallopConf
 import uk.ac.ncl.openlab.intake24.api.client.{ApiConfigChooser, ApiConfigurationOptions, ConsoleApiErrorHandler, Intake24ApiClient}
-import uk.ac.ncl.openlab.intake24.api.shared.{EmailCredentials, NewGuideImageRequest, NewImageMapRequest}
+import uk.ac.ncl.openlab.intake24.api.shared.{EmailCredentials, NewGuideImageRequest, NewImageMapWithObjectsRequest}
 
 object CreateNewZealandGuideImages extends App with ConsoleApiErrorHandler {
 
@@ -24,14 +24,14 @@ object CreateNewZealandGuideImages extends App with ConsoleApiErrorHandler {
       Paths.get("/Users/nip13/Projects/Intake24/Misc/intake24-images-highres/GMusselpipi.jpg"),
       Paths.get("/Users/nip13/Projects/Intake24/intake24-data/GuideImages/Gmusselpipi.svg"),
       Seq("mussel", "pipi", "scallop", "clams"),
-      NewImageMapRequest("Gmusselpipi", "Mussels and pipis (New Zealand)",
+      NewImageMapWithObjectsRequest("Gmusselpipi", "Mussels and pipis (New Zealand)",
         descPlaceholders(7, "Mussel/pipi"))).right;
 
     _ <- apiClient.imageMaps.createImageMap(
       Paths.get("/Users/nip13/Projects/Intake24/Misc/intake24-images-highres/Gmuffscone.jpg"),
       Paths.get("/Users/nip13/Projects/Intake24/intake24-data/GuideImages/Gmuffscone.svg"),
       Seq("muffin", "scone"),
-      NewImageMapRequest("Gmuffscone", "Muffins and scones",
+      NewImageMapWithObjectsRequest("Gmuffscone", "Muffins and scones",
         descPlaceholders(9, "Muffin/scone"))).right;
 
     _ <- apiClient.guideImages.createGuideImage(

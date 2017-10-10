@@ -21,12 +21,14 @@ package controllers
 import javax.inject.Inject
 
 import io.circe.generic.auto._
-import parsers.JsonBodyParser
-import play.api.mvc.{BaseController, ControllerComponents}
+import parsers.{FormDataUtil, JsonBodyParser}
+import play.api.libs.Files.TemporaryFile
+import play.api.mvc.MultipartFormData.FilePart
+import play.api.mvc.{BaseController, ControllerComponents, Result}
 import security.Intake24RestrictedActionBuilder
-import uk.ac.ncl.openlab.intake24.api.shared.NewGuideImageRequest
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{GuideImageAdminService, GuideImageMeta, ImageMapsAdminService, NewGuideImageRecord}
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.{ImageAdminService, ImageStorageService}
+import uk.ac.ncl.openlab.intake24.api.shared.{ErrorDescription, NewGuideImageRequest, NewImageMapRequest, NewImageMapWithObjectsRequest}
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.{AWTImageMap, ImageAdminService, ImageStorageService}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -39,7 +41,7 @@ class GuideImageAdminController @Inject()(guideImageAdminService: GuideImageAdmi
                                           jsonBodyParser: JsonBodyParser,
                                           val controllerComponents: ControllerComponents,
                                           implicit val executionContext: ExecutionContext) extends BaseController
-  with ImageOrDatabaseServiceErrorHandler {
+  with ImageOrDatabaseServiceErrorHandler with FormDataUtil {
 
   import ImageAdminService.WrapDatabaseError
 
@@ -92,4 +94,32 @@ class GuideImageAdminController @Inject()(guideImageAdminService: GuideImageAdmi
         translateImageServiceAndDatabaseResult(result)
       }
   }
+
+  def uploadGuideImage() = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(parse.multipartFormData) {
+    request =>
+      Future {
+        val result = for (
+          baseImage <- getFile("baseImage", request.body).right;
+          sourceKeywords <- getOptionalMultipleData("baseImageKeywords", request.body).right;
+          params <- getParsedData[NewImageMapRequest]("imageMapParameters", request.body).right;
+          _ <- createGuideImageMap(baseImage, sourceKeywords, params, request.subject.userId.toString).right // FIXME: better uploader string
+        ) yield ()
+
+        result match {
+          case Left(badResult) => badResult
+          case Right(()) => Ok
+        }
+      }
+  }
+
+  private def createGuideImageMap(baseImage: FilePart[TemporaryFile], keywords: Seq[String], params: NewImageMapRequest, uploader: String): Either[Result, Unit] =
+    translateImageServiceAndDatabaseError(
+      for (
+        baseImageSourceRecord <- imageAdminService.uploadSourceImage(ImageAdminService.getSourcePathForImageMap(params.id, baseImage.filename), baseImage.ref.path, keywords, uploader).right;
+        processedBaseImageDescriptor <- imageAdminService.processForImageMapBase(params.id, baseImageSourceRecord.id).right;
+        _ <- {
+          imageMapsAdminService.createImageMaps(Seq(NewImageMapRecord(params.id, params.description, processedBaseImageDescriptor.id, Nil, Map.empty)))
+        }.wrapped.right
+      ) yield ())
+
 }

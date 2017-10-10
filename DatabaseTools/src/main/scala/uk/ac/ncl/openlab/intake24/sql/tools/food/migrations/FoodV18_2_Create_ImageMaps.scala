@@ -9,7 +9,7 @@ import uk.ac.ncl.openlab.intake24.api.client.ApiError.{ErrorParseFailed, Request
 import uk.ac.ncl.openlab.intake24.api.client.portionsize.ImageMapAdminClientImpl
 import uk.ac.ncl.openlab.intake24.api.client.scalajhttp.SigninClientImpl
 import uk.ac.ncl.openlab.intake24.api.client.{ApiConfigChooser, ApiConfigurationOptions}
-import uk.ac.ncl.openlab.intake24.api.shared.{EmailCredentials, NewImageMapRequest, SigninResult, SurveyAliasCredentials}
+import uk.ac.ncl.openlab.intake24.api.shared.{EmailCredentials, NewImageMapWithObjectsRequest, SigninResult, SurveyAliasCredentials}
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.SVGImageMapParser
 import uk.ac.ncl.openlab.intake24.sql.tools._
 import upickle.default._

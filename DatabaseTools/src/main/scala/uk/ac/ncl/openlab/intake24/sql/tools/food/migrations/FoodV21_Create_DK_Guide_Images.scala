@@ -6,7 +6,7 @@ import org.rogach.scallop.ScallopConf
 import uk.ac.ncl.openlab.intake24.api.client.portionsize.{GuideImageAdminClientImpl, ImageMapAdminClientImpl}
 
 import uk.ac.ncl.openlab.intake24.api.client.{ApiConfigChooser, ApiConfigurationOptions}
-import uk.ac.ncl.openlab.intake24.api.shared.{EmailCredentials, NewGuideImageRequest, NewImageMapRequest, SurveyAliasCredentials}
+import uk.ac.ncl.openlab.intake24.api.shared.{EmailCredentials, NewGuideImageRequest, NewImageMapWithObjectsRequest, SurveyAliasCredentials}
 import uk.ac.ncl.openlab.intake24.sql.tools._
 import uk.ac.ncl.openlab.intake24.sql.tools.food.migrations.FoodV18_3_Create_Selection_Images.checkApiError
 

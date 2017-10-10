@@ -26,7 +26,7 @@ import play.api.libs.Files.TemporaryFile
 import play.api.mvc.MultipartFormData.FilePart
 import play.api.mvc.{BaseController, ControllerComponents, Result}
 import security.Intake24RestrictedActionBuilder
-import uk.ac.ncl.openlab.intake24.api.shared.{ErrorDescription, NewImageMapRequest}
+import uk.ac.ncl.openlab.intake24.api.shared.{ErrorDescription, NewImageMapWithObjectsRequest}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
 
@@ -53,13 +53,13 @@ class ImageMapAdminController @Inject()(
   def resolveUrls(set: AsServedSetWithPaths): AsServedSetWithUrls = AsServedSetWithUrls(set.id, set.description, set.images.map(resolveUrls))*/
 
 
-  private def validateParams(params: NewImageMapRequest, parsedImageMap: AWTImageMap): Either[Result, Unit] =
+  private def validateParams(params: NewImageMapWithObjectsRequest, parsedImageMap: AWTImageMap): Either[Result, Unit] =
     parsedImageMap.outlines.keySet.find(k => !params.objectDescriptions.contains(k.toString)) match {
       case Some(missingId) => Left(BadRequest(toJsonString(ErrorDescription("InvalidParameter", s"Missing description for object $missingId"))))
       case None => Right(())
     }
 
-  private def createImageMap(baseImage: FilePart[TemporaryFile], keywords: Seq[String], params: NewImageMapRequest, imageMap: AWTImageMap, uploader: String): Either[Result, Unit] =
+  private def createImageMap(baseImage: FilePart[TemporaryFile], keywords: Seq[String], params: NewImageMapWithObjectsRequest, imageMap: AWTImageMap, uploader: String): Either[Result, Unit] =
     translateImageServiceAndDatabaseError(
       for (
         baseImageSourceRecord <- imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForImageMap(params.id, baseImage.filename), baseImage.ref.path, keywords, uploader).right;
@@ -98,7 +98,7 @@ class ImageMapAdminController @Inject()(
           baseImage <- getFile("baseImage", request.body).right;
           svgImage <- getFile("svg", request.body).right;
           sourceKeywords <- getOptionalMultipleData("baseImageKeywords", request.body).right;
-          params <- getParsedData[NewImageMapRequest]("imageMapParameters", request.body).right;
+          params <- getParsedData[NewImageMapWithObjectsRequest]("imageMapParameters", request.body).right;
           imageMap <- (svgParser.parseImageMap(svgImage.ref.path.toString) match {
             case Left(e) => Left(BadRequest(toJsonString(ErrorDescription("InvalidParameter", s"Failed to parse the SVG image map: ${e.getClass.getName}: ${e.getMessage}"))))
             case Right(m) => Right(m)
