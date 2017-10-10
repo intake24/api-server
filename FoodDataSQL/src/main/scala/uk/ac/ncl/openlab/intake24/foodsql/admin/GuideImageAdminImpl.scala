@@ -142,7 +142,7 @@ class GuideImageAdminImpl @Inject()(@Named("intake24_foods") val dataSource: Dat
           case l =>
             val gi = l.head
             val imageMapObjects = l.map { io =>
-              GuideImageMapObject(io.image_map_object_id, io.weight,
+              GuideImageMapObject(Some(io.image_map_object_id), io.weight,
                 io.image_map_object_description, io.navigation_index, io.outline_coordinates)
             }
             val imageMeta = GuideImageMeta(gi.id, gi.description)
@@ -168,4 +168,7 @@ class GuideImageAdminImpl @Inject()(@Named("intake24_foods") val dataSource: Dat
         case Some(row) => Right(row.toGuideImageMeta)
       }
   }
+
+  override def patchGuideImageObjects(id: String, objects: Seq[GuideImageMapObject]): Either[UpdateError, Seq[GuideImageMapObject]] = ???
+
 }
