@@ -1,6 +1,8 @@
 package cache
 
-import javax.inject.Inject
+
+import java.util.concurrent.atomic.AtomicBoolean
+import javax.inject.{Inject, Singleton}
 
 import models.{CategoryProblem, FoodProblem, RecursiveCategoryProblems}
 import modules.ProblemCheckerService
@@ -14,6 +16,7 @@ import uk.ac.ncl.openlab.intake24.services.util.Timing
 
 import scala.collection.mutable.Buffer
 
+@Singleton
 case class CachedProblemChecker @Inject()(
                                            categories: ObservableCategoriesAdminService,
                                            foods: ObservableFoodsAdminService,
@@ -34,6 +37,8 @@ case class CachedProblemChecker @Inject()(
 
   var knownCacheKeys = Set[String]()
 
+  private val precacheMode = new AtomicBoolean(false)
+
   categories.addObserver(this)
   foods.addObserver(this)
   locales.addObserver(this)
@@ -53,8 +58,11 @@ case class CachedProblemChecker @Inject()(
 
   def recursiveCategoryProblemsCacheKey(code: String, locale: String) = s"CachedProblemChecker.recursiveCategoryProblems.$locale.$code"
 
-
   val maxReturnedProblems = 10
+
+  def enablePrecacheWarnings() = precacheMode.set(true)
+
+  def disablePrecacheWarnings() = precacheMode.set(false)
 
   def getFoodProblems(code: String, locale: String): Either[LocalLookupError, Seq[FoodProblem]] = cachePositiveResult(foodProblemsCacheKey(code, locale)) {
     for (
@@ -121,8 +129,14 @@ case class CachedProblemChecker @Inject()(
         if (rem.isEmpty || slots <= 0)
           problems
         else {
-          if (cache.get(recursiveCategoryProblemsCacheKey(rem.head.code, locale)).isEmpty)
-            logger.warn(s"Querying uncached subcategory problems ($locale/${rem.head.code})! Check the precacher.")
+          if (precacheMode.get()) {
+            if (cache.get(recursiveCategoryProblemsCacheKey(rem.head.code, locale)).isEmpty) {
+              logger.warn(s"Querying uncached subcategory problems ($locale/${rem.head.code})! This could be caused by: ")
+              logger.warn(s"   * The cache being too small")
+              logger.warn(s"   * The cache elements having default time to live (problems cache expects elements to stay in the cache indefinitely)")
+              logger.warn(s"   * The precacher algorithm not working properly")
+            }
+          }
 
           getRecursiveCategoryProblems(rem.head.code, locale, slots).right.flatMap {
             p =>
@@ -160,6 +174,7 @@ case class CachedProblemChecker @Inject()(
         ) yield result
       }
     }
+
 
   def invalidateFood(code: String): Unit = {
     locales.listLocales() match {
