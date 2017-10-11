@@ -1,7 +1,7 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.admin
 
 import uk.ac.ncl.openlab.intake24.GuideHeader
-import uk.ac.ncl.openlab.intake24.errors.{DependentCreateError, DependentUpdateError, UnexpectedDatabaseError, UpdateError}
+import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.GuideImageService
 
 case class NewGuideImageRecord(id: String, description: String, imageMapId: String, selectionImageId: Long, objectWeights: Map[Long, Double])
@@ -10,7 +10,7 @@ case class GuideImageFull(meta: GuideImageMeta, path: String, objects: Seq[Guide
 
 case class GuideImageMeta(id: String, description: String)
 
-case class GuideImageMapObject(id: Option[Long], weight: Double, description: String, navigationIndex: Int, outlineCoordinates: Seq[Double])
+case class GuideImageMapObject(weight: Double, description: String, navigationIndex: Int, outlineCoordinates: Seq[Double])
 
 trait GuideImageAdminService extends GuideImageService {
 
@@ -27,4 +27,7 @@ trait GuideImageAdminService extends GuideImageService {
   def patchGuideImageMeta(id: String, meta: GuideImageMeta): Either[UpdateError, GuideImageMeta]
 
   def patchGuideImageObjects(id: String, objects: Seq[GuideImageMapObject]): Either[UpdateError, Seq[GuideImageMapObject]]
+
+  def deleteGuideImageObject(imageMapId: String, imageMapObjectId: Long): Either[DeleteError, Unit]
+
 }
