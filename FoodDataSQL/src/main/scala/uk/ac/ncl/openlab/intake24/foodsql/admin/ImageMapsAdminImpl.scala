@@ -61,7 +61,9 @@ class ImageMapsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: Data
               buildObjectParams(imageMap)
           }
 
-          BatchSql("INSERT INTO image_map_objects VALUES({id},{image_map_id},{description},{navigation_index},{outline_coordinates}::double precision[],{overlay_image_id})", imageMapObjectParams.head, imageMapObjectParams.tail: _*).execute()
+          if (imageMapObjectParams.nonEmpty) {
+            BatchSql("INSERT INTO image_map_objects VALUES({id},{image_map_id},{description},{navigation_index},{outline_coordinates}::double precision[],{overlay_image_id})", imageMapObjectParams.head, imageMapObjectParams.tail: _*).execute()
+          }
 
           Right(())
         }

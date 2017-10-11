@@ -21,11 +21,11 @@ class GuideImageAdminImpl @Inject()(@Named("intake24_foods") val dataSource: Dat
                                           description: String,
                                           image_map_id: String,
                                           path: String,
-                                          image_map_object_id: Int,
-                                          weight: Double,
-                                          navigation_index: Int,
-                                          image_map_object_description: String,
-                                          outline_coordinates: Array[Double])
+                                          image_map_object_id: Option[Long],
+                                          weight: Option[Double],
+                                          navigation_index: Option[Int],
+                                          image_map_object_description: Option[String],
+                                          outline_coordinates: Option[Array[Double]])
 
   private case class GuideImageMetaRow(id: String, description: String) {
     def toGuideImageMeta = GuideImageMeta(id, description)
@@ -127,10 +127,10 @@ class GuideImageAdminImpl @Inject()(@Named("intake24_foods") val dataSource: Dat
            |  imo.description AS image_map_object_description,
            |  imo.outline_coordinates
            |FROM guide_images AS gi
-           |  JOIN image_maps ON gi.image_map_id = image_maps.id
-           |  JOIN processed_images AS pi ON image_maps.base_image_id = pi.id
-           |  JOIN image_map_objects AS imo ON imo.image_map_id = image_maps.id
-           |  JOIN guide_image_objects AS gio ON imo.id = gio.image_map_object_id
+           |  LEFT JOIN image_maps ON gi.image_map_id = image_maps.id
+           |  LEFT JOIN processed_images AS pi ON image_maps.base_image_id = pi.id
+           |  LEFT JOIN image_map_objects AS imo ON imo.image_map_id = image_maps.id
+           |  LEFT JOIN guide_image_objects AS gio ON imo.id = gio.image_map_object_id
            |                                  AND gio.guide_image_id = gi.id
            |WHERE gi.id = {id}""".stripMargin
 
@@ -141,9 +141,14 @@ class GuideImageAdminImpl @Inject()(@Named("intake24_foods") val dataSource: Dat
           case Nil => Left(RecordNotFound(new RuntimeException(s"Guide image $id not found")))
           case l =>
             val gi = l.head
-            val imageMapObjects = l.map { io =>
-              GuideImageMapObject(Some(io.image_map_object_id), io.weight,
-                io.image_map_object_description, io.navigation_index, io.outline_coordinates)
+            val imageMapObjects = l.flatMap { io =>
+              for (
+                weight <- io.weight;
+                img_map_object_description <-io.image_map_object_description;
+                nav_index <- io.navigation_index;
+                outline_coordinates <- io.outline_coordinates;
+                obj = GuideImageMapObject(io.image_map_object_id, weight, img_map_object_description, nav_index, outline_coordinates)
+              ) yield obj
             }
             val imageMeta = GuideImageMeta(gi.id, gi.description)
             Right(GuideImageFull(imageMeta, imageStorage.getUrl(gi.path), imageMapObjects))
