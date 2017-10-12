@@ -35,7 +35,6 @@ object PairwiseAssociationsMigration extends Migration {
   }
 
   private def createTables()(implicit connection: Connection) = {
-    //    FIXME: Drop table pairwise_associations_transactions_count
     SQL(
       """
         |CREATE TABLE pairwise_associations_occurrences (
@@ -75,8 +74,11 @@ object PairwiseAssociationsMigration extends Migration {
         }
       }
     }.toSeq
+    val transactionsUpdateParams = graph.map { localeNode =>
+      Seq[NamedParameter]('locale -> localeNode._1, 'transactions_count -> localeNode._2.getParams().numberOfTransactions)
+    }.toSeq
 
-    if (occurrenceUpdateParams.nonEmpty && coOccurrenceUpdateParams.nonEmpty) {
+    if (occurrenceUpdateParams.nonEmpty && coOccurrenceUpdateParams.nonEmpty && transactionsUpdateParams.nonEmpty) {
       BatchSql(
         """
           |INSERT INTO pairwise_associations_occurrences (locale, food_code, occurrences)
@@ -88,11 +90,17 @@ object PairwiseAssociationsMigration extends Migration {
           |INSERT INTO pairwise_associations_co_occurrences (locale, antecedent_food_code, consequent_food_code, occurrences)
           |VALUES ({locale}, {antecedent_food_code}, {consequent_food_code}, {occurrences});
         """.stripMargin, coOccurrenceUpdateParams.head, coOccurrenceUpdateParams.tail: _*).execute()
+
+      BatchSql(
+        """
+          |INSERT INTO pairwise_associations_transactions_count (locale, transactions_count)
+          |VALUES ({locale}, {transactions_count});
+        """.stripMargin, transactionsUpdateParams.head, transactionsUpdateParams.tail: _*).execute()
     }
     println("Done")
   }
 
-  private def getOccurrenceGraph()(implicit connection: Connection) = {
+  private def getOccurrenceGraph()(implicit connection: Connection): Map[String, PairwiseAssociationRules] = {
     val minSubmissionCount = 50
     val batchSize = 50
     val occurrenceGraph = Map[String, PairwiseAssociationRules]().withDefaultValue(PairwiseAssociationRules(None))

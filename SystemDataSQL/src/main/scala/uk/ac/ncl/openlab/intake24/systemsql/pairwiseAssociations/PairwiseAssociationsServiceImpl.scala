@@ -1,7 +1,6 @@
 package uk.ac.ncl.openlab.intake24.systemsql.pairwiseAssociations
 
 import java.time.{ZoneId, ZonedDateTime}
-import java.time.temporal.ChronoUnit
 import javax.inject.{Inject, Singleton}
 
 import org.slf4j.LoggerFactory
@@ -23,7 +22,14 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
   private var associationRules = getAssociationRules()
 
   override def recommend(locale: String, items: Seq[String]): Seq[(String, Double)] = associationRules.map { ar =>
-    ar.get(locale).flatMap(_.recommend(items)).toSeq
+    ar.get(locale).map { rules =>
+      val params = rules.getParams()
+      if (params.numberOfTransactions < settings.minimumNumberOfSurveySubmissions || items.isEmpty) {
+        params.occurrences.map(o => o._1 -> o._2.toDouble).toSeq.sortBy(-_._2)
+      } else {
+        rules.recommend(items)
+      }
+    }.getOrElse(Nil)
   }.getOrElse(Nil)
 
   override def addTransactions(surveyId: String, items: Seq[Seq[String]]): Unit = getValidSurvey(surveyId, "addTransactions").map { surveyParams =>
@@ -41,17 +47,34 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
 
   override def refresh(): Unit = {
     val foldGraph = Map[String, PairwiseAssociationRules]().withDefaultValue(PairwiseAssociationRules(None))
-
-    val graph = surveyAdminService.listSurveys().getOrElse(Nil).map { survey =>
-      survey.id -> getSubmissionCount(survey.id)
-    }.foldLeft(foldGraph) { (gr, survey) =>
-      if (surveyIsValid(survey._1, survey._2, "refresh")) {
-        Range(0, survey._2, settings.rulesUpdateBatchSize).foldLeft(gr) { (ocMp, offset) =>
-          val subs = dataExportService.getSurveySubmissions(survey._1, None, None, offset, settings.rulesUpdateBatchSize, None)
-          println(s"  processed ${offset + subs.size} out of $submissionCount")
-          subs
+    val graph = surveyAdminService.listSurveys().getOrElse(Nil)
+      .foldLeft(foldGraph) { (foldGraph, survey) =>
+        getSurveySubmissions(survey).foldLeft(foldGraph) { (foldGraph, submission) =>
+          val localeRules = foldGraph(submission.locale)
+          localeRules.addTransactions(submission.meals)
+          foldGraph + (submission.locale -> localeRules)
         }
       }
+    dataService.writeAssociations(graph) match {
+      case Left(e) => logger.error(s"Failed to refresh PairwiseAssociations ${e.exception.getMessage}")
+      case Right(_) => associationRules = getAssociationRules()
+    }
+  }
+
+  private def getSurveySubmissions(survey: SurveyParametersOut): Seq[Submission] = {
+    val submissionCount = getSubmissionCount(survey.id)
+    if (surveyIsValid(survey.id, submissionCount, "getSurveySubmissions")) {
+      Range(0, submissionCount, settings.rulesUpdateBatchSize).foldLeft(Seq[Submission]()) { (submissions, offset) =>
+        submissions ++ dataExportService.getSurveySubmissions(survey.id, None, None, offset, settings.rulesUpdateBatchSize, None)
+          .map { exportSubmissions =>
+            exportSubmissions.map { expSubmission =>
+              val meals = expSubmission.meals.map { meal => meal.foods.map(_.code) }
+              Submission(survey.localeId, meals)
+            }
+          }.getOrElse(Nil)
+      }
+    } else {
+      Nil
     }
   }
 
@@ -70,10 +93,10 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
 
   private def surveyIsValid(surveyId: String, submissionCount: Int, operationPrefix: String): Boolean =
     if (settings.ignoreSurveysContaining.exists(stopWord => surveyId.contains(stopWord))) {
-      logger.warn(s"$operationPrefix - survey $surveyId is ignored due to its' name")
+      logger.warn(s"Survey $surveyId is ignored due to its' name at $operationPrefix")
       false
     } else if (submissionCount < settings.minimumNumberOfSurveySubmissions) {
-      logger.warn(s"$operationPrefix - survey $surveyId is ignored since it contains less than ${settings.minimumNumberOfSurveySubmissions}")
+      logger.warn(s"Survey $surveyId is ignored since it contains less than ${settings.minimumNumberOfSurveySubmissions} at $operationPrefix")
       false
     } else {
       true
@@ -86,11 +109,13 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
   }
 
   private def getAssociationRules() = {
-    val associationRules = dataService.getAssociationsByLocale()
+    val associationRules = dataService.getAssociations()
     associationRules match {
       case Left(dbError) => logger.error(dbError.exception.getMessage)
     }
     associationRules
   }
+
+  private case class Submission(locale: String, meals: Seq[Seq[String]])
 
 }

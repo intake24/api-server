@@ -24,7 +24,7 @@ import com.google.inject.{AbstractModule, Injector, Provides, Singleton}
 import play.api.db.Database
 import play.api.{Configuration, Environment}
 import play.db.NamedDatabase
-import scheduled.{ErrorDigestSender, ErrorDigestSenderImpl}
+import scheduled.{ErrorDigestSender, ErrorDigestSenderImpl, PairwiseAssociationsRefresher, PairwiseAssociationsRefresherImpl}
 import security.captcha.{AsyncCaptchaService, GoogleRecaptchaImpl}
 import sms.{SMSService, TwilioSMSImpl}
 import uk.ac.ncl.openlab.intake24.foodsql.admin._
@@ -43,9 +43,10 @@ import uk.ac.ncl.openlab.intake24.services.foodindex.portuguese.{FoodIndexImpl_p
 import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, FoodIndexDataService, Splitter}
 import uk.ac.ncl.openlab.intake24.services.nutrition.{DefaultNutrientMappingServiceImpl, FoodCompositionService, NutrientMappingService}
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
-import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.PairwiseAssociationsServiceConfiguration
+import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsDataService, PairwiseAssociationsService, PairwiseAssociationsServiceConfiguration}
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.{ClientErrorService, FoodPopularityService, SurveyService, UserPhysicalDataService}
 import uk.ac.ncl.openlab.intake24.systemsql.admin._
+import uk.ac.ncl.openlab.intake24.systemsql.pairwiseAssociations.{PairwiseAssociationsDataServiceImpl, PairwiseAssociationsServiceImpl}
 import uk.ac.ncl.openlab.intake24.systemsql.user.{ClientErrorServiceImpl, FoodPopularityServiceImpl, SurveyServiceImpl, UserPhysicalDataServiceImpl}
 
 import collection.JavaConverters._
@@ -120,7 +121,8 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     val ignoreSurveysContaining = configuration.get[Seq[String]]("intake24.pairwiseAssociations.ignoreSurveysContaining")
     val useAfterNumberOfTransactions = configuration.get[Int]("intake24.pairwiseAssociations.useAfterNumberOfTransactions")
     val rulesUpdateBatchSize = configuration.get[Int]("intake24.pairwiseAssociations.rulesUpdateBatchSize")
-    PairwiseAssociationsServiceConfiguration(minimumNumberOfSurveySubmissions, ignoreSurveysContaining, useAfterNumberOfTransactions, rulesUpdateBatchSize)
+    val refreshAtTime = configuration.get[String]("intake24.pairwiseAssociations.refreshAtTime")
+    PairwiseAssociationsServiceConfiguration(minimumNumberOfSurveySubmissions, ignoreSurveysContaining, useAfterNumberOfTransactions, rulesUpdateBatchSize, refreshAtTime)
   }
 
   def configure() = {
@@ -213,5 +215,11 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     bind(classOf[SigninLogService]).to(classOf[SigninLogImpl])
 
     bind(classOf[UsersSupportService]).to(classOf[UsersSupportServiceImpl])
+
+    // Pairwise services
+    bind(classOf[PairwiseAssociationsDataService]).to(classOf[PairwiseAssociationsDataServiceImpl])
+    bind(classOf[PairwiseAssociationsService]).to(classOf[PairwiseAssociationsServiceImpl])
+    bind(classOf[PairwiseAssociationsRefresher]).to(classOf[PairwiseAssociationsRefresherImpl]).asEagerSingleton()
+
   }
 }
