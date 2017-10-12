@@ -6,7 +6,7 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.user.GuideImageService
 
 case class NewGuideImageRecord(id: String, description: String, imageMapId: String, selectionImageId: Long, objectWeights: Map[Long, Double])
 
-case class GuideImageFull(meta: GuideImageMeta, path: String, objects: Seq[GuideImageMapObject])
+case class GuideImageFull(meta: GuideImageMeta, imageMapId: String, path: String, objects: Seq[GuideImageMapObject])
 
 case class GuideImageMeta(id: String, description: String)
 
@@ -26,7 +26,7 @@ trait GuideImageAdminService extends GuideImageService {
 
   def patchGuideImageMeta(id: String, meta: GuideImageMeta): Either[UpdateError, GuideImageMeta]
 
-  def patchGuideImageObjects(imageMapId: String, objects: Seq[GuideImageMapObject]): Either[UpdateError, Seq[GuideImageMapObject]]
+  def patchGuideImageObjects(id: String, objects: Seq[GuideImageMapObject]): Either[UpdateError, Seq[GuideImageMapObject]]
 
   def deleteGuideImageObject(imageMapId: String, imageMapObjectId: Long): Either[DeleteError, Unit]
 

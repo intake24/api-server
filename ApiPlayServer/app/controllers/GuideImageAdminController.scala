@@ -70,10 +70,10 @@ class GuideImageAdminController @Inject()(guideImageAdminService: GuideImageAdmi
       }
   }
 
-  def patchGuideImageObjects(imageMapId: String) = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(jsonBodyParser.parse[Seq[GuideImageMapObject]]) {
+  def patchGuideImageObjects(id: String) = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(jsonBodyParser.parse[Seq[GuideImageMapObject]]) {
     request =>
       Future {
-        translateDatabaseResult(guideImageAdminService.patchGuideImageObjects(imageMapId, request.body))
+        translateDatabaseResult(guideImageAdminService.patchGuideImageObjects(id, request.body))
       }
   }
 
