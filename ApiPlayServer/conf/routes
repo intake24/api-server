@@ -4,137 +4,137 @@
 
 # SHARED CONTROLLERS #
 
-POST           /signin                                                       controllers.system.SigninController.signinWithEmail()
-POST           /signin/alias                                                 controllers.system.SigninController.signinWithAlias()
-POST           /signin/token/:token                                          controllers.system.SigninController.signinWithToken(token: String)
-POST           /refresh                                                      controllers.system.SigninController.refresh()
+POST           /signin                                                        controllers.system.SigninController.signinWithEmail()
+POST           /signin/alias                                                  controllers.system.SigninController.signinWithAlias()
+POST           /signin/token/:token                                           controllers.system.SigninController.signinWithToken(token: String)
+POST           /refresh                                                       controllers.system.SigninController.refresh()
 
-GET            /index/lookup/:locale/:term                                   controllers.FoodIndexController.lookup(locale, term)
+GET            /index/lookup/:locale/:term                                    controllers.FoodIndexController.lookup(locale, term)
 
-OPTIONS        /*dontcare                                                    controllers.CorsPreflightController.corsPreflight(dontcare: String)
+OPTIONS        /*dontcare                                                     controllers.CorsPreflightController.corsPreflight(dontcare: String)
 
 # ADMIN CONTROLLERS #
 
 # Locales
 
-GET            /admin/locales                                                controllers.LocalesAdminController.listLocales()
-GET            /admin/locales/:id                                            controllers.LocalesAdminController.getLocale(id)
+GET            /admin/locales                                                 controllers.LocalesAdminController.listLocales()
+GET            /admin/locales/:id                                             controllers.LocalesAdminController.getLocale(id)
 
 
 # Browsing
 
-GET            /admin/browse/:locale/root-categories                         controllers.FoodBrowsingAdminController.getRootCategories(locale: String)
-GET            /admin/browse/:locale/uncategorised-foods                     controllers.FoodBrowsingAdminController.getUncategorisedFoods(locale: String)
+GET            /admin/browse/:locale/root-categories                          controllers.FoodBrowsingAdminController.getRootCategories(locale: String)
+GET            /admin/browse/:locale/uncategorised-foods                      controllers.FoodBrowsingAdminController.getUncategorisedFoods(locale: String)
 
-GET            /admin/browse/:locale/:code                                   controllers.FoodBrowsingAdminController.getCategoryContents(code: String, locale: String)
+GET            /admin/browse/:locale/:code                                    controllers.FoodBrowsingAdminController.getCategoryContents(code: String, locale: String)
 
-GET            /admin/browse/:locale/food-parent-categories/:code            controllers.FoodBrowsingAdminController.getFoodParentCategories(code: String, locale: String)
-GET            /admin/browse/:locale/food-all-categories/:code               controllers.FoodBrowsingAdminController.getFoodAllCategories(code: String, locale: String)
+GET            /admin/browse/:locale/food-parent-categories/:code             controllers.FoodBrowsingAdminController.getFoodParentCategories(code: String, locale: String)
+GET            /admin/browse/:locale/food-all-categories/:code                controllers.FoodBrowsingAdminController.getFoodAllCategories(code: String, locale: String)
 
-GET            /admin/browse/:locale/category-parent-categories/:code        controllers.FoodBrowsingAdminController.getCategoryParentCategories(code: String, locale: String)
-GET            /admin/browse/:locale/category-all-categories/:code           controllers.FoodBrowsingAdminController.getCategoryAllCategories(code: String, locale: String)
+GET            /admin/browse/:locale/category-parent-categories/:code         controllers.FoodBrowsingAdminController.getCategoryParentCategories(code: String, locale: String)
+GET            /admin/browse/:locale/category-all-categories/:code            controllers.FoodBrowsingAdminController.getCategoryAllCategories(code: String, locale: String)
 
 # Quick search
 
-GET            /admin/quick-search/:locale/categories/:term                  controllers.QuickSearchController.searchCategories(term: String, locale: String)
-GET            /admin/quick-search/:locale/foods/:term                       controllers.QuickSearchController.searchFoods(term: String, locale: String)
+GET            /admin/quick-search/:locale/categories/:term                   controllers.QuickSearchController.searchCategories(term: String, locale: String)
+GET            /admin/quick-search/:locale/foods/:term                        controllers.QuickSearchController.searchFoods(term: String, locale: String)
 
 # Foods
 
-GET            /admin/foods/code-available/:code                             controllers.FoodsAdminController.isFoodCodeAvailable(code: String)
-GET            /admin/foods/:locale/:code                                    controllers.FoodsAdminController.getFoodRecord(code: String, locale: String)
+GET            /admin/foods/code-available/:code                              controllers.FoodsAdminController.isFoodCodeAvailable(code: String)
+GET            /admin/foods/:locale/:code                                     controllers.FoodsAdminController.getFoodRecord(code: String, locale: String)
 
-POST           /admin/foods/new                                              controllers.FoodsAdminController.createFood()
-POST           /admin/foods/new/:locale                                      controllers.FoodsAdminController.createLocalFood(locale)
+POST           /admin/foods/new                                               controllers.FoodsAdminController.createFood()
+POST           /admin/foods/new/:locale                                       controllers.FoodsAdminController.createLocalFood(locale)
 
-POST           /admin/foods/new-with-temp-code                               controllers.FoodsAdminController.createFoodWithTempCode()
-POST           /admin/foods/:locale/:code/clone                              controllers.FoodsAdminController.cloneFood(code, locale)
-POST           /admin/foods/:locale/:code/clone-as-local                     controllers.FoodsAdminController.cloneFoodAsLocal(code, locale)
-POST           /admin/foods/:code                                            controllers.FoodsAdminController.updateMainFoodRecord(code: String)
-POST           /admin/foods/:locale/:code                                    controllers.FoodsAdminController.updateLocalFoodRecord(code: String, locale: String)
-DELETE         /admin/foods/:code                                            controllers.FoodsAdminController.deleteFood(code)
+POST           /admin/foods/new-with-temp-code                                controllers.FoodsAdminController.createFoodWithTempCode()
+POST           /admin/foods/:locale/:code/clone                               controllers.FoodsAdminController.cloneFood(code, locale)
+POST           /admin/foods/:locale/:code/clone-as-local                      controllers.FoodsAdminController.cloneFoodAsLocal(code, locale)
+POST           /admin/foods/:code                                             controllers.FoodsAdminController.updateMainFoodRecord(code: String)
+POST           /admin/foods/:locale/:code                                     controllers.FoodsAdminController.updateLocalFoodRecord(code: String, locale: String)
+DELETE         /admin/foods/:code                                             controllers.FoodsAdminController.deleteFood(code)
 
 # Categories
 
-GET            /admin/categories/code-available/:code                        controllers.CategoriesAdminController.isCategoryCodeAvailable(code)
-GET            /admin/categories/:locale/:code                               controllers.CategoriesAdminController.getCategoryRecord(code: String, locale: String)
+GET            /admin/categories/code-available/:code                         controllers.CategoriesAdminController.isCategoryCodeAvailable(code)
+GET            /admin/categories/:locale/:code                                controllers.CategoriesAdminController.getCategoryRecord(code: String, locale: String)
 
-POST           /admin/categories/new                                         controllers.CategoriesAdminController.createMainCategoryRecord()
-POST           /admin/categories/:code                                       controllers.CategoriesAdminController.updateMainCategoryRecord(code: String)
-POST           /admin/categories/:locale/:code                               controllers.CategoriesAdminController.updateLocalCategoryRecord(code: String, locale: String)
-DELETE         /admin/categories/:code                                       controllers.CategoriesAdminController.deleteCategory(code: String)
+POST           /admin/categories/new                                          controllers.CategoriesAdminController.createMainCategoryRecord()
+POST           /admin/categories/:code                                        controllers.CategoriesAdminController.updateMainCategoryRecord(code: String)
+POST           /admin/categories/:locale/:code                                controllers.CategoriesAdminController.updateLocalCategoryRecord(code: String, locale: String)
+DELETE         /admin/categories/:code                                        controllers.CategoriesAdminController.deleteCategory(code: String)
 
 
 # Problem checker
 
-GET            /admin/foods/:locale/:code/problems                           controllers.ProblemCheckerController.checkFood(code: String, locale: String)
-GET            /admin/categories/:locale/:code/problems                      controllers.ProblemCheckerController.checkCategory(code: String, locale: String)
-GET            /admin/categories/:locale/:code/recursive-problems            controllers.ProblemCheckerController.checkCategoryRecursive(code: String, locale: String)
+GET            /admin/foods/:locale/:code/problems                            controllers.ProblemCheckerController.checkFood(code: String, locale: String)
+GET            /admin/categories/:locale/:code/problems                       controllers.ProblemCheckerController.checkCategory(code: String, locale: String)
+GET            /admin/categories/:locale/:code/recursive-problems             controllers.ProblemCheckerController.checkCategoryRecursive(code: String, locale: String)
 
 
 # Food groups
 
-GET            /admin/food-groups/:locale                                    controllers.FoodGroupsAdminController.listFoodGroups(locale: String)
-GET            /admin/food-groups/:locale/:id                                controllers.FoodGroupsAdminController.getFoodGroup(id: Int, locale: String)
+GET            /admin/food-groups/:locale                                     controllers.FoodGroupsAdminController.listFoodGroups(locale: String)
+GET            /admin/food-groups/:locale/:id                                 controllers.FoodGroupsAdminController.getFoodGroup(id: Int, locale: String)
 
 
 # Associated foods
 
-GET            /admin/associated-foods/:locale/:code                         controllers.AssociatedFoodsAdminController.getAssociatedFoods(code: String, locale: String)
-POST           /admin/associated-foods/:locale/:code                         controllers.AssociatedFoodsAdminController.updateAssociatedFoods(code: String, locale: String)
+GET            /admin/associated-foods/:locale/:code                          controllers.AssociatedFoodsAdminController.getAssociatedFoods(code: String, locale: String)
+POST           /admin/associated-foods/:locale/:code                          controllers.AssociatedFoodsAdminController.updateAssociatedFoods(code: String, locale: String)
 
 # Portion size methods
 
-GET            /admin/portion-size/as-served                                 controllers.AsServedSetsAdminController.listAsServedSets()
-GET            /admin/portion-size/as-served/:id                             controllers.AsServedSetsAdminController.getAsServedSet(id: String)
+GET            /admin/portion-size/as-served                                  controllers.AsServedSetsAdminController.listAsServedSets()
+GET            /admin/portion-size/as-served/:id                              controllers.AsServedSetsAdminController.getAsServedSet(id: String)
 
-GET            /admin/portion-size/as-served/:id/export                      controllers.AsServedSetsAdminController.exportAsServedSet(id: String)
-POST           /admin/portion-size/as-served/import                          controllers.AsServedSetsAdminController.importAsServedSet()
+GET            /admin/portion-size/as-served/:id/export                       controllers.AsServedSetsAdminController.exportAsServedSet(id: String)
+POST           /admin/portion-size/as-served/import                           controllers.AsServedSetsAdminController.importAsServedSet()
 
-POST           /admin/portion-size/as-served/new                             controllers.AsServedSetsAdminController.createAsServedSet()
-POST           /admin/portion-size/as-served/new-from-source                 controllers.AsServedSetsAdminController.createAsServedSetFromSource()
-PUT            /admin/portion-size/as-served/:id                             controllers.AsServedSetsAdminController.updateAsServedSet(id: String)
-DELETE         /admin/portion-size/as-served/:id                             controllers.AsServedSetsAdminController.deleteAsServedSet(id: String)
+POST           /admin/portion-size/as-served/new                              controllers.AsServedSetsAdminController.createAsServedSet()
+POST           /admin/portion-size/as-served/new-from-source                  controllers.AsServedSetsAdminController.createAsServedSetFromSource()
+PUT            /admin/portion-size/as-served/:id                              controllers.AsServedSetsAdminController.updateAsServedSet(id: String)
+DELETE         /admin/portion-size/as-served/:id                              controllers.AsServedSetsAdminController.deleteAsServedSet(id: String)
 
 # POST           /admin/portion-size/image-map/new                             controllers.ImageMapAdminController.createImageMap()
 # POST           /admin/portion-size/image-map/new-from-source                 controllers.ImageMapAdminController.createImageMapFromSource()
 
-GET            /admin/portion-size/image-map                                 controllers.ImageMapAdminController.listImageMaps()
-GET            /admin/portion-size/image-map/:id/base-image-source-id        controllers.ImageMapAdminController.getImageMapBaseImageSourceId(id)
-POST           /admin/portion-size/image-map/new-from-svg                    controllers.ImageMapAdminController.createImageMapFromSVG()
-POST           /admin/portion-size/image-map                                 controllers.ImageMapAdminController.uploadImageMap()
+GET            /admin/portion-size/image-map                                  controllers.ImageMapAdminController.listImageMaps()
+GET            /admin/portion-size/image-map/:id/base-image-source-id         controllers.ImageMapAdminController.getImageMapBaseImageSourceId(id)
+POST           /admin/portion-size/image-map/new-from-svg                     controllers.ImageMapAdminController.createImageMapFromSVG()
+POST           /admin/portion-size/image-map                                  controllers.ImageMapAdminController.uploadImageMap()
 
-GET            /admin/portion-size/guide-image                               controllers.GuideImageAdminController.listGuideImages()
-GET            /admin/portion-size/guide-image/:id                           controllers.GuideImageAdminController.getGuideImage(id: String)
-GET            /admin/portion-size/guide-image/:id/full                      controllers.GuideImageAdminController.getGuideImageFull(id: String)
-PATCH          /admin/portion-size/guide-image/:id/meta                      controllers.GuideImageAdminController.patchGuideImageMeta(id: String)
-PATCH          /admin/portion-size/guide-image/:id/objects                   controllers.GuideImageAdminController.patchGuideImageObjects(id: String)
-POST           /admin/portion-size/guide-image/new                           controllers.GuideImageAdminController.createGuideImage()
-POST           /admin/portion-size/guide-image/selection-screen-image        controllers.GuideImageAdminController.updateGuideSelectionImage(id: String, selectionImageId: Long)
+GET            /admin/portion-size/guide-image                                controllers.GuideImageAdminController.listGuideImages()
+GET            /admin/portion-size/guide-image/:id                            controllers.GuideImageAdminController.getGuideImage(id: String)
+GET            /admin/portion-size/guide-image/:id/full                       controllers.GuideImageAdminController.getGuideImageFull(id: String)
+PATCH          /admin/portion-size/guide-image/:id/meta                       controllers.GuideImageAdminController.patchGuideImageMeta(id: String)
+PATCH          /admin/portion-size/guide-image-map/:imageMapId/objects        controllers.GuideImageAdminController.patchGuideImageObjects(imageMapId: String)
+POST           /admin/portion-size/guide-image/new                            controllers.GuideImageAdminController.createGuideImage()
+POST           /admin/portion-size/guide-image/selection-screen-image         controllers.GuideImageAdminController.updateGuideSelectionImage(id: String, selectionImageId: Long)
 
-GET            /admin/portion-size/drinkware                                 controllers.DrinkwareAdminController.listDrinkwareSets()
-GET            /admin/portion-size/drinkware/:id                             controllers.DrinkwareAdminController.getDrinkwareSet(id: String)
+GET            /admin/portion-size/drinkware                                  controllers.DrinkwareAdminController.listDrinkwareSets()
+GET            /admin/portion-size/drinkware/:id                              controllers.DrinkwareAdminController.getDrinkwareSet(id: String)
 
 
 
 # Nutrient tables
 
-GET            /admin/nutrient-tables                                        controllers.NutrientTablesAdminController.listNutrientTables()
-GET            /admin/nutrient-tables/:nutrientTableId                       controllers.NutrientTablesAdminController.searchNutrientTableRecords(nutrientTableId: String, query: Option[String])
+GET            /admin/nutrient-tables                                         controllers.NutrientTablesAdminController.listNutrientTables()
+GET            /admin/nutrient-tables/:nutrientTableId                        controllers.NutrientTablesAdminController.searchNutrientTableRecords(nutrientTableId: String, query: Option[String])
 
 # Nutrient types
-GET            /admin/nutrient-types                                         controllers.NutrientTypesController.list()
+GET            /admin/nutrient-types                                          controllers.NutrientTypesController.list()
 
 # Source image management
 
-GET            /admin/images/source                                          controllers.ImageAdminController.listSourceImages(offset: Int, limit: Int, search: Option[String])
-POST           /admin/images/source/new                                      controllers.ImageAdminController.uploadSourceImage()
-POST           /admin/images/source/new-as-served                            controllers.ImageAdminController.uploadSourceImageForAsServed(setId: String)
-POST           /admin/images/source/new-image-map                            controllers.ImageAdminController.uploadSourceImageForImageMap(id: String)
-PATCH          /admin/images/source/:id                                      controllers.ImageAdminController.updateSourceImage(id: Int)
-DELETE         /admin/images/source/delete                                   controllers.ImageAdminController.deleteSourceImages()
+GET            /admin/images/source                                           controllers.ImageAdminController.listSourceImages(offset: Int, limit: Int, search: Option[String])
+POST           /admin/images/source/new                                       controllers.ImageAdminController.uploadSourceImage()
+POST           /admin/images/source/new-as-served                             controllers.ImageAdminController.uploadSourceImageForAsServed(setId: String)
+POST           /admin/images/source/new-image-map                             controllers.ImageAdminController.uploadSourceImageForImageMap(id: String)
+PATCH          /admin/images/source/:id                                       controllers.ImageAdminController.updateSourceImage(id: Int)
+DELETE         /admin/images/source/delete                                    controllers.ImageAdminController.deleteSourceImages()
 
-POST           /admin/images/process-for-selection-screen                    controllers.ImageAdminController.processForSelectionScreen(pathPrefix: String, sourceImageId: Long)
+POST           /admin/images/process-for-selection-screen                     controllers.ImageAdminController.processForSelectionScreen(pathPrefix: String, sourceImageId: Long)
 
 # POST    /admin/images/as-served               controllers.ImageAdminController.processForAsServed()
 
@@ -144,26 +144,26 @@ POST           /admin/images/process-for-selection-screen                    con
 
 # Demographic groups
 
-GET            /admin/demographic-groups                                     controllers.DemographicGroupsController.list()
-POST           /admin/demographic-groups                                     controllers.DemographicGroupsController.createDemographicGroup()
-PATCH          /admin/demographic-groups/:id                                 controllers.DemographicGroupsController.patchDemographicGroup(id: Int)
-GET            /admin/demographic-groups/:id                                 controllers.DemographicGroupsController.getDemographicGroup(id: Int)
-DELETE         /admin/demographic-groups/:id                                 controllers.DemographicGroupsController.deleteDemographicGroup(id: Int)
+GET            /admin/demographic-groups                                      controllers.DemographicGroupsController.list()
+POST           /admin/demographic-groups                                      controllers.DemographicGroupsController.createDemographicGroup()
+PATCH          /admin/demographic-groups/:id                                  controllers.DemographicGroupsController.patchDemographicGroup(id: Int)
+GET            /admin/demographic-groups/:id                                  controllers.DemographicGroupsController.getDemographicGroup(id: Int)
+DELETE         /admin/demographic-groups/:id                                  controllers.DemographicGroupsController.deleteDemographicGroup(id: Int)
 
-POST           /admin/demographic-groups/:id/scale-sectors                   controllers.DemographicGroupsController.createDemographicGroupScaleSector(id: Int)
-PATCH          /admin/demographic-group-scale-sectors/:id                    controllers.DemographicGroupsController.patchDemographicGroupScaleSector(id: Int)
-DELETE         /admin/demographic-group-scale-sectors/:id                    controllers.DemographicGroupsController.deleteDemographicGroupScaleSector(id: Int)
+POST           /admin/demographic-groups/:id/scale-sectors                    controllers.DemographicGroupsController.createDemographicGroupScaleSector(id: Int)
+PATCH          /admin/demographic-group-scale-sectors/:id                     controllers.DemographicGroupsController.patchDemographicGroupScaleSector(id: Int)
+DELETE         /admin/demographic-group-scale-sectors/:id                     controllers.DemographicGroupsController.deleteDemographicGroupScaleSector(id: Int)
 
-GET            /admin/henry-coefficients                                     controllers.DemographicGroupsController.getHenryCoefficients()
-GET            /admin/physical-activity-levels                               controllers.DemographicGroupsController.getPhysicalActivityLevels()
-GET            /admin/weight-targets                                         controllers.DemographicGroupsController.getWeightTargets()
+GET            /admin/henry-coefficients                                      controllers.DemographicGroupsController.getHenryCoefficients()
+GET            /admin/physical-activity-levels                                controllers.DemographicGroupsController.getPhysicalActivityLevels()
+GET            /admin/weight-targets                                          controllers.DemographicGroupsController.getWeightTargets()
 
 # Client-side error logging
 
-POST           /errors/report                                                controllers.system.ClientErrorReportController.reportError()
+POST           /errors/report                                                 controllers.system.ClientErrorReportController.reportError()
 
-->             /user                                                         user.Routes
-->             /users                                                        users.Routes
-->             /surveys                                                      surveys.Routes
-->             /help                                                         help.Routes
-->             /public                                                       public_.Routes
+->             /user                                                          user.Routes
+->             /users                                                         users.Routes
+->             /surveys                                                       surveys.Routes
+->             /help                                                          help.Routes
+->             /public                                                        public_.Routes

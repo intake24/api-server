@@ -26,7 +26,7 @@ trait GuideImageAdminService extends GuideImageService {
 
   def patchGuideImageMeta(id: String, meta: GuideImageMeta): Either[UpdateError, GuideImageMeta]
 
-  def patchGuideImageObjects(id: String, objects: Seq[GuideImageMapObject]): Either[UpdateError, Seq[GuideImageMapObject]]
+  def patchGuideImageObjects(imageMapId: String, objects: Seq[GuideImageMapObject]): Either[UpdateError, Seq[GuideImageMapObject]]
 
   def deleteGuideImageObject(imageMapId: String, imageMapObjectId: Long): Either[DeleteError, Unit]
 

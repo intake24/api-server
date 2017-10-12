@@ -179,22 +179,23 @@ class GuideImageAdminImpl @Inject()(@Named("intake24_foods") val dataSource: Dat
       }
   }
 
-  override def patchGuideImageObjects(id: String, objects: Seq[GuideImageMapObject]): Either[UpdateError, Seq[GuideImageMapObject]] = {
-    val cleanQ =
-      """
-        |DELETE FROM guide_image_objects WHERE image_map_id = {image_map_id};
-        |DELETE FROM image_map_objects WHERE image_map_id = {image_map_id};
-      """.stripMargin
-    SQL(cleanQ).on('image_map_id -> id).execute()
-    val res = objects.zipWithIndex.map { obj =>
-      createGuideImageObject(id, obj._2.toLong, obj._1)
+  override def patchGuideImageObjects(imageMapId: String, objects: Seq[GuideImageMapObject]): Either[UpdateError, Seq[GuideImageMapObject]] =
+    tryWithConnection { implicit conn =>
+      val cleanQ =
+        """
+          |DELETE FROM guide_image_objects WHERE image_map_id = {image_map_id};
+          |DELETE FROM image_map_objects WHERE image_map_id = {image_map_id};
+        """.stripMargin
+      SQL(cleanQ).on('image_map_id -> imageMapId).execute()
+      val res = objects.zipWithIndex.map { obj =>
+        createGuideImageObject(imageMapId, obj._2.toLong, obj._1)
+      }
+      if (res.exists(_.isLeft)) {
+        Left(UnexpectedDatabaseError(new RuntimeException("Failed to update GuideImageObjects")))
+      } else {
+        Right(res.map(_.right.get))
+      }
     }
-    if (res.exists(_.isLeft)) {
-      Left(UnexpectedDatabaseError(new RuntimeException("Failed to update GuideImageObjects")))
-    } else {
-      Right(res.flatten)
-    }
-  }
 
   override def deleteGuideImageObject(imageMapId: String, imageMapObjectId: Long): Either[DeleteError, Unit] = tryWithConnection {
     implicit conn =>
