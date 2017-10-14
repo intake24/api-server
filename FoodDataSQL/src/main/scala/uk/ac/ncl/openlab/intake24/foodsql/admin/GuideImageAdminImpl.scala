@@ -1,5 +1,7 @@
 package uk.ac.ncl.openlab.intake24.foodsql.admin
 
+import java.awt.Shape
+import java.sql.Connection
 import javax.inject.Named
 import javax.sql.DataSource
 
@@ -10,12 +12,17 @@ import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.GuideHeader
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageStorageService
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.{AWTImageMap, ImageAdminService, ImageStorageService, ShapeFactory}
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.GuideImageService
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
 
 @Singleton
-class GuideImageAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource, guideImageService: GuideImageService, imageStorage: ImageStorageService) extends GuideImageAdminService with SqlDataService {
+class GuideImageAdminImpl @Inject()(@Named("intake24_foods")
+                                    val dataSource: DataSource,
+                                    guideImageService: GuideImageService,
+                                    imageStorage: ImageStorageService,
+                                    imageAdminService: ImageAdminService,
+                                    imageMapsAdminService: ImageMapsAdminService) extends GuideImageAdminService with SqlDataService {
 
   private case class GuidedImageMapRow(id: String,
                                        description: String,
@@ -163,6 +170,13 @@ class GuideImageAdminImpl @Inject()(@Named("intake24_foods") val dataSource: Dat
 
   def getGuideImage(id: String) = guideImageService.getGuideImage(id)
 
+  override def getImageMapId(id: String): Either[LookupError, String] = tryWithConnection {
+    implicit conn =>
+      val imageMapId = SQL("SELECT image_map_id FROM guide_images WHERE id = {id};")
+        .on('id -> id).executeQuery().as(SqlParser.str(1).single)
+      Right(imageMapId)
+  }
+
   override def patchGuideImageMeta(id: String, meta: GuideImageMeta): Either[UpdateError, GuideImageMeta] = tryWithConnection {
     implicit conn =>
       val q =
@@ -179,28 +193,39 @@ class GuideImageAdminImpl @Inject()(@Named("intake24_foods") val dataSource: Dat
       }
   }
 
-  override def patchGuideImageObjects(id: String, objects: Seq[GuideImageMapObject]): Either[UpdateError, Seq[GuideImageMapObject]] =
+  override def patchGuideImageObjects(id: String, aspectRatio: Double, objects: Seq[GuideImageMapObject]): Either[UpdateError, Seq[GuideImageMapObject]] =
     tryWithConnection { implicit conn =>
-      withTransaction {
-        val cleanQ =
-          """
-            |DELETE FROM image_map_objects
-            |WHERE image_map_id = (SELECT image_map_id FROM guide_images WHERE id = {id});
-            |
-            |DELETE FROM guide_image_objects WHERE guide_image_id = {id};
-            |
-            |SELECT image_map_id FROM guide_images WHERE id = {id};
-          """.stripMargin
-        val imageMapId = SQL(cleanQ).on('id -> id).executeQuery().as(SqlParser.str("image_map_id").single)
-        val res = objects.zipWithIndex.map { obj =>
-          createGuideImageObject(id, imageMapId, obj._2.toLong, obj._1)
+
+      val errorMessage = "Failed to update GuideImageObjects"
+      val cleanQ =
+        """
+          |DELETE FROM guide_image_objects WHERE guide_image_id = {id};
+          |DELETE FROM image_map_objects
+          |WHERE image_map_id = (SELECT image_map_id FROM guide_images WHERE id = {id});
+        """.stripMargin
+
+      val procObj = objects.zipWithIndex
+        .map(i => (i._1, ShapeFactory.getShapeFromFlatCoordinates(i._1.outlineCoordinates), i._2))
+        .filter(_._2.isDefined)
+
+      for (
+        imageMapId <- getImageMapId(id);
+        sourceId <- imageMapsAdminService.getImageMapBaseImageSourceId(imageMapId);
+        overlayDescriptors <- generateOverlays(imageMapId, sourceId, procObj.map(_._1.navigationIndex),
+          procObj.map(i => i._3 -> i._2.get).toMap, aspectRatio);
+        res <- withTransaction {
+          SQL(cleanQ).on('id -> id).execute()
+          val objects = procObj.map(_._1).zip(overlayDescriptors).map { obj =>
+            createGuideImageObject(id, imageMapId, obj._2._1.toLong, obj._1, obj._2._2.id)
+          }
+          if (objects.exists(_.isLeft)) {
+            Left(UnexpectedDatabaseError(new RuntimeException(errorMessage)))
+          } else {
+            Right(objects.map(_.right.get))
+          }
         }
-        if (res.exists(_.isLeft)) {
-          Left(UnexpectedDatabaseError(new RuntimeException("Failed to update GuideImageObjects")))
-        } else {
-          Right(res.map(_.right.get))
-        }
-      }
+      ) yield res
+
     }
 
   override def deleteGuideImageObject(imageMapId: String, imageMapObjectId: Long): Either[DeleteError, Unit] = tryWithConnection {
@@ -214,38 +239,51 @@ class GuideImageAdminImpl @Inject()(@Named("intake24_foods") val dataSource: Dat
       Right(())
   }
 
-  private def createGuideImageObject(guideImageId: String, imageMapId: String, imageMapObjectId: Long, obj: GuideImageMapObject): Either[CreateError, GuideImageMapObject] = tryWithConnection {
-    implicit conn =>
-      val insertQ =
-        """
-          |WITH imo AS (
-          |  INSERT INTO image_map_objects (image_map_id, id, description, navigation_index, outline_coordinates)
-          |  VALUES ({image_map_id}, {id}, {description}, {navigation_index}, {outline_coordinates}::DOUBLE PRECISION[])
-          |  RETURNING image_map_id, id, description, navigation_index, outline_coordinates
-          |), gio AS (
-          |  INSERT INTO guide_image_objects (guide_image_id, weight, image_map_id, image_map_object_id)
-          |  SELECT {guide_image_id}, {weight}, imo.image_map_id, imo.id FROM imo
-          |  RETURNING image_map_id, weight
-          |) SELECT
-          |    imo.image_map_id,
-          |    imo.id AS image_map_object_id,
-          |    imo.description,
-          |    imo.navigation_index,
-          |    imo.outline_coordinates,
-          |    gio.weight
-          |FROM imo JOIN gio ON gio.image_map_id=imo.image_map_id;
-        """.stripMargin
-      val outline = s"{${obj.outlineCoordinates.toArray.mkString(",")}}"
-      val row = SQL(insertQ).on(
-        'image_map_id -> guideImageId,
-        'id -> imageMapObjectId,
-        'description -> obj.description,
-        'navigation_index -> obj.navigationIndex,
-        'outline_coordinates -> outline,
-        'guide_image_id -> guideImageId,
-        'weight -> obj.weight
-      ).executeQuery().as(Macro.namedParser[GuideImageMapObjectRow].single)
-      Right(GuideImageMapObject(row.weight, row.description, row.navigation_index, row.outline_coordinates))
+  private def generateOverlays(imageMapId: String, sourceId: Long, navIndexes: Seq[Int],
+                               shapeMap: Map[Int, Shape], aspectRatio: Double) = {
+    val imageMap = AWTImageMap(navIndexes, shapeMap, aspectRatio)
+    imageAdminService.generateImageMapOverlays(imageMapId, sourceId, imageMap).left.map { e =>
+      UnexpectedDatabaseError(e.exception)
+    }
+  }
+
+  private def createGuideImageObject(guideImageId: String,
+                                     imageMapId: String,
+                                     imageMapObjectId: Long,
+                                     obj: GuideImageMapObject,
+                                     overlayImageId: Long)(implicit conn: Connection): Either[CreateError, GuideImageMapObject] = {
+
+    val insertQ =
+      """
+        |WITH imo AS (
+        |  INSERT INTO image_map_objects (image_map_id, id, description, navigation_index, outline_coordinates, overlay_image_id)
+        |  VALUES ({image_map_id}, {id}, {description}, {navigation_index}, {outline_coordinates}::DOUBLE PRECISION[], {overlay_image_id})
+        |  RETURNING image_map_id, id, description, navigation_index, outline_coordinates
+        |), gio AS (
+        |  INSERT INTO guide_image_objects (guide_image_id, weight, image_map_id, image_map_object_id)
+        |  SELECT {guide_image_id}, {weight}, imo.image_map_id, imo.id FROM imo
+        |  RETURNING image_map_id, weight
+        |) SELECT
+        |    imo.image_map_id,
+        |    imo.id AS image_map_object_id,
+        |    imo.description,
+        |    imo.navigation_index,
+        |    imo.outline_coordinates,
+        |    gio.weight
+        |FROM imo JOIN gio ON gio.image_map_id=imo.image_map_id;
+      """.stripMargin
+    val outline = s"{${obj.outlineCoordinates.toArray.mkString(",")}}"
+    val row = SQL(insertQ).on(
+      'image_map_id -> guideImageId,
+      'id -> imageMapObjectId,
+      'description -> obj.description,
+      'navigation_index -> obj.navigationIndex,
+      'outline_coordinates -> outline,
+      'overlay_image_id -> overlayImageId,
+      'guide_image_id -> guideImageId,
+      'weight -> obj.weight
+    ).executeQuery().as(Macro.namedParser[GuideImageMapObjectRow].single)
+    Right(GuideImageMapObject(row.weight, row.description, row.navigation_index, row.outline_coordinates))
   }
 
 }

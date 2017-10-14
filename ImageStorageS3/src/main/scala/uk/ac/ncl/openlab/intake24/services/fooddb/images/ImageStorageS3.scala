@@ -37,7 +37,6 @@ class ImageStorageS3 @Inject()(s3client: AmazonS3,
       s3client.putObject(settings.bucketName, path, sourceFile.toFile)
 
       logger.debug(s"Uploading ${sourceFile.toString()} to S3 bucket ${settings.bucketName} using name $path")
-
       Right(suggestedPath)
     } catch {
       case e: Throwable => Left(ImageStorageError(e))

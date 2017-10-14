@@ -10,6 +10,8 @@ case class GuideImageFull(meta: GuideImageMeta, imageMapId: String, path: String
 
 case class GuideImageMeta(id: String, description: String)
 
+case class PatchGuideImageObjectsRequest(imageWidth: Double, imageHeight: Double, objects: Seq[GuideImageMapObject])
+
 case class GuideImageMapObject(weight: Double, description: String, navigationIndex: Int, outlineCoordinates: Seq[Double])
 
 trait GuideImageAdminService extends GuideImageService {
@@ -26,8 +28,10 @@ trait GuideImageAdminService extends GuideImageService {
 
   def patchGuideImageMeta(id: String, meta: GuideImageMeta): Either[UpdateError, GuideImageMeta]
 
-  def patchGuideImageObjects(id: String, objects: Seq[GuideImageMapObject]): Either[UpdateError, Seq[GuideImageMapObject]]
+  def patchGuideImageObjects(id: String, aspectRatio: Double, objects: Seq[GuideImageMapObject]): Either[UpdateError, Seq[GuideImageMapObject]]
 
   def deleteGuideImageObject(imageMapId: String, imageMapObjectId: Long): Either[DeleteError, Unit]
+
+  def getImageMapId(id: String): Either[LookupError, String]
 
 }
