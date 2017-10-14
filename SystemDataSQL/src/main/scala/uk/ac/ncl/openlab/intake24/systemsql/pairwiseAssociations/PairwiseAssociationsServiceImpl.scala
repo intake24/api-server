@@ -21,16 +21,20 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
 
   private var associationRules = getAssociationRules()
 
-  override def recommend(locale: String, items: Seq[String]): Seq[(String, Double)] = associationRules.map { ar =>
-    ar.get(locale).map { rules =>
-      val params = rules.getParams()
-      if (params.numberOfTransactions < settings.minimumNumberOfSurveySubmissions || items.isEmpty) {
-        params.occurrences.map(o => o._1 -> o._2.toDouble).toSeq.sortBy(-_._2)
-      } else {
-        rules.recommend(items)
-      }
-    }.getOrElse(Nil)
+  override def recommend(locale: String, items: Seq[String]): Seq[(String, Double)] = extractPairwiseRules(locale) { rules =>
+    val params = rules.getParams()
+    if (params.numberOfTransactions < settings.minimumNumberOfSurveySubmissions || items.isEmpty) {
+      params.occurrences.map(o => o._1 -> o._2.toDouble).toSeq.sortBy(-_._2)
+    } else {
+      rules.recommend(items)
+    }
   }.getOrElse(Nil)
+
+  override def getOccurrences(locale: String): Map[String, Int] = {
+    extractPairwiseRules(locale) { rules =>
+      rules.getParams().occurrences
+    }.getOrElse(Map[String, Int]())
+  }
 
   override def addTransactions(surveyId: String, items: Seq[Seq[String]]): Unit = getValidSurvey(surveyId, "addTransactions").map { surveyParams =>
     associationRules.map { localeAr =>
@@ -60,6 +64,10 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
       case Right(_) => associationRules = getAssociationRules()
     }
   }
+
+  private def extractPairwiseRules[T](localeId: String)(f: PairwiseAssociationRules => T): Option[T] = associationRules.map { localeAr =>
+    localeAr.get(localeId).map(rules => f(rules))
+  } getOrElse (None)
 
   private def getSurveySubmissions(survey: SurveyParametersOut): Seq[Submission] = {
     val submissionCount = getSubmissionCount(survey.id)
@@ -110,8 +118,8 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
 
   private def getAssociationRules() = {
     val associationRules = dataService.getAssociations()
-    associationRules match {
-      case Left(dbError) => logger.error(dbError.exception.getMessage)
+    associationRules.left.foreach { dbError =>
+      logger.error(dbError.exception.getMessage)
     }
     associationRules
   }

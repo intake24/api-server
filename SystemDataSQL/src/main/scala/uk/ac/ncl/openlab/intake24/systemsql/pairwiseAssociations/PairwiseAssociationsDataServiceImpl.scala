@@ -51,6 +51,8 @@ class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") va
   private case class TransactionCountRow(locale: String, transactions_count: Int)
 
   override def getAssociations(): Either[UnexpectedDatabaseError, Map[String, PairwiseAssociationRules]] = {
+    val test = getTransactionCounts()
+    println(test)
     for (
       transactionCounts <- getTransactionCounts();
       occurrences <- getOccurrenceMap();

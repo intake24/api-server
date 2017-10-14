@@ -13,7 +13,8 @@ case class PairwiseAssociationsServiceConfiguration(minimumNumberOfSurveySubmiss
                                                     ignoreSurveysContaining: Seq[String],
                                                     useAfterNumberOfTransactions: Int,
                                                     rulesUpdateBatchSize: Int,
-                                                    refreshAtTime: String) {
+                                                    refreshAtTime: String,
+                                                    minInputSearchSize: Int) {
 
   def nextRefreshIn: FiniteDuration = {
     val parsedParams = refreshAtTime.split(":").map(_.toInt)
@@ -31,6 +32,8 @@ case class PairwiseAssociationsServiceConfiguration(minimumNumberOfSurveySubmiss
 trait PairwiseAssociationsService {
 
   def recommend(locale: String, items: Seq[String]): Seq[(String, Double)]
+
+  def getOccurrences(locale: String): Map[String, Int]
 
   def addTransactions(surveyId: String, items: Seq[Seq[String]]): Unit
 

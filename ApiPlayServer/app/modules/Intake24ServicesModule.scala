@@ -116,14 +116,15 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
 
   @Provides
   @Singleton
-  def pairwiseAssociationsServiceSettings(configuration: Configuration): PairwiseAssociationsServiceConfiguration = {
-    val minimumNumberOfSurveySubmissions = configuration.get[Int]("intake24.pairwiseAssociations.minimumNumberOfSurveySubmissions")
-    val ignoreSurveysContaining = configuration.get[Seq[String]]("intake24.pairwiseAssociations.ignoreSurveysContaining")
-    val useAfterNumberOfTransactions = configuration.get[Int]("intake24.pairwiseAssociations.useAfterNumberOfTransactions")
-    val rulesUpdateBatchSize = configuration.get[Int]("intake24.pairwiseAssociations.rulesUpdateBatchSize")
-    val refreshAtTime = configuration.get[String]("intake24.pairwiseAssociations.refreshAtTime")
-    PairwiseAssociationsServiceConfiguration(minimumNumberOfSurveySubmissions, ignoreSurveysContaining, useAfterNumberOfTransactions, rulesUpdateBatchSize, refreshAtTime)
-  }
+  def pairwiseAssociationsServiceSettings(configuration: Configuration): PairwiseAssociationsServiceConfiguration =
+    PairwiseAssociationsServiceConfiguration(
+      configuration.get[Int]("intake24.pairwiseAssociations.minimumNumberOfSurveySubmissions"),
+      configuration.get[Seq[String]]("intake24.pairwiseAssociations.ignoreSurveysContaining"),
+      configuration.get[Int]("intake24.pairwiseAssociations.useAfterNumberOfTransactions"),
+      configuration.get[Int]("intake24.pairwiseAssociations.rulesUpdateBatchSize"),
+      configuration.get[String]("intake24.pairwiseAssociations.refreshAtTime"),
+      configuration.get[Int]("intake24.pairwiseAssociations.minInputSearchSize")
+    )
 
   def configure() = {
     // Utility services
