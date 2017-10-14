@@ -274,7 +274,7 @@ class GuideImageAdminImpl @Inject()(@Named("intake24_foods")
       """.stripMargin
     val outline = s"{${obj.outlineCoordinates.toArray.mkString(",")}}"
     val row = SQL(insertQ).on(
-      'image_map_id -> guideImageId,
+      'image_map_id -> imageMapId,
       'id -> imageMapObjectId,
       'description -> obj.description,
       'navigation_index -> obj.navigationIndex,
