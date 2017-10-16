@@ -4,6 +4,7 @@ import java.time.{ZoneId, ZonedDateTime}
 import javax.inject.{Inject, Singleton}
 
 import org.slf4j.LoggerFactory
+import uk.ac.ncl.openlab.intake24.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.pairwiseAssociationRules.PairwiseAssociationRules
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, SurveyAdminService, SurveyParametersOut}
 import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsDataService, PairwiseAssociationsService, PairwiseAssociationsServiceConfiguration}
@@ -51,7 +52,9 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
 
   override def refresh(): Unit = {
     val foldGraph = Map[String, PairwiseAssociationRules]().withDefaultValue(PairwiseAssociationRules(None))
-    val graph = surveyAdminService.listSurveys().getOrElse(Nil)
+    val surveys = surveyAdminService.listSurveys()
+    surveys.left.foreach(e => logger.error(e.exception.getMessage))
+    val graph = surveys.getOrElse(Nil)
       .foldLeft(foldGraph) { (foldGraph, survey) =>
         getSurveySubmissions(survey).foldLeft(foldGraph) { (foldGraph, submission) =>
           val localeRules = foldGraph(submission.locale)

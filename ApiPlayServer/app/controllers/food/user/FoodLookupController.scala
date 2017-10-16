@@ -65,7 +65,7 @@ class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex], foodDe
       case Some(index) => {
         val lookupResult = index.lookup(description, Math.max(0, Math.min(maxResults, 100)))
 
-        val sortedFoodHeaders = getSortedFoods(locale, lookupResult).map(_.food)
+        val sortedFoodHeaders = getSortedFoods(locale, lookupResult, selectedFoods).map(_.food)
         val sortedCategoryHeaders = lookupResult.categories.sortBy(_.matchCost).map(_.category)
 
         Right(LookupResult(sortedFoodHeaders, sortedCategoryHeaders))
@@ -82,9 +82,10 @@ class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex], foodDe
     }
   }
 
-  private def getSortedFoods(locale: String, lookupResult: IndexLookupResult): Seq[MatchedFood] = {
+  private def getSortedFoods(locale: String, lookupResult: IndexLookupResult, selectedFoods: Seq[String]): Seq[MatchedFood] = {
     val foundFoodCodes = lookupResult.foods.map(_.food.code)
-    val srtMap = getLookupSortMap(locale, Nil).filter(i => foundFoodCodes.contains(i._1))
+    val gr = getLookupSortMap(locale, selectedFoods)
+    val srtMap = gr.filter(i => foundFoodCodes.contains(i._1))
     val getScore = (code: String) => srtMap.getOrElse(code, 0d)
 
     lookupResult.foods.sortWith {
