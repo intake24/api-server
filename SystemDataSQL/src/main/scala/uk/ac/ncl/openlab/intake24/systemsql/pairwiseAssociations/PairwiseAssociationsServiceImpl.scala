@@ -63,8 +63,11 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
         }
       }
     dataService.writeAssociations(graph) match {
-      case Left(e) => logger.error(s"Failed to refresh PairwiseAssociations ${e.exception.getMessage}")
-      case Right(_) => associationRules = getAssociationRules()
+      case Left(e) =>
+        logger.error(s"Failed to refresh PairwiseAssociations ${e.exception.getMessage}")
+      case Right(_) =>
+        logger.debug(s"Successfully refreshed Pairwise associations")
+        associationRules = getAssociationRules()
     }
   }
 
