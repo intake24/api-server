@@ -100,7 +100,7 @@ object PairwiseAssociationsMigration extends Migration {
     println("Done")
   }
 
-  private def getOccurrenceGraph()(implicit connection: Connection) = {
+  private def getOccurrenceGraph()(implicit connection: Connection): Map[String, PairwiseAssociationRules] = {
     val minSubmissionCount = 50
     val batchSize = 50
     val occurrenceGraph = Map[String, PairwiseAssociationRules]().withDefaultValue(PairwiseAssociationRules(None))
@@ -117,7 +117,7 @@ object PairwiseAssociationsMigration extends Migration {
         } else {
           println(s"Processing survey $surveyId")
           Range(0, submissionCount, batchSize).foldLeft(ocMp) { (ocMp, offset) =>
-            val subs = getSubmissions(surveyId, offset).foldLeft(ocMp)(addSubmissionToOccurrenceGraph)
+            val subs = getSubmissions(surveyId, offset, batchSize).foldLeft(ocMp)(addSubmissionToOccurrenceGraph)
             println(s"  processed ${offset + subs.size} out of $submissionCount")
             subs
           }
@@ -151,8 +151,8 @@ object PairwiseAssociationsMigration extends Migration {
     SQL(countQuery).on('survey_id -> surveyId).executeQuery().as(SqlParser.int(1).single)
   }
 
-  private def getSubmissions(surveyId: String, offset: Int)(implicit connection: Connection): List[Submission] = {
-    getSubmissionIds(surveyId, offset).foldLeft(List[Submission]()) {
+  private def getSubmissions(surveyId: String, offset: Int, limit: Int)(implicit connection: Connection): List[Submission] = {
+    getSubmissionIds(surveyId, offset, limit).foldLeft(List[Submission]()) {
       (acc, submissionId) =>
         getSubmittedFoods(submissionId) match {
           case Nil => acc
@@ -163,7 +163,7 @@ object PairwiseAssociationsMigration extends Migration {
     }
   }
 
-  private def getSubmissionIds(surveyId: String, offset: Int)(implicit connection: Connection) = {
+  private def getSubmissionIds(surveyId: String, offset: Int, limit: Int)(implicit connection: Connection) = {
     val q =
       """
         |SELECT survey_submissions.id
@@ -172,8 +172,9 @@ object PairwiseAssociationsMigration extends Migration {
         |WHERE surveys.id = {survey_id}
         |ORDER BY survey_submissions.end_time ASC
         |OFFSET {offset}
+        |LIMIT {limit}
       """.stripMargin
-    SQL(q).on('survey_id -> surveyId, 'offset -> offset).executeQuery().as(SqlParser.scalar(anorm.Column.columnToUUID).*)
+    SQL(q).on('survey_id -> surveyId, 'offset -> offset, 'limit -> limit).executeQuery().as(SqlParser.scalar(anorm.Column.columnToUUID).*)
   }
 
   private def getSubmittedFoods(submissionId: UUID)(implicit connection: Connection) = {

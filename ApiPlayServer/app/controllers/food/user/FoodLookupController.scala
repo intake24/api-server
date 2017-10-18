@@ -28,7 +28,8 @@ import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound}
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodBrowsingService
-import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, Splitter}
+import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, IndexLookupResult, MatchedFood, Splitter}
+import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsService, PairwiseAssociationsServiceConfiguration}
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.FoodPopularityService
 import uk.ac.ncl.openlab.intake24.{UserCategoryHeader, UserFoodHeader}
 
@@ -40,6 +41,8 @@ case class LookupResult(foods: Seq[UserFoodHeader], categories: Seq[UserCategory
 
 class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex], foodDescriptionSplitters: Map[String, Splitter],
                                      foodBrowsingService: FoodBrowsingService, foodPopularityService: FoodPopularityService,
+                                     pairwiseAssociationsService: PairwiseAssociationsService,
+                                     pairwiseAssociationsConfig: PairwiseAssociationsServiceConfiguration,
                                      rab: Intake24RestrictedActionBuilder,
                                      playBodyParsers: PlayBodyParsers,
                                      val controllerComponents: ControllerComponents,
@@ -57,49 +60,59 @@ class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex], foodDe
       }
   }
 
-  private def lookupImpl(locale: String, description: String, maxResults: Int): Either[LookupError, LookupResult] = {
+  private def lookupImpl(locale: String, description: String, selectedFoods: Seq[String], maxResults: Int): Either[LookupError, LookupResult] = {
     foodIndexes.get(locale) match {
       case Some(index) => {
         val lookupResult = index.lookup(description, Math.max(0, Math.min(maxResults, 100)))
 
-        foodPopularityService.getPopularityCount(lookupResult.foods.map(_.food.code)).right.map {
-          popularityCounters =>
+        val sortedFoodHeaders = getSortedFoods(locale, lookupResult, selectedFoods).map(_.food)
+        val sortedCategoryHeaders = lookupResult.categories.sortBy(_.matchCost).map(_.category)
 
-            val sortedFoods = lookupResult.foods.sortWith {
-              (f1, f2) =>
-                val pop1 = popularityCounters(f1.food.code)
-                val pop2 = popularityCounters(f2.food.code)
-
-                if (pop1 == pop2)
-                  f1.matchCost < f2.matchCost
-                else
-                  pop1 > pop2
-            }
-
-            val sortedFoodHeaders = sortedFoods.map(_.food)
-
-            val sortedCategoryHeaders = lookupResult.categories.sortBy(_.matchCost).map(_.category)
-
-            LookupResult(sortedFoodHeaders, sortedCategoryHeaders)
-        }
+        Right(LookupResult(sortedFoodHeaders, sortedCategoryHeaders))
       }
       case None => Left(RecordNotFound(new RuntimeException(s"Food index not available for locale $locale")))
     }
   }
 
-  def lookup(locale: String, description: String, maxResults: Int) = rab.restrictToAuthenticated {
+  private def getLookupSortMap(locale: String, selectedFoods: Seq[String]): Map[String, Double] = {
+    if (selectedFoods.size < pairwiseAssociationsConfig.minInputSearchSize) {
+      pairwiseAssociationsService.getOccurrences(locale).map(i => i._1 -> i._2.toDouble)
+    } else {
+      pairwiseAssociationsService.recommend(locale, selectedFoods).groupBy(_._1).map(i => i._1 -> i._2.head._2)
+    }
+  }
+
+  private def getSortedFoods(locale: String, lookupResult: IndexLookupResult, selectedFoods: Seq[String]): Seq[MatchedFood] = {
+    val foundFoodCodes = lookupResult.foods.map(_.food.code)
+    val gr = getLookupSortMap(locale, selectedFoods)
+    val srtMap = gr.filter(i => foundFoodCodes.contains(i._1))
+    val getScore = (code: String) => srtMap.getOrElse(code, 0d)
+
+    lookupResult.foods.sortWith {
+      (f1, f2) =>
+        val pop1 = getScore(f1.food.code)
+        val pop2 = getScore(f2.food.code)
+
+        if (pop1 == pop2)
+          f1.matchCost < f2.matchCost
+        else
+          pop1 > pop2
+    }
+  }
+
+  def lookup(locale: String, description: String, selectedFoods: Seq[String], maxResults: Int) = rab.restrictToAuthenticated {
     _ =>
       Future {
-        translateDatabaseResult(lookupImpl(locale, description, maxResults))
+        translateDatabaseResult(lookupImpl(locale, description, selectedFoods, maxResults))
       }
   }
 
   //FIXME: bad performance due to individual queries for every food and category
-  def lookupInCategory(locale: String, description: String, categoryCode: String, maxResult: Int) = rab.restrictToAuthenticated {
+  def lookupInCategory(locale: String, description: String, categoryCode: String, selectedFoods: Seq[String], maxResult: Int) = rab.restrictToAuthenticated {
     _ =>
       Future {
         val result = for (
-          lookupResult <- lookupImpl(locale, description, maxResult).right;
+          lookupResult <- lookupImpl(locale, description, selectedFoods, maxResult).right;
           foodSuperCategories <- sequence(lookupResult.foods.map(f => foodBrowsingService.getFoodAllCategories(f.code).right.map(sc => (f.code -> sc)))).right.map(_.toMap).right;
           categorySuperCategories <- sequence(lookupResult.categories.map(c => foodBrowsingService.getCategoryAllCategories(c.code).right.map(sc => (c.code -> sc)))).right.map(_.toMap).right
         ) yield LookupResult(lookupResult.foods.filter(f => foodSuperCategories(f.code).contains(categoryCode)),

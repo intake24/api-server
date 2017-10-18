@@ -3,11 +3,11 @@ package uk.ac.ncl.openlab.intake24.systemsql.pairwiseAssociations
 import javax.inject.{Inject, Named}
 import javax.sql.DataSource
 
+import anorm.{BatchSql, Macro, NamedParameter, SQL}
+import uk.ac.ncl.openlab.intake24.errors.{UnexpectedDatabaseError, UpdateError}
 import uk.ac.ncl.openlab.intake24.pairwiseAssociationRules.{PairwiseAssociationRules, PairwiseAssociationRulesConstructorParams}
 import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.PairwiseAssociationsDataService
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
-import anorm.{BatchSql, Macro, NamedParameter, SQL}
-import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound, UnexpectedDatabaseError}
 
 /**
   * Created by Tim Osadchiy on 02/10/2017.
@@ -51,45 +51,96 @@ class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") va
   private case class TransactionCountRow(locale: String, transactions_count: Int)
 
   override def getAssociations(): Either[UnexpectedDatabaseError, Map[String, PairwiseAssociationRules]] = {
+    val test = getTransactionCounts()
+    println(test)
     for (
       transactionCounts <- getTransactionCounts();
       occurrences <- getOccurrenceMap();
-      coOccurrences <- getCoOccurrenceMap();
-      associationRules = transactionCounts.flatMap { transactionNode =>
-        for (
-          occurrenceMap <- occurrences.get(transactionNode._1);
-          coOccurrenceMap <- coOccurrences.get(transactionNode._1);
-          paramsNode = transactionNode._1 -> {
-            val params = PairwiseAssociationRulesConstructorParams(transactionNode._2, occurrenceMap, coOccurrenceMap)
-            PairwiseAssociationRules(Some(params))
+      coOccurrences <- getCoOccurrenceMap()
+    ) yield occurrences.flatMap { occurrenceNode =>
+      for (
+        transactionCount <- transactionCounts.get(occurrenceNode._1);
+        coOccurrenceMap <- coOccurrences.get(occurrenceNode._1);
+        paramsNode = occurrenceNode._1 -> {
+          val params = PairwiseAssociationRulesConstructorParams(transactionCount, occurrenceNode._2, coOccurrenceMap)
+          PairwiseAssociationRules(Some(params))
+        }
+      ) yield paramsNode
+    }
+  }
+
+  override def writeAssociations(localeAssociations: Map[String, PairwiseAssociationRules]): Either[UpdateError, Unit] = tryWithConnection {
+    implicit conn =>
+      withTransaction {
+        val occurrenceUpdateParams = localeAssociations.flatMap { localeNode =>
+          localeNode._2.getParams().occurrences.map { ocNode =>
+            Seq[NamedParameter]('locale -> localeNode._1, 'food_code -> ocNode._1, 'occurrences -> ocNode._2)
           }
-        ) yield paramsNode
+        }.toSeq
+        val coOccurrenceUpdateParams = localeAssociations.flatMap { localeNode =>
+          localeNode._2.getParams().coOccurrences.flatMap { ocNode =>
+            ocNode._2.map { consItemNode =>
+              Seq[NamedParameter]('locale -> localeNode._1, 'antecedent_food_code -> ocNode._1, 'consequent_food_code -> consItemNode._1, 'occurrences -> consItemNode._2)
+            }
+          }
+        }.toSeq
+        val transactionsUpdateParams = localeAssociations.map { localeNode =>
+          Seq[NamedParameter]('locale -> localeNode._1, 'transactions_count -> localeNode._2.getParams().numberOfTransactions)
+        }.toSeq
+
+        SQL(
+          """
+            |TRUNCATE pairwise_associations_occurrences;
+            |TRUNCATE pairwise_associations_co_occurrences;
+            |TRUNCATE pairwise_associations_transactions_count;
+          """.stripMargin).execute()
+
+        if (occurrenceUpdateParams.nonEmpty && coOccurrenceUpdateParams.nonEmpty && transactionsUpdateParams.nonEmpty) {
+          BatchSql(
+            """
+              |INSERT INTO pairwise_associations_occurrences (locale, food_code, occurrences)
+              |VALUES ({locale}, {food_code}, {occurrences});
+            """.stripMargin, occurrenceUpdateParams.head, occurrenceUpdateParams.tail: _*).execute()
+
+          BatchSql(
+            """
+              |INSERT INTO pairwise_associations_co_occurrences (locale, antecedent_food_code, consequent_food_code, occurrences)
+              |VALUES ({locale}, {antecedent_food_code}, {consequent_food_code}, {occurrences});
+            """.stripMargin, coOccurrenceUpdateParams.head, coOccurrenceUpdateParams.tail: _*).execute()
+
+          BatchSql(
+            """
+              |INSERT INTO pairwise_associations_transactions_count (locale, transactions_count)
+              |VALUES ({locale}, {transactions_count});
+            """.stripMargin, transactionsUpdateParams.head, transactionsUpdateParams.tail: _*).execute()
+        }
+        Right(())
       }
-    ) yield associationRules
   }
 
   override def addTransactions(locale: String, transactions: Seq[Seq[String]]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
-    implicit connection =>
-      val p = PairwiseAssociationRules(None)
-      p.addTransactions(transactions)
+    implicit conn =>
+      withTransaction {
+        val p = PairwiseAssociationRules(None)
+        p.addTransactions(transactions)
 
-      val params = p.getParams()
-      val coOccurrenceUpdateParams = params.coOccurrences.flatMap { antFoodNode =>
-        antFoodNode._2.map { consFoodNode =>
-          Seq[NamedParameter]('locale -> locale, 'antecedent_food_code -> antFoodNode._1,
-            'consequent_food_code -> consFoodNode._1, 'occurrences -> consFoodNode._2)
-        }
-      }.toSeq
-      val occurrenceUpdateParams = params.occurrences.map { node =>
-        Seq[NamedParameter]('locale -> locale, 'food_code -> node._1, 'occurrences -> node._2)
-      }.toSeq
-      val transactionCountsUpdateParams = Seq[NamedParameter]('locale -> locale, 'transactions_count -> params.numberOfTransactions)
+        val params = p.getParams()
+        val coOccurrenceUpdateParams = params.coOccurrences.flatMap { antFoodNode =>
+          antFoodNode._2.map { consFoodNode =>
+            Seq[NamedParameter]('locale -> locale, 'antecedent_food_code -> antFoodNode._1,
+              'consequent_food_code -> consFoodNode._1, 'occurrences -> consFoodNode._2)
+          }
+        }.toSeq
+        val occurrenceUpdateParams = params.occurrences.map { node =>
+          Seq[NamedParameter]('locale -> locale, 'food_code -> node._1, 'occurrences -> node._2)
+        }.toSeq
+        val transactionCountsUpdateParams = Seq[NamedParameter]('locale -> locale, 'transactions_count -> params.numberOfTransactions)
 
-      BatchSql(coOccurrenceUpdateSql, coOccurrenceUpdateParams.head, coOccurrenceUpdateParams.tail: _*).execute()
-      BatchSql(occurrenceUpdateSql, occurrenceUpdateParams.head, occurrenceUpdateParams.tail: _*).execute()
-      SQL(transactionCountUpdateSql).on(transactionCountsUpdateParams: _*).execute()
-
-      Right(())
+        BatchSql(coOccurrenceUpdateSql, coOccurrenceUpdateParams.head, coOccurrenceUpdateParams.tail: _*).execute()
+        BatchSql(occurrenceUpdateSql, occurrenceUpdateParams.head, occurrenceUpdateParams.tail: _*).execute()
+        SQL(transactionCountUpdateSql).on(transactionCountsUpdateParams: _*).execute()
+        Right(())
+      }
   }
 
   private def getCoOccurrenceMap(): Either[UnexpectedDatabaseError, Map[String, Map[String, Map[String, Int]]]] = tryWithConnection {

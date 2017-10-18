@@ -2,8 +2,8 @@
 # Food lookup and browser
 
 GET         /foods/:locale/split-description             controllers.food.user.FoodLookupController.getSplitSuggestion(locale: String, desc: String)
-GET         /foods/:locale/lookup                        controllers.food.user.FoodLookupController.lookup(locale: String, desc: String, limit: Int = 50)
-GET         /foods/:locale/lookup-in-category            controllers.food.user.FoodLookupController.lookupInCategory(locale: String, desc: String, category: String, limit: Int = 50)
+GET         /foods/:locale/lookup                        controllers.food.user.FoodLookupController.lookup(locale: String, desc: String, existing: Seq[String], limit: Int = 50)
+GET         /foods/:locale/lookup-in-category            controllers.food.user.FoodLookupController.lookupInCategory(locale: String, desc: String, category: String, existing: Seq[String], limit: Int = 50)
 
 GET         /categories/:locale/:code                    controllers.food.user.FoodDataController.getCategoryContents(code: String, locale: String)
 GET         /categories/:locale                          controllers.food.user.FoodDataController.getRootCategories(locale: String)
@@ -25,4 +25,4 @@ GET         /portion-size/drinkware/:id                  controllers.food.user.F
 
 # Food composition
 
-GET         /foods/:locale/:code/composition               controllers.food.user.FoodDataController.getFoodComposition(code: String, locale: String, weight: Option[Double])
+GET         /foods/:locale/:code/composition             controllers.food.user.FoodDataController.getFoodComposition(code: String, locale: String, weight: Option[Double])
