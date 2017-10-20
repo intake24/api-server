@@ -1,47 +1,59 @@
 package uk.ac.ncl.openlab.intake24.systemsql.pairwiseAssociations
 
+import java.sql.Connection
 import javax.inject.{Inject, Named}
 import javax.sql.DataSource
 
 import anorm.{BatchSql, Macro, NamedParameter, SQL}
+import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.errors.{UnexpectedDatabaseError, UpdateError}
 import uk.ac.ncl.openlab.intake24.pairwiseAssociationRules.{PairwiseAssociationRules, PairwiseAssociationRulesConstructorParams}
 import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.PairwiseAssociationsDataService
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
+
+import scala.concurrent.{Future, Promise}
 
 /**
   * Created by Tim Osadchiy on 02/10/2017.
   */
 class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends PairwiseAssociationsDataService with SqlDataService {
 
-  private val coOccurrenceSelectSql = "SELECT * FROM pairwise_associations_co_occurrences;"
+  private final val pairwiseAssociationsOccurrencesTN = "pairwise_associations_occurrences"
+  private final val pairwiseAssociationsCoOccurrencesTN = "pairwise_associations_co_occurrences"
+  private final val pairwiseAssociationsTransactionsCountTN = "pairwise_associations_transactions_count"
 
-  private val occurrencesSelectSql = "SELECT * FROM pairwise_associations_occurrences;"
+  private val logger = LoggerFactory.getLogger(getClass)
 
-  private val transactionsCountSelectSql = "SELECT * FROM pairwise_associations_transactions_count;"
+  private val coOccurrenceSelectSql = s"SELECT * FROM $pairwiseAssociationsCoOccurrencesTN;"
+
+  private val occurrencesSelectSql = s"SELECT * FROM $pairwiseAssociationsOccurrencesTN;"
+
+  private val transactionsCountSelectSql = s"SELECT * FROM $pairwiseAssociationsTransactionsCountTN;"
+
+  private val tableCopySuffix = "_copy"
 
   private val coOccurrenceUpdateSql =
-    """
-      |INSERT INTO pairwise_associations_co_occurrences (locale, antecedent_food_code, consequent_food_code, occurrences)
-      |VALUES ({locale}, {antecedent_food_code}, {consequent_food_code}, {occurrences})
-      |ON CONFLICT (locale, antecedent_food_code, consequent_food_code)
-      |  DO UPDATE SET occurrences = pairwise_associations_co_occurrences.occurrences + {occurrences};
+    s"""
+       |INSERT INTO $pairwiseAssociationsCoOccurrencesTN (locale, antecedent_food_code, consequent_food_code, occurrences)
+       |VALUES ({locale}, {antecedent_food_code}, {consequent_food_code}, {occurrences})
+       |ON CONFLICT (locale, antecedent_food_code, consequent_food_code)
+       |  DO UPDATE SET occurrences = $pairwiseAssociationsCoOccurrencesTN.occurrences + {occurrences};
     """.stripMargin
 
   private val occurrenceUpdateSql =
-    """
-      |INSERT INTO pairwise_associations_occurrences (locale, food_code, occurrences)
-      |VALUES ({locale}, {food_code}, {occurrences})
-      |ON CONFLICT (locale, food_code)
-      |  DO UPDATE SET occurrences = pairwise_associations_occurrences.occurrences + {occurrences};
+    s"""
+       |INSERT INTO $pairwiseAssociationsOccurrencesTN (locale, food_code, occurrences)
+       |VALUES ({locale}, {food_code}, {occurrences})
+       |ON CONFLICT (locale, food_code)
+       |  DO UPDATE SET occurrences = $pairwiseAssociationsOccurrencesTN.occurrences + {occurrences};
     """.stripMargin
 
   private val transactionCountUpdateSql =
-    """
-      |INSERT INTO pairwise_associations_transactions_count (locale, transactions_count)
-      |VALUES ({locale}, {transactions_count})
-      |ON CONFLICT (locale)
-      |  DO UPDATE SET transactions_count = pairwise_associations_transactions_count.transactions_count + {transactions_count};
+    s"""
+       |INSERT INTO $pairwiseAssociationsTransactionsCountTN (locale, transactions_count)
+       |VALUES ({locale}, {transactions_count})
+       |ON CONFLICT (locale)
+       |  DO UPDATE SET transactions_count = $pairwiseAssociationsTransactionsCountTN.transactions_count + {transactions_count};
     """.stripMargin
 
   private case class CoOccurrenceRow(locale: String, antecedent_food_code: String, consequent_food_code: String, occurrences: Int)
@@ -52,7 +64,6 @@ class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") va
 
   override def getAssociations(): Either[UnexpectedDatabaseError, Map[String, PairwiseAssociationRules]] = {
     val test = getTransactionCounts()
-    println(test)
     for (
       transactionCounts <- getTransactionCounts();
       occurrences <- getOccurrenceMap();
@@ -69,53 +80,14 @@ class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") va
     }
   }
 
-  override def writeAssociations(localeAssociations: Map[String, PairwiseAssociationRules]): Either[UpdateError, Unit] = tryWithConnection {
-    implicit conn =>
-      withTransaction {
-        val occurrenceUpdateParams = localeAssociations.flatMap { localeNode =>
-          localeNode._2.getParams().occurrences.map { ocNode =>
-            Seq[NamedParameter]('locale -> localeNode._1, 'food_code -> ocNode._1, 'occurrences -> ocNode._2)
-          }
-        }.toSeq
-        val coOccurrenceUpdateParams = localeAssociations.flatMap { localeNode =>
-          localeNode._2.getParams().coOccurrences.flatMap { ocNode =>
-            ocNode._2.map { consItemNode =>
-              Seq[NamedParameter]('locale -> localeNode._1, 'antecedent_food_code -> ocNode._1, 'consequent_food_code -> consItemNode._1, 'occurrences -> consItemNode._2)
-            }
-          }
-        }.toSeq
-        val transactionsUpdateParams = localeAssociations.map { localeNode =>
-          Seq[NamedParameter]('locale -> localeNode._1, 'transactions_count -> localeNode._2.getParams().numberOfTransactions)
-        }.toSeq
-
-        SQL(
-          """
-            |TRUNCATE pairwise_associations_occurrences;
-            |TRUNCATE pairwise_associations_co_occurrences;
-            |TRUNCATE pairwise_associations_transactions_count;
-          """.stripMargin).execute()
-
-        if (occurrenceUpdateParams.nonEmpty && coOccurrenceUpdateParams.nonEmpty && transactionsUpdateParams.nonEmpty) {
-          BatchSql(
-            """
-              |INSERT INTO pairwise_associations_occurrences (locale, food_code, occurrences)
-              |VALUES ({locale}, {food_code}, {occurrences});
-            """.stripMargin, occurrenceUpdateParams.head, occurrenceUpdateParams.tail: _*).execute()
-
-          BatchSql(
-            """
-              |INSERT INTO pairwise_associations_co_occurrences (locale, antecedent_food_code, consequent_food_code, occurrences)
-              |VALUES ({locale}, {antecedent_food_code}, {consequent_food_code}, {occurrences});
-            """.stripMargin, coOccurrenceUpdateParams.head, coOccurrenceUpdateParams.tail: _*).execute()
-
-          BatchSql(
-            """
-              |INSERT INTO pairwise_associations_transactions_count (locale, transactions_count)
-              |VALUES ({locale}, {transactions_count});
-            """.stripMargin, transactionsUpdateParams.head, transactionsUpdateParams.tail: _*).execute()
-        }
-        Right(())
-      }
+  override def writeAssociations(localeAssociations: Map[String, PairwiseAssociationRules]): Future[Either[UpdateError, Unit]] = {
+    val prom = Promise[Either[UpdateError, Unit]]
+    val thread = new Thread(() => {
+      val r = writeAssociationsToDb(localeAssociations)
+      prom.success(r)
+    })
+    thread.start()
+    prom.future
   }
 
   override def addTransactions(locale: String, transactions: Seq[Seq[String]]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
@@ -141,6 +113,86 @@ class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") va
         SQL(transactionCountUpdateSql).on(transactionCountsUpdateParams: _*).execute()
         Right(())
       }
+  }
+
+  private def writeAssociationsToDb(localeAssociations: Map[String, PairwiseAssociationRules]): Either[UpdateError, Unit] = tryWithConnection {
+    implicit conn =>
+      withTransaction {
+
+        val tableNames = Seq(pairwiseAssociationsOccurrencesTN, pairwiseAssociationsCoOccurrencesTN, pairwiseAssociationsTransactionsCountTN)
+
+        logger.debug("Copying db tables structure")
+        createDbCopies(tableNames, tableCopySuffix)
+
+        localeAssociations.foreach { localeNode =>
+          logger.debug(s"Writing graph for locale: ${localeNode._1}")
+
+          val locale = localeNode._1
+          val params = localeNode._2.getParams()
+
+          logger.debug("Writing occurrences")
+          writeOccurrenceMapToDbInBatch(
+            s"""
+               |INSERT INTO $pairwiseAssociationsOccurrencesTN$tableCopySuffix (locale, food_code, occurrences)
+               |VALUES ({locale}, {food_code}, {occurrences});
+            """.stripMargin,
+            params.occurrences, kv => Seq[NamedParameter]('locale -> locale, 'food_code -> kv._1, 'occurrences -> kv._2)
+          )
+
+          logger.debug("Writing co-occurrences")
+          params.coOccurrences.foreach { coocNode =>
+            logger.debug(s"Writing co-occurrences for ${coocNode._1}")
+            writeOccurrenceMapToDbInBatch(
+              s"""
+                 |INSERT INTO $pairwiseAssociationsCoOccurrencesTN$tableCopySuffix (locale, antecedent_food_code, consequent_food_code, occurrences)
+                 |VALUES ({locale}, {antecedent_food_code}, {consequent_food_code}, {occurrences});
+              """.stripMargin,
+              coocNode._2,
+              consItemNode =>
+                Seq[NamedParameter]('locale -> localeNode._1, 'antecedent_food_code -> coocNode._1, 'consequent_food_code -> consItemNode._1, 'occurrences -> consItemNode._2)
+            )
+          }
+
+          logger.debug("Writing transaction count")
+          SQL(
+            s"""
+               |INSERT INTO $pairwiseAssociationsTransactionsCountTN$tableCopySuffix (locale, transactions_count)
+               |VALUES ({locale}, {transactions_count});
+            """.stripMargin).on('locale -> localeNode._1, 'transactions_count -> params.numberOfTransactions).execute()
+        }
+
+        logger.debug("Committing new tables")
+        commitCopies(tableNames, tableCopySuffix)
+
+        Right(())
+      }
+  }
+
+  private def writeOccurrenceMapToDbInBatch(query: String, mp: Map[String, Int], namedParameterExtractFn: ((String, Int)) => Seq[NamedParameter])(implicit connection: Connection) = {
+    val batchSize = 50
+    val threadSleepFor = 10
+    Range(0, mp.size, batchSize).foreach { offset =>
+      val params = mp.slice(offset, offset + batchSize).map(namedParameterExtractFn).toSeq
+      BatchSql(query, params.head, params.tail: _*).execute()
+      logger.debug(s"Added ${val c = offset + batchSize; if (c > mp.size) mp.size else c} / ${mp.size}")
+      Thread.sleep(threadSleepFor)
+    }
+  }
+
+  private def commitCopies(tableNames: Seq[String], suffix: String)(implicit connection: Connection) = {
+    val q = (tn: String) =>
+      s"""
+         |DROP TABLE $tn;
+         |ALTER TABLE $tn$suffix RENAME TO $tn;
+      """.stripMargin
+    val qs = tableNames.map(q).mkString
+    SQL(qs).execute()
+  }
+
+  private def createDbCopies(tableNames: Seq[String], suffix: String)(implicit conn: Connection) = {
+    val q = (tn: String) => s"CREATE TABLE $tn$suffix (LIKE $tn INCLUDING DEFAULTS INCLUDING CONSTRAINTS INCLUDING INDEXES);"
+    val qs = tableNames.map(q).mkString
+    SQL(qs).execute()
   }
 
   private def getCoOccurrenceMap(): Either[UnexpectedDatabaseError, Map[String, Map[String, Map[String, Int]]]] = tryWithConnection {

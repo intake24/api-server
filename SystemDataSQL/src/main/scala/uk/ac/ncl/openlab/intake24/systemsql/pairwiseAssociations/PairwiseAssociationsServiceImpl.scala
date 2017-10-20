@@ -3,8 +3,8 @@ package uk.ac.ncl.openlab.intake24.systemsql.pairwiseAssociations
 import java.time.{ZoneId, ZonedDateTime}
 import javax.inject.{Inject, Singleton}
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.pairwiseAssociationRules.PairwiseAssociationRules
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, SurveyAdminService, SurveyParametersOut}
 import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsDataService, PairwiseAssociationsService, PairwiseAssociationsServiceConfiguration}
@@ -54,6 +54,8 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
     val foldGraph = Map[String, PairwiseAssociationRules]().withDefaultValue(PairwiseAssociationRules(None))
     val surveys = surveyAdminService.listSurveys()
     surveys.left.foreach(e => logger.error(e.exception.getMessage))
+
+    logger.debug(s"Building new pairwise associations graph")
     val graph = surveys.getOrElse(Nil)
       .foldLeft(foldGraph) { (foldGraph, survey) =>
         getSurveySubmissions(survey).foldLeft(foldGraph) { (foldGraph, submission) =>
@@ -62,12 +64,16 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
           foldGraph + (submission.locale -> localeRules)
         }
       }
-    dataService.writeAssociations(graph) match {
-      case Left(e) =>
-        logger.error(s"Failed to refresh PairwiseAssociations ${e.exception.getMessage}")
-      case Right(_) =>
-        logger.debug(s"Successfully refreshed Pairwise associations")
-        associationRules = getAssociationRules()
+
+    logger.debug(s"Writing pairwise associations graph to database")
+    dataService.writeAssociations(graph).onComplete {
+      _.foreach {
+        case Left(e) =>
+          logger.error(s"Failed to refresh PairwiseAssociations ${e.exception.getMessage}")
+        case Right(_) =>
+          logger.debug(s"Successfully refreshed Pairwise associations")
+          associationRules = getAssociationRules()
+      }
     }
   }
 
