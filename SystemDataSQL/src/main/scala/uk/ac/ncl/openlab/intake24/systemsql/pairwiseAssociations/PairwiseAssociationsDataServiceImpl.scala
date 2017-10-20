@@ -141,7 +141,6 @@ class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") va
 
           logger.debug("Writing co-occurrences")
           params.coOccurrences.foreach { coocNode =>
-            logger.debug(s"Writing co-occurrences for ${coocNode._1}")
             writeOccurrenceMapToDbInBatch(
               s"""
                  |INSERT INTO $pairwiseAssociationsCoOccurrencesTN$tableCopySuffix (locale, antecedent_food_code, consequent_food_code, occurrences)
