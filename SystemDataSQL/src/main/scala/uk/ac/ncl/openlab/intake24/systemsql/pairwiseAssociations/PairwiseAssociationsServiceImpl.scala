@@ -74,15 +74,17 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
 
     })
     for (
-      graph <-graphProm.future;
+      graph <- graphProm.future;
       result <- dataService.writeAssociations(graph)
-    ) yield {result match {
-      case Left(e) =>
-        logger.error(s"Failed to refresh PairwiseAssociations ${e.exception.getMessage}")
-      case Right(_) =>
-        logger.debug(s"Successfully refreshed Pairwise associations")
-        associationRules = getAssociationRules()
-    }}
+    ) yield {
+      result match {
+        case Left(e) =>
+          logger.error(s"Failed to refresh PairwiseAssociations ${e.exception.getMessage}")
+        case Right(_) =>
+          logger.debug(s"Successfully refreshed Pairwise associations")
+          associationRules = getAssociationRules()
+      }
+    }
     t.start()
   }
 
@@ -91,11 +93,14 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
   } getOrElse (None)
 
   private def getSurveySubmissions(survey: SurveyParametersOut): Seq[Submission] = {
+    val threadSleepFor = 10
     val submissionCount = getSubmissionCount(survey.id)
     if (surveyIsValid(survey.id, submissionCount, "getSurveySubmissions")) {
       Range(0, submissionCount, settings.rulesUpdateBatchSize).foldLeft(Seq[Submission]()) { (submissions, offset) =>
+        Thread.sleep(threadSleepFor)
         submissions ++ dataExportService.getSurveySubmissions(survey.id, None, None, offset, settings.rulesUpdateBatchSize, None)
           .map { exportSubmissions =>
+            Thread.sleep(threadSleepFor)
             exportSubmissions.map { expSubmission =>
               val meals = expSubmission.meals.map { meal => meal.foods.map(_.code) }
               Submission(survey.localeId, meals)
