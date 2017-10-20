@@ -20,7 +20,9 @@ class PairwiseAssociationsRefresherImpl @Inject()(settings: PairwiseAssociations
                                                   implicit val executionContext: ExecutionContext)
   extends PairwiseAssociationsRefresher {
 
-  paService.refresh()
+  system.scheduler.scheduleOnce(0.minutes) {
+    paService.refresh()
+  }
 
   system.scheduler.schedule(settings.nextRefreshIn, 24.hours) {
     paService.refresh()

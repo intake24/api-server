@@ -9,6 +9,8 @@ import uk.ac.ncl.openlab.intake24.pairwiseAssociationRules.PairwiseAssociationRu
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, SurveyAdminService, SurveyParametersOut}
 import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsDataService, PairwiseAssociationsService, PairwiseAssociationsServiceConfiguration}
 
+import scala.concurrent.{Future, Promise}
+
 /**
   * Created by Tim Osadchiy on 04/10/2017.
   */
@@ -51,30 +53,37 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
   }
 
   override def refresh(): Unit = {
-    val foldGraph = Map[String, PairwiseAssociationRules]().withDefaultValue(PairwiseAssociationRules(None))
-    val surveys = surveyAdminService.listSurveys()
-    surveys.left.foreach(e => logger.error(e.exception.getMessage))
+    val graphProm = Promise[Map[String, PairwiseAssociationRules]]
+    val t = new Thread(() => {
+      logger.debug(s"Collecting surveys")
+      val surveys = surveyAdminService.listSurveys()
+      surveys.left.foreach(e => logger.error(e.exception.getMessage))
 
-    logger.debug(s"Building new pairwise associations graph")
-    val graph = surveys.getOrElse(Nil)
-      .foldLeft(foldGraph) { (foldGraph, survey) =>
-        getSurveySubmissions(survey).foldLeft(foldGraph) { (foldGraph, submission) =>
-          val localeRules = foldGraph(submission.locale)
-          localeRules.addTransactions(submission.meals)
-          foldGraph + (submission.locale -> localeRules)
+      logger.debug(s"Building new pairwise associations graph")
+      val foldGraph = Map[String, PairwiseAssociationRules]().withDefaultValue(PairwiseAssociationRules(None))
+      val graph = surveys.getOrElse(Nil)
+        .foldLeft(foldGraph) { (foldGraph, survey) =>
+          getSurveySubmissions(survey).foldLeft(foldGraph) { (foldGraph, submission) =>
+            val localeRules = foldGraph(submission.locale)
+            localeRules.addTransactions(submission.meals)
+            foldGraph + (submission.locale -> localeRules)
+          }
         }
-      }
 
-    logger.debug(s"Writing pairwise associations graph to database")
-    dataService.writeAssociations(graph).onComplete {
-      _.foreach {
-        case Left(e) =>
-          logger.error(s"Failed to refresh PairwiseAssociations ${e.exception.getMessage}")
-        case Right(_) =>
-          logger.debug(s"Successfully refreshed Pairwise associations")
-          associationRules = getAssociationRules()
-      }
-    }
+      graphProm.success(graph)
+
+    })
+    for (
+      graph <-graphProm.future;
+      result <- dataService.writeAssociations(graph)
+    ) yield {result match {
+      case Left(e) =>
+        logger.error(s"Failed to refresh PairwiseAssociations ${e.exception.getMessage}")
+      case Right(_) =>
+        logger.debug(s"Successfully refreshed Pairwise associations")
+        associationRules = getAssociationRules()
+    }}
+    t.start()
   }
 
   private def extractPairwiseRules[T](localeId: String)(f: PairwiseAssociationRules => T): Option[T] = associationRules.map { localeAr =>
