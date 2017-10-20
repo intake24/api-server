@@ -56,11 +56,11 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
     val graphProm = Promise[Map[String, PairwiseAssociationRules]]
     val t = new Thread(() => {
       logger.info("Refreshing Pairwise associations")
-      logger.debug(s"Collecting surveys")
+      logger.debug("Collecting surveys")
       val surveys = surveyAdminService.listSurveys()
       surveys.left.foreach(e => logger.error(e.exception.getMessage))
 
-      logger.debug(s"Building new pairwise associations graph")
+      logger.debug("Building new pairwise associations graph")
       val foldGraph = Map[String, PairwiseAssociationRules]().withDefaultValue(PairwiseAssociationRules(None))
       val graph = surveys.getOrElse(Nil)
         .foldLeft(foldGraph) { (foldGraph, survey) =>
