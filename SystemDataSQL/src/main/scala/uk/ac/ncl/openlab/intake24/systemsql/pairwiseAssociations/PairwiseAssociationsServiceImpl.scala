@@ -102,6 +102,7 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
           .map { exportSubmissions =>
             Thread.sleep(threadSleepFor)
             exportSubmissions.map { expSubmission =>
+              Thread.sleep(threadSleepFor)
               val meals = expSubmission.meals.map { meal => meal.foods.map(_.code) }
               Submission(survey.localeId, meals)
             }
