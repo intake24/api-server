@@ -174,7 +174,6 @@ class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") va
     Range(0, mp.size, batchSize).foreach { offset =>
       val params = mp.slice(offset, offset + batchSize).map(namedParameterExtractFn).toSeq
       BatchSql(query, params.head, params.tail: _*).execute()
-      logger.debug(s"Added ${val c = offset + batchSize; if (c > mp.size) mp.size else c} / ${mp.size}")
       Thread.sleep(threadSleepFor)
     }
   }
