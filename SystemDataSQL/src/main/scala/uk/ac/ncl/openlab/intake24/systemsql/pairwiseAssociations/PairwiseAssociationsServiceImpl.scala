@@ -55,6 +55,7 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
   override def refresh(): Unit = {
     val graphProm = Promise[Map[String, PairwiseAssociationRules]]
     val t = new Thread(() => {
+      logger.info("Refreshing Pairwise associations")
       logger.debug(s"Collecting surveys")
       val surveys = surveyAdminService.listSurveys()
       surveys.left.foreach(e => logger.error(e.exception.getMessage))
@@ -81,7 +82,7 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
         case Left(e) =>
           logger.error(s"Failed to refresh PairwiseAssociations ${e.exception.getMessage}")
         case Right(_) =>
-          logger.debug(s"Successfully refreshed Pairwise associations")
+          logger.info(s"Successfully refreshed Pairwise associations")
           associationRules = getAssociationRules()
       }
     }
