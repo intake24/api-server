@@ -8,12 +8,17 @@ GET         /foods/:locale/lookup-in-category            controllers.food.user.F
 GET         /categories/:locale/:code                    controllers.food.user.FoodDataController.getCategoryContents(code: String, locale: String)
 GET         /categories/:locale                          controllers.food.user.FoodDataController.getRootCategories(locale: String)
 
+# Associated foods based on pairwise associations
+
+GET         /foods/associated/:locale                    controllers.food.user.FoodDataController.getPairwiseAssociatedFoods(locale: String, f: Seq[String])
+
 # Food and portion size estimation data
 
 GET         /foods/:locale/:code                         controllers.food.user.FoodDataController.getFoodData(code: String, locale: String)
 GET         /foods/:locale/:code/with-sources            controllers.food.user.FoodDataController.getFoodDataWithSources(code: String, locale: String)
 GET         /foods/:locale/:code/brand-names             controllers.food.user.FoodDataController.getBrandNames(code: String, locale: String)
 GET         /foods/:locale/:code/associated-foods        controllers.food.user.FoodDataController.getAssociatedFoodPrompts(code: String, locale: String)
+
 
 GET         /portion-size/weight                         controllers.food.user.FoodDataController.getWeightPortionSizeMethod()
 GET         /portion-size/as-served/:id                  controllers.food.user.FoodDataController.getAsServedSet(id: String)

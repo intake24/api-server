@@ -40,6 +40,9 @@ case class SourceFoodCompositionTable(tableId: String, recordId: String, url: St
 
 case class UserFoodNutrientData(source: SourceFoodCompositionTable, nutrients: Map[Long, Double])
 
+case class PairwiseAssociatedFoods(categories: Seq[UserCategoryHeader])
+
+
 class FoodDataController @Inject()(foodDataService: FoodDataService,
                                    foodBrowsingService: FoodBrowsingService,
                                    associatedFoodsService: AssociatedFoodsService,
@@ -138,6 +141,13 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
     _ =>
       Future {
         translateDatabaseResult(associatedFoodsService.getAssociatedFoods(code, locale))
+      }
+  }
+
+  def getPairwiseAssociatedFoods(locale: String, f: Seq[String]) = rab.restrictToAuthenticated {
+    _ =>
+      Future {
+        translateDatabaseResult(Right(PairwiseAssociatedFoods(Seq(UserCategoryHeader("BRED", "Bread")))))
       }
   }
 
