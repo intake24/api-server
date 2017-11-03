@@ -25,7 +25,7 @@ import uk.ac.ncl.openlab.intake24.errors.{LocaleError, LookupError, RecordNotFou
 import uk.ac.ncl.openlab.intake24.services.fooddb.user._
 
 @Singleton
-class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDatabaseService {
+class UserFoodDataServiceXmlImpl @Inject()(data: XmlDataSource) extends FoodDatabaseService {
 
   import Util._
 
@@ -97,7 +97,7 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDat
     }
 
   def getAsServedSet(id: String) = data.asServedSets.get(id) match {
-    case Some(set) => Right(UserAsServedSet(set.images(0).url, set.images.map( m => UserAsServedImage(m.url, m.url, m.weight))))
+    case Some(set) => Right(UserAsServedSet(set.images(0).url, set.images.map(m => UserAsServedImage(m.url, m.url, m.weight))))
     case None => Left(RecordNotFound(new RuntimeException(id)))
   }
 
@@ -106,10 +106,12 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDat
     case None => Left(RecordNotFound(new RuntimeException(id)))
   }
 
-  def getDrinkwareSet(id: String) = ??? /* data.drinkwareSets.get(id) match {
-    case Some(set) => Right(set)
-    case None => Left(RecordNotFound(new RuntimeException(id)))
-  }*/
+  def getDrinkwareSet(id: String) = ???
+
+  /* data.drinkwareSets.get(id) match {
+     case Some(set) => Right(set)
+     case None => Left(RecordNotFound(new RuntimeException(id)))
+   }*/
 
   def getAssociatedFoods(foodCode: String, locale: String) =
     checkLocale(locale).right.flatMap {
@@ -143,4 +145,6 @@ class UserFoodDataServiceXmlImpl @Inject() (data: XmlDataSource) extends FoodDat
   override def getImageMap(id: String): Either[LookupError, UserImageMap] = ???
 
   override def getImageMaps(id: Seq[String]): Either[LookupError, Seq[UserImageMap]] = ???
+
+  override def getFoodCategories(code: String, localeId: String, level: Int): Either[LookupError, Seq[CategoryHeader]] = ???
 }

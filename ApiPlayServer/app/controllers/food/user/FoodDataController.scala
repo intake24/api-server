@@ -9,9 +9,11 @@ import play.api.mvc.{BaseController, ControllerComponents}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24._
 import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
+import uk.ac.ncl.openlab.intake24.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageStorageService
 import uk.ac.ncl.openlab.intake24.services.fooddb.user._
 import uk.ac.ncl.openlab.intake24.services.nutrition.FoodCompositionService
+import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.PairwiseAssociationsService
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -55,6 +57,7 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
                                    imageStorageService: ImageStorageService,
                                    jsonBodyParser: JsonBodyParser,
                                    rab: Intake24RestrictedActionBuilder,
+                                   pairwiseAssociationsService: PairwiseAssociationsService,
                                    val controllerComponents: ControllerComponents,
                                    implicit val executionContext: ExecutionContext) extends BaseController with DatabaseErrorHandler with JsonUtils {
 
@@ -147,7 +150,23 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
   def getPairwiseAssociatedFoods(locale: String, f: Seq[String]) = rab.restrictToAuthenticated {
     _ =>
       Future {
-        translateDatabaseResult(Right(PairwiseAssociatedFoods(Seq(UserCategoryHeader("BRED", "Bread")))))
+        val recommendedCategories = pairwiseAssociationsService.recommend(locale, f)
+          .sortBy(-_._2)
+          .take(15)
+          .map { f =>
+            foodBrowsingService.getFoodCategories(f._1, locale, 0).right.map(_.filterNot(_.isHidden).map(c => c -> f._2))
+          }
+        val resp: Either[LookupError, PairwiseAssociatedFoods] = if (recommendedCategories.exists(_.isLeft)) {
+          Left(recommendedCategories.filter(_.isLeft).head.left.get)
+        } else {
+          val categories = recommendedCategories.flatMap(_.right.get)
+            .groupBy(_._1.code).map(n => n._2.head._1 -> n._2.map(_._2).sum)
+            .toSeq
+            .sortBy(-_._2)
+            .map(c => UserCategoryHeader(c._1.code, c._1.localDescription.getOrElse("")))
+          Right(PairwiseAssociatedFoods(categories))
+        }
+        translateDatabaseResult(resp)
       }
   }
 

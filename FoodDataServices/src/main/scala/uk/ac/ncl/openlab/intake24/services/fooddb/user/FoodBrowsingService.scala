@@ -1,7 +1,7 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.user
 
 import uk.ac.ncl.openlab.intake24.errors.{LocalLookupError, LocaleError, LookupError}
-import uk.ac.ncl.openlab.intake24.{UserCategoryContents, UserCategoryHeader}
+import uk.ac.ncl.openlab.intake24.{CategoryHeader, UserCategoryContents, UserCategoryHeader}
 
 sealed trait SourceRecord
 
@@ -51,4 +51,6 @@ trait FoodBrowsingService {
   def getFoodAllCategories(code: String): Either[LookupError, Set[String]]
 
   def getCategoryAllCategories(code: String): Either[LookupError, Set[String]]
+
+  def getFoodCategories(code: String, localeId: String, level: Int): Either[LookupError, Seq[CategoryHeader]]
 }
