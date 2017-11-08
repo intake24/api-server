@@ -1486,7 +1486,9 @@ object SystemDatabaseMigrations {
         ???
 
       }
-    }
+    },
+
+    UxTableMigration
 
 
   )
