@@ -21,7 +21,7 @@ object UxTableMigration extends Migration {
       """|CREATE TABLE ux_events (
          |  id SERIAL PRIMARY KEY,
          |  event_categories VARCHAR(500)[] NOT NULL,
-         |  event_name VARCHAR(500) NOT NULL,
+         |  event_type VARCHAR(500) NOT NULL,
          |  data JSON NOT NULL,
          |  created TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
          |)""".stripMargin).execute()

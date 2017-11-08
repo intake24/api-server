@@ -158,6 +158,9 @@ GET            /admin/weight-targets                                         con
 
 POST           /errors/report                                                controllers.system.ClientErrorReportController.reportError()
 
+# Ux events analysis logs
+POST           /ux-events                                                    controllers.UxEventsController.dispatch()
+
 ->             /user                                                         user.Routes
 ->             /users                                                        users.Routes
 ->             /surveys                                                      surveys.Routes

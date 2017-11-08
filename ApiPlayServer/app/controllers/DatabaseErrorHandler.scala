@@ -37,6 +37,7 @@ trait DatabaseErrorHandler extends Results with JsonUtils {
     case ParentRecordNotFound(e) => BadRequest(toJsonString(ErrorDescription("ParentRecordNotFound", "An object referenced by this object does not exist: " + e.getMessage))).as(ContentTypes.JSON)
     case IllegalParent(_) => BadRequest(toJsonString(ErrorDescription("IllegalParent", "The object references an illegal parent object"))).as(ContentTypes.JSON)
     case ConstraintViolation(name, _) => BadRequest(toJsonString(ErrorDescription("ConstraintViolation", s"Database constraint not met: $name")))
+    case FailedValidation(exception) => handleDatabaseError(exception)
     case UnexpectedDatabaseError(exception) => handleDatabaseError(exception)
   }
 

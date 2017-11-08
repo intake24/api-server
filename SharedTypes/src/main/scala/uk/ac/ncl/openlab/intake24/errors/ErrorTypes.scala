@@ -39,10 +39,10 @@ sealed trait LocalLookupError extends LocalUpdateError
 
 sealed trait LocaleError
   extends LocalLookupError
-  with LocalUpdateError
-  with LocalCreateError
-  with LocalDeleteError
-  with LocaleOrParentError {
+    with LocalUpdateError
+    with LocalCreateError
+    with LocalDeleteError
+    with LocaleOrParentError {
   val exception: Throwable
 }
 
@@ -58,32 +58,32 @@ sealed trait LocalUpdateError extends LocalDependentUpdateError
 
 sealed trait UpdateError
   extends LocalUpdateError
-  with DependentUpdateError {
+    with DependentUpdateError {
   val exception: Throwable
 }
 
 sealed trait LocalCreateError extends AnyError
 
-sealed trait CreateError 
+sealed trait CreateError
   extends LocalCreateError
-  with DependentCreateError {
+    with DependentCreateError {
   val exception: Throwable
 }
 
 sealed trait ParentError
   extends DependentUpdateError
-  with DependentCreateError
-  with LocaleOrParentError {
+    with DependentCreateError
+    with LocaleOrParentError {
   val exception: Throwable
 }
 
 sealed trait LocaleOrParentError
   extends LocalDependentUpdateError
-  with LocalDependentCreateError
+    with LocalDependentCreateError
 
 sealed trait LocalDependentUpdateError extends AnyError
 
-sealed trait DependentUpdateError 
+sealed trait DependentUpdateError
   extends LocalDependentUpdateError
 
 sealed trait LocalDependentCreateError extends AnyError
@@ -102,10 +102,10 @@ case class UndefinedLocale(exception: Throwable) extends LocaleError
 
 case class RecordNotFound(exception: Throwable)
   extends LookupError
-  with FoodCompositionTableError
-  with DeleteError
-  with UpdateError
-  with AnyError
+    with FoodCompositionTableError
+    with DeleteError
+    with UpdateError
+    with AnyError
 
 case class StillReferenced(exception: Throwable) extends DeleteError with UpdateError
 
@@ -121,13 +121,15 @@ case class ConstraintViolation(name: String, exception: Throwable) extends Const
 
 case class TableNotFound(exception: Throwable) extends FoodCompositionTableError
 
+case class FailedValidation(exception: Throwable) extends CreateError with UpdateError with ConstraintError
+
 case class UnexpectedDatabaseError(exception: Throwable)
   extends LocaleError
-  with LookupError
-  with DeleteError
-  with UpdateError
-  with CreateError
-  with FoodCompositionTableError
-  with ParentError
-  with ConstraintError
-  with AnyError
+    with LookupError
+    with DeleteError
+    with UpdateError
+    with CreateError
+    with FoodCompositionTableError
+    with ParentError
+    with ConstraintError
+    with AnyError

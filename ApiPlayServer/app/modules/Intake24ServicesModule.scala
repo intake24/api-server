@@ -45,9 +45,11 @@ import uk.ac.ncl.openlab.intake24.services.nutrition.{DefaultNutrientMappingServ
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsDataService, PairwiseAssociationsService, PairwiseAssociationsServiceConfiguration}
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.{ClientErrorService, FoodPopularityService, SurveyService, UserPhysicalDataService}
+import uk.ac.ncl.openlab.intake24.services.systemdb.uxEvents.UxEventsDataService
 import uk.ac.ncl.openlab.intake24.systemsql.admin._
 import uk.ac.ncl.openlab.intake24.systemsql.pairwiseAssociations.{PairwiseAssociationsDataServiceImpl, PairwiseAssociationsServiceImpl}
 import uk.ac.ncl.openlab.intake24.systemsql.user.{ClientErrorServiceImpl, FoodPopularityServiceImpl, SurveyServiceImpl, UserPhysicalDataServiceImpl}
+import uk.ac.ncl.openlab.intake24.systemsql.uxEvents.UxEventsDataServiceImpl
 
 import collection.JavaConverters._
 
@@ -221,6 +223,9 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     bind(classOf[PairwiseAssociationsDataService]).to(classOf[PairwiseAssociationsDataServiceImpl])
     bind(classOf[PairwiseAssociationsService]).to(classOf[PairwiseAssociationsServiceImpl])
     bind(classOf[PairwiseAssociationsRefresher]).to(classOf[PairwiseAssociationsRefresherImpl]).asEagerSingleton()
+
+    // Ux Events
+    bind(classOf[UxEventsDataService]).to(classOf[UxEventsDataServiceImpl])
 
   }
 }
