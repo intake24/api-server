@@ -29,11 +29,16 @@ object GenerateCsvMappingFromMasterList extends App {
 
   val nutrientNames = lines(0).tail.map(_.trim())
   val units = lines(1).tail.map(_.trim())
+  val localeName = lines(options.rowOffset())(0)
   val localColNames = lines(options.rowOffset()).tail.map(_.trim())
 
   private val rows = nutrientNames.zip(localColNames).zip(units).zipWithIndex.map {
     case (((desc, col), unit), index) => Row(index + 1, desc, unit, col)
   }
+
+  println(s"Mapping for: $localeName")
+  println("---")
+
 
   rows.filterNot(_.col.isEmpty).foreach {
     row =>
