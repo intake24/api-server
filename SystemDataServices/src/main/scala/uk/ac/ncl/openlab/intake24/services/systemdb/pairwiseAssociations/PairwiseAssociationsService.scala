@@ -9,6 +9,14 @@ import scala.concurrent.duration.FiniteDuration
   * Created by Tim Osadchiy on 04/10/2017.
   */
 
+object PairwiseAssociationsServiceSortTypes {
+  val popularity = "popularity"
+  val paRules = "paRules"
+
+  def invalidAlgorithmId(algorithmId: String) = !Seq(popularity, paRules).contains(algorithmId)
+
+}
+
 case class PairwiseAssociationsServiceConfiguration(minimumNumberOfSurveySubmissions: Int,
                                                     ignoreSurveysContaining: Seq[String],
                                                     useAfterNumberOfTransactions: Int,
@@ -31,7 +39,7 @@ case class PairwiseAssociationsServiceConfiguration(minimumNumberOfSurveySubmiss
 
 trait PairwiseAssociationsService {
 
-  def recommend(locale: String, items: Seq[String]): Seq[(String, Double)]
+  def recommend(locale: String, items: Seq[String], sortType: String): Seq[(String, Double)]
 
   def getOccurrences(locale: String): Map[String, Int]
 

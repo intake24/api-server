@@ -13,7 +13,7 @@ import uk.ac.ncl.openlab.intake24.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageStorageService
 import uk.ac.ncl.openlab.intake24.services.fooddb.user._
 import uk.ac.ncl.openlab.intake24.services.nutrition.FoodCompositionService
-import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.PairwiseAssociationsService
+import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsService, PairwiseAssociationsServiceSortTypes}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -63,11 +63,20 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
 
   import uk.ac.ncl.openlab.intake24.errors.ErrorUtils._
 
-  def getCategoryContents(code: String, locale: String) = rab.restrictToAuthenticated {
+  def getCategoryContents(code: String, locale: String, selectedFoods: Seq[String], algorithmId: String) = rab.restrictToAuthenticated {
     _ =>
       Future {
         translateDatabaseResult(foodBrowsingService.getCategoryContents(code, locale).right.map {
-          contents => LookupResult(contents.foods, contents.subcategories)
+          contents => {
+            val foods = if (PairwiseAssociationsServiceSortTypes.invalidAlgorithmId(algorithmId)) {
+              contents.foods
+            } else {
+              val srtFoodMap = pairwiseAssociationsService.recommend(locale, selectedFoods, algorithmId).groupBy(_._1).map(i => i._1 -> i._2.head._2)
+              val srtFoods = contents.foods.map(f => f -> srtFoodMap.getOrElse(f.code, 0d)).sortBy(f => -f._2 -> f._1.localDescription)
+              srtFoods.map(_._1)
+            }
+            LookupResult(foods, contents.subcategories)
+          }
         })
       }
   }
@@ -150,7 +159,7 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
   def getPairwiseAssociatedFoods(locale: String, f: Seq[String]) = rab.restrictToAuthenticated {
     _ =>
       Future {
-        val recommendedCategories = pairwiseAssociationsService.recommend(locale, f)
+        val recommendedCategories = pairwiseAssociationsService.recommend(locale, f, PairwiseAssociationsServiceSortTypes.paRules)
           .sortBy(-_._2)
           .take(15)
           .map { f =>
