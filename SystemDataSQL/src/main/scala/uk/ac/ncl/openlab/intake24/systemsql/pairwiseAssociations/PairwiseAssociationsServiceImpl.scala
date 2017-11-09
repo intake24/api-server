@@ -3,30 +3,35 @@ package uk.ac.ncl.openlab.intake24.systemsql.pairwiseAssociations
 import java.time.{ZoneId, ZonedDateTime}
 import javax.inject.{Inject, Singleton}
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.pairwiseAssociationRules.PairwiseAssociationRules
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, SurveyAdminService, SurveyParametersOut}
-import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsDataService, PairwiseAssociationsService, PairwiseAssociationsServiceConfiguration}
+import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsDataService, PairwiseAssociationsService, PairwiseAssociationsServiceConfiguration, PairwiseAssociationsServiceSortTypes}
 
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Promise
 
 /**
   * Created by Tim Osadchiy on 04/10/2017.
   */
+
 @Singleton
 class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsServiceConfiguration,
                                                 dataService: PairwiseAssociationsDataService,
                                                 surveyAdminService: SurveyAdminService,
+                                                pairwiseAssociationsConfig: PairwiseAssociationsServiceConfiguration,
                                                 dataExportService: DataExportService) extends PairwiseAssociationsService {
 
   private val logger = LoggerFactory.getLogger(getClass)
 
   private var associationRules = getAssociationRules()
 
-  override def recommend(locale: String, items: Seq[String]): Seq[(String, Double)] = extractPairwiseRules(locale) { rules =>
+  override def recommend(locale: String, items: Seq[String], sortType: String = PairwiseAssociationsServiceSortTypes.paRules): Seq[(String, Double)] = extractPairwiseRules(locale) { rules =>
     val params = rules.getParams()
-    if (params.numberOfTransactions < settings.minimumNumberOfSurveySubmissions || items.isEmpty) {
+
+    if (params.numberOfTransactions < settings.minimumNumberOfSurveySubmissions ||
+      items.size < pairwiseAssociationsConfig.minInputSearchSize ||
+      sortType == PairwiseAssociationsServiceSortTypes.popularity) {
       params.occurrences.map(o => o._1 -> o._2.toDouble).toSeq.sortBy(-_._2)
     } else {
       rules.recommend(items)

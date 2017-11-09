@@ -29,7 +29,7 @@ import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
 import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound}
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodBrowsingService
 import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, IndexLookupResult, MatchedFood, Splitter}
-import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsService, PairwiseAssociationsServiceConfiguration}
+import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsService, PairwiseAssociationsServiceConfiguration, PairwiseAssociationsServiceSortTypes}
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.FoodPopularityService
 import uk.ac.ncl.openlab.intake24.{UserCategoryHeader, UserFoodHeader}
 
@@ -39,15 +39,9 @@ case class SplitSuggestion(parts: Seq[String])
 
 case class LookupResult(foods: Seq[UserFoodHeader], categories: Seq[UserCategoryHeader])
 
-object FoodLookupAlgorithmIds {
-  val popularity = "popularity"
-  val paRules = "paRules"
-}
-
 class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex], foodDescriptionSplitters: Map[String, Splitter],
                                      foodBrowsingService: FoodBrowsingService, foodPopularityService: FoodPopularityService,
                                      pairwiseAssociationsService: PairwiseAssociationsService,
-                                     pairwiseAssociationsConfig: PairwiseAssociationsServiceConfiguration,
                                      rab: Intake24RestrictedActionBuilder,
                                      playBodyParsers: PlayBodyParsers,
                                      val controllerComponents: ControllerComponents,
@@ -79,13 +73,8 @@ class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex], foodDe
     }
   }
 
-  private def getLookupSortMap(locale: String, selectedFoods: Seq[String], algorithmId: String): Map[String, Double] = {
-    if (selectedFoods.size < pairwiseAssociationsConfig.minInputSearchSize || algorithmId == FoodLookupAlgorithmIds.popularity) {
-      pairwiseAssociationsService.getOccurrences(locale).map(i => i._1 -> i._2.toDouble)
-    } else {
-      pairwiseAssociationsService.recommend(locale, selectedFoods).groupBy(_._1).map(i => i._1 -> i._2.head._2)
-    }
-  }
+  private def getLookupSortMap(locale: String, selectedFoods: Seq[String], algorithmId: String): Map[String, Double] =
+    pairwiseAssociationsService.recommend(locale, selectedFoods, algorithmId).groupBy(_._1).map(i => i._1 -> i._2.head._2)
 
   private def getSortedFoods(locale: String, lookupResult: IndexLookupResult, selectedFoods: Seq[String], algorithmId: String): Seq[MatchedFood] = {
     val foundFoodCodes = lookupResult.foods.map(_.food.code)
@@ -105,7 +94,7 @@ class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex], foodDe
     }
   }
 
-  def lookup(locale: String, description: String, selectedFoods: Seq[String], maxResults: Int, algorithm: String = FoodLookupAlgorithmIds.paRules) = rab.restrictToAuthenticated {
+  def lookup(locale: String, description: String, selectedFoods: Seq[String], maxResults: Int, algorithm: String = PairwiseAssociationsServiceSortTypes.paRules) = rab.restrictToAuthenticated {
     _ =>
       Future {
         translateDatabaseResult(lookupImpl(locale, description, selectedFoods, maxResults, algorithm))
@@ -113,7 +102,7 @@ class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex], foodDe
   }
 
   //FIXME: bad performance due to individual queries for every food and category
-  def lookupInCategory(locale: String, description: String, categoryCode: String, selectedFoods: Seq[String], maxResult: Int, algorithm: String = FoodLookupAlgorithmIds.paRules) = rab.restrictToAuthenticated {
+  def lookupInCategory(locale: String, description: String, categoryCode: String, selectedFoods: Seq[String], maxResult: Int, algorithm: String = PairwiseAssociationsServiceSortTypes.paRules) = rab.restrictToAuthenticated {
     _ =>
       Future {
         val result = for (
