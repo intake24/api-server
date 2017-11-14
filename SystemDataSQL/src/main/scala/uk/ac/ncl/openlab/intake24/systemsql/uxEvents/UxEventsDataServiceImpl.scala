@@ -20,25 +20,31 @@ class UxEventsDataServiceImpl @Inject()(@Named("intake24_system") val dataSource
 
   private val tableName = "ux_events"
   private val returningFields = "id, event_categories::varchar[], event_type, data::TEXT, created"
+
   private val insertQ =
     s"""
-       |INSERT INTO $tableName (event_categories, event_type, data)
-       |VALUES ({event_categories}::varchar[], {event_type}, {data}::JSON)
-       |RETURNING $returningFields;
+       |INSERT INTO $tableName (event_categories, event_type, data, user_id, session_id, local_timestamp)
+       |VALUES (ARRAY[{event_categories}], {event_type}, {data}::JSON, {user_id}, {session_id}::uuid, {local_timestamp})
     """.stripMargin
+
   private val selectQ = s"SELECT $returningFields FROM $tableName;"
 
-  override def create(uxEvent: UxEventIn): Either[CreateError, UxEventOut] =
+  override def create(uxEvent: UxEventIn): Either[CreateError, Unit] =
     if (uxEvent.eventCategories.isEmpty) {
       Left(FailedValidation(new Exception("UxEvent must have at least one category")))
     } else tryWithConnection {
       implicit conn =>
-        val cats = s"{${uxEvent.eventCategories.mkString(",")}}"
-        val r = SQL(insertQ).on('event_categories -> cats,
+
+        val r = SQL(insertQ).on(
+          'event_categories -> uxEvent.eventCategories,
           'event_type -> uxEvent.eventType,
-          'data -> uxEvent.data)
-          .executeQuery().as(Macro.namedParser[UxEventRow].single)
-        Right(r.toEvent)
+          'data -> uxEvent.data,
+          'user_id -> uxEvent.userId,
+          'local_timestamp -> uxEvent.localTimestamp,
+          'session_id -> uxEvent.sessionId
+        ).execute()
+
+        Right(())
     }
 
 }

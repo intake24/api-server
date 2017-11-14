@@ -6,7 +6,6 @@ import anorm.{BatchSql, NamedParameter, SQL, SqlParser}
 import org.slf4j.Logger
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.URLAuthTokenUtils
 import uk.ac.ncl.openlab.intake24.sql.migrations.{Migration, MigrationFailed}
-
 import anorm.~
 
 object SystemDatabaseMigrations {
@@ -1488,9 +1487,52 @@ object SystemDatabaseMigrations {
       }
     },
 
-    UxTableMigration
+    UxTableMigration,
 
+    new Migration {
+      val versionFrom = 65l
+      val versionTo = 66l
 
+      val description = "Add session_id, user_id and local_time to ux_events"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE ux_events ADD COLUMN session_id uuid NOT NULL").execute()
+        SQL("ALTER TABLE ux_events ADD COLUMN user_id integer").execute()
+        SQL("ALTER TABLE ux_events ADD COLUMN local_timestamp integer").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE ux_events DROP COLUMN session_id").execute()
+        SQL("ALTER TABLE ux_events DROP COLUMN user_id").execute()
+        SQL("ALTER TABLE ux_events DROP COLUMN local_timestamp").execute()
+
+        Right(())
+      }
+    },
+
+    new Migration {
+      val versionFrom = 66l
+      val versionTo = 67l
+
+      val description = "Add user_id foreign key to ux_events"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE ux_events ADD CONSTRAINT user_id_fk FOREIGN KEY(user_id) REFERENCES users(id) ON UPDATE CASCADE").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE ux_events DROP CONSTRAINT user_id_fk").execute()
+
+        Right(())
+      }
+    }
   )
-
 }

@@ -1,6 +1,7 @@
 package controllers
 
 import java.time.ZonedDateTime
+import java.util.UUID
 import javax.inject.Inject
 
 import io.circe.Json
@@ -18,8 +19,8 @@ import scala.concurrent.{ExecutionContext, Future}
   * Created by Tim Osadchiy on 08/11/2017.
   */
 
-case class EmitRequest(eventCategories: Seq[String], eventType: String, data: Json) {
-  def toUxEvent = new UxEventIn(eventCategories, eventType, data.noSpaces)
+case class EmitRequest(eventType: String, eventCategories: Seq[String], sessionId: UUID, localTime: Long, data: Json) {
+  def toUxEvent(userId: Long) = new UxEventIn(eventCategories, eventType, data.noSpaces, userId, sessionId, localTime)
 }
 
 case class EmitResponse(id: Long, eventCategories: Seq[String], eventType: String, data: Json, created: ZonedDateTime)
@@ -41,8 +42,7 @@ class UxEventsController @Inject()(foodAuthChecks: FoodAuthChecks,
   def dispatch() = rab.restrictToAuthenticated(jsonBodyParser.parse[EmitRequest]) {
     req =>
       Future {
-        val uxEvent = uxEventDataService.create(req.body.toUxEvent)
-        translateDatabaseResult(uxEvent.right.flatMap(ue => EmitResponse.fromUxEvent(ue)))
+        translateDatabaseResult(uxEventDataService.create(req.body.toUxEvent(req.subject.userId)))
       }
   }
 
