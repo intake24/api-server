@@ -1499,7 +1499,7 @@ object SystemDatabaseMigrations {
 
         SQL("ALTER TABLE ux_events ADD COLUMN session_id uuid NOT NULL").execute()
         SQL("ALTER TABLE ux_events ADD COLUMN user_id integer").execute()
-        SQL("ALTER TABLE ux_events ADD COLUMN local_timestamp integer").execute()
+        SQL("ALTER TABLE ux_events ADD COLUMN local_timestamp bigint").execute()
 
         Right(())
       }
