@@ -10,9 +10,13 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
 class FoodAuthChecks @Inject()(service: FoodsAdminService) {
 
+  def isSuperUser(subject: Intake24AccessToken) = subject.roles.contains(Roles.superuser)
+
   def isFoodsAdmin(subject: Intake24AccessToken) = subject.roles.exists(r => r == Roles.superuser || r == Roles.foodsAdmin)
 
   def isSurveyAdmin(subject: Intake24AccessToken) = subject.roles.contains(Roles.surveyAdmin)
+
+  def isImagesAdmin(subject: Intake24AccessToken) = subject.roles.contains(Roles.imagesAdmin)
 
   def isLocaleMaintainer(localeId: String, subject: Intake24AccessToken) = subject.roles.contains(Roles.foodDatabaseMaintainer(localeId))
 
@@ -31,6 +35,8 @@ class FoodAuthChecks @Inject()(service: FoodsAdminService) {
 
   def allowAdmins(subject: Intake24AccessToken) =
     isFoodsAdmin(subject)
+
+  def allosImagesAdmins(subject:Intake24AccessToken) =
 
   def allowAnyStaff(subject: Intake24AccessToken) =
     isSurveyAdmin(subject) || isFoodsAdmin(subject) || isAnyLocaleMaintainer(subject) || subject.roles.exists(r => r.endsWith(Roles.staffSuffix))
@@ -82,12 +88,11 @@ class FoodAuthChecks @Inject()(service: FoodsAdminService) {
 
   def canReadNutrientTables(subject: Intake24AccessToken) = allowAnyLocaleMaintainers(subject)
 
-  def canReadPortionSizeMethods(subject: Intake24AccessToken) = allowAnyLocaleMaintainers(subject)
+  def canReadPortionSizeMethods(subject: Intake24AccessToken) = allowAnyLocaleMaintainers(subject) || isImagesAdmin(subject)
 
-  def canWritePortionSizeMethods(subject: Intake24AccessToken) = allowAdmins(subject)
+  def canWritePortionSizeMethods(subject: Intake24AccessToken) = isSuperUser(subject) || isImagesAdmin(subject)
 
-
-  def canUploadSourceImages(subject: Intake24AccessToken) = allowAdmins(subject)
+  def canUploadSourceImages(subject: Intake24AccessToken) = isSuperUser(subject) || isImagesAdmin(subject)
 
 
 }

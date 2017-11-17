@@ -9,11 +9,14 @@ object Roles {
 
   val foodsAdmin = "foodsadmin"
 
+  val imagesAdmin = "imagesadmin"
+
   val respondentSuffix = "/respondent"
 
   val staffSuffix = "/staff"
 
   val foodDatabaseMaintainerPrefix = "fdbm/"
+
 
   def surveyStaff(surveyId: String) = s"$surveyId$staffSuffix"
 
