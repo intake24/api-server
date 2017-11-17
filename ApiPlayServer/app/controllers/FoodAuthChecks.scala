@@ -36,8 +36,6 @@ class FoodAuthChecks @Inject()(service: FoodsAdminService) {
   def allowAdmins(subject: Intake24AccessToken) =
     isFoodsAdmin(subject)
 
-  def allosImagesAdmins(subject:Intake24AccessToken) =
-
   def allowAnyStaff(subject: Intake24AccessToken) =
     isSurveyAdmin(subject) || isFoodsAdmin(subject) || isAnyLocaleMaintainer(subject) || subject.roles.exists(r => r.endsWith(Roles.staffSuffix))
 
