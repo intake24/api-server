@@ -7,7 +7,10 @@ case class PublicSurveyParameters(localeId: String, respondentLanguageId: String
 
 case class SurveyFeedbackStyle(feedbackStyle: String)
 
-case class UserSurveyParameters(schemeId: String, localeId: String, state: String, suspensionReason: Option[String], description: Option[String])
+case class UxEventsSettings(enableSearchEvents: Boolean, enableAssociatedFoodsEvents: Boolean)
+
+case class UserSurveyParameters(schemeId: String, localeId: String, state: String, suspensionReason: Option[String], description: Option[String],
+                                uxEventsSettings: UxEventsSettings)
 
 case class SurveyFollowUp(followUpUrl: Option[String], showFeedback: Boolean)
 

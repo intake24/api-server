@@ -1533,6 +1533,32 @@ object SystemDatabaseMigrations {
 
         Right(())
       }
-    }
+    },
+
+    new Migration {
+      val versionFrom = 67l
+      val versionTo = 68l
+
+      val description = "Create surveys_ux_event_settings table"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL(
+          """CREATE TABLE surveys_ux_events_settings (
+            |survey_id varchar(64) PRIMARY KEY,
+            |enable_search_events boolean NOT NULL,
+            |enable_associated_foods_events boolean NOT NULL,
+            |CONSTRAINT survey_id_fk FOREIGN KEY(survey_id) REFERENCES surveys(id) ON UPDATE CASCADE ON DELETE CASCADE)""".stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("DROP TABLE surveys_ux_events_settings").execute()
+
+        Right(())
+      }
+    },
   )
 }
