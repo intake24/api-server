@@ -15,6 +15,8 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
   private case class UserSurveyParametersRow(scheme_id: String, state: Int, locale: String, started: Boolean, finished: Boolean, suspension_reason: Option[String],
                                              originating_url: Option[String], description: Option[String])
 
+  private case class UxEventSettingsRow(enable_search_events: Boolean, enable_associated_foods_events: Boolean)
+
   override def getPublicSurveyParameters(surveyId: String): Either[LookupError, PublicSurveyParameters] = tryWithConnection {
     implicit conn =>
       SQL("SELECT locale, respondent_language_id, support_email, originating_url FROM surveys JOIN locales ON locales.id = surveys.locale WHERE surveys.id={survey_id}")
@@ -58,7 +60,15 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
               "pending"
           }
 
-          Right(UserSurveyParameters(row.scheme_id, row.locale, state, row.suspension_reason, row.description))
+          val uxEventsSettings = SQL("SELECT enable_search_events, enable_associated_foods_events FROM surveys_ux_events_settings WHERE survey_id={survey_id}")
+            .on('survey_id -> surveyId)
+            .executeQuery()
+            .as(Macro.namedParser[UxEventSettingsRow].singleOpt) match {
+            case Some(UxEventSettingsRow(search, foods)) => UxEventsSettings(search, foods)
+            case None => UxEventsSettings(false, false)
+          }
+
+          Right(UserSurveyParameters(row.scheme_id, row.locale, state, row.suspension_reason, row.description, uxEventsSettings))
 
         }
         case None =>
