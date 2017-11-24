@@ -1560,5 +1560,31 @@ object SystemDatabaseMigrations {
         Right(())
       }
     },
+
+    new Migration {
+      val versionFrom = 68l
+      val versionTo = 69l
+
+      val description = "Add ux_session_id to survey_sumbissions"
+
+      def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("""CREATE EXTENSION IF NOT EXISTS "uuid-ossp"""").execute()
+        SQL("ALTER TABLE survey_submissions ADD COLUMN ux_session_id uuid NOT NULL DEFAULT uuid_generate_v4()").execute()
+        SQL("ALTER TABLE survey_submissions ALTER COLUMN ux_session_id DROP DEFAULT").execute()
+        SQL("CREATE INDEX survey_submissions_ux_session_index ON survey_submissions(ux_session_id)").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("DROP INDEX survey_submissions_ux_session_index").execute()
+        SQL("ALTER TABLE survey_submissions DROP COLUMN ux_session_id").execute()
+        SQL("""DROP EXTENSION IF EXISTS "uuid-ossp"""").execute()
+
+        Right(())
+      }
+    }
   )
 }
