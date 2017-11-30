@@ -88,7 +88,7 @@ class FoodsAdminController @Inject()(service: FoodsAdminService,
       }
   }
 
-  def cloneFoodAsLocal(code: String, locale: String) = rab.restrictAccess(foodAuthChecks.canCreateMainFoods)(bodyParsers.empty) {
+  def cloneFoodAsLocal(code: String, locale: String) = rab.restrictAccess(foodAuthChecks.canCreateLocalFoods(locale))(bodyParsers.empty) {
     _ =>
       Future {
         val result =
