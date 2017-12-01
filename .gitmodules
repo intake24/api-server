@@ -9,3 +9,7 @@
 [submodule "pairwise-association-rules"]
 	path = pairwise-association-rules
 	url = git@github.com:digitalinteraction/pairwise-association-rules.git
+[submodule "ApiShared"]
+	path = ApiShared
+	url = git@github.com:intake24/api-shared.git
+	branch = master
