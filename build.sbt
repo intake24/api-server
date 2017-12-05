@@ -23,6 +23,17 @@ lazy val commonSettings = Seq(
   scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
 )
 
+
+
+
+lazy val apiSharedJS = project.in(file("api-shared"))
+
+lazy val apiClientJS = project.in(file("api-client")).dependsOn(apiSharedJS)
+
+lazy val apiSharedJVM = project.in(file("api-shared"))
+
+lazy val apiSharedJVM = project.in(file("api-shared")).dependsOn(apiSharedJVM)
+
 lazy val sharedTypes = Project(id = "sharedTypes", base = file("SharedTypes")).settings(commonSettings: _*)
 
 lazy val infiauto = Project(id = "infiauto", base = file("infiauto")).settings(commonSettings: _*)
@@ -37,14 +48,17 @@ lazy val commonSql = Project(id = "commonSql", base = file("CommonSQL")).setting
 
 lazy val pairwiseAssociationRules = Project(id = "pairwiseAssociationRules", base = file("pairwise-association-rules")).settings(commonSettings: _*)
 
-lazy val systemDataServices = Project(id = "systemDataServices", base = file("SystemDataServices")).dependsOn(gwtShared, sharedTypes, pairwiseAssociationRules).settings(commonSettings: _*)
+lazy val systemDataServices =
+  Project(id = "systemDataServices", base = file("SystemDataServices")).dependsOn(apiSharedJVM, gwtShared, sharedTypes, pairwiseAssociationRules).settings(commonSettings: _*)
 
-lazy val systemDataSql = Project(id = "systemDataSql", base = file("SystemDataSQL")).dependsOn(commonSql, systemDataServices % "compile->compile;test->test", pairwiseAssociationRules).settings(commonSettings: _*)
+lazy val systemDataSql =
+  Project(id = "systemDataSql", base = file("SystemDataSQL")).dependsOn(commonSql, systemDataServices % "compile->compile;test->test", pairwiseAssociationRules).settings(commonSettings: _*)
 
 
 lazy val ptStemmer = Project(id = "ptStemmer", base = file("PTStemmer-Java"))
 
-lazy val foodDataServices = Project(id = "foodDataServices", base = file("FoodDataServices")).dependsOn(sharedTypes, phraseSearch, ptStemmer).settings(commonSettings: _*)
+lazy val foodDataServices =
+  Project(id = "foodDataServices", base = file("FoodDataServices")).dependsOn(apiSharedJVM, sharedTypes, phraseSearch, ptStemmer).settings(commonSettings: _*)
 
 lazy val foodDataXml = Project(id = "foodDataXml", base = file("FoodDataXML")).dependsOn(foodDataServices).settings(commonSettings: _*)
 
@@ -52,9 +66,8 @@ lazy val nutrientsCsv = Project(id = "nutrientsCsv", base = file("NutrientsCSV")
 
 lazy val foodDataSql = Project(id = "foodDataSql", base = file("FoodDataSQL")).dependsOn(commonSql, foodDataServices % "compile->compile;test->test", foodDataXml, nutrientsCsv).settings(commonSettings: _*)
 
-
-lazy val databaseTools = Project(id = "databaseTools", base = file("DatabaseTools")).dependsOn(commonSql, imageProcessorIM, systemDataSql, foodDataXml, foodDataSql, apiClient).settings(commonSettings: _*)
-
+lazy val databaseTools =
+  Project(id = "databaseTools", base = file("DatabaseTools")).dependsOn(commonSql, imageProcessorIM, systemDataSql, foodDataXml, foodDataSql, apiSharedJVM).settings(commonSettings: _*)
 
 lazy val imageStorageLocal = Project(id = "imageStorageLocal", base = file("ImageStorageLocal")).dependsOn(foodDataServices).settings(commonSettings: _*)
 
@@ -62,13 +75,8 @@ lazy val imageStorageS3 = Project(id = "imageStorageS3", base = file("ImageStora
 
 lazy val imageProcessorIM = Project(id = "imageProcessorIM", base = file("ImageProcessorIM")).dependsOn(foodDataServices).settings(commonSettings: _*)
 
-
-lazy val apiShared = Project(id = "apiShared", base = file("ApiShared")).dependsOn(foodDataServices, systemDataServices).settings(commonSettings: _*)
-
-lazy val apiPlayServer = Project(id = "apiPlayServer", base = file("ApiPlayServer")).enablePlugins(PlayScala, SystemdPlugin, JDebPackaging).dependsOn(foodDataSql, systemDataSql, apiShared, imageStorageLocal, imageStorageS3, imageProcessorIM).settings(commonSettings: _*)
-
-lazy val apiClient = Project(id = "apiClient", base = file("ApiClient")).dependsOn(apiShared).settings(commonSettings: _*)
-
+lazy val apiPlayServer =
+  Project(id = "apiPlayServer", base = file("ApiPlayServer")).enablePlugins(PlayScala, SystemdPlugin, JDebPackaging).dependsOn(apiSharedJVM, foodDataSql, systemDataSql, imageStorageLocal, imageStorageS3, imageProcessorIM).settings(commonSettings: _*)
 
 lazy val apiDocs = scalatex.ScalatexReadme(
   projectId = "apiDocs",

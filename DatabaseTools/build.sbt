@@ -20,7 +20,7 @@ name := "database-tools"
 
 description := "Intake24 database tools"
 
-assemblyMergeStrategy in assembly <<= (assemblyMergeStrategy in assembly) { (old) => {
+assemblyMergeStrategy in assembly ~= { (old) => {
   case PathList("org", "w3c", "dom", xs@_*) => MergeStrategy.first
   case PathList("javax", "xml", xs@_*) => MergeStrategy.first
   case x => old(x)
