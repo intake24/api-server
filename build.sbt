@@ -16,6 +16,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+import sbt.intake24.ResolveInternalDependencies._
+
 lazy val commonSettings = Seq(
   version := "3.9.1-SNAPSHOT",
   scalaVersion := "2.12.3",
@@ -24,15 +27,11 @@ lazy val commonSettings = Seq(
 )
 
 
-
-
-lazy val apiSharedJS = project.in(file("api-shared"))
-
-lazy val apiClientJS = project.in(file("api-client")).dependsOn(apiSharedJS)
-
 lazy val apiSharedJVM = project.in(file("api-shared"))
 
-lazy val apiSharedJVM = project.in(file("api-shared")).dependsOn(apiSharedJVM)
+lazy val apiClientJS = project.in(file("api-client"))
+
+lazy val apiClientJVM = project.in(file("api-client"))
 
 lazy val sharedTypes = Project(id = "sharedTypes", base = file("SharedTypes")).settings(commonSettings: _*)
 
@@ -91,3 +90,6 @@ lazy val apiDocs = scalatex.ScalatexReadme(
     "com.google.code.gson" % "gson" % "2.3.1" // for JSON pretty-printing
   )
 ).dependsOn(apiPlayServer)
+
+
+lazy val backend = (project in file(".")).settings(commands += resolveInternalDependencies)
