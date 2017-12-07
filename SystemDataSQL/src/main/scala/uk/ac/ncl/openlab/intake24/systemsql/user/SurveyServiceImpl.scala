@@ -146,7 +146,7 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
 
           if (!mealFoodsParams.isEmpty) {
 
-            val batch = BatchSql("INSERT INTO survey_submission_foods VALUES (DEFAULT, {meal_id}, {code}, {english_description}, {local_description}, {ready_meal}, {search_term}, {portion_size_method_id}, {reasonable_amount},{food_group_id},{food_group_english_description},{food_group_local_description},{brand},{nutrient_table_id},{nutrient_table_code})",
+            val batch = BatchSql("INSERT INTO survey_submission_foods (id, meal_id, code, english_description, local_description, ready_meal, search_term, portion_size_method_id, reasonable_amount, food_group_id, food_group_english_description, food_group_local_description, brand, nutrient_table_id, nutrient_table_code) VALUES (DEFAULT, {meal_id}, {code}, {english_description}, {local_description}, {ready_meal}, {search_term}, {portion_size_method_id}, {reasonable_amount},{food_group_id},{food_group_english_description},{food_group_local_description},{brand},{nutrient_table_id},{nutrient_table_code})",
               mealFoodsParams.head, mealFoodsParams.tail: _*)
 
             val foodIds = AnormUtil.batchKeys(batch)
