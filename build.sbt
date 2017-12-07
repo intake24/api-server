@@ -16,8 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
-import sbt.intake24.ResolveInternalDependencies._
+import ResolveInternalDependencies._
 
 lazy val commonSettings = Seq(
   version := "3.9.1-SNAPSHOT",
@@ -91,15 +90,4 @@ lazy val apiDocs = scalatex.ScalatexReadme(
   )
 ).dependsOn(apiPlayServer)
 
-
-lazy val backend = (project in file(".")).settings(
-  commands += resolveInternalDependencies,
-  onLoad.in(Global) ~= { f => s => f(resolveInternalDependenciesImpl(s)) }
-
-  //existing => existing
-    /*{
-      state =>
-        existing(resolveInternalDependenciesImpl(state))
-    }*/
-  //}
-)
+onLoad.in(Global) ~= { f => s => resolveInternalDependenciesImpl(f(s)) }

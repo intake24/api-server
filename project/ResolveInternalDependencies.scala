@@ -1,15 +1,22 @@
-package sbt.intake24
-
+import sbt.Keys._
 import sbt._
-import Keys._
 
+/**
+  * This is an attempt to emulate Maven-like multi-project build logic to avoid duplicating build files.
+  *
+  * If a subproject declares a libraryDependency which corresponds to another subproject's ID, replace the
+  * libraryDependency with a source dependency instead.
+  *
+  * This allows having a standalone library repository that is fully buildable and publishable on its own
+  * (via binary dependencies), and including the same repository as e.g. a git submodule as part of a larger
+  * project without having to go through a Maven or Ivy repository when iterating on the library in the
+  * context of the large project.
+  */
 object ResolveInternalDependencies {
 
   def resolveInternalDependenciesImpl(state: State): State = {
 
     val projectState = Project.extract(state)
-
-    state.log.info(state.remainingCommands.map(_.commandLine).mkString(", "))
 
     val allProjectRefs = projectState.structure.allProjectRefs
 

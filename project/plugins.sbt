@@ -28,6 +28,4 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.3.2")
 
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.21")
 
-// addSbtPlugin("org.jetbrains" % "sbt-structure-extractor" % "2017.2+6-9c625dbb")
-
 libraryDependencies += "org.vafer" % "jdeb" % "1.5" artifacts (Artifact("jdeb", "jar", "jar"))
