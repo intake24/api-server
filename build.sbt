@@ -92,4 +92,14 @@ lazy val apiDocs = scalatex.ScalatexReadme(
 ).dependsOn(apiPlayServer)
 
 
-lazy val backend = (project in file(".")).settings(commands += resolveInternalDependencies)
+lazy val backend = (project in file(".")).settings(
+  commands += resolveInternalDependencies,
+  onLoad.in(Global) ~= { f => s => f(resolveInternalDependenciesImpl(s)) }
+
+  //existing => existing
+    /*{
+      state =>
+        existing(resolveInternalDependenciesImpl(state))
+    }*/
+  //}
+)

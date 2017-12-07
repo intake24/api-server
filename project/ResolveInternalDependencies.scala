@@ -2,75 +2,52 @@ package sbt.intake24
 
 import sbt._
 import Keys._
-import sbt.internal.Load
 
 object ResolveInternalDependencies {
 
-  def resolveInternalDependencies = Command.command("resolveInternalDependencies") {
-    state =>
+  def resolveInternalDependenciesImpl(state: State): State = {
 
-      val projectState = Project.extract(state)
+    val projectState = Project.extract(state)
 
-      val allProjectRefs = projectState.structure.allProjectRefs
+    state.log.info(state.remainingCommands.map(_.commandLine).mkString(", "))
 
-      val projectIdMap = allProjectRefs.foldLeft(Map[ModuleID, ProjectRef]()) {
-        case (acc, ref) =>
-          projectID.in(ref).get(projectState.structure.data) match {
-            case Some(id) =>
-              acc + (id.withExplicitArtifacts(Vector()) -> ref)
-            case None => acc
-          }
-      }
+    val allProjectRefs = projectState.structure.allProjectRefs
 
-      val newSettings = allProjectRefs.foldLeft(Seq[Setting[_]]()) {
-        (settings, projectRef) =>
-          val libDepKey = libraryDependencies.in(projectRef)
-          libDepKey.get(projectState.structure.data) match {
-            case Some(deps) =>
-              deps.foldLeft(settings) {
-                (settings, libId) =>
-                  projectIdMap.get(libId) match {
-                    case Some(replacementRef) =>
+    val projectIdMap = allProjectRefs.foldLeft(Map[ModuleID, ProjectRef]()) {
+      case (acc, ref) =>
+        projectID.in(ref).get(projectState.structure.data) match {
+          case Some(id) =>
+            acc + (id.withExplicitArtifacts(Vector()) -> ref)
+          case None => acc
+        }
+    }
 
-                      println(s"Replacing " + libId + " in " + projectRef + " with " + replacementRef)
+    val newSettings = allProjectRefs.foldLeft(Seq[Setting[_]]()) {
+      (settings, projectRef) =>
+        val libDepKey = libraryDependencies.in(projectRef)
+        libDepKey.get(projectState.structure.data) match {
+          case Some(deps) =>
+            deps.foldLeft(settings) {
+              (settings, libId) =>
+                projectIdMap.get(libId) match {
+                  case Some(replacementRef) =>
+                    state.log.info(s"Replacing binary dependency $libId in ${projectRef.project} with source dependency ${replacementRef.project}")
+                    settings ++ Seq(libDepKey -= libId, buildDependencies.in(Global) ~= (_.addClasspath(projectRef, ResolvedClasspathDependency(replacementRef, None))))
 
-                      val newDeps = deps.filterNot(_ == libId)
+                  case None =>
+                    settings
+                }
+            }
 
-                      //BuildStru
+          case None => settings
+        }
+    }
 
-                      //state.u
-
-                      //println(s"Original libraryDependencies: $deps")
-                      //println(s"New libraryDependencies: $newDeps")
-
-                      //projectState.structure.data.
-
-                      settings ++ Seq(libDepKey -= libId, buildDependencies.in(Global) ~= (_.addClasspath(projectRef, ResolvedClasspathDependency(replacementRef, None))))
-
-                    //projectState.append(libDepKey -= libId, state)
-
-                    //println(state.get(libDepKey.key).map(_.mkString("\n")))
-
-                    //val stateMinusLib = pro
-                    //state.put(libDepKey.key, newDeps)
-
-                    /*stateMinusLib.update(buildDependencies.in(Global).key) {
-                    case Some(originalDeps) =>
-                      val newDeps = originalDeps.addClasspath(projectRef, ClasspathDependency(replacementRef, None))
-                    case None => throw new IllegalStateException("Should not be here")
-                  }*/
-
-                    //Load.reapppl
-                    case None =>
-                      settings
-                  }
-              }
-
-            case None => settings
-          }
-      }
-      //val xfsettings = Load.transformSettings(Load.projectScope(projectState.currentRef), projectState.currentRef.build, projectState.rootProject, newSettings)
-      //state.put(stateBuildStructure, Load.reapply(projectState.session.original ++ xfsettings, projectState.structure)(Def.showRelativeKey(projectState.session.current, projectState.structure.allProjects.size > 1, None)))
+    if (newSettings.nonEmpty)
       projectState.append(newSettings, state)
+    else
+      state
   }
+
+  def resolveInternalDependencies = Command.command("resolveInternalDependencies")(resolveInternalDependenciesImpl)
 }
