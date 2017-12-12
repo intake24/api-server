@@ -1,6 +1,6 @@
 package uk.ac.ncl.openlab.intake24.services.systemdb.admin
 
-import uk.ac.ncl.openlab.intake24.api.shared.{NewRespondentIds, NewRespondentWithPhysicalData}
+import uk.ac.ncl.openlab.intake24.api.data.{NewRespondentIds, NewRespondentWithPhysicalData}
 import uk.ac.ncl.openlab.intake24.errors._
 
 

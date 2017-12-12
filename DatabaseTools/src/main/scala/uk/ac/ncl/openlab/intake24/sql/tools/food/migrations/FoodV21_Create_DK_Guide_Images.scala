@@ -3,12 +3,10 @@ package uk.ac.ncl.openlab.intake24.sql.tools.food.migrations
 import java.nio.file.Paths
 
 import org.rogach.scallop.ScallopConf
-import uk.ac.ncl.openlab.intake24.api.client.portionsize.{GuideImageAdminClientImpl, ImageMapAdminClientImpl}
 
 import uk.ac.ncl.openlab.intake24.api.client.{ApiConfigChooser, ApiConfigurationOptions}
-import uk.ac.ncl.openlab.intake24.api.shared.{EmailCredentials, NewGuideImageRequest, NewImageMapRequest, SurveyAliasCredentials}
+import uk.ac.ncl.openlab.intake24.api.data.{EmailCredentials, NewGuideImageRequest, NewImageMapRequest, SurveyAliasCredentials}
 import uk.ac.ncl.openlab.intake24.sql.tools._
-import uk.ac.ncl.openlab.intake24.sql.tools.food.migrations.FoodV18_3_Create_Selection_Images.checkApiError
 
 object FoodV21_Create_DK_Guide_Images extends App with MigrationRunner with WarningMessage {
 /*

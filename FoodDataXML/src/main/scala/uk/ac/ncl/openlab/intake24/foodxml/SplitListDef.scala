@@ -18,7 +18,7 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodxml
 
-import uk.ac.ncl.openlab.intake24.SplitList
+import uk.ac.ncl.openlab.intake24.api.shared.admin.SplitList
 
 object SplitListDef {
   def parseFile(path: String) = {

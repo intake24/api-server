@@ -9,7 +9,7 @@ import io.circe.generic.auto._
 import io.circe.parser._
 import io.circe.syntax._
 import play.api.mvc._
-import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
+import uk.ac.ncl.openlab.intake24.api.data.ErrorDescription
 
 trait JsonUtils {
 

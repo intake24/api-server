@@ -1,6 +1,7 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.admin
 
-import uk.ac.ncl.openlab.intake24.SplitList
+
+import uk.ac.ncl.openlab.intake24.api.shared.admin.SplitList
 import uk.ac.ncl.openlab.intake24.errors.{LocaleError, UnexpectedDatabaseError}
 
 trait FoodIndexDataAdminService {

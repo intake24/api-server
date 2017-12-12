@@ -28,4 +28,7 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.3.2")
 
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.21")
 
-libraryDependencies += "org.vafer" % "jdeb" % "1.5" artifacts (Artifact("jdeb", "jar", "jar"))
+libraryDependencies ++= Seq(
+  "org.vafer" % "jdeb" % "1.5" artifacts (Artifact("jdeb", "jar", "jar")),
+  "org.scala-js" %% "scalajs-env-selenium" % "0.2.0"
+)

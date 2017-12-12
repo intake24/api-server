@@ -7,7 +7,7 @@ import javax.sql.DataSource
 import anorm._
 import org.apache.commons.lang3.StringUtils
 import org.postgresql.util.PSQLException
-import uk.ac.ncl.openlab.intake24.api.shared.NewUserProfile
+import uk.ac.ncl.openlab.intake24.api.data.NewUserProfile
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}

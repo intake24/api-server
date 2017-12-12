@@ -17,3 +17,7 @@
 	path = api-client
 	url = https://github.com/intake24/api-client
 	branch = master
+[submodule "RosHTTP"]
+	path = RosHTTP
+	url = git@github.com:intake24/RosHTTP.git
+	branch = master

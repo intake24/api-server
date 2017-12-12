@@ -3,7 +3,7 @@ package uk.ac.ncl.openlab.intake24.foodsql.user
 import java.sql.Connection
 
 import anorm.{Macro, SQL}
-import uk.ac.ncl.openlab.intake24.PortionSizeMethod
+import uk.ac.ncl.openlab.intake24.api.data.PortionSizeMethod
 import uk.ac.ncl.openlab.intake24.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.foodsql.SimpleValidation
 import uk.ac.ncl.openlab.intake24.foodsql.shared.FoodPortionSizeShared

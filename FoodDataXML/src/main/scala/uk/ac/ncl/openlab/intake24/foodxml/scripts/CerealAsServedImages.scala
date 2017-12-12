@@ -18,24 +18,24 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodxml.scripts
 
-import java.io.File
-import java.io.FileFilter
+import java.io.{File, FileFilter, FileReader}
+
 import au.com.bytecode.opencsv.CSVReader
-import java.io.FileReader
+import uk.ac.ncl.openlab.intake24.foodxml.{AsServedDef, AsServedImageV1, AsServedSetV1, Util}
+
 import scala.collection.JavaConverters._
-import uk.ac.ncl.openlab.intake24.AsServedSetV1
-import uk.ac.ncl.openlab.intake24.AsServedImageV1
 import scala.xml.XML
-import uk.ac.ncl.openlab.intake24.foodxml.AsServedDef
-import uk.ac.ncl.openlab.intake24.foodxml.Util
 
 
 object CerealAsServedImages extends App {
   def asServedImages(prefix: String, bowl: String, baseDir: String) = {
     def number(f: File) =
       f.getName().drop(prefix.length() + bowl.length()).dropRight(4).toInt
+
     val dir = new File(baseDir)
-    dir.listFiles(new FileFilter { def accept(f: File) = f.getName().startsWith(prefix + bowl) }).sortBy(number(_)).toSeq
+    dir.listFiles(new FileFilter {
+      def accept(f: File) = f.getName().startsWith(prefix + bowl)
+    }).sortBy(number(_)).toSeq
   }
 
   val photoBaseDir = "D:\\SCRAN24\\Photos_new"
@@ -55,6 +55,7 @@ object CerealAsServedImages extends App {
 
   def images(prefix: String, bowl: String, t: String): AsServedSetV1 = {
     def photoCode(f: File) = f.getName().dropRight(4)
+
     val images = asServedImages(prefix, bowl, baseDir).filter(f => photoType(photoCode(f)) == t).map(f => AsServedImageV1(f.getPath.drop(photoBaseDir.length + 1).replaceAll("\\\\", "\\/"), weights(photoCode(f))))
     AsServedSetV1("cereal_" + prefix + bowl + (if (t == "LO") "_leftovers" else ""), "Cereal, " + prefix + ", bowl " + bowl + (if (t == "LO") ", leftovers" else ""), images)
   }

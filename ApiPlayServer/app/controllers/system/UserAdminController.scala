@@ -34,7 +34,7 @@ import play.api.libs.mailer.{Email, MailerClient}
 import play.api.mvc._
 import security.Intake24RestrictedActionBuilder
 import security.captcha.AsyncCaptchaService
-import uk.ac.ncl.openlab.intake24.api.shared._
+import uk.ac.ncl.openlab.intake24.api.data._
 import uk.ac.ncl.openlab.intake24.errors.{ErrorUtils, RecordNotFound}
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._

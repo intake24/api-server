@@ -25,7 +25,7 @@ import anorm.{Macro, SQL, sqlToSimple}
 import com.google.inject.{Inject, Singleton}
 import com.google.inject.name.Named
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.{UserCategoryHeader, UserFoodHeader}
+import uk.ac.ncl.openlab.intake24.api.data.{UserCategoryHeader, UserFoodHeader}
 import uk.ac.ncl.openlab.intake24.errors.LocaleError
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}

@@ -1,7 +1,7 @@
 package uk.ac.ncl.openlab.intake24.foodsql.shared
 
 import anorm.{Macro, SQL}
-import uk.ac.ncl.openlab.intake24.{PortionSizeMethod, PortionSizeMethodParameter}
+import uk.ac.ncl.openlab.intake24.api.data.{PortionSizeMethod, PortionSizeMethodParameter}
 import uk.ac.ncl.openlab.intake24.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.foodsql.{FirstRowValidation, FirstRowValidationClause}
 import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader

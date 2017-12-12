@@ -26,9 +26,9 @@ lazy val commonSettings = Seq(
 )
 
 
-lazy val apiSharedJVM = project.in(file("api-shared"))
+lazy val scalaHttpJVM = project.in(file("RosHTTP"))
 
-lazy val apiClientJS = project.in(file("api-client"))
+lazy val apiSharedJVM = project.in(file("api-shared"))
 
 lazy val apiClientJVM = project.in(file("api-client"))
 

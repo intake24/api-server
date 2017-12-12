@@ -4,7 +4,7 @@ import java.nio.file.Paths
 
 import org.rogach.scallop.ScallopConf
 import uk.ac.ncl.openlab.intake24.api.client.{ApiConfigChooser, ApiConfigurationOptions, ConsoleApiErrorHandler, Intake24ApiClient}
-import uk.ac.ncl.openlab.intake24.api.shared.{EmailCredentials, NewGuideImageRequest, NewImageMapRequest}
+import uk.ac.ncl.openlab.intake24.api.data.{EmailCredentials, NewGuideImageRequest, NewImageMapRequest}
 
 object CreateNewZealandGuideImages extends App with ConsoleApiErrorHandler {
 

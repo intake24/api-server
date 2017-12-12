@@ -3,7 +3,7 @@ package parsers
 import java.io.{File, FileReader}
 
 import au.com.bytecode.opencsv.CSVReader
-import uk.ac.ncl.openlab.intake24.api.shared.NewRespondent
+import uk.ac.ncl.openlab.intake24.api.data.NewRespondent
 
 import scala.collection.JavaConverters._
 

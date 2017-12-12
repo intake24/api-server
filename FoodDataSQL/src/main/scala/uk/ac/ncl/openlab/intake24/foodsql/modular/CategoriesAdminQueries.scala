@@ -9,6 +9,8 @@ import org.apache.commons.lang3.StringUtils
 import org.postgresql.util.PSQLException
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24._
+import uk.ac.ncl.openlab.intake24.api.data.admin.{LocalCategoryRecordUpdate, MainCategoryRecordUpdate, NewCategory, NewLocalCategoryRecord}
+import uk.ac.ncl.openlab.intake24.api.data.{InheritableAttributes, PortionSizeMethod}
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.foodsql.shared.FoodPortionSizeShared
 import uk.ac.ncl.openlab.intake24.foodsql.{FirstRowValidation, FirstRowValidationClause}

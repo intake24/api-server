@@ -7,7 +7,8 @@ import anorm.{Macro, SQL, SqlParser, sqlToSimple}
 import com.google.inject.{Inject, Singleton}
 import com.google.inject.name.Named
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24._
+import uk.ac.ncl.openlab.intake24.api.data.InheritableAttributes
+import uk.ac.ncl.openlab.intake24.api.data.admin._
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.foodsql.SimpleValidation
 import uk.ac.ncl.openlab.intake24.foodsql.modular.{CategoriesAdminQueries, FoodBrowsingAdminQueries}

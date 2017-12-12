@@ -1,6 +1,6 @@
 package uk.ac.ncl.openlab.intake24.services.systemdb.admin
 
-import uk.ac.ncl.openlab.intake24.api.shared.NewUserProfile
+import uk.ac.ncl.openlab.intake24.api.data.NewUserProfile
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.UserPhysicalDataOut
 

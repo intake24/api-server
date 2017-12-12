@@ -6,8 +6,8 @@ import com.opencsv.CSVReader
 import org.rogach.scallop.ScallopConf
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.LocalFoodRecordUpdate
-import uk.ac.ncl.openlab.intake24.api.client.{ApiConfigChooser, ApiConfigurationOptions, Intake24ApiClient}
-import uk.ac.ncl.openlab.intake24.api.shared.EmailCredentials
+import uk.ac.ncl.openlab.intake24.api.client.{ApiConfigChooser, ApiConfigurationOptions}
+import uk.ac.ncl.openlab.intake24.api.data.EmailCredentials
 
 import scala.collection.JavaConverters._
 

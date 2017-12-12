@@ -5,7 +5,7 @@ import javax.sql.DataSource
 import anorm._
 import com.google.inject.{Inject, Singleton}
 import com.google.inject.name.Named
-import uk.ac.ncl.openlab.intake24.{CategoryHeader, FoodHeader}
+import uk.ac.ncl.openlab.intake24.api.data.admin.{CategoryHeader, FoodHeader}
 import uk.ac.ncl.openlab.intake24.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.QuickSearchService
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}

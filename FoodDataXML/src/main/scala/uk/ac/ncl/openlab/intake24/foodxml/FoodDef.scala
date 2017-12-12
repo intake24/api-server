@@ -18,52 +18,37 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodxml
 
-import scala.xml.NodeSeq
-import scala.xml.Node
-import scala.xml.Attribute
-import scala.xml.Text
-import scala.xml.Null
-import scala.xml.Elem
-
-import uk.ac.ncl.openlab.intake24.InheritableAttributes
-import uk.ac.ncl.openlab.intake24.PortionSizeMethod
-import scala.xml.NodeSeq.seqToNodeSeq
-import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
-
-import java.util.UUID
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.LocalFoodRecord
-import uk.ac.ncl.openlab.intake24.FoodRecord
-import uk.ac.ncl.openlab.intake24.MainFoodRecord
+import uk.ac.ncl.openlab.intake24.api.data.{InheritableAttributes, PortionSizeMethod, PortionSizeMethodParameter}
+
+import scala.xml.NodeSeq.seqToNodeSeq
+import scala.xml._
 
 object FoodDef {
-  
+
   val log = LoggerFactory.getLogger(getClass())
 
   def toXml(portionSizeMethod: PortionSizeMethod) =
-    <portion-size method={ portionSizeMethod.method } description={ portionSizeMethod.description } imageUrl={ portionSizeMethod.imageUrl } useForRecipes={ portionSizeMethod.useForRecipes.toString }>
-      {
-        portionSizeMethod.parameters.map(p => <param name={ p.name } value={ p.value }/>)
-      }
+    <portion-size method={portionSizeMethod.method} description={portionSizeMethod.description} imageUrl={portionSizeMethod.imageUrl} useForRecipes={portionSizeMethod.useForRecipes.toString}>
+      {portionSizeMethod.parameters.map(p => <param name={p.name} value={p.value}/>)}
     </portion-size>
 
   def toXml(nutrientTables: Map[String, String]) =
     nutrientTables.keys.map {
       key =>
-        <nutrient-table id={ key } code={ nutrientTables(key) }/>
+          <nutrient-table id={key} code={nutrientTables(key)}/>
     }
 
   def toXml(food: XmlFoodRecord): Node =
     addInheritableAttributes(
-      <food code={ food.code } description={ food.description } groupCode={ food.groupCode.toString }>
-        { toXml(food.nutrientTableCodes) }
-        { food.portionSizeMethods.map(toXml) }
+      <food code={food.code} description={food.description} groupCode={food.groupCode.toString}>
+        {toXml(food.nutrientTableCodes)}{food.portionSizeMethods.map(toXml)}
       </food>,
       food.attributes)
 
   def toXml(foods: Seq[XmlFoodRecord]): Node =
     <foods>
-      { foods.map(toXml) }
+      {foods.map(toXml)}
     </foods>
 
   def parseParam(e: Elem): PortionSizeMethodParameter =
@@ -113,14 +98,14 @@ object FoodDef {
       val attribs = inheritableAttributes(fnode)
 
       val psm = portionSizeMethods(fnode)
-      
+
       val legacyNdns = fnode.attribute("ndnsCode").map(_.text.toInt)
-      
+
       val nutrientTables = legacyNdns match {
         case Some(code) if code != -1 => parseNutrientTableCodes(fnode) + ("NDNS" -> code.toString())
         case _ => parseNutrientTableCodes(fnode)
       }
-      
+
       XmlFoodRecord(code, desc, groupCode, attribs, nutrientTables, psm)
     })
 }

@@ -4,11 +4,12 @@ import java.util.UUID
 import javax.sql.DataSource
 
 import anorm.NamedParameter.symbol
-import anorm.{Macro, NamedParameter, SQL, SqlParser, sqlToSimple}
-import com.google.inject.{Inject, Singleton}
+import anorm.{Macro, NamedParameter, SQL, sqlToSimple}
 import com.google.inject.name.Named
+import com.google.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24._
+import uk.ac.ncl.openlab.intake24.api.data.InheritableAttributes
+import uk.ac.ncl.openlab.intake24.api.data.admin._
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.foodsql.modular._
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService

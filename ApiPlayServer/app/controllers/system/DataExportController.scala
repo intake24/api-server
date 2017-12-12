@@ -29,7 +29,7 @@ import parsers.{JsonUtils, SurveyCSVExporter}
 import play.api.http.FileMimeTypes
 import play.api.mvc.{BaseController, BodyParsers, ControllerComponents, PlayBodyParsers}
 import security.Intake24RestrictedActionBuilder
-import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
+import uk.ac.ncl.openlab.intake24.api.data.ErrorDescription
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, ExportTaskInfo, SurveyAdminService}

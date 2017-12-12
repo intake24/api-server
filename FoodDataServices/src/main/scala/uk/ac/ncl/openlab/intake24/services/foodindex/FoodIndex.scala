@@ -18,8 +18,7 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.services.foodindex
 
-import uk.ac.ncl.openlab.intake24.UserCategoryHeader
-import uk.ac.ncl.openlab.intake24.UserFoodHeader
+import uk.ac.ncl.openlab.intake24.api.data.{UserCategoryHeader, UserFoodHeader}
 
 case class MatchedFood(food: UserFoodHeader, matchCost: Int)
 

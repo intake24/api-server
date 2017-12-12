@@ -24,7 +24,7 @@ import io.circe.generic.auto._
 import parsers.JsonBodyParser
 import play.api.mvc.{BaseController, ControllerComponents}
 import security.Intake24RestrictedActionBuilder
-import uk.ac.ncl.openlab.intake24.api.shared.NewGuideImageRequest
+import uk.ac.ncl.openlab.intake24.api.data.NewGuideImageRequest
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{GuideImageAdminService, ImageMapsAdminService, NewGuideImageRecord}
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageAdminService
 

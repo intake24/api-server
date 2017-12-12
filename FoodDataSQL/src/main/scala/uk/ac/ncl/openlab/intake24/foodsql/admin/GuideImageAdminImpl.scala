@@ -7,10 +7,11 @@ import anorm.{Macro, NamedParameter}
 import com.google.inject.{Inject, Singleton}
 import org.postgresql.util.PSQLException
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.GuideHeader
+
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{GuideImageAdminService, NewGuideImageRecord}
 import anorm.SQL
+import uk.ac.ncl.openlab.intake24.api.data.GuideHeader
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.GuideImageService
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
 

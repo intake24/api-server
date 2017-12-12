@@ -1,11 +1,11 @@
 package uk.ac.ncl.openlab.intake24.foodxml.scripts
 
-import uk.ac.ncl.openlab.intake24.foodxml.FoodDef
-import scala.xml.XML
-import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
+import java.io.{File, FileWriter}
+
 import au.com.bytecode.opencsv.CSVWriter
-import java.io.File
-import java.io.FileWriter
+import uk.ac.ncl.openlab.intake24.foodxml.FoodDef
+
+import scala.xml.XML
 
 object AsServedImageUsage extends App {
 
