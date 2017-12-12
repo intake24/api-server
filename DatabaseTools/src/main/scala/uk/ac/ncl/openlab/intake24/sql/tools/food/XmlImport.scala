@@ -23,6 +23,9 @@ import java.io.File
 import org.rogach.scallop.ScallopConf
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24._
+import uk.ac.ncl.openlab.intake24.api.data.admin.{NewLocalCategoryRecord, NewLocalFoodRecord, NewMainCategoryRecord, NewMainFoodRecord}
+import uk.ac.ncl.openlab.intake24.api.data.{AssociatedFood, GuideImage}
+import uk.ac.ncl.openlab.intake24.api.shared.admin.SplitList
 import uk.ac.ncl.openlab.intake24.foodxml._
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
 import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConnection, DatabaseOptions, WarningMessage}
@@ -114,12 +117,14 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
   }
 
   def importAsServedSets(asServed: Seq[AsServedSetV1]) = ???
-    /* checkError("As served sets import", for (
-      _ <- adminService.deleteAllAsServedSets().right;
-      _ <- adminService.createAsServedSets(asServed).right
-    ) yield ()) */
+
+  /* checkError("As served sets import", for (
+    _ <- adminService.deleteAllAsServedSets().right;
+    _ <- adminService.createAsServedSets(asServed).right
+  ) yield ()) */
 
   private case class ImageMapArea(id: Int, coords: Seq[Double])
+
   private case class ImageMapRecord(navigation: Seq[Seq[Int]], areas: Seq[ImageMapArea])
 
   private def parseImageMaps(imageMapsPath: String) = {
@@ -140,12 +145,14 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
 
   def importImageMaps(imageMaps: Seq[ImageMapRecord]) = ???
 
-  def importGuideImages(guideImages: Seq[GuideImage]) = ??? /*{
-    checkError("Guide image import", for (
-      _ <- adminService.deleteAllGuideImages().right;
-      _ <- adminService.createGuideImages(guideImages).right
-    ) yield ())
-  }*/
+  def importGuideImages(guideImages: Seq[GuideImage]) = ???
+
+  /*{
+     checkError("Guide image import", for (
+       _ <- adminService.deleteAllGuideImages().right;
+       _ <- adminService.createGuideImages(guideImages).right
+     ) yield ())
+   }*/
 
   def importDrinkwareSets(drinkwareSets: Seq[DrinkwareSet]) = {
     checkError("Drinkware sets import", for (
