@@ -3,12 +3,12 @@ package cache
 import com.google.inject.Inject
 import modules.BasicImpl
 import play.api.cache.SyncCacheApi
-import uk.ac.ncl.openlab.intake24._
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{CategoriesAdminService, LocalesAdminService}
+import uk.ac.ncl.openlab.intake24.api.data.admin._
 import uk.ac.ncl.openlab.intake24.errors._
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{CategoriesAdminService, LocalesAdminService}
 
-case class CachedCategoriesAdminService @Inject() (@BasicImpl service: CategoriesAdminService, localeService: LocalesAdminService, cache: SyncCacheApi)
-    extends CategoriesAdminService
+case class CachedCategoriesAdminService @Inject()(@BasicImpl service: CategoriesAdminService, localeService: LocalesAdminService, cache: SyncCacheApi)
+  extends CategoriesAdminService
     with CacheResult {
 
   var knownCacheKeys = Set[String]()

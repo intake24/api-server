@@ -23,15 +23,14 @@ import javax.inject.Inject
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
 import parsers.JsonUtils
-import play.api.mvc.{BaseController, BodyParsers, ControllerComponents, PlayBodyParsers}
+import play.api.mvc.{BaseController, ControllerComponents, PlayBodyParsers}
 import security.Intake24RestrictedActionBuilder
-import uk.ac.ncl.openlab.intake24.api.data.ErrorDescription
+import uk.ac.ncl.openlab.intake24.api.data.{ErrorDescription, UserCategoryHeader, UserFoodHeader}
 import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound}
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodBrowsingService
 import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, IndexLookupResult, MatchedFood, Splitter}
-import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsService, PairwiseAssociationsServiceConfiguration, PairwiseAssociationsServiceSortTypes}
+import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsService, PairwiseAssociationsServiceSortTypes}
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.FoodPopularityService
-import uk.ac.ncl.openlab.intake24.{UserCategoryHeader, UserFoodHeader}
 
 import scala.concurrent.{ExecutionContext, Future}
 
