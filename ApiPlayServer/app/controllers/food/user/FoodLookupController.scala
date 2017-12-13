@@ -25,7 +25,7 @@ import io.circe.generic.auto._
 import parsers.JsonUtils
 import play.api.mvc.{BaseController, ControllerComponents, PlayBodyParsers}
 import security.Intake24RestrictedActionBuilder
-import uk.ac.ncl.openlab.intake24.api.data.{ErrorDescription, UserCategoryHeader, UserFoodHeader}
+import uk.ac.ncl.openlab.intake24.api.data.{ErrorDescription, LookupResult}
 import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound}
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodBrowsingService
 import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, IndexLookupResult, MatchedFood, Splitter}
@@ -35,8 +35,6 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.user.FoodPopularityService
 import scala.concurrent.{ExecutionContext, Future}
 
 case class SplitSuggestion(parts: Seq[String])
-
-case class LookupResult(foods: Seq[UserFoodHeader], categories: Seq[UserCategoryHeader])
 
 class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex], foodDescriptionSplitters: Map[String, Splitter],
                                      foodBrowsingService: FoodBrowsingService, foodPopularityService: FoodPopularityService,
