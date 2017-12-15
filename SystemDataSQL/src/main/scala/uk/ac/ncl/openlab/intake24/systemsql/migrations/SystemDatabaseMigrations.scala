@@ -1585,6 +1585,9 @@ object SystemDatabaseMigrations {
 
         Right(())
       }
-    }
+    },
+
+    SeparateMeals
+
   )
 }

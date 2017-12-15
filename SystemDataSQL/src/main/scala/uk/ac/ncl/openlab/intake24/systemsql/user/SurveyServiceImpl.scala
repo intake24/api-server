@@ -4,6 +4,7 @@ import javax.inject.{Inject, Named}
 import javax.sql.DataSource
 
 import anorm._
+import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.SurveyState
 import uk.ac.ncl.openlab.intake24.services.systemdb.user._
@@ -11,6 +12,8 @@ import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 import uk.ac.ncl.openlab.intake24.surveydata.NutrientMappedSubmission
 
 class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends SurveyService with SqlDataService with SqlResourceLoader {
+
+  private val logger = LoggerFactory.getLogger(classOf[SurveyServiceImpl])
 
   private case class UserSurveyParametersRow(scheme_id: String, state: Int, locale: String, started: Boolean, finished: Boolean, suspension_reason: Option[String],
                                              originating_url: Option[String], description: Option[String])
@@ -113,9 +116,20 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
               Seq[NamedParameter]('survey_submission_id -> generatedId, 'hours -> meal.time.hours, 'minutes -> meal.time.minutes, 'name -> meal.name)
           }
 
-          val batch = BatchSql("INSERT INTO survey_submission_meals VALUES (DEFAULT, {survey_submission_id}::uuid, {hours}, {minutes}, {name})", mealParams.head, mealParams.tail: _*)
+          val batch = BatchSql(
+            """
+               |WITH inm AS (
+               |  INSERT INTO meals (id, date, name) VALUES (DEFAULT, DEFAULT, {name})
+               |  RETURNING id
+               |)
+               |INSERT INTO survey_submission_meals (id, survey_submission_id, hours, minutes, name, meal_id)
+               |VALUES (DEFAULT, {survey_submission_id}::uuid, {hours}, {minutes}, {name}, (SELECT id FROM inm))
+               |RETURNING id
+             """.stripMargin, mealParams.head, mealParams.tail: _*)
 
           val mealIds = AnormUtil.batchKeys(batch)
+
+          logger.debug(mealIds.mkString(","))
 
           val meals = mealIds.zip(survey.meals)
 
@@ -146,7 +160,7 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
 
           if (!mealFoodsParams.isEmpty) {
 
-            val batch = BatchSql("INSERT INTO survey_submission_foods (id, meal_id, code, english_description, local_description, ready_meal, search_term, portion_size_method_id, reasonable_amount, food_group_id, food_group_english_description, food_group_local_description, brand, nutrient_table_id, nutrient_table_code) VALUES (DEFAULT, {meal_id}, {code}, {english_description}, {local_description}, {ready_meal}, {search_term}, {portion_size_method_id}, {reasonable_amount},{food_group_id},{food_group_english_description},{food_group_local_description},{brand},{nutrient_table_id},{nutrient_table_code})",
+            val batch = BatchSql("INSERT INTO meal_foods (id, meal_id, code, english_description, local_description, ready_meal, search_term, portion_size_method_id, reasonable_amount, food_group_id, food_group_english_description, food_group_local_description, brand, nutrient_table_id, nutrient_table_code) VALUES (DEFAULT, {meal_id}, {code}, {english_description}, {local_description}, {ready_meal}, {search_term}, {portion_size_method_id}, {reasonable_amount},{food_group_id},{food_group_english_description},{food_group_local_description},{brand},{nutrient_table_id},{nutrient_table_code})",
               mealFoodsParams.head, mealFoodsParams.tail: _*)
 
             val foodIds = AnormUtil.batchKeys(batch)
@@ -189,7 +203,7 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
             }
 
             if (!foodNutrientParams.isEmpty) {
-              BatchSql("INSERT INTO survey_submission_nutrients(id, food_id, nutrient_type_id, amount) VALUES (DEFAULT, {food_id}, {nutrient_type_id}, {value})", foodNutrientParams.head, foodNutrientParams.tail: _*).execute()
+              BatchSql("INSERT INTO food_nutrients(id, food_id, nutrient_type_id, amount) VALUES (DEFAULT, {food_id}, {nutrient_type_id}, {value})", foodNutrientParams.head, foodNutrientParams.tail: _*).execute()
             }
           }
 
