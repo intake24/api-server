@@ -17,11 +17,6 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{Pairwi
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class PortionSizeMethodForSurvey(method: String, description: String, imageUrl: String, useForRecipes: Boolean, parameters: Map[String, String])
-
-case class FoodDataForSurvey(code: String, localDescription: String, readyMealOption: Boolean, sameAsBeforeOption: Boolean,
-                             caloriesPer100g: Double, portionSizeMethods: Seq[PortionSizeMethodForSurvey], associatedFoods: Seq[AssociatedFood],
-                             brands: Seq[String], categories: Set[String])
 
 case class UserAsServedImageWithUrls(mainImageUrl: String, thumbnailUrl: String, weight: Double)
 
