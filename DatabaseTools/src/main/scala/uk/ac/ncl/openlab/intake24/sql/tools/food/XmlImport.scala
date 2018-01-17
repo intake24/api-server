@@ -116,7 +116,7 @@ class XmlImporter(adminService: FoodDatabaseAdminService) {
     ) yield ())
   }
 
-  def importAsServedSets(asServed: Seq[AsServedSetV1]) = ???
+  def importAsServedSets(asServed: Seq[uk.ac.ncl.openlab.intake24.foodxml.AsServedSetV1]) = ???
 
   /* checkError("As served sets import", for (
     _ <- adminService.deleteAllAsServedSets().right;
