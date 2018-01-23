@@ -29,6 +29,5 @@ class QuickSearchAdminImpl @Inject()(@Named("intake24_foods") val dataSource: Da
       val lowerCaseTerm = searchTerm.toLowerCase
 
       Right(SQL(categoriesQuickSearchQuery).on('pattern -> s"%${lowerCaseTerm}%", 'locale_id -> locale).executeQuery().as(Macro.namedParser[CategoryHeaderRow].*).map(_.asCategoryHeader))
-
   }
 }
