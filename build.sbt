@@ -19,8 +19,8 @@ limitations under the License.
 import ResolveInternalDependencies._
 
 lazy val commonSettings = Seq(
-  version := "3.9.1-SNAPSHOT",
-  scalaVersion := "2.12.3",
+  version := "3.11.0-SNAPSHOT",
+  scalaVersion := "2.12.4",
   publishArtifact in(Compile, packageDoc) := false,
   scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
 )
@@ -83,7 +83,7 @@ lazy val apiDocs = scalatex.ScalatexReadme(
   source = "ApiDocs",
   autoResources = List("apidocs-styles.css")
 ).settings(
-  scalaVersion := "2.12.3",
+  scalaVersion := "2.12.4",
   libraryDependencies ++= Seq(
     "com.lihaoyi" %% "upickle" % "0.4.3",
     "com.google.code.gson" % "gson" % "2.3.1" // for JSON pretty-printing
