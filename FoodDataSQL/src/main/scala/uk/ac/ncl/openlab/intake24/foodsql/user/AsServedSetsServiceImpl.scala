@@ -22,7 +22,7 @@ class AsServedSetsServiceImpl @Inject()(@Named("intake24_foods") val dataSource:
 
   private lazy val imagesQuery = sqlFromResource("user/get_as_served_images.sql")
 
-  def getAsServedSet(id: String): Either[LookupError, UserAsServedSet] = tryWithConnection {
+  def getAsServedSet(id: Long): Either[LookupError, UserAsServedSet] = tryWithConnection {
     implicit conn =>
       withTransaction {
         SQL(setQuery).on('id -> id).executeQuery().as(Macro.namedParser[AsServedSetRow].singleOpt) match {
@@ -31,7 +31,7 @@ class AsServedSetsServiceImpl @Inject()(@Named("intake24_foods") val dataSource:
             val images = result.map(row => UserAsServedImage(row.image_path, row.thumbnail_path, row.weight))
             Right(UserAsServedSet(set.selection_image_path, images))
           }
-          case None => Left(RecordNotFound(new RuntimeException(id)))
+          case None => Left(RecordNotFound(new RuntimeException(id.toString)))
         }
       }
   }

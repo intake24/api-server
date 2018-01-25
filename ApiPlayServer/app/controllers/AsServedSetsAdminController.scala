@@ -34,13 +34,13 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class AsServedImageWithUrls(sourceId: Long, imageUrl: String, thumbnailUrl: String, weight: Double)
 
-case class AsServedSetWithUrls(id: String, description: String, images: Seq[AsServedImageWithUrls])
+case class AsServedSetWithUrls(id: Long, description: String, images: Seq[AsServedImageWithUrls])
 
 case class NewAsServedImage(sourceImageId: Long, weight: Double)
 
 case class ExistingAsServedImage(processedImageId: Long, processedThumbnailId: Long, weight: Double)
 
-case class NewAsServedSet(id: String, description: String, images: Seq[NewAsServedImage])
+case class NewAsServedSet(id: Long, description: String, images: Seq[NewAsServedImage])
 
 class AsServedSetsAdminController @Inject()(
                                              service: AsServedSetsAdminService,
@@ -68,19 +68,19 @@ class AsServedSetsAdminController @Inject()(
     }
   }
 
-  def getAsServedSet(id: String) = rab.restrictAccess(foodAuthChecks.canReadPortionSizeMethods) {
+  def getAsServedSet(id: Long) = rab.restrictAccess(foodAuthChecks.canReadPortionSizeMethods) {
     Future {
       translateDatabaseResult(service.getAsServedSetWithPaths(id).right.map(resolveUrls))
     }
   }
 
-  def deleteAsServedSet(id: String) = rab.restrictToRoles(Roles.superuser) {
+  def deleteAsServedSet(id: Long) = rab.restrictToRoles(Roles.superuser) {
     Future {
       translateDatabaseResult(service.deleteAsServedSetRecord(id))
     }
   }
 
-  def exportAsServedSet(id: String) = rab.restrictAccess(foodAuthChecks.canReadPortionSizeMethods) {
+  def exportAsServedSet(id: Long) = rab.restrictAccess(foodAuthChecks.canReadPortionSizeMethods) {
     Future {
       translateDatabaseResult(service.getPortableAsServedSet(id))
     }
@@ -139,7 +139,7 @@ class AsServedSetsAdminController @Inject()(
       }
   }
 
-  private def processImages(setId: String, sourceImages: Seq[Long]): Either[ImageServiceOrDatabaseError, (Seq[AsServedImageDescriptor], ImageDescriptor)] = {
+  private def processImages(setId: Long, sourceImages: Seq[Long]): Either[ImageServiceOrDatabaseError, (Seq[AsServedImageDescriptor], ImageDescriptor)] = {
     val ssiSourceId = sourceImages(sourceImages.length / 2)
 
     for (
@@ -205,7 +205,7 @@ class AsServedSetsAdminController @Inject()(
 
             val uploaderName = request.subject.userId.toString // FIXME: something like John Smith <john.smith@gmail.com> is probably more useful.
             val keywords = request.body.dataParts.getOrElse("keywords", Seq())
-            val setId = request.body.dataParts("id").head
+            val setId = request.body.dataParts("id").head.toLong
             val description = request.body.dataParts("description").head
 
             val result = for (
@@ -233,7 +233,7 @@ class AsServedSetsAdminController @Inject()(
     }
   }
 
-  def updateAsServedSet(id: String) = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(jsonBodyParser.parse[NewAsServedSet]) {
+  def updateAsServedSet(id: Long) = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(jsonBodyParser.parse[NewAsServedSet]) {
     request =>
       Future {
         val update = request.body

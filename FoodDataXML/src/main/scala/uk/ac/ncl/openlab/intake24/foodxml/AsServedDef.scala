@@ -26,7 +26,7 @@ import scala.xml.{Attribute, NodeSeq, Null, Text}
 case class AsServedImageV1(url: String, weight: Double)
 
 case class AsServedSetV1(id: String, description: String, images: Seq[AsServedImageV1]) {
-  def toHeader = AsServedHeader(id, description)
+  def toHeader = AsServedHeader(id.toLong, description)
 }
 
 

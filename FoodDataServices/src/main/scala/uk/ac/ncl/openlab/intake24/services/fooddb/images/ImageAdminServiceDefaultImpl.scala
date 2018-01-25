@@ -125,7 +125,7 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
 
   private def getExtension(path: String) = "." + FilenameUtils.getExtension(path).toLowerCase()
 
-  private def processAndUploadAsServed(setId: String, sourcePaths: Seq[String]): Either[ImageServiceOrDatabaseError, Seq[AsServedImagePaths]] = {
+  private def processAndUploadAsServed(setId: Long, sourcePaths: Seq[String]): Either[ImageServiceOrDatabaseError, Seq[AsServedImagePaths]] = {
     withTempDir {
       tempDir =>
         def rec(srcs: Seq[String], acc: Vector[AsServedImagePaths]): Either[ImageServiceOrDatabaseError, Vector[AsServedImagePaths]] =
@@ -219,7 +219,7 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
   private def mkProcessedThumbnailRecords(sourceIds: Seq[Long], paths: Seq[AsServedImagePaths]): Seq[ProcessedImageRecord] =
     sourceIds.zip(paths).map { case (id, paths) => ProcessedImageRecord(paths.thumbnail, id, ProcessedImagePurpose.AsServedThumbnail) }
 
-  def processForAsServed(setId: String, sourceImageIds: Seq[Long]): Either[ImageServiceOrDatabaseError, Seq[AsServedImageDescriptor]] =
+  def processForAsServed(setId: Long, sourceImageIds: Seq[Long]): Either[ImageServiceOrDatabaseError, Seq[AsServedImageDescriptor]] =
     for (
       sources <- {
         logger.debug("Getting source image descriptors")

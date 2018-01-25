@@ -97,6 +97,8 @@ class UserFoodDataServiceXmlImpl @Inject()(data: XmlDataSource) extends FoodData
         ??? /// (UserFoodData(f.code, f.description, f.nutrientTableCodes, f.groupCode, portionSizeMethods, readyMealOption, sameAsBeforeOption, reasonableAmount), null)
     }
 
+  override def getAsServedSet(id: Long): Either[LookupError, UserAsServedSet] = getAsServedSet(id.toString)
+
   def getAsServedSet(id: String) = data.asServedSets.get(id) match {
     case Some(set) => Right(UserAsServedSet(set.images(0).url, set.images.map(m => UserAsServedImage(m.url, m.url, m.weight))))
     case None => Left(RecordNotFound(new RuntimeException(id)))

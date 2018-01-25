@@ -21,7 +21,7 @@ GET         /foods/:locale/:code/associated-foods        controllers.food.user.F
 
 
 GET         /portion-size/weight                         controllers.food.user.FoodDataController.getWeightPortionSizeMethod()
-GET         /portion-size/as-served/:id                  controllers.food.user.FoodDataController.getAsServedSet(id: String)
+GET         /portion-size/as-served/:id                  controllers.food.user.FoodDataController.getAsServedSet(id: Long)
 POST        /portion-size/as-served                      controllers.food.user.FoodDataController.getAsServedSets()
 GET         /portion-size/guide-image/:id                controllers.food.user.FoodDataController.getGuideImage(id: String)
 GET         /portion-size/image-maps/:id                 controllers.food.user.FoodDataController.getImageMap(id: String)

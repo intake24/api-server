@@ -30,7 +30,7 @@ trait ImageAdminService {
 
   def deleteProcessedImages(ids: Seq[Long]): Either[ImageServiceOrDatabaseError, Unit]
 
-  def processForAsServed(setId: String, sourceImageIds: Seq[Long]): Either[ImageServiceOrDatabaseError, Seq[AsServedImageDescriptor]]
+  def processForAsServed(setId: Long, sourceImageIds: Seq[Long]): Either[ImageServiceOrDatabaseError, Seq[AsServedImageDescriptor]]
 
   def processForSelectionScreen(pathPrefix: String, sourceImageId: Long): Either[ImageServiceOrDatabaseError, ImageDescriptor]
 
@@ -59,12 +59,12 @@ object ImageAdminService {
     UUID.randomUUID().toString() + extension
   }
 
-  def getSourcePathForAsServed(setId: String, originalName: String): String =
+  def getSourcePathForAsServed(setId: Long, originalName: String): String =
     s"$asServedPathPrefix/$setId/${randomName(originalName)}"
 
   def getSourcePathForImageMap(id: String, originalName: String): String =
     s"$imageMapPathPrefix/$id/${randomName(originalName)}"
 
-  def ssiPrefixAsServed(setId: String): String =
+  def ssiPrefixAsServed(setId: Long): String =
     s"$asServedPathPrefix/$setId/selection"
 }

@@ -190,14 +190,14 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
     UserAsServedSetWithUrls(imageStorageService.getUrl(set.selectionImagePath), images)
   }
 
-  def getAsServedSet(id: String) = rab.restrictToAuthenticated {
+  def getAsServedSet(id: Long) = rab.restrictToAuthenticated {
     _ =>
       Future {
         translateDatabaseResult(asServedImageService.getAsServedSet(id).right.map(toAsServedSetWithUrls))
       }
   }
 
-  def getAsServedSets() = rab.restrictToAuthenticated(jsonBodyParser.parse[Seq[String]]) {
+  def getAsServedSets() = rab.restrictToAuthenticated(jsonBodyParser.parse[Seq[Long]]) {
     request =>
       Future {
         translateDatabaseResult(sequence(request.body.map(asServedImageService.getAsServedSet(_))).right.map(_.map(toAsServedSetWithUrls)))

@@ -68,7 +68,7 @@ class ImageAdminController @Inject()(service: ImageAdminService,
     request => uploadImpl(None, request)
   }
 
-  def uploadSourceImageForAsServed(setId: String) = rab.restrictToRoles(Roles.superuser, Roles.foodsAdmin)(playBodyParsers.multipartFormData) {
+  def uploadSourceImageForAsServed(setId: Long) = rab.restrictToRoles(Roles.superuser, Roles.foodsAdmin)(playBodyParsers.multipartFormData) {
     request => uploadImpl(Some(originalPath => ImageAdminService.getSourcePathForAsServed(setId, originalPath)), request)
   }
 

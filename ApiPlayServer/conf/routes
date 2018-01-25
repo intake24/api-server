@@ -86,15 +86,15 @@ POST           /admin/associated-foods/:locale/:code                         con
 # Portion size methods
 
 GET            /admin/portion-size/as-served                                 controllers.AsServedSetsAdminController.listAsServedSets()
-GET            /admin/portion-size/as-served/:id                             controllers.AsServedSetsAdminController.getAsServedSet(id: String)
+GET            /admin/portion-size/as-served/:id                             controllers.AsServedSetsAdminController.getAsServedSet(id: Long)
 
-GET            /admin/portion-size/as-served/:id/export                      controllers.AsServedSetsAdminController.exportAsServedSet(id: String)
+GET            /admin/portion-size/as-served/:id/export                      controllers.AsServedSetsAdminController.exportAsServedSet(id: Long)
 POST           /admin/portion-size/as-served/import                          controllers.AsServedSetsAdminController.importAsServedSet()
 
 POST           /admin/portion-size/as-served/new                             controllers.AsServedSetsAdminController.createAsServedSet()
 POST           /admin/portion-size/as-served/new-from-source                 controllers.AsServedSetsAdminController.createAsServedSetFromSource()
-PUT            /admin/portion-size/as-served/:id                             controllers.AsServedSetsAdminController.updateAsServedSet(id: String)
-DELETE         /admin/portion-size/as-served/:id                             controllers.AsServedSetsAdminController.deleteAsServedSet(id: String)
+PUT            /admin/portion-size/as-served/:id                             controllers.AsServedSetsAdminController.updateAsServedSet(id: Long)
+DELETE         /admin/portion-size/as-served/:id                             controllers.AsServedSetsAdminController.deleteAsServedSet(id: Long)
 
 # POST           /admin/portion-size/image-map/new                             controllers.ImageMapAdminController.createImageMap()
 # POST           /admin/portion-size/image-map/new-from-source                 controllers.ImageMapAdminController.createImageMapFromSource()
@@ -125,7 +125,7 @@ GET            /admin/nutrient-types                                         con
 
 GET            /admin/images/source                                          controllers.ImageAdminController.listSourceImages(offset: Int, limit: Int, search: Option[String])
 POST           /admin/images/source/new                                      controllers.ImageAdminController.uploadSourceImage()
-POST           /admin/images/source/new-as-served                            controllers.ImageAdminController.uploadSourceImageForAsServed(setId: String)
+POST           /admin/images/source/new-as-served                            controllers.ImageAdminController.uploadSourceImageForAsServed(setId: Long)
 POST           /admin/images/source/new-image-map                            controllers.ImageAdminController.uploadSourceImageForImageMap(id: String)
 PATCH          /admin/images/source/:id                                      controllers.ImageAdminController.updateSourceImage(id: Int)
 DELETE         /admin/images/source/delete                                   controllers.ImageAdminController.deleteSourceImages()

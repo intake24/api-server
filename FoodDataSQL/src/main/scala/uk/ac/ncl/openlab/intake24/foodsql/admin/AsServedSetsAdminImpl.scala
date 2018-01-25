@@ -18,11 +18,11 @@ class AsServedSetsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: D
 
   private val logger = LoggerFactory.getLogger(classOf[AsServedSetsAdminImpl])
 
-  def listAsServedSets(): Either[UnexpectedDatabaseError, Map[String, AsServedHeader]] = tryWithConnection {
+  def listAsServedSets(): Either[UnexpectedDatabaseError, Seq[AsServedHeader]] = tryWithConnection {
     implicit conn =>
       val headers = SQL("""SELECT id, description FROM as_served_sets""").executeQuery().as(Macro.namedParser[AsServedHeader].*)
 
-      Right(headers.map(h => (h.id, h)).toMap)
+      Right(headers)
   }
 
   def deleteAllAsServedSets(): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
@@ -69,7 +69,7 @@ class AsServedSetsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: D
 
   private lazy val imagesQuery = sqlFromResource("admin/get_as_served_images.sql")
 
-  def getAsServedSetWithPaths(id: String): Either[LookupError, AsServedSetWithPaths] = tryWithConnection {
+  def getAsServedSetWithPaths(id: Long): Either[LookupError, AsServedSetWithPaths] = tryWithConnection {
     implicit conn =>
       withTransaction {
         SQL(setQuery).on('id -> id).executeQuery().as(Macro.namedParser[AsServedSetRow].singleOpt) match {
@@ -92,7 +92,7 @@ class AsServedSetsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: D
 
   private lazy val imageRecordsQuery = sqlFromResource("admin/get_as_served_image_records.sql")
 
-  def getAsServedSetRecord(id: String): Either[LookupError, AsServedSetRecord] = tryWithConnection {
+  def getAsServedSetRecord(id: Long): Either[LookupError, AsServedSetRecord] = tryWithConnection {
     implicit conn =>
       withTransaction {
         SQL(setRecordQuery).on('id -> id).executeQuery().as(Macro.namedParser[AsServedSetRecordRow].singleOpt) match {
@@ -108,7 +108,7 @@ class AsServedSetsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: D
       }
   }
 
-  def deleteAsServedSetRecord(id: String): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
+  def deleteAsServedSetRecord(id: Long): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
       SQL("DELETE FROM as_served_sets WHERE id={id};").on('id -> id).execute()
       Right(())
@@ -122,7 +122,7 @@ class AsServedSetsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: D
 
   val portableImagesQuery = sqlFromResource("admin/get_portable_as_served_images.sql")
 
-  def getPortableAsServedSet(id: String): Either[LookupError, PortableAsServedSet] = tryWithConnection {
+  def getPortableAsServedSet(id: Long): Either[LookupError, PortableAsServedSet] = tryWithConnection {
     implicit conn =>
       withTransaction {
         SQL(portableSetQuery).on('id -> id).executeQuery().as(Macro.namedParser[PortableAsServedSetRow].singleOpt) match {
@@ -137,7 +137,7 @@ class AsServedSetsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: D
       }
   }
 
-  def updateAsServedSet(id: String, update: NewAsServedSetRecord): Either[UpdateError, Unit] = tryWithConnection {
+  def updateAsServedSet(id: Long, update: NewAsServedSetRecord): Either[UpdateError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
         if (SQL("UPDATE as_served_sets SET id={new_id},selection_image_id={selection_image_id},description={description} WHERE id={id}")

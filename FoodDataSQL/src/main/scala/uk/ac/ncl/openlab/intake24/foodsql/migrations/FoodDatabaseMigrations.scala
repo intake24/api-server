@@ -3,6 +3,7 @@ package uk.ac.ncl.openlab.intake24.foodsql.migrations
 import uk.ac.ncl.openlab.intake24.sql.migrations.Migration
 import org.slf4j.Logger
 import java.sql.Connection
+
 import anorm.SQL
 import uk.ac.ncl.openlab.intake24.sql.migrations.MigrationFailed
 
@@ -643,6 +644,48 @@ object FoodDatabaseMigrations {
       override val description: String = "Add Australia locale"
 
       override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("ALTER TABLE as_served_sets RENAME COLUMN id TO old_id").execute()
+        SQL("ALTER TABLE as_served_sets ADD COLUMN id SERIAL").execute()
+        SQL("ALTER TABLE as_served_sets DROP CONSTRAINT as_served_sets_pk CASCADE").execute()
+        SQL("ALTER TABLE as_served_sets ADD CONSTRAINT as_served_sets_pk PRIMARY KEY (id)").execute()
+
+        SQL("ALTER TABLE as_served_images RENAME COLUMN as_served_set_id to old_as_served_set_id").execute()
+        SQL("ALTER TABLE as_served_images ADD COLUMN as_served_set_id INTEGER NOT NULL DEFAULT 1").execute()
+        SQL("UPDATE as_served_images SET as_served_set_id = (SELECT id FROM as_served_sets WHERE  as_served_sets.old_id = old_as_served_set_id)").execute()
+
+        SQL(
+          """ALTER TABLE as_served_images ADD CONSTRAINT as_served_images_as_served_set_id_fk
+            |FOREIGN KEY (as_served_set_id) REFERENCES as_served_sets(id) ON DELETE CASCADE ON UPDATE CASCADE""".stripMargin).execute()
+        SQL("ALTER TABLE as_served_images DROP COLUMN old_as_served_set_id").execute()
+
+        SQL("""WITH t AS (
+                | SELECT params.id AS param_id, as_served_sets.id AS new_set_id
+                | FROM foods_portion_size_method_params params
+                |  JOIN foods_portion_size_methods psm ON params.portion_size_method_id = psm.id
+                |  LEFT JOIN as_served_sets ON as_served_sets.old_id = params.value
+                | WHERE psm.method = 'as-served' AND params.name='serving-image-set' OR params.name='leftovers-image-set'
+                |)
+                |UPDATE foods_portion_size_method_params SET value=t.new_set_id::VARCHAR(128) FROM t WHERE id=t.param_id""".stripMargin).execute()
+
+        SQL("SELECT id, old_id INTO old_as_served_set_ids FROM as_served_sets").execute()
+
+        SQL("ALTER TABLE as_served_sets DROP COLUMN old_id").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 44l
+      override val versionTo: Long = 45l
+      override val description: String = "Convert as served set ids into integers"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         SQL("INSERT INTO locales VALUES('en_AU', 'Australia', 'Australia', 'en_AU', 'en', 'au', 'en_GB')").execute()
 
         Right(())
@@ -653,6 +696,7 @@ object FoodDatabaseMigrations {
 
       }
     }
+
 
   )
 }
