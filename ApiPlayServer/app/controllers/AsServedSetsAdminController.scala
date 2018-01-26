@@ -34,6 +34,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class AsServedImageWithUrls(sourceId: Long, imageUrl: String, thumbnailUrl: String, weight: Double)
 
+case class AsServedSetHeaderWithUrl(id: Long, description: String, thumbnailUrl: String)
+
 case class AsServedSetWithUrls(id: Long, description: String, images: Seq[AsServedImageWithUrls])
 
 case class NewAsServedImage(sourceImageId: Long, weight: Double)
@@ -64,7 +66,13 @@ class AsServedSetsAdminController @Inject()(
 
   def listAsServedSets() = rab.restrictAccess(foodAuthChecks.canReadPortionSizeMethods) {
     Future {
-      translateDatabaseResult(service.listAsServedSets())
+      val resolvedHeaders = service.listAsServedSets().map {
+        _.map {
+          h => AsServedSetHeaderWithUrl(h.id, h.description, imageStorage.getUrl(h.thumbnailPath))
+        }
+      }
+
+      translateDatabaseResult(resolvedHeaders)
     }
   }
 

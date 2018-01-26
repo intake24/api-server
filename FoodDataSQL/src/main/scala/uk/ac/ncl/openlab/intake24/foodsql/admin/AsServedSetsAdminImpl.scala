@@ -20,7 +20,7 @@ class AsServedSetsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: D
 
   def listAsServedSets(): Either[UnexpectedDatabaseError, Seq[AsServedHeader]] = tryWithConnection {
     implicit conn =>
-      val headers = SQL("""SELECT id, description FROM as_served_sets""").executeQuery().as(Macro.namedParser[AsServedHeader].*)
+      val headers = SQL("""SELECT as_served_sets.id, description, path as thumbnailPath FROM as_served_sets JOIN processed_images ON processed_images.id = as_served_sets.selection_image_id""").executeQuery().as(Macro.namedParser[AsServedHeader].*)
 
       Right(headers)
   }
