@@ -34,7 +34,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class AsServedImageWithUrls(sourceId: Long, imageUrl: String, thumbnailUrl: String, weight: Double)
 
-case class AsServedSetHeaderWithUrl(id: Long, description: String, thumbnailUrl: String)
+case class AsServedSetHeaderWithUrl(id: Long, description: String, thumbnailUrl: Option[String])
 
 case class AsServedSetWithUrls(id: Long, description: String, images: Seq[AsServedImageWithUrls])
 
@@ -68,7 +68,7 @@ class AsServedSetsAdminController @Inject()(
     Future {
       val resolvedHeaders = service.listAsServedSets().map {
         _.map {
-          h => AsServedSetHeaderWithUrl(h.id, h.description, imageStorage.getUrl(h.thumbnailPath))
+          h => AsServedSetHeaderWithUrl(h.id, h.description, h.thumbnailPath.map(imageStorage.getUrl(_)))
         }
       }
 
@@ -137,7 +137,7 @@ class AsServedSetsAdminController @Inject()(
                 NewAsServedImageRecord(mainImageId, thumbnailId, img.weight)
             }
 
-            service.createAsServedSets(Seq(NewAsServedSetRecord(set.id, set.description, selectionImageId, images))).right
+            service.createAsServedSets(Seq(NewAsServedSetRecord(set.id, set.description, Some(selectionImageId), images))).right
           }
 
         ) yield ()
@@ -156,6 +156,15 @@ class AsServedSetsAdminController @Inject()(
     ) yield (imageDescriptors, ssiDescriptor)
   }
 
+  private case class NewAsServedSetResult(id: Long)
+
+  def createAsServedSet() = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods) {
+    _ =>
+      Future {
+        translateDatabaseResult(service.createAsServedSet().map(NewAsServedSetResult(_)))
+      }
+  }
+
   private def createAsServedSetImpl(newSet: NewAsServedSet): Either[ImageServiceOrDatabaseError, AsServedSetWithPaths] =
     for (
       descriptors <- processImages(newSet.id, newSet.images.map(_.sourceImageId)).right;
@@ -164,7 +173,7 @@ class AsServedSetsAdminController @Inject()(
           case (image, descriptor) => NewAsServedImageRecord(descriptor.mainImage.id, descriptor.thumbnail.id, image.weight)
         }
 
-        service.createAsServedSets(Seq(NewAsServedSetRecord(newSet.id, newSet.description, descriptors._2.id, images))).wrapped.right
+        service.createAsServedSets(Seq(NewAsServedSetRecord(newSet.id, newSet.description, Some(descriptors._2.id), images))).wrapped.right
       };
       res <- service.getAsServedSetWithPaths(newSet.id).wrapped.right
     ) yield res
@@ -181,7 +190,7 @@ class AsServedSetsAdminController @Inject()(
       }
   }
 
-  def createAsServedSet() = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(parse.multipartFormData) {
+  def createAsServedSetFromFormData() = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(parse.multipartFormData) {
     request =>
       Future {
 
@@ -230,7 +239,7 @@ class AsServedSetsAdminController @Inject()(
   }
 
   private def cleanUpOldImages(set: AsServedSetRecord): Either[Nothing, Unit] = {
-    val images = List(set.selectionImageId) ++ set.images.map(_.mainImageId) ++ set.images.map(_.thumbnailId)
+    val images = set.selectionImageId.toSeq ++ set.images.map(_.mainImageId) ++ set.images.map(_.thumbnailId)
 
     // It's OK to continue if image deletion failed, but still log it
     imageAdmin.deleteProcessedImages(images) match {
@@ -255,7 +264,7 @@ class AsServedSetsAdminController @Inject()(
                 NewAsServedImageRecord(mainImageId, thumbnailId, weight)
             }
 
-            service.updateAsServedSet(id, NewAsServedSetRecord(update.id, update.description, newDescriptors._2.id, newImageRecords)).wrapped.right
+            service.updateAsServedSet(id, NewAsServedSetRecord(update.id, update.description, Some(newDescriptors._2.id), newImageRecords)).wrapped.right
           };
           _ <- cleanUpOldImages(oldSet).right;
           res <- service.getAsServedSetWithPaths(update.id).wrapped.right

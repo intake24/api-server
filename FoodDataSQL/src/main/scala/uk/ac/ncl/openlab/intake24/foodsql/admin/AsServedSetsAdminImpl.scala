@@ -20,7 +20,7 @@ class AsServedSetsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: D
 
   def listAsServedSets(): Either[UnexpectedDatabaseError, Seq[AsServedHeader]] = tryWithConnection {
     implicit conn =>
-      val headers = SQL("""SELECT as_served_sets.id, description, path as thumbnailPath FROM as_served_sets JOIN processed_images ON processed_images.id = as_served_sets.selection_image_id""").executeQuery().as(Macro.namedParser[AsServedHeader].*)
+      val headers = SQL("""SELECT as_served_sets.id, description, path as thumbnailPath FROM as_served_sets LEFT JOIN processed_images ON processed_images.id = as_served_sets.selection_image_id""").executeQuery().as(Macro.namedParser[AsServedHeader].*)
 
       Right(headers)
   }
@@ -30,6 +30,11 @@ class AsServedSetsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: D
       SQL("DELETE FROM as_served_sets").execute()
 
       Right(())
+  }
+
+  def createAsServedSet(): Either[CreateError, Long] = tryWithConnection {
+    implicit conn =>
+      Right(SQL("INSERT INTO as_served_sets(description) VALUES('New as served set') RETURNING id").executeInsert(SqlParser.scalar[Long].single))
   }
 
   def createAsServedSets(sets: Seq[NewAsServedSetRecord]): Either[CreateError, Unit] = tryWithConnection {
@@ -84,7 +89,7 @@ class AsServedSetsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: D
       }
   }
 
-  private case class AsServedSetRecordRow(description: String, selection_image_id: Long)
+  private case class AsServedSetRecordRow(description: String, selection_image_id: Option[Long])
 
   private case class ImageRecordRow(id: Long, image_id: Long, thumbnail_image_id: Long, weight: Double)
 

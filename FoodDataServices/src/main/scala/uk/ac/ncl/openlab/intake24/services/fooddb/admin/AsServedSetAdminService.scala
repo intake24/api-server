@@ -12,9 +12,9 @@ case class NewAsServedImageRecord(mainImageId: Long, thumbnailId: Long, weight: 
 
 case class AsServedSetWithPaths(id: Long, description: String, images: Seq[AsServedImageWithPaths])
 
-case class AsServedSetRecord(id: Long, description: String, selectionImageId: Long, images: Seq[AsServedImageRecord])
+case class AsServedSetRecord(id: Long, description: String, selectionImageId: Option[Long], images: Seq[AsServedImageRecord])
 
-case class NewAsServedSetRecord(id: Long, description: String, selectionImageId: Long, images: Seq[NewAsServedImageRecord])
+case class NewAsServedSetRecord(id: Long, description: String, selectionImageId: Option[Long], images: Seq[NewAsServedImageRecord])
 
 case class PortableAsServedImage(sourcePath: String, sourceThumbnailPath: String, sourceKeywords: Seq[String], mainImagePath: String, thumbnailPath: String, weight: Double)
 
@@ -34,6 +34,8 @@ trait AsServedSetsAdminService {
   def getPortableAsServedSet(id: Long): Either[LookupError, PortableAsServedSet]
 
   def deleteAllAsServedSets(): Either[UnexpectedDatabaseError, Unit]
+
+  def createAsServedSet(): Either[CreateError, Long]
 
   def createAsServedSets(sets: Seq[NewAsServedSetRecord]): Either[CreateError, Unit]
 

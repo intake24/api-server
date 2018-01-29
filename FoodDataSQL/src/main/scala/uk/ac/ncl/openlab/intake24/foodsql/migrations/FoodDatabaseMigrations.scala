@@ -695,8 +695,24 @@ object FoodDatabaseMigrations {
         ???
 
       }
-    }
+    },
 
+    new Migration {
+
+      override val versionFrom: Long = 45l
+      override val versionTo: Long = 46l
+      override val description: String = "Allow null selection_image_id for empty as served sets"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("ALTER TABLE as_served_sets ALTER COLUMN selection_image_id DROP NOT NULL").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    }
 
   )
 }

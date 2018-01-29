@@ -42,7 +42,7 @@ object ImportNewZealandFoods extends App with DatabaseConnection with WarningMes
   val asServedService = new AsServedSetsAdminImpl(dataSource, new AsServedSetsServiceImpl(dataSource))
   val guideImageService = new GuideImageAdminImpl(dataSource, new GuideImageServiceImpl(dataSource))
 
-  val knownAsServedSets = asServedService.listAsServedSets().right.get.keySet
+  val knownAsServedSets = asServedService.listAsServedSets().right.get
   val knownGuideImages = guideImageService.listGuideImages().right.get.map(_.id).toSet
 
   println("Known as served sets: " + knownAsServedSets.mkString(", "))

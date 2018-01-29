@@ -86,13 +86,15 @@ POST           /admin/associated-foods/:locale/:code                         con
 # Portion size methods
 
 GET            /admin/portion-size/as-served                                 controllers.AsServedSetsAdminController.listAsServedSets()
+POST           /admin/portion-size/as-served/new                             controllers.AsServedSetsAdminController.createAsServedSet()
+POST           /admin/portion-size/as-served/new-from-form                   controllers.AsServedSetsAdminController.createAsServedSetFromFormData()
+POST           /admin/portion-size/as-served/new-from-source                 controllers.AsServedSetsAdminController.createAsServedSetFromSource()
+
 GET            /admin/portion-size/as-served/:id                             controllers.AsServedSetsAdminController.getAsServedSet(id: Long)
 
 GET            /admin/portion-size/as-served/:id/export                      controllers.AsServedSetsAdminController.exportAsServedSet(id: Long)
 POST           /admin/portion-size/as-served/import                          controllers.AsServedSetsAdminController.importAsServedSet()
 
-POST           /admin/portion-size/as-served/new                             controllers.AsServedSetsAdminController.createAsServedSet()
-POST           /admin/portion-size/as-served/new-from-source                 controllers.AsServedSetsAdminController.createAsServedSetFromSource()
 PUT            /admin/portion-size/as-served/:id                             controllers.AsServedSetsAdminController.updateAsServedSet(id: Long)
 DELETE         /admin/portion-size/as-served/:id                             controllers.AsServedSetsAdminController.deleteAsServedSet(id: Long)
 
