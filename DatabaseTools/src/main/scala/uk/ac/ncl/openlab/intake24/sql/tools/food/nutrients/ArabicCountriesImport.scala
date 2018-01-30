@@ -34,12 +34,12 @@ object ArabicCountriesImport extends App with WarningMessage with DatabaseConnec
   val nutrientTableService = new NutrientTablesAdminImpl(dataSource)
 
 
-  val UAEMapping = CsvNutrientTableMapping(2, col("AG") - 1, 0, None, ArabicCompositionTableMappings.UAE)
-  val BahrainMapping = CsvNutrientTableMapping(7, 0, 1, Some(2), ArabicCompositionTableMappings.Bahrain)
-  val OmanMapping = CsvNutrientTableMapping(7, 0, 1, Some(2), ArabicCompositionTableMappings.Oman)
-  val QatarMapping = CsvNutrientTableMapping(7, 0, 1, Some(2), ArabicCompositionTableMappings.Qatar)
-  val SaudiMapping = CsvNutrientTableMapping(7, 0, 1, Some(2), ArabicCompositionTableMappings.Saudi)
-  val KuwaitMapping = CsvNutrientTableMapping(2, 0, 1, Some(2),  ArabicCompositionTableMappings.Kuwait)
+  val UAEMapping = CsvNutrientTableMapping(2, col("AG") - 1, 0, None, AusnutMapping.UAE)
+  val BahrainMapping = CsvNutrientTableMapping(7, 0, 1, Some(2), AusnutMapping.Bahrain)
+  val OmanMapping = CsvNutrientTableMapping(7, 0, 1, Some(2), AusnutMapping.Oman)
+  val QatarMapping = CsvNutrientTableMapping(7, 0, 1, Some(2), AusnutMapping.Qatar)
+  val SaudiMapping = CsvNutrientTableMapping(7, 0, 1, Some(2), AusnutMapping.Saudi)
+  val KuwaitMapping = CsvNutrientTableMapping(2, 0, 1, Some(2),  AusnutMapping.Kuwait)
 
   val records =
     CsvNutrientTableParser.parseTable(options.csvDir() + File.separator + "uae.csv", UAEMapping) ++
