@@ -2,7 +2,7 @@ package cache
 
 import com.google.inject.{Inject, Singleton}
 import modules.BasicImpl
-import uk.ac.ncl.openlab.intake24._
+import uk.ac.ncl.openlab.intake24.api.data.admin._
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoriesAdminService
 

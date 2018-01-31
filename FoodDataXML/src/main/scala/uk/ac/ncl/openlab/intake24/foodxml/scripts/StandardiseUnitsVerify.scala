@@ -1,13 +1,12 @@
 package uk.ac.ncl.openlab.intake24.foodxml.scripts
 
-import uk.ac.ncl.openlab.intake24.foodxml.FoodDef
-import scala.xml.XML
-import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
-import au.com.bytecode.opencsv.CSVWriter
-import java.io.File
-import java.io.FileWriter
+import java.io.{File, FileInputStream}
 import java.util.Properties
-import java.io.FileInputStream
+
+import uk.ac.ncl.openlab.intake24.api.data.PortionSizeMethodParameter
+import uk.ac.ncl.openlab.intake24.foodxml.FoodDef
+
+import scala.xml.XML
 
 object StandardiseUnitsVerify extends App {
 

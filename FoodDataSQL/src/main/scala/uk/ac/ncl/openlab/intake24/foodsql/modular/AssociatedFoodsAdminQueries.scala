@@ -4,9 +4,10 @@ import anorm.NamedParameter.symbol
 import anorm.{Macro, NamedParameter, SQL, sqlToSimple}
 import org.postgresql.util.PSQLException
 import org.slf4j.LoggerFactory
+import uk.ac.ncl.openlab.intake24.api.data.AssociatedFood
+import uk.ac.ncl.openlab.intake24.api.data.admin.{AssociatedFoodWithHeader, CategoryHeader, FoodHeader}
 import uk.ac.ncl.openlab.intake24.errors.{LocaleOrParentError, ParentRecordNotFound, UndefinedLocale}
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
-import uk.ac.ncl.openlab.intake24.{AssociatedFood, AssociatedFoodWithHeader, CategoryHeader, FoodHeader}
 
 trait AssociatedFoodsAdminQueries extends SqlDataService with SqlResourceLoader {
 

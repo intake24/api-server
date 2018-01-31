@@ -3,11 +3,11 @@ package uk.ac.ncl.openlab.intake24.foodsql.modular
 import anorm.NamedParameter.symbol
 import anorm.{Macro, SQL, SqlParser, sqlToSimple}
 import org.slf4j.LoggerFactory
+import uk.ac.ncl.openlab.intake24.api.data.admin.{CategoryContents, CategoryHeader, FoodHeader}
 import uk.ac.ncl.openlab.intake24.errors.{LocalLookupError, LookupError}
 import uk.ac.ncl.openlab.intake24.foodsql.admin.HeaderRows
 import uk.ac.ncl.openlab.intake24.foodsql.{FirstRowValidation, FirstRowValidationClause}
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
-import uk.ac.ncl.openlab.intake24.{CategoryContents, CategoryHeader, FoodHeader}
 
 trait FoodBrowsingAdminQueries
   extends SqlDataService

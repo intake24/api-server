@@ -20,7 +20,8 @@ package uk.ac.ncl.openlab.intake24.foodxml
 
 import com.google.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24._
+import uk.ac.ncl.openlab.intake24.api.data.admin.CategoryHeader
+import uk.ac.ncl.openlab.intake24.api.data.{AssociatedFood, InheritableAttributes, UserCategoryContents, UserCategoryHeader}
 import uk.ac.ncl.openlab.intake24.errors.{LocaleError, LookupError, RecordNotFound}
 import uk.ac.ncl.openlab.intake24.services.fooddb.user._
 

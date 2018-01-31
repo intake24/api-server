@@ -4,7 +4,7 @@ package apidocs
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-import uk.ac.ncl.openlab.intake24.api.shared._
+import uk.ac.ncl.openlab.intake24.api.data._
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{NewRespondentIds, NewRespondentWithPhysicalData, UserProfile, UserProfileUpdate}
 import upickle.Js
 

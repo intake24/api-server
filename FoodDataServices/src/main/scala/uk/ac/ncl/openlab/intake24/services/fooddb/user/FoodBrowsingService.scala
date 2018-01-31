@@ -1,7 +1,8 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.user
 
+import uk.ac.ncl.openlab.intake24.api.data.admin.CategoryHeader
+import uk.ac.ncl.openlab.intake24.api.data.{UserCategoryContents, UserCategoryHeader}
 import uk.ac.ncl.openlab.intake24.errors.{LocalLookupError, LocaleError, LookupError}
-import uk.ac.ncl.openlab.intake24.{CategoryHeader, UserCategoryContents, UserCategoryHeader}
 
 sealed trait SourceRecord
 
@@ -37,9 +38,13 @@ object SourceLocale {
 
 }
 
-case class InheritableAttributeSources(sameAsBeforeOptionSource: InheritableAttributeSource, readyMealOptionSource: InheritableAttributeSource, reasonableAmountSource: InheritableAttributeSource)
+case class InheritableAttributeSources(sameAsBeforeOptionSource: InheritableAttributeSource,
+                                       readyMealOptionSource: InheritableAttributeSource,
+                                       reasonableAmountSource: InheritableAttributeSource)
 
-case class FoodDataSources(localDescriptionSource: SourceLocale, nutrientTablesSource: SourceLocale, portionSizeSource: (SourceLocale, SourceRecord), inheritableAttributesSources: InheritableAttributeSources)
+case class FoodDataSources(localDescriptionSource: SourceLocale, nutrientTablesSource: SourceLocale,
+                           portionSizeSource: (SourceLocale, SourceRecord),
+                           inheritableAttributesSources: InheritableAttributeSources)
 
 trait FoodBrowsingService {
 

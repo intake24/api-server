@@ -6,12 +6,13 @@ import anorm.NamedParameter.symbol
 import anorm.{Macro, SQL, SqlParser, sqlToSimple}
 import com.google.inject.name.Named
 import com.google.inject.{Inject, Singleton}
+import uk.ac.ncl.openlab.intake24.api.data.admin.CategoryHeader
+import uk.ac.ncl.openlab.intake24.api.data.{UserCategoryContents, UserCategoryHeader, UserFoodHeader}
 import uk.ac.ncl.openlab.intake24.errors.{LocalLookupError, LocaleError, LookupError, RecordNotFound}
 import uk.ac.ncl.openlab.intake24.foodsql.shared.SuperCategoriesQueries
 import uk.ac.ncl.openlab.intake24.foodsql.{FirstRowValidation, FirstRowValidationClause}
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodBrowsingService
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
-import uk.ac.ncl.openlab.intake24.{CategoryHeader, UserCategoryContents, UserCategoryHeader, UserFoodHeader}
 
 @Singleton
 class FoodBrowsingServiceImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends FoodBrowsingService with SqlDataService with SqlResourceLoader with FirstRowValidation with SuperCategoriesQueries {

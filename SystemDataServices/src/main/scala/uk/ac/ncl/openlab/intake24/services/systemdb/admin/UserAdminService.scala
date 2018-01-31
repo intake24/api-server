@@ -1,9 +1,9 @@
 package uk.ac.ncl.openlab.intake24.services.systemdb.admin
 
+import uk.ac.ncl.openlab.intake24.api.data.NewUserProfile
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.UserPhysicalDataOut
 
-case class NewUserProfile(name: Option[String], email: Option[String], phone: Option[String], roles: Set[String], customFields: Map[String, String])
 
 case class UserProfile(id: Long, name: Option[String], email: Option[String], phone: Option[String], emailNotifications: Boolean, smsNotifications: Boolean, roles: Set[String], customFields: Map[String, String])
 

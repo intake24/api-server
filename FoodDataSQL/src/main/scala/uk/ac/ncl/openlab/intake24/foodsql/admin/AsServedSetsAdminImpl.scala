@@ -6,7 +6,7 @@ import anorm._
 import com.google.inject.name.Named
 import com.google.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.AsServedHeader
+import uk.ac.ncl.openlab.intake24.api.data.AsServedHeader
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.AsServedSetsService

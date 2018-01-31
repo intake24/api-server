@@ -1,8 +1,5 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.images
 
-import uk.ac.ncl.openlab.intake24.GuideImage
-
-
 case class AsServedImageSettings(width: Int, height: Int, thumbnailWidth: Int)
 
 case class SelectionImageSettings(width: Int, height: Int)

@@ -25,9 +25,6 @@ import au.com.bytecode.opencsv.CSVReader
 import scala.xml.XML
 import java.io.File
 import java.io.FileFilter
-import uk.ac.ncl.openlab.intake24.PortionSizeMethod
-import uk.ac.ncl.openlab.intake24.GuideImageWeightRecord
-import uk.ac.ncl.openlab.intake24.GuideImage
 
 object ParseNewPhotosGuide {
  /* import ParseNewPhotos._

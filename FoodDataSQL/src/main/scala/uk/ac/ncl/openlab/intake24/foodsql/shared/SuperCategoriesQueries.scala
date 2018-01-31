@@ -2,10 +2,10 @@ package uk.ac.ncl.openlab.intake24.foodsql.shared
 
 import anorm.NamedParameter.symbol
 import anorm.{Macro, SQL, SqlParser, sqlToSimple}
-import uk.ac.ncl.openlab.intake24.CategoryHeader
+import uk.ac.ncl.openlab.intake24.api.data.admin.CategoryHeader
 import uk.ac.ncl.openlab.intake24.errors.{LocalLookupError, LookupError}
-import uk.ac.ncl.openlab.intake24.foodsql.{FirstRowValidation, FirstRowValidationClause}
 import uk.ac.ncl.openlab.intake24.foodsql.admin.HeaderRows
+import uk.ac.ncl.openlab.intake24.foodsql.{FirstRowValidation, FirstRowValidationClause}
 import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
 
 trait SuperCategoriesQueries extends FirstRowValidation with HeaderRows with SqlResourceLoader {

@@ -6,7 +6,7 @@ import anorm.{NamedParameter, SQL, sqlToSimple}
 import com.google.inject.Inject
 import com.google.inject.name.Named
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.SplitList
+import uk.ac.ncl.openlab.intake24.api.shared.admin.SplitList
 import uk.ac.ncl.openlab.intake24.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataSharedImpl
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodIndexDataAdminService

@@ -1,7 +1,6 @@
 package uk.ac.ncl.openlab.intake24.foodsql.admin
 
-import uk.ac.ncl.openlab.intake24.CategoryHeader
-import uk.ac.ncl.openlab.intake24.FoodHeader
+import uk.ac.ncl.openlab.intake24.api.data.admin.{CategoryHeader, FoodHeader}
 
 trait HeaderRows {
 

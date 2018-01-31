@@ -21,7 +21,8 @@ package uk.ac.ncl.openlab.intake24.sql.tools.system
 import anorm._
 import org.rogach.scallop._
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{NewUserWithPassword, SecurePassword, NewUserProfile}
+import uk.ac.ncl.openlab.intake24.api.data.NewUserProfile
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{NewUserWithPassword, SecurePassword}
 import uk.ac.ncl.openlab.intake24.sql.SqlFileUtil
 import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConfiguration, DatabaseConnection, DatabaseOptions, WarningMessage}
 import uk.ac.ncl.openlab.intake24.systemsql.admin.UserAdminImpl
