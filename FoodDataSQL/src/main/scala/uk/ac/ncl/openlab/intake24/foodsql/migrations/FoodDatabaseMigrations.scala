@@ -652,7 +652,25 @@ object FoodDatabaseMigrations {
         ???
 
       }
-    }
+    },
 
+    new Migration {
+
+      override val versionFrom: Long = 44l
+      override val versionTo: Long = 45l
+      override val description: String = "Add conversion factor for portion size methods"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("ALTER TABLE foods_portion_size_methods ADD COLUMN conversion_factor DOUBLE PRECISION NOT NULL DEFAULT 1.0").execute()
+        SQL("ALTER TABLE categories_portion_size_methods ADD COLUMN conversion_factor DOUBLE PRECISION NOT NULL DEFAULT 1.0").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    }
   )
 }
