@@ -72,7 +72,9 @@ trait CategoriesAdminQueries
 
   private val categoriesInsertLocalQuery = "INSERT INTO categories_local VALUES({category_code}, {locale_id}, {local_description}, {simple_local_description}, {version}::uuid)"
 
-  private val categoriesPsmInsertQuery = "INSERT INTO categories_portion_size_methods VALUES(DEFAULT, {category_code}, {locale_id}, {method}, {description}, {image_url}, {use_for_recipes})"
+  private val categoriesPsmInsertQuery =
+    """INSERT INTO categories_portion_size_methods(category_code,locale_id,method,description,image_url,use_for_recipes,conversion_factor)
+      |VALUES({category_code},{locale_id},{method},{description},{image_url},{use_for_recipes},{conversion_factor})""".stripMargin
 
   protected def updateCategoryPortionSizeMethodsQuery(categoryCode: String, portionSize: Seq[PortionSizeMethod], locale: String)(implicit conn: java.sql.Connection): Either[LocalUpdateError, Unit] = {
     val errors = Map[String, PSQLException => LocalUpdateError]("categories_portion_size_methods_categories_code_fk" -> (e => RecordNotFound(new RuntimeException(categoryCode))),
@@ -83,7 +85,8 @@ trait CategoriesAdminQueries
 
     if (portionSize.nonEmpty) {
       tryWithConstraintsCheck(errors) {
-        val psmParams = portionSize.map(ps => Seq[NamedParameter]('category_code -> categoryCode, 'locale_id -> locale, 'method -> ps.method, 'description -> ps.description, 'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes))
+        val psmParams = portionSize.map(ps => Seq[NamedParameter]('category_code -> categoryCode, 'locale_id -> locale, 'method -> ps.method,
+          'description -> ps.description, 'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes, 'conversion_factor -> ps.conversionFactor))
 
         val psmKeys = AnormUtil.batchKeys(batchSql(categoriesPsmInsertQuery, psmParams))
 
@@ -264,7 +267,8 @@ trait CategoriesAdminQueries
               local.portionSize.map {
                 ps =>
                   Seq[NamedParameter]('category_code -> code, 'locale_id -> locale, 'method -> ps.method,
-                    'description -> ps.description, 'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes)
+                    'description -> ps.description, 'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes,
+                    'conversion_factor -> ps.conversionFactor)
               }
           }
 

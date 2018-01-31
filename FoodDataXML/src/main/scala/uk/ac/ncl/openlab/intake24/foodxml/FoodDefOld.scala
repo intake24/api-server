@@ -78,7 +78,8 @@ object FoodDefOld {
     
   def parsePortionSize(e: Elem): PortionSizeMethod =
     if (e.label == "portion-size") PortionSizeMethod (e.attribute("method").get.text, e.attribute("description").map(_.text).getOrElse("No description"), 
-        e.attribute("imageUrl").map(_.text).getOrElse("portion/placeholder.jpg"), e.attribute("useForRecipes").map(_.text.toBoolean).getOrElse(false), e.child.filter(_.isInstanceOf[Elem]).map(n => parseParam(n.asInstanceOf[Elem])))
+        e.attribute("imageUrl").map(_.text).getOrElse("portion/placeholder.jpg"), e.attribute("useForRecipes").map(_.text.toBoolean).getOrElse(false), 1.0,
+      e.child.filter(_.isInstanceOf[Elem]).map(n => parseParam(n.asInstanceOf[Elem])))
     else throw new IllegalArgumentException ("Cannot parse element as portion size: " + e.text)
 
   def parseXml(root: NodeSeq): Map[String, CategoryV1] = {

@@ -90,7 +90,7 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
 
     val resolvedImageUrl = imageStorageService.getUrl(psm.imageUrl)
 
-    PortionSizeMethodForSurvey(psm.method, psm.description, resolvedImageUrl, psm.useForRecipes, parametersMap)
+    PortionSizeMethodForSurvey(psm.method, psm.description, resolvedImageUrl, psm.useForRecipes, psm.conversionFactor, parametersMap)
   }
 
   def getFoodData(code: String, locale: String) = rab.restrictToAuthenticated {
@@ -260,7 +260,7 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
   def getWeightPortionSizeMethod() = rab.restrictToAuthenticated {
     _ =>
       Future {
-        translateDatabaseResult(Right(PortionSizeMethodForSurvey("weight", "weight", imageStorageService.getUrl("portion/weight.png"), true, Map())))
+        translateDatabaseResult(Right(PortionSizeMethodForSurvey("weight", "weight", imageStorageService.getUrl("portion/weight.png"), true, 1.0, Map())))
       }
   }
 }
