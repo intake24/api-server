@@ -1585,6 +1585,36 @@ object SystemDatabaseMigrations {
 
         Right(())
       }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 69l
+      override val versionTo: Long = 70l
+      override val description: String = "Add new nutrient types for Australian FCT"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("INSERT INTO nutrient_types(id, description, unit_id) VALUES (229, 'Free sugars', 1)").execute()
+        SQL("INSERT INTO nutrient_types(id, description, unit_id) VALUES (230, 'Folic acid', 3)").execute()
+        SQL("INSERT INTO nutrient_types(id, description, unit_id) VALUES (231, 'Alpha-linolenic acid', 1)").execute()
+        SQL("INSERT INTO nutrient_types(id, description, unit_id) VALUES (232, 'Total long chain omega 3 fatty acids', 2)").execute()
+        SQL("INSERT INTO nutrient_types(id, description, unit_id) VALUES (233, 'Total trans fatty acids', 2)").execute()
+        SQL("INSERT INTO nutrient_types(id, description, unit_id) VALUES (234, 'C20:5w3 Eicosapentaenoic', 2)").execute()
+        SQL("INSERT INTO nutrient_types(id, description, unit_id) VALUES (235, 'C22:5w3 Docosapentaenoic', 2)").execute()
+        SQL("INSERT INTO nutrient_types(id, description, unit_id) VALUES (236, 'C22:6w3 Docosahexaenoic', 2)").execute()
+        SQL("INSERT INTO nutrient_types(id, description, unit_id) VALUES (237, 'Energy, with dietary fibre', 5)").execute()
+        SQL("INSERT INTO nutrient_types(id, description, unit_id) VALUES (238, 'Available carbohydrates, with sugar alcohols', 1)").execute()
+        SQL("INSERT INTO nutrient_types(id, description, unit_id) VALUES (239, 'Available carbohydrates, without sugar alcohol', 1)").execute()
+
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
     }
   )
 }
