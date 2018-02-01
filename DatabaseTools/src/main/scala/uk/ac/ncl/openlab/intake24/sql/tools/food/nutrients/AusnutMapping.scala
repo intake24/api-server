@@ -7,6 +7,7 @@ object AusnutMapping {
   import CsvNutrientTableParser.{excelColumnToOffset => col}
 
   val map = Map(
+    1l -> col("BF"),
     2l -> col("F"),
     11l -> col("H"),
     13l -> col("J"),
@@ -49,17 +50,17 @@ object AusnutMapping {
     158l -> col("AS"),
     162l -> col("AD"),
     171l -> col("N"),
-    228l -> col("O"),
-    229l -> col("AB"),
-    230l -> col("AZ"),
-    231l -> col("BD"),
-    232l -> col("BE"),
-    233l -> col("G"),
-    234l -> col("BA"),
-    235l -> col("BB"),
-    236l -> col("BC"),
-    237l -> col("E"),
-    238l -> col("J"),
-    239l -> col("K"))
+    229l -> col("O"),
+    230l -> col("AB"),
+    231l -> col("AZ"),
+    232l -> col("BD"),
+    233l -> col("BE"),
+    234l -> col("G"),
+    235l -> col("BA"),
+    236l -> col("BB"),
+    237l -> col("BC"),
+    238l -> col("E"),
+    239l -> col("J"),
+    240l -> col("K"))
 
 }
