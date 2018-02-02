@@ -2384,10 +2384,10 @@ object AustralianFoodsImport extends App with WarningMessage with ErrorHandler w
 
         throwOnError(for (r <- service.getFoodRecord(code, locale);
                           _ <- service.updateLocalFoodRecord(code, r.local.toUpdate.copy(doNotUse = true), locale)) yield ())
-      } else if (recode.contains(code)) {
-        logger.info("  copying local description and setting IND code")
+      } else if (recodingMap.contains(code)) {
+        logger.info("  copying local description and setting AUSNUT code")
         throwOnError(for (r <- service.getFoodRecord(code, locale);
-                          _ <- service.updateLocalFoodRecord(code, r.local.toUpdate.copy(localDescription = Some(r.main.englishDescription), nutrientTableCodes = Map("INDIA" -> recode(code))), locale)) yield ())
+                          _ <- service.updateLocalFoodRecord(code, r.local.toUpdate.copy(localDescription = Some(r.main.englishDescription), nutrientTableCodes = Map("AUSNUT" -> recodingMap(code))), locale)) yield ())
       } else {
         logger.info("  copying local description")
         throwOnError(for (r <- service.getFoodRecord(code, locale);
