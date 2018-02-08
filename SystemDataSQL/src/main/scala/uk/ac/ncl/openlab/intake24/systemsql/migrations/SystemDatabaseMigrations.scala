@@ -1616,6 +1616,27 @@ object SystemDatabaseMigrations {
         ???
 
       }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 70l
+      override val versionTo: Long = 71l
+      override val description: String = "Add Vitamin A in AU nutrient type"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("INSERT INTO nutrient_units(id, description, symbol) VALUES(6, 'International Units', 'IU')").execute()
+
+        SQL("INSERT INTO nutrient_types(id, description, unit_id) VALUES(241, 'Vitamin A', 6)").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
     }
   )
 }
