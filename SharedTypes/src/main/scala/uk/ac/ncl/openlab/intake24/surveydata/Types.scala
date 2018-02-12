@@ -27,3 +27,6 @@ case class NutrientMappedFood(code: String, englishDescription: String, localDes
                               nutrientTableId: Option[String], nutrientTableCode: Option[String], reasonableAmount: Boolean, foodGroupId: Int, foodGroupEnglishDescription: String, foodGroupLocalDescription: Option[String], nutrients: Map[Long, Double])
 
 case class NutrientMappedSubmission(startTime: ZonedDateTime, endTime: ZonedDateTime, uxSessionId: UUID, meals: Seq[NutrientMappedMeal], customData: Map[String, String])
+
+case class SubmissionNotification(userId: Long, userCustomData: Map[String, String], startTime: ZonedDateTime, endTime: ZonedDateTime,
+                                  uxSessionId: UUID, submissionId: UUID, submissionCustomData: Map[String, String], meals: Seq[NutrientMappedMeal])

@@ -22,23 +22,28 @@ import javax.inject.Inject
 
 import akka.actor.ActorSystem
 import controllers.DatabaseErrorHandler
+import io.circe.syntax._
 import io.circe.generic.auto._
 import parsers.{JsonBodyParser, JsonUtils}
 import play.Logger
+import play.api.libs.ws.WSClient
 import play.api.mvc._
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.api.data.ErrorDescription
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.UserAdminService
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{SurveyAdminService, UserAdminService}
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.{FoodPopularityService, SurveyService}
-import uk.ac.ncl.openlab.intake24.surveydata.SurveySubmission
+import uk.ac.ncl.openlab.intake24.surveydata.{SubmissionNotification, SurveySubmission}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 class SurveyController @Inject()(service: SurveyService,
+                                 ws: WSClient,
                                  userService: UserAdminService,
+                                 surveyAdminService: SurveyAdminService,
                                  nutrientMappingService: NutrientMappingService,
                                  foodPopularityService: FoodPopularityService,
                                  actorSystem: ActorSystem,
@@ -54,9 +59,10 @@ class SurveyController @Inject()(service: SurveyService,
   }
 
   def getSurveyFeedbackStyle(surveyId: String) = Action.async {
-    _ => Future {
-      translateDatabaseResult(service.getSurveyFeedbackStyle(surveyId))
-    }
+    _ =>
+      Future {
+        translateDatabaseResult(service.getSurveyFeedbackStyle(surveyId))
+      }
   }
 
   def getSurveyParameters(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId), Roles.surveyRespondent(surveyId))(playBodyParsers.empty) {
@@ -113,13 +119,46 @@ class SurveyController @Inject()(service: SurveyService,
                 }
 
                 val result = for (nutrientMappedSubmission <- nutrientMappingService.mapSurveySubmission(request.body, params.localeId).right;
-                                  _ <- service.createSubmission(userId, surveyId, nutrientMappedSubmission).right;
-                                  _ <- foodPopularityService.incrementPopularityCount(foodCodes).right) yield ()
+                                  submissionId <- service.createSubmission(userId, surveyId, nutrientMappedSubmission).right;
+                                  _ <- foodPopularityService.incrementPopularityCount(foodCodes).right) yield ((nutrientMappedSubmission, submissionId))
                 result match {
-                  case Right(()) => ()
-                  case Left(e) => Logger.error("Failed to process survey submission", e.exception)
+                  case Right((nutrientMappedSubmission, submissionId)) =>
+
+                    (for (surveyParams <- surveyAdminService.getSurveyParameters(surveyId);
+                          userParams <- userService.getUserById(request.subject.userId))
+                      yield (surveyParams, userParams)) match {
+                      case Right((surveyParams, userParams)) =>
+                        surveyParams.submissionNotificationUrl.foreach {
+                          notificationUrl =>
+
+                            Logger.debug("Sending survey submission notification")
+
+                            val payload = SubmissionNotification(userParams.id, userParams.customFields,
+                              nutrientMappedSubmission.startTime, nutrientMappedSubmission.endTime,
+                              nutrientMappedSubmission.uxSessionId, submissionId, nutrientMappedSubmission.customData, nutrientMappedSubmission.meals).asJson.noSpaces
+
+                            ws.url(notificationUrl)
+                              .withHttpHeaders("Content-Type" -> "application/json; charset=utf-8")
+                              .withBody(payload)
+                              .execute("POST")
+                              .onComplete {
+                                case Success(response) =>
+                                  if (response.status == 200)
+                                    Logger.debug("Survey submission notification sent successfully")
+                                  else
+                                    Logger.error(s"Survey submission notification sent, but request failed with code ${response.status}")
+                                case Failure(e) =>
+                                  Logger.error("Failed to send survey submission notification", e)
+                              }
+                        }
+
+                      case Left(error) => Logger.error("Failed to handle survey submission notification", error.exception)
+                    }
+
+                  case Left(e) => Logger.error("Failed to process survey submission!", e.exception)
                 }
               }
+
 
               Ok
             }

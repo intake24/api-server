@@ -1,5 +1,6 @@
 package uk.ac.ncl.openlab.intake24.systemsql.user
 
+import java.util.UUID
 import javax.inject.{Inject, Named}
 import javax.sql.DataSource
 
@@ -86,7 +87,7 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
       }
   }
 
-  def createSubmission(userId: Long, surveyId: String, survey: NutrientMappedSubmission): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
+  def createSubmission(userId: Long, surveyId: String, survey: NutrientMappedSubmission): Either[UnexpectedDatabaseError, UUID] = tryWithConnection {
     implicit conn =>
       withTransaction {
         val generatedId = java.util.UUID.randomUUID()
@@ -209,7 +210,7 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
           }
         }
 
-        Right(())
+        Right(generatedId)
       }
   }
 }

@@ -164,3 +164,4 @@ POST           /errors/report                                                con
 ->             /help                                                         help.Routes
 ->             /public                                                       public_.Routes
 ->             /ux                                                           ux.Routes
+->             /temp                                                         temp.Routes

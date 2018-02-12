@@ -46,7 +46,7 @@ class SurveyAdminController @Inject()(service: SurveyAdminService,
     SurveyParametersIn(surveyParametersIn.id, surveyParametersIn.schemeId, surveyParametersIn.localeId,
       surveyParametersIn.state, surveyParametersIn.startDate, surveyParametersIn.endDate,
       surveyParametersIn.allowGeneratedUsers, surveyParametersIn.externalFollowUpURL,
-      surveyParametersIn.supportEmail, description)
+      surveyParametersIn.supportEmail, description, surveyParametersIn.submissionNotificationUrl)
   }
 
   def createSurvey() = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin)(jsonBodyParser.parse[SurveyParametersIn]) {

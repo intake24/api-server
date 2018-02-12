@@ -1637,6 +1637,25 @@ object SystemDatabaseMigrations {
         ???
 
       }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 71l
+      override val versionTo: Long = 72l
+      override val description: String = "Add survey submission notification URL"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE surveys ADD COLUMN submission_notification_url CHARACTER VARYING(2048)").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
     }
   )
 }
