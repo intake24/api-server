@@ -78,7 +78,7 @@ class SurveyController @Inject()(service: SurveyService,
         val userId = request.subject.userId
 
         val result = for (
-          userNameOpt <- userService.getSurveyUserAliases(Seq(userId), surveyId).right.map(_.get(userId)).right;
+          userNameOpt <- userService.getSurveyUserAliases(Seq(userId), surveyId).right.map(_.get(userId).map(_.userName)).right;
           followUp <- service.getSurveyFollowUp(surveyId).right
         ) yield {
 
@@ -123,42 +123,47 @@ class SurveyController @Inject()(service: SurveyService,
                                   _ <- foodPopularityService.incrementPopularityCount(foodCodes).right) yield ((nutrientMappedSubmission, submissionId))
                 result match {
                   case Right((nutrientMappedSubmission, submissionId)) =>
-
-                    (for (surveyParams <- surveyAdminService.getSurveyParameters(surveyId);
-                          userParams <- userService.getUserById(request.subject.userId))
-                      yield (surveyParams, userParams)) match {
-                      case Right((surveyParams, userParams)) =>
-                        surveyParams.submissionNotificationUrl.foreach {
+                    surveyAdminService.getSurveyParameters(surveyId) match {
+                      case Right(surveyParameters) =>
+                        surveyParameters.submissionNotificationUrl.foreach {
                           notificationUrl =>
 
-                            Logger.debug("Sending survey submission notification")
+                            (for (userParams <- userService.getUserById(userId);
+                                  userAlias <- userService.getSurveyUserAliases(Seq(userId), surveyId))
+                              yield ((userParams, userAlias))) match {
+                              case Right((userParams, userAlias)) =>
+                                Logger.debug("Sending survey submission notification")
 
-                            val payload = SubmissionNotification(userParams.id, userParams.customFields,
-                              nutrientMappedSubmission.startTime, nutrientMappedSubmission.endTime,
-                              nutrientMappedSubmission.uxSessionId, submissionId, nutrientMappedSubmission.customData, nutrientMappedSubmission.meals).asJson.noSpaces
+                                val payload = SubmissionNotification(userParams.id, surveyId, userAlias.get(userId).map(_.userName).getOrElse(null),
+                                  userParams.customFields, nutrientMappedSubmission.startTime, nutrientMappedSubmission.endTime,
+                                  nutrientMappedSubmission.uxSessionId, submissionId, nutrientMappedSubmission.customData, nutrientMappedSubmission.meals).asJson.noSpaces
 
-                            ws.url(notificationUrl)
-                              .withHttpHeaders("Content-Type" -> "application/json; charset=utf-8")
-                              .withBody(payload)
-                              .execute("POST")
-                              .onComplete {
-                                case Success(response) =>
-                                  if (response.status == 200)
-                                    Logger.debug("Survey submission notification sent successfully")
-                                  else
-                                    Logger.error(s"Survey submission notification sent, but request failed with code ${response.status}")
-                                case Failure(e) =>
-                                  Logger.error("Failed to send survey submission notification", e)
-                              }
+                                ws.url(notificationUrl)
+                                  .withHttpHeaders("Content-Type" -> "application/json; charset=utf-8")
+                                  .withBody(payload)
+                                  .execute("POST")
+                                  .onComplete {
+                                    case Success(response) =>
+                                      if (response.status == 200)
+                                        Logger.debug(s"Survey submission notification sent to $notificationUrl")
+                                      else
+                                        Logger.error(s"Survey submission notification sent, but request failed with code ${response.status}")
+                                    case Failure(e) =>
+                                      Logger.error("Failed to send survey submission notification", e)
+                                  }
+
+                              case Left(error) => Logger.error(s"Could not get user data for user $userId", error.exception)
+                            }
+
+
                         }
-
-                      case Left(error) => Logger.error("Failed to handle survey submission notification", error.exception)
+                      case Left(error) => Logger.error(s"Could not get survey parameters for survey $surveyId", error.exception)
                     }
 
-                  case Left(e) => Logger.error("Failed to process survey submission!", e.exception)
+                  case Left(error) => Logger.error(s"Could not save survey submission!", error.exception)
+
                 }
               }
-
 
               Ok
             }

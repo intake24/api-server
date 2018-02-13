@@ -74,6 +74,15 @@ class UserAdminController @Inject()(service: UserAdminService,
       setting
   }
 
+  private lazy val surveyFrontendUrl = {
+    val setting = configuration.get[String]("intake24.surveyFrontendUrl")
+
+    if (!setting.endsWith("/"))
+      setting + "/"
+    else
+      setting
+  }
+
 
   private def doCreateOrUpdate(surveyId: String, roles: Set[String], userRecords: Seq[NewRespondent]): Result = {
     val hasher = passwordHasherRegistry.current
@@ -182,11 +191,14 @@ class UserAdminController @Inject()(service: UserAdminService,
       Future {
         val result =
           for (users <- service.listUsersByRole(Roles.surveyRespondent(surveyId), offset, limit).right;
-               surveyUserNames <- service.getSurveyUserAliases(users.map(_.id), surveyId).right)
+               aliases <- service.getSurveyUserAliases(users.map(_.id), surveyId).right)
             yield
-              users.filter(u => surveyUserNames.contains(u.id)).map {
+              users.filter(u => aliases.contains(u.id)).map {
                 user =>
-                  UserInfoWithSurveyUserName(user.id, surveyUserNames(user.id), user.name, user.email, user.phone, user.emailNotifications, user.smsNotifications, user.roles, user.customFields)
+
+                  val authUrl = surveyFrontendUrl + s"surveys/$surveyId?auth=${aliases(user.id).urlAuthToken}"
+
+                  UserInfoWithSurveyUserName(user.id, aliases(user.id).userName, authUrl, user.name, user.email, user.phone, user.emailNotifications, user.smsNotifications, user.roles, user.customFields)
               }
 
         translateDatabaseResult(result)

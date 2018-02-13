@@ -31,17 +31,15 @@ object UserManagementExamples {
     Some("admin@admin.com"),
     None,
     true,
-    false,
-    Set("superuser"),
-    Map())
-  )
+    false
+  ))
 
 
   val globalUserDelete = asPrettyJSON(DeleteUsersRequest(Seq(1l, 2l, 3l)))
 
   val surveyUserRecord = asPrettyJSON(Seq(
-    UserInfoWithSurveyUserName(1l, "user1", Some("John Smith"), None, None, true, true, Set("respondent"), Map("City" -> "Newcastle")),
-    UserInfoWithSurveyUserName(2l, "user2", Some("Jack Black"), None, None, true, true, Set("respondent"), Map("City" -> "Cambridge"))))
+    UserInfoWithSurveyUserName(1l, "user1", "http://blah", Some("John Smith"), None, None, true, true, Set("respondent"), Map("City" -> "Newcastle")),
+    UserInfoWithSurveyUserName(2l, "user2", "http://blah", Some("Jack Black"), None, None, true, true, Set("respondent"), Map("City" -> "Cambridge"))))
 
   val surveyUserUpdate = asPrettyJSON(Seq(CreateOrUpdateSurveyUsersRequest(Seq(NewRespondent("user1", "p455w0rd", Some("John Smith"), Some("john@smith.com"), Some("+441234567890"), Map())))))
 
@@ -60,6 +58,7 @@ object UserManagementExamples {
         Some("m"),
         Some(LocalDate.parse("2000-01-01")),
         Some(80.0),
+        Some("lose"),
         Some(180.0)
       )
     )

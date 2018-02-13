@@ -477,15 +477,15 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
     }
   }
 
-  def getSurveyUserAliases(userIds: Seq[Long], surveyId: String): Either[UnexpectedDatabaseError, Map[Long, String]] = tryWithConnection {
+  def getSurveyUserAliases(userIds: Seq[Long], surveyId: String): Either[UnexpectedDatabaseError, Map[Long, SurveyUserAliasData]] = tryWithConnection {
     implicit connection =>
       if (userIds.isEmpty)
         Right(Map())
       else
-        Right(SQL("SELECT user_id, user_name FROM user_survey_aliases WHERE user_id IN ({user_ids}) AND survey_id={survey_id}")
+        Right(SQL("SELECT user_id, user_name, url_auth_token FROM user_survey_aliases WHERE user_id IN ({user_ids}) AND survey_id={survey_id}")
           .on('user_ids -> userIds, 'survey_id -> surveyId)
-          .as((SqlParser.long("user_id") ~ SqlParser.str("user_name")).*).foldLeft(Map[Long, String]()) {
-          case (acc, userId ~ userName) => acc + (userId -> userName)
+          .as((SqlParser.long("user_id") ~ SqlParser.str("user_name") ~ SqlParser.str("url_auth_token")).*).foldLeft(Map[Long, SurveyUserAliasData]()) {
+          case (acc, userId ~ userName ~ authToken) => acc + (userId -> SurveyUserAliasData(userName, authToken))
         })
   }
 

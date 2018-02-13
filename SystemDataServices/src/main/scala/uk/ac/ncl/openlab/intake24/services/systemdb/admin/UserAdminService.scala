@@ -24,6 +24,8 @@ case class NewUserWithPassword(userInfo: NewUserProfile, password: SecurePasswor
   */
 case class SurveyUserAlias(surveyId: String, userName: String)
 
+case class SurveyUserAliasData(userName: String, urlAuthToken: String)
+
 case class NewUserWithAlias(alias: SurveyUserAlias, userInfo: NewUserProfile, password: SecurePassword)
 
 case class UserAccessToSurveySeq(users: Seq[UserAccessToSurvey]) {
@@ -84,7 +86,7 @@ trait UserAdminService {
 
   def listUsersByRole(role: String, offset: Int, limit: Int): Either[UnexpectedDatabaseError, Seq[UserProfile]]
 
-  def getSurveyUserAliases(userIds: Seq[Long], surveyId: String): Either[UnexpectedDatabaseError, Map[Long, String]]
+  def getSurveyUserAliases(userIds: Seq[Long], surveyId: String): Either[UnexpectedDatabaseError, Map[Long, SurveyUserAliasData]]
 
   // Custom data support
 

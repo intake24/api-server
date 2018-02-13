@@ -74,7 +74,8 @@ class DefaultNutrientMappingServiceImpl @Inject()(foodDataService: FoodDataServi
           val mappedFoods = meal.foods.map {
             food =>
 
-              val weight = food.portionSize.portionWeight
+              val psw = food.portionSize.asPortionSizeWithWeights
+
               val mapping = foodDataMap(food.code).nutrientTableCodes
 
               if (mapping.size > 1) {
@@ -95,11 +96,11 @@ class DefaultNutrientMappingServiceImpl @Inject()(foodDataService: FoodDataServi
               val foodGroup = foodGroupMap(foodData.groupCode)
 
               val nutrients = foodCompositionData.map {
-                case (k, v) => (k -> v * weight / 100.0)
+                case (k, v) => (k -> v * psw.portionWeight / 100.0)
               }
 
-              NutrientMappedFood(food.code, foodData.englishDescription, foodData.localDescription, food.isReadyMeal, food.searchTerm, food.brand, food.portionSize, food.customData,
-                mapping.headOption.map(_._1), mapping.headOption.map(_._2), foodData.reasonableAmount.toDouble >= weight, foodData.groupCode, foodGroup.main.englishDescription, foodGroup.local.localDescription,
+              NutrientMappedFood(food.code, foodData.englishDescription, foodData.localDescription, food.isReadyMeal, food.searchTerm, food.brand, psw, food.customData,
+                mapping.headOption.map(_._1), mapping.headOption.map(_._2), foodData.reasonableAmount.toDouble >= psw.portionWeight, foodData.groupCode, foodGroup.main.englishDescription, foodGroup.local.localDescription,
                 nutrients)
 
           }

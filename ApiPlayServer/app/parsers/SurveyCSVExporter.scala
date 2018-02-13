@@ -85,14 +85,9 @@ object SurveyCSVExporter {
 
                 dataScheme.foodCustomFields.map(_.key).foreach(k => row.append(food.customData.getOrElse(k, noData)))
 
-                val servingWeight = food.portionSize.data.get("servingWeight").map(_.toDouble)
-                val leftoversWeight = food.portionSize.data.get("leftoversWeight").map(_.toDouble)
-
-                val portionWeight = for (sw <- servingWeight; lw <- leftoversWeight) yield sw - lw
-
-                row.append(servingWeight.map("%.2f".format(_)).getOrElse(noData), food.portionSize.data.getOrElse("servingImage", noData),
-                  leftoversWeight.map("%.2f".format(_)).getOrElse(noData), food.portionSize.data.getOrElse("leftoversImage", noData),
-                  portionWeight.map("%.2f".format(_)).getOrElse(noData), food.reasonableAmount.toString)
+                row.append(f"${food.portionSize.servingWeight}%.2f", food.portionSize.data.getOrElse("servingImage", noData),
+                  f"${food.portionSize.leftoversWeight}%.2f", food.portionSize.data.getOrElse("leftoversImage", noData),
+                  f"${food.portionSize.portionWeight}%.2f", food.reasonableAmount.toString)
 
                 row.append(noData, noData, noData)
 
