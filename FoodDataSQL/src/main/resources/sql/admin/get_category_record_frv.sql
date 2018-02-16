@@ -3,7 +3,7 @@ WITH v AS(
          (SELECT id FROM locales WHERE id={locale_id}) AS locale_id
 )
 SELECT v.category_code, v.locale_id, code, description, local_description, is_hidden, 
-       same_as_before_option, ready_meal_option, reasonable_amount, categories.version as version, 
+       same_as_before_option, ready_meal_option, reasonable_amount, use_in_recipes, categories.version as version,
        categories_local.version as local_version 
 FROM v
   LEFT JOIN categories ON v.category_code=categories.code

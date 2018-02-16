@@ -22,7 +22,7 @@ trait NewLocalFoodsParser {
       row =>
         val parentCategories = row.drop(5).filterNot(_.isEmpty()).toSeq
 
-        NewMainFoodRecord(row(0), row(2).replace("\"", ""), 0, InheritableAttributes(None, None, None), parentCategories, Seq(localeCode))
+        NewMainFoodRecord(row(0), row(2).replace("\"", ""), 0, InheritableAttributes(None, None, None, None), parentCategories, Seq(localeCode))
     }
 
     val newLocalRecords = rows.map {
