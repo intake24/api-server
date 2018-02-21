@@ -20,7 +20,7 @@ package uk.ac.ncl.openlab.intake24.services.foodindex
 
 import org.slf4j.LoggerFactory
 import org.workcraft.phrasesearch._
-import uk.ac.ncl.openlab.intake24.UserFoodHeader
+import uk.ac.ncl.openlab.intake24.api.data.UserFoodHeader
 
 abstract class AbstractFoodIndex(foodData: FoodIndexDataService, phoneticEncoder: Option[PhoneticEncoder], wordOps: WordOps, indexFilter: Seq[String], nonIndexedWords: Seq[String], localSpecialFoods: LocalSpecialFoodNames, locale: String) extends FoodIndex {
 

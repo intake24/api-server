@@ -1,7 +1,7 @@
 /*
 This file is part of Intake24.
 
-Copyright 2015, 2016, 2017 Newcastle University.
+Copyright 2015, 2016 Newcastle University.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,6 +16,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-name := "api-shared"
+package uk.ac.ncl.openlab.intake24.services.foodindex.english
 
-description := "Intake24 API shared Scala data types"
+import com.google.inject.{Inject, Singleton}
+import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
+
+@Singleton
+class FoodIndexImpl_en_AU @Inject()(foodData: FoodIndexDataService) extends EnglishFoodIndex (foodData, "en_AU")

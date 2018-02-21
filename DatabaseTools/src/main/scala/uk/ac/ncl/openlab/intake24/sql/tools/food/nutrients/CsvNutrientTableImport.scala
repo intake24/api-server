@@ -3,10 +3,10 @@ package uk.ac.ncl.openlab.intake24.sql.tools.food.nutrients
 import org.rogach.scallop.ScallopConf
 import uk.ac.ncl.openlab.intake24.foodsql.admin.NutrientTablesAdminImpl
 import uk.ac.ncl.openlab.intake24.nutrientsndns.{CsvNutrientTableMapping, CsvNutrientTableParser}
-import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConfigurationOptions, DatabaseConnection, WarningMessage}
+import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConfigurationOptions, DatabaseConnection, ErrorHandler, WarningMessage}
 import uk.ac.ncl.openlab.intake24.{NewNutrientTableRecord, NutrientTable}
 
-abstract class CsvNutrientTableImport(nutrientTableId: String, nutrientTableDescription: String, nutrientMapping: CsvNutrientTableMapping) extends App with WarningMessage with DatabaseConnection {
+abstract class CsvNutrientTableImport(nutrientTableId: String, nutrientTableDescription: String, nutrientMapping: CsvNutrientTableMapping) extends App with WarningMessage with DatabaseConnection with ErrorHandler {
 
   trait Options extends DatabaseConfigurationOptions {
 
@@ -34,5 +34,5 @@ abstract class CsvNutrientTableImport(nutrientTableId: String, nutrientTableDesc
       NewNutrientTableRecord(record.id, nutrientTableId, record.description, None, record.nutrients)
   }
 
-  nutrientTableService.createOrUpdateNutrientTableRecords(newRecords)
+  throwOnError(nutrientTableService.createOrUpdateNutrientTableRecords(newRecords))
 }

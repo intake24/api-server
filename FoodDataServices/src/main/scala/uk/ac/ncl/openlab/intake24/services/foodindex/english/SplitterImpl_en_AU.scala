@@ -1,7 +1,7 @@
 /*
 This file is part of Intake24.
 
-Copyright 2015, 2016, 2017 Newcastle University.
+Copyright 2015, 2016 Newcastle University.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,17 +16,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-name := "api-client"
+package uk.ac.ncl.openlab.intake24.services.foodindex.english
 
-description := "Intake24 Scala API client"
+import com.google.inject.{Inject, Singleton}
+import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
 
-libraryDependencies ++= Seq(
-  "org.rogach" %% "scallop" % "2.0.5",
-  "commons-io" % "commons-io" % "2.5",
-  "org.scalaj" %% "scalaj-http" % "2.3.0",
-  "org.scalatest" %% "scalatest" % "3.0.1" % "test",
-  "com.opencsv" % "opencsv" % "3.9",
-  "io.circe" %% "circe-core" % "0.7.0",
-  "io.circe" %% "circe-generic" % "0.7.0",
-  "io.circe" %% "circe-parser" % "0.7.0"
-)
+// FIXME: Error handling
+@Singleton
+class SplitterImpl_en_AU @Inject()(foodData: FoodIndexDataService) extends EnglishSplitter(foodData.splitList("en_AU").right.get)

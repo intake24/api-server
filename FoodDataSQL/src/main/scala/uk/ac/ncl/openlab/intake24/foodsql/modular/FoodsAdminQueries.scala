@@ -8,6 +8,8 @@ import org.apache.commons.lang3.StringUtils
 import org.postgresql.util.PSQLException
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24._
+import uk.ac.ncl.openlab.intake24.api.data.InheritableAttributes
+import uk.ac.ncl.openlab.intake24.api.data.admin.{LocalFoodRecordUpdate, MainFoodRecordUpdate, NewLocalFoodRecord, NewMainFoodRecord}
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.foodsql.shared.FoodPortionSizeShared
 import uk.ac.ncl.openlab.intake24.foodsql.{FirstRowValidation, FirstRowValidationClause}
@@ -112,7 +114,9 @@ trait FoodsAdminQueries extends FoodsAdminService
 
   private val foodNutrientMappingInsertQuery = "INSERT INTO foods_nutrient_mapping VALUES ({food_code}, {locale_id}, {nutrient_table_id}, {nutrient_table_code})"
 
-  private val foodPsmInsertQuery = "INSERT INTO foods_portion_size_methods VALUES(DEFAULT, {food_code}, {locale_id}, {method}, {description}, {image_url}, {use_for_recipes})"
+  private val foodPsmInsertQuery =
+    """INSERT INTO foods_portion_size_methods(food_code,locale_id,method,description,image_url,use_for_recipes,conversion_factor)
+      |VALUES({food_code},{locale_id},{method},{description},{image_url},{use_for_recipes},{conversion_factor})""".stripMargin
 
   private val foodPsmParamsInsertQuery = "INSERT INTO foods_portion_size_method_params VALUES(DEFAULT, {portion_size_method_id}, {name}, {value})"
 
@@ -146,7 +150,8 @@ trait FoodsAdminQueries extends FoodsAdminService
       val psmParams =
         localFoodRecordsSeq.flatMap {
           case (code, local) =>
-            local.portionSize.map(ps => Seq[NamedParameter]('food_code -> code, 'locale_id -> locale, 'method -> ps.method, 'description -> ps.description, 'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes))
+            local.portionSize.map(ps => Seq[NamedParameter]('food_code -> code, 'locale_id -> locale, 'method -> ps.method,
+              'description -> ps.description, 'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes, 'conversion_factor -> ps.conversionFactor))
         }.toSeq
 
       if (psmParams.nonEmpty) {
@@ -230,7 +235,8 @@ trait FoodsAdminQueries extends FoodsAdminService
       }
 
       if (foodLocal.portionSize.nonEmpty) {
-        val psmParams = foodLocal.portionSize.map(ps => Seq[NamedParameter]('food_code -> foodCode, 'locale_id -> locale, 'method -> ps.method, 'description -> ps.description, 'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes))
+        val psmParams = foodLocal.portionSize.map(ps => Seq[NamedParameter]('food_code -> foodCode, 'locale_id -> locale, 'method -> ps.method, 'description -> ps.description,
+          'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes, 'conversion_factor -> ps.conversionFactor))
 
         val psmKeys = AnormUtil.batchKeys(batchSql(foodPsmInsertQuery, psmParams))
 

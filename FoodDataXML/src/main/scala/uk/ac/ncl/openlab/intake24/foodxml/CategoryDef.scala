@@ -18,29 +18,25 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodxml
 
-import scala.xml.NodeSeq
-import scala.xml.Node
-import uk.ac.ncl.openlab.intake24.CategoryV2
+import scala.xml.{Node, NodeSeq}
 import scala.xml.NodeSeq.seqToNodeSeq
-import java.util.UUID
+
 
 object CategoryDef {
 
   def toXml(category: XmlCategoryRecord): Node =
     FoodDef.addPortionSizeMethods(
       FoodDef.addInheritableAttributes(
-        <category code={ category.code } description={ category.description } hidden={ category.isHidden.toString }>
-          {
-            category.foods.map(f => <food code={ f }/>) ++
-              category.subcategories.map(sc => <subcategory code={ sc }/>)
-          }
+        <category code={category.code} description={category.description} hidden={category.isHidden.toString}>
+          {category.foods.map(f => <food code={f}/>) ++
+          category.subcategories.map(sc => <subcategory code={sc}/>)}
         </category>,
         category.attributes),
       category.portionSizeMethods)
 
   def toXml(categories: Seq[XmlCategoryRecord]): Node =
     <categories>
-      { categories.map(toXml) }
+      {categories.map(toXml)}
     </categories>
 
   def parseXml(root: NodeSeq): Seq[XmlCategoryRecord] =

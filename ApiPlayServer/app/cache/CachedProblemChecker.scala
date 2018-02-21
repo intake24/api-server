@@ -8,7 +8,7 @@ import models.{CategoryProblem, FoodProblem, RecursiveCategoryProblems}
 import modules.ProblemCheckerService
 import org.slf4j.LoggerFactory
 import play.api.cache.SyncCacheApi
-import uk.ac.ncl.openlab.intake24._
+import uk.ac.ncl.openlab.intake24.api.data.admin._
 import uk.ac.ncl.openlab.intake24.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodBrowsingAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDataService

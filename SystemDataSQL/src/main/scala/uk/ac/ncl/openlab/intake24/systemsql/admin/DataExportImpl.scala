@@ -90,7 +90,7 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
                         }.toMap
 
                         ExportFood(foodRow.code, foodRow.english_description, foodRow.local_description, foodRow.search_term, foodRow.nutrient_table_id, foodRow.nutrient_table_code, foodRow.ready_meal,
-                          PortionSize(foodRow.portion_size_method_id, customFieldsAsMap(foodRow.portion_size_data)), foodRow.reasonable_amount,
+                          PortionSize(foodRow.portion_size_method_id, customFieldsAsMap(foodRow.portion_size_data)).asPortionSizeWithWeights, foodRow.reasonable_amount,
                           foodRow.food_group_id, foodRow.brand, nutrients, customFieldsAsMap(foodRow.custom_fields))
                     }
 

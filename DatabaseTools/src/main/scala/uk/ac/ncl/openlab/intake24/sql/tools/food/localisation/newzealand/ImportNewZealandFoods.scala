@@ -4,7 +4,8 @@ import java.io.FileReader
 
 import com.opencsv.CSVReader
 import org.rogach.scallop.ScallopConf
-import uk.ac.ncl.openlab.intake24._
+import uk.ac.ncl.openlab.intake24.api.data.admin.{LocalFoodRecordUpdate, NewMainFoodRecord}
+import uk.ac.ncl.openlab.intake24.api.data.{PortionSizeMethod, PortionSizeMethodParameter}
 import uk.ac.ncl.openlab.intake24.errors.{RecordNotFound, UnexpectedDatabaseError}
 import uk.ac.ncl.openlab.intake24.foodsql.admin.{AsServedSetsAdminImpl, FoodsAdminImpl, GuideImageAdminImpl}
 import uk.ac.ncl.openlab.intake24.foodsql.user.{AsServedSetsServiceImpl, GuideImageServiceImpl}

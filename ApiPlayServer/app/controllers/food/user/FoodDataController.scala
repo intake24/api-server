@@ -7,8 +7,8 @@ import io.circe.generic.auto._
 import parsers.{JsonBodyParser, JsonUtils}
 import play.api.mvc.{BaseController, ControllerComponents}
 import security.Intake24RestrictedActionBuilder
-import uk.ac.ncl.openlab.intake24._
-import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
+import uk.ac.ncl.openlab.intake24.{DrinkwareSet, VolumeSample}
+import uk.ac.ncl.openlab.intake24.api.data._
 import uk.ac.ncl.openlab.intake24.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageStorageService
 import uk.ac.ncl.openlab.intake24.services.fooddb.user._
@@ -17,11 +17,6 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{Pairwi
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class PortionSizeMethodForSurvey(method: String, description: String, imageUrl: String, useForRecipes: Boolean, parameters: Map[String, String])
-
-case class FoodDataForSurvey(code: String, localDescription: String, readyMealOption: Boolean, sameAsBeforeOption: Boolean,
-                             caloriesPer100g: Double, portionSizeMethods: Seq[PortionSizeMethodForSurvey], associatedFoods: Seq[AssociatedFood],
-                             brands: Seq[String], categories: Set[String])
 
 case class UserAsServedImageWithUrls(mainImageUrl: String, thumbnailUrl: String, weight: Double)
 
@@ -95,7 +90,7 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
 
     val resolvedImageUrl = imageStorageService.getUrl(psm.imageUrl)
 
-    PortionSizeMethodForSurvey(psm.method, psm.description, resolvedImageUrl, psm.useForRecipes, parametersMap)
+    PortionSizeMethodForSurvey(psm.method, psm.description, resolvedImageUrl, psm.useForRecipes, psm.conversionFactor, parametersMap)
   }
 
   def getFoodData(code: String, locale: String) = rab.restrictToAuthenticated {
@@ -265,7 +260,7 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
   def getWeightPortionSizeMethod() = rab.restrictToAuthenticated {
     _ =>
       Future {
-        translateDatabaseResult(Right(PortionSizeMethodForSurvey("weight", "weight", imageStorageService.getUrl("portion/weight.png"), true, Map())))
+        translateDatabaseResult(Right(PortionSizeMethodForSurvey("weight", "weight", imageStorageService.getUrl("portion/weight.png"), true, 1.0, Map())))
       }
   }
 }

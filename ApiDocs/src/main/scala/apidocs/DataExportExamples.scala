@@ -6,7 +6,7 @@ import java.time.temporal.{ChronoField, TemporalField}
 import java.util.UUID
 
 import parsers.JsonUtils
-import uk.ac.ncl.openlab.intake24.api.shared._
+import uk.ac.ncl.openlab.intake24.api.data._
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{ExportFood, ExportMeal, ExportSubmission}
 import uk.ac.ncl.openlab.intake24.surveydata._
 import upickle.Js

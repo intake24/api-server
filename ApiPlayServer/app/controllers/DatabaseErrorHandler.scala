@@ -4,7 +4,7 @@ import io.circe.Encoder
 import org.slf4j.LoggerFactory
 import play.api.http.ContentTypes
 import play.api.mvc.{Result, Results}
-import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
+import uk.ac.ncl.openlab.intake24.api.data.ErrorDescription
 import uk.ac.ncl.openlab.intake24.errors._
 import io.circe.generic.auto._
 import parsers.JsonUtils

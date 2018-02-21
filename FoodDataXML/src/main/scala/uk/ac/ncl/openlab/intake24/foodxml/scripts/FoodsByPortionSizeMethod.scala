@@ -22,10 +22,8 @@ import java.io.File
 import java.io.FileWriter
 
 import scala.xml.XML
-
 import au.com.bytecode.opencsv.CSVWriter
-import uk.ac.ncl.openlab.intake24.FoodRecord
-import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
+import uk.ac.ncl.openlab.intake24.api.data.PortionSizeMethodParameter
 import uk.ac.ncl.openlab.intake24.foodxml.AsServedDef
 import uk.ac.ncl.openlab.intake24.foodxml.FoodDef
 import uk.ac.ncl.openlab.intake24.foodxml.GuideImageDef

@@ -1,6 +1,7 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.admin
 
-import uk.ac.ncl.openlab.intake24.AsServedHeader
+
+import uk.ac.ncl.openlab.intake24.api.data.AsServedHeader
 import uk.ac.ncl.openlab.intake24.errors._
 
 case class AsServedImageWithPaths(sourceId: Long, imagePath: String, thumbnailPath: String, weight: Double)

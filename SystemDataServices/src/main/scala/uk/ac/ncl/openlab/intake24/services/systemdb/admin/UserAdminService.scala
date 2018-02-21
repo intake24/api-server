@@ -1,9 +1,9 @@
 package uk.ac.ncl.openlab.intake24.services.systemdb.admin
 
+import uk.ac.ncl.openlab.intake24.api.data.NewUserProfile
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.UserPhysicalDataOut
 
-case class NewUserProfile(name: Option[String], email: Option[String], phone: Option[String], roles: Set[String], customFields: Map[String, String])
 
 case class UserProfile(id: Long, name: Option[String], email: Option[String], phone: Option[String], emailNotifications: Boolean, smsNotifications: Boolean, roles: Set[String], customFields: Map[String, String])
 
@@ -23,6 +23,8 @@ case class NewUserWithPassword(userInfo: NewUserProfile, password: SecurePasswor
   * different surveys.
   */
 case class SurveyUserAlias(surveyId: String, userName: String)
+
+case class SurveyUserAliasData(userName: String, urlAuthToken: String)
 
 case class NewUserWithAlias(alias: SurveyUserAlias, userInfo: NewUserProfile, password: SecurePassword)
 
@@ -84,7 +86,7 @@ trait UserAdminService {
 
   def listUsersByRole(role: String, offset: Int, limit: Int): Either[UnexpectedDatabaseError, Seq[UserProfile]]
 
-  def getSurveyUserAliases(userIds: Seq[Long], surveyId: String): Either[UnexpectedDatabaseError, Map[Long, String]]
+  def getSurveyUserAliases(userIds: Seq[Long], surveyId: String): Either[UnexpectedDatabaseError, Map[Long, SurveyUserAliasData]]
 
   // Custom data support
 

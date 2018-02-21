@@ -18,9 +18,9 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodxml
 
+import uk.ac.ncl.openlab.intake24.api.data.{GuideImage, GuideImageWeightRecord}
+
 import scala.xml.NodeSeq
-import uk.ac.ncl.openlab.intake24.GuideImage
-import uk.ac.ncl.openlab.intake24.GuideImageWeightRecord
 import scala.xml.NodeSeq.seqToNodeSeq
 
 object GuideImageDef {

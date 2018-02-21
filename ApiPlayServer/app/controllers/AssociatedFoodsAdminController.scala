@@ -24,7 +24,7 @@ import io.circe.generic.auto._
 import parsers.{JsonBodyParser, JsonUtils}
 import play.api.mvc.{BaseController, ControllerComponents}
 import security.Intake24RestrictedActionBuilder
-import uk.ac.ncl.openlab.intake24.AssociatedFood
+import uk.ac.ncl.openlab.intake24.api.data.AssociatedFood
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.AssociatedFoodsAdminService
 
 import scala.concurrent.{ExecutionContext, Future}

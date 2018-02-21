@@ -18,18 +18,24 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodxml
 
-import scala.xml.XML
-import scala.xml.NodeSeq
-import scala.xml.Node
-import scala.xml.Attribute
-import scala.xml.Text
-import scala.xml.Null
-import scala.xml.Elem
-import uk.ac.ncl.openlab.intake24.CategoryV1
-import uk.ac.ncl.openlab.intake24.FoodOld
-import uk.ac.ncl.openlab.intake24.PortionSizeMethod
+import java.util.UUID
+
+import uk.ac.ncl.openlab.intake24.api.data.{InheritableAttributes, PortionSizeMethod, PortionSizeMethodParameter}
+
 import scala.xml.NodeSeq.seqToNodeSeq
-import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
+import scala.xml._
+
+sealed trait IndexEntryOld {
+  val description: String
+  val code: String
+  val path: String
+
+  val fullCode = if (path.isEmpty) code else path + ":" + code
+}
+
+case class FoodOld(code: String, description: String, isDrink: Boolean, ndnsCode: Int, path: String, portionSize: Seq[PortionSizeMethod]) extends IndexEntryOld
+
+case class CategoryV1(code: String, description: String, children: Map[String, IndexEntryOld], path: String) extends IndexEntryOld
 
 object FoodDefOld {
   def toXml(category: CategoryV1): Node =
@@ -72,7 +78,8 @@ object FoodDefOld {
     
   def parsePortionSize(e: Elem): PortionSizeMethod =
     if (e.label == "portion-size") PortionSizeMethod (e.attribute("method").get.text, e.attribute("description").map(_.text).getOrElse("No description"), 
-        e.attribute("imageUrl").map(_.text).getOrElse("portion/placeholder.jpg"), e.attribute("useForRecipes").map(_.text.toBoolean).getOrElse(false), e.child.filter(_.isInstanceOf[Elem]).map(n => parseParam(n.asInstanceOf[Elem])))
+        e.attribute("imageUrl").map(_.text).getOrElse("portion/placeholder.jpg"), e.attribute("useForRecipes").map(_.text.toBoolean).getOrElse(false), 1.0,
+      e.child.filter(_.isInstanceOf[Elem]).map(n => parseParam(n.asInstanceOf[Elem])))
     else throw new IllegalArgumentException ("Cannot parse element as portion size: " + e.text)
 
   def parseXml(root: NodeSeq): Map[String, CategoryV1] = {

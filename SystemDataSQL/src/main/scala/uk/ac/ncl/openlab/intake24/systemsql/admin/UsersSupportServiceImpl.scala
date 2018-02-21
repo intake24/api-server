@@ -3,6 +3,7 @@ package uk.ac.ncl.openlab.intake24.systemsql.admin
 import javax.inject.{Inject, Named}
 import javax.sql.DataSource
 
+import uk.ac.ncl.openlab.intake24.api.data.{NewRespondentIds, NewRespondentWithPhysicalData, NewUserProfile}
 import uk.ac.ncl.openlab.intake24.errors.DependentCreateError
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._

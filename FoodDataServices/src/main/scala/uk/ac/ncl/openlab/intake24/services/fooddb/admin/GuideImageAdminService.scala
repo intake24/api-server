@@ -1,6 +1,6 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.admin
 
-import uk.ac.ncl.openlab.intake24.GuideHeader
+import uk.ac.ncl.openlab.intake24.api.data.GuideHeader
 import uk.ac.ncl.openlab.intake24.errors.{DependentCreateError, DependentUpdateError, UnexpectedDatabaseError}
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.GuideImageService
 

@@ -1,14 +1,14 @@
 package uk.ac.ncl.openlab.intake24.foodsql.shared
 
 import anorm.{Macro, SQL}
-import uk.ac.ncl.openlab.intake24.{PortionSizeMethod, PortionSizeMethodParameter}
+import uk.ac.ncl.openlab.intake24.api.data.{PortionSizeMethod, PortionSizeMethodParameter}
 import uk.ac.ncl.openlab.intake24.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.foodsql.{FirstRowValidation, FirstRowValidationClause}
 import uk.ac.ncl.openlab.intake24.sql.SqlResourceLoader
 
 trait FoodPortionSizeShared extends SqlResourceLoader with FirstRowValidation {
 
-  protected case class PsmResultRow(id: Long, method: String, description: String, image_url: String, use_for_recipes: Boolean, param_name: Option[String], param_value: Option[String])
+  protected case class PsmResultRow(id: Long, method: String, description: String, image_url: String, use_for_recipes: Boolean, conversion_factor: Double, param_name: Option[String], param_value: Option[String])
 
   protected val psmResultRowParser = Macro.namedParser[PsmResultRow]
 
@@ -19,7 +19,7 @@ trait FoodPortionSizeShared extends SqlResourceLoader with FirstRowValidation {
         val params = rows.filterNot(r => r.param_name.isEmpty || r.param_value.isEmpty).map(row => PortionSizeMethodParameter(row.param_name.get, row.param_value.get))
         val head = rows.head
 
-        PortionSizeMethod(head.method, head.description, head.image_url, head.use_for_recipes, params)
+        PortionSizeMethod(head.method, head.description, head.image_url, head.use_for_recipes, head.conversion_factor, params)
     }
 
   private lazy val foodPsmQuery = sqlFromResource("shared/food_portion_size_methods.sql")

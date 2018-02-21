@@ -19,9 +19,7 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.foodxml.scripts
 
 import scala.xml.XML
-import uk.ac.ncl.openlab.intake24.CategoryV1
-import uk.ac.ncl.openlab.intake24.foodxml.Util
-import uk.ac.ncl.openlab.intake24.foodxml.FoodDefOld
+import uk.ac.ncl.openlab.intake24.foodxml.{CategoryV1, FoodDefOld, Util}
 
 object FindProblems {
 

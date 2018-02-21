@@ -32,7 +32,7 @@ import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.{Configuration, Logger}
 import security._
-import uk.ac.ncl.openlab.intake24.api.shared._
+import uk.ac.ncl.openlab.intake24.api.data._
 import uk.ac.ncl.openlab.intake24.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{SigninAttempt, SigninLogService, SurveyUserAlias}
 

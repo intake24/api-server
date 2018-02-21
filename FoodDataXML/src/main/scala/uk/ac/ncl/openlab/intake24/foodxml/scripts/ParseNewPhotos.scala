@@ -18,17 +18,6 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodxml.scripts
 
-import java.io.FileReader
-import scala.collection.JavaConversions.asScalaBuffer
-import au.com.bytecode.opencsv.CSVReader
-
-
-import scala.xml.XML
-import java.io.File
-import java.io.FileFilter
-
-import uk.ac.ncl.openlab.intake24.PortionSizeMethod
-
 object ParseNewPhotos {
 
   /*case class Row(description: String, tp: String, weight: String, id: String, foods: Seq[String])

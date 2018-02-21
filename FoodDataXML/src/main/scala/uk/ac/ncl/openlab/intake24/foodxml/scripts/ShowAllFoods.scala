@@ -20,12 +20,9 @@ package uk.ac.ncl.openlab.intake24.foodxml.scripts
 
 import java.io.File
 import java.io.PrintWriter
+
 import scala.xml.XML
-import uk.ac.ncl.openlab.intake24.FoodOld
-import uk.ac.ncl.openlab.intake24.CategoryV1
-import uk.ac.ncl.openlab.intake24.IndexEntryOld
-import uk.ac.ncl.openlab.intake24.foodxml.FoodDefOld
-import uk.ac.ncl.openlab.intake24.foodxml.Util
+import uk.ac.ncl.openlab.intake24.foodxml._
 
 object ShowAllFoods {
 

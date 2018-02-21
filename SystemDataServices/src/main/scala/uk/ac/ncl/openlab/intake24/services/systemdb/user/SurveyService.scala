@@ -1,5 +1,7 @@
 package uk.ac.ncl.openlab.intake24.services.systemdb.user
 
+import java.util.UUID
+
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.surveydata.NutrientMappedSubmission
 
@@ -24,5 +26,5 @@ trait SurveyService {
 
   def getSurveyFollowUp(surveyId: String): Either[LookupError, SurveyFollowUp]
 
-  def createSubmission(userId: Long, surveyId: String, submission: NutrientMappedSubmission): Either[UnexpectedDatabaseError, Unit]
+  def createSubmission(userId: Long, surveyId: String, submission: NutrientMappedSubmission): Either[UnexpectedDatabaseError, UUID]
 }

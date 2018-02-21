@@ -22,7 +22,6 @@ import au.com.bytecode.opencsv.CSVReader
 import java.io.FileReader
 import scala.collection.JavaConversions._
 import scala.xml.XML
-import uk.ac.ncl.openlab.intake24.PortionSizeMethod
 
 
 

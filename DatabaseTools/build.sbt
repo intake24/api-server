@@ -20,7 +20,7 @@ name := "database-tools"
 
 description := "Intake24 database tools"
 
-assemblyMergeStrategy in assembly <<= (assemblyMergeStrategy in assembly) { (old) => {
+assemblyMergeStrategy in assembly ~= { (old) => {
   case PathList("org", "w3c", "dom", xs@_*) => MergeStrategy.first
   case PathList("javax", "xml", xs@_*) => MergeStrategy.first
   case x => old(x)
@@ -28,6 +28,7 @@ assemblyMergeStrategy in assembly <<= (assemblyMergeStrategy in assembly) { (old
 
 
 libraryDependencies ++= Seq(
+  "uk.ac.ncl.openlab.intake24" %% "api-client" % "1.0.0-SNAPSHOT",
   "com.google.gwt" % "gwt-user" % "2.7.0" % "provided",
   "org.slf4j" % "slf4j-api" % "1.7.21",
   "org.slf4j" % "slf4j-simple" % "1.7.21",
@@ -35,5 +36,6 @@ libraryDependencies ++= Seq(
   "org.apache.poi" % "poi-ooxml" % "3.9",
   "com.lihaoyi" %% "upickle" % "0.4.4",
   "org.rogach" %% "scallop" % "2.0.5",
-  "commons-io" % "commons-io" % "2.5"
+  "commons-io" % "commons-io" % "2.5",
+  "com.opencsv" % "opencsv" % "3.9"
 )
