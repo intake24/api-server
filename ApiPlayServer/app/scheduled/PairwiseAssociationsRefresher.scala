@@ -21,11 +21,11 @@ class PairwiseAssociationsRefresherImpl @Inject()(settings: PairwiseAssociations
   extends PairwiseAssociationsRefresher {
 
   system.scheduler.scheduleOnce(0.minutes) {
-//    paService.refresh()
+    paService.refresh()
   }
 
   system.scheduler.schedule(settings.nextRefreshIn, 24.hours) {
-//    paService.refresh()
+    paService.refresh()
   }
 
 }
