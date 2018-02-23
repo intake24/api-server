@@ -24,7 +24,7 @@ import com.google.inject.{AbstractModule, Injector, Provides, Singleton}
 import play.api.db.Database
 import play.api.{Configuration, Environment}
 import play.db.NamedDatabase
-import scheduled.{ErrorDigestSender, ErrorDigestSenderImpl, PairwiseAssociationsRefresher, PairwiseAssociationsRefresherImpl}
+import scheduled.{ErrorDigestSender, ErrorDigestSenderImpl, NotificationSender, NotificationSenderImpl, PairwiseAssociationsRefresher, PairwiseAssociationsRefresherImpl}
 import security.captcha.{AsyncCaptchaService, GoogleRecaptchaImpl}
 import sms.{SMSService, TwilioSMSImpl}
 import uk.ac.ncl.openlab.intake24.foodsql.admin._
@@ -43,13 +43,18 @@ import uk.ac.ncl.openlab.intake24.services.foodindex.portuguese.{FoodIndexImpl_p
 import uk.ac.ncl.openlab.intake24.services.foodindex._
 import uk.ac.ncl.openlab.intake24.services.nutrition.{DefaultNutrientMappingServiceImpl, FoodCompositionService, NutrientMappingService}
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
+import uk.ac.ncl.openlab.intake24.services.systemdb.notifications.NotificationScheduleDataService
 import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsDataService, PairwiseAssociationsService, PairwiseAssociationsServiceConfiguration}
+import uk.ac.ncl.openlab.intake24.services.systemdb.shortUrls.ShortUrlDataService
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.{ClientErrorService, FoodPopularityService, SurveyService, UserPhysicalDataService}
 import uk.ac.ncl.openlab.intake24.services.systemdb.uxEvents.UxEventsDataService
 import uk.ac.ncl.openlab.intake24.systemsql.admin._
+import uk.ac.ncl.openlab.intake24.systemsql.notifications.NotificationScheduleDataServiceImpl
 import uk.ac.ncl.openlab.intake24.systemsql.pairwiseAssociations.{PairwiseAssociationsDataServiceImpl, PairwiseAssociationsServiceImpl}
+import uk.ac.ncl.openlab.intake24.systemsql.shortUrl.ShortUrlDataServiceImpl
 import uk.ac.ncl.openlab.intake24.systemsql.user.{ClientErrorServiceImpl, FoodPopularityServiceImpl, SurveyServiceImpl, UserPhysicalDataServiceImpl}
 import uk.ac.ncl.openlab.intake24.systemsql.uxEvents.UxEventsDataServiceImpl
+import urlShort.{ShortUrlService, ShortUrlServiceImpl}
 
 import scala.concurrent.duration._
 
@@ -262,6 +267,12 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
 
     // Ux Events
     bind(classOf[UxEventsDataService]).to(classOf[UxEventsDataServiceImpl])
+
+    // User notifications
+    bind(classOf[ShortUrlDataService]).to(classOf[ShortUrlDataServiceImpl])
+    bind(classOf[ShortUrlService]).to(classOf[ShortUrlServiceImpl])
+    bind(classOf[NotificationScheduleDataService]).to(classOf[NotificationScheduleDataServiceImpl])
+    bind(classOf[NotificationSender]).to(classOf[NotificationSenderImpl]).asEagerSingleton()
 
   }
 }

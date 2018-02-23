@@ -560,4 +560,14 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
         .as(SqlParser.int("count").single))
   }
 
+  override def getAuthTokenByUserId(userId: Long): Either[LookupError, String] = tryWithConnection {
+    implicit conn =>
+      SQL("SELECT url_auth_token FROM user_survey_aliases WHERE user_id = {user_id}")
+        .on('user_id -> userId)
+        .as(SqlParser.str("url_auth_token").singleOpt) match {
+        case Some(str) => Right(str)
+        case None => Left(RecordNotFound(new Exception(s"Couldn't find user with user id $userId")))
+      }
+  }
+
 }

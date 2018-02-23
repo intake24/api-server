@@ -1656,6 +1656,62 @@ object SystemDatabaseMigrations {
         ???
 
       }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 72l
+      override val versionTo: Long = 73l
+      override val description: String = "Create user notification table"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL(
+          """
+            |CREATE TABLE user_notification_schedule (
+            |  id                SERIAL PRIMARY KEY,
+            |  user_id           INTEGER                  NOT NULL,
+            |  survey_id         CHARACTER VARYING(64),
+            |  datetime          TIMESTAMP WITH TIME ZONE NOT NULL,
+            |  notification_type CHARACTER VARYING(100),
+            |  CONSTRAINT user_notification_schedule_users_fk FOREIGN KEY (user_id) REFERENCES public.users (id) ON UPDATE CASCADE ON DELETE CASCADE,
+            |  CONSTRAINT user_notification_schedule_surveys_fk FOREIGN KEY (survey_id) REFERENCES public.surveys (id) ON UPDATE CASCADE ON DELETE CASCADE
+            |)
+          """.stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 73l
+      override val versionTo: Long = 74l
+      override val description: String = "Short urls for token login"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL(
+          """
+            |CREATE TABLE short_urls (
+            |  long_url   CHARACTER VARYING(1000) NOT NULL PRIMARY KEY,
+            |  short_url  CHARACTER VARYING(100) NOT NULL
+            |)
+          """.stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
     }
+
   )
 }

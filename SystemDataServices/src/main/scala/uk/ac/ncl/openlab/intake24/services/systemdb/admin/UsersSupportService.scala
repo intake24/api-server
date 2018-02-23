@@ -8,4 +8,5 @@ import uk.ac.ncl.openlab.intake24.errors._
 trait UsersSupportService {
 
   def createRespondentsWithPhysicalData(surveyId: String, newUsers: Seq[NewRespondentWithPhysicalData]): Either[DependentCreateError, Seq[NewRespondentIds]]
+
 }
