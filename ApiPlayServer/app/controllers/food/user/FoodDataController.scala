@@ -167,7 +167,7 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
           "SW05",
           "SW06"
         )
-        val recommendedCategories = pairwiseAssociationsService.recommend(locale, f, PairwiseAssociationsServiceSortTypes.paRules, true)
+        val recommendedCategories = pairwiseAssociationsService.recommend(locale, f, PairwiseAssociationsServiceSortTypes.paRules, ignoreInputSize = true)
           .sortBy(-_._2)
           .take(15)
           .map { f =>
