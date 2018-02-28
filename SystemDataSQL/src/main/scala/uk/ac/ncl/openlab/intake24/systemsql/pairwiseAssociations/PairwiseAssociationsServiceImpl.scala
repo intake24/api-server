@@ -26,11 +26,14 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
 
   private var associationRules = getAssociationRules()
 
-  override def recommend(locale: String, items: Seq[String], sortType: String = PairwiseAssociationsServiceSortTypes.paRules): Seq[(String, Double)] = extractPairwiseRules(locale) { rules =>
+  override def recommend(locale: String,
+                         items: Seq[String],
+                         sortType: String = PairwiseAssociationsServiceSortTypes.paRules,
+                         ignoreInputSize: Boolean = false): Seq[(String, Double)] = extractPairwiseRules(locale) { rules =>
     val params = rules.getParams()
 
     if (params.numberOfTransactions < settings.minimumNumberOfSurveySubmissions ||
-      items.size < pairwiseAssociationsConfig.minInputSearchSize ||
+      (items.size < pairwiseAssociationsConfig.minInputSearchSize && !ignoreInputSize) ||
       sortType == PairwiseAssociationsServiceSortTypes.popularity) {
       params.occurrences.map(o => o._1 -> o._2.toDouble).toSeq.sortBy(-_._2)
     } else {

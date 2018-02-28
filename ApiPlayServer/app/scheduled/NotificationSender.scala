@@ -4,8 +4,7 @@ import java.time.ZonedDateTime
 
 import akka.actor.ActorSystem
 import javax.inject.{Inject, Singleton}
-import org.slf4j.LoggerFactory
-import play.api.Configuration
+import play.api.{Configuration, Logger}
 import play.api.libs.mailer.{Email, MailerClient}
 import sms.SMSService
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{UserAdminService, UserProfile}
@@ -33,16 +32,16 @@ class NotificationSenderImpl @Inject()(system: ActorSystem,
                                        implicit val executionContext: ExecutionContext) extends NotificationSender {
 
   system.scheduler.schedule(0.second, 2.minutes) {
-    val logger = LoggerFactory.getLogger("NotificationSenderImpl")
 
     sendNotifications()
 
     def sendNotifications() = {
-      notificationDataService.list().foreach {
-        notificationList =>
+      notificationDataService.list() match {
+        case Right(notificationList) =>
           val now = ZonedDateTime.now()
           val relevantNotifications = notificationList.filter(n => now.isAfter(n.dateTime))
           sendNotificationsRecursive(relevantNotifications)
+        case Left(e) => logError(s"Failed to retreive notification list: ${e.exception.getMessage}")
       }
     }
 
@@ -50,7 +49,8 @@ class NotificationSenderImpl @Inject()(system: ActorSystem,
       notification =>
         sendSingleNotification(notification)
           .foreach { _ =>
-            notificationDataService.clean(notification.id)
+            notificationDataService.clean(notification.id).left.foreach(e =>
+              logError(s"Failed to delete notification after sent with DB Error: ${e.exception.getMessage}"))
             sendNotificationsRecursive(notList.drop(1))
           }
     }
@@ -61,11 +61,15 @@ class NotificationSenderImpl @Inject()(system: ActorSystem,
           userService.getUserById(notification.userId) match {
             case Right(userProfile) => sendNotificationToUser(surveyId, surveyProfile, userProfile)
             case Left(e) => {
+              logError(s"Couldn't find user: ${notification.userId}")
               notifyAdminUserNotFound(notification.userId, surveyProfile.supportEmail)
               Future(false)
             }
           }
-        case Left(e) => Future(false)
+        case Left(e) => {
+          logError(s"Couldn't find parameters for survey id: ${surveyId}")
+          Future(false)
+        }
       }
     }.getOrElse(Future(false))
 
@@ -83,6 +87,7 @@ class NotificationSenderImpl @Inject()(system: ActorSystem,
           }
         }
         case Left(e) => {
+          logError(s"No auth token for user: ${userProfile.id}")
           notifyAdminNoToken(userProfile, surveyProfile.supportEmail)
           Future(false)
         }
@@ -159,6 +164,9 @@ class NotificationSenderImpl @Inject()(system: ActorSystem,
       val email = Email(title, s"Intake24 <$emailFrom>", Seq(emailTo), Some(message))
       mailerClient.send(email)
     }
+
+    def logError(msg: String) = Logger.error(s"${getClass.getSimpleName}. ${msg}")
+
   }
 
 

@@ -154,11 +154,26 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
   def getPairwiseAssociatedFoods(locale: String, f: Seq[String]) = rab.restrictToAuthenticated {
     _ =>
       Future {
-        val recommendedCategories = pairwiseAssociationsService.recommend(locale, f, PairwiseAssociationsServiceSortTypes.paRules)
+        val hideCategories = Seq(
+          //          "MDNK", // Milk as a drink
+          //          "MCRL", // Milk in cereal
+          "RECP", // Recipes
+          "SLW1", // Wizards
+          "SLW2",
+          "SW01",
+          "SW02",
+          "SW03",
+          "SW04",
+          "SW05",
+          "SW06"
+        )
+        val recommendedCategories = pairwiseAssociationsService.recommend(locale, f, PairwiseAssociationsServiceSortTypes.paRules, true)
           .sortBy(-_._2)
           .take(15)
           .map { f =>
-            foodBrowsingService.getFoodCategories(f._1, locale, 0).right.map(_.filterNot(_.isHidden).map(c => c -> f._2))
+            foodBrowsingService.getFoodCategories(f._1, locale, 0).right
+              .map(_.filterNot(ch => hideCategories.contains(ch.code))
+                .map(c => c -> f._2))
           }
         val resp: Either[LookupError, PairwiseAssociatedFoods] = if (recommendedCategories.exists(_.isLeft)) {
           Left(recommendedCategories.filter(_.isLeft).head.left.get)

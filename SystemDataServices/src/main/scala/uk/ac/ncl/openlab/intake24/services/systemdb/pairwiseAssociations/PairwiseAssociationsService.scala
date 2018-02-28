@@ -39,7 +39,7 @@ case class PairwiseAssociationsServiceConfiguration(minimumNumberOfSurveySubmiss
 
 trait PairwiseAssociationsService {
 
-  def recommend(locale: String, items: Seq[String], sortType: String): Seq[(String, Double)]
+  def recommend(locale: String, items: Seq[String], sortType: String, ignoreInputSize: Boolean = false): Seq[(String, Double)]
 
   def getOccurrences(locale: String): Map[String, Int]
 

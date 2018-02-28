@@ -3,7 +3,7 @@ package urlShort
 import com.google.inject.Inject
 import io.circe._
 import io.circe.parser._
-import play.api.Configuration
+import play.api.{Configuration, Logger}
 import play.api.libs.ws.WSClient
 import uk.ac.ncl.openlab.intake24.services.systemdb.shortUrls.ShortUrlDataService
 
@@ -48,8 +48,10 @@ class ShortUrlServiceImpl @Inject()(ws: WSClient,
             case Right(res) => res.id
             case Left(e) => throw new Exception(s"Couldn't parse response from Google short url: ${response.body}")
           }
-        else
+        else {
+          Logger.error(s"${getClass.getSimpleName}. Google short url request failed with status ${response.status}: ${response.body}")
           throw new Exception(s"Google short url request failed with status ${response.status}: ${response.body}")
+        }
       }
   }
 
