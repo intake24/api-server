@@ -27,7 +27,7 @@ import play.api.mvc.{BaseController, ControllerComponents, PlayBodyParsers}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.api.data.{ErrorDescription, LookupResult}
 import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound}
-import uk.ac.ncl.openlab.intake24.services.RecipesAttributeIndex
+import uk.ac.ncl.openlab.intake24.services.RecipesAttributeCache
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodBrowsingService
 import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, IndexLookupResult, MatchedFood, Splitter}
 import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsService, PairwiseAssociationsServiceSortTypes}
@@ -38,7 +38,7 @@ import scala.concurrent.{ExecutionContext, Future}
 case class SplitSuggestion(parts: Seq[String])
 
 class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex],
-                                     recipesAttributeIndex: RecipesAttributeIndex,
+                                     recipesAttributeIndex: RecipesAttributeCache,
                                      foodDescriptionSplitters: Map[String, Splitter],
                                      foodBrowsingService: FoodBrowsingService, foodPopularityService: FoodPopularityService,
                                      pairwiseAssociationsService: PairwiseAssociationsService,
@@ -62,7 +62,7 @@ class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex],
   private def lookupImpl(locale: String, description: String, selectedFoods: Seq[String], maxResults: Int, algorithmId: String, resultFilter: IndexLookupResult => IndexLookupResult): Either[LookupError, LookupResult] = {
     foodIndexes.get(locale) match {
       case Some(index) => {
-        val lookupResult = resultFilter(index.lookup(description, Math.max(0, Math.min(maxResults, 100))))
+        val lookupResult = resultFilter(index.lookup(description, Math.max(0, Math.min(maxResults, 50)), 15))
 
         val sortedFoodHeaders = getSortedFoods(locale, lookupResult, selectedFoods, algorithmId).map(_.food)
         val sortedCategoryHeaders = lookupResult.categories.sortBy(_.matchCost).map(_.category)
