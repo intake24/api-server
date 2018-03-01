@@ -40,5 +40,5 @@ class AutoReloadIndex(reload: () => AbstractFoodIndex, delay: Duration, period: 
     }
   }, delay.toMillis, period.toMillis)
   
-  def lookup(description: String, maxResults: Int): IndexLookupResult = ref.get.lookup(description, maxResults)
+  def lookup(description: String, maxFoods: Int, maxCategories: Int): IndexLookupResult = ref.get.lookup(description, maxFoods, maxCategories)
 }

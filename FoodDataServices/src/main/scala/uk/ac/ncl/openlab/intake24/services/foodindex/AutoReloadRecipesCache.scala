@@ -22,23 +22,23 @@ import java.util.TimerTask
 import java.util.concurrent.atomic.AtomicReference
 
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.services.RecipesAttributeIndex
+import uk.ac.ncl.openlab.intake24.services.RecipesAttributeCache
 
 import scala.concurrent.duration._
 
-class AutoReloadRecipesIndex(reload: () => RecipesAttributeIndex, delay: Duration, period: Duration) extends RecipesAttributeIndex {
-  val log = LoggerFactory.getLogger(classOf[AutoReloadRecipesIndex])
+class AutoReloadRecipesCache(reload: () => RecipesAttributeCache, delay: Duration, period: Duration) extends RecipesAttributeCache {
+  val log = LoggerFactory.getLogger(classOf[AutoReloadRecipesCache])
 
-  val ref = new AtomicReference[RecipesAttributeIndex](reload.apply()) // load the first index synchronously
+  val ref = new AtomicReference[RecipesAttributeCache](reload.apply()) // load the first index synchronously
 
   val reloadTimer = new java.util.Timer(true)
 
   reloadTimer.schedule(new TimerTask() {
     override def run() = {
-      log.debug(s"Reloading recipe attributes index...")
+      log.debug(s"Reloading recipe attributes cache...")
       val t0 = System.currentTimeMillis()
       ref.set(reload.apply())
-      log.debug(s"Reloaded recipe attributes index in ${System.currentTimeMillis() - t0} ms")
+      log.debug(s"Reloaded recipe attributes cache in ${System.currentTimeMillis() - t0} ms")
     }
   }, delay.toMillis, period.toMillis)
 

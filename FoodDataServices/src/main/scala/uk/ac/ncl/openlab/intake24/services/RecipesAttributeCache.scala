@@ -14,7 +14,7 @@ object UseInRecipes {
 
 }
 
-trait RecipesAttributeIndex {
+trait RecipesAttributeCache {
 
   def filterForRecipes(indexLookupResult: IndexLookupResult): IndexLookupResult
 
