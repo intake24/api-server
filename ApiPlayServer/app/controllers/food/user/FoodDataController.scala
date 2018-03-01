@@ -174,17 +174,13 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
             foodBrowsingService.getFoodCategories(f._1, locale, 0).right
               .map(_.filterNot(ch => hideCategories.contains(ch.code))
                 .map(c => c -> f._2))
-          }
-        val resp: Either[LookupError, PairwiseAssociatedFoods] = if (recommendedCategories.exists(_.isLeft)) {
-          Left(recommendedCategories.filter(_.isLeft).head.left.get)
-        } else {
-          val categories = recommendedCategories.flatMap(_.right.get)
-            .groupBy(_._1.code).map(n => n._2.head._1 -> n._2.map(_._2).sum)
-            .toSeq
-            .sortBy(-_._2)
-            .map(c => UserCategoryHeader(c._1.code, c._1.localDescription.getOrElse("")))
-          Right(PairwiseAssociatedFoods(categories))
-        }
+          }.filter(_.isRight)
+        val categories = recommendedCategories.flatMap(_.right.get)
+          .groupBy(_._1.code).map(n => n._2.head._1 -> n._2.map(_._2).sum)
+          .toSeq
+          .sortBy(-_._2)
+          .map(c => UserCategoryHeader(c._1.code, c._1.localDescription.getOrElse("")))
+        val resp = Right(PairwiseAssociatedFoods(categories))
         translateDatabaseResult(resp)
       }
   }
