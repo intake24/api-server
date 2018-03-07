@@ -35,6 +35,8 @@ class NotificationSenderImpl @Inject()(system: ActorSystem,
 
     sendNotifications()
 
+    case class MessagePack(email: String, sms: String)
+
     def sendNotifications() = {
       notificationDataService.list() match {
         case Right(notificationList) =>
@@ -78,8 +80,8 @@ class NotificationSenderImpl @Inject()(system: ActorSystem,
       userService.getAuthTokenByUserId(userProfile.id) match {
         case Right(token) => {
           getLoginMessage(surveyId, token).map { loginMessage =>
-            sendNotificationEmailToUser(userProfile, surveyProfile, loginMessage)
-            sendNotificationSmsToUser(userProfile, surveyProfile, loginMessage)
+            sendNotificationEmailToUser(userProfile, surveyProfile, loginMessage.email)
+            sendNotificationSmsToUser(userProfile, surveyProfile, loginMessage.sms)
             if (userProfile.phone.isDefined || userProfile.email.isDefined) {
               notifyAdminSuccessful(userProfile, surveyProfile.supportEmail)
             }
@@ -105,13 +107,18 @@ class NotificationSenderImpl @Inject()(system: ActorSystem,
         case None => notifyAdminNoPhone(userProfile, surveyProfile.supportEmail)
       }
 
-    def getLoginMessage(surveyId: String, token: String): Future[String] = {
+    def getLoginMessage(surveyId: String, token: String): Future[MessagePack] = {
       val authUrl = produceAuthUrl(surveyId, token)
-      shortUrlService.shorten(authUrl).map(shUrl => produceMessage(shUrl))
+      shortUrlService.shorten(authUrl).map(shUrl => MessagePack(
+        produceEmailMessage(shUrl), produceSmsMessage(shUrl)
+      ))
     }
 
-    def produceMessage(url: String) =
-      s"Intake24. Please use your selected device to record your dietary intake $url"
+    def produceEmailMessage(url: String) =
+      s"It's time to record your dietary recall in Intake24. If this isn't your first recall during this study, please use the same browser that you used for the previous recall. Follow this url to login: $url"
+
+    def produceSmsMessage(url: String) =
+      s"Intake24. Please use your selected browser to record your dietary intake. Login url was sent to your email"
 
     def produceAuthUrl(surveyId: String, authToken: String) =
       s"${configuration.get[String]("intake24.surveyFrontendUrl")}/surveys/$surveyId?auth=$authToken"
