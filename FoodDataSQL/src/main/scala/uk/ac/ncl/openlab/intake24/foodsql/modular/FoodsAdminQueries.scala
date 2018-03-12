@@ -51,7 +51,7 @@ trait FoodsAdminQueries extends FoodsAdminService
 
   private val foodInsertQuery = "INSERT INTO foods VALUES ({code}, {description}, {food_group_id}, {version}::uuid)"
 
-  private val foodAttributesInsertQuery = "INSERT INTO foods_attributes VALUES (DEFAULT, {food_code}, {same_as_before_option}, {ready_meal_option}, {reasonable_amount})"
+  private val foodAttributesInsertQuery = "INSERT INTO foods_attributes VALUES (DEFAULT, {food_code}, {same_as_before_option}, {ready_meal_option}, {reasonable_amount}, {use_in_recipes})"
 
   private def truncateDescription(description: String, foodCode: String) = {
     if (description.length() > 128) {
@@ -79,7 +79,8 @@ trait FoodsAdminQueries extends FoodsAdminService
 
         val foodAttributeParams =
           foods.map(f => Seq[NamedParameter]('food_code -> f.code, 'same_as_before_option -> f.attributes.sameAsBeforeOption,
-            'ready_meal_option -> f.attributes.readyMealOption, 'reasonable_amount -> f.attributes.reasonableAmount))
+            'ready_meal_option -> f.attributes.readyMealOption, 'reasonable_amount -> f.attributes.reasonableAmount,
+            'use_in_recipes -> f.attributes.useInRecipes))
 
         batchSql(foodAttributesInsertQuery, foodAttributeParams).execute()
 
@@ -200,7 +201,8 @@ trait FoodsAdminQueries extends FoodsAdminService
 
       SQL(foodAttributesInsertQuery)
         .on('food_code -> foodCode, 'same_as_before_option -> attributes.sameAsBeforeOption,
-          'ready_meal_option -> attributes.readyMealOption, 'reasonable_amount -> attributes.reasonableAmount).execute()
+          'ready_meal_option -> attributes.readyMealOption, 'reasonable_amount -> attributes.reasonableAmount,
+          'use_in_recipes -> attributes.useInRecipes).execute()
 
       Right(())
     }

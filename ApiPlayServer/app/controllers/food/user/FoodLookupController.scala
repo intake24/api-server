@@ -27,6 +27,7 @@ import play.api.mvc.{BaseController, ControllerComponents, PlayBodyParsers}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.api.data.{ErrorDescription, LookupResult}
 import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound}
+import uk.ac.ncl.openlab.intake24.services.RecipesAttributeCache
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodBrowsingService
 import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, IndexLookupResult, MatchedFood, Splitter}
 import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsService, PairwiseAssociationsServiceSortTypes}
@@ -36,7 +37,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class SplitSuggestion(parts: Seq[String])
 
-class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex], foodDescriptionSplitters: Map[String, Splitter],
+class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex],
+                                     recipesAttributeIndex: RecipesAttributeCache,
+                                     foodDescriptionSplitters: Map[String, Splitter],
                                      foodBrowsingService: FoodBrowsingService, foodPopularityService: FoodPopularityService,
                                      pairwiseAssociationsService: PairwiseAssociationsService,
                                      rab: Intake24RestrictedActionBuilder,
@@ -56,10 +59,10 @@ class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex], foodDe
       }
   }
 
-  private def lookupImpl(locale: String, description: String, selectedFoods: Seq[String], maxResults: Int, algorithmId: String): Either[LookupError, LookupResult] = {
+  private def lookupImpl(locale: String, description: String, selectedFoods: Seq[String], maxResults: Int, algorithmId: String, resultFilter: IndexLookupResult => IndexLookupResult): Either[LookupError, LookupResult] = {
     foodIndexes.get(locale) match {
       case Some(index) => {
-        val lookupResult = index.lookup(description, Math.max(0, Math.min(maxResults, 100)))
+        val lookupResult = resultFilter(index.lookup(description, Math.max(0, Math.min(maxResults, 50)), 15))
 
         val sortedFoodHeaders = getSortedFoods(locale, lookupResult, selectedFoods, algorithmId).map(_.food)
         val sortedCategoryHeaders = lookupResult.categories.sortBy(_.matchCost).map(_.category)
@@ -94,7 +97,14 @@ class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex], foodDe
   def lookup(locale: String, description: String, selectedFoods: Seq[String], maxResults: Int, algorithm: String = PairwiseAssociationsServiceSortTypes.paRules) = rab.restrictToAuthenticated {
     _ =>
       Future {
-        translateDatabaseResult(lookupImpl(locale, description, selectedFoods, maxResults, algorithm))
+        translateDatabaseResult(lookupImpl(locale, description, selectedFoods, maxResults, algorithm, recipesAttributeIndex.filterForRegularFoods))
+      }
+  }
+
+  def lookupForRecipes(locale: String, description: String, selectedFoods: Seq[String], maxResults: Int, algorithm: String = PairwiseAssociationsServiceSortTypes.paRules) = rab.restrictToAuthenticated {
+    _ =>
+      Future {
+        translateDatabaseResult(lookupImpl(locale, description, selectedFoods, maxResults, algorithm, recipesAttributeIndex.filterForRecipes))
       }
   }
 
@@ -103,7 +113,7 @@ class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex], foodDe
     _ =>
       Future {
         val result = for (
-          lookupResult <- lookupImpl(locale, description, selectedFoods, maxResult, algorithm).right;
+          lookupResult <- lookupImpl(locale, description, selectedFoods, maxResult, algorithm, recipesAttributeIndex.filterForRegularFoods).right;
           foodSuperCategories <- sequence(lookupResult.foods.map(f => foodBrowsingService.getFoodAllCategories(f.code).right.map(sc => (f.code -> sc)))).right.map(_.toMap).right;
           categorySuperCategories <- sequence(lookupResult.categories.map(c => foodBrowsingService.getCategoryAllCategories(c.code).right.map(sc => (c.code -> sc)))).right.map(_.toMap).right
         ) yield LookupResult(lookupResult.foods.filter(f => foodSuperCategories(f.code).contains(categoryCode)),

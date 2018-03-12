@@ -1,6 +1,9 @@
 package uk.ac.ncl.openlab.intake24.foodsql.test
 
 import uk.ac.ncl.openlab.intake24._
+import uk.ac.ncl.openlab.intake24.api.data.{AssociatedFood, InheritableAttributes, PortionSizeMethod, PortionSizeMethodParameter}
+import uk.ac.ncl.openlab.intake24.api.data.admin.{NewCategory, NewLocalCategoryRecord, NewLocalFoodRecord, NewMainFoodRecord}
+import uk.ac.ncl.openlab.intake24.foodxml.{AsServedImageV1, AsServedSetV1}
 
 import scala.util.Random
 
@@ -56,8 +59,9 @@ trait RandomData {
     val readyMeal = if (Random.nextBoolean()) Some(Random.nextBoolean()) else None
     val sameAsBefore = if (Random.nextBoolean()) Some(Random.nextBoolean()) else None
     val reasonableAmount = if (Random.nextBoolean()) Some(Random.nextInt(1000)) else None
+    val useInRecipes = Random.nextInt(3)
 
-    InheritableAttributes(readyMeal, sameAsBefore, reasonableAmount)
+    InheritableAttributes(readyMeal, sameAsBefore, reasonableAmount, useInRecipes)
   }
 
   def randomNewFood(code: String, groupCodes: IndexedSeq[Int]) = NewMainFoodRecord(code, randomDescription, randomElement(groupCodes), randomAttributes, Seq(), Seq())

@@ -34,7 +34,7 @@ class CategoriesAdminImpl @Inject()(@Named("intake24_foods") val dataSource: Dat
   def isCategoryCodeAvailable(code: String): Either[UnexpectedDatabaseError, Boolean] = isCategoryCode(code).right.map(!_)
 
   case class CategoryResultRow(version: UUID, local_version: Option[UUID], code: String, description: String, local_description: Option[String], is_hidden: Boolean, same_as_before_option: Option[Boolean],
-                               ready_meal_option: Option[Boolean], reasonable_amount: Option[Int])
+                               ready_meal_option: Option[Boolean], reasonable_amount: Option[Int], use_in_recipes: Option[Int])
 
   private lazy val categoryRecordQuery = sqlFromResource("admin/get_category_record_frv.sql")
 
@@ -51,7 +51,8 @@ class CategoriesAdminImpl @Inject()(@Named("intake24_foods") val dataSource: Dat
               result =>
                 CategoryRecord(
                   MainCategoryRecord(result.version, result.code, result.description, result.is_hidden,
-                    InheritableAttributes(result.ready_meal_option, result.same_as_before_option, result.reasonable_amount), parentCategories),
+                    InheritableAttributes(result.ready_meal_option, result.same_as_before_option, result.reasonable_amount,
+                      result.use_in_recipes), parentCategories),
                   LocalCategoryRecord(result.local_version, result.local_description, psm))
             }
           }.right
@@ -92,10 +93,6 @@ class CategoriesAdminImpl @Inject()(@Named("intake24_foods") val dataSource: Dat
     implicit conn =>
       addSubcategoriesToCategoriesQuery(categorySubcategories)
   }
-
-  private val categoriesInsertQuery = "INSERT INTO categories VALUES({code},{description},{is_hidden},{version}::uuid)"
-
-  private val categoriesAttributesInsertQuery = "INSERT INTO categories_attributes VALUES (DEFAULT, {category_code}, {same_as_before_option}, {ready_meal_option}, {reasonable_amount})"
 
   def createCategory(categoryBase: NewCategory): Either[CreateError, Unit] = tryWithConnection {
     implicit conn =>

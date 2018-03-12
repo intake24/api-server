@@ -65,7 +65,7 @@ object FoodDef {
     val sameAsBeforeOption = e.attribute("sameAsBeforeOption").map(_.text == "true")
     val reasonableAmount = e.attribute("reasonableAmount").map(_.text.toInt)
 
-    InheritableAttributes(readyMealOption, sameAsBeforeOption, reasonableAmount)
+    InheritableAttributes(readyMealOption, sameAsBeforeOption, reasonableAmount, None)
   }
 
   def portionSizeMethods(e: Node): Seq[PortionSizeMethod] =

@@ -18,6 +18,8 @@ limitations under the License.
 
 package modules
 
+import javax.sql.DataSource
+
 import cache._
 import com.google.inject.name.{Named, Names}
 import com.google.inject.{AbstractModule, Injector, Provides, Singleton}
@@ -31,7 +33,9 @@ import uk.ac.ncl.openlab.intake24.foodsql.admin._
 import uk.ac.ncl.openlab.intake24.foodsql.demographicGroups._
 import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl
 import uk.ac.ncl.openlab.intake24.foodsql.images.ImageDatabaseServiceSqlImpl
+import uk.ac.ncl.openlab.intake24.foodsql.recipes.RecipesAttributeCacheImpl
 import uk.ac.ncl.openlab.intake24.foodsql.user.{FoodCompositionServiceImpl, _}
+import uk.ac.ncl.openlab.intake24.services.RecipesAttributeCache
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.demographicgroups._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
@@ -86,6 +90,14 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     }
 
     buildMap(Map(), enabledLocales.toList, reloadPeriod)
+  }
+
+  @Provides
+  @Singleton
+  def recipesAttributeIndex(@Named("intake24_foods") dataSource: DataSource, configuration: Configuration): RecipesAttributeCache = {
+    val reloadPeriod = configuration.get[Int]("intake24.foodIndex.reloadPeriodMinutes").minutes
+
+    new AutoReloadRecipesCache(() => new RecipesAttributeCacheImpl(dataSource), reloadPeriod, reloadPeriod)
   }
 
   @Provides
@@ -262,6 +274,5 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
 
     // Ux Events
     bind(classOf[UxEventsDataService]).to(classOf[UxEventsDataServiceImpl])
-
   }
 }
