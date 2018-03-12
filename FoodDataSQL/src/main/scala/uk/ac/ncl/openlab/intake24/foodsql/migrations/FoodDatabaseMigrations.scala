@@ -722,6 +722,27 @@ object FoodDatabaseMigrations {
         ???
 
       }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 47l
+      override val versionTo: Long = 48l
+      override val description: String = "Add use in recipes to inheritable attributes"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE categories_attributes ADD COLUMN use_in_recipes INTEGER").execute()
+        SQL("ALTER TABLE foods_attributes ADD COLUMN use_in_recipes INTEGER").execute()
+        SQL("ALTER TABLE attribute_defaults ADD COLUMN use_in_recipes INTEGER DEFAULT 0").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
     }
 
   )

@@ -40,9 +40,11 @@ trait CategoriesAdminQueries
       SQL("DELETE FROM categories_attributes WHERE category_code={category_code}")
         .on('category_code -> categoryCode).execute()
 
-      SQL("INSERT INTO categories_attributes VALUES (DEFAULT, {category_code}, {same_as_before_option}, {ready_meal_option}, {reasonable_amount})")
+      SQL("INSERT INTO categories_attributes(category_code, same_as_before_option, ready_meal_option, reasonable_amount, use_in_recipes) " +
+        "  VALUES ({category_code}, {same_as_before_option}, {ready_meal_option}, {reasonable_amount}, {use_in_recipes})")
         .on('category_code -> categoryCode, 'same_as_before_option -> attributes.sameAsBeforeOption,
-          'ready_meal_option -> attributes.readyMealOption, 'reasonable_amount -> attributes.reasonableAmount).execute()
+          'ready_meal_option -> attributes.readyMealOption, 'reasonable_amount -> attributes.reasonableAmount,
+          'use_in_recipes -> attributes.useInRecipes).execute()
 
       Right(())
     } catch {
@@ -215,7 +217,10 @@ trait CategoriesAdminQueries
 
   private val categoriesInsertQuery = "INSERT INTO categories VALUES({code},{description},{is_hidden},{version}::uuid)"
 
-  private val categoriesAttributesInsertQuery = "INSERT INTO categories_attributes VALUES (DEFAULT, {category_code}, {same_as_before_option}, {ready_meal_option}, {reasonable_amount})"
+  private val categoriesAttributesInsertQuery =
+    """INSERT INTO
+      |categories_attributes(category_code, same_as_before_option, ready_meal_option, reasonable_amount, use_in_recipes)
+      |VALUES ({category_code}, {same_as_before_option}, {ready_meal_option}, {reasonable_amount}, {use_in_recipes})""".stripMargin
 
   protected def createCategoriesQuery(categories: Seq[NewCategory])(implicit conn: java.sql.Connection): Either[CreateError, Unit] = {
     if (!categories.isEmpty) {
@@ -229,7 +234,7 @@ trait CategoriesAdminQueries
 
         val categoryAttributeParams =
           categories.map(c => Seq[NamedParameter]('category_code -> c.code, 'same_as_before_option -> c.attributes.sameAsBeforeOption,
-            'ready_meal_option -> c.attributes.readyMealOption, 'reasonable_amount -> c.attributes.reasonableAmount))
+            'ready_meal_option -> c.attributes.readyMealOption, 'reasonable_amount -> c.attributes.reasonableAmount, 'use_in_recipes -> c.attributes.useInRecipes))
 
         batchSql(categoriesAttributesInsertQuery, categoryAttributeParams).execute()
 

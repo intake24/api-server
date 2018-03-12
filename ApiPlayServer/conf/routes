@@ -9,8 +9,6 @@ POST           /signin/alias                                                 con
 POST           /signin/token/:token                                          controllers.system.SigninController.signinWithToken(token: String)
 POST           /refresh                                                      controllers.system.SigninController.refresh()
 
-GET            /index/lookup/:locale/:term                                   controllers.FoodIndexController.lookup(locale, term)
-
 OPTIONS        /*dontcare                                                    controllers.CorsPreflightController.corsPreflight(dontcare: String)
 
 # ADMIN CONTROLLERS #

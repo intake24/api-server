@@ -27,7 +27,7 @@ case class MatchedCategory(category: UserCategoryHeader, matchCost: Int)
 case class IndexLookupResult(foods: Seq[MatchedFood], categories: Seq[MatchedCategory])
 
 trait FoodIndex {
-  def lookup(description: String, maxResults: Int): IndexLookupResult
+  def lookup(description: String, maxFoods: Int, maxCategories: Int): IndexLookupResult
 }
 
 object FoodIndex {

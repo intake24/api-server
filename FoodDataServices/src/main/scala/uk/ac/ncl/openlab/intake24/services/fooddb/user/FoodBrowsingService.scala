@@ -40,7 +40,8 @@ object SourceLocale {
 
 case class InheritableAttributeSources(sameAsBeforeOptionSource: InheritableAttributeSource,
                                        readyMealOptionSource: InheritableAttributeSource,
-                                       reasonableAmountSource: InheritableAttributeSource)
+                                       reasonableAmountSource: InheritableAttributeSource,
+                                       useInRecipesSource: InheritableAttributeSource)
 
 case class FoodDataSources(localDescriptionSource: SourceLocale, nutrientTablesSource: SourceLocale,
                            portionSizeSource: (SourceLocale, SourceRecord),

@@ -18,27 +18,31 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.services.foodindex
 
-import java.util.concurrent.atomic.AtomicReference
 import java.util.TimerTask
+import java.util.concurrent.atomic.AtomicReference
+
+import org.slf4j.LoggerFactory
+import uk.ac.ncl.openlab.intake24.services.RecipesAttributeCache
 
 import scala.concurrent.duration._
-import org.slf4j.LoggerFactory
 
-class AutoReloadIndex(reload: () => AbstractFoodIndex, delay: Duration, period: Duration, description: String) extends FoodIndex {
-  val log = LoggerFactory.getLogger(classOf[AutoReloadIndex])
-  
-  val ref = new AtomicReference[AbstractFoodIndex](reload.apply()) // load the first index synchronously 
-  
-  val reloadTimer = new java.util.Timer(true) 
-    
+class AutoReloadRecipesCache(reload: () => RecipesAttributeCache, delay: Duration, period: Duration) extends RecipesAttributeCache {
+  val log = LoggerFactory.getLogger(classOf[AutoReloadRecipesCache])
+
+  val ref = new AtomicReference[RecipesAttributeCache](reload.apply()) // load the first index synchronously
+
+  val reloadTimer = new java.util.Timer(true)
+
   reloadTimer.schedule(new TimerTask() {
     override def run() = {
-      log.debug(s"Reloading $description index...")
+      log.debug(s"Reloading recipe attributes cache...")
       val t0 = System.currentTimeMillis()
       ref.set(reload.apply())
-      log.debug(s"Reloaded $description index in ${System.currentTimeMillis() - t0} ms")
+      log.debug(s"Reloaded recipe attributes cache in ${System.currentTimeMillis() - t0} ms")
     }
   }, delay.toMillis, period.toMillis)
-  
-  def lookup(description: String, maxFoods: Int, maxCategories: Int): IndexLookupResult = ref.get.lookup(description, maxFoods, maxCategories)
+
+  def filterForRecipes(indexLookupResult: IndexLookupResult) = ref.get().filterForRecipes(indexLookupResult)
+
+  def filterForRegularFoods(indexLookupResult: IndexLookupResult) = ref.get().filterForRegularFoods(indexLookupResult)
 }
