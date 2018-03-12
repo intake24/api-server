@@ -65,8 +65,6 @@ abstract class AbstractFoodIndex(foodData: FoodIndexDataService, phoneticEncoder
 
   log.debug(s"Indexing complete in ${System.currentTimeMillis() - it0} ms")
 
-  log.debug(categoryIndex.dictionaryWords.mkString(", "))
-
   def lookup(description: String, maxFoods: Int, maxCategories: Int): IndexLookupResult = {
     log.debug(s"Lookup request: $description")
     val foodInterpretation = foodIndex.interpretPhrase(description, MatchFewer)
