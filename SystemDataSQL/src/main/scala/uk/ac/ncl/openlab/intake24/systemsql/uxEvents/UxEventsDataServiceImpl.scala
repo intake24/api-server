@@ -1,10 +1,10 @@
 package uk.ac.ncl.openlab.intake24.systemsql.uxEvents
 
 import java.time.ZonedDateTime
+
 import javax.inject.{Inject, Named}
 import javax.sql.DataSource
-
-import anorm.{Macro, SQL}
+import anorm._
 import uk.ac.ncl.openlab.intake24.errors.{CreateError, FailedValidation, UnexpectedDatabaseError}
 import uk.ac.ncl.openlab.intake24.services.systemdb.uxEvents.{UxEventIn, UxEventOut, UxEventsDataService}
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
@@ -46,5 +46,20 @@ class UxEventsDataServiceImpl @Inject()(@Named("intake24_system") val dataSource
 
         Right(())
     }
+
+  override def userWasActiveWithinPeriod(userId: Long, dateFrom: ZonedDateTime, dateTo: ZonedDateTime): Either[UnexpectedDatabaseError, Boolean] = tryWithConnection {
+    implicit conn =>
+      val r = SQL(
+        s"""
+           |SELECT EXISTS(
+           |    SELECT 1
+           |    FROM $tableName
+           |    WHERE user_id = {user_id} AND
+           |        created >= {date_from} AND
+           |        CREATED <= {date_to}
+           |)
+        """.stripMargin).on('user_id -> userId, 'date_from -> dateFrom, 'date_to -> dateTo).executeQuery().as(SqlParser.bool("exists").single)
+      Right(r)
+  }
 
 }

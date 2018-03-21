@@ -19,14 +19,14 @@ limitations under the License.
 package modules
 
 import javax.sql.DataSource
-
 import cache._
 import com.google.inject.name.{Named, Names}
 import com.google.inject.{AbstractModule, Injector, Provides, Singleton}
 import play.api.db.Database
 import play.api.{Configuration, Environment}
 import play.db.NamedDatabase
-import scheduled.{ErrorDigestSender, ErrorDigestSenderImpl, NotificationSender, NotificationSenderImpl, PairwiseAssociationsRefresher, PairwiseAssociationsRefresherImpl}
+import scheduled.notificationSender.{NotificationSender, NotificationSenderImpl}
+import scheduled.{ErrorDigestSender, ErrorDigestSenderImpl, PairwiseAssociationsRefresher, PairwiseAssociationsRefresherImpl}
 import security.captcha.{AsyncCaptchaService, GoogleRecaptchaImpl}
 import sms.{SMSService, TwilioSMSImpl}
 import uk.ac.ncl.openlab.intake24.foodsql.admin._

@@ -3,7 +3,7 @@ package uk.ac.ncl.openlab.intake24.services.systemdb.uxEvents
 import java.time.ZonedDateTime
 import java.util.UUID
 
-import uk.ac.ncl.openlab.intake24.errors.CreateError
+import uk.ac.ncl.openlab.intake24.errors.{CreateError, UnexpectedDatabaseError}
 
 /**
   * Created by Tim Osadchiy on 08/11/2017.
@@ -15,5 +15,5 @@ case class UxEventOut(id: Long, eventCategories: Seq[String], eventType: String,
 
 trait UxEventsDataService {
   def create(uxEvent: UxEventIn): Either[CreateError, Unit]
-
+  def userWasActiveWithinPeriod(userId: Long, dateFrom: ZonedDateTime, dateTo: ZonedDateTime): Either[UnexpectedDatabaseError, Boolean]
 }

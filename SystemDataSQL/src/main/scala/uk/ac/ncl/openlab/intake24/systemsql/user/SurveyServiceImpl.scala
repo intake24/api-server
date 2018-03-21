@@ -1,9 +1,10 @@
 package uk.ac.ncl.openlab.intake24.systemsql.user
 
+import java.time.ZonedDateTime
 import java.util.UUID
+
 import javax.inject.{Inject, Named}
 import javax.sql.DataSource
-
 import anorm._
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.SurveyState
@@ -212,5 +213,22 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
 
         Right(generatedId)
       }
+  }
+
+  override def userSubmittedWithinPeriod(surveyId: String, userId: Long, dateFrom: ZonedDateTime, dateTo: ZonedDateTime): Either[UnexpectedDatabaseError, Boolean] = tryWithConnection {
+    implicit conn =>
+      val r = SQL(
+        """
+          |SELECT EXISTS(
+          |    SELECT 1
+          |    FROM survey_submissions
+          |    WHERE survey_id = {survey_id} AND
+          |          user_id = {user_id} AND
+          |          start_time >= {date_from} AND
+          |          start_time <= {date_to}
+          |)
+        """.stripMargin)
+        .on('survey_id -> surveyId, 'user_id -> userId, 'date_from -> dateFrom, 'date_to -> dateTo).executeQuery().as(SqlParser.bool("exists").single)
+      Right(r)
   }
 }

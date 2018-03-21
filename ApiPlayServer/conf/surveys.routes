@@ -48,6 +48,7 @@ POST          /:surveyId/users/staff                                 controllers
 GET           /:surveyId/users/respondents                           controllers.system.UserAdminController.listSurveyRespondentUsers(surveyId: String, offset: Int, limit: Int)
 POST          /:surveyId/users/respondents                           controllers.system.UserAdminController.createOrUpdateSurveyRespondents(surveyId: String)
 POST          /:surveyId/users/respondents/upload-csv                controllers.system.UserAdminController.uploadSurveyRespondentsCSV(surveyId: String)
+POST          /:surveyId/users/notifications/upload-csv              controllers.system.NotificationAdminController.uploadNotificationsCSV(surveyId: String)
 DELETE        /:surveyId/users                                       controllers.system.UserAdminController.deleteSurveyUsers(surveyId: String)
 
 # For Newcastle Can

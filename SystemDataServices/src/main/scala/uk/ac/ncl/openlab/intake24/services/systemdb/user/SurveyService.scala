@@ -1,5 +1,6 @@
 package uk.ac.ncl.openlab.intake24.services.systemdb.user
 
+import java.time.ZonedDateTime
 import java.util.UUID
 
 import uk.ac.ncl.openlab.intake24.errors._
@@ -27,4 +28,7 @@ trait SurveyService {
   def getSurveyFollowUp(surveyId: String): Either[LookupError, SurveyFollowUp]
 
   def createSubmission(userId: Long, surveyId: String, submission: NutrientMappedSubmission): Either[UnexpectedDatabaseError, UUID]
+
+  def userSubmittedWithinPeriod(surveyId: String, userId: Long, dateFrom: ZonedDateTime, dateTo: ZonedDateTime): Either[UnexpectedDatabaseError, Boolean]
+
 }
