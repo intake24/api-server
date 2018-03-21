@@ -1726,10 +1726,10 @@ object SystemDatabaseMigrations {
           """
             |CREATE TABLE user_sessions
             |(
-            |  user_id      INTEGER                  NOT NULL,
-            |  survey_id    CHARACTER VARYING(64)    NOT NULL,
-            |  session_data CHARACTER VARYING(5000000),
-            |  created      TIMESTAMP WITH TIME ZONE NOT NULL,
+            |  user_id      INTEGER                    NOT NULL,
+            |  survey_id    CHARACTER VARYING(64)      NOT NULL,
+            |  session_data CHARACTER VARYING(5000000) NOT NULL,
+            |  created      TIMESTAMP WITH TIME ZONE   NOT NULL,
             |  CONSTRAINT user_sessions_pk PRIMARY KEY (user_id, survey_id),
             |  CONSTRAINT user_sessions_users_pk FOREIGN KEY (user_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE CASCADE,
             |  CONSTRAINT user_sessions_surveys_fk FOREIGN KEY (survey_id) REFERENCES surveys (id) ON UPDATE CASCADE ON DELETE CASCADE
