@@ -1711,6 +1711,38 @@ object SystemDatabaseMigrations {
         ???
 
       }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 74l
+      override val versionTo: Long = 75l
+      override val description: String = "User session storage"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE surveys ADD COLUMN store_user_session_on_server BOOLEAN").execute()
+        SQL(
+          """
+            |CREATE TABLE user_sessions
+            |(
+            |  user_id      INTEGER                  NOT NULL,
+            |  survey_id    CHARACTER VARYING(64)    NOT NULL,
+            |  session_data CHARACTER VARYING(5000000),
+            |  created      TIMESTAMP WITH TIME ZONE NOT NULL,
+            |  CONSTRAINT user_sessions_pk PRIMARY KEY (user_id, survey_id),
+            |  CONSTRAINT user_sessions_users_pk FOREIGN KEY (user_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE CASCADE,
+            |  CONSTRAINT user_sessions_surveys_fk FOREIGN KEY (survey_id) REFERENCES surveys (id) ON UPDATE CASCADE ON DELETE CASCADE
+            |)
+          """.stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
     }
 
   )
