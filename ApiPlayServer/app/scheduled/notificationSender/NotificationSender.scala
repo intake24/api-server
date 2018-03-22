@@ -35,7 +35,7 @@ class NotificationSenderImpl @Inject()(system: ActorSystem,
 
   system.scheduler.schedule(0.second, 1.minutes) {
 
-    val NOTIFY_AGAIN_AFTER_MINUTES = 1
+    val NOTIFY_AGAIN_AFTER_MINUTES = 40
     val ADMIN_NAME = "Tim"
 
     sendNotifications()
