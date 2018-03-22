@@ -254,6 +254,7 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
   override def getCustomDataScheme(schemeId: String): Either[LookupError, CustomDataScheme] = schemeId match {
     case "default" => Right(CustomDataScheme(Seq(), Seq(), Seq(), Seq()))
     case "experimental-pa-rules" => Right(CustomDataScheme(Seq(), Seq(), Seq(), Seq()))
+    case "experimental-flexible-recall" => Right(CustomDataScheme(Seq(), Seq(), Seq(), Seq()))
     case "young_scot_2014" =>
       Right(CustomDataScheme(
         Seq(CustomFieldDescription("age", "Age"),
