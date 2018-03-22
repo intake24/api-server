@@ -33,7 +33,7 @@ class NotificationSenderImpl @Inject()(system: ActorSystem,
                                        configuration: Configuration,
                                        implicit val executionContext: ExecutionContext) extends NotificationSender {
 
-  system.scheduler.schedule(0.second, 1.minutes) {
+  system.scheduler.schedule(0.second, 2.minutes) {
 
     val NOTIFY_AGAIN_AFTER_MINUTES = 40
     val ADMIN_NAME = "Tim"
