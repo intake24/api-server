@@ -19,11 +19,11 @@ limitations under the License.
 package controllers.system.user
 
 import javax.inject.Inject
-
 import akka.actor.ActorSystem
 import controllers.DatabaseErrorHandler
 import io.circe.syntax._
 import io.circe.generic.auto._
+import models.{SaveUserSessionRequest, UserSessionResponse}
 import parsers.{JsonBodyParser, JsonUtils}
 import play.Logger
 import play.api.libs.ws.WSClient
@@ -33,7 +33,7 @@ import uk.ac.ncl.openlab.intake24.api.data.ErrorDescription
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{SurveyAdminService, UserAdminService}
-import uk.ac.ncl.openlab.intake24.services.systemdb.user.{FoodPopularityService, SurveyService}
+import uk.ac.ncl.openlab.intake24.services.systemdb.user.{FoodPopularityService, SurveyService, UserSession, UserSessionDataService}
 import uk.ac.ncl.openlab.intake24.surveydata.{SubmissionNotification, SurveySubmission}
 
 import scala.concurrent.duration._
@@ -50,6 +50,7 @@ class SurveyController @Inject()(service: SurveyService,
                                  rab: Intake24RestrictedActionBuilder,
                                  playBodyParsers: PlayBodyParsers,
                                  jsonBodyParser: JsonBodyParser,
+                                 userSessionDataService: UserSessionDataService,
                                  val controllerComponents: ControllerComponents,
                                  implicit val executionContext: ExecutionContext) extends BaseController
   with DatabaseErrorHandler with JsonUtils {
@@ -93,6 +94,33 @@ class SurveyController @Inject()(service: SurveyService,
         }
 
         translateDatabaseResult(result)
+      }
+  }
+
+  def saveSession(surveyId: String) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(jsonBodyParser.parse[SaveUserSessionRequest]) {
+    request =>
+      Future {
+        val userId = request.subject.userId
+        translateDatabaseResult(userSessionDataService.save(UserSession(userId, surveyId, request.body.data)))
+      }
+  }
+
+  def getSession(surveyId: String) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(playBodyParsers.empty) {
+    request =>
+      Future {
+        val userId = request.subject.userId
+        val r = userSessionDataService.get(surveyId, userId)
+          .map(s => UserSessionResponse(Some(s)))
+          .getOrElse(UserSessionResponse(None))
+        translateDatabaseResult(Right(r))
+      }
+  }
+
+  def cleanSession(surveyId: String) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(playBodyParsers.empty) {
+    request =>
+      Future {
+        val userId = request.subject.userId
+        translateDatabaseResult(userSessionDataService.clean(surveyId, userId))
       }
   }
 

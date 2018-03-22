@@ -51,6 +51,11 @@ POST          /:surveyId/users/respondents/upload-csv                controllers
 POST          /:surveyId/users/notifications/upload-csv              controllers.system.NotificationAdminController.uploadNotificationsCSV(surveyId: String)
 DELETE        /:surveyId/users                                       controllers.system.UserAdminController.deleteSurveyUsers(surveyId: String)
 
+# User sessions
+GET           /:surveyId/user-session                                controllers.system.user.SurveyController.getSession(surveyId: String)
+POST          /:surveyId/user-session                                controllers.system.user.SurveyController.saveSession(surveyId: String)
+DELETE        /:surveyId/user-session                                controllers.system.user.SurveyController.cleanSession(surveyId: String)
+
 # For Newcastle Can
 
 POST          /:surveyId/users/respondents/with-physical-data        controllers.system.UserAdminController.createRespondentsWithPhysicalData(surveyId: String)

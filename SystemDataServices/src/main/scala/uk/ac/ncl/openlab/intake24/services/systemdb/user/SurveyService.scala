@@ -12,8 +12,8 @@ case class SurveyFeedbackStyle(feedbackStyle: String)
 
 case class UxEventsSettings(enableSearchEvents: Boolean, enableAssociatedFoodsEvents: Boolean)
 
-case class UserSurveyParameters(schemeId: String, localeId: String, state: String, suspensionReason: Option[String], description: Option[String],
-                                uxEventsSettings: UxEventsSettings)
+case class UserSurveyParameters(id: String, schemeId: String, localeId: String, state: String, suspensionReason: Option[String],
+                                description: Option[String], uxEventsSettings: UxEventsSettings, storeUserSessionOnServer: Boolean)
 
 case class SurveyFollowUp(followUpUrl: Option[String], showFeedback: Boolean)
 

@@ -14,8 +14,8 @@ import uk.ac.ncl.openlab.intake24.surveydata.NutrientMappedSubmission
 
 class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends SurveyService with SqlDataService with SqlResourceLoader {
 
-  private case class UserSurveyParametersRow(scheme_id: String, state: Int, locale: String, started: Boolean, finished: Boolean, suspension_reason: Option[String],
-                                             originating_url: Option[String], description: Option[String])
+  private case class UserSurveyParametersRow(id: String, scheme_id: String, state: Int, locale: String, started: Boolean, finished: Boolean, suspension_reason: Option[String],
+                                             originating_url: Option[String], description: Option[String], store_user_session_on_server: Option[Boolean])
 
   private case class UxEventSettingsRow(enable_search_events: Boolean, enable_associated_foods_events: Boolean)
 
@@ -43,7 +43,7 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
 
   override def getSurveyParameters(surveyId: String): Either[LookupError, UserSurveyParameters] = tryWithConnection {
     implicit conn =>
-      SQL("SELECT scheme_id, locale, state, now() >= start_date AS started, now() > end_date AS finished, suspension_reason, originating_url, description FROM surveys WHERE id={survey_id}")
+      SQL("SELECT id, scheme_id, locale, state, now() >= start_date AS started, now() > end_date AS finished, suspension_reason, originating_url, description, store_user_session_on_server FROM surveys WHERE id={survey_id}")
         .on('survey_id -> surveyId)
         .executeQuery()
         .as(Macro.namedParser[UserSurveyParametersRow].singleOpt) match {
@@ -70,7 +70,7 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
             case None => UxEventsSettings(false, false)
           }
 
-          Right(UserSurveyParameters(row.scheme_id, row.locale, state, row.suspension_reason, row.description, uxEventsSettings))
+          Right(UserSurveyParameters(row.id, row.scheme_id, row.locale, state, row.suspension_reason, row.description, uxEventsSettings, row.store_user_session_on_server.getOrElse(false)))
 
         }
         case None =>

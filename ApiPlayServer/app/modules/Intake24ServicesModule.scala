@@ -50,13 +50,13 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import uk.ac.ncl.openlab.intake24.services.systemdb.notifications.NotificationScheduleDataService
 import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsDataService, PairwiseAssociationsService, PairwiseAssociationsServiceConfiguration}
 import uk.ac.ncl.openlab.intake24.services.systemdb.shortUrls.ShortUrlDataService
-import uk.ac.ncl.openlab.intake24.services.systemdb.user.{ClientErrorService, FoodPopularityService, SurveyService, UserPhysicalDataService}
+import uk.ac.ncl.openlab.intake24.services.systemdb.user._
 import uk.ac.ncl.openlab.intake24.services.systemdb.uxEvents.UxEventsDataService
 import uk.ac.ncl.openlab.intake24.systemsql.admin._
 import uk.ac.ncl.openlab.intake24.systemsql.notifications.NotificationScheduleDataServiceImpl
 import uk.ac.ncl.openlab.intake24.systemsql.pairwiseAssociations.{PairwiseAssociationsDataServiceImpl, PairwiseAssociationsServiceImpl}
 import uk.ac.ncl.openlab.intake24.systemsql.shortUrl.ShortUrlDataServiceImpl
-import uk.ac.ncl.openlab.intake24.systemsql.user.{ClientErrorServiceImpl, FoodPopularityServiceImpl, SurveyServiceImpl, UserPhysicalDataServiceImpl}
+import uk.ac.ncl.openlab.intake24.systemsql.user._
 import uk.ac.ncl.openlab.intake24.systemsql.uxEvents.UxEventsDataServiceImpl
 import urlShort.{ShortUrlService, ShortUrlServiceImpl}
 
@@ -285,6 +285,9 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     bind(classOf[ShortUrlService]).to(classOf[ShortUrlServiceImpl])
     bind(classOf[NotificationScheduleDataService]).to(classOf[NotificationScheduleDataServiceImpl])
     bind(classOf[NotificationSender]).to(classOf[NotificationSenderImpl]).asEagerSingleton()
+
+    // User sessions
+    bind(classOf[UserSessionDataService]).to(classOf[UserSessionDataServiceImpl])
 
   }
 }
