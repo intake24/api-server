@@ -7,8 +7,8 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.notifications.Notification
   */
 object NotificationMessages {
 
-  val EMAIL_SUFFIX = "Please use the same browser that you used for the previous recalls. Follow this url to login: %s \n\n -%s from Intake24"
-  val EMAIL_SHORT_SUFFIX = "Follow this url to login: %s \\n\\n -%s from Intake24"
+  val EMAIL_SUFFIX = "Please use the same browser that you used for the previous recalls. Follow this url to login: %s -%s from Intake24"
+  val EMAIL_SHORT_SUFFIX = "Follow this url to login: %s -%s from Intake24"
   val MOBILE_SUFFIX = "Login url was sent to your email. -%s from Intake24"
 
   val emailMessages = Map(
