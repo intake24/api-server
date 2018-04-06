@@ -26,7 +26,7 @@ abstract class ArabicFoodIndex(foodData: FoodIndexDataService, locale: String)
 
 
 object ArabicFoodIndex {
-  val indexFilter = Seq("`", ",", """\/""", """\-""", """\)""", """\(""", """\.""", """e\.g\.""", """e\.g""", """\'s""")
-  val nonIndexedWords = Seq("com")
+  val indexFilter = Seq("`", "\\+", "،", ",", "\\/", "\\-", "\\)", "\\(", "\\.")
+  val nonIndexedWords = Seq()
   val specialFoodNames = new ArabicSpecialFoodNames
 }
