@@ -1,5 +1,5 @@
 package controllers.system.asynchronous
-
+/*
 import java.io.{File, FileWriter, IOException}
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -39,19 +39,17 @@ object ExportManager {
 
 }
 
-case class ExportManagerConfig(
+case class ExportTaskConfig(
                                 batchSize: Int,
                                 throttleRateMs: Int,
                                 maxActiveTasks: Int,
-                                s3BucketName: String,
-                                s3PathPrefix: String,
-                                s3UrlExpirationTimeMinutes: Long
+
                               )
 
 class ExportManager(exportService: DataExportService,
                     s3Client: AmazonS3,
                     mailer: MailerClient,
-                    config: ExportManagerConfig,
+                    config: ExportTaskConfig,
                     implicit val executionContext: ExecutionContext) extends Actor {
 
   case class CSVFileHandles(file: File, fileWriter: FileWriter, csvWriter: CSVWriter)
@@ -72,7 +70,7 @@ class ExportManager(exportService: DataExportService,
   }
 
   def dbSetSuccessful(taskId: Long, downloadUrl: String, urlExpiresAt: ZonedDateTime): ThrottledTask[Unit] = ThrottledTask.fromAnyError {
-    exportService.setExportTaskSuccess(taskId, downloadUrl, urlExpiresAt)
+    exportService.setExportTaskSuccess(taskId) //, downloadUrl, urlExpiresAt)
   }
 
   def dbSetFailed(taskId: Long, cause: Throwable): ThrottledTask[Unit] = ThrottledTask.fromAnyError {
@@ -321,7 +319,7 @@ class AsynchronousDataExporter @Inject()(actorSystem: ActorSystem,
 
   val configSection = "intake24.asyncDataExporter"
 
-  val exportManagerConfig = ExportManagerConfig(
+  val exportManagerConfig = ExportTaskConfig(
     configuration.get[Int](s"$configSection.batchSize"),
     configuration.get[Int](s"$configSection.throttleRateMs"),
     configuration.get[Int](s"$configSection.maxConcurrentTasks"),
@@ -329,6 +327,8 @@ class AsynchronousDataExporter @Inject()(actorSystem: ActorSystem,
     configuration.get[String](s"$configSection.s3.pathPrefix"),
     configuration.get[Long](s"$configSection.s3.urlExpirationTimeMinutes")
   )
+
+
 
   val exportManager = actorSystem.actorOf(Props(classOf[ExportManager], exportService, s3Client, mailer, exportManagerConfig, executionContext), "ExportManager")
 
@@ -348,3 +348,4 @@ class AsynchronousDataExporter @Inject()(actorSystem: ActorSystem,
       }
   }
 }
+*/

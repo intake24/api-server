@@ -18,7 +18,10 @@ limitations under the License.
 
 package modules
 
+import java.util.concurrent.{ForkJoinPool, ForkJoinWorkerThread}
+import java.util.concurrent.ForkJoinPool.ForkJoinWorkerThreadFactory
 import javax.sql.DataSource
+
 import cache._
 import com.google.inject.name.{Named, Names}
 import com.google.inject.{AbstractModule, Injector, Provides, Singleton}
@@ -60,6 +63,7 @@ import uk.ac.ncl.openlab.intake24.systemsql.user._
 import uk.ac.ncl.openlab.intake24.systemsql.uxEvents.UxEventsDataServiceImpl
 import urlShort.{ShortUrlService, ShortUrlServiceImpl}
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 class Intake24ServicesModule(env: Environment, config: Configuration) extends AbstractModule {
@@ -169,17 +173,14 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     ImageProcessorSettings(commandSearchPath, command, source, selection, asServed, imageMaps)
   }
 
+  // Custom execution context for long-running blocking tasks (data export etc.)
   @Provides
+  @Named("long-tasks")
   @Singleton
-  def pairwiseAssociationsServiceSettings(configuration: Configuration): PairwiseAssociationsServiceConfiguration =
-    PairwiseAssociationsServiceConfiguration(
-      configuration.get[Int]("intake24.pairwiseAssociations.minimumNumberOfSurveySubmissions"),
-      configuration.get[Seq[String]]("intake24.pairwiseAssociations.ignoreSurveysContaining"),
-      configuration.get[Int]("intake24.pairwiseAssociations.useAfterNumberOfTransactions"),
-      configuration.get[Int]("intake24.pairwiseAssociations.rulesUpdateBatchSize"),
-      configuration.get[String]("intake24.pairwiseAssociations.refreshAtTime"),
-      configuration.get[Int]("intake24.pairwiseAssociations.minInputSearchSize")
-    )
+  def longTasksExecutionContext(configuration: Configuration): ExecutionContext = {
+    val maxThreads = configuration.get[Int]("intake24.longTasksContext.maxThreads")
+    ExecutionContext.fromExecutor(new ForkJoinPool(maxThreads))
+  }
 
   def configure() = {
     // Utility services
@@ -272,11 +273,6 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
 
     bind(classOf[UsersSupportService]).to(classOf[UsersSupportServiceImpl])
 
-    // Pairwise services
-    bind(classOf[PairwiseAssociationsDataService]).to(classOf[PairwiseAssociationsDataServiceImpl])
-    bind(classOf[PairwiseAssociationsService]).to(classOf[PairwiseAssociationsServiceImpl])
-    bind(classOf[PairwiseAssociationsRefresher]).to(classOf[PairwiseAssociationsRefresherImpl]).asEagerSingleton()
-
     // Ux Events
     bind(classOf[UxEventsDataService]).to(classOf[UxEventsDataServiceImpl])
 
@@ -288,6 +284,7 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
 
     // User sessions
     bind(classOf[UserSessionDataService]).to(classOf[UserSessionDataServiceImpl])
+
 
   }
 }

@@ -23,16 +23,15 @@ import java.time.format.{DateTimeFormatter, DateTimeParseException}
 import javax.inject.Inject
 
 import controllers.DatabaseErrorHandler
-import controllers.system.asynchronous.AsynchronousDataExporter
+import controllers.system.asynchronous.SingleThreadedDataExporter
 import io.circe.generic.auto._
 import parsers.{JsonUtils, SurveyCSVExporter}
-import play.api.http.FileMimeTypes
-import play.api.mvc.{BaseController, BodyParsers, ControllerComponents, PlayBodyParsers}
+import play.api.mvc.{BaseController, ControllerComponents, PlayBodyParsers}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.api.data.ErrorDescription
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, ExportTaskInfo, SurveyAdminService}
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, ScopedExportTaskInfo, SurveyAdminService}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -41,7 +40,7 @@ case class NewExportTaskInfo(taskId: Long)
 class DataExportController @Inject()(service: DataExportService,
                                      surveyAdminService: SurveyAdminService,
                                      foodGroupsAdminService: FoodGroupsAdminService,
-                                     asyncExporter: AsynchronousDataExporter,
+                                     dataExporter: SingleThreadedDataExporter,
                                      rab: Intake24RestrictedActionBuilder,
                                      playBodyParsers: PlayBodyParsers,
                                      val controllerComponents: ControllerComponents,
@@ -120,8 +119,7 @@ class DataExportController @Inject()(service: DataExportService,
           val parsedTo = ZonedDateTime.parse(dateTo)
           val forceBOM = request.getQueryString("forceBOM").isDefined
 
-
-          translateDatabaseResult(asyncExporter.queueCsvExport(request.subject.userId, surveyId, parsedFrom, parsedTo, forceBOM).right.map(NewExportTaskInfo(_)))
+          translateDatabaseResult(dataExporter.queueCsvExport(request.subject.userId, surveyId, parsedFrom, parsedTo, forceBOM).map(h => NewExportTaskInfo(h.id)))
 
         } catch {
           case e: DateTimeParseException => BadRequest(toJsonString(ErrorDescription("DateFormat", "Failed to parse date parameter. Expected a UTC date in ISO 8601 format, e.g. '2017-02-15T16:40:30Z'.")))
@@ -130,7 +128,7 @@ class DataExportController @Inject()(service: DataExportService,
   }
 
 
-  case class GetExportTaskStatusResult(activeTasks: Seq[ExportTaskInfo])
+  case class GetExportTaskStatusResult(activeTasks: Seq[ScopedExportTaskInfo])
 
   def getExportTaskStatus(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
     request =>

@@ -159,10 +159,10 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
         Left(RecordNotFound(new RuntimeException(s"Export task id $taskId does not exist")))
   }
 
-  def setExportTaskSuccess(taskId: Long, downloadUrl: String, downloadUrlExpiresAt: ZonedDateTime): Either[LookupError, Unit] = tryWithConnection {
+  def setExportTaskSuccess(taskId: Long): Either[LookupError, Unit] = tryWithConnection {
     implicit conn =>
-      if (SQL("UPDATE data_export_tasks SET successful=true,download_url={url},download_url_expires_at={expires_at} WHERE id={task_id}")
-        .on('task_id -> taskId, 'url -> downloadUrl, 'expires_at -> downloadUrlExpiresAt)
+      if (SQL("UPDATE data_export_tasks SET progress=1,successful=true,completed_at=NOW() WHERE id={task_id}")
+        .on('task_id -> taskId)
         .executeUpdate() == 1)
         Right(())
       else
@@ -200,11 +200,12 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
       else Left(RecordNotFound(new RuntimeException(s"Export task id $taskId does not exist")))
   }
 
+
   private case class ExportTaskStatusRow(id: Long, created_at: ZonedDateTime, date_from: ZonedDateTime,
                                          date_to: ZonedDateTime, progress: Option[Double], successful: Option[Boolean],
                                          download_url: Option[String], download_url_expires_at: Option[ZonedDateTime])
 
-  def getActiveExportTasks(surveyId: String, userId: Long): Either[LookupError, Seq[ExportTaskInfo]] = tryWithConnection {
+  def getActiveExportTasks(surveyId: String, userId: Long): Either[LookupError, Seq[ScopedExportTaskInfo]] = tryWithConnection {
     implicit conn =>
       Right(SQL("SELECT id, created_at, date_from, date_to, progress, successful, download_url, download_url_expires_at FROM data_export_tasks WHERE user_id={user_id} AND survey_id={survey_id} AND created_at > (now() - interval '1 day') ORDER BY created_at DESC")
         .on('user_id -> userId, 'survey_id -> surveyId)
@@ -213,13 +214,8 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
           row =>
 
             val status = row.successful match {
-              case Some(true) =>
-                if (row.download_url_expires_at.get.isBefore(ZonedDateTime.now()))
-                  ExportTaskStatus.Expired
-                else
-                  ExportTaskStatus.Completed(row.download_url.get)
-              case Some(false) =>
-                ExportTaskStatus.Failed
+              case Some(true) => ExportTaskStatus.Completed
+              case Some(false) => ExportTaskStatus.Failed
               case None =>
                 row.progress match {
                   case Some(progress) => ExportTaskStatus.InProgress(progress)
@@ -227,7 +223,34 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
                 }
             }
 
-            ExportTaskInfo(row.id, row.created_at, row.date_from, row.date_to, status)
+            ScopedExportTaskInfo(row.id, row.created_at, row.date_from, row.date_to, status)
         })
+  }
+
+  private case class TaskInfoRow(userId: Long, survey_id: String, date_from: ZonedDateTime, date_to: ZonedDateTime,
+                                 progress: Option[Double], successful: Option[Boolean])
+
+  override def getTaskInfo(taskId: Long): Either[LookupError, ExportTaskInfo] = tryWithConnection {
+    implicit conn =>
+      SQL("SELECT user_id, survey_id, date_from, date_to, progress, successful FROM data_export_tasks WHERE id={task_id}")
+        .on('task_id -> taskId)
+        .as(Macro.namedParser[TaskInfoRow].singleOpt)
+        .map {
+          row =>
+            val status = row.successful match {
+              case Some(true) => ExportTaskStatus.Completed
+              case Some(false) => ExportTaskStatus.Failed
+              case None =>
+                row.progress match {
+                  case Some(progress) => ExportTaskStatus.InProgress(progress)
+                  case None => ExportTaskStatus.Pending
+                }
+            }
+
+            ExportTaskInfo(row.userId, row.survey_id, row.date_from, row.date_to, status)
+        } match {
+        case Some(row) => Right(row)
+        case None => Left(RecordNotFound(new RuntimeException(s"Task $taskId does not exist")))
+      }
   }
 }
