@@ -224,8 +224,8 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
           |    FROM survey_submissions
           |    WHERE survey_id = {survey_id} AND
           |          user_id = {user_id} AND
-          |          start_time >= {date_from} AND
-          |          start_time <= {date_to}
+          |          end_time >= {date_from} AND
+          |          end_time <= {date_to}
           |)
         """.stripMargin)
         .on('survey_id -> surveyId, 'user_id -> userId, 'date_from -> dateFrom, 'date_to -> dateTo).executeQuery().as(SqlParser.bool("exists").single)
