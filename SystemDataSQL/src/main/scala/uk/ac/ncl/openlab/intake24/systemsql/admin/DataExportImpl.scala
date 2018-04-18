@@ -227,7 +227,7 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
         })
   }
 
-  private case class TaskInfoRow(userId: Long, survey_id: String, date_from: ZonedDateTime, date_to: ZonedDateTime,
+  private case class TaskInfoRow(user_id: Long, survey_id: String, date_from: ZonedDateTime, date_to: ZonedDateTime,
                                  progress: Option[Double], successful: Option[Boolean])
 
   override def getTaskInfo(taskId: Long): Either[LookupError, ExportTaskInfo] = tryWithConnection {
@@ -247,7 +247,7 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
                 }
             }
 
-            ExportTaskInfo(row.userId, row.survey_id, row.date_from, row.date_to, status)
+            ExportTaskInfo(row.user_id, row.survey_id, row.date_from, row.date_to, status)
         } match {
         case Some(row) => Right(row)
         case None => Left(RecordNotFound(new RuntimeException(s"Task $taskId does not exist")))

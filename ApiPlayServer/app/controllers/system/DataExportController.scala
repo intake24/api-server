@@ -22,30 +22,43 @@ import java.time._
 import java.time.format.{DateTimeFormatter, DateTimeParseException}
 import javax.inject.Inject
 
+import cats.data.EitherT
+import cats.instances.future._
 import controllers.DatabaseErrorHandler
-import controllers.system.asynchronous.SingleThreadedDataExporter
+import controllers.system.asynchronous.{DataExportS3Uploader, EmailSender, ExportTaskHandle, SingleThreadedDataExporter}
 import io.circe.generic.auto._
+import org.slf4j.LoggerFactory
 import parsers.{JsonUtils, SurveyCSVExporter}
+import play.api.Configuration
 import play.api.mvc.{BaseController, ControllerComponents, PlayBodyParsers}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.api.data.ErrorDescription
+import uk.ac.ncl.openlab.intake24.errors.AnyError
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, ScopedExportTaskInfo, SurveyAdminService}
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, ScopedExportTaskInfo, SurveyAdminService, UserProfile}
+import views.html.DataExportNotification
 
 import scala.concurrent.{ExecutionContext, Future}
 
 case class NewExportTaskInfo(taskId: Long)
 
-class DataExportController @Inject()(service: DataExportService,
+class DataExportController @Inject()(configuration: Configuration,
+                                     service: DataExportService,
                                      surveyAdminService: SurveyAdminService,
                                      foodGroupsAdminService: FoodGroupsAdminService,
                                      dataExporter: SingleThreadedDataExporter,
+                                     s3Uploader: DataExportS3Uploader,
+                                     emailSender: EmailSender,
                                      rab: Intake24RestrictedActionBuilder,
                                      playBodyParsers: PlayBodyParsers,
                                      val controllerComponents: ControllerComponents,
                                      implicit val executionContext: ExecutionContext) extends BaseController
   with DatabaseErrorHandler with JsonUtils {
+
+  val logger = LoggerFactory.getLogger(classOf[DataExportController])
+
+  val urlExpirationTimeMinutes = configuration.get[Int](s"intake24.asyncDataExporter.s3.urlExpirationTimeMinutes")
 
   def getSurveySubmissions(surveyId: String, dateFrom: String, dateTo: String, offset: Int, limit: Int) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
     _ =>
@@ -110,20 +123,40 @@ class DataExportController @Inject()(service: DataExportService,
       }
   }
 
+  //val body = DataExportNotification(task.userName, task.surveyId, downloadUrl, config.s3UrlExpirationTimeMinutes.toInt / 60)
+
+  //val message = Email(, , Seq(email), None, Some(body.toString()))
+
+  def downloadAvailableMessage(surveyId: String, url: String) =
+    (userProfile: UserProfile) => DataExportNotification(userProfile.name, surveyId, url, urlExpirationTimeMinutes).toString()
+
   def getSurveySubmissionsAsCSVAsync(surveyId: String, dateFrom: String, dateTo: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
     request =>
-      Future {
+      try {
+        val parsedFrom = ZonedDateTime.parse(dateFrom)
+        val parsedTo = ZonedDateTime.parse(dateTo)
+        val forceBOM = request.getQueryString("forceBOM").isDefined
 
-        try {
-          val parsedFrom = ZonedDateTime.parse(dateFrom)
-          val parsedTo = ZonedDateTime.parse(dateTo)
-          val forceBOM = request.getQueryString("forceBOM").isDefined
+        dataExporter.queueCsvExport(request.subject.userId, surveyId, parsedFrom, parsedTo, forceBOM).map {
+          handle =>
 
-          translateDatabaseResult(dataExporter.queueCsvExport(request.subject.userId, surveyId, parsedFrom, parsedTo, forceBOM).map(h => NewExportTaskInfo(h.id)))
+            val dateStamp = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.ofInstant(Clock.systemUTC().instant(), ZoneId.systemDefault).withNano(0)).replace(":", "-").replace("T", "-")
 
-        } catch {
-          case e: DateTimeParseException => BadRequest(toJsonString(ErrorDescription("DateFormat", "Failed to parse date parameter. Expected a UTC date in ISO 8601 format, e.g. '2017-02-15T16:40:30Z'.")))
+            (for (exportTaskHandle <- EitherT(Future.successful(handle));
+                  s3url <- EitherT(s3Uploader.upload(exportTaskHandle, s"intake24-$surveyId-data-${exportTaskHandle.id}-$dateStamp.csv"));
+                  _ <- EitherT(emailSender.sendHtml(request.subject.userId, s"Your Intake24 survey ($surveyId) data is available for download",
+                    "Intake24 <support@intake24.co.uk>", downloadAvailableMessage(surveyId, s3url.toString()))))
+              yield ()).value.map {
+              case Right(()) => ()
+              case Left(e) => logger.error(s"Manual export request failed!", e.exception)
+            }
+
+            translateDatabaseResult(handle.map(h => NewExportTaskInfo(h.id)))
         }
+
+      } catch {
+        case _: DateTimeParseException =>
+          Future.successful(BadRequest(toJsonString(ErrorDescription("DateFormat", "Failed to parse date parameter. Expected a UTC date in ISO 8601 format, e.g. '2017-02-15T16:40:30Z'."))))
       }
   }
 

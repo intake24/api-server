@@ -3,7 +3,7 @@ package controllers
 import javax.inject.Inject
 
 import security.Intake24AccessToken
-import uk.ac.ncl.openlab.intake24.errors.AnyError
+import uk.ac.ncl.openlab.intake24.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
@@ -49,7 +49,7 @@ class FoodAuthChecks @Inject()(service: FoodsAdminService) {
 
   def canCreateMainFoods(subject: Intake24AccessToken) = allowAdmins(subject)
 
-  def canUpdateMainFood(foodCode: String)(subject: Intake24AccessToken): Either[AnyError, Boolean] = {
+  def canUpdateMainFood(foodCode: String)(subject: Intake24AccessToken): Either[DatabaseError, Boolean] = {
 
     val isAdmin = isFoodsAdmin(subject)
     val isMaintainer = isAnyLocaleMaintainer(subject)

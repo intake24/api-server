@@ -4,7 +4,7 @@ import javax.inject.{Inject, Singleton}
 import javax.security.auth.Subject
 
 import security.Intake24AccessToken
-import uk.ac.ncl.openlab.intake24.errors.AnyError
+import uk.ac.ncl.openlab.intake24.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{UserAdminService, UserProfile}
 
@@ -24,7 +24,7 @@ class UserAuthChecks @Inject()(userAdminService: UserAdminService) {
   def isUserRespondentOnly(profile: UserProfile): Boolean =
     profile.roles.nonEmpty && profile.roles.forall(_.endsWith(Roles.respondentSuffix))
 
-  def canUpdateProfile(userId: Long)(subject: Intake24AccessToken): Either[AnyError, Boolean] = {
+  def canUpdateProfile(userId: Long)(subject: Intake24AccessToken): Either[DatabaseError, Boolean] = {
     // Anyone can edit their own profile
     if (subject.userId == userId)
       Right(true)
@@ -50,7 +50,7 @@ class UserAuthChecks @Inject()(userAdminService: UserAdminService) {
       }
   }
 
-  def canUpdatePassword(userId: Long)(subject: Intake24AccessToken): Either[AnyError, Boolean] = {
+  def canUpdatePassword(userId: Long)(subject: Intake24AccessToken): Either[DatabaseError, Boolean] = {
     // Forbid changing your own password for now until e-mail/SMS validation is working
     if (subject.userId == userId)
       Right(false)

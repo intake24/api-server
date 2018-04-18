@@ -5,7 +5,7 @@ import javax.sql.DataSource
 
 import anorm.{AnormException, BatchSql, NamedParameter}
 import org.postgresql.util.PSQLException
-import uk.ac.ncl.openlab.intake24.errors.{AnyError, UnexpectedDatabaseError}
+import uk.ac.ncl.openlab.intake24.errors.{DatabaseError, UnexpectedDatabaseError}
 
 trait SqlDataService {
   val dataSource: DataSource
@@ -99,7 +99,7 @@ trait SqlDataService {
     }
   }
 
-  def tryWithConnectionWrapErrors[E, T](wrap: AnyError => E)(block: Connection => Either[E, T]): Either[E, T] = {
+  def tryWithConnectionWrapErrors[E, T](wrap: DatabaseError => E)(block: Connection => Either[E, T]): Either[E, T] = {
     val conn = dataSource.getConnection()
     try {
       block(conn)

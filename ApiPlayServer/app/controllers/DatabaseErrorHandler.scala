@@ -27,7 +27,7 @@ trait DatabaseErrorHandler extends Results with JsonUtils {
     InternalServerError(toJsonString(ErrorDescription("DatabaseError", "Unexpected database error: " + e.getMessage()))).as(ContentTypes.JSON)
   }
 
-  def translateDatabaseError(error: AnyError): Result = error match {
+  def translateDatabaseError(error: DatabaseError): Result = error match {
     case DuplicateCode(e) => BadRequest(toJsonString(ErrorDescription("DuplicateCode", e.getMessage))).as(ContentTypes.JSON)
     case VersionConflict(_) => Conflict(toJsonString(ErrorDescription("VersionConflict", "Object has been concurrently edited by someone else, try again using the new base version"))).as(ContentTypes.JSON)
     case TableNotFound(e) => NotFound(toJsonString(ErrorDescription("RecordNotFound", "Food composition table not found: " + e.getMessage))).as(ContentTypes.JSON)
@@ -41,7 +41,7 @@ trait DatabaseErrorHandler extends Results with JsonUtils {
     case UnexpectedDatabaseError(exception) => handleDatabaseError(exception)
   }
 
-  def translateDatabaseResult[T](result: Either[AnyError, T])(implicit enc: Encoder[T]) = result match {
+  def translateDatabaseResult[T](result: Either[DatabaseError, T])(implicit enc: Encoder[T]) = result match {
     case Right(()) => Ok
     case Right(result) => Ok(toJsonString(result)).as(ContentTypes.JSON)
     case Left(error) => translateDatabaseError(error)

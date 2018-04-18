@@ -20,7 +20,7 @@ class ErrorDigestSenderImpl @Inject()(config: Configuration,
                                       system: ActorSystem,
                                       errorService: ClientErrorService,
                                       mailer: MailerClient,
-                                      @Named("long-tasks") implicit val executionContext: ExecutionContext,
+                                      @Named("intake24") implicit val executionContext: ExecutionContext,
                                      ) extends ErrorDigestSender {
 
 

@@ -17,7 +17,7 @@ trait PairwiseAssociationsRefresher
 class PairwiseAssociationsRefresherImpl @Inject()(settings: PairwiseAssociationsServiceConfiguration,
                                                   system: ActorSystem,
                                                   paService: PairwiseAssociationsService,
-                                                  @Named("long-tasks") implicit val executionContext: ExecutionContext)
+                                                  @Named("intake24") implicit val executionContext: ExecutionContext)
   extends PairwiseAssociationsRefresher {
 
   system.scheduler.scheduleOnce(0.minutes) {

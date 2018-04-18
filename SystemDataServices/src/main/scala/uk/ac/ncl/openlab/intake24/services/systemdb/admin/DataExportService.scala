@@ -1,5 +1,6 @@
 package uk.ac.ncl.openlab.intake24.services.systemdb.admin
 
+import java.net.URL
 import java.time.ZonedDateTime
 import java.util.UUID
 
@@ -60,6 +61,8 @@ trait DataExportService {
   def getActiveExportTasks(surveyId: String, userId: Long): Either[LookupError, Seq[ScopedExportTaskInfo]]
 
   def getTaskInfo(taskId: Long): Either[LookupError, ExportTaskInfo]
+
+  def setExportTaskDownloadUrl(url: URL)
 
   //def getSurveySubmissionsAsCSV()
 

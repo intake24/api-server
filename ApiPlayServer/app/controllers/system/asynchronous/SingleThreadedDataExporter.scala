@@ -9,20 +9,20 @@ import org.slf4j.LoggerFactory
 import parsers.SurveyCSVExporter
 import play.api.Configuration
 import uk.ac.ncl.openlab.intake24.FoodGroupRecord
-import uk.ac.ncl.openlab.intake24.errors.AnyError
+import uk.ac.ncl.openlab.intake24.errors.{AnyError, DatabaseError, UnexpectedException}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
-case class ExportTaskHandle(id: Long, result: Future[File])
+case class ExportTaskHandle(id: Long, result: Future[Either[AnyError, File]])
 
 @Singleton
 class SingleThreadedDataExporter @Inject()(configuration: Configuration,
                                            exportService: DataExportService,
                                            surveyAdminService: SurveyAdminService,
                                            userAdminService: UserAdminService,
-                                           @Named("long-tasks") executionContext: ExecutionContext,
+                                           @Named("intake24") implicit val executionContext: ExecutionContext,
                                            foodGroupsAdminService: FoodGroupsAdminService) {
 
   val logger = LoggerFactory.getLogger(classOf[SingleThreadedDataExporter])
@@ -33,12 +33,12 @@ class SingleThreadedDataExporter @Inject()(configuration: Configuration,
   val batchSize = configuration.get[Int](s"$configSection.task.batchSize")
 
   def export(taskId: Long, surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime, dataScheme: CustomDataScheme,
-             foodGroups: Map[Int, FoodGroupRecord], localNutrients: Seq[LocalNutrientDescription], insertBOM: Boolean): Future[File] = {
+             foodGroups: Map[Int, FoodGroupRecord], localNutrients: Seq[LocalNutrientDescription], insertBOM: Boolean): Future[Either[AnyError, File]] = {
 
     def throttle() = Thread.sleep(throttleDelay)
 
     @throws[IOException]
-    def exportNextBatch(csvWriter: CSVWriter, offset: Int): Either[AnyError, Int] = {
+    def exportNextBatch(csvWriter: CSVWriter, offset: Int): Either[DatabaseError, Int] = {
       logger.debug(s"[$taskId] exporting next submissions batch using offset $offset")
 
       exportService.getSurveySubmissions(surveyId, Some(dateFrom), Some(dateTo), offset, batchSize, None).map {
@@ -50,7 +50,7 @@ class SingleThreadedDataExporter @Inject()(configuration: Configuration,
     }
 
     @throws[IOException]
-    def exportRemaining(csvWriter: CSVWriter, totalCount: Int, currentOffset: Int = 0): Either[AnyError, Unit] =
+    def exportRemaining(csvWriter: CSVWriter, totalCount: Int, currentOffset: Int = 0): Either[DatabaseError, Unit] =
       if (totalCount == 0) {
         logger.debug(s"[$taskId] expected total count is 0, skipping export steps")
         Right(())
@@ -75,10 +75,7 @@ class SingleThreadedDataExporter @Inject()(configuration: Configuration,
         }
       }
 
-    val promise = Promise[File]()
-
-    executionContext.execute(() => {
-
+    Future {
       logger.debug(s"[$taskId] started export task")
 
       var file: File = null
@@ -98,16 +95,14 @@ class SingleThreadedDataExporter @Inject()(configuration: Configuration,
 
         throttle()
 
-        (for (_ <- exportService.setExportTaskStarted(taskId);
-              expectedCount <- exportService.getSurveySubmissionCount(surveyId, dateFrom, dateTo);
-              _ <- exportRemaining(csvWriter, expectedCount);
-              _ <- Right(logger.debug(s"[$taskId] setting successful state"));
-              _ <- exportService.setExportTaskSuccess(taskId)) yield ()) match {
-          case Right(()) => {
-            logger.debug(s"[$taskId] file: ${file.getAbsolutePath}")
-            promise.success(file)
-          }
-          case Left(dbError) => promise.failure(dbError.exception)
+        for (_ <- exportService.setExportTaskStarted(taskId);
+             expectedCount <- exportService.getSurveySubmissionCount(surveyId, dateFrom, dateTo);
+             _ <- exportRemaining(csvWriter, expectedCount);
+             _ <- Right(logger.debug(s"[$taskId] setting successful state"));
+             _ <- exportService.setExportTaskSuccess(taskId)) yield {
+
+          logger.debug(s"[$taskId] file: ${file.getAbsolutePath}")
+          file
         }
 
       } catch {
@@ -126,7 +121,7 @@ class SingleThreadedDataExporter @Inject()(configuration: Configuration,
               logger.warn("Could not delete the temporary file after an IOException during CSV export", e)
           }
 
-          promise.failure(e)
+          Left(UnexpectedException(e))
       } finally {
         try {
           if (fileWriter != null) {
@@ -139,24 +134,22 @@ class SingleThreadedDataExporter @Inject()(configuration: Configuration,
         } catch {
           case e: IOException =>
             logger.warn("Could not close the FileWriter or CSVWriter after CSV export", e)
-            throw e
         }
       }
-    })
-
-    promise.future
+    }
   }
 
-  // Blocking and intended to be wrapped in a Future by the caller
-  def queueCsvExport(userId: Long, surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime, insertBOM: Boolean): Either[AnyError, ExportTaskHandle] = {
-    for (
-      survey <- surveyAdminService.getSurveyParameters(surveyId);
-      foodGroups <- foodGroupsAdminService.listFoodGroups(survey.localeId);
-      dataScheme <- surveyAdminService.getCustomDataScheme(survey.schemeId);
-      localNutrients <- surveyAdminService.getLocalNutrientTypes(survey.localeId);
-      taskId <- exportService.createExportTask(ExportTaskParameters(userId, surveyId, dateFrom, dateTo))
-    ) yield {
-      ExportTaskHandle(taskId, export(taskId, surveyId, dateFrom, dateTo, dataScheme, foodGroups, localNutrients, insertBOM))
+  def queueCsvExport(userId: Long, surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime, insertBOM: Boolean): Future[Either[DatabaseError, ExportTaskHandle]] = {
+    Future {
+      for (
+        survey <- surveyAdminService.getSurveyParameters(surveyId);
+        foodGroups <- foodGroupsAdminService.listFoodGroups(survey.localeId);
+        dataScheme <- surveyAdminService.getCustomDataScheme(survey.schemeId);
+        localNutrients <- surveyAdminService.getLocalNutrientTypes(survey.localeId);
+        taskId <- exportService.createExportTask(ExportTaskParameters(userId, surveyId, dateFrom, dateTo))
+      ) yield {
+        ExportTaskHandle(taskId, export(taskId, surveyId, dateFrom, dateTo, dataScheme, foodGroups, localNutrients, insertBOM))
+      }
     }
   }
 }

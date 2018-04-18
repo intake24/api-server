@@ -175,7 +175,7 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
 
   // Custom execution context for long-running blocking tasks (data export etc.)
   @Provides
-  @Named("long-tasks")
+  @Named("intake24")
   @Singleton
   def longTasksExecutionContext(configuration: Configuration): ExecutionContext = {
     val maxThreads = configuration.get[Int]("intake24.longTasksContext.maxThreads")

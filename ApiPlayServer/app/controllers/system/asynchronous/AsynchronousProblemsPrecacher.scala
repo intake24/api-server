@@ -8,7 +8,7 @@ import akka.actor.ActorSystem
 import modules.ProblemCheckerService
 import org.slf4j.LoggerFactory
 import play.api.Configuration
-import uk.ac.ncl.openlab.intake24.errors.AnyError
+import uk.ac.ncl.openlab.intake24.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{FoodBrowsingAdminService, LocalesAdminService}
 
 import scala.concurrent.ExecutionContext
@@ -41,7 +41,7 @@ class AsynchronousProblemsPrecacher @Inject()(localesService: LocalesAdminServic
 
   private val countDownLatch = new AtomicReference[CountDownLatch](null)
 
-  private def logError(error: AnyError): Unit = logger.error(s"Database error: ${error.toString}", error.exception)
+  private def logError(error: DatabaseError): Unit = logger.error(s"Database error: ${error.toString}", error.exception)
 
   private def processNextTask(workerInfo: String, startTime: Long, queue: List[Task]): Unit = {
 

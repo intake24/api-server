@@ -20,7 +20,7 @@ package uk.ac.ncl.openlab.intake24.services.nutrition
 
 import com.google.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.errors.AnyError
+import uk.ac.ncl.openlab.intake24.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.{FoodDataService, ResolvedFoodData}
 import uk.ac.ncl.openlab.intake24.surveydata.{NutrientMappedFood, NutrientMappedMeal, NutrientMappedSubmission, SurveySubmission}
@@ -32,7 +32,7 @@ class DefaultNutrientMappingServiceImpl @Inject()(foodDataService: FoodDataServi
 
   private val logger = LoggerFactory.getLogger(classOf[DefaultNutrientMappingServiceImpl])
 
-  def mapSurveySubmission(submission: SurveySubmission, locale: String): Either[AnyError, NutrientMappedSubmission] = {
+  def mapSurveySubmission(submission: SurveySubmission, locale: String): Either[DatabaseError, NutrientMappedSubmission] = {
 
     // I have spent an hour writing an "optimal" solution for this, but then realised that food data inheritance is tricky
     // and it is better to solve performance issues using caching :(

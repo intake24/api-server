@@ -13,7 +13,7 @@ import scala.concurrent.duration._
 @Singleton
 class ScheduledDataExporter @Inject()(config: Configuration,
                                       system: ActorSystem,
-                                      @Named("long-tasks") implicit val executionContext: ExecutionContext,
+                                      @Named("intake24") implicit val executionContext: ExecutionContext,
                                      ) extends ErrorDigestSender {
 
 

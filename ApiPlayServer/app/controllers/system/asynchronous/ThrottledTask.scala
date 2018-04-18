@@ -1,6 +1,6 @@
 package controllers.system.asynchronous
 
-import uk.ac.ncl.openlab.intake24.errors.AnyError
+import uk.ac.ncl.openlab.intake24.errors.DatabaseError
 
 import scala.util.{Failure, Success, Try}
 
@@ -51,7 +51,7 @@ object ThrottledTask {
     def run(scheduler: ThrottlingScheduler)(onComplete: (Try[T]) => Unit): Unit = onComplete(Try(f))
   }
 
-  def fromAnyError[T](f: => Either[AnyError, T]) = new ThrottledTask[T] {
+  def fromAnyError[T](f: => Either[DatabaseError, T]) = new ThrottledTask[T] {
     def run(scheduler: ThrottlingScheduler)(onComplete: (Try[T]) => Unit): Unit = {
       val tryResult = f match {
         case Right(result) => Success(result)
