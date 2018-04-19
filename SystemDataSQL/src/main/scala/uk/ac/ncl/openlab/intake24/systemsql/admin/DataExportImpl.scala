@@ -1,5 +1,6 @@
 package uk.ac.ncl.openlab.intake24.systemsql.admin
 
+import java.net.URL
 import java.time.{Instant, ZonedDateTime}
 import java.util.UUID
 import javax.inject.{Inject, Named}
@@ -11,6 +12,7 @@ import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound, Unexpecte
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 import uk.ac.ncl.openlab.intake24.surveydata._
+import uk.ac.ncl.openlab.intake24.errors.ErrorUtils.collectStackTrace
 
 class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends DataExportService with SqlDataService with SqlResourceLoader {
 
@@ -134,10 +136,10 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
       }
   }
 
-  def createExportTask(parameters: ExportTaskParameters): Either[UnexpectedDatabaseError, Long] = tryWithConnection {
+  def createExportTask(userId: Long, surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime, purpose: String): Either[UnexpectedDatabaseError, Long] = tryWithConnection {
     implicit conn =>
-      Right(SQL("INSERT INTO data_export_tasks(id, survey_id, date_from, date_to, user_id, created_at) VALUES(DEFAULT, {survey_id}, {date_from}, {date_to}, {user_id}, NOW())")
-        .on('survey_id -> parameters.surveyId, 'date_from -> parameters.dateFrom, 'date_to -> parameters.dateTo, 'user_id -> parameters.userId)
+      Right(SQL("INSERT INTO data_export_tasks(id, survey_id, date_from, date_to, user_id, created_at, purpose) VALUES(DEFAULT, {survey_id}, {date_from}, {date_to}, {user_id}, NOW(), {purpose})")
+        .on('survey_id -> surveyId, 'date_from -> dateFrom, 'date_to -> dateTo, 'user_id -> userId, 'purpose -> purpose)
         .executeInsert(SqlParser.scalar[Long].single))
   }
 
@@ -171,50 +173,37 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
 
   def setExportTaskFailure(taskId: Long, cause: Throwable): Either[LookupError, Unit] = tryWithConnection {
     implicit conn =>
-
-      def collectStackTrace(throwable: Throwable, stackTrace: List[String] = List()): List[String] = {
-        if (throwable == null)
-          stackTrace.reverse
-        else {
-          val exceptionDesc = s"${throwable.getClass().getName()}: ${throwable.getMessage()}"
-
-          val withDesc = if (!stackTrace.isEmpty)
-            s"Caused by $exceptionDesc" :: stackTrace
-          else
-            s"Exception $exceptionDesc" :: stackTrace
-
-          val trace = throwable.getStackTrace.foldLeft(withDesc) {
-            (st, ste) => s"  at ${ste.getClassName()}.${ste.getMethodName()}(${ste.getFileName()}:${ste.getLineNumber()})" :: st
-          }
-
-          collectStackTrace(throwable.getCause, trace)
-        }
-      }
-
-      val stackTrace = collectStackTrace(cause)
-
       if (SQL("UPDATE data_export_tasks SET successful=false,stack_trace={stack_trace},completed_at=NOW() WHERE id={id}")
-        .on('id -> taskId, 'stack_trace -> stackTrace.toArray)
+        .on('id -> taskId, 'stack_trace -> collectStackTrace(cause).toArray)
         .executeUpdate() == 1)
         Right(())
       else Left(RecordNotFound(new RuntimeException(s"Export task id $taskId does not exist")))
   }
 
 
-  private case class ExportTaskStatusRow(id: Long, created_at: ZonedDateTime, date_from: ZonedDateTime,
-                                         date_to: ZonedDateTime, progress: Option[Double], successful: Option[Boolean],
-                                         download_url: Option[String], download_url_expires_at: Option[ZonedDateTime])
+  private case class ExportTaskStatusDownloadRow(id: Long, created_at: ZonedDateTime, date_from: ZonedDateTime,
+                                                 date_to: ZonedDateTime, progress: Option[Double], successful: Option[Boolean],
+                                                 upload_successful: Option[Boolean], download_url: Option[String], download_url_expires_at: Option[ZonedDateTime])
 
-  def getActiveExportTasks(surveyId: String, userId: Long): Either[LookupError, Seq[ScopedExportTaskInfo]] = tryWithConnection {
+  def getActiveExportTasks(surveyId: String, userId: Long): Either[LookupError, Seq[ExportTaskInfo]] = tryWithConnection {
     implicit conn =>
-      Right(SQL("SELECT id, created_at, date_from, date_to, progress, successful, download_url, download_url_expires_at FROM data_export_tasks WHERE user_id={user_id} AND survey_id={survey_id} AND created_at > (now() - interval '1 day') ORDER BY created_at DESC")
+      val downloadTasks = SQL(
+        """SELECT data_export_tasks.id, created_at, date_from, date_to, progress, successful, upload_successful, download_url, download_url_expires_at
+          |FROM
+          |  data_export_tasks LEFT JOIN data_export_downloads d3 ON data_export_tasks.id = d3.task_id
+          |WHERE purpose='download' AND user_id={user_id}
+          |  AND created_at > (now() - interval '1 day')
+          |  AND (download_url_expires_at > now() OR download_url_expires_at IS NULL)""".stripMargin)
         .on('user_id -> userId, 'survey_id -> surveyId)
-        .as(Macro.namedParser[ExportTaskStatusRow].*)
+        .as(Macro.namedParser[ExportTaskStatusDownloadRow].*)
         .map {
           row =>
-
             val status = row.successful match {
-              case Some(true) => ExportTaskStatus.Completed
+              case Some(true) => row.upload_successful match {
+                case Some(true) => ExportTaskStatus.DownloadUrlAvailable(row.download_url.get)
+                case Some(false) => ExportTaskStatus.Failed
+                case None => ExportTaskStatus.DownloadUrlPending
+              }
               case Some(false) => ExportTaskStatus.Failed
               case None =>
                 row.progress match {
@@ -223,34 +212,33 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
                 }
             }
 
-            ScopedExportTaskInfo(row.id, row.created_at, row.date_from, row.date_to, status)
-        })
+            ExportTaskInfo(row.id, row.created_at, row.date_from, row.date_to, status)
+        }
+
+      //TODO: add upload tasks if needed
+
+      Right(downloadTasks)
   }
 
-  private case class TaskInfoRow(user_id: Long, survey_id: String, date_from: ZonedDateTime, date_to: ZonedDateTime,
-                                 progress: Option[Double], successful: Option[Boolean])
-
-  override def getTaskInfo(taskId: Long): Either[LookupError, ExportTaskInfo] = tryWithConnection {
+  def setExportTaskDownloadUrl(taskId: Long, url: URL, expiresAt: ZonedDateTime): Either[LookupError, Unit] = tryWithConnection {
     implicit conn =>
-      SQL("SELECT user_id, survey_id, date_from, date_to, progress, successful FROM data_export_tasks WHERE id={task_id}")
-        .on('task_id -> taskId)
-        .as(Macro.namedParser[TaskInfoRow].singleOpt)
-        .map {
-          row =>
-            val status = row.successful match {
-              case Some(true) => ExportTaskStatus.Completed
-              case Some(false) => ExportTaskStatus.Failed
-              case None =>
-                row.progress match {
-                  case Some(progress) => ExportTaskStatus.InProgress(progress)
-                  case None => ExportTaskStatus.Pending
-                }
-            }
+      SQL(
+        """INSERT INTO data_export_downloads(task_id, upload_successful, download_url, download_url_expires_at)
+          |VALUES ({task_id},true,{download_url},{download_url_expires_at})""".stripMargin)
+        .on('task_id -> taskId, 'download_url -> url.toString, 'download_url_expires_at -> expiresAt)
+        .execute()
 
-            ExportTaskInfo(row.user_id, row.survey_id, row.date_from, row.date_to, status)
-        } match {
-        case Some(row) => Right(row)
-        case None => Left(RecordNotFound(new RuntimeException(s"Task $taskId does not exist")))
-      }
+      Right(())
+  }
+
+  def setExportTaskDownloadFailed(taskId: Long, cause: Throwable): Either[LookupError, Unit] = tryWithConnection {
+    implicit conn =>
+      SQL(
+        """INSERT INTO data_export_downloads(task_id, upload_successful, stack_trace)
+          |VALUES ({task_id}, false, {stack_trace})""".stripMargin)
+        .on('task_id -> taskId, 'stack_trace -> collectStackTrace(cause).toArray)
+        .execute()
+
+      Right(())
   }
 }

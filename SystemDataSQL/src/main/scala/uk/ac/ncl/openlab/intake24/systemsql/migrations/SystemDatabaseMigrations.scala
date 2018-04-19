@@ -1754,7 +1754,7 @@ object SystemDatabaseMigrations {
 
         SQL(
           """
-            |CREATE TABLE data_export_download_links(
+            |CREATE TABLE data_export_downloads(
             |  id SERIAL PRIMARY KEY,
             |  task_id INTEGER NOT NULL REFERENCES data_export_tasks(id),
             |  upload_successful BOOLEAN,
@@ -1764,10 +1764,10 @@ object SystemDatabaseMigrations {
             |)
           """.stripMargin).execute()
 
-        SQL("CREATE INDEX data_export_download_links_task_id_index ON data_export_download_links (task_id)").execute()
+        SQL("CREATE INDEX data_export_downloads_task_id_index ON data_export_download_links (task_id)").execute()
 
         SQL(
-          """INSERT INTO data_export_download_links(task_id, upload_successful, stack_trace, download_url, download_url_expires_at)
+          """INSERT INTO data_export_downloads(task_id, upload_successful, stack_trace, download_url, download_url_expires_at)
             |SELECT id, true, NULL, download_url, download_url_expires_at FROM data_export_tasks
             |WHERE download_url IS NOT NULL""".stripMargin).execute()
 
@@ -1808,6 +1808,25 @@ object SystemDatabaseMigrations {
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         ???
       }
+    },
+
+    new Migration {
+      override val versionFrom: Long = 77l
+      override val versionTo: Long = 78l
+      override val description: String = "Add purpose column to data_export_tasks"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE data_export_tasks ADD COLUMN purpose VARCHAR(16) NOT NULL DEFAULT 'download'").execute()
+        SQL("CREATE INDEX data_export_tasks_purpose_index ON data_export_tasks (purpose)").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
     }
+
   )
 }

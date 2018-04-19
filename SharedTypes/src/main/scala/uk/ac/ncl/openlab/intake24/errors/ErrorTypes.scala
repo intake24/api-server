@@ -38,6 +38,25 @@ object ErrorUtils {
       case Success(v) => Right(v)
       case Failure(e) => Left(UnexpectedException(e))
     }
+
+  def collectStackTrace(throwable: Throwable, stackTrace: List[String] = List()): List[String] = {
+    if (throwable == null)
+      stackTrace.reverse
+    else {
+      val exceptionDesc = s"${throwable.getClass().getName()}: ${throwable.getMessage()}"
+
+      val withDesc = if (!stackTrace.isEmpty)
+        s"Caused by $exceptionDesc" :: stackTrace
+      else
+        s"Exception $exceptionDesc" :: stackTrace
+
+      val trace = throwable.getStackTrace.foldLeft(withDesc) {
+        (st, ste) => s"  at ${ste.getClassName()}.${ste.getMethodName()}(${ste.getFileName()}:${ste.getLineNumber()})" :: st
+      }
+
+      collectStackTrace(throwable.getCause, trace)
+    }
+  }
 }
 
 sealed trait AnyError {

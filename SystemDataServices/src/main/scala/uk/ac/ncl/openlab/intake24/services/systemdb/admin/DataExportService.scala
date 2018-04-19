@@ -15,8 +15,6 @@ case class ExportMeal(name: String, time: MealTime, customData: Map[String, Stri
 case class ExportFood(code: String, englishDescription: String, localDescription: Option[String], searchTerm: String, nutrientTableId: String, nutrientTableCode: String, isReadyMeal: Boolean,
                       portionSize: PortionSizeWithWeights, reasonableAmount: Boolean, foodGroupId: Int, brand: String, nutrients: Map[Int, Double], customData: Map[String, String])
 
-case class ExportTaskParameters(userId: Long, surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime)
-
 case class ExportTaskProgressUpdate(id: Long, progress: Double)
 
 case class ExportTaskSuccess(id: Long, downloadUrl: String)
@@ -34,13 +32,14 @@ object ExportTaskStatus {
 
   case class InProgress(progress: Double) extends ExportTaskStatus
 
-  case object Completed extends ExportTaskStatus
+  case object DownloadUrlPending extends ExportTaskStatus
 
+  case class DownloadUrlAvailable(url: String) extends ExportTaskStatus
+
+  case object UploadPending extends ExportTaskStatus
 }
 
-case class ExportTaskInfo(userId: Long, surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime, status: ExportTaskStatus)
-
-case class ScopedExportTaskInfo(id: Long, createdAt: ZonedDateTime, dateFrom: ZonedDateTime, dateTo: ZonedDateTime, status: ExportTaskStatus)
+case class ExportTaskInfo(id: Long, createdAt: ZonedDateTime, dateFrom: ZonedDateTime, dateTo: ZonedDateTime, status: ExportTaskStatus)
 
 trait DataExportService {
 
@@ -48,7 +47,7 @@ trait DataExportService {
 
   def getSurveySubmissionCount(surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime): Either[LookupError, Int]
 
-  def createExportTask(parameters: ExportTaskParameters): Either[UnexpectedDatabaseError, Long]
+  def createExportTask(userId: Long, surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime, purpose: String): Either[UnexpectedDatabaseError, Long]
 
   def setExportTaskStarted(taskId: Long): Either[LookupError, Unit]
 
@@ -58,11 +57,11 @@ trait DataExportService {
 
   def setExportTaskFailure(taskId: Long, cause: Throwable): Either[LookupError, Unit]
 
-  def getActiveExportTasks(surveyId: String, userId: Long): Either[LookupError, Seq[ScopedExportTaskInfo]]
+  def getActiveExportTasks(surveyId: String, userId: Long): Either[LookupError, Seq[ExportTaskInfo]]
 
-  def getTaskInfo(taskId: Long): Either[LookupError, ExportTaskInfo]
+  def setExportTaskDownloadUrl(taskId: Long, url: URL, expiresAt: ZonedDateTime): Either[LookupError, Unit]
 
-  def setExportTaskDownloadUrl(url: URL)
+  def setExportTaskDownloadFailed(taskId: Long, cause: Throwable): Either[LookupError, Unit]
 
   //def getSurveySubmissionsAsCSV()
 

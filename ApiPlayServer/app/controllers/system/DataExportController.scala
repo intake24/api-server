@@ -36,7 +36,7 @@ import uk.ac.ncl.openlab.intake24.api.data.ErrorDescription
 import uk.ac.ncl.openlab.intake24.errors.AnyError
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, ScopedExportTaskInfo, SurveyAdminService, UserProfile}
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, ExportTaskInfo, SurveyAdminService, UserProfile}
 import views.html.DataExportNotification
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -130,14 +130,14 @@ class DataExportController @Inject()(configuration: Configuration,
   def downloadAvailableMessage(surveyId: String, url: String) =
     (userProfile: UserProfile) => DataExportNotification(userProfile.name, surveyId, url, urlExpirationTimeMinutes).toString()
 
-  def getSurveySubmissionsAsCSVAsync(surveyId: String, dateFrom: String, dateTo: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
+  def queueCSVExportForDownload(surveyId: String, dateFrom: String, dateTo: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
     request =>
       try {
         val parsedFrom = ZonedDateTime.parse(dateFrom)
         val parsedTo = ZonedDateTime.parse(dateTo)
         val forceBOM = request.getQueryString("forceBOM").isDefined
 
-        dataExporter.queueCsvExport(request.subject.userId, surveyId, parsedFrom, parsedTo, forceBOM).map {
+        dataExporter.queueCsvExport(request.subject.userId, surveyId, parsedFrom, parsedTo, forceBOM, "download").map {
           handle =>
 
             val dateStamp = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.ofInstant(Clock.systemUTC().instant(), ZoneId.systemDefault).withNano(0)).replace(":", "-").replace("T", "-")
@@ -161,7 +161,7 @@ class DataExportController @Inject()(configuration: Configuration,
   }
 
 
-  case class GetExportTaskStatusResult(activeTasks: Seq[ScopedExportTaskInfo])
+  case class GetExportTaskStatusResult(activeTasks: Seq[ExportTaskInfo])
 
   def getExportTaskStatus(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
     request =>

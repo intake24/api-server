@@ -41,11 +41,19 @@ class DataExportS3Uploader @Inject()(configuration: Configuration,
   def upload(task: ExportTaskHandle, s3FileName: String): Future[Either[AnyError, URL]] =
     task.result.map {
       fileResult =>
-        for (file <- fileResult;
-             _ <- Right(logger.debug(s"[${task.id}] uploading ${file.getAbsolutePath} to S3"));
-             urlExpirationDate <- Right(Date.from(ZonedDateTime.now().plus(urlExpirationTimeMinutes, ChronoUnit.MINUTES).toInstant));
-             url <- uploadImpl(s3FileName, file, urlExpirationDate);
-             dataExportService.setExportTaskDownloadUrl(url))
-          yield url
+        (for (file <- fileResult;
+              _ <- Right(logger.debug(s"[${task.id}] uploading ${file.getAbsolutePath} to S3"));
+              urlExpirationDate <- Right(ZonedDateTime.now().plus(urlExpirationTimeMinutes, ChronoUnit.MINUTES));
+              url <- uploadImpl(s3FileName, file, Date.from(urlExpirationDate.toInstant));
+              _ <- dataExportService.setExportTaskDownloadUrl(task.id, url, urlExpirationDate))
+          yield url).left.map {
+          error =>
+            logger.error(s"[${task.id}] upload to S3 failed", error.exception)
+            dataExportService.setExportTaskDownloadFailed(task.id, error.exception).left.map {
+              setError =>
+                logger.warn(s"[${task.id}] could not set failed status for data export download", setError.exception)
+            }
+            error
+        }
     }
 }

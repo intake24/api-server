@@ -139,14 +139,14 @@ class SingleThreadedDataExporter @Inject()(configuration: Configuration,
     }
   }
 
-  def queueCsvExport(userId: Long, surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime, insertBOM: Boolean): Future[Either[DatabaseError, ExportTaskHandle]] = {
+  def queueCsvExport(userId: Long, surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime, insertBOM: Boolean, purpose: String): Future[Either[DatabaseError, ExportTaskHandle]] = {
     Future {
       for (
         survey <- surveyAdminService.getSurveyParameters(surveyId);
         foodGroups <- foodGroupsAdminService.listFoodGroups(survey.localeId);
         dataScheme <- surveyAdminService.getCustomDataScheme(survey.schemeId);
         localNutrients <- surveyAdminService.getLocalNutrientTypes(survey.localeId);
-        taskId <- exportService.createExportTask(ExportTaskParameters(userId, surveyId, dateFrom, dateTo))
+        taskId <- exportService.createExportTask(userId, surveyId, dateFrom, dateTo, purpose)
       ) yield {
         ExportTaskHandle(taskId, export(taskId, surveyId, dateFrom, dateTo, dataScheme, foodGroups, localNutrients, insertBOM))
       }
