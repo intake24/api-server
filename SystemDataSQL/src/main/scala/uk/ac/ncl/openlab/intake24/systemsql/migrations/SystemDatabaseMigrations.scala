@@ -1826,6 +1826,35 @@ object SystemDatabaseMigrations {
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         ???
       }
+    },
+
+    new Migration {
+      override val versionFrom: Long = 78l
+      override val versionTo: Long = 79l
+      override val description: String = "Create data_export_scheduled"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL(
+          """create table data_export_scheduled
+            |(
+            | id serial not null PRIMARY KEY,
+            | user_id integer not null REFERENCES users(id),
+            | days_of_week integer default 127,
+            | time_of_day time with time zone not null,
+            | uploader_name varchar(16) not null,
+            | uploader_config varchar(1024) not null,
+            | next_run_at timestamp with time zone not null
+            |)""".stripMargin).execute()
+
+        SQL("CREATE INDEX data_export_schedule_next_run_at_index ON data_export_scheduled (next_run_at)").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
     }
 
   )

@@ -37,6 +37,7 @@ object ExportTaskStatus {
   case class DownloadUrlAvailable(url: String) extends ExportTaskStatus
 
   case object UploadPending extends ExportTaskStatus
+
 }
 
 case class ExportTaskInfo(id: Long, createdAt: ZonedDateTime, dateFrom: ZonedDateTime, dateTo: ZonedDateTime, status: ExportTaskStatus)
@@ -62,10 +63,4 @@ trait DataExportService {
   def setExportTaskDownloadUrl(taskId: Long, url: URL, expiresAt: ZonedDateTime): Either[LookupError, Unit]
 
   def setExportTaskDownloadFailed(taskId: Long, cause: Throwable): Either[LookupError, Unit]
-
-  //def getSurveySubmissionsAsCSV()
-
-  //def getActivityReportAsJSON()
-
-  //def getActivityReportAsCSV()
 }
