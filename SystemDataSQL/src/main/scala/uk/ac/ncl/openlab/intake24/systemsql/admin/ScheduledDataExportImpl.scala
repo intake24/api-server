@@ -80,6 +80,7 @@ class ScheduledDataExportImpl @Inject()(@Named("intake24_system") val dataSource
       withTransaction {
 
         val taskParams = SQL("SELECT days_of_week, time::text, time_zone FROM data_export_scheduled WHERE id = {task_id}")
+          .on('task_id -> scheduledTaskId)
           .executeQuery()
           .as((SqlParser.int(1) ~ SqlParser.str(2) ~ SqlParser.str(3)).singleOpt)
 
@@ -91,7 +92,7 @@ class ScheduledDataExportImpl @Inject()(@Named("intake24_system") val dataSource
 
             nextRunTime match {
               case Some(time) =>
-                SQL("UPDATE data_export_scheduled SET next_run_utc={next_run}::time WHERE id={task_id}")
+                SQL("UPDATE data_export_scheduled SET next_run_utc={next_run} WHERE id={task_id}")
                   .on('next_run -> nextRunTime, 'task_id -> scheduledTaskId)
                   .executeUpdate()
                 Right(())

@@ -22,17 +22,17 @@ class SingleThreadedDataExporter @Inject()(configuration: Configuration,
                                            exportService: DataExportService,
                                            surveyAdminService: SurveyAdminService,
                                            userAdminService: UserAdminService,
-                                           @Named("intake24") implicit val executionContext: ExecutionContext,
+                                           @Named("intake24") implicit private val executionContext: ExecutionContext,
                                            foodGroupsAdminService: FoodGroupsAdminService) {
 
-  val logger = LoggerFactory.getLogger(classOf[SingleThreadedDataExporter])
+  private val logger = LoggerFactory.getLogger(classOf[SingleThreadedDataExporter])
 
-  val configSection = "intake24.asyncDataExporter"
+  private val configSection = "intake24.asyncDataExporter"
 
-  val throttleDelay = configuration.get[Int](s"$configSection.task.throttleRateMs")
-  val batchSize = configuration.get[Int](s"$configSection.task.batchSize")
+  private val throttleDelay = configuration.get[Int](s"$configSection.task.throttleRateMs")
+  private val batchSize = configuration.get[Int](s"$configSection.task.batchSize")
 
-  def export(taskId: Long, surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime, dataScheme: CustomDataScheme,
+  private def export(taskId: Long, surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime, dataScheme: CustomDataScheme,
              foodGroups: Map[Int, FoodGroupRecord], localNutrients: Seq[LocalNutrientDescription], insertBOM: Boolean): Future[Either[AnyError, File]] = {
 
     def throttle() = Thread.sleep(throttleDelay)

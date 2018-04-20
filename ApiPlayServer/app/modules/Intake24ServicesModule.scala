@@ -29,7 +29,7 @@ import play.api.db.Database
 import play.api.{Configuration, Environment}
 import play.db.NamedDatabase
 import scheduled.notificationSender.{NotificationSender, NotificationSenderImpl}
-import scheduled.{ErrorDigestSender, ErrorDigestSenderImpl, PairwiseAssociationsRefresher, PairwiseAssociationsRefresherImpl}
+import scheduled._
 import security.captcha.{AsyncCaptchaService, GoogleRecaptchaImpl}
 import sms.{SMSService, TwilioSMSImpl}
 import uk.ac.ncl.openlab.intake24.foodsql.admin._
@@ -262,6 +262,7 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     // Error digest service
 
     bind(classOf[ErrorDigestSender]).to(classOf[ErrorDigestSenderImpl]).asEagerSingleton()
+    bind(classOf[DataExportDaemon]).asEagerSingleton()
 
     // Demographic service
     bind(classOf[DemographicGroupsService]).to(classOf[DemographicGroupsServiceImpl])

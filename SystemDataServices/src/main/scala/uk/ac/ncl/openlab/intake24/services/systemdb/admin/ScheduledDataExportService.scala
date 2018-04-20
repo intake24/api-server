@@ -4,7 +4,7 @@ import java.time.{LocalTime, OffsetTime}
 
 import uk.ac.ncl.openlab.intake24.errors.{LookupError, UnexpectedDatabaseError}
 
-case class PendingScheduledExportTask(userId: Long, surveyId: String, periodDays: Option[Int], action: String, actionConfig: String)
+case class PendingScheduledExportTask(id: Long, userId: Long, surveyId: String, periodDays: Option[Int], action: String, actionConfig: String)
 
 trait ScheduledDataExportService {
 
