@@ -200,6 +200,7 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     bind(classOf[UserAdminService]).to(classOf[UserAdminImpl])
     bind(classOf[SurveyAdminService]).to(classOf[SurveyAdminImpl])
     bind(classOf[DataExportService]).to(classOf[DataExportImpl])
+    bind(classOf[ScheduledDataExportService]).to(classOf[ScheduledDataExportImpl])
 
     // User facing services
 

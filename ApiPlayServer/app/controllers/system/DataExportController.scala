@@ -18,6 +18,8 @@ limitations under the License.
 
 package controllers.system
 
+import io.circe.generic.auto
+
 import java.time._
 import java.time.format.{DateTimeFormatter, DateTimeParseException}
 import javax.inject.Inject
@@ -25,23 +27,24 @@ import javax.inject.Inject
 import cats.data.EitherT
 import cats.instances.future._
 import controllers.DatabaseErrorHandler
-import controllers.system.asynchronous.{DataExportS3Uploader, EmailSender, ExportTaskHandle, SingleThreadedDataExporter}
+import controllers.system.asynchronous.{DataExportS3Uploader, EmailSender, SingleThreadedDataExporter}
 import io.circe.generic.auto._
 import org.slf4j.LoggerFactory
-import parsers.{JsonUtils, SurveyCSVExporter}
+import parsers.{JsonBodyParser, JsonUtils, SurveyCSVExporter}
 import play.api.Configuration
 import play.api.mvc.{BaseController, ControllerComponents, PlayBodyParsers}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.api.data.ErrorDescription
-import uk.ac.ncl.openlab.intake24.errors.AnyError
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, ExportTaskInfo, SurveyAdminService, UserProfile}
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import views.html.DataExportNotification
 
 import scala.concurrent.{ExecutionContext, Future}
 
 case class NewExportTaskInfo(taskId: Long)
+
+case class NewScheduledTaskRequest(daysOfWeek: Int, time: LocalTime, timeZone: String, period: Option[Int], action: String, actionConfig: String)
 
 class DataExportController @Inject()(configuration: Configuration,
                                      service: DataExportService,
@@ -49,9 +52,11 @@ class DataExportController @Inject()(configuration: Configuration,
                                      foodGroupsAdminService: FoodGroupsAdminService,
                                      dataExporter: SingleThreadedDataExporter,
                                      s3Uploader: DataExportS3Uploader,
+                                     exportScheduler: ScheduledDataExportService,
                                      emailSender: EmailSender,
                                      rab: Intake24RestrictedActionBuilder,
                                      playBodyParsers: PlayBodyParsers,
+                                     jsonBodyParser: JsonBodyParser,
                                      val controllerComponents: ControllerComponents,
                                      implicit val executionContext: ExecutionContext) extends BaseController
   with DatabaseErrorHandler with JsonUtils {
@@ -168,5 +173,14 @@ class DataExportController @Inject()(configuration: Configuration,
       Future {
         translateDatabaseResult(service.getActiveExportTasks(surveyId, request.subject.userId).right.map(GetExportTaskStatusResult(_)))
       }
+  }
+
+  def scheduleExport(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin)(jsonBodyParser.parse[NewScheduledTaskRequest]) {
+    request =>
+      Future {
+        val r = request.body
+        translateDatabaseResult(exportScheduler.createScheduledTask(request.subject.userId, surveyId, r.period, r.daysOfWeek, r.time, r.timeZone, r.action, r.actionConfig))
+      }
+
   }
 }

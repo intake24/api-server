@@ -1,7 +1,7 @@
 package parsers
 
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDate, ZonedDateTime}
+import java.time.{LocalDate, LocalTime, ZonedDateTime}
 
 import cats.syntax.either._
 import io.circe._
@@ -29,6 +29,11 @@ trait JsonUtils {
   implicit val dateDecoder = Decoder.decodeString.emap {
     str =>
       Either.catchNonFatal(LocalDate.parse(str)).leftMap { t => s"${t.getClass.getName}: ${t.getMessage}" }
+  }
+
+  implicit val localTimeDecoder = Decoder.decodeString.emap {
+    str =>
+      Either.catchNonFatal(LocalTime.parse(str)).leftMap { t => s"${t.getClass.getName}: ${t.getMessage}" }
   }
 
   implicit def optionEncoder[T](implicit enc: Encoder[T]) = new Encoder[Option[T]] {

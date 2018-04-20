@@ -1785,34 +1785,6 @@ object SystemDatabaseMigrations {
     new Migration {
       override val versionFrom: Long = 76l
       override val versionTo: Long = 77l
-      override val description: String = "Create data_export_schedule"
-
-      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
-
-        SQL(
-          """
-            CREATE TABLE data_export_schedule
-            |(
-            |  id SERIAL,
-            |  user_id INTEGER NOT NULL,
-            |  days_of_week INTEGER DEFAULT 127,
-            |  time TIME WITH TIME ZONE NOT NULL,
-            |  uploader_id INTEGER NOT NULL,
-            |  uploader_config CHARACTER VARYING(1024) NOT NULL
-            |)
-          """.stripMargin).execute()
-
-        Right(())
-      }
-
-      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
-        ???
-      }
-    },
-
-    new Migration {
-      override val versionFrom: Long = 77l
-      override val versionTo: Long = 78l
       override val description: String = "Add purpose column to data_export_tasks"
 
       override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
@@ -1829,8 +1801,8 @@ object SystemDatabaseMigrations {
     },
 
     new Migration {
-      override val versionFrom: Long = 78l
-      override val versionTo: Long = 79l
+      override val versionFrom: Long = 77l
+      override val versionTo: Long = 78l
       override val description: String = "Create data_export_scheduled"
 
       override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
@@ -1838,16 +1810,19 @@ object SystemDatabaseMigrations {
         SQL(
           """create table data_export_scheduled
             |(
-            | id serial not null PRIMARY KEY,
-            | user_id integer not null REFERENCES users(id),
-            | days_of_week integer default 127,
-            | time_of_day time with time zone not null,
-            | uploader_name varchar(16) not null,
-            | uploader_config varchar(1024) not null,
-            | next_run_at timestamp with time zone not null
+            | id serial not null primary key,
+            | user_id integer not null references users(id) on update cascade on delete cascade,
+            | survey_id varchar(64) not null references surveys(id) on update cascade on delete cascade,
+            | period_days integer,
+            | days_of_week integer default 127 CHECK(days_of_week > 0 AND days_of_week <=127),
+            | time time not null,
+            | time_zone varchar(32) not null,
+            | action varchar(32) not null,
+            | action_config varchar(1024) not null,
+            | next_run_utc timestamp not null
             |)""".stripMargin).execute()
 
-        SQL("CREATE INDEX data_export_schedule_next_run_at_index ON data_export_scheduled (next_run_at)").execute()
+        SQL("CREATE INDEX data_export_scheduled_next_run_utc_index ON data_export_scheduled (next_run_utc)").execute()
 
         Right(())
       }
