@@ -1,42 +1,63 @@
 package scheduled
 
-import java.time.{ZoneId, ZoneOffset, ZonedDateTime}
+import java.io.File
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import java.time._
 import javax.inject.Named
 
 import akka.actor.ActorSystem
+import cats.data.EitherT
+import cats.implicits._
 import com.google.inject.{Inject, Singleton}
-import controllers.system.SurveyAdminController
-import controllers.system.asynchronous.{ExportTaskHandle, SingleThreadedDataExporter}
+import controllers.system.asynchronous.{DataExportFtpsUploader, ExportTaskHandle, FTPSConfig, SingleThreadedDataExporter}
+import io.circe.parser.decode
+import io.circe.generic.auto._
 import org.slf4j.LoggerFactory
 import play.api.Configuration
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.ScheduledDataExportService
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{PendingScheduledExportTask, ScheduledDataExportService}
 
-import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 @Singleton
 class DataExportDaemon @Inject()(config: Configuration,
                                  dataExporter: SingleThreadedDataExporter,
                                  scheduledTasks: ScheduledDataExportService,
+                                 ftpsUploader: DataExportFtpsUploader,
                                  system: ActorSystem,
                                  @Named("intake24") implicit val executionContext: ExecutionContext,
-                                     ) {
+                                ) {
 
   private val logger = LoggerFactory.getLogger(classOf[DataExportDaemon])
 
-  private def runAction(scheduledTaskId: Long, action: String, actionConfig: String, taskHandle: ExportTaskHandle) = {
+  private val pollingPeriodSeconds = config.get[Int]("intake24.scheduledDataExport.pollingIntervalSeconds")
 
-    taskHandle.result.map {
+
+  private def uploadFTPS(file: File, remoteName: String, config: String): Either[Throwable, Unit] =
+    decode[FTPSConfig](config) match {
+      case Right(config) => ftpsUploader.upload(file, remoteName, config)
+      case Left(error) => Left(error)
+    }
+
+  private def runPostExportAction(task: PendingScheduledExportTask, exportTaskHandle: ExportTaskHandle): Future[Either[Throwable, Unit]] = {
+    exportTaskHandle.result.map {
       case Right(file) =>
-        logger.debug(s"Applying $action to ${file.getAbsolutePath}")
+        task.action match {
+          case "upload_ftps" =>
+            val dateStamp = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.ofInstant(Clock.systemUTC().instant(), ZoneId.systemDefault).withNano(0)).replace(":", "").replace("T", "-")
+            val remoteFileName = s"intake24-${task.surveyId}-data-${exportTaskHandle.id}-$dateStamp.csv"
+
+            uploadFTPS(file, remoteFileName, task.actionConfig)
+          case _ => Left(new RuntimeException(s"Unsupported export action: ${task.action}"))
+        }
       case Left(error) =>
-        logger.error(s"Export task ${taskHandle.id} initiated by scheduled task $scheduledTaskId failed", error)
+        Left(error.exception)
     }
   }
 
-  system.scheduler.schedule(0.minutes, 10.minutes) {
+  system.scheduler.schedule(0.minutes, pollingPeriodSeconds.seconds) {
 
     scheduledTasks.getPendingScheduledTasks() match {
       case Right(tasks) =>
@@ -52,9 +73,15 @@ class DataExportDaemon @Inject()(config: Configuration,
 
             val dateTo = ZonedDateTime.now()
 
-            dataExporter.queueCsvExport(task.userId, task.surveyId, dateFrom, dateTo, true, "scheduled").map {
-              case Right(taskHandle) => runAction(task.id, task.action, task.actionConfig, taskHandle)
-              case Left(error) => logger.error(s"Failed to queue data export for scheduled task ${task.id}", error.exception)
+            val taskResult = for (exportTaskHandle <- EitherT(dataExporter.queueCsvExport(task.userId, task.surveyId, dateFrom, dateTo, true, "scheduled").map(_.left.map(_.exception)));
+                                  _ <- EitherT(runPostExportAction(task, exportTaskHandle))) yield ()
+
+            taskResult.value.onComplete {
+              case Success(Right(())) => logger.debug(s"Post export action successfully executed for scheduled task ${task.id}")
+              case Success(Left(e)) =>
+                logger.error(s"Failed to apply post export action for scheduled task ${task.id}: ${task.action}", e)
+              case Failure(e) =>
+                logger.error(s"Failed to apply post export action for scheduled task ${task.id}: ${task.action}", e)
             }
 
             scheduledTasks.updateNextRunTime(task.id) match {
@@ -65,9 +92,7 @@ class DataExportDaemon @Inject()(config: Configuration,
 
         }
 
-      case Left(error) =>
-        logger.error("Failed to get pending scheduled tasks", error.exception)
+      case Left(error) => logger.error("Failed to get pending scheduled tasks", error.exception)
     }
-
   }
 }

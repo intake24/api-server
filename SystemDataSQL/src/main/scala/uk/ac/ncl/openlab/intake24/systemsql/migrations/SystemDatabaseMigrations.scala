@@ -1764,7 +1764,7 @@ object SystemDatabaseMigrations {
             |)
           """.stripMargin).execute()
 
-        SQL("CREATE INDEX data_export_downloads_task_id_index ON data_export_download_links (task_id)").execute()
+        SQL("CREATE INDEX data_export_downloads_task_id_index ON data_export_downloads (task_id)").execute()
 
         SQL(
           """INSERT INTO data_export_downloads(task_id, upload_successful, stack_trace, download_url, download_url_expires_at)
