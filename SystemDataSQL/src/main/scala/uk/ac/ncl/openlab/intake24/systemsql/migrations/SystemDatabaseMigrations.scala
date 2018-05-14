@@ -1830,6 +1830,27 @@ object SystemDatabaseMigrations {
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         ???
       }
+    },
+
+    new Migration {
+      override val versionFrom: Long = 78l
+      override val versionTo: Long = 79l
+      override val description: String = "Fix constraints to make deleting surveys possible"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE survey_submission_missing_foods DROP CONSTRAINT survey_submission_missing_foods_fkey").execute()
+        SQL("""ALTER TABLE survey_submission_missing_foods
+              |  ADD CONSTRAINT survey_submission_missing_foods_fkey
+              |  FOREIGN KEY (meal_id) REFERENCES survey_submission_meals (id) ON DELETE CASCADE ON UPDATE CASCADE;
+              """.stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
     }
 
   )
