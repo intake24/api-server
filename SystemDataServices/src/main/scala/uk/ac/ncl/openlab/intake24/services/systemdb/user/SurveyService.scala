@@ -13,7 +13,8 @@ case class SurveyFeedbackStyle(feedbackStyle: String)
 case class UxEventsSettings(enableSearchEvents: Boolean, enableAssociatedFoodsEvents: Boolean)
 
 case class UserSurveyParameters(id: String, schemeId: String, localeId: String, state: String, suspensionReason: Option[String],
-                                description: Option[String], uxEventsSettings: UxEventsSettings, storeUserSessionOnServer: Boolean)
+                                description: Option[String], uxEventsSettings: UxEventsSettings, storeUserSessionOnServer: Boolean,
+                                numberOfSurveysForFeedback: Int)
 
 case class SurveyFollowUp(followUpUrl: Option[String], showFeedback: Boolean)
 
@@ -30,5 +31,7 @@ trait SurveyService {
   def createSubmission(userId: Long, surveyId: String, submission: NutrientMappedSubmission): Either[UnexpectedDatabaseError, UUID]
 
   def userSubmittedWithinPeriod(surveyId: String, userId: Long, dateFrom: ZonedDateTime, dateTo: ZonedDateTime): Either[UnexpectedDatabaseError, Boolean]
+
+  def getNumberOfSubmissionsForUser(surveyId: String, userId: Long): Either[UnexpectedDatabaseError, Int]
 
 }

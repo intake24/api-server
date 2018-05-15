@@ -41,9 +41,14 @@ trait DatabaseErrorHandler extends Results with JsonUtils {
     case UnexpectedDatabaseError(exception) => handleDatabaseError(exception)
   }
 
-  def translateDatabaseResult[T](result: Either[DatabaseError, T])(implicit enc: Encoder[T]) = result match {
+  def translateDatabaseResult[T](result: Either[DatabaseError, T])(implicit enc: Encoder[T]): Result = result match {
     case Right(()) => Ok
     case Right(result) => Ok(toJsonString(result)).as(ContentTypes.JSON)
+    case Left(error) => translateDatabaseError(error)
+  }
+
+  def translateDatabaseHttpResult(result: Either[DatabaseError, Result]): Result = result match {
+    case Right(result) => result
     case Left(error) => translateDatabaseError(error)
   }
 }

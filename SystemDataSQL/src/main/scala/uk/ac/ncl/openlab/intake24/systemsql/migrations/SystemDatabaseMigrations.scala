@@ -1840,10 +1840,28 @@ object SystemDatabaseMigrations {
       override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
 
         SQL("ALTER TABLE survey_submission_missing_foods DROP CONSTRAINT survey_submission_missing_foods_fkey").execute()
-        SQL("""ALTER TABLE survey_submission_missing_foods
-              |  ADD CONSTRAINT survey_submission_missing_foods_fkey
-              |  FOREIGN KEY (meal_id) REFERENCES survey_submission_meals (id) ON DELETE CASCADE ON UPDATE CASCADE;
-              """.stripMargin).execute()
+        SQL(
+          """ALTER TABLE survey_submission_missing_foods
+            |  ADD CONSTRAINT survey_submission_missing_foods_fkey
+            |  FOREIGN KEY (meal_id) REFERENCES survey_submission_meals (id) ON DELETE CASCADE ON UPDATE CASCADE;
+          """.stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    },
+
+    new Migration {
+      override val versionFrom: Long = 79l
+      override val versionTo: Long = 80l
+      override val description: String = "Add submissions_for_feedback to survey parameters"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE surveys ADD COLUMN number_of_submissions_for_feedback INTEGER NOT NULL DEFAULT 1").execute()
 
         Right(())
       }
