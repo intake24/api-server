@@ -743,7 +743,34 @@ object FoodDatabaseMigrations {
         ???
 
       }
-    }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 48l
+      override val versionTo: Long = 49l
+      override val description: String = "Create foods_compound_groups"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL(
+          """CREATE TABLE foods_compound_groups(
+            |  food_code VARCHAR(8) REFERENCES foods(code),
+            |  locale_id VARCHAR(16) REFERENCES locales(id),
+            |  food_group_id INTEGER REFERENCES food_groups(id),
+            |  proportion DOUBLE PRECISION NOT NULL CHECK (proportion >= 0 AND proportion <= 1),
+            |  CONSTRAINT foods_compound_groups_pk PRIMARY KEY (food_code, food_group_id, locale_id)
+            |)
+          """.stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    },
 
   )
 }
