@@ -69,6 +69,6 @@ class FoodSubstApiImpl @Inject()(foodBrowsingService: FoodBrowsingService,
 
   override def listNutrients(): Seq[NutrientDescription] = supportedNutrients
 
-  override def defaultNutrientIds(): Seq[Long] = Seq(ENERGY_ID, FAT_ID, SAT_FAT_ID, SUGARS_ID, CO2)
+  override def defaultNutrientIds(): Seq[Long] = Seq(ENERGY_ID, FAT_ID, SAT_FAT_ID, SUGARS_ID)
 
 }
