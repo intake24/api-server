@@ -1869,6 +1869,50 @@ object SystemDatabaseMigrations {
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         ???
       }
+    },
+
+    new Migration {
+      override val versionFrom: Long = 80l
+      override val versionTo: Long = 81l
+      override val description: String = "Anonymize IP addresses in signin_log for non-admin users"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE signin_log ALTER COLUMN remote_address DROP NOT NULL").execute()
+
+        SQL("""UPDATE signin_log SET remote_address=NULL WHERE (user_id NOT IN (SELECT DISTINCT (id) FROM users JOIN user_roles u ON users.id = u.user_id WHERE
+              |  role='superuser' OR role='foodsadmin' OR role ='imageadmin' OR role ='surveyadmin' OR role='imagesadmin'
+              |  OR role LIKE '%/staff' OR role LIKE 'fdbm/') OR user_id IS NULL)
+              """.stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    },
+
+    new Migration {
+      override val versionFrom: Long = 81l
+      override val versionTo: Long = 82l
+      override val description: String = "Delete name and e-mail records for non-admin users"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("""UPDATE users SET name=NULL,email=NULL,phone=NULL,simple_name=NULL WHERE
+              |  id NOT IN (SELECT DISTINCT (id) FROM users JOIN user_roles u ON users.id = u.user_id WHERE
+              |  role='superuser' OR role='foodsadmin' OR role ='imageadmin' OR role ='surveyadmin' OR role='imagesadmin'
+              |  OR role LIKE '%/staff' OR role LIKE 'fdbm/')
+              |  AND id NOT IN (SELECT DISTINCT (id) FROM users JOIN user_survey_aliases a ON users.id = a.user_id WHERE a.survey_id='flex-recall')
+            """.stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
     }
 
   )
