@@ -3,15 +3,19 @@ package uk.ac.ncl.openlab.intake24.foodSubstRec
 import com.google.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.api.data.UserFoodHeader
+import uk.ac.ncl.openlab.intake24.errors.RecordNotFound
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodBrowsingService
 import uk.ac.ncl.openlab.intake24.services.nutrition.{FoodCompositionService, NutrientDescription}
 
 /**
   * Created by Tim Osadchiy on 26/04/2018.
   */
+
+case class AlternativesResponse(self: FoodWithNutrients, alternatives: Seq[FoodWithNutrients])
+
 trait FoodSubstApi {
 
-  def findAlternatives(foodCode: String): Seq[FoodWithNutrients]
+  def findAlternatives(foodCode: String): Either[RecordNotFound, AlternativesResponse]
 
   def listNutrients(): Seq[NutrientDescription]
 
@@ -51,24 +55,28 @@ class FoodSubstApiImpl @Inject()(foodBrowsingService: FoodBrowsingService,
       Map()
   }
 
-  override def findAlternatives(foodCode: String): Seq[FoodWithNutrients] =
-    foodSubstRecommender.findAlternatives(foodCode)
-      .flatMap { fc =>
-        for (
-          foodHeader <- {
-            val fh = foodHeaders.get(fc)
-            foodHeaders.get(fc)
-          };
-          foodNutrients <- {
-            val nuts = nutrientService.getNutrients(fc)
-            nutrientService.getNutrients(fc)
-          };
-          item = FoodWithNutrients(foodHeader, foodNutrients)
-        ) yield item
-      }
+  override def findAlternatives(foodCode: String) = getFoodWithNutrients(foodCode) match {
+    case Some(foodWithNutrients) =>
+      val alternatives = foodSubstRecommender.findAlternatives(foodCode)
+        .flatMap { fc =>
+          for (
+            foodHeader <- foodHeaders.get(fc);
+            foodNutrients <- nutrientService.getNutrients(fc);
+            item = FoodWithNutrients(foodHeader, foodNutrients)
+          ) yield item
+        }
+      Right(AlternativesResponse(foodWithNutrients, alternatives))
+    case None => Left(RecordNotFound(new Throwable("Food header was not found")))
+  }
 
   override def listNutrients(): Seq[NutrientDescription] = supportedNutrients
 
   override def defaultNutrientIds(): Seq[Long] = Seq(ENERGY_ID, FAT_ID, SAT_FAT_ID, SUGARS_ID)
+
+  private def getFoodWithNutrients(foodCode: String) = for (
+    foodHeader <- foodHeaders.get(foodCode);
+    foodNutrients <- nutrientService.getNutrients(foodCode);
+    item = FoodWithNutrients(foodHeader, foodNutrients)
+  ) yield item
 
 }

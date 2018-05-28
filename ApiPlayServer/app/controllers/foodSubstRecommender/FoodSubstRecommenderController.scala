@@ -7,6 +7,7 @@ import parsers.JsonUtils
 import play.api.mvc.{BaseController, ControllerComponents}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.foodSubstRec.FoodSubstApi
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodDataService
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -14,6 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
   * Created by Tim Osadchiy on 26/04/2018.
   */
 class FoodSubstRecommenderController @Inject()(foodSubstApi: FoodSubstApi,
+                                               foodDataService: FoodDataService,
                                                rab: Intake24RestrictedActionBuilder,
                                                val controllerComponents: ControllerComponents,
                                                implicit val executionContext: ExecutionContext) extends BaseController with DatabaseErrorHandler with JsonUtils {
@@ -21,7 +23,7 @@ class FoodSubstRecommenderController @Inject()(foodSubstApi: FoodSubstApi,
   def findSimilar(foodCode: String) = rab.restrictToAuthenticated {
     _ =>
       Future {
-        translateDatabaseResult(Right(foodSubstApi.findAlternatives(foodCode)))
+        translateDatabaseResult(foodSubstApi.findAlternatives(foodCode))
       }
   }
 
@@ -36,6 +38,13 @@ class FoodSubstRecommenderController @Inject()(foodSubstApi: FoodSubstApi,
     _ =>
       Future {
         translateDatabaseResult(Right(foodSubstApi.defaultNutrientIds()))
+      }
+  }
+
+  def getFoodByHeader(foodCode: String, locale: String) = rab.restrictToAuthenticated {
+    _ =>
+      Future {
+        translateDatabaseResult(foodDataService.getFoodHeader(foodCode, locale))
       }
   }
 
