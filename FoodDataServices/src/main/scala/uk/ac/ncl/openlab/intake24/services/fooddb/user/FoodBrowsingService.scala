@@ -1,7 +1,7 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.user
 
-import uk.ac.ncl.openlab.intake24.api.data.admin.CategoryHeader
-import uk.ac.ncl.openlab.intake24.api.data.{UserCategoryContents, UserCategoryHeader}
+import uk.ac.ncl.openlab.intake24.api.data.admin.{CategoryHeader, FoodHeader}
+import uk.ac.ncl.openlab.intake24.api.data.{UserCategoryContents, UserCategoryHeader, UserFoodHeader}
 import uk.ac.ncl.openlab.intake24.errors.{LocalLookupError, LocaleError, LookupError}
 
 sealed trait SourceRecord
@@ -47,6 +47,10 @@ case class FoodDataSources(localDescriptionSource: SourceLocale, nutrientTablesS
                            portionSizeSource: (SourceLocale, SourceRecord),
                            inheritableAttributesSources: InheritableAttributeSources)
 
+case class FoodCategoryRelation(foodCode: String, categoryCode: String)
+
+case class CategoryCategoryRelation(categoryCode: String, subCategoryCode: String)
+
 trait FoodBrowsingService {
 
   def getRootCategories(locale: String): Either[LocaleError, Seq[UserCategoryHeader]]
@@ -59,4 +63,11 @@ trait FoodBrowsingService {
   def getCategoryAllCategories(code: String): Either[LookupError, Set[String]]
 
   def getFoodCategories(code: String, localeId: String, level: Int): Either[LookupError, Seq[CategoryHeader]]
+
+  def listAllFoods(localeId: String): Either[LookupError, Seq[UserFoodHeader]]
+
+  def listFodCategoryRelationships(): Either[LookupError, Seq[FoodCategoryRelation]]
+
+  def listCategoryCategoryRelationships(): Either[LookupError, Seq[CategoryCategoryRelation]]
+
 }

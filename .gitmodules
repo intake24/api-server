@@ -21,3 +21,6 @@
 	path = RosHTTP
 	url = git@github.com:intake24/RosHTTP.git
 	branch = master
+[submodule "standardize"]
+	path = standardize
+	url = git@github.com:timosadchiy/standardize.git
