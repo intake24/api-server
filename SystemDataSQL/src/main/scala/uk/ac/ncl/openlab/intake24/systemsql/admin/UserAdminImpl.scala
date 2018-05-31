@@ -7,12 +7,15 @@ import javax.sql.DataSource
 import anorm._
 import org.apache.commons.lang3.StringUtils
 import org.postgresql.util.PSQLException
+import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.api.data.NewUserProfile
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
 class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends UserAdminService with SqlDataService with SqlResourceLoader {
+
+  val logger = LoggerFactory.getLogger(classOf[UserAdminImpl])
 
   private case class RolesForId(userId: Long, roles: Set[String])
 
@@ -150,6 +153,38 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
 
   private lazy val createOrUpdateUserByAliasQuery = sqlFromResource("admin/users/create_or_update_user_by_alias.sql")
 
+  def ensureShortUrlsValid(aliases: Seq[SurveyUserAlias], attemptsLeft: Int = 10)(implicit connection: Connection): Either[UnexpectedDatabaseError, Unit] =
+    if (attemptsLeft == 0)
+      Left(UnexpectedDatabaseError(new RuntimeException("Failed to allocate unique short URLs in 10 attempts")))
+    else
+      withTransaction {
+        val usersToUpdate = SQL(
+          """SELECT survey_id, user_name FROM user_survey_aliases WHERE (survey_id, user_name) IN
+            |(SELECT UNNEST(ARRAY[{survey_ids}]), UNNEST(ARRAY[{user_names}])) AND short_url IS NULL""".stripMargin)
+          .on('survey_ids -> aliases.map(_.surveyId), 'user_names -> aliases.map(_.userName))
+          .executeQuery()
+          .as(Macro.namedParser[SurveyUserAlias](Macro.ColumnNaming.SnakeCase).*)
+
+        val params = usersToUpdate.map {
+          alias =>
+            Seq[NamedParameter]('survey_id -> alias.surveyId, 'user_name -> alias.userName, 'short_url -> URLAuthTokenUtils.generateShortToken(6))
+        }
+
+        if (params.nonEmpty) {
+
+          val updated = BatchSql("UPDATE user_survey_aliases SET short_url={short_url} WHERE survey_id={survey_id} AND user_name={user_name} AND NOT EXISTS (SELECT 1 FROM user_survey_aliases WHERE short_url={short_url})", params.head, params.tail: _*).execute()
+          Right(usersToUpdate.zip(updated).filter(_._2 == 0).map(_._1))
+        } else
+          Right(Seq())
+      }.flatMap {
+        usersToRetry =>
+          if (usersToRetry.isEmpty)
+            Right(())
+          else
+            ensureShortUrlsValid(usersToRetry, attemptsLeft - 1)
+      }
+
+
   def createOrUpdateUsersWithAliases(usersWithAliases: Seq[NewUserWithAlias]): Either[DependentUpdateError, Unit] = tryWithConnection {
     implicit conn =>
       withTransaction {
@@ -177,8 +212,11 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
         }
         else
           Right(())
+      }.flatMap {
+        _ => ensureShortUrlsValid(usersWithAliases.map(_.alias))
       }
   }
+
 
   def createUsersQuery(newUsers: Seq[NewUserProfile])(implicit connection: Connection): Either[CreateError, Seq[Long]] = {
     if (newUsers.isEmpty)
