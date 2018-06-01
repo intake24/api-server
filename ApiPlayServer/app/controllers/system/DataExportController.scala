@@ -133,7 +133,7 @@ class DataExportController @Inject()(configuration: Configuration,
   //val message = Email(, , Seq(email), None, Some(body.toString()))
 
   def downloadAvailableMessage(surveyId: String, url: String) =
-    (userProfile: UserProfile) => DataExportNotification(userProfile.name, surveyId, url, urlExpirationTimeMinutes).toString()
+    (userProfile: UserProfile) => DataExportNotification(userProfile.name, surveyId, url, urlExpirationTimeMinutes / 60).toString()
 
   def queueCSVExportForDownload(surveyId: String, dateFrom: String, dateTo: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
     request =>

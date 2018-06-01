@@ -3,42 +3,28 @@ package urlShort
 import com.google.inject.Inject
 import io.circe._
 import io.circe.parser._
-import play.api.{Configuration, Logger}
 import play.api.libs.ws.WSClient
-import uk.ac.ncl.openlab.intake24.services.systemdb.shortUrls.ShortUrlDataService
+import play.api.{Configuration, Logger}
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-/**
-  * Created by Tim Osadchiy on 22/02/2018.
-  */
-class ShortUrlServiceImpl @Inject()(ws: WSClient,
-                                    dataService: ShortUrlDataService,
-                                    executionContext: ExecutionContext,
-                                    configuration: Configuration) extends ShortUrlService {
-
-  private implicit val implicitEC = executionContext
+class GoogleShortUrlImpl @Inject()(ws: WSClient,
+                                   implicit val executionContext: ExecutionContext,
+                                   configuration: Configuration) extends ShortUrlService {
 
   private implicit val responseDecoder =
     Decoder.forProduct3[String, String, String, ShortResp]("kind", "id", "longUrl") {
       (kind, id, longUrl) => ShortResp(kind, id, longUrl)
     }
 
+  private val apiKey = configuration.get[String]("intake24.urlShort.google.apiKey")
+
   private case class ShortResp(kind: String, id: String, longUrl: String)
 
-  override def shorten(url: String): Future[String] = {
-    dataService.getShortUrl(url) match {
-      case Right(shortUrl) => Future(shortUrl)
-      case Left(e) => requestShortUrl(url).map { shUrl =>
-        dataService.createShortUrl(url, shUrl)
-        shUrl
-      }
-    }
-  }
+  override def shorten(urls: Seq[String]): Future[Seq[String]] = Future.traverse(urls)(requestShortUrl)
 
   private def requestShortUrl(longUrl: String): Future[String] = {
-    ws.url(s"https://www.googleapis.com/urlshortener/v1/url?key=${configuration.get[String]("intake24.urlShort.apiKey")}")
+    ws.url(s"https://www.googleapis.com/urlshortener/v1/url?key=${apiKey}")
       .withHttpHeaders("Content-Type" -> "application/json; charset=utf-8")
       .withBody(s"""{"longUrl": "$longUrl"}""")
       .execute("POST")

@@ -61,7 +61,7 @@ import uk.ac.ncl.openlab.intake24.systemsql.pairwiseAssociations.{PairwiseAssoci
 import uk.ac.ncl.openlab.intake24.systemsql.shortUrl.ShortUrlDataServiceImpl
 import uk.ac.ncl.openlab.intake24.systemsql.user._
 import uk.ac.ncl.openlab.intake24.systemsql.uxEvents.UxEventsDataServiceImpl
-import urlShort.{ShortUrlService, ShortUrlServiceImpl}
+import urlShort.{GoogleShortUrlImpl, RandomShortUrlImpl, ShortUrlService}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -280,7 +280,7 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
 
     // User notifications
     bind(classOf[ShortUrlDataService]).to(classOf[ShortUrlDataServiceImpl])
-    bind(classOf[ShortUrlService]).to(classOf[ShortUrlServiceImpl])
+    bind(classOf[ShortUrlService]).to(classOf[RandomShortUrlImpl])
     bind(classOf[NotificationScheduleDataService]).to(classOf[NotificationScheduleDataServiceImpl])
     bind(classOf[NotificationSender]).to(classOf[NotificationSenderImpl]).asEagerSingleton()
 

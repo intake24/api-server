@@ -57,6 +57,11 @@ object ErrorUtils {
       collectStackTrace(throwable.getCause, trace)
     }
   }
+
+  def asFuture[T](result: Either[AnyError,T]): Future[T] = result match {
+    case Right(r) => Future.successful(r)
+    case Left(e) => Future.failed(e.exception)
+  }
 }
 
 sealed trait AnyError {

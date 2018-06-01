@@ -1918,12 +1918,11 @@ object SystemDatabaseMigrations {
     new Migration {
       override val versionFrom: Long = 82l
       override val versionTo: Long = 83l
-      override val description: String = "Add short_url to user_survey_aliases"
+      override val description: String = "Add unique constraint and index to short_urls"
 
       override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
 
-        SQL("""ALTER TABLE user_survey_aliases ADD COLUMN short_url VARCHAR(128)""".stripMargin).execute()
-        SQL("""ALTER TABLE user_survey_aliases ADD CONSTRAINT user_survey_aliases_unique_short_url UNIQUE(short_url)""".stripMargin).execute()
+        SQL("ALTER TABLE short_urls ADD CONSTRAINT short_urls_unique UNIQUE (short_url)").execute()
 
         Right(())
       }
