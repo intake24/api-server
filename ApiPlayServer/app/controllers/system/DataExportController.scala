@@ -18,12 +18,11 @@ limitations under the License.
 
 package controllers.system
 
-import io.circe.generic.auto
-
 import java.time._
 import java.time.format.{DateTimeFormatter, DateTimeParseException}
 import javax.inject.Inject
 
+import cache.NdnsCompoundsFoodGroupsCache
 import cats.data.EitherT
 import cats.instances.future._
 import controllers.DatabaseErrorHandler
@@ -53,6 +52,7 @@ class DataExportController @Inject()(configuration: Configuration,
                                      dataExporter: SingleThreadedDataExporter,
                                      s3Uploader: DataExportS3Uploader,
                                      exportScheduler: ScheduledDataExportService,
+                                     ndnsGroupsCache: NdnsCompoundsFoodGroupsCache,
                                      emailSender: EmailSender,
                                      rab: Intake24RestrictedActionBuilder,
                                      playBodyParsers: PlayBodyParsers,
@@ -85,9 +85,20 @@ class DataExportController @Inject()(configuration: Configuration,
       Future {
 
         val respondentId = request.subject.userId
+        val includeFoodGroups = request.getQueryString("compoundFoodGroups").isDefined
 
         try {
-          translateDatabaseResult(service.getSurveySubmissions(surveyId, None, None, 0, Int.MaxValue, Some(respondentId)))
+
+          if (includeFoodGroups) {
+            val submissionsWithFoodGroups = for (submissions <- service.getSurveySubmissions(surveyId, None, None, 0, Int.MaxValue, Some(respondentId));
+                                                 withFoodGroups <- ndnsGroupsCache.addFoodGroups(submissions))
+              yield withFoodGroups
+
+            translateDatabaseResult(submissionsWithFoodGroups)
+          }
+          else
+            translateDatabaseResult(service.getSurveySubmissions(surveyId, None, None, 0, Int.MaxValue, Some(respondentId)))
+
         } catch {
           case e: DateTimeParseException => BadRequest(toJsonString(ErrorDescription("DateFormat", "Failed to parse date parameter. Expected a UTC date in ISO 8601 format, e.g. '2017-02-15T16:40:30Z'.")))
         }

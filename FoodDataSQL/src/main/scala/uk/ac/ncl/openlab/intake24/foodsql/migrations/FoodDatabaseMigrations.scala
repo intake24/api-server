@@ -3,7 +3,8 @@ package uk.ac.ncl.openlab.intake24.foodsql.migrations
 import uk.ac.ncl.openlab.intake24.sql.migrations.Migration
 import org.slf4j.Logger
 import java.sql.Connection
-import anorm.SQL
+
+import anorm.{BatchSql, NamedParameter, SQL}
 import uk.ac.ncl.openlab.intake24.sql.migrations.MigrationFailed
 
 object FoodDatabaseMigrations {
@@ -745,6 +746,7 @@ object FoodDatabaseMigrations {
       }
     },
 
+
     new Migration {
 
       override val versionFrom: Long = 48l
@@ -755,11 +757,74 @@ object FoodDatabaseMigrations {
 
         SQL(
           """CREATE TABLE ndns_compound_food_groups(
-            |  food_code VARCHAR(8) REFERENCES foods(code),
-            |  locale_id VARCHAR(16) REFERENCES locales(id),
-            |  food_group_id INTEGER REFERENCES food_groups(id),
-            |  proportion DOUBLE PRECISION NOT NULL CHECK (proportion >= 0 AND proportion <= 1),
-            |  CONSTRAINT foods_compound_groups_pk PRIMARY KEY (food_code, food_group_id, locale_id)
+            | id INTEGER PRIMARY KEY,
+            | description CHARACTER VARYING(128) NOT NULL
+            |)
+          """.stripMargin).execute()
+
+        val groupNames = Seq("Alcoholic beverages",
+          "Bread, white",
+          "Bread, wholemeal/grain/brown",
+          "Cereal",
+          "Cereal, white",
+          "Cereal, wholemeal/grain/brown",
+          "Coffee, Tea, Cocoa or Infusion",
+          "Dairy and alternatives",
+          "Dairy and alternatives, high fat",
+          "Dairy and alternatives, low fat",
+          "Discretionary items",
+          "Egg",
+          "Fats, hard",
+          "Fats, liquid",
+          "Fats, low fat",
+          "Fruit",
+          "Fruit, canned",
+          "Fruit, cooked",
+          "Fruit, dried",
+          "Fruit, fresh",
+          "Fruit, pureed",
+          "Juice",
+          "Meats",
+          "Meats, processed",
+          "Meats, red",
+          "Miscellaneous",
+          "Mixed",
+          "Mixed,  Pulses",
+          "Mixed, Fish/ Seafood",
+          "Mixed, Vegetable",
+          "Nuts and Seeds",
+          "Potatoes",
+          "Pulses and pulse products",
+          "Pulses and pulse products, pureed",
+          "Seafood, oily fish",
+          "Seafood, organism",
+          "Seafood, white fish",
+          "Soft drink, low calorie",
+          "Soft drink, not low calorie",
+          "Starchy vegetables",
+          "Supplements",
+          "Vegetables",
+          "Vegetables, canned",
+          "Vegetables, cooked",
+          "Vegetables, dried",
+          "Vegetables, fresh",
+          "Vegetables, pureed",
+          "Water",
+          "#N/A")
+
+
+        val params = groupNames.zipWithIndex.map {
+          case (desc, index) => Seq[NamedParameter]('id -> (index + 1), 'description -> desc)
+        }
+
+        BatchSql("INSERT INTO ndns_compound_food_groups VALUES({id},{description})", params.head, params.tail: _*).execute()
+
+        SQL(
+          """CREATE TABLE ndns_compound_food_groups_data (
+            |  ndns_food_code INTEGER NOT NULL,
+            |  compound_food_group_id INTEGER NOT NULL REFERENCES ndns_compound_food_groups(id),
+            |  proportion DOUBLE PRECISION NOT NULL,
+            |  CONSTRAINT ndns_compound_food_groups_data_pk PRIMARY KEY (ndns_food_code, compound_food_group_id)
             |)
           """.stripMargin).execute()
 
@@ -770,8 +835,7 @@ object FoodDatabaseMigrations {
         ???
 
       }
-    },
-
+    }
 
 
   )

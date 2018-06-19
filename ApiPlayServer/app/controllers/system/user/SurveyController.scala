@@ -204,11 +204,18 @@ class SurveyController @Inject()(service: SurveyService,
             if (userNameOpt.isEmpty)
               Logger.warn(s"Survey user has no survey alias (for external follow up URL): $userId")
 
-            val followUpUrlWithUserName = for (userName <- userNameOpt;
-                                               followUpUrl <- followUp.followUpUrl)
-              yield followUpUrl.replace("[intake24_username_value]", userName)
+            val submissionThresholdReached = (currentSubmissionsCount + 1) >= surveyParameters.numberOfSurveysForFeedback
 
-            val redirectToFeedback = ((currentSubmissionsCount + 1) >= surveyParameters.numberOfSurveysForFeedback) && followUp.showFeedback
+            val followUpUrlWithUserName =
+              if (submissionThresholdReached) {
+                for (userName <- userNameOpt;
+                     followUpUrl <- followUp.followUpUrl)
+                  yield followUpUrl.replace("[intake24_username_value]", userName)
+              }
+              else
+                None
+
+            val redirectToFeedback = submissionThresholdReached && followUp.showFeedback
 
             Ok(SubmissionResponseBody(followUpUrlWithUserName, redirectToFeedback).asJson.noSpaces).as(ContentTypes.JSON)
           }

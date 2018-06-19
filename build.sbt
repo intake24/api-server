@@ -19,7 +19,7 @@ limitations under the License.
 import ResolveInternalDependencies._
 
 lazy val commonSettings = Seq(
-  version := "3.24.0-SNAPSHOT",
+  version := "3.24.1-SNAPSHOT",
   scalaVersion := "2.12.4",
   publishArtifact in(Compile, packageDoc) := false,
   scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")

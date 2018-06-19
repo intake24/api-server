@@ -38,7 +38,7 @@ import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl
 import uk.ac.ncl.openlab.intake24.foodsql.images.ImageDatabaseServiceSqlImpl
 import uk.ac.ncl.openlab.intake24.foodsql.recipes.RecipesAttributeCacheImpl
 import uk.ac.ncl.openlab.intake24.foodsql.user.{FoodCompositionServiceImpl, _}
-import uk.ac.ncl.openlab.intake24.services.RecipesAttributeCache
+import uk.ac.ncl.openlab.intake24.services.{NdnsCompoundFoodGroupsService, RecipesAttributeCache}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.demographicgroups._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
@@ -288,5 +288,6 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     bind(classOf[UserSessionDataService]).to(classOf[UserSessionDataServiceImpl])
 
 
+    bind(classOf[NdnsCompoundFoodGroupsService]).to(classOf[NdnsCompoundFoodGroupsImpl])
   }
 }
