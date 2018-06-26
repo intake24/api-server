@@ -835,8 +835,34 @@ object FoodDatabaseMigrations {
         ???
 
       }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 49l
+      override val versionTo: Long = 50l
+      override val description: String = "Create five a day feedback table"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL(
+          """CREATE TABLE five_a_day_feedback(
+            |  id SERIAL PRIMARY KEY,
+            |  if_less_than INT NOT NULL,
+            |  sentiment sentiment_enum NOT NULL,
+            |  summary VARCHAR(500) NOT NULL,
+            |  feedback VARCHAR(20000) NOT NULL
+            |)
+          """.stripMargin).execute()
+
+        SQL("""CREATE UNIQUE INDEX five_a_day_feedback_if_less_than_uindex ON five_a_day_feedback (if_less_than)""".stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
     }
-
-
   )
 }

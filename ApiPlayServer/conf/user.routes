@@ -32,3 +32,7 @@ GET         /portion-size/drinkware/:id                  controllers.food.user.F
 # Food composition
 
 GET         /foods/:locale/:code/composition             controllers.food.user.FoodDataController.getFoodComposition(code: String, locale: String, weight: Option[Double])
+
+# Feedback
+
+GET         /feedback/five-a-day                         controllers.food.user.FeedbackDataController.getFiveADayFeedback()

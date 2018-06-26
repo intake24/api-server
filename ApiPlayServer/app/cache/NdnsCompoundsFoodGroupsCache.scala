@@ -67,10 +67,14 @@ class NdnsCompoundsFoodGroupsCache @Inject()(service: NdnsCompoundFoodGroupsServ
 
   private def mapFood(food: ExportFood, foodGroupData: Map[Int, Map[Int, Double]]): ExportFoodWithFoodGroups = {
 
-    val foodGroups = if (food.nutrientTableCode == "NDNS")
+    val foodGroups = if (food.nutrientTableId == "NDNS") {
+     logger.warn("Penis")
       foodGroupData(food.nutrientTableCode.toInt)
-    else
+    }
+    else {
+      logger.warn(s"Kotak: ${food.nutrientTableCode}")
       Map[Int, Double]()
+    }
 
     ExportFoodWithFoodGroups(food.code, food.englishDescription, food.localDescription, food.searchTerm, food.nutrientTableId,
       food.nutrientTableCode, food.isReadyMeal, food.portionSize, food.reasonableAmount, food.foodGroupId, food.brand,

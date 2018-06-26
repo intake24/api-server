@@ -289,5 +289,6 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
 
 
     bind(classOf[NdnsCompoundFoodGroupsService]).to(classOf[NdnsCompoundFoodGroupsImpl])
+    bind(classOf[FeedbackDataService]).to(classOf[FeedbackDataImpl])
   }
 }
