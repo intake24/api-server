@@ -45,7 +45,7 @@ object ImportNdnsCompoundGroups extends App with DatabaseConnection with Warning
 
   val version = SQL("SELECT version FROM schema_version").executeQuery()(conn1).as(SqlParser.long("version").single)(conn1)
 
-  if (version != 49) {
+  if (version != 50) {
     throw new RuntimeException(s"Wrong schema version: expected 49, got $version")
   } else {
     BatchSql("INSERT INTO ndns_compound_food_groups_data VALUES({ndns_food_code},{compound_food_group_id},{proportion})", params.head, params.tail:_*).execute()(conn1)
