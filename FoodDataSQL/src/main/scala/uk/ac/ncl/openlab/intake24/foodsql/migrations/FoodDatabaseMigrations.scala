@@ -863,6 +863,25 @@ object FoodDatabaseMigrations {
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         ???
       }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 50l
+      override val versionTo: Long = 51l
+      override val description: String = "Drop unused five a day columns"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE five_a_day_feedback DROP COLUMN sentiment").execute()
+        SQL("ALTER TABLE five_a_day_feedback DROP COLUMN summary").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
     }
   )
 }

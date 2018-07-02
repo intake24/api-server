@@ -13,7 +13,7 @@ import anorm.{Macro, SQL}
 class FeedbackDataImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends FeedbackDataService with SqlDataService {
   override def getFiveADayFeedback(): Either[UnexpectedDatabaseError, Seq[FiveADayFeedbackRow]] = tryWithConnection {
     implicit connection =>
-      Right(SQL("SELECT if_less_than, sentiment, summary, feedback FROM five_a_day_feedback ORDER BY if_less_than DESC")
+      Right(SQL("SELECT if_less_than, feedback FROM five_a_day_feedback ORDER BY if_less_than DESC")
         .executeQuery()
         .as(Macro.namedParser[FiveADayFeedbackRow](Macro.ColumnNaming.SnakeCase).*))
   }

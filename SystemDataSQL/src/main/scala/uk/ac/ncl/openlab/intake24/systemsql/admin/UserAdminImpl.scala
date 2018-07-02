@@ -512,7 +512,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
   def listUsersByRole(role: String, offset: Int, limit: Int): Either[UnexpectedDatabaseError, Seq[UserProfile]] = tryWithConnection {
     implicit conn =>
       withTransaction {
-        val rows = SQL("SELECT id,name,email,phone,email_notifications,sms_notifications FROM users JOIN user_roles ON users.id=user_roles.user_id AND role={role} OFFSET {offset} LIMIT {limit}")
+        val rows = SQL("SELECT id,name,email,phone,email_notifications,sms_notifications FROM users JOIN user_roles ON users.id=user_roles.user_id AND role={role} ORDER BY id OFFSET {offset} LIMIT {limit}")
           .on('role -> role, 'offset -> offset, 'limit -> limit)
           .as(UserProfileRow.parser.*)
         Right(buildUserRecordsFromRows(rows))
