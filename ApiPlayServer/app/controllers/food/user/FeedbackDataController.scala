@@ -40,4 +40,10 @@ class FeedbackDataController @Inject()(feedbackDataService: FeedbackDataService,
       translateDatabaseResult(feedbackDataService.getFiveADayFeedback())
     }
   }
+
+  def getFoodGroupsFeedback() = rab.restrictToAuthenticated {
+    Future {
+      translateDatabaseResult(feedbackDataService.getFoodGroupsFeedback())
+    }
+  }
 }

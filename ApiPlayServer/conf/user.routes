@@ -36,3 +36,4 @@ GET         /foods/:locale/:code/composition             controllers.food.user.F
 # Feedback
 
 GET         /feedback/five-a-day                         controllers.food.user.FeedbackDataController.getFiveADayFeedback()
+GET         /feedback/food-groups                        controllers.food.user.FeedbackDataController.getFoodGroupsFeedback()

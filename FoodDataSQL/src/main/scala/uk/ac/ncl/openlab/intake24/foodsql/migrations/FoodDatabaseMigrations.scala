@@ -882,6 +882,40 @@ object FoodDatabaseMigrations {
       def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         ???
       }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 51l
+      override val versionTo: Long = 52l
+      override val description: String = "Create food group feedback tables"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL(
+          """create table food_groups_feedback(
+            |id serial primary key,
+            |name varchar(64) not null,
+            |too_high_threshold double precision,
+            |too_high_message varchar(512),
+            |too_low_threshold double precision,
+            |too_low_message varchar(512),
+            |tell_me_more_text varchar(20000) NOT NULL)
+          """.stripMargin).execute()
+
+        SQL(
+          """create table food_groups_feedback_group_ids(
+            |food_groups_feedback_id integer references food_groups_feedback(id),
+            |food_group_id integer references ndns_compound_food_groups(id),
+            |constraint food_groups_feedback_group_ids_pk PRIMARY KEY(food_groups_feedback_id, food_group_id))
+          """.stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
     }
   )
 }
