@@ -4,7 +4,7 @@ import javax.inject.{Inject, Named, Singleton}
 import javax.sql.DataSource
 
 import uk.ac.ncl.openlab.intake24.errors.UnexpectedDatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.{FeedbackDataService, FiveADayFeedbackRow, FoodGroupFeedbackRow, FoodGroupValueThreshold}
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.{FeedbackDataService, FiveADayFeedback, FoodGroupFeedbackRow, FoodGroupValueThreshold}
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
 import anorm.{Macro, SQL, SqlParser, ~}
 
@@ -15,11 +15,11 @@ class FeedbackDataImpl @Inject()(@Named("intake24_foods") val dataSource: DataSo
   private case class InternalRow(id: Int, name: String, tooHighThreshold: Option[Double], tooHighMessage: Option[String],
                                  tooLowThreshold: Option[Double], tooLowMessage: Option[String], tellMeMoreText: String)
 
-  override def getFiveADayFeedback(): Either[UnexpectedDatabaseError, Seq[FiveADayFeedbackRow]] = tryWithConnection {
+  override def getFiveADayFeedback(): Either[UnexpectedDatabaseError, FiveADayFeedback] = tryWithConnection {
     implicit connection =>
-      Right(SQL("SELECT if_less_than, feedback FROM five_a_day_feedback ORDER BY if_less_than DESC")
+      Right(SQL("SELECT tell_me_more_text, too_low_message FROM five_a_day_feedback LIMIT 1")
         .executeQuery()
-        .as(Macro.namedParser[FiveADayFeedbackRow](Macro.ColumnNaming.SnakeCase).*))
+        .as(Macro.namedParser[FiveADayFeedback](Macro.ColumnNaming.SnakeCase).single))
   }
 
   def getFoodGroupsFeedback(): Either[UnexpectedDatabaseError, Seq[FoodGroupFeedbackRow]] = tryWithConnection {
