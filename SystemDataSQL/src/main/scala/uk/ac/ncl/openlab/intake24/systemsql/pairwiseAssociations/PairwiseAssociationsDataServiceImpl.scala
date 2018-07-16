@@ -1,22 +1,25 @@
 package uk.ac.ncl.openlab.intake24.systemsql.pairwiseAssociations
 
 import java.sql.Connection
+
 import javax.inject.{Inject, Named}
 import javax.sql.DataSource
-
-import anorm.{BatchSql, Macro, NamedParameter, SQL}
+import anorm.{BatchSql, Macro, NamedParameter, SQL, SqlParser}
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.errors.{UnexpectedDatabaseError, UpdateError}
 import uk.ac.ncl.openlab.intake24.pairwiseAssociationRules.{PairwiseAssociationRules, PairwiseAssociationRulesConstructorParams}
 import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.PairwiseAssociationsDataService
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
+import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.concurrent.{Future, Promise}
 
 /**
   * Created by Tim Osadchiy on 02/10/2017.
   */
-class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends PairwiseAssociationsDataService with SqlDataService {
+class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") val dataSource: DataSource, val batchSize: Int = 200) extends PairwiseAssociationsDataService with SqlDataService {
+
+  private val THREAD_SLEEP_FOR = 10
 
   private final val pairwiseAssociationsOccurrencesTN = "pairwise_associations_occurrences"
   private final val pairwiseAssociationsCoOccurrencesTN = "pairwise_associations_co_occurrences"
@@ -24,9 +27,9 @@ class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") va
 
   private val logger = LoggerFactory.getLogger(getClass)
 
-  private val coOccurrenceSelectSql = s"SELECT * FROM $pairwiseAssociationsCoOccurrencesTN;"
+  private val coOccurrenceSelectSql = s"SELECT * FROM $pairwiseAssociationsCoOccurrencesTN OFFSET {offset} LIMIT {limit}"
 
-  private val occurrencesSelectSql = s"SELECT * FROM $pairwiseAssociationsOccurrencesTN;"
+  private val occurrencesSelectSql = s"SELECT * FROM $pairwiseAssociationsOccurrencesTN OFFSET {offset} LIMIT {limit}"
 
   private val transactionsCountSelectSql = s"SELECT * FROM $pairwiseAssociationsTransactionsCountTN;"
 
@@ -62,12 +65,11 @@ class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") va
 
   private case class TransactionCountRow(locale: String, transactions_count: Int)
 
-  override def getAssociations(): Either[UnexpectedDatabaseError, Map[String, PairwiseAssociationRules]] = {
-    val test = getTransactionCounts()
+  override def getAssociations(): Future[Map[String, PairwiseAssociationRules]] = {
     for (
       transactionCounts <- getTransactionCounts();
-      occurrences <- getOccurrenceMap();
-      coOccurrences <- getCoOccurrenceMap()
+      occurrences <- getOccurrenceMapAsync();
+      coOccurrences <- getCoOccurenceMapAsync()
     ) yield occurrences.flatMap { occurrenceNode =>
       for (
         transactionCount <- transactionCounts.get(occurrenceNode._1);
@@ -168,12 +170,10 @@ class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") va
   }
 
   private def writeOccurrenceMapToDbInBatch(query: String, mp: Map[String, Int], namedParameterExtractFn: ((String, Int)) => Seq[NamedParameter])(implicit connection: Connection) = {
-    val batchSize = 50
-    val threadSleepFor = 10
     Range(0, mp.size, batchSize).foreach { offset =>
       val params = mp.slice(offset, offset + batchSize).map(namedParameterExtractFn).toSeq
       BatchSql(query, params.head, params.tail: _*).execute()
-      Thread.sleep(threadSleepFor)
+      Thread.sleep(THREAD_SLEEP_FOR)
     }
   }
 
@@ -193,32 +193,109 @@ class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") va
     SQL(qs).execute()
   }
 
-  private def getCoOccurrenceMap(): Either[UnexpectedDatabaseError, Map[String, Map[String, Map[String, Int]]]] = tryWithConnection {
-    implicit conn =>
-      val mp = SQL(coOccurrenceSelectSql).executeQuery().as(Macro.namedParser[CoOccurrenceRow].*).groupBy(_.locale).map { localeNode =>
-        localeNode._1 -> localeNode._2.groupBy(_.antecedent_food_code).map { antNode =>
-          antNode._1 -> antNode._2.groupBy(_.consequent_food_code).map { consNode =>
-            consNode._1 -> consNode._2.head.occurrences
+  private def getCoOccurenceMapAsync(): Future[Map[String, Map[String, Map[String, Int]]]] = {
+    val promise = Promise[Map[String, Map[String, Map[String, Int]]]]()
+    val defaultMap: Map[String, Map[String, Map[String, Int]]] = Map().withDefaultValue(Map().withDefaultValue(Map().withDefaultValue(0)))
+    val t = new Thread(() => {
+      countRecordsInTable(pairwiseAssociationsCoOccurrencesTN).flatMap { count =>
+        logger.info(s"Getting co-occurrences for $count records from DB.")
+        val rowsResults = Range(0, count, batchSize).map { offset =>
+          Thread.sleep(THREAD_SLEEP_FOR)
+          tryWithConnection {
+            implicit conn =>
+              Right(SQL(coOccurrenceSelectSql).on('limit -> batchSize, 'offset -> offset).executeQuery().as(Macro.namedParser[CoOccurrenceRow].*))
           }
+        }.toSeq
+
+        rowsResults.partition(_.isLeft) match {
+          case (Nil, results) =>
+            logger.info(s"Successfully finished getting co-occurrences for $count records from DB.")
+            logger.info(s"Converting co-occurrences into a map")
+            Right(results.foldLeft(defaultMap) { (agg, result) => {
+              Thread.sleep(THREAD_SLEEP_FOR)
+              result.right.get.foldLeft(agg) { (subAgg, record) =>
+                subAgg + (record.locale ->
+                  (subAgg(record.locale) + (record.antecedent_food_code ->
+                    (subAgg(record.locale)(record.antecedent_food_code) + (record.consequent_food_code -> record.occurrences)))))
+              }
+            }
+            })
+          case _ =>
+            val error = rowsResults.collectFirst({
+              case Left(e) => e.exception.getMessage
+            }).getOrElse("Unknown error")
+            logger.info(s"At least one occurrence batch was retrieved with the following error. $error")
+            Left(UnexpectedDatabaseError(new Exception("Couldn't retrieve co-occurrence records")))
         }
+
+      } match {
+        case Left(e) => promise.failure(e.exception)
+        case Right(mp) => promise.success(mp)
       }
-      Right(mp)
+    })
+    t.run()
+    promise.future
   }
 
-  private def getOccurrenceMap(): Either[UnexpectedDatabaseError, Map[String, Map[String, Int]]] = tryWithConnection {
-    implicit conn =>
-      val mp = SQL(occurrencesSelectSql).executeQuery().as(Macro.namedParser[OccurrenceRow].*).groupBy(_.locale).map { n =>
-        n._1 -> n._2.groupBy(_.food_code).map { fn => fn._1 -> fn._2.head.occurrences }
+  private def getOccurrenceMapAsync(): Future[Map[String, Map[String, Int]]] = {
+    val promise = Promise[Map[String, Map[String, Int]]]
+    val defaultMap = Map[String, Map[String, Int]]().withDefaultValue(Map().withDefaultValue(0))
+    val t = new Thread(() => {
+      countRecordsInTable(pairwiseAssociationsOccurrencesTN).flatMap { count =>
+        logger.info(s"Getting occurrences for $count records from DB.")
+        val queryResults = Range(0, count, batchSize).map { offset =>
+          Thread.sleep(THREAD_SLEEP_FOR)
+          tryWithConnection { implicit conn =>
+            Right(SQL(occurrencesSelectSql).on('limit -> batchSize, 'offset -> offset)
+              .executeQuery()
+              .as(Macro.namedParser[OccurrenceRow].*))
+          }
+        }.toSeq
+        queryResults.partition(_.isLeft) match {
+          case (Nil, results) =>
+            logger.info(s"Successfully finished getting occurrences for $count records from DB.")
+            logger.info(s"Converting occurrences into a map")
+            Right(results.foldLeft(defaultMap) { (agg, result) =>
+              result.right.get.foldLeft(agg) { (agg, occ) =>
+                agg + (occ.locale -> (agg(occ.locale) + (occ.food_code -> occ.occurrences)))
+              }
+            })
+          case _ =>
+            val error = queryResults.collectFirst({
+              case Left(e) => e.exception.getMessage
+            }).getOrElse("Unknown error")
+            logger.info(s"At least one occurrence batch was retrieved with the following error. $error")
+            Left(UnexpectedDatabaseError(new Exception("Couldn't retieve occurence records")))
+        }
+      } match {
+        case Left(e) => promise.failure(e.exception)
+        case Right(mp) => promise.success(mp)
       }
-      Right(mp)
+    })
+    t.run()
+    promise.future
   }
 
-  private def getTransactionCounts(): Either[UnexpectedDatabaseError, Map[String, Int]] = tryWithConnection {
-    implicit conn =>
-      val mp = SQL(transactionsCountSelectSql).executeQuery().as(Macro.namedParser[TransactionCountRow].*).groupBy(_.locale).map { n =>
-        n._1 -> n._2.head.transactions_count
+  private def getTransactionCounts(): Future[Map[String, Int]] = {
+    val promise = Promise[Map[String, Int]]()
+    val t = new Thread(() => {
+      tryWithConnection {
+        implicit conn =>
+          val mp = SQL(transactionsCountSelectSql).executeQuery().as(Macro.namedParser[TransactionCountRow].*).groupBy(_.locale).map { n =>
+            n._1 -> n._2.head.transactions_count
+          }
+          Right(mp)
+      } match {
+        case Right(mp) => promise.success(mp)
+        case Left(e) => promise.failure(e.exception)
       }
-      Right(mp)
+    })
+    t.run()
+    promise.future
+  }
+
+  private def countRecordsInTable(tableName: String): Either[UnexpectedDatabaseError, Int] = tryWithConnection {
+    implicit conn => Right(SQL(s"SELECT count(*) FROM $tableName").executeQuery().as(SqlParser.int("count").single))
   }
 
 }

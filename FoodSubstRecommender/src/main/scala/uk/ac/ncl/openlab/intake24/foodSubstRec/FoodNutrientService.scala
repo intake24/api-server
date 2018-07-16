@@ -14,6 +14,8 @@ trait FoodNutrientService extends DistanceService {
 
 @Singleton()
 class FoodNutrientServiceEnGbNDNSImpl @Inject()(val nutrientService: FoodCompositionService) extends FoodNutrientService {
+  // Fixme: Top priority. Make all calculations async in a separate thread
+
   // Fixme: This service should work for any locale and tableId
 
   private val logger = LoggerFactory.getLogger(getClass)

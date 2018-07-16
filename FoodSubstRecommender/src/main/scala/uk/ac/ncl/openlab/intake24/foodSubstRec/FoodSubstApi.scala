@@ -39,6 +39,7 @@ class FoodSubstApiImpl @Inject()(foodBrowsingService: FoodBrowsingService,
   private val SUGARS_ID = 23
   private val CO2 = 228
 
+  // Fixme: make DB query ASYNC and in a separate thread
   private val supportedNutrients = foodCompositionService.getSupportedNutrients() match {
     case Right(r) => r
     case Left(e) =>
@@ -48,11 +49,13 @@ class FoodSubstApiImpl @Inject()(foodBrowsingService: FoodBrowsingService,
 
 
   // Fixme: should be for any locale
-  private val foodHeaders: Map[String, UserFoodHeader] = foodBrowsingService.listAllFoods("en_GB") match {
+  // Fixme: make DB query ASYNC and in a separate thread
+  private val foodHeaders: Map[String, UserFoodHeader] =
+  foodBrowsingService.listAllFoods("en_GB") match {
     case Right(r) => r.groupBy(_.code).map(i => i._1 -> i._2.head)
     case Left(e) =>
       logger.error(s"Couldn't get food headers. ${e.exception.getMessage}")
-      Map()
+      Map[String, UserFoodHeader]()
   }
 
   override def findAlternatives(foodCode: String) = getFoodWithNutrients(foodCode) match {
