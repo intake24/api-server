@@ -73,7 +73,7 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
           logger.error(s"Failed to refresh PairwiseAssociations ${e.exception.getMessage}")
         case Right(_) =>
           logger.debug(s"Successfully refreshed Pairwise associations")
-          getAssociationRules()
+          this.associationRules = graph
       }
     }
   }
