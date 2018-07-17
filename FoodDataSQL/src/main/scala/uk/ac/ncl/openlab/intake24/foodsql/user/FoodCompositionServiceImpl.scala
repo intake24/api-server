@@ -70,6 +70,7 @@ class FoodCompositionServiceImpl @Inject()(@Named("intake24_foods") val dataSour
         """.stripMargin
       val rows = SQL(q).on('table_id -> tableId, 'locale -> localeId).as(Macro.namedParser[FoodNutrientValueRow].*)
       val mp = rows.groupBy(_.code).map(g => g._1 -> g._2.map(r => r.nutrient_type_id -> r.units_per_100g).toMap)
+
       Right(mp)
   }
 

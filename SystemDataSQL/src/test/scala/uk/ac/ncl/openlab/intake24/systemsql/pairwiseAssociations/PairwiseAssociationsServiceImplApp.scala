@@ -14,16 +14,16 @@ import scala.collection.JavaConverters._
   */
 object PairwiseAssociationsServiceImplApp extends App {
 
-  val configPath = "systemDataSql/src/test/test.conf"
+  val configPath = "apiPlayServer/conf/application.conf"
 
   DriverManager.registerDriver(new org.postgresql.Driver)
 
   val conf = ConfigFactory.parseFile(new File(configPath))
   val dataSource = new org.postgresql.ds.PGSimpleDataSource()
 
-  dataSource.setUser(conf.getString("db.username"))
-  dataSource.setUrl(conf.getString("db.url"))
-  dataSource.setPassword(conf.getString("db.password"))
+  dataSource.setUser(conf.getString("db.intake24_system.username"))
+  dataSource.setUrl(conf.getString("db.intake24_system.url"))
+  dataSource.setPassword(conf.getString("db.intake24_system.password"))
 
   val settings = PairwiseAssociationsServiceConfiguration(
     conf.getInt("pairwiseAssociations.minimumNumberOfSurveySubmissions"),

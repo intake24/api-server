@@ -19,3 +19,5 @@ limitations under the License.
 name := "food-subst-rec"
 
 description := "Intake24 ImageMagick image processor implementation"
+
+libraryDependencies += "com.typesafe" % "config" % "1.3.3" % Test
