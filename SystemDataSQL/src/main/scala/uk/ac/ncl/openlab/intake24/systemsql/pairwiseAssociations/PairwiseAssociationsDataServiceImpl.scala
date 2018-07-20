@@ -8,16 +8,16 @@ import anorm.{BatchSql, Macro, NamedParameter, SQL, SqlParser}
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.errors.{UnexpectedDatabaseError, UpdateError}
 import uk.ac.ncl.openlab.intake24.pairwiseAssociationRules.{PairwiseAssociationRules, PairwiseAssociationRulesConstructorParams}
-import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.PairwiseAssociationsDataService
+import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsDataService, PairwiseAssociationsServiceConfiguration}
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
-import scala.concurrent.ExecutionContext.Implicits.global
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, Promise}
 
 /**
   * Created by Tim Osadchiy on 02/10/2017.
   */
-class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") val dataSource: DataSource, val batchSize: Int = 200) extends PairwiseAssociationsDataService with SqlDataService {
+class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") val dataSource: DataSource, settings: PairwiseAssociationsServiceConfiguration) extends PairwiseAssociationsDataService with SqlDataService {
 
   private val THREAD_SLEEP_FOR = 10
 
@@ -170,8 +170,8 @@ class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") va
   }
 
   private def writeOccurrenceMapToDbInBatch(query: String, mp: Map[String, Int], namedParameterExtractFn: ((String, Int)) => Seq[NamedParameter])(implicit connection: Connection) = {
-    Range(0, mp.size, batchSize).foreach { offset =>
-      val params = mp.slice(offset, offset + batchSize).map(namedParameterExtractFn).toSeq
+    Range(0, mp.size, settings.batchSize).foreach { offset =>
+      val params = mp.slice(offset, offset + settings.batchSize).map(namedParameterExtractFn).toSeq
       BatchSql(query, params.head, params.tail: _*).execute()
       Thread.sleep(THREAD_SLEEP_FOR)
     }
@@ -199,11 +199,11 @@ class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") va
     val t = new Thread(() => {
       countRecordsInTable(pairwiseAssociationsCoOccurrencesTN).flatMap { count =>
         logger.info(s"Getting co-occurrences for $count records from DB.")
-        val rowsResults = Range(0, count, batchSize).map { offset =>
+        val rowsResults = Range(0, count, settings.batchSize).map { offset =>
           Thread.sleep(THREAD_SLEEP_FOR)
           tryWithConnection {
             implicit conn =>
-              Right(SQL(coOccurrenceSelectSql).on('limit -> batchSize, 'offset -> offset).executeQuery().as(Macro.namedParser[CoOccurrenceRow].*))
+              Right(SQL(coOccurrenceSelectSql).on('limit -> settings.batchSize, 'offset -> offset).executeQuery().as(Macro.namedParser[CoOccurrenceRow].*))
           }
         }.toSeq
 
@@ -243,10 +243,10 @@ class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") va
     val t = new Thread(() => {
       countRecordsInTable(pairwiseAssociationsOccurrencesTN).flatMap { count =>
         logger.info(s"Getting occurrences for $count records from DB.")
-        val queryResults = Range(0, count, batchSize).map { offset =>
+        val queryResults = Range(0, count, settings.batchSize).map { offset =>
           Thread.sleep(THREAD_SLEEP_FOR)
           tryWithConnection { implicit conn =>
-            Right(SQL(occurrencesSelectSql).on('limit -> batchSize, 'offset -> offset)
+            Right(SQL(occurrencesSelectSql).on('limit -> settings.batchSize, 'offset -> offset)
               .executeQuery()
               .as(Macro.namedParser[OccurrenceRow].*))
           }

@@ -22,7 +22,8 @@ case class PairwiseAssociationsServiceConfiguration(minimumNumberOfSurveySubmiss
                                                     useAfterNumberOfTransactions: Int,
                                                     rulesUpdateBatchSize: Int,
                                                     refreshAtTime: String,
-                                                    minInputSearchSize: Int) {
+                                                    minInputSearchSize: Int,
+                                                    batchSize: Int) {
 
   def nextRefreshIn: FiniteDuration = {
     val parsedParams = refreshAtTime.split(":").map(_.toInt)

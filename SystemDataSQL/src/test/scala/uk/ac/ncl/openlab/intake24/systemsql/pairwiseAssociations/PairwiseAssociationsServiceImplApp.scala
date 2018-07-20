@@ -31,9 +31,10 @@ object PairwiseAssociationsServiceImplApp extends App {
     conf.getInt("pairwiseAssociations.useAfterNumberOfTransactions"),
     conf.getInt("pairwiseAssociations.rulesUpdateBatchSize"),
     conf.getString("pairwiseAssociations.refreshAtTime"),
-    conf.getInt("pairwiseAssociations.minInputSearchSize")
+    conf.getInt("pairwiseAssociations.minInputSearchSize"),
+    conf.getInt("pairwiseAssociations.batchSize"),
   )
-  val dataService = new PairwiseAssociationsDataServiceImpl(dataSource)
+  val dataService = new PairwiseAssociationsDataServiceImpl(dataSource, settings)
   val surveyAdminService = new SurveyAdminImpl(dataSource)
   val dataExportService = new DataExportImpl(dataSource)
 
