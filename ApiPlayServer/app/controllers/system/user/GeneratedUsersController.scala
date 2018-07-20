@@ -25,7 +25,7 @@ import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
 import parsers.JsonUtils
 import play.api.mvc._
-import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
+import uk.ac.ncl.openlab.intake24.api.data.{ErrorDescription, NewUserProfile}
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 

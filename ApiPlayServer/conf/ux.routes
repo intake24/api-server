@@ -1,0 +1,2 @@
+# Ux events analysis logs
+POST        /event        controllers.UxEventsController.dispatch()

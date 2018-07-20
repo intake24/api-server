@@ -1,8 +1,10 @@
 package uk.ac.ncl.openlab.intake24.systemsql.user
 
+import java.time.ZonedDateTime
+import java.util.UUID
+
 import javax.inject.{Inject, Named}
 import javax.sql.DataSource
-
 import anorm._
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.SurveyState
@@ -12,8 +14,11 @@ import uk.ac.ncl.openlab.intake24.surveydata.NutrientMappedSubmission
 
 class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends SurveyService with SqlDataService with SqlResourceLoader {
 
-  private case class UserSurveyParametersRow(scheme_id: String, state: Int, locale: String, started: Boolean, finished: Boolean, suspension_reason: Option[String],
-                                             originating_url: Option[String], description: Option[String])
+  private case class UserSurveyParametersRow(id: String, scheme_id: String, state: Int, locale: String, started: Boolean, finished: Boolean, suspension_reason: Option[String],
+                                             originating_url: Option[String], description: Option[String], store_user_session_on_server: Option[Boolean],
+                                             number_of_submissions_for_feedback: Int)
+
+  private case class UxEventSettingsRow(enable_search_events: Boolean, enable_associated_foods_events: Boolean)
 
   override def getPublicSurveyParameters(surveyId: String): Either[LookupError, PublicSurveyParameters] = tryWithConnection {
     implicit conn =>
@@ -39,7 +44,7 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
 
   override def getSurveyParameters(surveyId: String): Either[LookupError, UserSurveyParameters] = tryWithConnection {
     implicit conn =>
-      SQL("SELECT scheme_id, locale, state, now() >= start_date AS started, now() > end_date AS finished, suspension_reason, originating_url, description FROM surveys WHERE id={survey_id}")
+      SQL("SELECT id, scheme_id, locale, state, now() >= start_date AS started, now() > end_date AS finished, suspension_reason, originating_url, description, store_user_session_on_server, number_of_submissions_for_feedback FROM surveys WHERE id={survey_id}")
         .on('survey_id -> surveyId)
         .executeQuery()
         .as(Macro.namedParser[UserSurveyParametersRow].singleOpt) match {
@@ -58,7 +63,16 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
               "pending"
           }
 
-          Right(UserSurveyParameters(row.scheme_id, row.locale, state, row.suspension_reason, row.description))
+          val uxEventsSettings = SQL("SELECT enable_search_events, enable_associated_foods_events FROM surveys_ux_events_settings WHERE survey_id={survey_id}")
+            .on('survey_id -> surveyId)
+            .executeQuery()
+            .as(Macro.namedParser[UxEventSettingsRow].singleOpt) match {
+            case Some(UxEventSettingsRow(search, foods)) => UxEventsSettings(search, foods)
+            case None => UxEventsSettings(false, false)
+          }
+
+          Right(UserSurveyParameters(row.id, row.scheme_id, row.locale, state, row.suspension_reason, row.description, uxEventsSettings, row.store_user_session_on_server.getOrElse(false),
+            row.number_of_submissions_for_feedback))
 
         }
         case None =>
@@ -76,14 +90,14 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
       }
   }
 
-  def createSubmission(userId: Long, surveyId: String, survey: NutrientMappedSubmission): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
+  def createSubmission(userId: Long, surveyId: String, survey: NutrientMappedSubmission): Either[UnexpectedDatabaseError, UUID] = tryWithConnection {
     implicit conn =>
       withTransaction {
         val generatedId = java.util.UUID.randomUUID()
 
-        SQL("INSERT INTO survey_submissions VALUES ({id}::uuid, {survey_id}, {user_id}, {start_time}, {end_time}, ARRAY[{log}])")
+        SQL("INSERT INTO survey_submissions VALUES ({id}::uuid, {survey_id}, {user_id}, {start_time}, {end_time}, ARRAY[{log}]::text[], {ux_session_id}::uuid)")
           .on('id -> generatedId, 'survey_id -> surveyId, 'user_id -> userId, 'start_time -> survey.startTime,
-            'end_time -> survey.endTime, 'log -> survey.log)
+            'end_time -> survey.endTime, 'log -> Seq[String](), 'ux_session_id -> survey.uxSessionId)
           .execute()
 
         val customFieldParams = survey.customData.map {
@@ -136,7 +150,7 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
 
           if (!mealFoodsParams.isEmpty) {
 
-            val batch = BatchSql("INSERT INTO survey_submission_foods VALUES (DEFAULT, {meal_id}, {code}, {english_description}, {local_description}, {ready_meal}, {search_term}, {portion_size_method_id}, {reasonable_amount},{food_group_id},{food_group_english_description},{food_group_local_description},{brand},{nutrient_table_id},{nutrient_table_code})",
+            val batch = BatchSql("INSERT INTO survey_submission_foods (id, meal_id, code, english_description, local_description, ready_meal, search_term, portion_size_method_id, reasonable_amount, food_group_id, food_group_english_description, food_group_local_description, brand, nutrient_table_id, nutrient_table_code) VALUES (DEFAULT, {meal_id}, {code}, {english_description}, {local_description}, {ready_meal}, {search_term}, {portion_size_method_id}, {reasonable_amount},{food_group_id},{food_group_english_description},{food_group_local_description},{brand},{nutrient_table_id},{nutrient_table_code})",
               mealFoodsParams.head, mealFoodsParams.tail: _*)
 
             val foodIds = AnormUtil.batchKeys(batch)
@@ -199,7 +213,29 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
           }
         }
 
-        Right(())
+        Right(generatedId)
       }
+  }
+
+  override def userSubmittedWithinPeriod(surveyId: String, userId: Long, dateFrom: ZonedDateTime, dateTo: ZonedDateTime): Either[UnexpectedDatabaseError, Boolean] = tryWithConnection {
+    implicit conn =>
+      val r = SQL(
+        """
+          |SELECT EXISTS(
+          |    SELECT 1
+          |    FROM survey_submissions
+          |    WHERE survey_id = {survey_id} AND
+          |          user_id = {user_id} AND
+          |          end_time >= {date_from} AND
+          |          end_time <= {date_to}
+          |)
+        """.stripMargin)
+        .on('survey_id -> surveyId, 'user_id -> userId, 'date_from -> dateFrom, 'date_to -> dateTo).executeQuery().as(SqlParser.bool("exists").single)
+      Right(r)
+  }
+
+  override def getNumberOfSubmissionsForUser(surveyId: String, userId: Long): Either[UnexpectedDatabaseError, Int] = tryWithConnection {
+    implicit conn =>
+      Right(SQL("SELECT COUNT(*) FROM survey_submissions WHERE survey_id={survey_id} AND user_id={user_id}").on('survey_id -> surveyId, 'user_id -> userId).executeQuery().as(SqlParser.int(1).single))
   }
 }

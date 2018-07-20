@@ -16,14 +16,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.6.3")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.6.7")
 
-addSbtPlugin("com.lihaoyi" % "scalatex-sbt-plugin" % "0.3.7")
+addSbtPlugin("com.lihaoyi" % "scalatex-sbt-plugin" % "0.3.11")
 
-addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.8.2")
+addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.0")
 
-addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.3")
+addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.6")
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.2.0-M8")
+addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.3.2")
 
-libraryDependencies += "org.vafer" % "jdeb" % "1.5" artifacts (Artifact("jdeb", "jar", "jar"))
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.21")
+
+libraryDependencies ++= Seq(
+  "org.vafer" % "jdeb" % "1.5" artifacts (Artifact("jdeb", "jar", "jar")),
+  "org.scala-js" %% "scalajs-env-selenium" % "0.2.0"
+)

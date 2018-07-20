@@ -1,0 +1,4 @@
+GET        /find/:foodCode                  controllers.foodSubstRecommender.FoodSubstRecommenderController.findSimilar(foodCode: String)
+GET        /supported-nuts                  controllers.foodSubstRecommender.FoodSubstRecommenderController.supportedNutrients()
+GET        /default-nuts                    controllers.foodSubstRecommender.FoodSubstRecommenderController.defaultNutrients()
+GET        /food/:foodCode/:localeId        controllers.foodSubstRecommender.FoodSubstRecommenderController.getFoodByHeader(foodCode: String, localeId: String)

@@ -7,6 +7,7 @@ import javax.sql.DataSource
 import anorm._
 import org.apache.commons.lang3.StringUtils
 import org.postgresql.util.PSQLException
+import uk.ac.ncl.openlab.intake24.api.data.NewUserProfile
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
@@ -476,15 +477,15 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
     }
   }
 
-  def getSurveyUserAliases(userIds: Seq[Long], surveyId: String): Either[UnexpectedDatabaseError, Map[Long, String]] = tryWithConnection {
+  def getSurveyUserAliases(userIds: Seq[Long], surveyId: String): Either[UnexpectedDatabaseError, Map[Long, SurveyUserAliasData]] = tryWithConnection {
     implicit connection =>
       if (userIds.isEmpty)
         Right(Map())
       else
-        Right(SQL("SELECT user_id, user_name FROM user_survey_aliases WHERE user_id IN ({user_ids}) AND survey_id={survey_id}")
+        Right(SQL("SELECT user_id, user_name, url_auth_token FROM user_survey_aliases WHERE user_id IN ({user_ids}) AND survey_id={survey_id}")
           .on('user_ids -> userIds, 'survey_id -> surveyId)
-          .as((SqlParser.long("user_id") ~ SqlParser.str("user_name")).*).foldLeft(Map[Long, String]()) {
-          case (acc, userId ~ userName) => acc + (userId -> userName)
+          .as((SqlParser.long("user_id") ~ SqlParser.str("user_name") ~ SqlParser.str("url_auth_token")).*).foldLeft(Map[Long, SurveyUserAliasData]()) {
+          case (acc, userId ~ userName ~ authToken) => acc + (userId -> SurveyUserAliasData(userName, authToken))
         })
   }
 
@@ -511,7 +512,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
   def listUsersByRole(role: String, offset: Int, limit: Int): Either[UnexpectedDatabaseError, Seq[UserProfile]] = tryWithConnection {
     implicit conn =>
       withTransaction {
-        val rows = SQL("SELECT id,name,email,phone,email_notifications,sms_notifications FROM users JOIN user_roles ON users.id=user_roles.user_id AND role={role} OFFSET {offset} LIMIT {limit}")
+        val rows = SQL("SELECT id,name,email,phone,email_notifications,sms_notifications FROM users JOIN user_roles ON users.id=user_roles.user_id AND role={role} ORDER BY id OFFSET {offset} LIMIT {limit}")
           .on('role -> role, 'offset -> offset, 'limit -> limit)
           .as(UserProfileRow.parser.*)
         Right(buildUserRecordsFromRows(rows))
@@ -557,6 +558,16 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
         .on('survey_id -> surveyId)
         .executeQuery()
         .as(SqlParser.int("count").single))
+  }
+
+  override def getAuthTokenByUserId(userId: Long): Either[LookupError, String] = tryWithConnection {
+    implicit conn =>
+      SQL("SELECT url_auth_token FROM user_survey_aliases WHERE user_id = {user_id}")
+        .on('user_id -> userId)
+        .as(SqlParser.str("url_auth_token").singleOpt) match {
+        case Some(str) => Right(str)
+        case None => Left(RecordNotFound(new Exception(s"Couldn't find user with user id $userId")))
+      }
   }
 
 }

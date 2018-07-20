@@ -7,12 +7,13 @@ import anorm.{Macro, SQL, sqlToSimple}
 import com.google.inject.name.Named
 import com.google.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
+import uk.ac.ncl.openlab.intake24.api.data.admin.{CategoryContents, CategoryHeader, FoodHeader}
 import uk.ac.ncl.openlab.intake24.errors.{LocalLookupError, LocaleError, LookupError}
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidationClause
 import uk.ac.ncl.openlab.intake24.foodsql.modular.FoodBrowsingAdminQueries
 import uk.ac.ncl.openlab.intake24.foodsql.shared.SuperCategoriesQueries
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{CategoryDescendantsCodes, FoodBrowsingAdminService}
-import uk.ac.ncl.openlab.intake24.{CategoryContents, CategoryHeader, FoodHeader}
+
 
 @Singleton
 class FoodBrowsingAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource) extends FoodBrowsingAdminService

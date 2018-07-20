@@ -2,6 +2,7 @@ package scheduled
 
 import java.time.format.DateTimeFormatter
 import java.time.{ZoneId, ZonedDateTime}
+import javax.inject.Named
 
 import akka.actor.ActorSystem
 import com.google.inject.{Inject, Singleton}
@@ -19,7 +20,7 @@ class ErrorDigestSenderImpl @Inject()(config: Configuration,
                                       system: ActorSystem,
                                       errorService: ClientErrorService,
                                       mailer: MailerClient,
-                                      implicit val executionContext: ExecutionContext,
+                                      @Named("intake24") implicit val executionContext: ExecutionContext,
                                      ) extends ErrorDigestSender {
 
 

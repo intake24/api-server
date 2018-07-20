@@ -4,11 +4,12 @@ import java.util.UUID
 import javax.sql.DataSource
 
 import anorm.NamedParameter.symbol
-import anorm.{Macro, NamedParameter, SQL, SqlParser, sqlToSimple}
-import com.google.inject.{Inject, Singleton}
+import anorm.{Macro, NamedParameter, SQL, sqlToSimple}
 import com.google.inject.name.Named
+import com.google.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24._
+import uk.ac.ncl.openlab.intake24.api.data.InheritableAttributes
+import uk.ac.ncl.openlab.intake24.api.data.admin._
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.foodsql.modular._
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
@@ -26,7 +27,8 @@ class FoodsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSour
   private val logger = LoggerFactory.getLogger(classOf[FoodsAdminImpl])
 
   private case class FoodResultRow(version: UUID, code: String, description: String, local_description: Option[String], do_not_use: Option[Boolean], food_group_id: Long,
-                                   same_as_before_option: Option[Boolean], ready_meal_option: Option[Boolean], reasonable_amount: Option[Int], local_version: Option[UUID])
+                                   same_as_before_option: Option[Boolean], ready_meal_option: Option[Boolean], reasonable_amount: Option[Int],
+                                   use_in_recipes: Option[Int], local_version: Option[UUID])
 
   private lazy val foodRecordQuery = sqlFromResource("admin/food_record.sql")
 
@@ -46,7 +48,8 @@ class FoodsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSour
             result =>
               FoodRecord(
                 MainFoodRecord(result.version, result.code, result.description, result.food_group_id.toInt,
-                  InheritableAttributes(result.ready_meal_option, result.same_as_before_option, result.reasonable_amount), parentCategories, localeRestrictions),
+                  InheritableAttributes(result.ready_meal_option, result.same_as_before_option, result.reasonable_amount,
+                    result.use_in_recipes), parentCategories, localeRestrictions),
                 LocalFoodRecord(result.local_version, result.local_description, result.do_not_use.getOrElse(false), nutrientTableCodes, portionSizeMethods,
                   associatedFoods, brandNames))
           }

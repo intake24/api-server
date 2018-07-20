@@ -9,6 +9,8 @@ import org.apache.commons.lang3.StringUtils
 import org.postgresql.util.PSQLException
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24._
+import uk.ac.ncl.openlab.intake24.api.data.admin.{LocalCategoryRecordUpdate, MainCategoryRecordUpdate, NewCategory, NewLocalCategoryRecord}
+import uk.ac.ncl.openlab.intake24.api.data.{InheritableAttributes, PortionSizeMethod}
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.foodsql.shared.FoodPortionSizeShared
 import uk.ac.ncl.openlab.intake24.foodsql.{FirstRowValidation, FirstRowValidationClause}
@@ -38,9 +40,11 @@ trait CategoriesAdminQueries
       SQL("DELETE FROM categories_attributes WHERE category_code={category_code}")
         .on('category_code -> categoryCode).execute()
 
-      SQL("INSERT INTO categories_attributes VALUES (DEFAULT, {category_code}, {same_as_before_option}, {ready_meal_option}, {reasonable_amount})")
+      SQL("INSERT INTO categories_attributes(category_code, same_as_before_option, ready_meal_option, reasonable_amount, use_in_recipes) " +
+        "  VALUES ({category_code}, {same_as_before_option}, {ready_meal_option}, {reasonable_amount}, {use_in_recipes})")
         .on('category_code -> categoryCode, 'same_as_before_option -> attributes.sameAsBeforeOption,
-          'ready_meal_option -> attributes.readyMealOption, 'reasonable_amount -> attributes.reasonableAmount).execute()
+          'ready_meal_option -> attributes.readyMealOption, 'reasonable_amount -> attributes.reasonableAmount,
+          'use_in_recipes -> attributes.useInRecipes).execute()
 
       Right(())
     } catch {
@@ -70,7 +74,9 @@ trait CategoriesAdminQueries
 
   private val categoriesInsertLocalQuery = "INSERT INTO categories_local VALUES({category_code}, {locale_id}, {local_description}, {simple_local_description}, {version}::uuid)"
 
-  private val categoriesPsmInsertQuery = "INSERT INTO categories_portion_size_methods VALUES(DEFAULT, {category_code}, {locale_id}, {method}, {description}, {image_url}, {use_for_recipes})"
+  private val categoriesPsmInsertQuery =
+    """INSERT INTO categories_portion_size_methods(category_code,locale_id,method,description,image_url,use_for_recipes,conversion_factor)
+      |VALUES({category_code},{locale_id},{method},{description},{image_url},{use_for_recipes},{conversion_factor})""".stripMargin
 
   protected def updateCategoryPortionSizeMethodsQuery(categoryCode: String, portionSize: Seq[PortionSizeMethod], locale: String)(implicit conn: java.sql.Connection): Either[LocalUpdateError, Unit] = {
     val errors = Map[String, PSQLException => LocalUpdateError]("categories_portion_size_methods_categories_code_fk" -> (e => RecordNotFound(new RuntimeException(categoryCode))),
@@ -81,7 +87,8 @@ trait CategoriesAdminQueries
 
     if (portionSize.nonEmpty) {
       tryWithConstraintsCheck(errors) {
-        val psmParams = portionSize.map(ps => Seq[NamedParameter]('category_code -> categoryCode, 'locale_id -> locale, 'method -> ps.method, 'description -> ps.description, 'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes))
+        val psmParams = portionSize.map(ps => Seq[NamedParameter]('category_code -> categoryCode, 'locale_id -> locale, 'method -> ps.method,
+          'description -> ps.description, 'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes, 'conversion_factor -> ps.conversionFactor))
 
         val psmKeys = AnormUtil.batchKeys(batchSql(categoriesPsmInsertQuery, psmParams))
 
@@ -210,7 +217,10 @@ trait CategoriesAdminQueries
 
   private val categoriesInsertQuery = "INSERT INTO categories VALUES({code},{description},{is_hidden},{version}::uuid)"
 
-  private val categoriesAttributesInsertQuery = "INSERT INTO categories_attributes VALUES (DEFAULT, {category_code}, {same_as_before_option}, {ready_meal_option}, {reasonable_amount})"
+  private val categoriesAttributesInsertQuery =
+    """INSERT INTO
+      |categories_attributes(category_code, same_as_before_option, ready_meal_option, reasonable_amount, use_in_recipes)
+      |VALUES ({category_code}, {same_as_before_option}, {ready_meal_option}, {reasonable_amount}, {use_in_recipes})""".stripMargin
 
   protected def createCategoriesQuery(categories: Seq[NewCategory])(implicit conn: java.sql.Connection): Either[CreateError, Unit] = {
     if (!categories.isEmpty) {
@@ -224,7 +234,7 @@ trait CategoriesAdminQueries
 
         val categoryAttributeParams =
           categories.map(c => Seq[NamedParameter]('category_code -> c.code, 'same_as_before_option -> c.attributes.sameAsBeforeOption,
-            'ready_meal_option -> c.attributes.readyMealOption, 'reasonable_amount -> c.attributes.reasonableAmount))
+            'ready_meal_option -> c.attributes.readyMealOption, 'reasonable_amount -> c.attributes.reasonableAmount, 'use_in_recipes -> c.attributes.useInRecipes))
 
         batchSql(categoriesAttributesInsertQuery, categoryAttributeParams).execute()
 
@@ -262,7 +272,8 @@ trait CategoriesAdminQueries
               local.portionSize.map {
                 ps =>
                   Seq[NamedParameter]('category_code -> code, 'locale_id -> locale, 'method -> ps.method,
-                    'description -> ps.description, 'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes)
+                    'description -> ps.description, 'image_url -> ps.imageUrl, 'use_for_recipes -> ps.useForRecipes,
+                    'conversion_factor -> ps.conversionFactor)
               }
           }
 

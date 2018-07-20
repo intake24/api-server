@@ -18,20 +18,27 @@ limitations under the License.
 
 package modules
 
+import java.util.concurrent.{ForkJoinPool, ForkJoinWorkerThread}
+import java.util.concurrent.ForkJoinPool.ForkJoinWorkerThreadFactory
+import javax.sql.DataSource
+
 import cache._
-import com.google.inject.name.Named
+import com.google.inject.name.{Named, Names}
 import com.google.inject.{AbstractModule, Injector, Provides, Singleton}
 import play.api.db.Database
 import play.api.{Configuration, Environment}
 import play.db.NamedDatabase
-import scheduled.{ErrorDigestSender, ErrorDigestSenderImpl}
+import scheduled.notificationSender.{NotificationSender, NotificationSenderImpl}
+import scheduled._
 import security.captcha.{AsyncCaptchaService, GoogleRecaptchaImpl}
 import sms.{SMSService, TwilioSMSImpl}
 import uk.ac.ncl.openlab.intake24.foodsql.admin._
 import uk.ac.ncl.openlab.intake24.foodsql.demographicGroups._
 import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl
 import uk.ac.ncl.openlab.intake24.foodsql.images.ImageDatabaseServiceSqlImpl
+import uk.ac.ncl.openlab.intake24.foodsql.recipes.RecipesAttributeCacheImpl
 import uk.ac.ncl.openlab.intake24.foodsql.user.{FoodCompositionServiceImpl, _}
+import uk.ac.ncl.openlab.intake24.services.{NdnsCompoundFoodGroupsService, RecipesAttributeCache}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.demographicgroups._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
@@ -40,37 +47,91 @@ import uk.ac.ncl.openlab.intake24.services.foodindex.arabic.{FoodIndexImpl_ar_AE
 import uk.ac.ncl.openlab.intake24.services.foodindex.danish.{FoodIndexImpl_da_DK, SplitterImpl_da_DK}
 import uk.ac.ncl.openlab.intake24.services.foodindex.english._
 import uk.ac.ncl.openlab.intake24.services.foodindex.portuguese.{FoodIndexImpl_pt_PT, SplitterImpl_pt_PT}
-import uk.ac.ncl.openlab.intake24.services.foodindex.{FoodIndex, FoodIndexDataService, Splitter}
+import uk.ac.ncl.openlab.intake24.services.foodindex._
 import uk.ac.ncl.openlab.intake24.services.nutrition.{DefaultNutrientMappingServiceImpl, FoodCompositionService, NutrientMappingService}
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
-import uk.ac.ncl.openlab.intake24.services.systemdb.user.{ClientErrorService, FoodPopularityService, SurveyService, UserPhysicalDataService}
+import uk.ac.ncl.openlab.intake24.services.systemdb.notifications.NotificationScheduleDataService
+import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsDataService, PairwiseAssociationsService, PairwiseAssociationsServiceConfiguration}
+import uk.ac.ncl.openlab.intake24.services.systemdb.shortUrls.ShortUrlDataService
+import uk.ac.ncl.openlab.intake24.services.systemdb.user._
+import uk.ac.ncl.openlab.intake24.services.systemdb.uxEvents.UxEventsDataService
 import uk.ac.ncl.openlab.intake24.systemsql.admin._
-import uk.ac.ncl.openlab.intake24.systemsql.user.{ClientErrorServiceImpl, FoodPopularityServiceImpl, SurveyServiceImpl, UserPhysicalDataServiceImpl}
+import uk.ac.ncl.openlab.intake24.systemsql.notifications.NotificationScheduleDataServiceImpl
+import uk.ac.ncl.openlab.intake24.systemsql.pairwiseAssociations.{PairwiseAssociationsDataServiceImpl, PairwiseAssociationsServiceImpl}
+import uk.ac.ncl.openlab.intake24.systemsql.shortUrl.ShortUrlDataServiceImpl
+import uk.ac.ncl.openlab.intake24.systemsql.user._
+import uk.ac.ncl.openlab.intake24.systemsql.uxEvents.UxEventsDataServiceImpl
+import urlShort.{GoogleShortUrlImpl, RandomShortUrlImpl, ShortUrlService}
 
-import collection.JavaConverters._
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 
 class Intake24ServicesModule(env: Environment, config: Configuration) extends AbstractModule {
   @Provides
   @Singleton
-  def foodIndexes(injector: Injector): Map[String, FoodIndex] =
-    Map("en_GB" -> injector.getInstance(classOf[FoodIndexImpl_en_GB]),
-      "pt_PT" -> injector.getInstance(classOf[FoodIndexImpl_pt_PT]),
-      "da_DK" -> injector.getInstance(classOf[FoodIndexImpl_da_DK]),
-      "ar_AE" -> injector.getInstance(classOf[FoodIndexImpl_ar_AE]),
-      "en_NZ" -> injector.getInstance(classOf[FoodIndexImpl_en_NZ]),
-      "en_GB_gf" -> injector.getInstance(classOf[FoodIndexImpl_en_GB_gf]),
-      "en_IN" -> injector.getInstance(classOf[FoodIndexImpl_en_IN]))
+  def foodIndexes(foodIndexDataService: FoodIndexDataService, configuration: Configuration): Map[String, FoodIndex] = {
+
+    val reloadPeriod = configuration.get[Int]("intake24.foodIndex.reloadPeriodMinutes").minutes
+    val enabledLocales = configuration.get[Seq[String]]("intake24.foodIndex.enabledLocales")
+
+    // This could be done using DI, but not sure if holding an injector instance for auto reloading
+    // is a good idea
+    def createIndex(localeId: String) = localeId match {
+      case "en_GB" => new FoodIndexImpl_en_GB(foodIndexDataService)
+      case "pt_PT" => new FoodIndexImpl_pt_PT(foodIndexDataService)
+      case "da_DK" => new FoodIndexImpl_da_DK(foodIndexDataService)
+      case "ar_AE" => new FoodIndexImpl_ar_AE(foodIndexDataService)
+      case "en_NZ" => new FoodIndexImpl_en_NZ(foodIndexDataService)
+      case "en_GB_gf" => new FoodIndexImpl_en_GB_gf(foodIndexDataService)
+      case "en_IN" => new FoodIndexImpl_en_IN(foodIndexDataService)
+      case "en_AU" => new FoodIndexImpl_en_AU(foodIndexDataService)
+    }
+
+    val globalReloadPeriod = reloadPeriod * enabledLocales.size
+
+    def buildMap(acc: Map[String, FoodIndex],
+                 remaining: List[String],
+                 delay: Duration): Map[String, FoodIndex] = remaining match {
+      case Nil => acc
+      case locale :: locales =>
+        buildMap(acc + (locale -> new AutoReloadIndex(() => createIndex(locale), delay, globalReloadPeriod, locale)),
+          locales, delay + reloadPeriod)
+    }
+
+    buildMap(Map(), enabledLocales.toList, reloadPeriod)
+  }
 
   @Provides
   @Singleton
-  def foodDescriptionSplitters(injector: Injector): Map[String, Splitter] =
-    Map("en_GB" -> injector.getInstance(classOf[SplitterImpl_en_GB]),
-      "pt_PT" -> injector.getInstance(classOf[SplitterImpl_pt_PT]),
-      "da_DK" -> injector.getInstance(classOf[SplitterImpl_da_DK]),
-      "ar_AE" -> injector.getInstance(classOf[SplitterImpl_ar_AE]),
-      "en_NZ" -> injector.getInstance(classOf[SplitterImpl_en_NZ]),
-      "en_GB_gf" -> injector.getInstance(classOf[SplitterImpl_en_GB_gf]),
-      "en_IN" -> injector.getInstance(classOf[SplitterImpl_en_IN]))
+  def recipesAttributeIndex(@Named("intake24_foods") dataSource: DataSource, configuration: Configuration): RecipesAttributeCache = {
+    val reloadPeriod = configuration.get[Int]("intake24.foodIndex.reloadPeriodMinutes").minutes
+
+    new AutoReloadRecipesCache(() => new RecipesAttributeCacheImpl(dataSource), reloadPeriod, reloadPeriod)
+  }
+
+  @Provides
+  @Singleton
+  def foodDescriptionSplitters(foodIndexDataService: FoodIndexDataService, configuration: Configuration): Map[String, Splitter] = {
+
+    val enabledLocales = configuration.get[Seq[String]]("intake24.foodIndex.enabledLocales")
+
+    def createSplitter(localeId: String) = localeId match {
+      case "en_GB" => new SplitterImpl_en_GB(foodIndexDataService)
+      case "pt_PT" => new SplitterImpl_pt_PT(foodIndexDataService)
+      case "da_DK" => new SplitterImpl_da_DK(foodIndexDataService)
+      case "ar_AE" => new SplitterImpl_ar_AE(foodIndexDataService)
+      case "en_NZ" => new SplitterImpl_en_NZ(foodIndexDataService)
+      case "en_GB_gf" => new SplitterImpl_en_GB_gf(foodIndexDataService)
+      case "en_IN" => new SplitterImpl_en_IN(foodIndexDataService)
+      case "en_AU" => new SplitterImpl_en_AU(foodIndexDataService)
+
+    }
+
+    enabledLocales.foldLeft(Map[String, Splitter]()) {
+      case (acc, locale) => acc + (locale -> createSplitter(locale))
+    }
+  }
+
 
   @Provides
   @Named("intake24_system")
@@ -112,6 +173,15 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     ImageProcessorSettings(commandSearchPath, command, source, selection, asServed, imageMaps)
   }
 
+  // Custom execution context for long-running blocking tasks (data export etc.)
+  @Provides
+  @Named("intake24")
+  @Singleton
+  def longTasksExecutionContext(configuration: Configuration): ExecutionContext = {
+    val maxThreads = configuration.get[Int]("intake24.longTasksContext.maxThreads")
+    ExecutionContext.fromExecutor(new ForkJoinPool(maxThreads))
+  }
+
   def configure() = {
     // Utility services
 
@@ -130,6 +200,7 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     bind(classOf[UserAdminService]).to(classOf[UserAdminImpl])
     bind(classOf[SurveyAdminService]).to(classOf[SurveyAdminImpl])
     bind(classOf[DataExportService]).to(classOf[DataExportImpl])
+    bind(classOf[ScheduledDataExportService]).to(classOf[ScheduledDataExportImpl])
 
     // User facing services
 
@@ -191,6 +262,7 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     // Error digest service
 
     bind(classOf[ErrorDigestSender]).to(classOf[ErrorDigestSenderImpl]).asEagerSingleton()
+    bind(classOf[DataExportDaemon]).asEagerSingleton()
 
     // Demographic service
     bind(classOf[DemographicGroupsService]).to(classOf[DemographicGroupsServiceImpl])
@@ -202,5 +274,21 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     bind(classOf[SigninLogService]).to(classOf[SigninLogImpl])
 
     bind(classOf[UsersSupportService]).to(classOf[UsersSupportServiceImpl])
+
+    // Ux Events
+    bind(classOf[UxEventsDataService]).to(classOf[UxEventsDataServiceImpl])
+
+    // User notifications
+    bind(classOf[ShortUrlDataService]).to(classOf[ShortUrlDataServiceImpl])
+    bind(classOf[ShortUrlService]).to(classOf[RandomShortUrlImpl])
+    bind(classOf[NotificationScheduleDataService]).to(classOf[NotificationScheduleDataServiceImpl])
+    bind(classOf[NotificationSender]).to(classOf[NotificationSenderImpl]).asEagerSingleton()
+
+    // User sessions
+    bind(classOf[UserSessionDataService]).to(classOf[UserSessionDataServiceImpl])
+
+
+    bind(classOf[NdnsCompoundFoodGroupsService]).to(classOf[NdnsCompoundFoodGroupsImpl])
+    bind(classOf[FeedbackDataService]).to(classOf[FeedbackDataImpl])
   }
 }

@@ -20,7 +20,7 @@ package uk.ac.ncl.openlab.intake24.foodxml
 
 import java.io.{File, PrintWriter}
 
-import uk.ac.ncl.openlab.intake24._
+import uk.ac.ncl.openlab.intake24.api.data.{UserCategoryHeader, UserFoodHeader}
 import uk.ac.ncl.openlab.intake24.errors.{LocaleError, UndefinedLocale}
 
 import scala.xml.{Node, PrettyPrinter}

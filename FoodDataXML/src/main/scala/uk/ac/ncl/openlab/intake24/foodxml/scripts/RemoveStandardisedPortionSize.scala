@@ -22,7 +22,6 @@ import java.io.FileReader
 import scala.collection.JavaConversions.asScalaBuffer
 import au.com.bytecode.opencsv.CSVReader
 import scala.xml.XML
-import uk.ac.ncl.openlab.intake24.PortionSizeMethod
 
 object RemoveStandardisedPortionSize {
 

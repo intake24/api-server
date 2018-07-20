@@ -2,7 +2,7 @@ package uk.ac.ncl.openlab.intake24.foodsql.foodindex
 
 import anorm.SqlParser.str
 import anorm.{Macro, _}
-import uk.ac.ncl.openlab.intake24.SplitList
+import uk.ac.ncl.openlab.intake24.api.shared.admin.SplitList
 import uk.ac.ncl.openlab.intake24.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
 

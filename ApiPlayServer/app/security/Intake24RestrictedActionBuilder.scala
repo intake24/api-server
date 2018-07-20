@@ -3,7 +3,7 @@ package security
 import com.google.inject.{Inject, Singleton}
 import play.api.mvc._
 import security.authorization.{AuthorizedRequest, RestrictedActionBuilder}
-import uk.ac.ncl.openlab.intake24.errors.AnyError
+import uk.ac.ncl.openlab.intake24.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -14,7 +14,7 @@ class Intake24RestrictedActionBuilder @Inject()(val authenticationService: Intak
                                                 val failureHandler: Intake24AuthorizationFailureHandler,
                                                 val playBodyParsers: PlayBodyParsers,
                                                 val actionBuilder: DefaultActionBuilder,
-                                                implicit val executionContext: ExecutionContext) extends RestrictedActionBuilder[Intake24AuthenticationToken, AnyError] {
+                                                implicit val executionContext: ExecutionContext) extends RestrictedActionBuilder[Intake24AuthenticationToken, DatabaseError] {
 
   private def checkIfAccessToken(token: Intake24AuthenticationToken, check: Intake24AccessToken => Boolean) = token match {
     case t: Intake24AccessToken => if (check(t)) Some(t) else None
@@ -26,13 +26,13 @@ class Intake24RestrictedActionBuilder @Inject()(val authenticationService: Intak
     case _ => None
   }
 
-  private def dbCheckIfAccessToken(token: Intake24AuthenticationToken, check: Intake24AccessToken => Either[AnyError, Boolean]) = token match {
+  private def dbCheckIfAccessToken(token: Intake24AuthenticationToken, check: Intake24AccessToken => Either[DatabaseError, Boolean]) = token match {
     case t: Intake24AccessToken => check(t).right.map(authorized => if (authorized) Some(t) else None)
     case _ => Right(None)
   }
 
 
-  class RestrictAccessWithDatabaseCheckAdapter(check: Intake24AccessToken => Either[AnyError, Boolean]) {
+  class RestrictAccessWithDatabaseCheckAdapter(check: Intake24AccessToken => Either[DatabaseError, Boolean]) {
     def apply[A](bodyParser: BodyParser[A])(block: AuthorizedRequest[A, Intake24AccessToken] => Future[Result]) =
       restrictedActionWithDatabaseCheck[A, Intake24AccessToken](t => dbCheckIfAccessToken(t, check), bodyParser, block)
 
@@ -59,12 +59,13 @@ class Intake24RestrictedActionBuilder @Inject()(val authenticationService: Intak
 
   def restrictAccess(check: Intake24AccessToken => Boolean) = new RestrictAccessAdapter(check)
 
-  def restrictAccessWithDatabaseCheck(check: Intake24AccessToken => Either[AnyError, Boolean]) = new RestrictAccessWithDatabaseCheckAdapter(check)
+  def restrictAccessWithDatabaseCheck(check: Intake24AccessToken => Either[DatabaseError, Boolean]) = new RestrictAccessWithDatabaseCheckAdapter(check)
 
 
   def restrictToAuthenticated = restrictAccess(_ => true)
 
-  def restrictToRoles(roles: String*) = restrictAccess(t => roles.exists(r => t.roles.contains(r)))
+  def restrictToRoles(roles: String*) = restrictAccess(t => t.roles.contains(Roles.superuser) ||
+    roles.exists(r => t.roles.contains(r)))
 
   def restrictToRespondents = restrictAccess(t => t.roles.exists(r => r.endsWith(Roles.respondentSuffix)))
 }

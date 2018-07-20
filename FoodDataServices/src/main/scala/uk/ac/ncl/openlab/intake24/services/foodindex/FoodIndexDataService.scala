@@ -18,7 +18,8 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.services.foodindex
 
-import uk.ac.ncl.openlab.intake24.{SplitList, UserCategoryHeader, UserFoodHeader}
+import uk.ac.ncl.openlab.intake24.api.data.{UserCategoryHeader, UserFoodHeader}
+import uk.ac.ncl.openlab.intake24.api.shared.admin.SplitList
 import uk.ac.ncl.openlab.intake24.errors.LocaleError
 
 trait FoodIndexDataService {

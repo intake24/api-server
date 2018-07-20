@@ -1,7 +1,8 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.user
 
+import uk.ac.ncl.openlab.intake24.api.data.admin.{CategoryHeader, FoodHeader}
+import uk.ac.ncl.openlab.intake24.api.data.{UserCategoryContents, UserCategoryHeader, UserFoodHeader}
 import uk.ac.ncl.openlab.intake24.errors.{LocalLookupError, LocaleError, LookupError}
-import uk.ac.ncl.openlab.intake24.{UserCategoryContents, UserCategoryHeader}
 
 sealed trait SourceRecord
 
@@ -37,9 +38,18 @@ object SourceLocale {
 
 }
 
-case class InheritableAttributeSources(sameAsBeforeOptionSource: InheritableAttributeSource, readyMealOptionSource: InheritableAttributeSource, reasonableAmountSource: InheritableAttributeSource)
+case class InheritableAttributeSources(sameAsBeforeOptionSource: InheritableAttributeSource,
+                                       readyMealOptionSource: InheritableAttributeSource,
+                                       reasonableAmountSource: InheritableAttributeSource,
+                                       useInRecipesSource: InheritableAttributeSource)
 
-case class FoodDataSources(localDescriptionSource: SourceLocale, nutrientTablesSource: SourceLocale, portionSizeSource: (SourceLocale, SourceRecord), inheritableAttributesSources: InheritableAttributeSources)
+case class FoodDataSources(localDescriptionSource: SourceLocale, nutrientTablesSource: SourceLocale,
+                           portionSizeSource: (SourceLocale, SourceRecord),
+                           inheritableAttributesSources: InheritableAttributeSources)
+
+case class FoodCategoryRelation(foodCode: String, categoryCode: String)
+
+case class CategoryCategoryRelation(categoryCode: String, subCategoryCode: String)
 
 trait FoodBrowsingService {
 
@@ -51,4 +61,13 @@ trait FoodBrowsingService {
   def getFoodAllCategories(code: String): Either[LookupError, Set[String]]
 
   def getCategoryAllCategories(code: String): Either[LookupError, Set[String]]
+
+  def getFoodCategories(code: String, localeId: String, level: Int): Either[LookupError, Seq[CategoryHeader]]
+
+  def listAllFoods(localeId: String): Either[LookupError, Seq[UserFoodHeader]]
+
+  def listFodCategoryRelationships(): Either[LookupError, Seq[FoodCategoryRelation]]
+
+  def listCategoryCategoryRelationships(): Either[LookupError, Seq[CategoryCategoryRelation]]
+
 }

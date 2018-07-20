@@ -2,14 +2,14 @@ package uk.ac.ncl.openlab.intake24.foodsql.admin
 
 import java.awt.Shape
 import java.sql.Connection
+
 import javax.inject.Named
 import javax.sql.DataSource
-
 import anorm.{Macro, NamedParameter, SQL, SqlParser}
 import com.google.inject.{Inject, Singleton}
 import org.postgresql.util.PSQLException
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.GuideHeader
+import uk.ac.ncl.openlab.intake24.api.data.GuideHeader
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.{AWTImageMap, ImageAdminService, ImageStorageService, ShapeFactory}

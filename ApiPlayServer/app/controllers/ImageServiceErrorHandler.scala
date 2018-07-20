@@ -6,7 +6,7 @@ import parsers.JsonUtils
 import play.api.Logger
 import play.api.http.ContentTypes
 import play.api.mvc.{Result, Results}
-import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
+import uk.ac.ncl.openlab.intake24.api.data.ErrorDescription
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
 
 trait ImageServiceErrorHandler extends Results with JsonUtils {

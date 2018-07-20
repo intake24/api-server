@@ -8,7 +8,7 @@ import io.circe.generic.auto._
 import parsers.{JsonBodyParser, JsonUtils}
 import play.api.mvc.{BaseController, ControllerComponents, Result}
 import security.Intake24RestrictedActionBuilder
-import uk.ac.ncl.openlab.intake24.errors.{AnyError, RecordNotFound}
+import uk.ac.ncl.openlab.intake24.errors.{DatabaseError, RecordNotFound}
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{UserAdminService, UserProfileWithPhysicalData}
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.{UserPhysicalDataIn, UserPhysicalDataService}
 
@@ -26,7 +26,7 @@ class UserPhysicalDataController @Inject()(service: UserPhysicalDataService,
                                            val controllerComponents: ControllerComponents,
                                            implicit val executionContext: ExecutionContext) extends BaseController with DatabaseErrorHandler with JsonUtils {
 
-  private def doWithDatabaseCheck(check: Either[AnyError, Boolean])(block: => Result): Result =
+  private def doWithDatabaseCheck(check: Either[DatabaseError, Boolean])(block: => Result): Result =
     check match {
       case Right(true) => block
       case Right(false) => Forbidden

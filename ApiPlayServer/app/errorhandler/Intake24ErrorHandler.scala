@@ -9,7 +9,7 @@ import play.api.http.{ContentTypes, DefaultHttpErrorHandler}
 import play.api.mvc.Results._
 import play.api.mvc._
 import play.api.routing.Router
-import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
+import uk.ac.ncl.openlab.intake24.api.data.ErrorDescription
 
 import scala.concurrent._
 

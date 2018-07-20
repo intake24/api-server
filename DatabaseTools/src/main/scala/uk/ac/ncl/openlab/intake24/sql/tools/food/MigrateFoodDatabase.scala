@@ -2,7 +2,7 @@ package uk.ac.ncl.openlab.intake24.sql.tools.food
 
 import org.rogach.scallop.ScallopConf
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.sql.migrations.{DatabaseError, MigrationFailed, MigrationsImpl}
+import uk.ac.ncl.openlab.intake24.sql.migrations.{DbError, MigrationFailed, MigrationsImpl}
 import uk.ac.ncl.openlab.intake24.sql.tools._
 
 import scala.language.reflectiveCalls
@@ -27,7 +27,7 @@ object MigrateFoodDatabase extends App with DatabaseConnection with WarningMessa
 
   migrations.applyMigrations(uk.ac.ncl.openlab.intake24.foodsql.migrations.FoodDatabaseMigrations.activeMigrations) match {
     case Left(MigrationFailed(e)) => throw e
-    case Left(DatabaseError(e)) => throw e.exception
+    case Left(DbError(e)) => throw e.exception
     case Right(()) => {}
   }
 }

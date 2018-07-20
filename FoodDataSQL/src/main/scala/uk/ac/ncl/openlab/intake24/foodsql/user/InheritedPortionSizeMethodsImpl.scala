@@ -3,7 +3,7 @@ package uk.ac.ncl.openlab.intake24.foodsql.user
 import java.sql.Connection
 
 import anorm.{Macro, SQL}
-import uk.ac.ncl.openlab.intake24.PortionSizeMethod
+import uk.ac.ncl.openlab.intake24.api.data.PortionSizeMethod
 import uk.ac.ncl.openlab.intake24.errors.LocalLookupError
 import uk.ac.ncl.openlab.intake24.foodsql.SimpleValidation
 import uk.ac.ncl.openlab.intake24.foodsql.shared.FoodPortionSizeShared
@@ -12,14 +12,14 @@ import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
 trait InheritedPortionSizeMethodsImpl extends FoodPortionSizeShared with SqlDataService with SimpleValidation with SqlResourceLoader {
 
-  private case class RecursivePsmResultRow(id: Long, category_code: String, method: String, description: String, image_url: String, use_for_recipes: Boolean, param_name: Option[String], param_value: Option[String])
+  private case class RecursivePsmResultRow(id: Long, category_code: String, method: String, description: String, image_url: String, use_for_recipes: Boolean, conversion_factor: Double, param_name: Option[String], param_value: Option[String])
 
   private def mkRecursivePortionSizeMethods(rows: Seq[RecursivePsmResultRow]): (Seq[PortionSizeMethod], SourceRecord) =
     if (rows.isEmpty)
       (Seq(), SourceRecord.NoRecord)
     else {
       val firstCategoryCode = rows.head.category_code
-      (mkPortionSizeMethods(rows.takeWhile(_.category_code == firstCategoryCode).map(r => PsmResultRow(r.id, r.method, r.description, r.image_url, r.use_for_recipes, r.param_name, r.param_value))), SourceRecord.CategoryRecord(firstCategoryCode))
+      (mkPortionSizeMethods(rows.takeWhile(_.category_code == firstCategoryCode).map(r => PsmResultRow(r.id, r.method, r.description, r.image_url, r.use_for_recipes, r.conversion_factor, r.param_name, r.param_value))), SourceRecord.CategoryRecord(firstCategoryCode))
     }
 
   private lazy val inheritedPsmQuery = sqlFromResource("user/inherited_psm.sql")

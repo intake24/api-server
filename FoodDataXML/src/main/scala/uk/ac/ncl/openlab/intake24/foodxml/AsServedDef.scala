@@ -18,28 +18,28 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodxml
 
-import scala.xml.Attribute
-import scala.xml.Text
-import scala.xml.Null
-import scala.xml.NodeSeq
-import uk.ac.ncl.openlab.intake24.AsServedSetV1
-import uk.ac.ncl.openlab.intake24.AsServedImageV1
+import uk.ac.ncl.openlab.intake24.api.data.AsServedHeader
+
 import scala.xml.NodeSeq.seqToNodeSeq
+import scala.xml.{Attribute, NodeSeq, Null, Text}
+
+case class AsServedImageV1(url: String, weight: Double)
+
+case class AsServedSetV1(id: String, description: String, images: Seq[AsServedImageV1]) {
+  def toHeader = AsServedHeader(id, description)
+}
+
 
 object AsServedDef {
   def toXml(sets: Iterable[AsServedSetV1]) =
     <as-served-sets>
-      {
-        sets.toSeq.sortBy(_.id).map(set =>
-          <as-served-set>
-            {
-              set.images.map(img =>
-                <as-served-image/>
-                  % Attribute(None, "url", Text(img.url), Null)
-                  % Attribute(None, "weight", Text(img.weight.toString), Null))
-            }
-          </as-served-set> % Attribute(None, "id", Text(set.id), Null) % Attribute(None, "description", Text(set.description), Null))
-      }
+      {sets.toSeq.sortBy(_.id).map(set =>
+      <as-served-set>
+        {set.images.map(img =>
+          <as-served-image/>
+          % Attribute(None, "url", Text(img.url), Null)
+          % Attribute(None, "weight", Text(img.weight.toString), Null))}
+      </as-served-set> % Attribute(None, "id", Text(set.id), Null) % Attribute(None, "description", Text(set.description), Null))}
     </as-served-sets>
 
   def parseXml(root: NodeSeq) = {

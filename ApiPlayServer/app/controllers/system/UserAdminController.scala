@@ -18,10 +18,12 @@ limitations under the License.
 
 package controllers.system
 
+import java.io.StringWriter
 import java.security.SecureRandom
 import java.util.Base64
 import javax.inject.Inject
 
+import au.com.bytecode.opencsv.CSVWriter
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
@@ -34,11 +36,12 @@ import play.api.libs.mailer.{Email, MailerClient}
 import play.api.mvc._
 import security.Intake24RestrictedActionBuilder
 import security.captcha.AsyncCaptchaService
-import uk.ac.ncl.openlab.intake24.api.shared._
+import uk.ac.ncl.openlab.intake24.api.data._
 import uk.ac.ncl.openlab.intake24.errors.{ErrorUtils, RecordNotFound}
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.UserPhysicalDataService
+import urlShort.ShortUrlCache
 import views.html.PasswordResetLink
 
 import scala.concurrent.duration._
@@ -56,6 +59,7 @@ class UserAdminController @Inject()(service: UserAdminService,
                                     mailerClient: MailerClient,
                                     syncCacheApi: SyncCacheApi,
                                     captchaService: AsyncCaptchaService,
+                                    shortUrlCache: ShortUrlCache,
                                     configuration: Configuration,
                                     val controllerComponents: ControllerComponents,
                                     implicit val executionContext: ExecutionContext) extends BaseController
@@ -67,6 +71,15 @@ class UserAdminController @Inject()(service: UserAdminService,
 
   private lazy val adminFrontendUrl = {
     val setting = configuration.get[String]("intake24.adminFrontendUrl")
+
+    if (!setting.endsWith("/"))
+      setting + "/"
+    else
+      setting
+  }
+
+  private lazy val surveyFrontendUrl = {
+    val setting = configuration.get[String]("intake24.surveyFrontendUrl")
 
     if (!setting.endsWith("/"))
       setting + "/"
@@ -182,14 +195,73 @@ class UserAdminController @Inject()(service: UserAdminService,
       Future {
         val result =
           for (users <- service.listUsersByRole(Roles.surveyRespondent(surveyId), offset, limit).right;
-               surveyUserNames <- service.getSurveyUserAliases(users.map(_.id), surveyId).right)
+               aliases <- service.getSurveyUserAliases(users.map(_.id), surveyId).right)
             yield
-              users.filter(u => surveyUserNames.contains(u.id)).map {
+              users.filter(u => aliases.contains(u.id)).map {
                 user =>
-                  UserInfoWithSurveyUserName(user.id, surveyUserNames(user.id), user.name, user.email, user.phone, user.emailNotifications, user.smsNotifications, user.roles, user.customFields)
+
+                  val authUrl = surveyFrontendUrl + s"surveys/$surveyId?auth=${aliases(user.id).urlAuthToken}"
+
+                  UserInfoWithSurveyUserName(user.id, aliases(user.id).userName, authUrl, user.name, user.email, user.phone, user.emailNotifications, user.smsNotifications, user.roles, user.customFields)
               }
 
         translateDatabaseResult(result)
+      }
+  }
+
+  private case class RespondentWithAuthUrl(id: Long, userName: String, authUrl: String)
+
+  private case class RespondentWithAuthAndShortUrls(id: Long, userName: String, authUrl: String, shortUrl: String)
+
+  private def getRespondentsWithAuthUrls(surveyId: String, offset: Int, limit: Int): Future[Seq[RespondentWithAuthUrl]] = {
+    Future {
+      for (users <- service.listUsersByRole(Roles.surveyRespondent(surveyId), offset, limit);
+           aliases <- service.getSurveyUserAliases(users.map(_.id), surveyId)) yield {
+
+        users.filter(u => aliases.contains(u.id)).map {
+          user =>
+            RespondentWithAuthUrl(user.id, aliases(user.id).userName, surveyFrontendUrl + s"surveys/$surveyId?auth=${aliases(user.id).urlAuthToken}")
+        }
+      }
+    }.flatMap {
+      result => ErrorUtils.asFuture(result)
+    }
+  }
+
+  private def appendShortUrls(respondents: Seq[RespondentWithAuthUrl]): Future[Seq[RespondentWithAuthAndShortUrls]] =
+    shortUrlCache.getShortUrls(respondents.map(_.authUrl)).map {
+      shortUrls =>
+        respondents.zip(shortUrls).map {
+          case (r, shortUrl) => RespondentWithAuthAndShortUrls(r.id, r.userName, r.authUrl, shortUrl)
+        }
+    }
+
+
+  def getRespondentAuthenticationUrlsAsJson(surveyId: String, offset: Int, limit: Int) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
+    _ =>
+      for (respondents <- getRespondentsWithAuthUrls(surveyId, offset, limit);
+           result <- appendShortUrls(respondents)) yield {
+        Ok(toJsonString(result)).as(ContentTypes.JSON)
+      }
+  }
+
+  def getRespondentAuthenticationUrlsAsCsv(surveyId: String, offset: Int, limit: Int) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
+    _ =>
+      for (respondents <- getRespondentsWithAuthUrls(surveyId, offset, limit);
+           result <- appendShortUrls(respondents)) yield {
+
+        val stringWriter = new StringWriter()
+
+        val csvWriter = new CSVWriter(stringWriter)
+        csvWriter.writeNext(Array("Intake24 ID", "User ID", "Authentication URL", "Shortened URL"))
+        result.foreach {
+          r =>
+            csvWriter.writeNext(Array(r.id.toString, r.userName.toString, r.authUrl, r.shortUrl))
+        }
+
+        csvWriter.close()
+
+        Ok(stringWriter.toString).as("text/csv")
       }
   }
 

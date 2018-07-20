@@ -6,9 +6,9 @@ import org.rogach.scallop.ScallopConf
 import uk.ac.ncl.openlab.intake24.{NewNutrientTableRecord, NutrientTable}
 import uk.ac.ncl.openlab.intake24.foodsql.admin.NutrientTablesAdminImpl
 import uk.ac.ncl.openlab.intake24.nutrientsndns.{CsvNutrientTableMapping, CsvNutrientTableParser}
-import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConfigurationOptions, DatabaseConnection, WarningMessage}
+import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConfigurationOptions, DatabaseConnection, ErrorHandler, WarningMessage}
 
-object ArabicCountriesImport extends App with WarningMessage with DatabaseConnection {
+object ArabicCountriesImport extends App with WarningMessage with DatabaseConnection with ErrorHandler {
 
   import CsvNutrientTableParser.{excelColumnToOffset => col}
 
@@ -39,21 +39,23 @@ object ArabicCountriesImport extends App with WarningMessage with DatabaseConnec
   val OmanMapping = CsvNutrientTableMapping(7, 0, 1, Some(2), ArabicCompositionTableMappings.Oman)
   val QatarMapping = CsvNutrientTableMapping(7, 0, 1, Some(2), ArabicCompositionTableMappings.Qatar)
   val SaudiMapping = CsvNutrientTableMapping(7, 0, 1, Some(2), ArabicCompositionTableMappings.Saudi)
+  val KuwaitMapping = CsvNutrientTableMapping(2, 0, 1, Some(2),  ArabicCompositionTableMappings.Kuwait)
 
   val records =
     CsvNutrientTableParser.parseTable(options.csvDir() + File.separator + "uae.csv", UAEMapping) ++
       CsvNutrientTableParser.parseTable(options.csvDir() + File.separator + "bahrain.csv", BahrainMapping) ++
       CsvNutrientTableParser.parseTable(options.csvDir() + File.separator + "oman.csv", OmanMapping) ++
       CsvNutrientTableParser.parseTable(options.csvDir() + File.separator + "qatar.csv", QatarMapping) ++
-      CsvNutrientTableParser.parseTable(options.csvDir() + File.separator + "saudi.csv", SaudiMapping)
+      CsvNutrientTableParser.parseTable(options.csvDir() + File.separator + "saudi.csv", SaudiMapping) ++
+      CsvNutrientTableParser.parseTable(options.csvDir() + File.separator + "kuwait.csv", KuwaitMapping)
 
 
-  nutrientTableService.createOrUpdateNutrientTable(NutrientTable(nutrientTableId, nutrientTableDescription))
+  throwOnError(nutrientTableService.createOrUpdateNutrientTable(NutrientTable(nutrientTableId, nutrientTableDescription)))
 
   val newRecords = records.map {
     record =>
       NewNutrientTableRecord(record.id, nutrientTableId, record.description, record.localDescription, record.nutrients)
   }
 
-  nutrientTableService.createOrUpdateNutrientTableRecords(newRecords)
+  throwOnError(nutrientTableService.createOrUpdateNutrientTableRecords(newRecords))
 }

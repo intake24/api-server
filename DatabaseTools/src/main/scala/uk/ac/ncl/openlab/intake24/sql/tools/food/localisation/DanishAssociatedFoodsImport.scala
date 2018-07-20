@@ -4,7 +4,7 @@ import java.io.{File, FileReader}
 
 import com.opencsv.CSVReader
 import org.rogach.scallop.ScallopConf
-import uk.ac.ncl.openlab.intake24.AssociatedFood
+import uk.ac.ncl.openlab.intake24.api.data.AssociatedFood
 import uk.ac.ncl.openlab.intake24.foodsql.admin.AssociatedFoodsAdminImpl
 import uk.ac.ncl.openlab.intake24.foodsql.user.AssociatedFoodsServiceImpl
 import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConfigurationOptions, DatabaseConnection, ErrorHandler, WarningMessage}

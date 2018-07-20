@@ -22,9 +22,9 @@ import javax.inject.Inject
 
 import io.circe.generic.auto._
 import parsers.{JsonBodyParser, JsonUtils}
-import play.api.mvc.{BaseController, BodyParsers, ControllerComponents, PlayBodyParsers}
+import play.api.mvc.{BaseController, ControllerComponents, PlayBodyParsers}
 import security.Intake24RestrictedActionBuilder
-import uk.ac.ncl.openlab.intake24._
+import uk.ac.ncl.openlab.intake24.api.data.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.{AssociatedFoodsService, BrandNamesService, FoodDataService}
 
@@ -88,7 +88,7 @@ class FoodsAdminController @Inject()(service: FoodsAdminService,
       }
   }
 
-  def cloneFoodAsLocal(code: String, locale: String) = rab.restrictAccess(foodAuthChecks.canCreateMainFoods)(bodyParsers.empty) {
+  def cloneFoodAsLocal(code: String, locale: String) = rab.restrictAccess(foodAuthChecks.canCreateLocalFoods(locale))(bodyParsers.empty) {
     _ =>
       Future {
         val result =

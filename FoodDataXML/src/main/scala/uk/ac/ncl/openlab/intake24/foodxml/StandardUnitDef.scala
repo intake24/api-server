@@ -18,8 +18,8 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodxml
 
-import scala.Range
-import uk.ac.ncl.openlab.intake24.PortionSizeMethodParameter
+import uk.ac.ncl.openlab.intake24.api.data.PortionSizeMethodParameter
+
 
 case class StandardUnitDef(name: String, weight: Double, omitFoodDesc: Boolean)
 

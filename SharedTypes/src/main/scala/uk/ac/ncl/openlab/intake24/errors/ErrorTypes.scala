@@ -18,6 +18,9 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.errors
 
+import scala.concurrent.Future
+import scala.util.{Failure, Success, Try}
+
 object ErrorUtils {
   def sequence[E, T](s: Seq[Either[E, T]]): Either[E, Seq[T]] = {
     val z: Either[E, Seq[T]] = Right(Seq())
@@ -29,20 +32,57 @@ object ErrorUtils {
         ) yield (t +: ts)
     }.right.map(_.reverse)
   }
+
+  def catchAll[T](block: => T): Either[AnyError, T] =
+    Try(block) match {
+      case Success(v) => Right(v)
+      case Failure(e) => Left(UnexpectedException(e))
+    }
+
+  def collectStackTrace(throwable: Throwable, stackTrace: List[String] = List()): List[String] = {
+    if (throwable == null)
+      stackTrace.reverse
+    else {
+      val exceptionDesc = s"${throwable.getClass().getName()}: ${throwable.getMessage()}"
+
+      val withDesc = if (!stackTrace.isEmpty)
+        s"Caused by $exceptionDesc" :: stackTrace
+      else
+        s"Exception $exceptionDesc" :: stackTrace
+
+      val trace = throwable.getStackTrace.foldLeft(withDesc) {
+        (st, ste) => s"  at ${ste.getClassName()}.${ste.getMethodName()}(${ste.getFileName()}:${ste.getLineNumber()})" :: st
+      }
+
+      collectStackTrace(throwable.getCause, trace)
+    }
+  }
+
+  def asFuture[T](result: Either[AnyError,T]): Future[T] = result match {
+    case Right(r) => Future.successful(r)
+    case Left(e) => Future.failed(e.exception)
+  }
 }
 
 sealed trait AnyError {
+  def exception: Throwable
+}
+
+case class UnexpectedException(exception: Throwable) extends AnyError
+
+sealed trait DatabaseError extends AnyError {
   val exception: Throwable
+
 }
 
 sealed trait LocalLookupError extends LocalUpdateError
 
 sealed trait LocaleError
   extends LocalLookupError
-  with LocalUpdateError
-  with LocalCreateError
-  with LocalDeleteError
-  with LocaleOrParentError {
+    with LocalUpdateError
+    with LocalCreateError
+    with LocalDeleteError
+    with LocaleOrParentError {
   val exception: Throwable
 }
 
@@ -50,7 +90,7 @@ sealed trait LookupError extends LocalLookupError with UpdateError {
   val exception: Throwable
 }
 
-sealed trait LocalDeleteError extends AnyError
+sealed trait LocalDeleteError extends DatabaseError
 
 sealed trait DeleteError extends LocalDeleteError
 
@@ -58,43 +98,43 @@ sealed trait LocalUpdateError extends LocalDependentUpdateError
 
 sealed trait UpdateError
   extends LocalUpdateError
-  with DependentUpdateError {
+    with DependentUpdateError {
   val exception: Throwable
 }
 
-sealed trait LocalCreateError extends AnyError
+sealed trait LocalCreateError extends DatabaseError
 
-sealed trait CreateError 
+sealed trait CreateError
   extends LocalCreateError
-  with DependentCreateError {
+    with DependentCreateError {
   val exception: Throwable
 }
 
 sealed trait ParentError
   extends DependentUpdateError
-  with DependentCreateError
-  with LocaleOrParentError {
+    with DependentCreateError
+    with LocaleOrParentError {
   val exception: Throwable
 }
 
 sealed trait LocaleOrParentError
   extends LocalDependentUpdateError
-  with LocalDependentCreateError
+    with LocalDependentCreateError
 
-sealed trait LocalDependentUpdateError extends AnyError
+sealed trait LocalDependentUpdateError extends DatabaseError
 
-sealed trait DependentUpdateError 
+sealed trait DependentUpdateError
   extends LocalDependentUpdateError
 
-sealed trait LocalDependentCreateError extends AnyError
+sealed trait LocalDependentCreateError extends DatabaseError
 
 sealed trait DependentCreateError extends LocalDependentCreateError
 
-sealed trait FoodCompositionTableError extends AnyError {
+sealed trait FoodCompositionTableError extends DatabaseError {
   val exception: Throwable
 }
 
-sealed trait ConstraintError extends AnyError with UpdateError with CreateError {
+sealed trait ConstraintError extends DatabaseError with UpdateError with CreateError {
   val exception: Throwable
 }
 
@@ -102,10 +142,10 @@ case class UndefinedLocale(exception: Throwable) extends LocaleError
 
 case class RecordNotFound(exception: Throwable)
   extends LookupError
-  with FoodCompositionTableError
-  with DeleteError
-  with UpdateError
-  with AnyError
+    with FoodCompositionTableError
+    with DeleteError
+    with UpdateError
+    with DatabaseError
 
 case class StillReferenced(exception: Throwable) extends DeleteError with UpdateError
 
@@ -121,13 +161,15 @@ case class ConstraintViolation(name: String, exception: Throwable) extends Const
 
 case class TableNotFound(exception: Throwable) extends FoodCompositionTableError
 
+case class FailedValidation(exception: Throwable) extends CreateError with UpdateError with ConstraintError
+
 case class UnexpectedDatabaseError(exception: Throwable)
   extends LocaleError
-  with LookupError
-  with DeleteError
-  with UpdateError
-  with CreateError
-  with FoodCompositionTableError
-  with ParentError
-  with ConstraintError
-  with AnyError
+    with LookupError
+    with DeleteError
+    with UpdateError
+    with CreateError
+    with FoodCompositionTableError
+    with ParentError
+    with ConstraintError
+    with DatabaseError

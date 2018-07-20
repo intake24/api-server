@@ -19,7 +19,6 @@ limitations under the License.
 package controllers
 
 import javax.inject.Inject
-
 import io.circe.generic.auto._
 import parsers.FormDataUtil
 import play.api.http.ContentTypes
@@ -27,7 +26,7 @@ import play.api.libs.Files.TemporaryFile
 import play.api.mvc.MultipartFormData.FilePart
 import play.api.mvc.{BaseController, ControllerComponents, Result}
 import security.Intake24RestrictedActionBuilder
-import uk.ac.ncl.openlab.intake24.api.shared.{ErrorDescription, ImageMapResponse, NewImageMapRequest, NewImageMapWithObjectsRequest}
+import uk.ac.ncl.openlab.intake24.api.data.{ErrorDescription, ImageMapResponse, NewImageMapRequest, NewImageMapWithObjectsRequest}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
 

@@ -6,6 +6,7 @@ import java.util.UUID
 import org.slf4j.Logger
 import uk.ac.ncl.openlab.intake24.sql.migrations.{Migration, MigrationFailed}
 import anorm.{BatchSql, Macro, NamedParameter, SQL, SqlParser}
+import uk.ac.ncl.openlab.intake24.pairwiseAssociationRules.PairwiseAssociationRules
 
 /**
   * Created by Tim Osadchiy on 29/09/2017.
@@ -18,74 +19,120 @@ object PairwiseAssociationsMigration extends Migration {
   override val description: String = "Creating and filling table for Pairwise Associations"
 
   override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
-    createTable()
-    fillTable()
+    createTables()
+    fillTables()
     Right(())
   }
 
-  override def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = ???
-
-  private def createTable()(implicit connection: Connection) = {
+  override def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
     SQL(
       """
-        |CREATE TABLE pairwise_associations (
+        |DROP TABLE pairwise_associations_occurrence;
+        |DROP TABLE pairwise_associations_co_occurrences;
+        |DROP TABLE pairwise_associations_transactions_count;
+      """.stripMargin).execute()
+    Right(())
+  }
+
+  private def createTables()(implicit connection: Connection) = {
+    SQL(
+      """
+        |CREATE TABLE pairwise_associations_occurrences (
+        |  locale      CHARACTER VARYING(64) NOT NULL,
+        |  food_code   CHARACTER VARYING(50) NOT NULL,
+        |  occurrences INTEGER               NOT NULL,
+        |  PRIMARY KEY (locale, food_code)
+        |);
+        |
+        |CREATE TABLE pairwise_associations_co_occurrences (
         |  locale          CHARACTER VARYING(64) NOT NULL,
-        |  antecedent_food CHARACTER VARYING(50) NOT NULL,
-        |  consequent_food CHARACTER VARYING(50) NOT NULL,
+        |  antecedent_food_code CHARACTER VARYING(50) NOT NULL,
+        |  consequent_food_code CHARACTER VARYING(50) NOT NULL,
         |  occurrences     INTEGER               NOT NULL,
-        |  PRIMARY KEY (locale, antecedent_food, consequent_food)
+        |  PRIMARY KEY (locale, antecedent_food_code, consequent_food_code)
+        |);
+        |
+        |CREATE TABLE pairwise_associations_transactions_count (
+        |  locale             CHARACTER VARYING(64) PRIMARY KEY,
+        |  transactions_count INTEGER NOT NULL
         |);
       """.stripMargin).execute()
   }
 
-  private def fillTable()(implicit connection: Connection) = {
+  private def fillTables()(implicit connection: Connection) = {
     val graph = getOccurrenceGraph()
     println("Updating db...")
-    val updateParams = graph.flatMap { localeNode =>
-      localeNode._2.flatMap { ocNode =>
+    val occurrenceUpdateParams = graph.flatMap { localeNode =>
+      localeNode._2.getParams().occurrences.map { ocNode =>
+        Seq[NamedParameter]('locale -> localeNode._1, 'food_code -> ocNode._1, 'occurrences -> ocNode._2)
+      }
+    }.toSeq
+    val coOccurrenceUpdateParams = graph.flatMap { localeNode =>
+      localeNode._2.getParams().coOccurrences.flatMap { ocNode =>
         ocNode._2.map { consItemNode =>
-          Seq[NamedParameter]('locale -> localeNode._1, 'antecedent_food -> ocNode._1, 'consequent_food -> consItemNode._1, 'occurrences -> consItemNode._2)
+          Seq[NamedParameter]('locale -> localeNode._1, 'antecedent_food_code -> ocNode._1, 'consequent_food_code -> consItemNode._1, 'occurrences -> consItemNode._2)
         }
       }
     }.toSeq
+    val transactionsUpdateParams = graph.map { localeNode =>
+      Seq[NamedParameter]('locale -> localeNode._1, 'transactions_count -> localeNode._2.getParams().numberOfTransactions)
+    }.toSeq
 
-    if (updateParams.nonEmpty) {
+    if (occurrenceUpdateParams.nonEmpty && coOccurrenceUpdateParams.nonEmpty && transactionsUpdateParams.nonEmpty) {
       BatchSql(
         """
-          |INSERT INTO pairwise_associations (locale, antecedent_food, consequent_food, occurrences)
-          |VALUES ({locale}, {antecedent_food}, {consequent_food}, {occurrences});
-        """.stripMargin, updateParams.head, updateParams.tail: _*).execute()
+          |INSERT INTO pairwise_associations_occurrences (locale, food_code, occurrences)
+          |VALUES ({locale}, {food_code}, {occurrences});
+        """.stripMargin, occurrenceUpdateParams.head, occurrenceUpdateParams.tail: _*).execute()
+
+      BatchSql(
+        """
+          |INSERT INTO pairwise_associations_co_occurrences (locale, antecedent_food_code, consequent_food_code, occurrences)
+          |VALUES ({locale}, {antecedent_food_code}, {consequent_food_code}, {occurrences});
+        """.stripMargin, coOccurrenceUpdateParams.head, coOccurrenceUpdateParams.tail: _*).execute()
+
+      BatchSql(
+        """
+          |INSERT INTO pairwise_associations_transactions_count (locale, transactions_count)
+          |VALUES ({locale}, {transactions_count});
+        """.stripMargin, transactionsUpdateParams.head, transactionsUpdateParams.tail: _*).execute()
     }
     println("Done")
   }
 
-  private def getOccurrenceGraph()(implicit connection: Connection) = {
+  private def getOccurrenceGraph()(implicit connection: Connection): Map[String, PairwiseAssociationRules] = {
+    val minSubmissionCount = 50
     val batchSize = 50
-    val occurrenceGraph: Map[String, Map[String, Map[String, Int]]] = Map[String, Map[String, Map[String, Int]]]().withDefaultValue(Map().withDefaultValue(Map().withDefaultValue(0)))
+    val occurrenceGraph = Map[String, PairwiseAssociationRules]().withDefaultValue(PairwiseAssociationRules(None))
 
     getSurveyIds().foldLeft(occurrenceGraph) { (ocMp, surveyId) =>
-      println(s"Processing survey $surveyId")
-      val submissionCount = countSurveySubmissions(surveyId)
-      Range(0, submissionCount, batchSize).foldLeft(ocMp) { (ocMp, offset) =>
-        val subs = getSubmissions(surveyId, offset).foldLeft(ocMp)(addSubmissionToOccurrenceGraph)
-        println(s"  processed ${offset + subs.size} out of $submissionCount")
-        subs
+      if (surveyId.toLowerCase().contains("test")) {
+        println(s"Survey $surveyId is ignored since it contains word 'test'")
+        ocMp
+      } else {
+        val submissionCount = countSurveySubmissions(surveyId)
+        if (submissionCount < minSubmissionCount) {
+          println(s"Survey $surveyId is ignored since it has less than $minSubmissionCount submissions")
+          ocMp
+        } else {
+          println(s"Processing survey $surveyId")
+          Range(0, submissionCount, batchSize).foldLeft(ocMp) { (ocMp, offset) =>
+            val subs = getSubmissions(surveyId, offset, batchSize).foldLeft(ocMp)(addSubmissionToOccurrenceGraph)
+            println(s"  processed ${offset + subs.size} out of $submissionCount")
+            subs
+          }
+        }
       }
     }
-
   }
 
-  private def addSubmissionToOccurrenceGraph(graph: Map[String, Map[String, Map[String, Int]]], submission: Submission): Map[String, Map[String, Map[String, Int]]] =
-    submission.mealPairs.foldLeft(graph) { (ocMp, pair) =>
-      ocMp + (
-        submission.locale -> (
-          ocMp(submission.locale) + (
-            pair._1 -> (
-              ocMp(submission.locale)(pair._1) + (pair._2 -> (ocMp(submission.locale)(pair._1)(pair._2) + 1))
-              )
-            )
-          )
-        )
+  private def addSubmissionToOccurrenceGraph(graph: Map[String, PairwiseAssociationRules], submission: Submission): Map[String, PairwiseAssociationRules] =
+    submission.meals.foldLeft(graph) { (ocMp, meal) =>
+      ocMp + (submission.locale -> {
+        val graph = ocMp(submission.locale)
+        graph.addTransaction(meal)
+        graph
+      })
     }
 
   private def getSurveyIds()(implicit connection: Connection) = {
@@ -104,19 +151,19 @@ object PairwiseAssociationsMigration extends Migration {
     SQL(countQuery).on('survey_id -> surveyId).executeQuery().as(SqlParser.int(1).single)
   }
 
-  private def getSubmissions(surveyId: String, offset: Int)(implicit connection: Connection): List[Submission] = {
-    getSubmissionIds(surveyId, offset).foldLeft(List[Submission]()) {
+  private def getSubmissions(surveyId: String, offset: Int, limit: Int)(implicit connection: Connection): List[Submission] = {
+    getSubmissionIds(surveyId, offset, limit).foldLeft(List[Submission]()) {
       (acc, submissionId) =>
         getSubmittedFoods(submissionId) match {
           case Nil => acc
           case l =>
-            val mealPairs = l.groupBy(_.meal_id).flatMap(m => pairs(m._2.map(_.food_code))).toSeq
-            Submission(l.head.locale, mealPairs) :: acc
+            val meals = l.groupBy(_.meal_id).map(m => m._2.map(_.food_code)).toSeq
+            Submission(l.head.locale, meals) :: acc
         }
     }
   }
 
-  private def getSubmissionIds(surveyId: String, offset: Int)(implicit connection: Connection) = {
+  private def getSubmissionIds(surveyId: String, offset: Int, limit: Int)(implicit connection: Connection) = {
     val q =
       """
         |SELECT survey_submissions.id
@@ -125,8 +172,9 @@ object PairwiseAssociationsMigration extends Migration {
         |WHERE surveys.id = {survey_id}
         |ORDER BY survey_submissions.end_time ASC
         |OFFSET {offset}
+        |LIMIT {limit}
       """.stripMargin
-    SQL(q).on('survey_id -> surveyId, 'offset -> offset).executeQuery().as(SqlParser.scalar(anorm.Column.columnToUUID).*)
+    SQL(q).on('survey_id -> surveyId, 'offset -> offset, 'limit -> limit).executeQuery().as(SqlParser.scalar(anorm.Column.columnToUUID).*)
   }
 
   private def getSubmittedFoods(submissionId: UUID)(implicit connection: Connection) = {
@@ -145,17 +193,8 @@ object PairwiseAssociationsMigration extends Migration {
 
   }
 
-  private def pairs(l: Seq[String]): Set[(String, String)] =
-    l.foldLeft(Set[(String, String)]()) {
-      (acc, first) =>
-        l.foldLeft(acc) {
-          (acc, second) =>
-            if (first != second) acc + (first -> second) else acc
-        }
-    }
-
   private case class SubmittedFoodRow(locale: String, meal_id: Int, food_code: String)
 
-  private case class Submission(locale: String, mealPairs: Seq[(String, String)])
+  private case class Submission(locale: String, meals: Seq[Seq[String]])
 
 }

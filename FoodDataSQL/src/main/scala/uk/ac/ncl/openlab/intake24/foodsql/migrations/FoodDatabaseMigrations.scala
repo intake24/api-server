@@ -3,7 +3,8 @@ package uk.ac.ncl.openlab.intake24.foodsql.migrations
 import uk.ac.ncl.openlab.intake24.sql.migrations.Migration
 import org.slf4j.Logger
 import java.sql.Connection
-import anorm.SQL
+
+import anorm.{BatchSql, NamedParameter, SQL}
 import uk.ac.ncl.openlab.intake24.sql.migrations.MigrationFailed
 
 object FoodDatabaseMigrations {
@@ -634,7 +635,308 @@ object FoodDatabaseMigrations {
         ???
 
       }
-    }
+    },
 
+    new Migration {
+
+      override val versionFrom: Long = 43l
+      override val versionTo: Long = 44l
+      override val description: String = "Add Australia locale"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("INSERT INTO locales VALUES('en_AU', 'Australia', 'Australia', 'en_AU', 'en', 'au', 'en_GB')").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 44l
+      override val versionTo: Long = 45l
+      override val description: String = "Add conversion factor for portion size methods"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("ALTER TABLE foods_portion_size_methods ADD COLUMN conversion_factor DOUBLE PRECISION NOT NULL DEFAULT 1.0").execute()
+        SQL("ALTER TABLE categories_portion_size_methods ADD COLUMN conversion_factor DOUBLE PRECISION NOT NULL DEFAULT 1.0").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 45l
+      override val versionTo: Long = 46l
+      override val description: String = "Add new nutrient types for Australian FCT"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("INSERT INTO nutrient_types(id, description, unit_id) VALUES (229, 'Free sugars', 1)").execute()
+        SQL("INSERT INTO nutrient_types(id, description, unit_id) VALUES (230, 'Folic acid', 3)").execute()
+        SQL("INSERT INTO nutrient_types(id, description, unit_id) VALUES (231, 'Alpha-linolenic acid', 1)").execute()
+        SQL("INSERT INTO nutrient_types(id, description, unit_id) VALUES (232, 'Total long chain omega 3 fatty acids', 2)").execute()
+        SQL("INSERT INTO nutrient_types(id, description, unit_id) VALUES (233, 'Total trans fatty acids', 2)").execute()
+        SQL("INSERT INTO nutrient_types(id, description, unit_id) VALUES (234, 'Moisture', 1)").execute()
+        SQL("INSERT INTO nutrient_types(id, description, unit_id) VALUES (235, 'C20:5w3 Eicosapentaenoic', 2)").execute()
+        SQL("INSERT INTO nutrient_types(id, description, unit_id) VALUES (236, 'C22:5w3 Docosapentaenoic', 2)").execute()
+        SQL("INSERT INTO nutrient_types(id, description, unit_id) VALUES (237, 'C22:6w3 Docosahexaenoic', 2)").execute()
+        SQL("INSERT INTO nutrient_types(id, description, unit_id) VALUES (238, 'Energy, with dietary fibre', 5)").execute()
+        SQL("INSERT INTO nutrient_types(id, description, unit_id) VALUES (239, 'Available carbohydrates, with sugar alcohols', 1)").execute()
+        SQL("INSERT INTO nutrient_types(id, description, unit_id) VALUES (240, 'Available carbohydrates, without sugar alcohol', 1)").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 46l
+      override val versionTo: Long = 47l
+      override val description: String = "Add Vitamin A in AU nutrient type"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("INSERT INTO nutrient_units(id, description, symbol) VALUES(6, 'International Units', 'IU')").execute()
+
+        SQL("INSERT INTO nutrient_types(id, description, unit_id) VALUES(241, 'Vitamin A', 6)").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 47l
+      override val versionTo: Long = 48l
+      override val description: String = "Add use in recipes to inheritable attributes"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE categories_attributes ADD COLUMN use_in_recipes INTEGER").execute()
+        SQL("ALTER TABLE foods_attributes ADD COLUMN use_in_recipes INTEGER").execute()
+        SQL("ALTER TABLE attribute_defaults ADD COLUMN use_in_recipes INTEGER DEFAULT 0").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    },
+
+
+    new Migration {
+
+      override val versionFrom: Long = 48l
+      override val versionTo: Long = 49l
+      override val description: String = "Create tables for NDNS food group data"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL(
+          """CREATE TABLE ndns_compound_food_groups(
+            | id INTEGER PRIMARY KEY,
+            | description CHARACTER VARYING(128) NOT NULL
+            |)
+          """.stripMargin).execute()
+
+        val groupNames = Seq("Alcoholic beverages",
+          "Bread, white",
+          "Bread, wholemeal/grain/brown",
+          "Cereal",
+          "Cereal, white",
+          "Cereal, wholemeal/grain/brown",
+          "Coffee, Tea, Cocoa or Infusion",
+          "Dairy and alternatives",
+          "Dairy and alternatives, high fat",
+          "Dairy and alternatives, low fat",
+          "Discretionary items",
+          "Egg",
+          "Fats, hard",
+          "Fats, liquid",
+          "Fats, low fat",
+          "Fruit",
+          "Fruit, canned",
+          "Fruit, cooked",
+          "Fruit, dried",
+          "Fruit, fresh",
+          "Fruit, pureed",
+          "Juice",
+          "Meats",
+          "Meats, processed",
+          "Meats, red",
+          "Miscellaneous",
+          "Mixed",
+          "Mixed,  Pulses",
+          "Mixed, Fish/ Seafood",
+          "Mixed, Vegetable",
+          "Nuts and Seeds",
+          "Potatoes",
+          "Pulses and pulse products",
+          "Pulses and pulse products, pureed",
+          "Seafood, oily fish",
+          "Seafood, organism",
+          "Seafood, white fish",
+          "Soft drink, low calorie",
+          "Soft drink, not low calorie",
+          "Starchy vegetables",
+          "Supplements",
+          "Vegetables",
+          "Vegetables, canned",
+          "Vegetables, cooked",
+          "Vegetables, dried",
+          "Vegetables, fresh",
+          "Vegetables, pureed",
+          "Water",
+          "#N/A")
+
+
+        val params = groupNames.zipWithIndex.map {
+          case (desc, index) => Seq[NamedParameter]('id -> (index + 1), 'description -> desc)
+        }
+
+        BatchSql("INSERT INTO ndns_compound_food_groups VALUES({id},{description})", params.head, params.tail: _*).execute()
+
+        SQL(
+          """CREATE TABLE ndns_compound_food_groups_data (
+            |  ndns_food_code INTEGER NOT NULL,
+            |  compound_food_group_id INTEGER NOT NULL REFERENCES ndns_compound_food_groups(id),
+            |  proportion DOUBLE PRECISION NOT NULL,
+            |  CONSTRAINT ndns_compound_food_groups_data_pk PRIMARY KEY (ndns_food_code, compound_food_group_id)
+            |)
+          """.stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 49l
+      override val versionTo: Long = 50l
+      override val description: String = "Create five a day feedback table"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL(
+          """CREATE TABLE five_a_day_feedback(
+            |  id SERIAL PRIMARY KEY,
+            |  if_less_than INT NOT NULL,
+            |  sentiment sentiment_enum NOT NULL,
+            |  summary VARCHAR(500) NOT NULL,
+            |  feedback VARCHAR(20000) NOT NULL
+            |)
+          """.stripMargin).execute()
+
+        SQL("""CREATE UNIQUE INDEX five_a_day_feedback_if_less_than_uindex ON five_a_day_feedback (if_less_than)""".stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 50l
+      override val versionTo: Long = 51l
+      override val description: String = "Drop unused five a day columns"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE five_a_day_feedback DROP COLUMN sentiment").execute()
+        SQL("ALTER TABLE five_a_day_feedback DROP COLUMN summary").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 51l
+      override val versionTo: Long = 52l
+      override val description: String = "Create food group feedback tables"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL(
+          """create table food_groups_feedback(
+            |id serial primary key,
+            |name varchar(64) not null,
+            |too_high_threshold double precision,
+            |too_high_message varchar(512),
+            |too_low_threshold double precision,
+            |too_low_message varchar(512),
+            |tell_me_more_text varchar(20000) NOT NULL)
+          """.stripMargin).execute()
+
+        SQL(
+          """create table food_groups_feedback_group_ids(
+            |food_groups_feedback_id integer references food_groups_feedback(id),
+            |food_group_id integer references ndns_compound_food_groups(id),
+            |constraint food_groups_feedback_group_ids_pk PRIMARY KEY(food_groups_feedback_id, food_group_id))
+          """.stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    },
+
+    new Migration {
+      override val versionFrom: Long = 52l
+      override val versionTo: Long = 53l
+      override val description: String = "Clean up five_a_day_feedback table"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("""alter table five_a_day_feedback drop column id""").execute()
+        SQL("""alter table five_a_day_feedback drop column if_less_than""").execute()
+        SQL("""alter table five_a_day_feedback add column too_low_message VARCHAR(512)""").execute()
+        SQL("""alter table five_a_day_feedback rename column feedback to tell_me_more_text""").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+
+    }
   )
 }

@@ -6,7 +6,7 @@ import java.time.temporal.{ChronoField, TemporalField}
 import java.util.UUID
 
 import parsers.JsonUtils
-import uk.ac.ncl.openlab.intake24.api.shared._
+import uk.ac.ncl.openlab.intake24.api.data._
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{ExportFood, ExportMeal, ExportSubmission}
 import uk.ac.ncl.openlab.intake24.surveydata._
 import upickle.Js
@@ -41,7 +41,7 @@ object DataExportExamples extends JsonUtils {
             "NDNS",
             "1234",
             false,
-            PortionSize("as-served", Map("servingWeight" -> "100", "leftoversWeight" -> "50")),
+            PortionSizeWithWeights(1.0, 1.0, 1.0, "as-served", Map("servingWeight" -> "100", "leftoversWeight" -> "50")),
             true,
             10,
             "Some brand",

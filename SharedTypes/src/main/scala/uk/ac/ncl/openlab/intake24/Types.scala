@@ -18,131 +18,15 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24
 
-import java.util.UUID
-
-sealed trait IndexEntryOld {
-  val description: String
-  val code: String
-  val path: String
-
-  val fullCode = if (path.isEmpty) code else path + ":" + code
-}
-
-case class InheritableAttributes(readyMealOption: Option[Boolean], sameAsBeforeOption: Option[Boolean], reasonableAmount: Option[Int])
-
-object InheritableAttributes {
-  val readyMealDefault = false
-  val sameAsBeforeDefault = false
-  val reasonableAmountDefault = 1000
-}
-
-/* TODO: Move these to corresponding services */
-
-case class PortionSizeMethodParameter(name: String, value: String)
-
-case class PortionSizeMethod(method: String, description: String, imageUrl: String, useForRecipes: Boolean, parameters: Seq[PortionSizeMethodParameter])
-
-case class AssociatedFood(foodOrCategoryCode: Either[String, String], promptText: String, linkAsMain: Boolean, genericName: String)
-
-case class BrandName(id: Int, name: String)
-
-/**/
-
-case class FoodOld(code: String, description: String, isDrink: Boolean, ndnsCode: Int, path: String, portionSize: Seq[PortionSizeMethod]) extends IndexEntryOld
-
-case class FoodRecord(main: MainFoodRecord, local: LocalFoodRecord) {
-  def allowedInLocale(locale: String) = (main.localeRestrictions.isEmpty || main.localeRestrictions.contains(locale)) && !local.doNotUse
-}
-
-case class MainFoodRecord(version: UUID, code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes,
-                          parentCategories: Seq[CategoryHeader], localeRestrictions: Seq[String])
-
-case class MainFoodRecordUpdate(baseVersion: UUID, code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes,
-                                parentCategories: Seq[String], localeRestrictions: Seq[String])
-
-case class NewMainFoodRecord(code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes, parentCategories: Seq[String], localeRestrictions: Seq[String]) {
-  def toHeader = FoodHeader(code, englishDescription, None, false)
-}
-
-case class NewLocalMainFoodRecord(code: String, englishDescription: String, groupCode: Int, attributes: InheritableAttributes, parentCategories: Seq[String])
-
-case class NewFoodAutoCode(englishDescription: String, groupCode: Int, attributes: InheritableAttributes)
-
-case class LocalFoodRecord(version: Option[UUID], localDescription: Option[String], doNotUse: Boolean,
-                           nutrientTableCodes: Map[String, String], portionSize: Seq[PortionSizeMethod], associatedFoods: Seq[AssociatedFoodWithHeader],
-                           brandNames: Seq[String]) {
-  def toUpdate = LocalFoodRecordUpdate(version, localDescription, doNotUse, nutrientTableCodes, portionSize, associatedFoods.map(_.toAssociatedFood), brandNames)
-}
-
-case class LocalFoodRecordUpdate(baseVersion: Option[UUID], localDescription: Option[String], doNotUse: Boolean,
-                                 nutrientTableCodes: Map[String, String], portionSize: Seq[PortionSizeMethod], associatedFoods: Seq[AssociatedFood],
-                                 brandNames: Seq[String])
-
-case class NewLocalFoodRecord(localDescription: Option[String], doNotUse: Boolean,
-                              nutrientTableCodes: Map[String, String], portionSize: Seq[PortionSizeMethod], associatedFoods: Seq[AssociatedFood],
-                              brandNames: Seq[String])
-
-case class FoodHeader(code: String, englishDescription: String, localDescription: Option[String], excluded: Boolean)
-
-case class UserFoodHeader(code: String, localDescription: String)
-
-case class CategoryV1(code: String, description: String, children: Map[String, IndexEntryOld], path: String) extends IndexEntryOld
-
-case class CategoryV2(version: UUID, code: String, description: String, foods: Seq[String], subcategories: Seq[String], isHidden: Boolean, attributes: InheritableAttributes, portionSizeMethods: Seq[PortionSizeMethod])
-
-case class CategoryHeader(code: String, englishDescription: String, localDescription: Option[String], isHidden: Boolean)
-
-case class UserCategoryHeader(code: String, localDescription: String)
-
-case class NewCategory(code: String, englishDescription: String, isHidden: Boolean, attributes: InheritableAttributes) {
-  def toHeader = CategoryHeader(code, englishDescription, None, isHidden)
-}
-
-case class CategoryRecord(main: MainCategoryRecord, local: LocalCategoryRecord)
-
-case class NewMainCategoryRecord(code: String, englishDescription: String, isHidden: Boolean, attributes: InheritableAttributes, parentCategories: Seq[String]) {
-  def toNewCategory = NewCategory(code, englishDescription, isHidden, attributes)
-}
-
-case class MainCategoryRecord(version: UUID, code: String, englishDescription: String, isHidden: Boolean, attributes: InheritableAttributes,
-                              parentCategories: Seq[CategoryHeader]) {
-  def toUpdate = MainCategoryRecordUpdate(version, code, englishDescription, isHidden, attributes, parentCategories.map(_.code))
-}
-
-case class MainCategoryRecordUpdate(baseVersion: UUID, code: String, englishDescription: String, isHidden: Boolean, attributes: InheritableAttributes,
-                                    parentCategories: Seq[String])
 
 
-case class LocalCategoryRecord(version: Option[UUID], localDescription: Option[String], portionSize: Seq[PortionSizeMethod]) {
-  def toUpdate = LocalCategoryRecordUpdate(version, localDescription, portionSize)
-}
-
-case class NewLocalCategory(localDescription: Option[String])
-
-case class NewLocalCategoryRecord(localDescription: Option[String], portionSize: Seq[PortionSizeMethod])
-
-case class LocalCategoryRecordUpdate(baseVersion: Option[UUID], localDescription: Option[String], portionSize: Seq[PortionSizeMethod])
-
-case class CategoryContents(foods: Seq[FoodHeader], subcategories: Seq[CategoryHeader])
-
-case class UserCategoryContents(foods: Seq[UserFoodHeader], subcategories: Seq[UserCategoryHeader])
 
 
-case class SplitList(splitWords: Seq[String], keepPairs: Map[String, Set[String]])
 
-case class AsServedImageV1(url: String, weight: Double)
 
-case class AsServedHeader(id: String, description: String)
 
-case class AsServedSetV1(id: String, description: String, images: Seq[AsServedImageV1]) {
-  def toHeader = AsServedHeader(id, description)
-}
 
-case class GuideHeader(id: String, description: String, path: String)
 
-case class GuideImage(id: String, description: String, weights: Seq[GuideImageWeightRecord])
-
-case class GuideImageWeightRecord(description: String, objectId: Int, weight: Double)
 
 case class VolumeFunction(samples: Seq[(Double, Double)]) {
   if (samples.isEmpty)
@@ -193,13 +77,6 @@ case class DrinkwareHeader(id: String, description: String)
 
 case class DrinkwareSet(id: String, description: String, guideId: String, scales: Seq[DrinkScale])
 
-
-case class AssociatedFoodWithHeader(foodOrCategoryHeader: Either[FoodHeader, CategoryHeader], promptText: String, linkAsMain: Boolean, genericName: String) {
-  def toAssociatedFood = {
-    val foodOrCategoryCode = foodOrCategoryHeader.left.map(_.code).right.map(_.code)
-    AssociatedFood(foodOrCategoryCode, promptText, linkAsMain, genericName)
-  }
-}
 
 case class FoodGroupMain(id: Int, englishDescription: String)
 

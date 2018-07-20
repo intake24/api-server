@@ -21,3 +21,4 @@ dist
 /bin/
 /conf/logback.xml
 /conf/application.conf
+/conf/ehcache.xml

@@ -1,11 +1,11 @@
 package uk.ac.ncl.openlab.intake24.sql.tools.food.localisation
 
-import javax.sql.DataSource
-
 import org.rogach.scallop.ScallopConf
 import org.slf4j.LoggerFactory
+import uk.ac.ncl.openlab.intake24.Locale
+import uk.ac.ncl.openlab.intake24.api.data.AssociatedFood
+import uk.ac.ncl.openlab.intake24.api.data.admin.{NewLocalCategoryRecord, NewLocalFoodRecord}
 import uk.ac.ncl.openlab.intake24.foodsql.admin.{CategoriesAdminImpl, FoodsAdminImpl, LocalesAdminImpl}
-import uk.ac.ncl.openlab.intake24.{AssociatedFood, Locale, NewLocalCategoryRecord, NewLocalFoodRecord}
 import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl
 import uk.ac.ncl.openlab.intake24.sql.tools.{DatabaseConnection, DatabaseOptions, ErrorHandler, WarningMessage}
 

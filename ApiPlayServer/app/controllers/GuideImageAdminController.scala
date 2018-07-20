@@ -19,16 +19,15 @@ limitations under the License.
 package controllers
 
 import javax.inject.Inject
-
 import io.circe.generic.auto._
 import parsers.{FormDataUtil, JsonBodyParser}
 import play.api.mvc.{BaseController, ControllerComponents}
 import security.Intake24RestrictedActionBuilder
-import uk.ac.ncl.openlab.intake24.api.shared.NewGuideImageRequest
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.{ImageAdminService, ImageStorageService}
 
 import scala.concurrent.{ExecutionContext, Future}
+import uk.ac.ncl.openlab.intake24.api.data.NewGuideImageRequest
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.{ImageAdminService, ImageStorageService}
 
 class GuideImageAdminController @Inject()(guideImageAdminService: GuideImageAdminService,
                                           imageMapsAdminService: ImageMapsAdminService,

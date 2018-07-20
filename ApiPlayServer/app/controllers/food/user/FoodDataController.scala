@@ -7,19 +7,16 @@ import io.circe.generic.auto._
 import parsers.{JsonBodyParser, JsonUtils}
 import play.api.mvc.{BaseController, ControllerComponents}
 import security.Intake24RestrictedActionBuilder
-import uk.ac.ncl.openlab.intake24._
-import uk.ac.ncl.openlab.intake24.api.shared.ErrorDescription
+import uk.ac.ncl.openlab.intake24.{DrinkwareSet, VolumeSample}
+import uk.ac.ncl.openlab.intake24.api.data._
+import uk.ac.ncl.openlab.intake24.errors.LookupError
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageStorageService
 import uk.ac.ncl.openlab.intake24.services.fooddb.user._
 import uk.ac.ncl.openlab.intake24.services.nutrition.FoodCompositionService
+import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsService, PairwiseAssociationsServiceSortTypes}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class PortionSizeMethodForSurvey(method: String, description: String, imageUrl: String, useForRecipes: Boolean, parameters: Map[String, String])
-
-case class FoodDataForSurvey(code: String, localDescription: String, readyMealOption: Boolean, sameAsBeforeOption: Boolean,
-                             caloriesPer100g: Double, portionSizeMethods: Seq[PortionSizeMethodForSurvey], associatedFoods: Seq[AssociatedFood],
-                             brands: Seq[String], categories: Set[String])
 
 case class UserAsServedImageWithUrls(mainImageUrl: String, thumbnailUrl: String, weight: Double)
 
@@ -40,6 +37,9 @@ case class SourceFoodCompositionTable(tableId: String, recordId: String, url: St
 
 case class UserFoodNutrientData(source: SourceFoodCompositionTable, nutrients: Map[Long, Double])
 
+case class PairwiseAssociatedFoods(categories: Seq[UserCategoryHeader])
+
+
 class FoodDataController @Inject()(foodDataService: FoodDataService,
                                    foodBrowsingService: FoodBrowsingService,
                                    associatedFoodsService: AssociatedFoodsService,
@@ -52,16 +52,26 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
                                    imageStorageService: ImageStorageService,
                                    jsonBodyParser: JsonBodyParser,
                                    rab: Intake24RestrictedActionBuilder,
+                                   pairwiseAssociationsService: PairwiseAssociationsService,
                                    val controllerComponents: ControllerComponents,
                                    implicit val executionContext: ExecutionContext) extends BaseController with DatabaseErrorHandler with JsonUtils {
 
   import uk.ac.ncl.openlab.intake24.errors.ErrorUtils._
 
-  def getCategoryContents(code: String, locale: String) = rab.restrictToAuthenticated {
+  def getCategoryContents(code: String, locale: String, selectedFoods: Seq[String], algorithmId: String) = rab.restrictToAuthenticated {
     _ =>
       Future {
         translateDatabaseResult(foodBrowsingService.getCategoryContents(code, locale).right.map {
-          contents => LookupResult(contents.foods, contents.subcategories)
+          contents => {
+            val foods = if (PairwiseAssociationsServiceSortTypes.invalidAlgorithmId(algorithmId)) {
+              contents.foods
+            } else {
+              val srtFoodMap = pairwiseAssociationsService.recommend(locale, selectedFoods, algorithmId).groupBy(_._1).map(i => i._1 -> i._2.head._2)
+              val srtFoods = contents.foods.map(f => f -> srtFoodMap.getOrElse(f.code, 0d)).sortBy(f => -f._2 -> f._1.localDescription)
+              srtFoods.map(_._1)
+            }
+            LookupResult(foods, contents.subcategories)
+          }
         })
       }
   }
@@ -80,7 +90,7 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
 
     val resolvedImageUrl = imageStorageService.getUrl(psm.imageUrl)
 
-    PortionSizeMethodForSurvey(psm.method, psm.description, resolvedImageUrl, psm.useForRecipes, parametersMap)
+    PortionSizeMethodForSurvey(psm.method, psm.description, resolvedImageUrl, psm.useForRecipes, psm.conversionFactor, parametersMap)
   }
 
   def getFoodData(code: String, locale: String) = rab.restrictToAuthenticated {
@@ -138,6 +148,40 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
     _ =>
       Future {
         translateDatabaseResult(associatedFoodsService.getAssociatedFoods(code, locale))
+      }
+  }
+
+  def getPairwiseAssociatedFoods(locale: String, f: Seq[String]) = rab.restrictToAuthenticated {
+    _ =>
+      Future {
+        val hideCategories = Seq(
+          //          "MDNK", // Milk as a drink
+          //          "MCRL", // Milk in cereal
+          "RECP", // Recipes
+          "SLW1", // Wizards
+          "SLW2",
+          "SW01",
+          "SW02",
+          "SW03",
+          "SW04",
+          "SW05",
+          "SW06"
+        )
+        val recommendedCategories = pairwiseAssociationsService.recommend(locale, f, PairwiseAssociationsServiceSortTypes.paRules, ignoreInputSize = true)
+          .sortBy(-_._2)
+          .take(15)
+          .map { f =>
+            foodBrowsingService.getFoodCategories(f._1, locale, 0).right
+              .map(_.filterNot(ch => hideCategories.contains(ch.code))
+                .map(c => c -> f._2))
+          }.filter(_.isRight)
+        val categories = recommendedCategories.flatMap(_.right.get)
+          .groupBy(_._1.code).map(n => n._2.head._1 -> n._2.map(_._2).sum)
+          .toSeq
+          .sortBy(-_._2)
+          .map(c => UserCategoryHeader(c._1.code, c._1.localDescription.getOrElse("")))
+        val resp = Right(PairwiseAssociatedFoods(categories))
+        translateDatabaseResult(resp)
       }
   }
 
@@ -227,7 +271,7 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
   def getWeightPortionSizeMethod() = rab.restrictToAuthenticated {
     _ =>
       Future {
-        translateDatabaseResult(Right(PortionSizeMethodForSurvey("weight", "weight", imageStorageService.getUrl("portion/weight.png"), true, Map())))
+        translateDatabaseResult(Right(PortionSizeMethodForSurvey("weight", "weight", imageStorageService.getUrl("portion/weight.png"), true, 1.0, Map())))
       }
   }
 }

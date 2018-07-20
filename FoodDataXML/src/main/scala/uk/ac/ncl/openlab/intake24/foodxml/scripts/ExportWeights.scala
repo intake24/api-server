@@ -21,8 +21,7 @@ package uk.ac.ncl.openlab.intake24.foodxml.scripts
 import java.io.FileWriter
 
 import au.com.bytecode.opencsv.CSVWriter
-import uk.ac.ncl.openlab.intake24.AsServedSetV1
-import uk.ac.ncl.openlab.intake24.foodxml.{AsServedDef, GuideImageDef}
+import uk.ac.ncl.openlab.intake24.foodxml.{AsServedDef, AsServedSetV1, GuideImageDef}
 
 import scala.collection.JavaConverters._
 import scala.xml.XML

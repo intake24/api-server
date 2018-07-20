@@ -25,7 +25,7 @@ import parsers.{JsonBodyParser, JsonUtils}
 import play.api.mvc.{BaseController, ControllerComponents}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.CategoriesAdminService
-import uk.ac.ncl.openlab.intake24.{LocalCategoryRecordUpdate, MainCategoryRecordUpdate, NewLocalCategoryRecord, NewMainCategoryRecord}
+import uk.ac.ncl.openlab.intake24.api.data.admin._
 
 import scala.concurrent.{ExecutionContext, Future}
 

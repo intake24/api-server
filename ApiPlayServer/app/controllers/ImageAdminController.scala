@@ -81,7 +81,7 @@ class ImageAdminController @Inject()(service: ImageAdminService,
   private def toClientRecord(record: SourceImageRecord): ClientSourceImageRecord =
     ClientSourceImageRecord(record.id, storageService.getUrl(record.path), storageService.getUrl(record.thumbnailPath), record.keywords, record.uploader, record.uploadedAt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
 
-  def listSourceImages(offset: Int, limit: Int, searchTerm: Option[String]) = rab.restrictToRoles(Roles.superuser, Roles.foodsAdmin) {
+  def listSourceImages(offset: Int, limit: Int, searchTerm: Option[String]) = rab.restrictToRoles(Roles.superuser, Roles.foodsAdmin, Roles.imagesAdmin) {
     request =>
       Future {
         val resolvedRecords = databaseService.listSourceImageRecords(offset, Math.max(Math.min(limit, 100), 0), searchTerm).right.map(toClientRecords)

@@ -20,7 +20,7 @@ package uk.ac.ncl.openlab.intake24.services.nutrition
 
 import com.google.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.errors.AnyError
+import uk.ac.ncl.openlab.intake24.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.{FoodDataService, ResolvedFoodData}
 import uk.ac.ncl.openlab.intake24.surveydata.{NutrientMappedFood, NutrientMappedMeal, NutrientMappedSubmission, SurveySubmission}
@@ -32,7 +32,7 @@ class DefaultNutrientMappingServiceImpl @Inject()(foodDataService: FoodDataServi
 
   private val logger = LoggerFactory.getLogger(classOf[DefaultNutrientMappingServiceImpl])
 
-  def mapSurveySubmission(submission: SurveySubmission, locale: String): Either[AnyError, NutrientMappedSubmission] = {
+  def mapSurveySubmission(submission: SurveySubmission, locale: String): Either[DatabaseError, NutrientMappedSubmission] = {
 
     // I have spent an hour writing an "optimal" solution for this, but then realised that food data inheritance is tricky
     // and it is better to solve performance issues using caching :(
@@ -74,7 +74,8 @@ class DefaultNutrientMappingServiceImpl @Inject()(foodDataService: FoodDataServi
           val mappedFoods = meal.foods.map {
             food =>
 
-              val weight = food.portionSize.portionWeight
+              val psw = food.portionSize.asPortionSizeWithWeights
+
               val mapping = foodDataMap(food.code).nutrientTableCodes
 
               if (mapping.size > 1) {
@@ -95,11 +96,11 @@ class DefaultNutrientMappingServiceImpl @Inject()(foodDataService: FoodDataServi
               val foodGroup = foodGroupMap(foodData.groupCode)
 
               val nutrients = foodCompositionData.map {
-                case (k, v) => (k -> v * weight / 100.0)
+                case (k, v) => (k -> v * psw.portionWeight / 100.0)
               }
 
-              NutrientMappedFood(food.code, foodData.englishDescription, foodData.localDescription, food.isReadyMeal, food.searchTerm, food.brand, food.portionSize, food.customData,
-                mapping.headOption.map(_._1), mapping.headOption.map(_._2), foodData.reasonableAmount.toDouble >= weight, foodData.groupCode, foodGroup.main.englishDescription, foodGroup.local.localDescription,
+              NutrientMappedFood(food.code, foodData.englishDescription, foodData.localDescription, food.isReadyMeal, food.searchTerm, food.brand, psw, food.customData,
+                mapping.headOption.map(_._1), mapping.headOption.map(_._2), foodData.reasonableAmount.toDouble >= psw.portionWeight, foodData.groupCode, foodGroup.main.englishDescription, foodGroup.local.localDescription,
                 nutrients)
 
           }
@@ -108,7 +109,7 @@ class DefaultNutrientMappingServiceImpl @Inject()(foodDataService: FoodDataServi
 
       }
 
-      NutrientMappedSubmission(submission.startTime, submission.endTime, mappedMeals, submission.log, submission.customData)
+      NutrientMappedSubmission(submission.startTime, submission.endTime, submission.uxSessionId, mappedMeals, submission.customData)
     }
   }
 }

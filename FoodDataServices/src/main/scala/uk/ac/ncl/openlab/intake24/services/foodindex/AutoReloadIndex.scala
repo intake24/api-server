@@ -19,8 +19,8 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.services.foodindex
 
 import java.util.concurrent.atomic.AtomicReference
-
 import java.util.TimerTask
+
 import scala.concurrent.duration._
 import org.slf4j.LoggerFactory
 
@@ -35,9 +35,10 @@ class AutoReloadIndex(reload: () => AbstractFoodIndex, delay: Duration, period: 
     override def run() = {
       log.debug(s"Reloading $description index...")
       val t0 = System.currentTimeMillis()
-      ref.set(reload.apply())      
+      ref.set(reload.apply())
+      log.debug(s"Reloaded $description index in ${System.currentTimeMillis() - t0} ms")
     }
   }, delay.toMillis, period.toMillis)
   
-  def lookup(description: String, maxResults: Int): IndexLookupResult = ref.get.lookup(description, maxResults)
+  def lookup(description: String, maxFoods: Int, maxCategories: Int): IndexLookupResult = ref.get.lookup(description, maxFoods, maxCategories)
 }

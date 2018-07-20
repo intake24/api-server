@@ -1,14 +1,10 @@
 package uk.ac.ncl.openlab.intake24.sql.tools.food.localisation
 
-import uk.ac.ncl.openlab.intake24.AssociatedFood
-import java.io.OutputStreamWriter
-import uk.ac.ncl.openlab.intake24.FoodHeader
-import uk.ac.ncl.openlab.intake24.PortionSizeMethod
-import java.io.FileWriter
+import java.io.{File, FileWriter, OutputStreamWriter}
+
 import au.com.bytecode.opencsv.CSVWriter
-import uk.ac.ncl.openlab.intake24.NewLocalFoodRecord
-import java.io.File
-import uk.ac.ncl.openlab.intake24.UserFoodHeader
+import uk.ac.ncl.openlab.intake24.api.data.admin.NewLocalFoodRecord
+import uk.ac.ncl.openlab.intake24.api.data.{AssociatedFood, UserFoodHeader}
 
 trait RecodingTableParser {
   def parseRecodingTable(path: String): RecodingTable
@@ -16,7 +12,7 @@ trait RecodingTableParser {
 
 trait RecodingTableUtil {
   def buildRecodedLocalFoodRecords(logPath: Option[String], englishLocaleName: String, localNutrientTableId: String,
-    indexableFoods: Seq[UserFoodHeader], recodingTable: RecodingTable, translatedAssociatedFoods: Map[String, Seq[AssociatedFood]]) = {
+                                   indexableFoods: Seq[UserFoodHeader], recodingTable: RecodingTable, translatedAssociatedFoods: Map[String, Seq[AssociatedFood]]) = {
 
     val logWriter = new CSVWriter(logPath.map(logPath => new FileWriter(new File(logPath))).getOrElse(new OutputStreamWriter(System.out)))
 

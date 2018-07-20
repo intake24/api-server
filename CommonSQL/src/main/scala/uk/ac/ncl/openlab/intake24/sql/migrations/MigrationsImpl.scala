@@ -4,14 +4,14 @@ import javax.sql.DataSource
 
 import anorm.{SQL, SqlParser}
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.errors.AnyError
+import uk.ac.ncl.openlab.intake24.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
 
 sealed trait MigrationError
 
 case class MigrationFailed(e: Throwable) extends MigrationError
 
-case class DatabaseError(e: AnyError) extends MigrationError
+case class DbError(e: DatabaseError) extends MigrationError
 
 class MigrationsImpl(val dataSource: DataSource) extends SqlDataService {
 
@@ -20,7 +20,7 @@ class MigrationsImpl(val dataSource: DataSource) extends SqlDataService {
   private def getCurrentVersion()(implicit conn: java.sql.Connection): Long =
     SQL("SELECT version FROM schema_version").executeQuery().as(SqlParser.long("version").single)
 
-  def applyMigrations(migrations: Seq[Migration]): Either[MigrationError, Unit] = tryWithConnectionWrapErrors[MigrationError, Unit](DatabaseError(_)) {
+  def applyMigrations(migrations: Seq[Migration]): Either[MigrationError, Unit] = tryWithConnectionWrapErrors[MigrationError, Unit](DbError(_)) {
     implicit conn =>
 
       def migrateFrom(version: Long): Either[MigrationError, Unit] = {

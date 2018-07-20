@@ -18,8 +18,7 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.services.foodindex
 
-import uk.ac.ncl.openlab.intake24.UserCategoryHeader
-import uk.ac.ncl.openlab.intake24.UserFoodHeader
+import uk.ac.ncl.openlab.intake24.api.data.{UserCategoryHeader, UserFoodHeader}
 
 case class MatchedFood(food: UserFoodHeader, matchCost: Int)
 
@@ -28,7 +27,7 @@ case class MatchedCategory(category: UserCategoryHeader, matchCost: Int)
 case class IndexLookupResult(foods: Seq[MatchedFood], categories: Seq[MatchedCategory])
 
 trait FoodIndex {
-  def lookup(description: String, maxResults: Int): IndexLookupResult
+  def lookup(description: String, maxFoods: Int, maxCategories: Int): IndexLookupResult
 }
 
 object FoodIndex {

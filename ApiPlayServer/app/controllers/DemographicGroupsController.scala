@@ -35,14 +35,14 @@ class DemographicGroupsController @Inject()(dgService: DemographicGroupsService,
       }
   }
 
-  def createDemographicGroup() = rab.restrictToRoles(Roles.superuser)(jsonBodyParser.parse[DemographicGroupRecordIn]) {
+  def createDemographicGroup() = rab.restrictToRoles(Roles.foodsAdmin)(jsonBodyParser.parse[DemographicGroupRecordIn]) {
     request =>
       Future {
         translateDatabaseResult(dgService.createDemographicGroup(request.body))
       }
   }
 
-  def patchDemographicGroup(id: Int) = rab.restrictToRoles(Roles.superuser)(jsonBodyParser.parse[DemographicGroupRecordIn]) {
+  def patchDemographicGroup(id: Int) = rab.restrictToRoles(Roles.foodsAdmin)(jsonBodyParser.parse[DemographicGroupRecordIn]) {
     request =>
       Future {
         translateDatabaseResult(dgService.patchDemographicGroup(id, request.body))
@@ -56,14 +56,14 @@ class DemographicGroupsController @Inject()(dgService: DemographicGroupsService,
       }
   }
 
-  def deleteDemographicGroup(id: Int) = rab.restrictToRoles(Roles.superuser) {
+  def deleteDemographicGroup(id: Int) = rab.restrictToRoles(Roles.foodsAdmin) {
     _ =>
       Future {
         translateDatabaseResult(dgService.deleteDemographicGroup(id))
       }
   }
 
-  def createDemographicGroupScaleSector(demographicGroupId: Int) = rab.restrictToRoles(Roles.superuser)(jsonBodyParser.parse[DemographicScaleSectorIn]) {
+  def createDemographicGroupScaleSector(demographicGroupId: Int) = rab.restrictToRoles(Roles.foodsAdmin)(jsonBodyParser.parse[DemographicScaleSectorIn]) {
     request =>
       Future {
         val sanitised = sanitiseDemographicScaleSector(request.body)
@@ -71,7 +71,7 @@ class DemographicGroupsController @Inject()(dgService: DemographicGroupsService,
       }
   }
 
-  def patchDemographicGroupScaleSector(id: Int) = rab.restrictToRoles(Roles.superuser)(jsonBodyParser.parse[DemographicScaleSectorIn]) {
+  def patchDemographicGroupScaleSector(id: Int) = rab.restrictToRoles(Roles.foodsAdmin)(jsonBodyParser.parse[DemographicScaleSectorIn]) {
     request =>
       Future {
         val sanitised = sanitiseDemographicScaleSector(request.body)
@@ -79,7 +79,7 @@ class DemographicGroupsController @Inject()(dgService: DemographicGroupsService,
       }
   }
 
-  def deleteDemographicGroupScaleSector(id: Int) = rab.restrictToRoles(Roles.superuser) {
+  def deleteDemographicGroupScaleSector(id: Int) = rab.restrictToRoles(Roles.foodsAdmin) {
     _ =>
       Future {
         translateDatabaseResult(dgService.deleteDemographicScaleSector(id))

@@ -6,7 +6,7 @@ import javax.sql.DataSource
 import anorm.{Macro, SQL, sqlToSimple}
 import com.google.inject.Singleton
 import com.google.inject.name.Named
-import uk.ac.ncl.openlab.intake24.AssociatedFood
+import uk.ac.ncl.openlab.intake24.api.data.AssociatedFood
 import uk.ac.ncl.openlab.intake24.errors.{LocalLookupError, UnexpectedDatabaseError}
 import uk.ac.ncl.openlab.intake24.foodsql.modular.{FoodQueries, LocaleQueries}
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.AssociatedFoodsService

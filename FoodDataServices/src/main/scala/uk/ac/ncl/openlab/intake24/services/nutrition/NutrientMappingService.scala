@@ -20,10 +20,10 @@ package uk.ac.ncl.openlab.intake24.services.nutrition
 
 import java.time.Instant
 
-import uk.ac.ncl.openlab.intake24.errors.AnyError
+import uk.ac.ncl.openlab.intake24.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.surveydata._
 
 trait NutrientMappingService {
 
-  def mapSurveySubmission(submission: SurveySubmission, locale: String): Either[AnyError, NutrientMappedSubmission]
+  def mapSurveySubmission(submission: SurveySubmission, locale: String): Either[DatabaseError, NutrientMappedSubmission]
 }

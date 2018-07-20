@@ -18,10 +18,8 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.services.foodindex
 
-import uk.ac.ncl.openlab.intake24.CategoryV2
-import uk.ac.ncl.openlab.intake24.FoodRecord
-import uk.ac.ncl.openlab.intake24.UserCategoryHeader
-import uk.ac.ncl.openlab.intake24.UserFoodHeader
+import uk.ac.ncl.openlab.intake24.api.data.{UserCategoryHeader, UserFoodHeader}
+import uk.ac.ncl.openlab.intake24.api.data.admin.{CategoryV2, FoodRecord}
 
 sealed trait IndexEntry
 

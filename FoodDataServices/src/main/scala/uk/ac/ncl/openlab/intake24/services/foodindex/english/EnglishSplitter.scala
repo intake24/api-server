@@ -20,9 +20,11 @@ package uk.ac.ncl.openlab.intake24.services.foodindex.english
 
 import scala.annotation.tailrec
 import java.util.regex.Pattern
+
 import uk.ac.ncl.openlab.intake24.services.foodindex.Splitter
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.SplitList
+
+import uk.ac.ncl.openlab.intake24.api.shared.admin.SplitList
 
 case class EnglishSplitter(splitList: SplitList) extends Splitter {
 

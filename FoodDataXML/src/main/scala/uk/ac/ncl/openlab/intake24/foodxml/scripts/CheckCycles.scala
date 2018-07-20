@@ -18,25 +18,17 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodxml.scripts
 
-import java.io.File
-import java.io.PrintWriter
+import uk.ac.ncl.openlab.intake24.foodxml.{Categories, CategoryDef, FoodDef}
+
 import scala.xml.XML
-import uk.ac.ncl.openlab.intake24.FoodOld
-import uk.ac.ncl.openlab.intake24.CategoryV1
-import uk.ac.ncl.openlab.intake24.IndexEntryOld
-import uk.ac.ncl.openlab.intake24.foodxml.FoodDefOld
-import uk.ac.ncl.openlab.intake24.foodxml.Util
-import uk.ac.ncl.openlab.intake24.foodxml.FoodDef
-import uk.ac.ncl.openlab.intake24.foodxml.CategoryDef
-import uk.ac.ncl.openlab.intake24.foodxml.Categories
 
 object CheckCycles extends App {
 
   val foods = FoodDef.parseXml(XML.load("/home/ivan/Projects/Intake24/intake24-data/foods.xml"))
   val categories = Categories(CategoryDef.parseXml(XML.load("/home/ivan/Projects/Intake24/intake24-data/categories.xml")))
 
- println (foods.size)
-  
+  println(foods.size)
+
   def findCycles(code: String) = {
 
     def r(cats: Seq[String], visited: Seq[String]): Option[(Seq[String], String)] = {

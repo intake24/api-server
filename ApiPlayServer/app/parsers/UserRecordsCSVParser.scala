@@ -3,7 +3,7 @@ package parsers
 import java.io.{File, FileReader}
 
 import au.com.bytecode.opencsv.CSVReader
-import uk.ac.ncl.openlab.intake24.api.shared.NewRespondent
+import uk.ac.ncl.openlab.intake24.api.data.NewRespondent
 
 import scala.collection.JavaConverters._
 
@@ -27,6 +27,7 @@ object UserRecordsCSVParser {
   private def containsWhitespace(s: String): Boolean = whitespace.findFirstMatchIn(s).isDefined
 
   private def parseHeader(header: Array[String]): Either[String, HeaderFormat] = {
+    println(header.mkString(", "))
     if (header.length < 2)
       Left("""Incorrect number of columns in header: at least 2 required ("user name" and "password")""")
     else if (!(header(0).toLowerCase == USER_NAME_HEADER && header(1).toLowerCase == PASSWORD_HEADER))
