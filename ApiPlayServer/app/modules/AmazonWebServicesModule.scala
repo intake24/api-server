@@ -18,12 +18,24 @@ limitations under the License.
 
 package modules
 
+import com.amazonaws.auth.profile.ProfileCredentialsProvider
 import com.amazonaws.services.s3.{AmazonS3, AmazonS3ClientBuilder}
-import com.google.inject.AbstractModule
+import com.google.inject.{AbstractModule, Provides}
+import javax.inject.Singleton
+import play.api.Configuration
 
 class AmazonWebServicesModule extends AbstractModule {
 
   def configure() = {
-    bind(classOf[AmazonS3]).toInstance(AmazonS3ClientBuilder.defaultClient())
+
   }
+
+  @Provides
+  @Singleton
+  def createS3client(config: Configuration): AmazonS3 = {
+    val profileName = config.getOptional[String]("intake24.s3.profileName").getOrElse("default")
+    AmazonS3ClientBuilder.standard()
+      .withCredentials(new ProfileCredentialsProvider(profileName)).build()
+  }
+
 }
