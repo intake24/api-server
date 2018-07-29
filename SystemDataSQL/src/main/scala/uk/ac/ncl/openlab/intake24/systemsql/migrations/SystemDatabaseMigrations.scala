@@ -1656,6 +1656,300 @@ object SystemDatabaseMigrations {
         ???
 
       }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 72l
+      override val versionTo: Long = 73l
+      override val description: String = "Create user notification table"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL(
+          """
+            |CREATE TABLE user_notification_schedule (
+            |  id                SERIAL PRIMARY KEY,
+            |  user_id           INTEGER                  NOT NULL,
+            |  survey_id         CHARACTER VARYING(64),
+            |  datetime          TIMESTAMP WITH TIME ZONE NOT NULL,
+            |  notification_type CHARACTER VARYING(100),
+            |  CONSTRAINT user_notification_schedule_users_fk FOREIGN KEY (user_id) REFERENCES public.users (id) ON UPDATE CASCADE ON DELETE CASCADE,
+            |  CONSTRAINT user_notification_schedule_surveys_fk FOREIGN KEY (survey_id) REFERENCES public.surveys (id) ON UPDATE CASCADE ON DELETE CASCADE
+            |)
+          """.stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 73l
+      override val versionTo: Long = 74l
+      override val description: String = "Short urls for token login"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL(
+          """
+            |CREATE TABLE short_urls (
+            |  long_url   CHARACTER VARYING(1000) NOT NULL PRIMARY KEY,
+            |  short_url  CHARACTER VARYING(100) NOT NULL
+            |)
+          """.stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 74l
+      override val versionTo: Long = 75l
+      override val description: String = "User session storage"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE surveys ADD COLUMN store_user_session_on_server BOOLEAN").execute()
+        SQL(
+          """
+            |CREATE TABLE user_sessions
+            |(
+            |  user_id      INTEGER                    NOT NULL,
+            |  survey_id    CHARACTER VARYING(64)      NOT NULL,
+            |  session_data CHARACTER VARYING(5000000) NOT NULL,
+            |  created      TIMESTAMP WITH TIME ZONE   NOT NULL,
+            |  CONSTRAINT user_sessions_pk PRIMARY KEY (user_id, survey_id),
+            |  CONSTRAINT user_sessions_users_pk FOREIGN KEY (user_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE CASCADE,
+            |  CONSTRAINT user_sessions_surveys_fk FOREIGN KEY (survey_id) REFERENCES surveys (id) ON UPDATE CASCADE ON DELETE CASCADE
+            |)
+          """.stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    },
+
+    new Migration {
+      override val versionFrom: Long = 75l
+      override val versionTo: Long = 76l
+      override val description: String = "Split download URL information from data_export_tasks"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL(
+          """
+            |CREATE TABLE data_export_downloads(
+            |  id SERIAL PRIMARY KEY,
+            |  task_id INTEGER NOT NULL REFERENCES data_export_tasks(id),
+            |  upload_successful BOOLEAN,
+            |  stack_trace VARCHAR(256),
+            |  download_url VARCHAR(1024),
+            |  download_url_expires_at TIMESTAMP WITH TIME ZONE
+            |)
+          """.stripMargin).execute()
+
+        SQL("CREATE INDEX data_export_downloads_task_id_index ON data_export_downloads (task_id)").execute()
+
+        SQL(
+          """INSERT INTO data_export_downloads(task_id, upload_successful, stack_trace, download_url, download_url_expires_at)
+            |SELECT id, true, NULL, download_url, download_url_expires_at FROM data_export_tasks
+            |WHERE download_url IS NOT NULL""".stripMargin).execute()
+
+        SQL("ALTER TABLE data_export_tasks DROP COLUMN download_url").execute()
+        SQL("ALTER TABLE data_export_tasks DROP COLUMN download_url_expires_at").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    },
+
+    new Migration {
+      override val versionFrom: Long = 76l
+      override val versionTo: Long = 77l
+      override val description: String = "Add purpose column to data_export_tasks"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE data_export_tasks ADD COLUMN purpose VARCHAR(16) NOT NULL DEFAULT 'download'").execute()
+        SQL("CREATE INDEX data_export_tasks_purpose_index ON data_export_tasks (purpose)").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    },
+
+    new Migration {
+      override val versionFrom: Long = 77l
+      override val versionTo: Long = 78l
+      override val description: String = "Create data_export_scheduled"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL(
+          """create table data_export_scheduled
+            |(
+            | id serial not null primary key,
+            | user_id integer not null references users(id) on update cascade on delete cascade,
+            | survey_id varchar(64) not null references surveys(id) on update cascade on delete cascade,
+            | period_days integer,
+            | days_of_week integer default 127 CHECK(days_of_week > 0 AND days_of_week <=127),
+            | time time not null,
+            | time_zone varchar(32) not null,
+            | action varchar(32) not null,
+            | action_config varchar(1024) not null,
+            | next_run_utc timestamp not null
+            |)""".stripMargin).execute()
+
+        SQL("CREATE INDEX data_export_scheduled_next_run_utc_index ON data_export_scheduled (next_run_utc)").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    },
+
+    new Migration {
+      override val versionFrom: Long = 78l
+      override val versionTo: Long = 79l
+      override val description: String = "Fix constraints to make deleting surveys possible"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE survey_submission_missing_foods DROP CONSTRAINT survey_submission_missing_foods_fkey").execute()
+        SQL(
+          """ALTER TABLE survey_submission_missing_foods
+            |  ADD CONSTRAINT survey_submission_missing_foods_fkey
+            |  FOREIGN KEY (meal_id) REFERENCES survey_submission_meals (id) ON DELETE CASCADE ON UPDATE CASCADE;
+          """.stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    },
+
+    new Migration {
+      override val versionFrom: Long = 79l
+      override val versionTo: Long = 80l
+      override val description: String = "Add submissions_for_feedback to survey parameters"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE surveys ADD COLUMN number_of_submissions_for_feedback INTEGER NOT NULL DEFAULT 1").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    },
+
+    new Migration {
+      override val versionFrom: Long = 80l
+      override val versionTo: Long = 81l
+      override val description: String = "Anonymize IP addresses in signin_log for non-admin users"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE signin_log ALTER COLUMN remote_address DROP NOT NULL").execute()
+
+        SQL("""UPDATE signin_log SET remote_address=NULL WHERE (user_id NOT IN (SELECT DISTINCT (id) FROM users JOIN user_roles u ON users.id = u.user_id WHERE
+              |  role='superuser' OR role='foodsadmin' OR role ='imageadmin' OR role ='surveyadmin' OR role='imagesadmin'
+              |  OR role LIKE '%/staff' OR role LIKE 'fdbm/') OR user_id IS NULL)
+              """.stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    },
+
+    new Migration {
+      override val versionFrom: Long = 81l
+      override val versionTo: Long = 82l
+      override val description: String = "Delete name and e-mail records for non-admin users"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("""UPDATE users SET name=NULL,email=NULL,phone=NULL,simple_name=NULL WHERE
+              |  id NOT IN (SELECT DISTINCT (id) FROM users JOIN user_roles u ON users.id = u.user_id WHERE
+              |  role='superuser' OR role='foodsadmin' OR role ='imageadmin' OR role ='surveyadmin' OR role='imagesadmin'
+              |  OR role LIKE '%/staff' OR role LIKE 'fdbm/')
+              |  AND id NOT IN (SELECT DISTINCT (id) FROM users JOIN user_survey_aliases a ON users.id = a.user_id WHERE a.survey_id='flex-recall')
+            """.stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    },
+
+    new Migration {
+      override val versionFrom: Long = 82l
+      override val versionTo: Long = 83l
+      override val description: String = "Add unique constraint and index to short_urls"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("ALTER TABLE short_urls ADD CONSTRAINT short_urls_unique UNIQUE (short_url)").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+      }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 83l
+      override val versionTo: Long = 84l
+      override val description: String = "Add UK (simplified) locale"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("INSERT INTO locales VALUES('en_GB_simple', 'United Kingdom (simplified)', 'United Kingdom (simplified)', 'en_GB', 'en', 'gb', 'en_GB')").execute()
+        SQL("INSERT INTO local_nutrient_types(locale_id, nutrient_type_id) SELECT 'en_GB_simple', nutrient_type_id FROM local_nutrient_types WHERE locale_id='en_GB'").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
     }
+
   )
 }

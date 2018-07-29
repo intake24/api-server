@@ -27,6 +27,7 @@ object UserRecordsCSVParser {
   private def containsWhitespace(s: String): Boolean = whitespace.findFirstMatchIn(s).isDefined
 
   private def parseHeader(header: Array[String]): Either[String, HeaderFormat] = {
+    println(header.mkString(", "))
     if (header.length < 2)
       Left("""Incorrect number of columns in header: at least 2 required ("user name" and "password")""")
     else if (!(header(0).toLowerCase == USER_NAME_HEADER && header(1).toLowerCase == PASSWORD_HEADER))

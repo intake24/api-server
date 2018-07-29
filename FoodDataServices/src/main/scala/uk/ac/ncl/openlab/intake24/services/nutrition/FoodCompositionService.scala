@@ -29,4 +29,7 @@ trait FoodCompositionService {
   def getEnergyKcalNutrientId(): Long
 
   def getFoodCompositionRecord(table_id: String, record_id: String): Either[FoodCompositionTableError, Map[Long, Double]]
+
+  def listFoodNutrients(tableId: String, localeId: String): Either[FoodCompositionTableError, Map[String, Map[Long, Double]]]
+
 }

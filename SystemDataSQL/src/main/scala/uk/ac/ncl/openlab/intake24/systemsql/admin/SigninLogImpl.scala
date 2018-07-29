@@ -12,6 +12,7 @@ class SigninLogImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
 
   def logSigninAttempt(event: SigninAttempt): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
+
       SQL("INSERT INTO signin_log VALUES (DEFAULT, DEFAULT,{ip},{provider},{provider_key},{success},{userId},{message},{user_agent})")
         .on('ip -> event.remoteAddress, 'provider -> event.provider, 'provider_key -> event.providerKey, 'success -> event.success, 'userId -> event.userId, 'message -> event.message,
         'user_agent -> event.userAgent)

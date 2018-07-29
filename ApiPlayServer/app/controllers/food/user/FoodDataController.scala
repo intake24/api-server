@@ -154,22 +154,33 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
   def getPairwiseAssociatedFoods(locale: String, f: Seq[String]) = rab.restrictToAuthenticated {
     _ =>
       Future {
-        val recommendedCategories = pairwiseAssociationsService.recommend(locale, f, PairwiseAssociationsServiceSortTypes.paRules)
+        val hideCategories = Seq(
+          //          "MDNK", // Milk as a drink
+          //          "MCRL", // Milk in cereal
+          "RECP", // Recipes
+          "SLW1", // Wizards
+          "SLW2",
+          "SW01",
+          "SW02",
+          "SW03",
+          "SW04",
+          "SW05",
+          "SW06"
+        )
+        val recommendedCategories = pairwiseAssociationsService.recommend(locale, f, PairwiseAssociationsServiceSortTypes.paRules, ignoreInputSize = true)
           .sortBy(-_._2)
           .take(15)
           .map { f =>
-            foodBrowsingService.getFoodCategories(f._1, locale, 0).right.map(_.filterNot(_.isHidden).map(c => c -> f._2))
-          }
-        val resp: Either[LookupError, PairwiseAssociatedFoods] = if (recommendedCategories.exists(_.isLeft)) {
-          Left(recommendedCategories.filter(_.isLeft).head.left.get)
-        } else {
-          val categories = recommendedCategories.flatMap(_.right.get)
-            .groupBy(_._1.code).map(n => n._2.head._1 -> n._2.map(_._2).sum)
-            .toSeq
-            .sortBy(-_._2)
-            .map(c => UserCategoryHeader(c._1.code, c._1.localDescription.getOrElse("")))
-          Right(PairwiseAssociatedFoods(categories))
-        }
+            foodBrowsingService.getFoodCategories(f._1, locale, 0).right
+              .map(_.filterNot(ch => hideCategories.contains(ch.code))
+                .map(c => c -> f._2))
+          }.filter(_.isRight)
+        val categories = recommendedCategories.flatMap(_.right.get)
+          .groupBy(_._1.code).map(n => n._2.head._1 -> n._2.map(_._2).sum)
+          .toSeq
+          .sortBy(-_._2)
+          .map(c => UserCategoryHeader(c._1.code, c._1.localDescription.getOrElse("")))
+        val resp = Right(PairwiseAssociatedFoods(categories))
         translateDatabaseResult(resp)
       }
   }

@@ -19,7 +19,7 @@ limitations under the License.
 import ResolveInternalDependencies._
 
 lazy val commonSettings = Seq(
-  version := "3.14.1-SNAPSHOT",
+  version := "3.26.0-SNAPSHOT",
   scalaVersion := "2.12.4",
   publishArtifact in(Compile, packageDoc) := false,
   scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
@@ -73,8 +73,12 @@ lazy val imageStorageS3 = Project(id = "imageStorageS3", base = file("ImageStora
 
 lazy val imageProcessorIM = Project(id = "imageProcessorIM", base = file("ImageProcessorIM")).dependsOn(foodDataServices).settings(commonSettings: _*)
 
+lazy val standardize = Project(id = "standardize", base = file("standardize")).settings(commonSettings: _*)
+
+lazy val foodSubstRecommender = Project(id = "foodSubstRecommender", base = file("FoodSubstRecommender")).dependsOn(foodDataServices, standardize).settings(commonSettings: _*)
+
 lazy val apiPlayServer =
-  Project(id = "apiPlayServer", base = file("ApiPlayServer")).enablePlugins(PlayScala, SystemdPlugin, JDebPackaging).dependsOn(apiSharedJVM, foodDataSql, systemDataSql, imageStorageLocal, imageStorageS3, imageProcessorIM).settings(commonSettings: _*)
+  Project(id = "apiPlayServer", base = file("ApiPlayServer")).enablePlugins(PlayScala, SystemdPlugin, JDebPackaging).dependsOn(apiSharedJVM, foodDataSql, systemDataSql, imageStorageLocal, imageStorageS3, imageProcessorIM, foodSubstRecommender).settings(commonSettings: _*)
 
 lazy val apiDocs = scalatex.ScalatexReadme(
   projectId = "apiDocs",

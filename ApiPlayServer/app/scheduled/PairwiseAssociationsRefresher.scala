@@ -1,6 +1,6 @@
 package scheduled
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.{Inject, Named, Singleton}
 
 import scala.concurrent.duration._
 import akka.actor.ActorSystem
@@ -17,7 +17,7 @@ trait PairwiseAssociationsRefresher
 class PairwiseAssociationsRefresherImpl @Inject()(settings: PairwiseAssociationsServiceConfiguration,
                                                   system: ActorSystem,
                                                   paService: PairwiseAssociationsService,
-                                                  implicit val executionContext: ExecutionContext)
+                                                  @Named("intake24") implicit val executionContext: ExecutionContext)
   extends PairwiseAssociationsRefresher {
 
   system.scheduler.scheduleOnce(0.minutes) {

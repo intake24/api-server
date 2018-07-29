@@ -21,8 +21,8 @@ name := "common-sql"
 description := "Intake24 shared SQL code"
 
 libraryDependencies ++= Seq(
-  "org.postgresql" % "postgresql" % "42.0.0",
-  "org.postgresql" % "postgresql" % "42.0.0" % "test",
+  "org.postgresql" % "postgresql" % "42.2.2",
+  "org.postgresql" % "postgresql" % "42.2.2" % "test",
   "com.typesafe.play" %% "anorm" % "2.5.3",
   "org.slf4j" % "slf4j-api" % "1.7.21"
 )

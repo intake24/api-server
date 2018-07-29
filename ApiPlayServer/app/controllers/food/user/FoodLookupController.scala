@@ -82,16 +82,7 @@ class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex],
     val srtMap = gr.filter(i => foundFoodCodes.contains(i._1))
     val getScore = (code: String) => srtMap.getOrElse(code, 0d)
 
-    lookupResult.foods.sortWith {
-      (f1, f2) =>
-        val pop1 = getScore(f1.food.code)
-        val pop2 = getScore(f2.food.code)
-
-        if (pop1 == pop2)
-          f1.matchCost < f2.matchCost
-        else
-          pop1 > pop2
-    }
+    lookupResult.foods.sortBy(f => (-getScore(f.food.code), f.matchCost))
   }
 
   def lookup(locale: String, description: String, selectedFoods: Seq[String], maxResults: Int, algorithm: String = PairwiseAssociationsServiceSortTypes.paRules) = rab.restrictToAuthenticated {

@@ -69,14 +69,18 @@ class SigninController @Inject()(silhouette: Environment[Intake24ApiEnv],
 
   def handleAuthResult(providerID: String, providerKey: String, authResult: Future[LoginInfo])(implicit request: RequestHeader): Future[Result] = {
 
-    def logException(e: Throwable) = logAttemptAsync(SigninAttempt(getRemoteAddress(request), getUserAgent(request), providerID, providerKey, false, None, Some(e.getClass.getSimpleName + ": " + e.getMessage)))
+    def logException(e: Throwable) = logAttemptAsync(SigninAttempt(None, getUserAgent(request), providerID, providerKey, false, None, Some(e.getClass.getSimpleName + ": " + e.getMessage)))
 
     authResult.flatMap {
       loginInfo =>
         silhouette.identityService.retrieve(loginInfo).flatMap {
           case Some(user) =>
 
-            logAttemptAsync(SigninAttempt(getRemoteAddress(request), getUserAgent(request), providerID, providerKey, true, Some(user.userInfo.id), None))
+            // GDPR: as long as we know some personal information (e-mail) might as well store the IP
+            //       otherwise don't store the IP at all
+            val remoteAddressOption = if (loginInfo.providerID == "email") Some(getRemoteAddress(request)) else None
+
+            logAttemptAsync(SigninAttempt(remoteAddressOption, getUserAgent(request), providerID, providerKey, true, Some(user.userInfo.id), None))
 
             silhouette.authenticatorService.create(loginInfo).flatMap {
               t =>
@@ -89,7 +93,7 @@ class SigninController @Inject()(silhouette: Environment[Intake24ApiEnv],
                 }
             }
           case None =>
-            logAttemptAsync(SigninAttempt(getRemoteAddress(request), getUserAgent(request), loginInfo.providerID, loginInfo.providerKey, false, None, Some("Authentication was successful, but identity service could not find user")))
+            logAttemptAsync(SigninAttempt(None, getUserAgent(request), loginInfo.providerID, loginInfo.providerKey, false, None, Some("Authentication was successful, but identity service could not find user")))
             Future.successful(Unauthorized)
         }
     }.recover {

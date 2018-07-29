@@ -24,8 +24,10 @@ import akka.actor.ActorSystem
 import controllers.DatabaseErrorHandler
 import io.circe.syntax._
 import io.circe.generic.auto._
+import models.{SaveUserSessionRequest, UserSessionResponse}
 import parsers.{JsonBodyParser, JsonUtils}
 import play.Logger
+import play.api.http.ContentTypes
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 import security.Intake24RestrictedActionBuilder
@@ -33,12 +35,14 @@ import uk.ac.ncl.openlab.intake24.api.data.ErrorDescription
 import uk.ac.ncl.openlab.intake24.services.nutrition.NutrientMappingService
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{SurveyAdminService, UserAdminService}
-import uk.ac.ncl.openlab.intake24.services.systemdb.user.{FoodPopularityService, SurveyService}
+import uk.ac.ncl.openlab.intake24.services.systemdb.user.{FoodPopularityService, SurveyService, UserSession, UserSessionDataService}
 import uk.ac.ncl.openlab.intake24.surveydata.{SubmissionNotification, SurveySubmission}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
+
+case class SubmissionResponseBody(followUpUrl: Option[String], redirectToFeedback: Boolean)
 
 class SurveyController @Inject()(service: SurveyService,
                                  ws: WSClient,
@@ -50,6 +54,7 @@ class SurveyController @Inject()(service: SurveyService,
                                  rab: Intake24RestrictedActionBuilder,
                                  playBodyParsers: PlayBodyParsers,
                                  jsonBodyParser: JsonBodyParser,
+                                 userSessionDataService: UserSessionDataService,
                                  val controllerComponents: ControllerComponents,
                                  implicit val executionContext: ExecutionContext) extends BaseController
   with DatabaseErrorHandler with JsonUtils {
@@ -96,79 +101,127 @@ class SurveyController @Inject()(service: SurveyService,
       }
   }
 
+  def saveSession(surveyId: String) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(jsonBodyParser.parse[SaveUserSessionRequest]) {
+    request =>
+      Future {
+        val userId = request.subject.userId
+        translateDatabaseResult(userSessionDataService.save(UserSession(userId, surveyId, request.body.data)))
+      }
+  }
+
+  def getSession(surveyId: String) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(playBodyParsers.empty) {
+    request =>
+      Future {
+        val userId = request.subject.userId
+        val r = userSessionDataService.get(surveyId, userId)
+          .map(s => UserSessionResponse(Some(s)))
+          .getOrElse(UserSessionResponse(None))
+        translateDatabaseResult(Right(r))
+      }
+  }
+
+  def cleanSession(surveyId: String) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(playBodyParsers.empty) {
+    request =>
+      Future {
+        val userId = request.subject.userId
+        translateDatabaseResult(userSessionDataService.clean(surveyId, userId))
+      }
+  }
+
   def submitSurvey(surveyId: String) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(jsonBodyParser.parse[SurveySubmission]) {
     request =>
       Future {
-        service.getSurveyParameters(surveyId) match {
-          case Right(params) =>
-            if (params.state != "running")
-              Forbidden(toJsonString(ErrorDescription("SurveyNotRunning", "Survey not accepting submissions at this time")))
-            else {
-              val userId = request.subject.userId
+        val userId = request.subject.userId;
 
-              // No reason to keep the user waiting for the database result because reporting nutrient mapping or
-              // database errors to the user is not helpful at this point.
-              // Schedule submission asynchronously to release the request immediately and log errors server-side instead.
-              actorSystem.scheduler.scheduleOnce(0.seconds) {
+        val result = for (surveyParameters <- service.getSurveyParameters(surveyId);
+                          currentSubmissionsCount <- service.getNumberOfSubmissionsForUser(surveyId, userId);
+                          userNameOpt <- userService.getSurveyUserAliases(Seq(userId), surveyId).map(_.get(userId).map(_.userName));
+                          followUp <- service.getSurveyFollowUp(surveyId)) yield {
+          if (surveyParameters.state != "running")
+            Forbidden(toJsonString(ErrorDescription("SurveyNotRunning", "Survey not accepting submissions at this time")))
+          else {
+            val userId = request.subject.userId
 
-                val foodCodes = request.body.meals.foldLeft(List[String]()) {
-                  (acc, meal) =>
-                    meal.foods.foldLeft(acc) {
-                      (acc, food) => food.code :: acc
-                    }
-                }
+            // No reason to keep the user waiting for the database result because reporting nutrient mapping or
+            // database errors to the user is not helpful at this point.
+            // Schedule submission asynchronously to release the request immediately and log errors server-side instead.
+            actorSystem.scheduler.scheduleOnce(0.seconds) {
 
-                val result = for (nutrientMappedSubmission <- nutrientMappingService.mapSurveySubmission(request.body, params.localeId).right;
-                                  submissionId <- service.createSubmission(userId, surveyId, nutrientMappedSubmission).right;
-                                  _ <- foodPopularityService.incrementPopularityCount(foodCodes).right) yield ((nutrientMappedSubmission, submissionId))
-                result match {
-                  case Right((nutrientMappedSubmission, submissionId)) =>
-                    surveyAdminService.getSurveyParameters(surveyId) match {
-                      case Right(surveyParameters) =>
-                        surveyParameters.submissionNotificationUrl.foreach {
-                          notificationUrl =>
-
-                            (for (userParams <- userService.getUserById(userId);
-                                  userAlias <- userService.getSurveyUserAliases(Seq(userId), surveyId))
-                              yield ((userParams, userAlias))) match {
-                              case Right((userParams, userAlias)) =>
-                                Logger.debug("Sending survey submission notification")
-
-                                val payload = SubmissionNotification(userParams.id, surveyId, userAlias.get(userId).map(_.userName).getOrElse(null),
-                                  userParams.customFields, nutrientMappedSubmission.startTime, nutrientMappedSubmission.endTime,
-                                  nutrientMappedSubmission.uxSessionId, submissionId, nutrientMappedSubmission.customData, nutrientMappedSubmission.meals).asJson.noSpaces
-
-                                ws.url(notificationUrl)
-                                  .withHttpHeaders("Content-Type" -> "application/json; charset=utf-8")
-                                  .withBody(payload)
-                                  .execute("POST")
-                                  .onComplete {
-                                    case Success(response) =>
-                                      if (response.status == 200)
-                                        Logger.debug(s"Survey submission notification sent to $notificationUrl")
-                                      else
-                                        Logger.error(s"Survey submission notification sent, but request failed with code ${response.status}")
-                                    case Failure(e) =>
-                                      Logger.error("Failed to send survey submission notification", e)
-                                  }
-
-                              case Left(error) => Logger.error(s"Could not get user data for user $userId", error.exception)
-                            }
-
-
-                        }
-                      case Left(error) => Logger.error(s"Could not get survey parameters for survey $surveyId", error.exception)
-                    }
-
-                  case Left(error) => Logger.error(s"Could not save survey submission!", error.exception)
-
-                }
+              val foodCodes = request.body.meals.foldLeft(List[String]()) {
+                (acc, meal) =>
+                  meal.foods.foldLeft(acc) {
+                    (acc, food) => food.code :: acc
+                  }
               }
 
-              Ok
+              val result = for (nutrientMappedSubmission <- nutrientMappingService.mapSurveySubmission(request.body, surveyParameters.localeId).right;
+                                submissionId <- service.createSubmission(userId, surveyId, nutrientMappedSubmission).right;
+                                _ <- foodPopularityService.incrementPopularityCount(foodCodes).right) yield ((nutrientMappedSubmission, submissionId))
+              result match {
+                case Right((nutrientMappedSubmission, submissionId)) =>
+                  surveyAdminService.getSurveyParameters(surveyId) match {
+                    case Right(surveyParameters) =>
+                      surveyParameters.submissionNotificationUrl.foreach {
+                        notificationUrl =>
+
+                          (for (userParams <- userService.getUserById(userId);
+                                userAlias <- userService.getSurveyUserAliases(Seq(userId), surveyId))
+                            yield ((userParams, userAlias))) match {
+                            case Right((userParams, userAlias)) =>
+                              Logger.debug("Sending survey submission notification")
+
+                              val payload = SubmissionNotification(userParams.id, surveyId, userAlias.get(userId).map(_.userName).getOrElse(null),
+                                userParams.customFields, nutrientMappedSubmission.startTime, nutrientMappedSubmission.endTime,
+                                nutrientMappedSubmission.uxSessionId, submissionId, nutrientMappedSubmission.customData, nutrientMappedSubmission.meals).asJson.noSpaces
+
+                              ws.url(notificationUrl)
+                                .withHttpHeaders("Content-Type" -> "application/json; charset=utf-8")
+                                .withBody(payload)
+                                .execute("POST")
+                                .onComplete {
+                                  case Success(response) =>
+                                    if (response.status == 200)
+                                      Logger.debug(s"Survey submission notification sent to $notificationUrl")
+                                    else
+                                      Logger.error(s"Survey submission notification sent, but request failed with code ${response.status}")
+                                  case Failure(e) =>
+                                    Logger.error("Failed to send survey submission notification", e)
+                                }
+
+                            case Left(error) => Logger.error(s"Could not get user data for user $userId", error.exception)
+                          }
+
+
+                      }
+                    case Left(error) => Logger.error(s"Could not get survey parameters for survey $surveyId", error.exception)
+                  }
+
+                case Left(error) => Logger.error(s"Could not save survey submission!", error.exception)
+
+              }
             }
-          case Left(error) => translateDatabaseError(error)
+
+            if (userNameOpt.isEmpty)
+              Logger.warn(s"Survey user has no survey alias (for external follow up URL): $userId")
+
+            val submissionThresholdReached = (currentSubmissionsCount + 1) >= surveyParameters.numberOfSurveysForFeedback
+
+            val followUpUrlWithUserName =
+              if (submissionThresholdReached) {
+                for (userName <- userNameOpt;
+                     followUpUrl <- followUp.followUpUrl)
+                  yield followUpUrl.replace("[intake24_username_value]", userName)
+              }
+              else
+                None
+
+            val redirectToFeedback = submissionThresholdReached && followUp.showFeedback
+
+            Ok(SubmissionResponseBody(followUpUrlWithUserName, redirectToFeedback).asJson.noSpaces).as(ContentTypes.JSON)
+          }
         }
+
+        translateDatabaseHttpResult(result)
       }
   }
 }

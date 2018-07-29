@@ -60,6 +60,7 @@ trait UserAdminService {
 
   def getUserByUrlToken(token: String): Either[LookupError, UserProfile]
 
+  def getAuthTokenByUserId(userId: Long): Either[LookupError, String]
 
   def deleteUsersById(userIds: Seq[Long]): Either[DeleteError, Unit]
 

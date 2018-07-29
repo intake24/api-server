@@ -4,7 +4,7 @@ import java.nio.file.Path
 import java.util.UUID
 
 import org.apache.commons.io.FilenameUtils
-import uk.ac.ncl.openlab.intake24.errors.AnyError
+import uk.ac.ncl.openlab.intake24.errors.DatabaseError
 
 case class ImageDescriptor(id: Long, path: String)
 
@@ -19,7 +19,7 @@ sealed trait ImageServiceOrDatabaseError {
   }
 }
 
-case class DatabaseErrorWrapper(error: AnyError) extends ImageServiceOrDatabaseError
+case class DatabaseErrorWrapper(error: DatabaseError) extends ImageServiceOrDatabaseError
 
 case class ImageServiceErrorWrapper(error: ImageServiceError) extends ImageServiceOrDatabaseError
 
@@ -45,7 +45,7 @@ object ImageAdminService {
     def wrapped: Either[ImageServiceOrDatabaseError, T] = result.left.map(ImageServiceErrorWrapper(_))
   }
 
-  implicit class WrapDatabaseError[T](result: Either[AnyError, T]) {
+  implicit class WrapDatabaseError[T](result: Either[DatabaseError, T]) {
     def wrapped: Either[ImageServiceOrDatabaseError, T] = result.left.map(DatabaseErrorWrapper(_))
   }
 

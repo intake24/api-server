@@ -18,17 +18,18 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.foodsql.user
 
-import javax.inject.Inject
-import javax.sql.DataSource
-
 import anorm.NamedParameter.symbol
 import anorm.{Macro, SQL, SqlParser, sqlToSimple}
 import com.google.inject.Singleton
 import com.google.inject.name.Named
+import javax.inject.Inject
+import javax.sql.DataSource
 import org.slf4j.LoggerFactory
+import uk.ac.ncl.openlab.intake24.api.data.UserFoodHeader
+import uk.ac.ncl.openlab.intake24.api.data.admin.FoodHeader
 import uk.ac.ncl.openlab.intake24.errors.{LocalLookupError, LocaleError, UndefinedLocale}
 import uk.ac.ncl.openlab.intake24.foodsql.FirstRowValidation
-import uk.ac.ncl.openlab.intake24.services.fooddb.user.{FoodDataService, FoodDataSources, SourceLocale, ResolvedFoodData}
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.{FoodDataService, FoodDataSources, ResolvedFoodData, SourceLocale}
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
 @Singleton
@@ -94,4 +95,21 @@ class FoodDataServiceImpl @Inject()(@Named("intake24_foods") val dataSource: Dat
         }
       }
   }
+
+  override def getFoodHeader(code: String, localeId: String): Either[LocalLookupError, UserFoodHeader] = tryWithConnection {
+    implicit conn =>
+      val r = SQL(
+        """
+          |SELECT
+          |  f.code,
+          |  f2.local_description as localDescription
+          |FROM foods f
+          |  JOIN foods_local f2 on f.code = f2.food_code
+          |WHERE f.code = {code} AND f2.locale_id={localeId};
+        """.stripMargin).on('code -> code, 'localeId -> localeId).executeQuery()
+        .as(Macro.namedParser[UserFoodHeader].single)
+      Right(r)
+
+  }
+
 }
