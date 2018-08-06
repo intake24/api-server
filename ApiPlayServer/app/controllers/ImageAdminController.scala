@@ -40,18 +40,19 @@ class ImageAdminController @Inject()(service: ImageAdminService,
 
     val keywords = request.body.dataParts.get("keywords").getOrElse(Seq())
 
+
+
     if (request.body.files.length < 1)
       BadRequest("""{"cause":"Expected file attachments"}""").as(ContentTypes.JSON)
     else {
       val results = request.body.files.map {
         file =>
-
           val suggestedPath = pathFunc match {
             case Some(f) => f(file.filename)
             case None => file.filename
           }
 
-          service.uploadSourceImage(suggestedPath, file.ref.path, keywords, uploaderName)
+          service.uploadSourceImage(suggestedPath, file.ref.path, file.filename, keywords, uploaderName)
       }.toList
 
       val error = results.find(_.isLeft)

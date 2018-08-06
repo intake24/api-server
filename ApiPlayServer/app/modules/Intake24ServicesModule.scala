@@ -228,7 +228,7 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
 
     bind(classOf[ImageDatabaseService]).to(classOf[ImageDatabaseServiceSqlImpl])
     bind(classOf[ImageAdminService]).to(classOf[ImageAdminServiceDefaultImpl])
-    bind(classOf[FileTypeAnalyzer]).to(classOf[FileCommandFileTypeAnalyzer])
+
     bind(classOf[ImageProcessor]).to(classOf[ImageProcessorIM])
 
     // Admin services -- cached

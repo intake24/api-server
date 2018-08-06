@@ -62,7 +62,8 @@ class ImageMapAdminController @Inject()(
   private def createImageMap(baseImage: FilePart[TemporaryFile], keywords: Seq[String], params: NewImageMapWithObjectsRequest, imageMap: AWTImageMap, uploader: String): Either[Result, Unit] =
     translateImageServiceAndDatabaseError(
       for (
-        baseImageSourceRecord <- imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForImageMap(params.id, baseImage.filename), baseImage.ref.path, keywords, uploader).right;
+        baseImageSourceRecord <- imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForImageMap(params.id, baseImage.filename), baseImage.ref.path,
+          baseImage.filename, keywords, uploader).right;
         processedBaseImageDescriptor <- imageAdmin.processForImageMapBase(params.id, baseImageSourceRecord.id).right;
         overlayDescriptors <- imageAdmin.generateImageMapOverlays(params.id, baseImageSourceRecord.id, imageMap).right;
         _ <- {
@@ -80,7 +81,8 @@ class ImageMapAdminController @Inject()(
   private def createImageMapWithoutObjects(baseImage: FilePart[TemporaryFile], keywords: Seq[String], params: NewImageMapRequest, uploader: String): Either[Result, ImageMapResponse] =
     translateImageServiceAndDatabaseError(
       for (
-        baseImageSourceRecord <- imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForImageMap(params.id, baseImage.filename), baseImage.ref.path, keywords, uploader).right;
+        baseImageSourceRecord <- imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForImageMap(params.id, baseImage.filename),
+          baseImage.ref.path, baseImage.filename, keywords, uploader).right;
         processedBaseImageDescriptor <- imageAdmin.processForImageMapBase(params.id, baseImageSourceRecord.id).right;
         _ <- imageMaps.createImageMaps(Seq(NewImageMapRecord(params.id, params.description, processedBaseImageDescriptor.id, Nil, Map.empty))).wrapped.right
       ) yield ImageMapResponse(params.id, params.description, baseImageSourceRecord.path))
