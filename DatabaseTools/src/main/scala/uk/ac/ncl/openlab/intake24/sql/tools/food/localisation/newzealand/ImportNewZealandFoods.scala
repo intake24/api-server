@@ -40,13 +40,13 @@ object ImportNewZealandFoods extends App with DatabaseConnection with WarningMes
 
   val foodsAdminService = new FoodsAdminImpl(dataSource)
   val asServedService = new AsServedSetsAdminImpl(dataSource, new AsServedSetsServiceImpl(dataSource))
-  val guideImageService = new GuideImageAdminImpl(dataSource, new GuideImageServiceImpl(dataSource))
+  //  val guideImageService = new GuideImageAdminImpl(dataSource, new GuideImageServiceImpl(dataSource))
 
   val knownAsServedSets = asServedService.listAsServedSets().right.get.keySet
-  val knownGuideImages = guideImageService.listGuideImages().right.get.map(_.id).toSet
+  //  val knownGuideImages = guideImageService.listGuideImages().right.get.map(_.id).toSet
 
   println("Known as served sets: " + knownAsServedSets.mkString(", "))
-  println("Known guide images: " + knownGuideImages.mkString(", "))
+  //  println("Known guide images: " + knownGuideImages.mkString(", "))
 
   val replacementCodes = {
     val reader = new CSVReader(new FileReader(options.codesCsv()))
@@ -155,8 +155,8 @@ object ImportNewZealandFoods extends App with DatabaseConnection with WarningMes
   def verifyGuideImage(params: Seq[PortionSizeMethodParameter]) = {
     val id = params.find(_.name == "guide-image-id").get.value
 
-    if (!knownGuideImages.contains(id))
-      println(s"    \u001b[101mUndefined guide image: $id \u001b[39m")
+    //    if (!knownGuideImages.contains(id))
+    //      println(s"    \u001b[101mUndefined guide image: $id \u001b[39m")
   }
 
 

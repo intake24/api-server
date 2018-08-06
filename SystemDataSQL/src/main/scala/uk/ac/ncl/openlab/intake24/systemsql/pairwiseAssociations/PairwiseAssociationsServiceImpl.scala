@@ -2,14 +2,14 @@ package uk.ac.ncl.openlab.intake24.systemsql.pairwiseAssociations
 
 import java.time.{ZoneId, ZonedDateTime}
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.{Inject, Named, Singleton}
 import org.slf4j.LoggerFactory
+import uk.ac.ncl.openlab.intake24.errors.UpdateError
 import uk.ac.ncl.openlab.intake24.pairwiseAssociationRules.PairwiseAssociationRules
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, ExportSubmission, SurveyAdminService, SurveyParametersOut}
 import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsDataService, PairwiseAssociationsService, PairwiseAssociationsServiceConfiguration, PairwiseAssociationsServiceSortTypes}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
 /**
@@ -20,7 +20,10 @@ import scala.util.{Failure, Success}
 class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsServiceConfiguration,
                                                 dataService: PairwiseAssociationsDataService,
                                                 surveyAdminService: SurveyAdminService,
-                                                dataExportService: DataExportService) extends PairwiseAssociationsService {
+                                                dataExportService: DataExportService,
+                                                @Named("intake24") implicit val executionContext: ExecutionContext) extends PairwiseAssociationsService {
+
+  type LocalizedPARules = Map[String, PairwiseAssociationRules]
 
   private val threadSleepFor = 5
 
@@ -28,7 +31,13 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
 
   private var associationRules = Map[String, PairwiseAssociationRules]()
 
-  getAssociationRules()
+  private val associationRulesPromise = Promise[Map[String, PairwiseAssociationRules]]
+
+  getAssociationRulesFromDb()
+
+  override def getAssociationRules(): Map[String, PairwiseAssociationRules] = associationRules
+
+  override def getAssociationRulesAsync(): Future[Map[String, PairwiseAssociationRules]] = associationRulesPromise.future
 
   override def recommend(locale: String,
                          items: Seq[String],
@@ -63,7 +72,7 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
       dataService.addTransactions(surveyParams.localeId, items)
     }
 
-  override def refresh(): Unit = {
+  override def refresh(): Future[Either[UpdateError, LocalizedPARules]] = {
     for (
       graph <- buildRules();
       result <- dataService.writeAssociations(graph)
@@ -71,16 +80,17 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
       result match {
         case Left(e) =>
           logger.error(s"Failed to refresh PairwiseAssociations ${e.exception.getMessage}")
+          Left(e)
         case Right(_) =>
           logger.debug(s"Successfully refreshed Pairwise associations")
           this.associationRules = graph
+          Right(graph)
       }
     }
   }
 
-  def buildRules(): Future[Map[String, PairwiseAssociationRules]] = {
-    val graphProm = Promise[Map[String, PairwiseAssociationRules]]
-    new Thread(() => {
+  def buildRules(): Future[LocalizedPARules] = {
+    Future {
       logger.debug("Refreshing Pairwise associations")
       logger.debug("Collecting surveys")
       val surveys = surveyAdminService.listSurveys()
@@ -88,8 +98,7 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
 
       logger.debug("Building new pairwise associations graph")
       val foldGraph = Map[String, PairwiseAssociationRules]().withDefault(_ => PairwiseAssociationRules(None))
-      val graph = surveys.getOrElse(Nil).foldLeft(foldGraph) { (foldGraph, survey) =>
-        Thread.sleep(threadSleepFor)
+      surveys.getOrElse(Nil).foldLeft(foldGraph) { (foldGraph, survey) =>
         val submissions = getSurveySubmissions(survey)
 
         logger.debug("Building a graph")
@@ -100,10 +109,7 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
         foldGraph + (survey.localeId -> localeRules)
       }
 
-      graphProm.success(graph)
-
-    }).start()
-    graphProm.future
+    }
   }
 
   private def extractPairwiseRules[T](localeId: String)(f: PairwiseAssociationRules => T): Option[T] =
@@ -114,7 +120,6 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
     if (surveyIsValid(survey.id, submissionCount, "getSurveySubmissions")) {
       logger.debug(s"Retrieving $submissionCount submissions from survey ${survey.id}")
       val submissions = Range(0, submissionCount, settings.rulesUpdateBatchSize).foldLeft(Seq[ExportSubmission]()) { (submissions, offset) =>
-        Thread.sleep(threadSleepFor)
         submissions ++ dataExportService.getSurveySubmissions(survey.id, None, None, offset, settings.rulesUpdateBatchSize, None).getOrElse(Nil)
       }
       submissions
@@ -153,9 +158,13 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
     dataExportService.getSurveySubmissionCount(surveyId, dateFrom, dateTo).getOrElse(0)
   }
 
-  private def getAssociationRules() = dataService.getAssociations().onComplete({
-    case Success(mp) => this.associationRules = mp
-    case Failure(e) => logger.error(e.getMessage)
+  private def getAssociationRulesFromDb() = dataService.getAssociations().onComplete({
+    case Success(mp) =>
+      this.associationRules = mp
+      associationRulesPromise.success(mp)
+    case Failure(e) =>
+      logger.error(e.getMessage)
+      associationRulesPromise.failure(e)
   })
 
   private case class Submission(locale: String, meals: Seq[Seq[String]])
