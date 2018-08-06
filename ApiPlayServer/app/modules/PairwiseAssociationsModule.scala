@@ -35,7 +35,9 @@ class PairwiseAssociationsModule(env: Environment, config: Configuration) extend
       configuration.get[Int]("intake24.pairwiseAssociations.useAfterNumberOfTransactions"),
       configuration.get[Int]("intake24.pairwiseAssociations.rulesUpdateBatchSize"),
       configuration.get[String]("intake24.pairwiseAssociations.refreshAtTime"),
-      configuration.get[Int]("intake24.pairwiseAssociations.minInputSearchSize")
+      configuration.get[Int]("intake24.pairwiseAssociations.minInputSearchSize"),
+      configuration.get[Int]("intake24.pairwiseAssociations.readWriteRulesDbBatchSize"),
+      configuration.get[Int]("intake24.pairwiseAssociations.storedCoOccurrencesThreshold")
     )
 
   def configure() = {

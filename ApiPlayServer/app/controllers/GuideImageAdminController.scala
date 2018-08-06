@@ -19,32 +19,34 @@ limitations under the License.
 package controllers
 
 import javax.inject.Inject
-
 import io.circe.generic.auto._
-import parsers.JsonBodyParser
+import parsers.{FormDataUtil, JsonBodyParser}
 import play.api.mvc.{BaseController, ControllerComponents}
 import security.Intake24RestrictedActionBuilder
-import uk.ac.ncl.openlab.intake24.api.data.NewGuideImageRequest
-import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{GuideImageAdminService, ImageMapsAdminService, NewGuideImageRecord}
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageAdminService
 
 import scala.concurrent.{ExecutionContext, Future}
+import uk.ac.ncl.openlab.intake24.api.data.NewGuideImageRequest
+import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.{ImageAdminService, ImageStorageService}
 
 class GuideImageAdminController @Inject()(guideImageAdminService: GuideImageAdminService,
                                           imageMapsAdminService: ImageMapsAdminService,
                                           imageAdminService: ImageAdminService,
+                                          imageStorage: ImageStorageService,
                                           foodAuthChecks: FoodAuthChecks,
                                           rab: Intake24RestrictedActionBuilder,
                                           jsonBodyParser: JsonBodyParser,
                                           val controllerComponents: ControllerComponents,
                                           implicit val executionContext: ExecutionContext) extends BaseController
-  with ImageOrDatabaseServiceErrorHandler {
+  with ImageOrDatabaseServiceErrorHandler with FormDataUtil {
 
   import ImageAdminService.WrapDatabaseError
 
   def listGuideImages() = rab.restrictAccess(foodAuthChecks.canReadPortionSizeMethods) {
     Future {
-      translateDatabaseResult(guideImageAdminService.listGuideImages())
+      translateDatabaseResult(guideImageAdminService.listGuideImages().map { images =>
+        images.map(img => img.copy(path = imageStorage.getUrl(img.path)))
+      })
     }
   }
 
@@ -52,6 +54,26 @@ class GuideImageAdminController @Inject()(guideImageAdminService: GuideImageAdmi
     Future {
       translateDatabaseResult(guideImageAdminService.getGuideImage(id))
     }
+  }
+
+  def getGuideImageFull(id: String) = rab.restrictAccess(foodAuthChecks.canReadPortionSizeMethods) {
+    Future {
+      translateDatabaseResult(guideImageAdminService.getFullGuideImage(id))
+    }
+  }
+
+  def patchGuideImageMeta(id: String) = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(jsonBodyParser.parse[GuideImageMeta]) {
+    request =>
+      Future {
+        translateDatabaseResult(guideImageAdminService.patchGuideImageMeta(id, request.body))
+      }
+  }
+
+  def patchGuideImageObjects(id: String) = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(jsonBodyParser.parse[PatchGuideImageObjectsRequest]) {
+    request =>
+      Future {
+        translateDatabaseResult(guideImageAdminService.patchGuideImageObjects(id, request.body.imageWidth / request.body.imageHeight, request.body.objects))
+      }
   }
 
   def updateGuideSelectionImage(id: String, selectionImageId: Long) = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods) {
@@ -76,4 +98,5 @@ class GuideImageAdminController @Inject()(guideImageAdminService: GuideImageAdmi
         translateImageServiceAndDatabaseResult(result)
       }
   }
+
 }

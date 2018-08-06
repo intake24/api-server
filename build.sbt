@@ -75,7 +75,7 @@ lazy val imageProcessorIM = Project(id = "imageProcessorIM", base = file("ImageP
 
 lazy val standardize = Project(id = "standardize", base = file("standardize")).settings(commonSettings: _*)
 
-lazy val foodSubstRecommender = Project(id = "foodSubstRecommender", base = file("FoodSubstRecommender")).dependsOn(foodDataServices, standardize).settings(commonSettings: _*)
+lazy val foodSubstRecommender = Project(id = "foodSubstRecommender", base = file("FoodSubstRecommender")).dependsOn(foodDataServices, foodDataSql, standardize).settings(commonSettings: _*)
 
 lazy val apiPlayServer =
   Project(id = "apiPlayServer", base = file("ApiPlayServer")).enablePlugins(PlayScala, SystemdPlugin, JDebPackaging).dependsOn(apiSharedJVM, foodDataSql, systemDataSql, imageStorageLocal, imageStorageS3, imageProcessorIM, foodSubstRecommender).settings(commonSettings: _*)

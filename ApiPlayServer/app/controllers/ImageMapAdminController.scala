@@ -19,14 +19,14 @@ limitations under the License.
 package controllers
 
 import javax.inject.Inject
-
 import io.circe.generic.auto._
 import parsers.FormDataUtil
+import play.api.http.ContentTypes
 import play.api.libs.Files.TemporaryFile
 import play.api.mvc.MultipartFormData.FilePart
 import play.api.mvc.{BaseController, ControllerComponents, Result}
 import security.Intake24RestrictedActionBuilder
-import uk.ac.ncl.openlab.intake24.api.data.{ErrorDescription, NewImageMapRequest}
+import uk.ac.ncl.openlab.intake24.api.data.{ErrorDescription, ImageMapResponse, NewImageMapRequest, NewImageMapWithObjectsRequest}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
 
@@ -53,16 +53,17 @@ class ImageMapAdminController @Inject()(
   def resolveUrls(set: AsServedSetWithPaths): AsServedSetWithUrls = AsServedSetWithUrls(set.id, set.description, set.images.map(resolveUrls))*/
 
 
-  private def validateParams(params: NewImageMapRequest, parsedImageMap: AWTImageMap): Either[Result, Unit] =
+  private def validateParams(params: NewImageMapWithObjectsRequest, parsedImageMap: AWTImageMap): Either[Result, Unit] =
     parsedImageMap.outlines.keySet.find(k => !params.objectDescriptions.contains(k.toString)) match {
       case Some(missingId) => Left(BadRequest(toJsonString(ErrorDescription("InvalidParameter", s"Missing description for object $missingId"))))
       case None => Right(())
     }
 
-  private def createImageMap(baseImage: FilePart[TemporaryFile], keywords: Seq[String], params: NewImageMapRequest, imageMap: AWTImageMap, uploader: String): Either[Result, Unit] =
+  private def createImageMap(baseImage: FilePart[TemporaryFile], keywords: Seq[String], params: NewImageMapWithObjectsRequest, imageMap: AWTImageMap, uploader: String): Either[Result, Unit] =
     translateImageServiceAndDatabaseError(
       for (
-        baseImageSourceRecord <- imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForImageMap(params.id, baseImage.filename), baseImage.ref.path, keywords, uploader).right;
+        baseImageSourceRecord <- imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForImageMap(params.id, baseImage.filename), baseImage.ref.path,
+          baseImage.filename, keywords, uploader).right;
         processedBaseImageDescriptor <- imageAdmin.processForImageMapBase(params.id, baseImageSourceRecord.id).right;
         overlayDescriptors <- imageAdmin.generateImageMapOverlays(params.id, baseImageSourceRecord.id, imageMap).right;
         _ <- {
@@ -76,6 +77,15 @@ class ImageMapAdminController @Inject()(
         }.wrapped.right
 
       ) yield ())
+
+  private def createImageMapWithoutObjects(baseImage: FilePart[TemporaryFile], keywords: Seq[String], params: NewImageMapRequest, uploader: String): Either[Result, ImageMapResponse] =
+    translateImageServiceAndDatabaseError(
+      for (
+        baseImageSourceRecord <- imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForImageMap(params.id, baseImage.filename),
+          baseImage.ref.path, baseImage.filename, keywords, uploader).right;
+        processedBaseImageDescriptor <- imageAdmin.processForImageMapBase(params.id, baseImageSourceRecord.id).right;
+        _ <- imageMaps.createImageMaps(Seq(NewImageMapRecord(params.id, params.description, processedBaseImageDescriptor.id, Nil, Map.empty))).wrapped.right
+      ) yield ImageMapResponse(params.id, params.description, baseImageSourceRecord.path))
 
   def listImageMaps() = rab.restrictAccess(foodAuthChecks.canReadPortionSizeMethods) {
     _ =>
@@ -98,7 +108,7 @@ class ImageMapAdminController @Inject()(
           baseImage <- getFile("baseImage", request.body).right;
           svgImage <- getFile("svg", request.body).right;
           sourceKeywords <- getOptionalMultipleData("baseImageKeywords", request.body).right;
-          params <- getParsedData[NewImageMapRequest]("imageMapParameters", request.body).right;
+          params <- getParsedData[NewImageMapWithObjectsRequest]("imageMapParameters", request.body).right;
           imageMap <- (svgParser.parseImageMap(svgImage.ref.path.toString) match {
             case Left(e) => Left(BadRequest(toJsonString(ErrorDescription("InvalidParameter", s"Failed to parse the SVG image map: ${e.getClass.getName}: ${e.getMessage}"))))
             case Right(m) => Right(m)
@@ -110,6 +120,23 @@ class ImageMapAdminController @Inject()(
         result match {
           case Left(badResult) => badResult
           case Right(()) => Ok
+        }
+      }
+  }
+
+  def uploadImageMap() = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(parse.multipartFormData) {
+    request =>
+      Future {
+        val result = for (
+          baseImage <- getFile("baseImage", request.body).right;
+          sourceKeywords <- getOptionalMultipleData("baseImageKeywords", request.body).right;
+          params <- getParsedData[NewImageMapRequest]("imageMapParameters", request.body).right;
+          imgMap <- createImageMapWithoutObjects(baseImage, sourceKeywords, params, request.subject.userId.toString).right // FIXME: better uploader string
+        ) yield imgMap
+
+        result match {
+          case Left(badResult) => badResult
+          case Right(r) => Ok(toJsonString(r)).as(ContentTypes.JSON)
         }
       }
   }

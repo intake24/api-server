@@ -24,7 +24,7 @@ case class DatabaseErrorWrapper(error: DatabaseError) extends ImageServiceOrData
 case class ImageServiceErrorWrapper(error: ImageServiceError) extends ImageServiceOrDatabaseError
 
 trait ImageAdminService {
-  def uploadSourceImage(suggestedPath: String, source: Path, keywords: Seq[String], uploaderName: String): Either[ImageServiceOrDatabaseError, SourceImageRecord]
+  def uploadSourceImage(suggestedPath: String, source: Path, sourceFileName: String, keywords: Seq[String], uploaderName: String): Either[ImageServiceOrDatabaseError, SourceImageRecord]
 
   def deleteSourceImages(ids: Seq[Long]): Either[ImageServiceOrDatabaseError, Unit]
 

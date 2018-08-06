@@ -210,7 +210,8 @@ class AsServedSetsAdminController @Inject()(
 
             val result = for (
               sources <- sequence(records.map {
-                record => imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForAsServed(setId, record._1.filename), record._1.ref.path, keywords, uploaderName)
+                record => imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForAsServed(setId, record._1.filename), record._1.ref.path,
+                  record._1.filename, keywords, uploaderName)
               }).right;
               result <- createAsServedSetImpl(NewAsServedSet(setId, description, sources.zip(weights).map { case (source, weight) => NewAsServedImage(source.id, weight) })).right)
               yield result

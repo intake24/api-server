@@ -14,6 +14,9 @@ trait FoodNutrientService extends DistanceService {
 
 @Singleton()
 class FoodNutrientServiceEnGbNDNSImpl @Inject()(val nutrientService: FoodCompositionService) extends FoodNutrientService {
+
+  // Fixme: Top priority. Make all calculations async in a separate thread
+
   // Fixme: This service should work for any locale and tableId
 
   private val logger = LoggerFactory.getLogger(getClass)
@@ -27,8 +30,8 @@ class FoodNutrientServiceEnGbNDNSImpl @Inject()(val nutrientService: FoodComposi
         Map().withDefaultValue(Map().withDefaultValue(Double.MaxValue))
     }
 
-  private val nutrientTypes: Seq[Long] = foodNutrientMap.foldLeft(Set[Long]()) { (agg, foodNuts) =>
-    agg ++ foodNuts._2.filter(n => foodNutrientMap.forall(fnm => fnm._2.contains(n._1))).keys
+  private val nutrientTypes: Seq[Long] = foodNutrientMap.foldLeft(foodNutrientMap.head._2.keys.toSet) {
+    (agg, foodNuts) => agg.intersect(foodNuts._2.keys.toSet)
   }.toSeq.sorted
 
   private val scaled: Map[String, Map[Long, Double]] = {

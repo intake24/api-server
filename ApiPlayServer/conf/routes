@@ -100,9 +100,13 @@ DELETE         /admin/portion-size/as-served/:id                             con
 GET            /admin/portion-size/image-map                                 controllers.ImageMapAdminController.listImageMaps()
 GET            /admin/portion-size/image-map/:id/base-image-source-id        controllers.ImageMapAdminController.getImageMapBaseImageSourceId(id)
 POST           /admin/portion-size/image-map/new-from-svg                    controllers.ImageMapAdminController.createImageMapFromSVG()
+POST           /admin/portion-size/image-map                                 controllers.ImageMapAdminController.uploadImageMap()
 
 GET            /admin/portion-size/guide-image                               controllers.GuideImageAdminController.listGuideImages()
 GET            /admin/portion-size/guide-image/:id                           controllers.GuideImageAdminController.getGuideImage(id: String)
+GET            /admin/portion-size/guide-image/:id/full                      controllers.GuideImageAdminController.getGuideImageFull(id: String)
+PATCH          /admin/portion-size/guide-image/:id/meta                      controllers.GuideImageAdminController.patchGuideImageMeta(id: String)
+PATCH          /admin/portion-size/guide-image/:id/objects                   controllers.GuideImageAdminController.patchGuideImageObjects(id: String)
 POST           /admin/portion-size/guide-image/new                           controllers.GuideImageAdminController.createGuideImage()
 POST           /admin/portion-size/guide-image/selection-screen-image        controllers.GuideImageAdminController.updateGuideSelectionImage(id: String, selectionImageId: Long)
 

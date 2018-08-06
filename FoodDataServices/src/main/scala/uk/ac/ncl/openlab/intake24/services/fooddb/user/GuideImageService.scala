@@ -15,4 +15,5 @@ case class UserGuideImage(description: String, imageMapId: String, weights: Map[
 trait GuideImageService {
 
   def getGuideImage(id: String): Either[LookupError, UserGuideImage]
+
 }

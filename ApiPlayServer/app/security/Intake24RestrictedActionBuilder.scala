@@ -64,7 +64,8 @@ class Intake24RestrictedActionBuilder @Inject()(val authenticationService: Intak
 
   def restrictToAuthenticated = restrictAccess(_ => true)
 
-  def restrictToRoles(roles: String*) = restrictAccess(t => roles.exists(r => t.roles.contains(r)))
+  def restrictToRoles(roles: String*) = restrictAccess(t => t.roles.contains(Roles.superuser) ||
+    roles.exists(r => t.roles.contains(r)))
 
   def restrictToRespondents = restrictAccess(t => t.roles.exists(r => r.endsWith(Roles.respondentSuffix)))
 }

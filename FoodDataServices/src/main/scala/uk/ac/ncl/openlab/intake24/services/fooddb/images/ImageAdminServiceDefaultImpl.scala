@@ -46,8 +46,8 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
     }
 
 
-  def checkFileType(path: Path): Either[ImageServiceError, Unit] = {
-    val actualType = fileTypeAnalyzer.getFileMimeType(path)
+  def checkFileType(path: Path, originalName: String): Either[ImageServiceError, Unit] = {
+    val actualType = fileTypeAnalyzer.getFileMimeType(path, originalName)
 
     if (allowedFileTypes.exists(t => actualType.startsWith(t)))
       Right(())
@@ -82,7 +82,7 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
   // TODO: if the database operation fails, images need to be deleted from storage.
   // Failing to do that won't break anything, but will result in unused files.
   // Maybe some garbage collection is a better idea?
-  def uploadSourceImage(suggestedPath: String, source: Path, keywords: Seq[String], uploaderName: String): Either[ImageServiceOrDatabaseError, SourceImageRecord] =
+  def uploadSourceImage(suggestedPath: String, source: Path, sourceFileName: String, keywords: Seq[String], uploaderName: String): Either[ImageServiceOrDatabaseError, SourceImageRecord] =
   withTempDir {
     tempDir =>
       val extension = getExtension(source.toString)
@@ -91,7 +91,7 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
       for (
         _ <- {
           logger.debug("Checking file type")
-          checkFileType(source).wrapped.right
+          checkFileType(source, sourceFileName).wrapped.right
         };
         _ <- {
           logger.debug("Generating fixed size thumbnail")

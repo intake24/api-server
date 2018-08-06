@@ -3,6 +3,10 @@ package uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations
 import java.util.concurrent.TimeUnit
 import java.util.{Calendar, Date}
 
+import uk.ac.ncl.openlab.intake24.errors.UpdateError
+import uk.ac.ncl.openlab.intake24.pairwiseAssociationRules.PairwiseAssociationRules
+
+import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
 /**
@@ -22,7 +26,9 @@ case class PairwiseAssociationsServiceConfiguration(minimumNumberOfSurveySubmiss
                                                     useAfterNumberOfTransactions: Int,
                                                     rulesUpdateBatchSize: Int,
                                                     refreshAtTime: String,
-                                                    minInputSearchSize: Int) {
+                                                    minInputSearchSize: Int,
+                                                    readWriteRulesDbBatchSize: Int,
+                                                    storedCoOccurrencesThreshold: Int) {
 
   def nextRefreshIn: FiniteDuration = {
     val parsedParams = refreshAtTime.split(":").map(_.toInt)
@@ -39,12 +45,16 @@ case class PairwiseAssociationsServiceConfiguration(minimumNumberOfSurveySubmiss
 
 trait PairwiseAssociationsService {
 
+  def getAssociationRules(): Map[String, PairwiseAssociationRules]
+
   def recommend(locale: String, items: Seq[String], sortType: String, ignoreInputSize: Boolean = false): Seq[(String, Double)]
 
   def getOccurrences(locale: String): Map[String, Int]
 
   def addTransactions(surveyId: String, items: Seq[Seq[String]]): Unit
 
-  def refresh(): Unit
+  def refresh(): Future[Either[UpdateError, Map[String, PairwiseAssociationRules]]]
+
+  def getAssociationRulesAsync(): Future[Map[String, PairwiseAssociationRules]]
 
 }
