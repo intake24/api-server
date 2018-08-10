@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package security
+package uk.ac.ncl.openlab.intake24.security.authentication
 
 import com.mohiva.play.silhouette.api.util.{PasswordHasher, PasswordInfo}
 import org.apache.shiro.codec.Base64
@@ -42,7 +42,7 @@ class ShiroPasswordHasher extends PasswordHasher {
   def matches(passwordInfo: PasswordInfo, suppliedPassword: String) = {
     val saltBytes = passwordInfo.salt match {
       case Some(salt) => Base64.decode(passwordInfo.salt.get)
-      case None => throw new DatabaseFormatException("Salt field cannot be empty for Shiro hashed passwords")
+      case None => throw new RuntimeException("Salt field cannot be empty for Shiro hashed passwords")
     }
 
     val passwordHashBase64 = new Sha256Hash(suppliedPassword, saltBytes, 1024).toBase64

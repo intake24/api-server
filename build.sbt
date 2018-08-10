@@ -20,7 +20,7 @@ import ResolveInternalDependencies._
 
 lazy val commonSettings = Seq(
   version := "3.27.0-SNAPSHOT",
-  scalaVersion := "2.12.4",
+  scalaVersion := "2.12.6",
   publishArtifact in(Compile, packageDoc) := false,
   scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
 )
@@ -77,8 +77,18 @@ lazy val standardize = Project(id = "standardize", base = file("standardize")).s
 
 lazy val foodSubstRecommender = Project(id = "foodSubstRecommender", base = file("FoodSubstRecommender")).dependsOn(foodDataServices, foodDataSql, standardize).settings(commonSettings: _*)
 
+lazy val playUtils = project.in(file("PlayUtils")).dependsOn(sharedTypes, apiSharedJVM)
+
+lazy val playSecurity = project.in(file("PlaySecurity")).dependsOn(playUtils, systemDataSql, apiSharedJVM)
+
 lazy val apiPlayServer =
-  Project(id = "apiPlayServer", base = file("ApiPlayServer")).enablePlugins(PlayScala, SystemdPlugin, JDebPackaging).dependsOn(apiSharedJVM, foodDataSql, systemDataSql, imageStorageLocal, imageStorageS3, imageProcessorIM, foodSubstRecommender).settings(commonSettings: _*)
+  Project(id = "apiPlayServer", base = file("ApiPlayServer")).enablePlugins(PlayScala, SystemdPlugin, JDebPackaging)
+    .dependsOn(apiSharedJVM, foodDataSql, systemDataSql, imageStorageLocal, imageStorageS3, imageProcessorIM, foodSubstRecommender,
+               playSecurity)
+    .settings(commonSettings: _*)
+
+
+lazy val dataExportService = project.in(file("DataExportService")).enablePlugins(PlayScala, SystemdPlugin, JDebPackaging).dependsOn(apiSharedJVM, foodDataSql, systemDataSql, playSecurity)
 
 lazy val apiDocs = scalatex.ScalatexReadme(
   projectId = "apiDocs",

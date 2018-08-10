@@ -1,0 +1,38 @@
+@(userName: Option[String], surveyId: String, downloadUrl: String, urlExpirationTimeHours: Int)
+
+@EmailBase("Intake 24 Report Notification") {
+    <p style="font-family: sans-serif;
+        font-size: 14px;
+        font-weight: normal;
+        margin: 0;
+        Margin-bottom: 15px;">
+    @{
+        userName match {
+            case Some(name) => s"Hello ${name.split("\\s+").head}!"
+            case None => "Hello,"
+        }
+    }
+    </p>
+    <p style="font-family: sans-serif;
+        font-size: 14px;
+        font-weight: normal;
+        margin: 0;
+        Margin-bottom: 15px;">
+        The data from your survey (@surveyId) is now available for download:</p>
+    @ActionButton(downloadUrl, "Download")
+    <p style="font-family: sans-serif;
+        font-size: 14px;
+        font-weight: normal;
+        margin: 0;
+        Margin-bottom: 15px;">
+        Please note that the link above will expire in @urlExpirationTimeHours hours.</p>
+    <p style="font-family: sans-serif;
+        font-size: 14px;
+        font-weight: normal;
+        margin: 0;
+        Margin-bottom: 15px;">
+        Have a nice day :)
+        <br>
+        Intake24
+    </p>
+}
