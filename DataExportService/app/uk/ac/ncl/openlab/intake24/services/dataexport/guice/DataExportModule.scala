@@ -27,6 +27,7 @@ import play.api.db.{Database, NamedDatabase}
 import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodGroupsAdminImpl
 import uk.ac.ncl.openlab.intake24.foodsql.user.NdnsCompoundFoodGroupsImpl
 import uk.ac.ncl.openlab.intake24.services.NdnsCompoundFoodGroupsService
+import uk.ac.ncl.openlab.intake24.services.dataexport.DataExportDaemon
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, ScheduledDataExportService, SurveyAdminService, UserAdminService}
 import uk.ac.ncl.openlab.intake24.systemsql.admin.{DataExportImpl, ScheduledDataExportImpl, SurveyAdminImpl, UserAdminImpl}
@@ -45,6 +46,8 @@ class DataExportModule extends AbstractModule {
 
     bind(classOf[FoodGroupsAdminService]).to(classOf[FoodGroupsAdminImpl])
     bind(classOf[NdnsCompoundFoodGroupsService]).to(classOf[NdnsCompoundFoodGroupsImpl])
+
+    bind(classOf[DataExportDaemon]).asEagerSingleton()
   }
 
   // Custom execution context for long-running blocking tasks (data export etc.)
