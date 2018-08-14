@@ -20,11 +20,12 @@ package modules
 
 import java.util.concurrent.{ForkJoinPool, ForkJoinWorkerThread}
 import java.util.concurrent.ForkJoinPool.ForkJoinWorkerThreadFactory
-import javax.sql.DataSource
 
+import javax.sql.DataSource
 import cache._
 import com.google.inject.name.{Named, Names}
 import com.google.inject.{AbstractModule, Injector, Provides, Singleton}
+import parsers.{CSVFormatV1, CSVFormatV2, SurveyCSVExporter}
 import play.api.db.Database
 import play.api.{Configuration, Environment}
 import play.db.NamedDatabase
@@ -145,6 +146,11 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
 
   @Provides
   @Singleton
+  def csvExportFormats(): Map[String, SurveyCSVExporter] =
+    Map("v1" -> new SurveyCSVExporter(new CSVFormatV1), "v2" -> new SurveyCSVExporter(new CSVFormatV2))
+
+  @Provides
+  @Singleton
   def imageProcessorSettings(configuration: Configuration): ImageProcessorSettings = {
 
     val source = SourceImageSettings(
@@ -202,6 +208,7 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     bind(classOf[UserAdminService]).to(classOf[UserAdminImpl])
     bind(classOf[SurveyAdminService]).to(classOf[SurveyAdminImpl])
     bind(classOf[DataExportService]).to(classOf[DataExportImpl])
+
     bind(classOf[ScheduledDataExportService]).to(classOf[ScheduledDataExportImpl])
 
     // User facing services
