@@ -73,7 +73,7 @@ class DataExportDaemon @Inject()(config: Configuration,
 
             val dateTo = ZonedDateTime.now()
 
-            val taskResult = for (exportTaskHandle <- EitherT(dataExporter.queueCsvExport(task.userId, task.surveyId, dateFrom, dateTo, true, "scheduled").map(_.left.map(_.exception)));
+            val taskResult = for (exportTaskHandle <- EitherT(dataExporter.queueCsvExport(task.userId, task.surveyId, dateFrom, dateTo, true, "scheduled", "v1").map(_.left.map(_.exception)));
                                   _ <- EitherT(runPostExportAction(task, exportTaskHandle))) yield ()
 
             taskResult.value.onComplete {

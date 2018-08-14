@@ -57,6 +57,7 @@ class DataExportController @Inject()(configuration: Configuration,
                                      rab: Intake24RestrictedActionBuilder,
                                      playBodyParsers: PlayBodyParsers,
                                      jsonBodyParser: JsonBodyParser,
+                                     csvExportFormats: Map[String, SurveyCSVExporter],
                                      val controllerComponents: ControllerComponents,
                                      implicit val executionContext: ExecutionContext) extends BaseController
   with DatabaseErrorHandler with JsonUtils {
@@ -105,36 +106,41 @@ class DataExportController @Inject()(configuration: Configuration,
       }
   }
 
-  def getSurveySubmissionsAsCSV(surveyId: String, dateFrom: String, dateTo: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
+  def getSurveySubmissionsAsCSV(surveyId: String, dateFrom: String, dateTo: String, format: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
     request =>
       Future {
 
-        try {
-          val parsedFrom = ZonedDateTime.parse(dateFrom)
-          val parsedTo = ZonedDateTime.parse(dateTo)
-          val forceBOM = request.getQueryString("forceBOM").isDefined
+        csvExportFormats.get(format) match {
+          case Some(exporter) =>
+            try {
+              val parsedFrom = ZonedDateTime.parse(dateFrom)
+              val parsedTo = ZonedDateTime.parse(dateTo)
+              val forceBOM = request.getQueryString("forceBOM").isDefined
 
-          val data = for (params <- surveyAdminService.getSurveyParameters(surveyId).right;
-                          localNutrients <- surveyAdminService.getLocalNutrientTypes(params.localeId).right;
-                          dataScheme <- surveyAdminService.getCustomDataScheme(params.schemeId).right;
-                          foodGroups <- foodGroupsAdminService.listFoodGroups(params.localeId).right;
-                          submissions <- service.getSurveySubmissions(surveyId, Some(parsedFrom), Some(parsedTo), 0, Integer.MAX_VALUE, None).right) yield ((localNutrients, dataScheme, foodGroups, submissions))
+              val data = for (params <- surveyAdminService.getSurveyParameters(surveyId).right;
+                              localNutrients <- surveyAdminService.getLocalNutrientTypes(params.localeId).right;
+                              dataScheme <- surveyAdminService.getCustomDataScheme(params.schemeId).right;
+                              foodGroups <- foodGroupsAdminService.listFoodGroups(params.localeId).right;
+                              submissions <- service.getSurveySubmissions(surveyId, Some(parsedFrom), Some(parsedTo), 0, Integer.MAX_VALUE, None).right) yield ((localNutrients, dataScheme, foodGroups, submissions))
 
-          data match {
-            case Right((localNutrients, dataScheme, foodGroups, submissions)) =>
-              SurveyCSVExporter.exportSurveySubmissions(dataScheme, foodGroups, localNutrients, submissions, forceBOM) match {
-                case Right(csvFile) =>
-                  val dateStamp = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.ofInstant(Clock.systemUTC().instant(), ZoneId.systemDefault).withNano(0)).replace(":", "-").replace("T", "-")
+              data match {
+                case Right((localNutrients, dataScheme, foodGroups, submissions)) =>
+                  exporter.exportSurveySubmissions(dataScheme, foodGroups, localNutrients, submissions, forceBOM) match {
+                    case Right(csvFile) =>
+                      val dateStamp = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.ofInstant(Clock.systemUTC().instant(), ZoneId.systemDefault).withNano(0)).replace(":", "-").replace("T", "-")
 
-                  Ok.sendFile(csvFile, fileName = _ => s"intake24-$surveyId-data-$dateStamp.csv", onClose = () => csvFile.delete()).as(if (forceBOM) "application/octet-stream" else "text/csv;charset=utf-8")
-                case Left(exportError) => InternalServerError(toJsonString(ErrorDescription("ExportError", exportError)))
+                      Ok.sendFile(csvFile, fileName = _ => s"intake24-$surveyId-data-$dateStamp.csv", onClose = () => csvFile.delete()).as(if (forceBOM) "application/octet-stream" else "text/csv;charset=utf-8")
+                    case Left(exportError) => InternalServerError(toJsonString(ErrorDescription("ExportError", exportError)))
+                  }
+                case Left(databaseError) => translateDatabaseError(databaseError)
               }
-            case Left(databaseError) => translateDatabaseError(databaseError)
-          }
 
 
-        } catch {
-          case e: DateTimeParseException => BadRequest(toJsonString(ErrorDescription("DateFormat", "Failed to parse date parameter. Expected a UTC date in ISO 8601 format, e.g. '2017-02-15T16:40:30Z'.")))
+            } catch {
+              case e: DateTimeParseException => BadRequest(toJsonString(ErrorDescription("DateFormat", "Failed to parse date parameter. Expected a UTC date in ISO 8601 format, e.g. '2017-02-15T16:40:30Z'.")))
+            }
+          case None =>
+            BadRequest(s"Output format version not supported: $format")
         }
       }
   }
@@ -146,14 +152,14 @@ class DataExportController @Inject()(configuration: Configuration,
   def downloadAvailableMessage(surveyId: String, url: String) =
     (userProfile: UserProfile) => DataExportNotification(userProfile.name, surveyId, url, urlExpirationTimeMinutes / 60).toString()
 
-  def queueCSVExportForDownload(surveyId: String, dateFrom: String, dateTo: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
+  def queueCSVExportForDownload(surveyId: String, dateFrom: String, dateTo: String, format: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
     request =>
       try {
         val parsedFrom = ZonedDateTime.parse(dateFrom)
         val parsedTo = ZonedDateTime.parse(dateTo)
         val forceBOM = request.getQueryString("forceBOM").isDefined
 
-        dataExporter.queueCsvExport(request.subject.userId, surveyId, parsedFrom, parsedTo, forceBOM, "download").map {
+        dataExporter.queueCsvExport(request.subject.userId, surveyId, parsedFrom, parsedTo, forceBOM, "download", format).map {
           handle =>
 
             val dateStamp = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.ofInstant(Clock.systemUTC().instant(), ZoneId.systemDefault).withNano(0)).replace(":", "-").replace("T", "-")

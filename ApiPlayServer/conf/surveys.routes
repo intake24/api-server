@@ -16,8 +16,8 @@ DELETE        /:surveyId                                             controllers
 
 
 GET           /:surveyId/submissions                                 controllers.system.DataExportController.getSurveySubmissions(surveyId, dateFrom: String, dateTo: String, offset: Int, limit: Int)
-GET           /:surveyId/submissions/csv                             controllers.system.DataExportController.getSurveySubmissionsAsCSV(surveyId, dateFrom: String, dateTo: String)
-POST          /:surveyId/submissions/async/csv                       controllers.system.DataExportController.queueCSVExportForDownload(surveyId, dateFrom: String, dateTo: String)
+GET           /:surveyId/submissions/csv                             controllers.system.DataExportController.getSurveySubmissionsAsCSV(surveyId, dateFrom: String, dateTo: String, format: String ?= "v1")
+POST          /:surveyId/submissions/async/csv                       controllers.system.DataExportController.queueCSVExportForDownload(surveyId, dateFrom: String, dateTo: String, format: String ?= "v2")
 GET           /:surveyId/submissions/async/status                    controllers.system.DataExportController.getExportTaskStatus(surveyId: String)
 POST          /:surveyId/submissions/scheduled                       controllers.system.DataExportController.scheduleExport(surveyId: String)
 
