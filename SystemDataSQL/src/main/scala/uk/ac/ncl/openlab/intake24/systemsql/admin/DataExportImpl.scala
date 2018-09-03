@@ -236,7 +236,7 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
       SQL(
         """INSERT INTO data_export_downloads(task_id, upload_successful, stack_trace)
           |VALUES ({task_id}, false, {stack_trace})""".stripMargin)
-        .on('task_id -> taskId, 'stack_trace -> collectStackTrace(cause).toArray)
+        .on('task_id -> taskId, 'stack_trace -> cause.getMessage)
         .execute()
 
       Right(())

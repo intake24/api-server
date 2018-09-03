@@ -31,7 +31,7 @@ class DataExportDaemon @Inject()(config: Configuration,
 
   private val logger = LoggerFactory.getLogger(classOf[DataExportDaemon])
 
-  private val pollingPeriodSeconds = config.get[Int]("intake24.scheduledDataExport.pollingIntervalSeconds")
+  private val pollingPeriodSeconds = config.get[Int]("intake24.dataExport.scheduled.pollingIntervalSeconds")
 
 
   private def uploadFTPS(file: File, remoteName: String, config: String): Either[Throwable, Unit] =

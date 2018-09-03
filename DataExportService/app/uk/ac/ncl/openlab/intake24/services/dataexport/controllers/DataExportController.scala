@@ -20,24 +20,30 @@ package uk.ac.ncl.openlab.intake24.services.dataexport.controllers
 
 import java.time._
 import java.time.format.{DateTimeFormatter, DateTimeParseException}
+import java.time.temporal.ChronoUnit
 
 import cats.data.EitherT
 import cats.instances.future._
+
+
 import javax.inject.Inject
 import org.slf4j.LoggerFactory
 import play.api.Configuration
 import play.api.mvc.{BaseController, ControllerComponents, PlayBodyParsers}
 import uk.ac.ncl.openlab.intake24.api.data.ErrorDescription
-import uk.ac.ncl.openlab.intake24.play.utils.{DatabaseErrorHandler, JsonBodyParser, JsonUtils}
+import uk.ac.ncl.openlab.intake24.errors.AnyError
+import uk.ac.ncl.openlab.intake24.play.utils.{DatabaseErrorHandler, JsonBodyParser}
 import uk.ac.ncl.openlab.intake24.security.authorization.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.services.dataexport._
+import uk.ac.ncl.openlab.intake24.services.dataexport.views.html.DataExportNotification
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
+
 import io.circe.generic.auto._
-import uk.ac.ncl.openlab.intake24.services.dataexport.views.html.DataExportNotification
 
 case class NewExportTaskInfo(taskId: Long)
 
@@ -48,7 +54,7 @@ class DataExportController @Inject()(configuration: Configuration,
                                      surveyAdminService: SurveyAdminService,
                                      foodGroupsAdminService: FoodGroupsAdminService,
                                      dataExporter: SingleThreadedDataExporter,
-                                     s3Uploader: DataExportS3Uploader,
+                                     secureUrlService: SecureUrlService,
                                      exportScheduler: ScheduledDataExportService,
                                      ndnsGroupsCache: NdnsCompoundsFoodGroupsCache,
                                      emailSender: EmailSender,
@@ -61,7 +67,7 @@ class DataExportController @Inject()(configuration: Configuration,
 
   val logger = LoggerFactory.getLogger(classOf[DataExportController])
 
-  val urlExpirationTimeMinutes = configuration.get[Int](s"intake24.asyncDataExporter.s3.urlExpirationTimeMinutes")
+  val urlExpirationTimeMinutes = configuration.get[Int](s"intake24.dataExport.secureUrl.urlExpirationTimeMinutes")
 
   def getSurveySubmissions(surveyId: String, dateFrom: String, dateTo: String, offset: Int, limit: Int) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
     _ =>
@@ -144,6 +150,13 @@ class DataExportController @Inject()(configuration: Configuration,
   def downloadAvailableMessage(surveyId: String, url: String) =
     (userProfile: UserProfile) => DataExportNotification(userProfile.name, surveyId, url, urlExpirationTimeMinutes / 60).toString()
 
+
+  private def checkResult(result: Either[AnyError, Unit], errorMessage: String) = result match {
+    case Right(()) => ()
+    case Left(error) =>
+      logger.error(errorMessage, error.exception)
+  }
+
   def queueCSVExportForDownload(surveyId: String, dateFrom: String, dateTo: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
     request =>
       try {
@@ -151,24 +164,33 @@ class DataExportController @Inject()(configuration: Configuration,
         val parsedTo = ZonedDateTime.parse(dateTo)
         val forceBOM = request.getQueryString("forceBOM").isDefined
 
-        dataExporter.queueCsvExport(request.subject.userId, surveyId, parsedFrom, parsedTo, forceBOM, "download").map {
-          handle =>
+
+        val queueResult = dataExporter.queueCsvExport(request.subject.userId, surveyId, parsedFrom, parsedTo, forceBOM, "download")
+
+        val exportResult = (for (exportTaskHandle <- EitherT(queueResult);
+                                 file <- EitherT(exportTaskHandle.result)) yield (file, exportTaskHandle)).value
+
+        exportResult.map {
+          case Right((file, exportTaskHandle)) =>
 
             val dateStamp = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.ofInstant(Clock.systemUTC().instant(), ZoneId.systemDefault).withNano(0)).replace(":", "-").replace("T", "-")
+            val urlExpirationDate = ZonedDateTime.now().plus(urlExpirationTimeMinutes, ChronoUnit.MINUTES)
 
-            (for (exportTaskHandle <- EitherT(Future.successful(handle));
-                  s3url <- EitherT(s3Uploader.upload(exportTaskHandle, s"intake24-$surveyId-data-${exportTaskHandle.id}-$dateStamp.csv"));
-                  _ <- EitherT(emailSender.sendHtml(request.subject.userId, s"Your Intake24 survey ($surveyId) data is available for download",
-                    "Intake24 <support@intake24.co.uk>", downloadAvailableMessage(surveyId, s3url.toString()))))
-              yield ()).value.map {
-              case Right(()) => ()
-              case Left(e) => logger.error(s"Manual export request failed!", e.exception)
+            secureUrlService.createUrl(s"intake24-$surveyId-data-${exportTaskHandle.id}-$dateStamp.csv", file, urlExpirationDate) match {
+              case Success(secureUrl) =>
+                checkResult(service.setExportTaskDownloadUrl(exportTaskHandle.id, secureUrl, urlExpirationDate), "Failed to set download URL")
+                checkResult(emailSender.sendHtml(request.subject.userId, s"Your Intake24 survey ($surveyId) data is available for download",
+                  "Intake24 <support@intake24.co.uk>", downloadAvailableMessage(surveyId, secureUrl.toString())), "Failed to send e-mail notification")
+
+              case Failure(exception) =>
+                logger.error("Failed to create secure URL for file download", exception)
+
+                checkResult(service.setExportTaskDownloadFailed(exportTaskHandle.id, exception), "Failed to update download URL status after secure URL service failed")
             }
-
-            translateDatabaseResult(handle.map(h => NewExportTaskInfo(h.id)))
         }
-
-      } catch {
+        queueResult.map(r => translateDatabaseResult(r.map(h => NewExportTaskInfo(h.id))))
+      }
+      catch {
         case _: DateTimeParseException =>
           Future.successful(BadRequest(toJsonString(ErrorDescription("DateFormat", "Failed to parse date parameter. Expected a UTC date in ISO 8601 format, e.g. '2017-02-15T16:40:30Z'."))))
       }

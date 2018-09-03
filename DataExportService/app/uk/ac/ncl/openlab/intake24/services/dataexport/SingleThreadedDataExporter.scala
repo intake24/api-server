@@ -16,6 +16,7 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 
 case class ExportTaskHandle(id: Long, result: Future[Either[AnyError, File]])
 
+
 @Singleton
 class SingleThreadedDataExporter @Inject()(configuration: Configuration,
                                            exportService: DataExportService,
@@ -26,7 +27,7 @@ class SingleThreadedDataExporter @Inject()(configuration: Configuration,
 
   private val logger = LoggerFactory.getLogger(classOf[SingleThreadedDataExporter])
 
-  private val configSection = "intake24.asyncDataExporter"
+  private val configSection = "intake24.dataExport"
 
   private val throttleDelay = configuration.get[Int](s"$configSection.task.throttleRateMs")
   private val batchSize = configuration.get[Int](s"$configSection.task.batchSize")

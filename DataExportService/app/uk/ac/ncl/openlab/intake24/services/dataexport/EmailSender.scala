@@ -42,27 +42,27 @@ class EmailSender @Inject()(configuration: Configuration,
         Right(())
     }
 
-  def send(userId: Long, subject: String, from: String, body: UserProfile => String): Future[Either[AnyError, Unit]] =
-    Future {
-      for (profile <- userAdminService.getUserById(userId);
-           _ <- sendIfAllowed(profile, subject, from, body, false))
-        yield ()
-    }
+  def send(userId: Long, subject: String, from: String, body: UserProfile => String): Either[AnyError, Unit] =
 
-  def sendHtml(userId: Long, subject: String, from: String, body: UserProfile => String): Future[Either[AnyError, Unit]] =
-    Future {
-      for (profile <- userAdminService.getUserById(userId);
-           _ <- sendIfAllowed(profile, subject, from, body, true))
-        yield ()
-    }
+    for (profile <- userAdminService.getUserById(userId);
+         _ <- sendIfAllowed(profile, subject, from, body, false))
+      yield ()
 
-  def send(address: String, subject: String, from: String, body: String): Future[Either[AnyError, Unit]] =
-    Future {
-      sendTo(address, subject, from, body, false)
-    }
 
-  def sendHtml(address: String, subject: String, from: String, body: String): Future[Either[AnyError, Unit]] =
-    Future {
-      sendTo(address, subject, from, body, true)
-    }
+  def sendHtml(userId: Long, subject: String, from: String, body: UserProfile => String): Either[AnyError, Unit] =
+
+    for (profile <- userAdminService.getUserById(userId);
+         _ <- sendIfAllowed(profile, subject, from, body, true))
+      yield ()
+
+
+  def send(address: String, subject: String, from: String, body: String): Either[AnyError, Unit] =
+
+    sendTo(address, subject, from, body, false)
+
+
+  def sendHtml(address: String, subject: String, from: String, body: String): Either[AnyError, Unit] =
+
+    sendTo(address, subject, from, body, true)
+
 }

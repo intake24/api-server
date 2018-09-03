@@ -33,11 +33,14 @@ object ErrorUtils {
     }.right.map(_.reverse)
   }
 
-  def catchAll[T](block: => T): Either[AnyError, T] =
-    Try(block) match {
+  def fromTry[T](result: Try[T]): Either[AnyError, T] =
+    result match {
       case Success(v) => Right(v)
       case Failure(e) => Left(UnexpectedException(e))
     }
+
+  def catchAll[T](block: => T): Either[AnyError, T] =
+    fromTry(Try(block))
 
   def collectStackTrace(throwable: Throwable, stackTrace: List[String] = List()): List[String] = {
     if (throwable == null)
@@ -58,10 +61,11 @@ object ErrorUtils {
     }
   }
 
-  def asFuture[T](result: Either[AnyError,T]): Future[T] = result match {
+  def asFuture[T](result: Either[AnyError, T]): Future[T] = result match {
     case Right(r) => Future.successful(r)
     case Left(e) => Future.failed(e.exception)
   }
+
 }
 
 sealed trait AnyError {
