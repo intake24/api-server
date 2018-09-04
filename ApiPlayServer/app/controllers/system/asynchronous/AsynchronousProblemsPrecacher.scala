@@ -26,6 +26,7 @@ class AsynchronousProblemsPrecacher @Inject()(localesService: LocalesAdminServic
 
   private val throttleRateMs = configuration.get[Int](s"intake24.asyncProblemsPrecacher.throttleRateMs")
   private val maxRecursiveResults = configuration.get[Int](s"intake24.asyncProblemsPrecacher.maxRecursiveResults")
+  private val enabledLocales = configuration.get[Seq[String]](s"intake24.asyncProblemsPrecacher.enabledLocales")
 
   private sealed trait Task
 
@@ -115,17 +116,28 @@ class AsynchronousProblemsPrecacher @Inject()(localesService: LocalesAdminServic
   }
 
   localesService.listLocales() match {
-    case Right(locales) =>
+    case Right(knownLocales) =>
 
-      problemCheckerService.enablePrecacheWarnings()
-
-      locales.keySet.toSeq.sorted.foreach {
-        case id => actorSystem.scheduler.scheduleOnce(Random.nextInt(throttleRateMs * 4).milliseconds) {
-          logger.info(s"[$id] Started")
-          processNextTask(s"$id", System.currentTimeMillis(), List(VisitLocale(id)))
-        }
+      val locales = enabledLocales match {
+        case Seq("*") => knownLocales.keySet.toSeq.sorted
+        case _ => knownLocales.keySet.toSeq.sorted.filter(enabledLocales.contains)
       }
-      countDownLatch.set(new CountDownLatch(locales.size))
+
+      if (locales.nonEmpty) {
+        problemCheckerService.enablePrecacheWarnings()
+
+        locales.foreach {
+          case id => actorSystem.scheduler.scheduleOnce(Random.nextInt(throttleRateMs * 4).milliseconds) {
+            logger.info(s"[$id] Started")
+            processNextTask(s"$id", System.currentTimeMillis(), List(VisitLocale(id)))
+          }
+        }
+        countDownLatch.set(new CountDownLatch(knownLocales.size))
+
+      } else {
+        logger.warn("Problems precacher locales list empty -- is this intentional?")
+      }
+
     case Left(e) =>
       logError(e)
   }
