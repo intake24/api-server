@@ -18,19 +18,17 @@ limitations under the License.
 
 package modules
 
-import java.util.concurrent.{ForkJoinPool, ForkJoinWorkerThread}
-import java.util.concurrent.ForkJoinPool.ForkJoinWorkerThreadFactory
+import java.util.concurrent.ForkJoinPool
 
-import javax.sql.DataSource
 import cache._
-import com.google.inject.name.{Named, Names}
-import com.google.inject.{AbstractModule, Injector, Provides, Singleton}
-import parsers.{CSVFormatV1, CSVFormatV2, SurveyCSVExporter}
+import com.google.inject.name.Named
+import com.google.inject.{AbstractModule, Provides, Singleton}
+import javax.sql.DataSource
 import play.api.db.Database
 import play.api.{Configuration, Environment}
 import play.db.NamedDatabase
-import scheduled.notificationSender.{NotificationSender, NotificationSenderImpl}
 import scheduled._
+import scheduled.notificationSender.{NotificationSender, NotificationSenderImpl}
 import security.captcha.{AsyncCaptchaService, GoogleRecaptchaImpl}
 import sms.{SMSService, TwilioSMSImpl}
 import uk.ac.ncl.openlab.intake24.foodsql.admin._
@@ -39,30 +37,28 @@ import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl
 import uk.ac.ncl.openlab.intake24.foodsql.images.ImageDatabaseServiceSqlImpl
 import uk.ac.ncl.openlab.intake24.foodsql.recipes.RecipesAttributeCacheImpl
 import uk.ac.ncl.openlab.intake24.foodsql.user.{FoodCompositionServiceImpl, _}
-import uk.ac.ncl.openlab.intake24.services.{NdnsCompoundFoodGroupsService, RecipesAttributeCache}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.demographicgroups._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
 import uk.ac.ncl.openlab.intake24.services.fooddb.user._
+import uk.ac.ncl.openlab.intake24.services.foodindex._
 import uk.ac.ncl.openlab.intake24.services.foodindex.arabic.{FoodIndexImpl_ar_AE, SplitterImpl_ar_AE}
 import uk.ac.ncl.openlab.intake24.services.foodindex.danish.{FoodIndexImpl_da_DK, SplitterImpl_da_DK}
 import uk.ac.ncl.openlab.intake24.services.foodindex.english._
 import uk.ac.ncl.openlab.intake24.services.foodindex.portuguese.{FoodIndexImpl_pt_PT, SplitterImpl_pt_PT}
-import uk.ac.ncl.openlab.intake24.services.foodindex._
 import uk.ac.ncl.openlab.intake24.services.nutrition.{DefaultNutrientMappingServiceImpl, FoodCompositionService, NutrientMappingService}
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import uk.ac.ncl.openlab.intake24.services.systemdb.notifications.NotificationScheduleDataService
-import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsDataService, PairwiseAssociationsService, PairwiseAssociationsServiceConfiguration}
 import uk.ac.ncl.openlab.intake24.services.systemdb.shortUrls.ShortUrlDataService
 import uk.ac.ncl.openlab.intake24.services.systemdb.user._
 import uk.ac.ncl.openlab.intake24.services.systemdb.uxEvents.UxEventsDataService
+import uk.ac.ncl.openlab.intake24.services.{NdnsCompoundFoodGroupsService, RecipesAttributeCache}
 import uk.ac.ncl.openlab.intake24.systemsql.admin._
 import uk.ac.ncl.openlab.intake24.systemsql.notifications.NotificationScheduleDataServiceImpl
-import uk.ac.ncl.openlab.intake24.systemsql.pairwiseAssociations.{PairwiseAssociationsDataServiceImpl, PairwiseAssociationsServiceImpl}
 import uk.ac.ncl.openlab.intake24.systemsql.shortUrl.ShortUrlDataServiceImpl
 import uk.ac.ncl.openlab.intake24.systemsql.user._
 import uk.ac.ncl.openlab.intake24.systemsql.uxEvents.UxEventsDataServiceImpl
-import urlShort.{GoogleShortUrlImpl, RandomShortUrlImpl, ShortUrlService}
+import urlShort.{RandomShortUrlImpl, ShortUrlService}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -146,11 +142,6 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
 
   @Provides
   @Singleton
-  def csvExportFormats(): Map[String, SurveyCSVExporter] =
-    Map("v1" -> new SurveyCSVExporter(new CSVFormatV1), "v2" -> new SurveyCSVExporter(new CSVFormatV2))
-
-  @Provides
-  @Singleton
   def imageProcessorSettings(configuration: Configuration): ImageProcessorSettings = {
 
     val source = SourceImageSettings(
@@ -208,8 +199,6 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     bind(classOf[UserAdminService]).to(classOf[UserAdminImpl])
     bind(classOf[SurveyAdminService]).to(classOf[SurveyAdminImpl])
     bind(classOf[DataExportService]).to(classOf[DataExportImpl])
-
-    bind(classOf[ScheduledDataExportService]).to(classOf[ScheduledDataExportImpl])
 
     // User facing services
 
@@ -271,7 +260,6 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     // Error digest service
 
     bind(classOf[ErrorDigestSender]).to(classOf[ErrorDigestSenderImpl]).asEagerSingleton()
-    bind(classOf[DataExportDaemon]).asEagerSingleton()
 
     // Demographic service
     bind(classOf[DemographicGroupsService]).to(classOf[DemographicGroupsServiceImpl])

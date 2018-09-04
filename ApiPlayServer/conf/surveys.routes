@@ -14,13 +14,6 @@ DELETE        /:surveyId                                             controllers
 # POST           /admin/update-global-support-users                            controllers.system.SurveyAdminController.updateGlobalSupportUsers()
 # POST           /admin/surveys/:surveyId/support-users/update                 controllers.system.SurveyAdminController.updateSurveySupportUsers(surveyId: String)
 
-
-GET           /:surveyId/submissions                                 controllers.system.DataExportController.getSurveySubmissions(surveyId, dateFrom: String, dateTo: String, offset: Int, limit: Int)
-GET           /:surveyId/submissions/csv                             controllers.system.DataExportController.getSurveySubmissionsAsCSV(surveyId, dateFrom: String, dateTo: String, format: String ?= "v1")
-POST          /:surveyId/submissions/async/csv                       controllers.system.DataExportController.queueCSVExportForDownload(surveyId, dateFrom: String, dateTo: String, format: String ?= "v2")
-GET           /:surveyId/submissions/async/status                    controllers.system.DataExportController.getExportTaskStatus(surveyId: String)
-POST          /:surveyId/submissions/scheduled                       controllers.system.DataExportController.scheduleExport(surveyId: String)
-
 # GET            /admin/surveys/:surveyId/submissions/xlsx                     controllers.system.DataExportController.getSurveySubmissionsAsXLSX(surveyId, dateFrom: Long, dateTo: Long, offset: Int, limit: Int)
 
 # Survey info and submissions
@@ -34,8 +27,6 @@ POST          /:surveyId/generate-user                               controllers
 
 POST          /:surveyId/submissions                                 controllers.system.user.SurveyController.submitSurvey(surveyId: String)
 POST          /:surveyId/request-callback                            controllers.system.user.HelpController.requestCallback(surveyId)
-
-GET           /:surveyId/my-submissions                              controllers.system.DataExportController.getMySurveySubmissions(surveyId)
 
 # Survey Permissions
 POST          /:surveyId/acl                                         controllers.system.UserAdminController.giveAccessToSurvey(surveyId)

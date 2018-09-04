@@ -41,13 +41,13 @@ class LocalSecureUrlController @Inject()(configuration: Configuration,
 
   def download(key: String) = Action.async {
     Future {
-      JavaConverters.asScalaIterator(Files.newDirectoryStream(dirPath).iterator()).find(_.getFileName.startsWith(key)) match {
+      JavaConverters.asScalaIterator(Files.newDirectoryStream(dirPath).iterator()).find(_.getFileName.toString.startsWith(key)) match {
         case Some(path) =>
           val clientName = path.getFileName.toString.drop(key.length + 1)
           Ok.sendFile(path.toFile, false, _ => clientName)
-        case None => NotFound
+        case None =>
+          NotFound
       }
     }
   }
-
 }

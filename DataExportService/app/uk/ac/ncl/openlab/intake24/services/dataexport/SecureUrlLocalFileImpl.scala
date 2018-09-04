@@ -14,10 +14,10 @@ import scala.concurrent.ExecutionContext
 import scala.util.Try
 
 @Singleton
-class SecureUrlTempFileImpl @Inject()(configuration: Configuration,
-                                      @Named("intake24") implicit val executionContext: ExecutionContext) extends SecureUrlService {
+class SecureUrlLocalFileImpl @Inject()(configuration: Configuration,
+                                       @Named("intake24") implicit val executionContext: ExecutionContext) extends SecureUrlService {
 
-  val logger = LoggerFactory.getLogger(classOf[SecureUrlTempFileImpl])
+  val logger = LoggerFactory.getLogger(classOf[SecureUrlLocalFileImpl])
 
   val dirPath = Paths.get(configuration.get[String]("intake24.dataExport.secureUrl.local.directory"))
 
@@ -31,6 +31,8 @@ class SecureUrlTempFileImpl @Inject()(configuration: Configuration,
       val destPath = dirPath.resolve(s"$secureName.$fileName")
 
       Files.move(srcPath, destPath)
+
+
 
       new URL(s"$apiServerUrlPrefix/data-export/download?key=$secureName")
     }

@@ -16,36 +16,37 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 @Singleton
-class SecureUrlFileCleanUpDaemon @Inject()(config: Configuration,
-                                           system: ActorSystem,
-                                           @Named("intake24") implicit val executionContext: ExecutionContext,
-                                 ) {
+class LocalSecureUrlCleanUpDaemon @Inject()(config: Configuration,
+                                            system: ActorSystem,
+                                            @Named("intake24") implicit val executionContext: ExecutionContext,
+                                           ) {
 
-  private val logger = LoggerFactory.getLogger(classOf[SecureUrlFileCleanUpDaemon])
+  private val logger = LoggerFactory.getLogger(classOf[LocalSecureUrlCleanUpDaemon])
 
-  private val cleanupInterval = config.get[Int]("intake24.localDownloads.cleanupIntervalSeconds")
-  private val lifeTime = config.get[Int]("intake24.localDownloads.fileLifeTimeSeconds")
-  private val dirPath = config.get[String]("intake24.localDownloads.directory")
+  private val expirationTime = config.get[Int]("intake24.dataExport.secureUrl.urlExpirationTimeMinutes")
+  private val cleanupInterval = config.get[Int]("intake24.dataExport.secureUrl.local.cleanupIntervalSeconds")
+  private val dirPath = config.get[String]("intake24.dataExport.secureUrl.local.directory")
 
   val dir = Paths.get(dirPath)
 
   if (Files.exists(dir) && Files.isDirectory(dir)) {
     system.scheduler.schedule(0.minutes, cleanupInterval.seconds) {
+      val minCreatedAt = Instant.now().minus(expirationTime, ChronoUnit.MINUTES)
 
-      val maxCreatedAt = Instant.now().minus(lifeTime, ChronoUnit.SECONDS)
+      logger.debug("Deleting files created before " + minCreatedAt.toString)
 
       Files.newDirectoryStream(dir, (entry: Path) => Files.isRegularFile(entry)).iterator().asScala.foreach {
         file =>
           val attrs = Files.readAttributes(file, classOf[BasicFileAttributes])
           val createdAt = attrs.creationTime().toInstant
 
-          if (createdAt.isBefore(maxCreatedAt)) {
+          if (createdAt.isBefore(minCreatedAt)) {
             logger.debug(s"Deleting ${file.toString}")
             Files.delete(file)
           }
       }
     }
   } else {
-    logger.warn("intake24.localDownloads.directory does not point to a directory, file cleanup service will not start")
+    logger.warn("intake24.dataExport.secureUrl.local.directory does not point to a directory, file cleanup service will not start")
   }
 }
