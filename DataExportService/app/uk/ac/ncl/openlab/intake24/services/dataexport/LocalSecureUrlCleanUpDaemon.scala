@@ -16,12 +16,12 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 @Singleton
-class FileCleanUpDaemon @Inject()(config: Configuration,
-                                  system: ActorSystem,
-                                  @Named("intake24") implicit val executionContext: ExecutionContext,
+class SecureUrlFileCleanUpDaemon @Inject()(config: Configuration,
+                                           system: ActorSystem,
+                                           @Named("intake24") implicit val executionContext: ExecutionContext,
                                  ) {
 
-  private val logger = LoggerFactory.getLogger(classOf[FileCleanUpDaemon])
+  private val logger = LoggerFactory.getLogger(classOf[SecureUrlFileCleanUpDaemon])
 
   private val cleanupInterval = config.get[Int]("intake24.localDownloads.cleanupIntervalSeconds")
   private val lifeTime = config.get[Int]("intake24.localDownloads.fileLifeTimeSeconds")
