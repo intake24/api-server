@@ -11,6 +11,7 @@ import play.api.Configuration
 import uk.ac.ncl.openlab.intake24.errors.{AnyError, ErrorUtils}
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.DataExportService
 
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -21,13 +22,13 @@ class DataExportSecureUrlUploader @Inject()(configuration: Configuration,
 
   val logger = LoggerFactory.getLogger(classOf[DataExportSecureUrlUploader])
 
-  val urlLifeTime = configuration.get[Int]("intake24.dataExport.secureUrl.urlLifeTimeMinutes")
+  val validityPeriod = configuration.get[FiniteDuration]("intake24.dataExport.secureUrl.validityPeriod")
 
   def upload(task: ExportTaskHandle, fileName: String): Future[Either[AnyError, URL]] =
     task.result.map {
       fileResult =>
         (for (file <- fileResult;
-              urlExpirationDate <- Right(ZonedDateTime.now().plus(urlLifeTime, ChronoUnit.MINUTES));
+              urlExpirationDate <- Right(ZonedDateTime.now().plus(validityPeriod.toMillis, ChronoUnit.MILLIS));
               url <- ErrorUtils.fromTry(secureUrlService.createUrl(fileName, file, urlExpirationDate));
               _ <- dataExportService.setExportTaskDownloadUrl(task.id, url, urlExpirationDate))
           yield url).left.map {

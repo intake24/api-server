@@ -24,8 +24,6 @@ import java.time.temporal.ChronoUnit
 
 import cats.data.EitherT
 import cats.instances.future._
-
-
 import javax.inject.Inject
 import org.slf4j.LoggerFactory
 import play.api.Configuration
@@ -42,8 +40,9 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
-
 import io.circe.generic.auto._
+
+import scala.concurrent.duration.FiniteDuration
 
 case class NewExportTaskInfo(taskId: Long)
 
@@ -68,7 +67,7 @@ class DataExportController @Inject()(configuration: Configuration,
 
   val logger = LoggerFactory.getLogger(classOf[DataExportController])
 
-  val urlExpirationTimeMinutes = configuration.get[Int](s"intake24.dataExport.secureUrl.urlExpirationTimeMinutes")
+  val urlValidityPeriod = configuration.get[FiniteDuration](s"intake24.dataExport.secureUrl.validityPeriod")
 
   def getSurveySubmissions(surveyId: String, dateFrom: String, dateTo: String, offset: Int, limit: Int) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
     _ =>
@@ -155,7 +154,7 @@ class DataExportController @Inject()(configuration: Configuration,
   //val message = Email(, , Seq(email), None, Some(body.toString()))
 
   def downloadAvailableMessage(surveyId: String, url: String) =
-    (userProfile: UserProfile) => DataExportNotification(userProfile.name, surveyId, url, urlExpirationTimeMinutes / 60).toString()
+    (userProfile: UserProfile) => DataExportNotification(userProfile.name, surveyId, url, urlValidityPeriod.toHours.toInt).toString()
 
 
   private def checkResult(result: Either[AnyError, Unit], errorMessage: String) = result match {
@@ -181,7 +180,7 @@ class DataExportController @Inject()(configuration: Configuration,
           case Right((file, exportTaskHandle)) =>
 
             val dateStamp = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.ofInstant(Clock.systemUTC().instant(), ZoneId.systemDefault).withNano(0)).replace(":", "-").replace("T", "-")
-            val urlExpirationDate = ZonedDateTime.now().plus(urlExpirationTimeMinutes, ChronoUnit.MINUTES)
+            val urlExpirationDate = ZonedDateTime.now().plus(urlValidityPeriod.toMillis, ChronoUnit.MILLIS)
 
             secureUrlService.createUrl(s"intake24-$surveyId-data-${exportTaskHandle.id}-$dateStamp.csv", file, urlExpirationDate) match {
               case Success(secureUrl) =>
@@ -194,6 +193,9 @@ class DataExportController @Inject()(configuration: Configuration,
 
                 checkResult(service.setExportTaskDownloadFailed(exportTaskHandle.id, exception), "Failed to update download URL status after secure URL service failed")
             }
+
+          case Left(error) =>
+            logger.error("Failed to queue CSV export", error.exception)
         }
         queueResult.map(r => translateDatabaseResult(r.map(h => NewExportTaskInfo(h.id))))
       }

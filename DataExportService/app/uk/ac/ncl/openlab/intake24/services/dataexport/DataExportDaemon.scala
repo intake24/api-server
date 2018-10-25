@@ -17,6 +17,7 @@ import play.api.Configuration
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{PendingScheduledExportTask, ScheduledDataExportService}
 
 import scala.concurrent.duration._
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
@@ -31,8 +32,7 @@ class DataExportDaemon @Inject()(config: Configuration,
 
   private val logger = LoggerFactory.getLogger(classOf[DataExportDaemon])
 
-  private val pollingPeriodSeconds = config.get[Int]("intake24.dataExport.scheduled.pollingIntervalSeconds")
-
+  private val pollingInterval = config.get[FiniteDuration]("intake24.dataExport.scheduled.pollingInterval")
 
   private def uploadFTPS(file: File, remoteName: String, config: String): Either[Throwable, Unit] =
     decode[FTPSConfig](config) match {
@@ -56,7 +56,7 @@ class DataExportDaemon @Inject()(config: Configuration,
     }
   }
 
-  system.scheduler.schedule(0.minutes, pollingPeriodSeconds.seconds) {
+  system.scheduler.schedule(0.minutes, pollingInterval) {
 
     scheduledTasks.getPendingScheduledTasks() match {
       case Right(tasks) =>

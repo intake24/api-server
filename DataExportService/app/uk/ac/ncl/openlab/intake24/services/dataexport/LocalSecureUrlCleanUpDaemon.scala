@@ -23,15 +23,15 @@ class LocalSecureUrlCleanUpDaemon @Inject()(config: Configuration,
 
   private val logger = LoggerFactory.getLogger(classOf[LocalSecureUrlCleanUpDaemon])
 
-  private val expirationTime = config.get[Int]("intake24.dataExport.secureUrl.urlExpirationTimeMinutes")
-  private val cleanupInterval = config.get[Int]("intake24.dataExport.secureUrl.local.cleanupIntervalSeconds")
+  private val validityPeriod = config.get[FiniteDuration]("intake24.dataExport.secureUrl.validityPeriod")
+  private val cleanupInterval = config.get[FiniteDuration]("intake24.dataExport.secureUrl.local.cleanupInterval")
   private val dirPath = config.get[String]("intake24.dataExport.secureUrl.local.directory")
 
   val dir = Paths.get(dirPath)
 
   if (Files.exists(dir) && Files.isDirectory(dir)) {
-    system.scheduler.schedule(0.minutes, cleanupInterval.seconds) {
-      val minCreatedAt = Instant.now().minus(expirationTime, ChronoUnit.MINUTES)
+    system.scheduler.schedule(0.minutes, cleanupInterval) {
+      val minCreatedAt = Instant.now().minus(validityPeriod.toMillis, ChronoUnit.MILLIS)
 
       logger.debug("Deleting files created before " + minCreatedAt.toString)
 
