@@ -18,7 +18,6 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.services.dataexport.guice
 
-import com.amazonaws.auth.profile.ProfileCredentialsProvider
 import com.amazonaws.services.s3.{AmazonS3, AmazonS3ClientBuilder}
 import com.google.inject.{AbstractModule, Provides}
 import javax.inject.Singleton
@@ -33,9 +32,7 @@ class AmazonWebServicesModule extends AbstractModule {
   @Provides
   @Singleton
   def createS3client(config: Configuration): AmazonS3 = {
-    val profileName = config.getOptional[String]("intake24.S3.profileName").getOrElse("default")
-    AmazonS3ClientBuilder.standard()
-      .withCredentials(new ProfileCredentialsProvider(profileName)).build()
+    AmazonS3ClientBuilder.defaultClient()
   }
 
 }
