@@ -44,18 +44,21 @@ class NdnsCompoundsFoodGroupsCache @Inject()(service: NdnsCompoundFoodGroupsServ
       service.getCompoundFoodGroupsData(uncached).map {
         dbData =>
 
-          uncached.foreach {
-            uncachedKey =>
+          val unavailable = uncached.foldLeft(Map[Int, Map[Int, Double]]()) {
+            (acc, uncachedKey) =>
               dbData.get(uncachedKey) match {
-                case Some(data) => cache.set(cacheKey(uncachedKey), data)
+                case Some(data) =>
+                  cache.set(cacheKey(uncachedKey), data)
+                  acc
                 case None => {
                   logger.warn(s"No compound food group data available for NDNS code $uncachedKey")
                   cache.set(cacheKey(uncachedKey), Map())
+                  acc + (uncachedKey -> Map())
                 }
               }
           }
 
-          cached ++ dbData
+          cached ++ dbData ++ unavailable
       }
   }
 

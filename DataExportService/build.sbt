@@ -1,9 +1,11 @@
 name := """intake24-data-export"""
 organization := "uk.ac.ncl.openlab.intake24"
 
-version := "4.1.0-SNAPSHOT"
+version := "4.1.1-SNAPSHOT"
 
 scalaVersion := "2.12.6"
+
+maintainer := "Ivan Poliakov <ivan.poliakov@ncl.ac.uk>"
 
 libraryDependencies ++= Seq(
   jdbc,
