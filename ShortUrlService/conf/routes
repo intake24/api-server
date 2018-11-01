@@ -1,0 +1,1 @@
+POST        /shorten        uk.ac.ncl.openlab.intake24.services.shorturl.controllers.InternalApiController.shorten()

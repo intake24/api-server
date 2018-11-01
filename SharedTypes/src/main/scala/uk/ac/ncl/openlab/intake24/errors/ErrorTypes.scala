@@ -42,6 +42,11 @@ object ErrorUtils {
   def catchAll[T](block: => T): Either[AnyError, T] =
     fromTry(Try(block))
 
+  def asTry[T](result: Either[AnyError, T]) = result match {
+    case Right(value) => Success(value)
+    case Left(error) => Failure(error.exception)
+  }
+
   def collectStackTrace(throwable: Throwable, stackTrace: List[String] = List()): List[String] = {
     if (throwable == null)
       stackTrace.reverse

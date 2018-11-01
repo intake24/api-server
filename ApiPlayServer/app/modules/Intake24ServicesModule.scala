@@ -49,7 +49,6 @@ import uk.ac.ncl.openlab.intake24.services.foodindex.portuguese.{FoodIndexImpl_p
 import uk.ac.ncl.openlab.intake24.services.nutrition.{DefaultNutrientMappingServiceImpl, FoodCompositionService, NutrientMappingService}
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import uk.ac.ncl.openlab.intake24.services.systemdb.notifications.NotificationScheduleDataService
-import uk.ac.ncl.openlab.intake24.services.systemdb.shortUrls.ShortUrlDataService
 import uk.ac.ncl.openlab.intake24.services.systemdb.user._
 import uk.ac.ncl.openlab.intake24.services.systemdb.uxEvents.UxEventsDataService
 import uk.ac.ncl.openlab.intake24.services.{NdnsCompoundFoodGroupsService, RecipesAttributeCache}
@@ -276,7 +275,7 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     bind(classOf[UxEventsDataService]).to(classOf[UxEventsDataServiceImpl])
 
     // User notifications
-    bind(classOf[ShortUrlDataService]).to(classOf[ShortUrlDataServiceImpl])
+
     bind(classOf[ShortUrlService]).to(classOf[RandomShortUrlImpl])
     bind(classOf[NotificationScheduleDataService]).to(classOf[NotificationScheduleDataServiceImpl])
     bind(classOf[NotificationSender]).to(classOf[NotificationSenderImpl]).asEagerSingleton()

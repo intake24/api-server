@@ -90,6 +90,8 @@ lazy val apiPlayServer =
 
 lazy val dataExportService = project.in(file("DataExportService")).enablePlugins(PlayScala, SystemdPlugin, JDebPackaging, ClasspathJarPlugin).dependsOn(apiSharedJVM, foodDataSql, systemDataSql, playSecurity)
 
+lazy val shortUrlService = project.in(file("ShortUrlService")).enablePlugins(PlayScala, SystemdPlugin, JDebPackaging, ClasspathJarPlugin).dependsOn(apiSharedJVM, systemDataSql, playSecurity)
+
 lazy val apiDocs = scalatex.ScalatexReadme(
   projectId = "apiDocs",
   wd = file(""),

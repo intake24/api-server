@@ -21,12 +21,14 @@ package controllers.system
 import java.io.StringWriter
 import java.security.SecureRandom
 import java.util.Base64
-import javax.inject.Inject
 
+import akka.stream.scaladsl.{Source, StreamConverters}
+import javax.inject.Inject
 import au.com.bytecode.opencsv.CSVWriter
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
+import org.reactivestreams.Publisher
 import parsers.{JsonBodyParser, JsonUtils, UserRecordsCSVParser}
 import play.api.Configuration
 import play.api.cache.SyncCacheApi
@@ -45,7 +47,7 @@ import urlShort.ShortUrlCache
 import views.html.PasswordResetLink
 
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 class UserAdminController @Inject()(service: UserAdminService,
                                     userPhysicalData: UserPhysicalDataService,
@@ -239,29 +241,85 @@ class UserAdminController @Inject()(service: UserAdminService,
 
   def getRespondentAuthenticationUrlsAsJson(surveyId: String, offset: Int, limit: Int) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
     _ =>
-      for (respondents <- getRespondentsWithAuthUrls(surveyId, offset, limit);
+      for (respondents <- getRespondentsWithAuthUrls(surveyId, offset, Math.max(0, Math.min(limit, 1000)));
            result <- appendShortUrls(respondents)) yield {
         Ok(toJsonString(result)).as(ContentTypes.JSON)
       }
   }
 
-  def getRespondentAuthenticationUrlsAsCsv(surveyId: String, offset: Int, limit: Int) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
-    _ =>
-      for (respondents <- getRespondentsWithAuthUrls(surveyId, offset, limit);
-           result <- appendShortUrls(respondents)) yield {
+  private def getRespondentAuthenticationUrlsAsCsvStream(surveyId: String): Iterator[String] = new Iterator[String] {
 
-        val stringWriter = new StringWriter()
+    val limit = 1000
+    var offset = 0
 
-        val csvWriter = new CSVWriter(stringWriter)
-        csvWriter.writeNext(Array("Intake24 ID", "User ID", "Authentication URL", "Shortened URL"))
-        result.foreach {
-          r =>
-            csvWriter.writeNext(Array(r.id.toString, r.userName.toString, r.authUrl, r.shortUrl))
+    private def toCsvChunk(rows: Seq[Array[String]]) = {
+      val stringWriter = new StringWriter()
+      val csvWriter = new CSVWriter(stringWriter)
+      rows.foreach(csvWriter.writeNext(_))
+      csvWriter.close()
+      stringWriter.close()
+      stringWriter.toString()
+    }
+
+    var cachedNext: Option[String] = Some(toCsvChunk(Seq(Array("Intake24 user ID", "Survey user ID", "Authentication URL", "Short authentication URL"))))
+
+    override def hasNext: Boolean = cachedNext match {
+      case Some(_) =>
+        true
+
+      case None =>
+        val dbResult = for (users <- service.listUsersByRole(Roles.surveyRespondent(surveyId), offset, limit);
+                            aliases <- service.getSurveyUserAliases(users.map(_.id), surveyId)) yield {
+
+          users.filter(u => aliases.contains(u.id)).map {
+            user =>
+              RespondentWithAuthUrl(user.id, aliases(user.id).userName, surveyFrontendUrl + s"surveys/$surveyId?auth=${aliases(user.id).urlAuthToken}")
+          }
         }
 
-        csvWriter.close()
 
-        Ok(stringWriter.toString).as("text/csv")
+        dbResult match {
+          case Right(rows) if rows.nonEmpty =>
+
+            val shortUrls = Await.result(shortUrlCache.getShortUrls(rows.map(_.authUrl)), 10.seconds)
+
+            val withShortUrls = rows.zip(shortUrls).map {
+              case (r, shortUrl) => RespondentWithAuthAndShortUrls(r.id, r.userName, r.authUrl, shortUrl)
+            }
+
+            cachedNext = Some(toCsvChunk(withShortUrls.map(row => Array(row.id.toString, row.userName, row.authUrl, row.shortUrl))))
+            offset += rows.length
+            true
+          case Right(_) =>
+            cachedNext = None
+            false
+          case Left(error) =>
+            throw error.exception
+        }
+    }
+
+    override def next(): String = cachedNext match {
+      case Some(e) =>
+        cachedNext = None
+        e
+      case None =>
+        if (hasNext)
+          next()
+        else
+          throw new NoSuchElementException
+    }
+  }
+
+  def getRespondentAuthenticationUrlsAsCsv(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
+    _ =>
+      Future {
+        val source = Source.fromIterator {
+          () => getRespondentAuthenticationUrlsAsCsvStream(surveyId)
+        }
+
+        Ok.chunked(source)
+          .as("text/csv")
+          .withHeaders("Content-Disposition" -> "attachment; filename=test.csv")
       }
   }
 

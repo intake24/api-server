@@ -48,24 +48,24 @@ case class NewExportTaskInfo(taskId: Long)
 
 case class NewScheduledTaskRequest(daysOfWeek: Int, time: LocalTime, timeZone: String, period: Option[Int], action: String, actionConfig: String)
 
-class DataExportController @Inject()(configuration: Configuration,
-                                     service: DataExportService,
-                                     surveyAdminService: SurveyAdminService,
-                                     foodGroupsAdminService: FoodGroupsAdminService,
-                                     dataExporter: SingleThreadedDataExporter,
-                                     secureUrlService: SecureUrlService,
-                                     exportScheduler: ScheduledDataExportService,
-                                     ndnsGroupsCache: NdnsCompoundsFoodGroupsCache,
-                                     emailSender: EmailSender,
-                                     rab: Intake24RestrictedActionBuilder,
-                                     playBodyParsers: PlayBodyParsers,
-                                     jsonBodyParser: JsonBodyParser,
-                                     csvExportFormats: Map[String, SurveyCSVExporter],
-                                     val controllerComponents: ControllerComponents,
-                                     implicit val executionContext: ExecutionContext) extends BaseController
+class SurveyDataExportController @Inject()(configuration: Configuration,
+                                           service: DataExportService,
+                                           surveyAdminService: SurveyAdminService,
+                                           foodGroupsAdminService: FoodGroupsAdminService,
+                                           dataExporter: SingleThreadedDataExporter,
+                                           secureUrlService: SecureUrlService,
+                                           exportScheduler: ScheduledDataExportService,
+                                           ndnsGroupsCache: NdnsCompoundsFoodGroupsCache,
+                                           emailSender: EmailSender,
+                                           rab: Intake24RestrictedActionBuilder,
+                                           playBodyParsers: PlayBodyParsers,
+                                           jsonBodyParser: JsonBodyParser,
+                                           csvExportFormats: Map[String, SurveyCSVExporter],
+                                           val controllerComponents: ControllerComponents,
+                                           implicit val executionContext: ExecutionContext) extends BaseController
   with DatabaseErrorHandler {
 
-  val logger = LoggerFactory.getLogger(classOf[DataExportController])
+  val logger = LoggerFactory.getLogger(classOf[SurveyDataExportController])
 
   val urlValidityPeriod = configuration.get[FiniteDuration](s"intake24.dataExport.secureUrl.validityPeriod")
 

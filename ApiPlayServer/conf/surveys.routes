@@ -37,8 +37,6 @@ DELETE        /:surveyId/acl                                         controllers
 GET           /:surveyId/users/staff                                 controllers.system.UserAdminController.listSurveyStaffUsers(surveyId: String, offset: Int, limit: Int)
 POST          /:surveyId/users/staff                                 controllers.system.UserAdminController.createOrUpdateSurveyStaff(surveyId: String)
 GET           /:surveyId/users/respondents                           controllers.system.UserAdminController.listSurveyRespondentUsers(surveyId: String, offset: Int, limit: Int)
-GET           /:surveyId/users/respondent-auth-urls.json             controllers.system.UserAdminController.getRespondentAuthenticationUrlsAsJson(surveyId: String, offset: Int, limit: Int)
-GET           /:surveyId/users/respondent-auth-urls.csv              controllers.system.UserAdminController.getRespondentAuthenticationUrlsAsCsv(surveyId: String, offset: Int, limit: Int)
 POST          /:surveyId/users/respondents                           controllers.system.UserAdminController.createOrUpdateSurveyRespondents(surveyId: String)
 POST          /:surveyId/users/respondents/upload-csv                controllers.system.UserAdminController.uploadSurveyRespondentsCSV(surveyId: String)
 POST          /:surveyId/users/notifications/upload-csv              controllers.system.NotificationAdminController.uploadNotificationsCSV(surveyId: String)
