@@ -4,7 +4,6 @@ import java.time.ZonedDateTime
 
 import akka.actor.ActorSystem
 import javax.inject.{Inject, Singleton}
-
 import play.api.libs.mailer.{Email, MailerClient}
 import play.api.{Configuration, Logger}
 import sms.SMSService
@@ -12,7 +11,7 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{UserAdminService, Use
 import uk.ac.ncl.openlab.intake24.services.systemdb.notifications.{NewNotification, Notification, NotificationScheduleDataService}
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.{PublicSurveyParameters, SurveyService}
 import uk.ac.ncl.openlab.intake24.services.systemdb.uxEvents.UxEventsDataService
-import urlShort.{ShortUrlCache, ShortUrlService}
+import uk.ac.ncl.openlab.intake24.shorturls.{ShortUrlsHttpClient, ShortUrlsRequest}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -25,7 +24,7 @@ trait NotificationSender
 @Singleton
 class NotificationSenderImpl @Inject()(system: ActorSystem,
                                        notificationDataService: NotificationScheduleDataService,
-                                       shortUrlCache: ShortUrlCache,
+                                       shortUrlsService: ShortUrlsHttpClient,
                                        userService: UserAdminService,
                                        smsService: SMSService,
                                        mailerClient: MailerClient,
@@ -128,10 +127,11 @@ class NotificationSenderImpl @Inject()(system: ActorSystem,
 
     def getLoginMessage(notification: Notification, userProfile: UserProfile, surveyId: String, token: String): Future[Option[MessagePack]] = {
       val authUrl = produceAuthUrl(surveyId, token)
-      shortUrlCache.getShortUrls(Seq(authUrl)).map(shUrl => {
+
+      shortUrlsService.getShortUrls(ShortUrlsRequest(Seq(authUrl))).unsafeToFuture().map(shUrl => {
         for (
-          emailMsg <- produceEmailMessage(notification, userProfile, shUrl.head);
-          smsMsg <- produceSmsMessage(notification, userProfile, shUrl.head)
+          emailMsg <- produceEmailMessage(notification, userProfile, shUrl.shortUrls.head);
+          smsMsg <- produceSmsMessage(notification, userProfile, shUrl.shortUrls.head)
         ) yield MessagePack(emailMsg, smsMsg)
       })
     }

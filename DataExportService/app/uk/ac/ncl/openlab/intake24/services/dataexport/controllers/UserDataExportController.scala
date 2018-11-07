@@ -24,17 +24,14 @@ import java.time.{Clock, LocalDateTime, ZoneId, ZonedDateTime}
 import java.util.UUID
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.model.StatusCode
 import com.opencsv.CSVWriter
 import io.circe.generic.auto._
-import io.circe.parser._
 import io.circe.syntax._
 import javax.inject.Inject
 import org.slf4j.LoggerFactory
 import play.api.Configuration
 import play.api.cache.SyncCacheApi
 import play.api.http.ContentTypes
-import play.api.libs.ws.WSClient
 import play.api.mvc.{BaseController, ControllerComponents}
 import uk.ac.ncl.openlab.intake24.errors.ErrorUtils
 import uk.ac.ncl.openlab.intake24.play.utils.{DatabaseErrorHandler, JsonBodyParser}
@@ -42,9 +39,10 @@ import uk.ac.ncl.openlab.intake24.security.authorization.Intake24RestrictedActio
 import uk.ac.ncl.openlab.intake24.services.dataexport._
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
+import uk.ac.ncl.openlab.intake24.shorturls.{ShortUrlsHttpClient, ShortUrlsRequest}
 
-import scala.concurrent.duration.{FiniteDuration, _}
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 case class UserDataExportHandle(requestId: UUID)
@@ -69,7 +67,7 @@ class UserDataExportController @Inject()(configuration: Configuration,
                                          service: UserAdminService,
                                          secureUrlService: SecureUrlService,
                                          syncCacheApi: SyncCacheApi,
-                                         ws: WSClient,
+                                         shortUrlsClient: ShortUrlsHttpClient,
                                          rab: Intake24RestrictedActionBuilder,
                                          jsonBodyParser: JsonBodyParser,
                                          actorSystem: ActorSystem,
@@ -80,42 +78,20 @@ class UserDataExportController @Inject()(configuration: Configuration,
   val logger = LoggerFactory.getLogger(classOf[UserDataExportController])
 
   val surveyFrontendUrl = configuration.get[String]("intake24.surveyFrontendUrl")
-  val shortUrlServiceUrl = configuration.get[String]("intake24.shortUrlServiceUrl")
 
-
-  private def shortenUrls(fullUrls: Seq[String]): Try[Seq[String]] = {
-    val request = ws.url(shortUrlServiceUrl + "/shorten")
-      .withHttpHeaders(CONTENT_TYPE -> ContentTypes.JSON)
-      .post(fullUrls.asJson.noSpaces)
-      .flatMap {
-        response =>
-
-          if (StatusCode.int2StatusCode(response.status).isSuccess()) {
-            decode[Seq[String]](response.body) match {
-              case Left(e) => Future.failed(e)
-              case Right(urls) => Future.successful(urls)
-            }
-          } else {
-            Future.failed(new RuntimeException("Short url service returned " + response.status))
-          }
-      }
-
-    Try {
-      Await.ready(request, 10.seconds)
-    }.flatMap {
-      _.value.get
-    }
-  }
 
   private def appendShortUrls(respondents: Seq[RespondentWithAuthUrl]): Try[Seq[RespondentWithAuthAndShortUrls]] = {
-    shortenUrls(respondents.map(_.authUrl)).map {
-      shortUrls =>
-        respondents.zip(shortUrls).map {
+
+    shortUrlsClient.getShortUrls(ShortUrlsRequest(respondents.map(_.authUrl))).attempt.unsafeRunSync.map {
+      response =>
+        respondents.zip(response.shortUrls).map {
           case (r, shortUrl) => RespondentWithAuthAndShortUrls(r.id, r.userName, r.authUrl, shortUrl)
         }
+    } match {
+      case Left(error) => Failure(error)
+      case Right(value) => Success(value)
     }
   }
-
 
   private def exportImpl(surveyId: String): Try[File] = {
 
@@ -169,7 +145,7 @@ class UserDataExportController @Inject()(configuration: Configuration,
 
       val requestId = UUID.randomUUID().toString
 
-      syncCacheApi.set(cacheKey(surveyId, requestId), (UserDataExportStatus.Pending:UserDataExportStatus).asJson.noSpaces, 10 minutes)
+      syncCacheApi.set(cacheKey(surveyId, requestId), (UserDataExportStatus.Pending: UserDataExportStatus).asJson.noSpaces, 10 minutes)
 
       actorSystem.scheduler.scheduleOnce(0.seconds) {
         val result: UserDataExportStatus = exportImpl(surveyId).flatMap {
@@ -181,7 +157,7 @@ class UserDataExportController @Inject()(configuration: Configuration,
             UserDataExportStatus.Successful(url.toString)
           case Failure(exception) =>
             logger.error("Could not export file", exception)
-            UserDataExportStatus.Failed(s"${exception.getClass}: ${exception.getMessage}")
+            UserDataExportStatus.Failed(s"${exception.getClass.getSimpleName}: ${exception.getMessage}")
         }
 
         syncCacheApi.set(cacheKey(surveyId, requestId), result.asJson.noSpaces, 10 minutes)

@@ -26,7 +26,7 @@ import play.api.Configuration
 
 class AmazonWebServicesModule extends AbstractModule {
 
-  def configure() = {
+  override def configure() = {
 
   }
 

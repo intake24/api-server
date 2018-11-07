@@ -6,7 +6,7 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.shortUrls.ShortUrlDataServic
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ShortUrlCache @Inject()(shortUrlService: ShortUrlService,
+class ShortUrlCache @Inject()(shortUrlService: ShortUrlBackend,
                               dataService: ShortUrlDataService,
                               implicit val ec: ExecutionContext) {
 

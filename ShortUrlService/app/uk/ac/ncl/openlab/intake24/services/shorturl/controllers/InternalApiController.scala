@@ -18,24 +18,26 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.services.shorturl.controllers
 
+import io.circe.generic.auto._
 import io.circe.syntax._
 import javax.inject.Inject
 import play.api.mvc.{BaseController, ControllerComponents}
 import uk.ac.ncl.openlab.intake24.play.utils.{DatabaseErrorHandler, JsonBodyParser}
-import uk.ac.ncl.openlab.intake24.services.shorturl.ShortUrlService
+import uk.ac.ncl.openlab.intake24.services.shorturl.ShortUrlBackend
+import uk.ac.ncl.openlab.intake24.shorturls.{ShortUrlsRequest, ShortUrlsResponse}
 
 import scala.concurrent.ExecutionContext
 
-class InternalApiController @Inject()(shortUrlService: ShortUrlService,
+class InternalApiController @Inject()(shortUrlService: ShortUrlBackend,
                                       val controllerComponents: ControllerComponents,
                                       jsonBodyParser: JsonBodyParser,
                                       implicit val executionContext: ExecutionContext) extends BaseController with DatabaseErrorHandler {
 
-  def shorten() = Action.async(jsonBodyParser.parse[Seq[String]]) {
+  def shorten() = Action.async(jsonBodyParser.parse[ShortUrlsRequest]) {
     request =>
-      shortUrlService.shorten(request.body).map {
+      shortUrlService.shorten(request.body.fullUrls).map {
         shortUrls =>
-          Ok(shortUrls.asJson.noSpaces)
+          Ok(ShortUrlsResponse(shortUrls).asJson.noSpaces)
       }
   }
 }

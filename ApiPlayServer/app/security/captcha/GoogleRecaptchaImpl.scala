@@ -25,7 +25,7 @@ class GoogleRecaptchaImpl @Inject()(ws: WSClient,
   private case class VerifyResponse(success: Boolean, errorCodes: Option[Seq[String]])
 
   private implicit val responseDecoder =
-    Decoder.forProduct2[Boolean, Option[Seq[String]], VerifyResponse]("success", "error-codes") {
+    Decoder.forProduct2[VerifyResponse, Boolean, Option[Seq[String]]]("success", "error-codes") {
       (success, errorCodes) =>
         VerifyResponse(success, errorCodes)
     }

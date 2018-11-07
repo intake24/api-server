@@ -40,7 +40,7 @@ class PairwiseAssociationsModule(env: Environment, config: Configuration) extend
       configuration.get[Int]("intake24.pairwiseAssociations.storedCoOccurrencesThreshold")
     )
 
-  def configure() = {
+  override def configure() = {
     // Pairwise services
     bind(classOf[PairwiseAssociationsDataService]).to(classOf[PairwiseAssociationsDataServiceImpl])
     bind(classOf[PairwiseAssociationsService]).to(classOf[PairwiseAssociationsServiceImpl])

@@ -8,7 +8,7 @@ import scala.concurrent.Future
 import scala.util.Random
 
 @Singleton
-class InternalShortUrlImpl @Inject()(configuration: Configuration) extends ShortUrlService {
+class InternalShortUrlImpl @Inject()(configuration: Configuration) extends ShortUrlBackend {
 
   private val random = new Random()
   private val alphabet = configuration.get[String]("intake24.urlShort.internal.alphabet")

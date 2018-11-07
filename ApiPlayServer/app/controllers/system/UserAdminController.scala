@@ -43,11 +43,12 @@ import uk.ac.ncl.openlab.intake24.errors.{ErrorUtils, RecordNotFound}
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.UserPhysicalDataService
-import urlShort.ShortUrlCache
+import uk.ac.ncl.openlab.intake24.shorturls.{ShortUrlsHttpClient, ShortUrlsRequest}
 import views.html.PasswordResetLink
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 class UserAdminController @Inject()(service: UserAdminService,
                                     userPhysicalData: UserPhysicalDataService,
@@ -61,7 +62,7 @@ class UserAdminController @Inject()(service: UserAdminService,
                                     mailerClient: MailerClient,
                                     syncCacheApi: SyncCacheApi,
                                     captchaService: AsyncCaptchaService,
-                                    shortUrlCache: ShortUrlCache,
+                                    shortUrlsClient: ShortUrlsHttpClient,
                                     configuration: Configuration,
                                     val controllerComponents: ControllerComponents,
                                     implicit val executionContext: ExecutionContext) extends BaseController
@@ -230,19 +231,24 @@ class UserAdminController @Inject()(service: UserAdminService,
     }
   }
 
-  private def appendShortUrls(respondents: Seq[RespondentWithAuthUrl]): Future[Seq[RespondentWithAuthAndShortUrls]] =
-    shortUrlCache.getShortUrls(respondents.map(_.authUrl)).map {
-      shortUrls =>
-        respondents.zip(shortUrls).map {
+
+  private def appendShortUrls(respondents: Seq[RespondentWithAuthUrl]): Try[Seq[RespondentWithAuthAndShortUrls]] = {
+
+    shortUrlsClient.getShortUrls(ShortUrlsRequest(respondents.map(_.authUrl))).attempt.unsafeRunSync.map {
+      response =>
+        respondents.zip(response.shortUrls).map {
           case (r, shortUrl) => RespondentWithAuthAndShortUrls(r.id, r.userName, r.authUrl, shortUrl)
         }
+    } match {
+      case Left(error) => Failure(error)
+      case Right(value) => Success(value)
     }
-
+  }
 
   def getRespondentAuthenticationUrlsAsJson(surveyId: String, offset: Int, limit: Int) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
     _ =>
       for (respondents <- getRespondentsWithAuthUrls(surveyId, offset, Math.max(0, Math.min(limit, 1000)));
-           result <- appendShortUrls(respondents)) yield {
+           result <- Future.fromTry(appendShortUrls(respondents))) yield {
         Ok(toJsonString(result)).as(ContentTypes.JSON)
       }
   }
@@ -281,11 +287,7 @@ class UserAdminController @Inject()(service: UserAdminService,
         dbResult match {
           case Right(rows) if rows.nonEmpty =>
 
-            val shortUrls = Await.result(shortUrlCache.getShortUrls(rows.map(_.authUrl)), 10.seconds)
-
-            val withShortUrls = rows.zip(shortUrls).map {
-              case (r, shortUrl) => RespondentWithAuthAndShortUrls(r.id, r.userName, r.authUrl, shortUrl)
-            }
+            val withShortUrls = appendShortUrls(rows).get  // boom :-(
 
             cachedNext = Some(toCsvChunk(withShortUrls.map(row => Array(row.id.toString, row.userName, row.authUrl, row.shortUrl))))
             offset += rows.length

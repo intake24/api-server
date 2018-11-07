@@ -31,7 +31,7 @@ class LocalStorageModule extends AbstractModule {
       configuration.get[String]("intake24.images.localStorage.baseDirectory"),
       configuration.get[String]("intake24.images.localStorage.urlPrefix"))
 
-  def configure() = {
+  override def configure() = {
     bind(classOf[ImageStorageService]).to(classOf[ImageStorageLocal])
   }
 }

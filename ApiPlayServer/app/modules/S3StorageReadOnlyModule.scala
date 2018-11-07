@@ -31,7 +31,7 @@ class S3StorageReadOnlyModule extends AbstractModule {
       configuration.get[String]("intake24.images.S3Storage.bucketName"),
       configuration.get[String]("intake24.images.S3Storage.pathPrefix"))
 
-  def configure() = {
+  override def configure() = {
     bind(classOf[ImageStorageService]).to(classOf[ImageStorageS3ReadOnly])
   }
 }

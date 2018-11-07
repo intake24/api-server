@@ -23,7 +23,7 @@ import uk.ac.ncl.openlab.intake24.services.dataexport.{SecureUrlS3Impl, SecureUr
 
 class S3SecureUrlModule extends AbstractModule {
 
-  def configure() = {
+  override def configure() = {
     bind(classOf[SecureUrlService]).to(classOf[SecureUrlS3Impl])
   }
 }

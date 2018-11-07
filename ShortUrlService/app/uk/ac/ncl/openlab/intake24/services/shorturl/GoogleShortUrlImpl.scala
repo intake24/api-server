@@ -10,7 +10,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class GoogleShortUrlImpl @Inject()(ws: WSClient,
                                    implicit val executionContext: ExecutionContext,
-                                   configuration: Configuration) extends ShortUrlService {
+                                   configuration: Configuration) extends ShortUrlBackend {
 
   private implicit val responseDecoder =
     Decoder.forProduct3[String, String, String, ShortResp]("kind", "id", "longUrl") {

@@ -21,9 +21,10 @@ package modules
 import java.util.concurrent.ForkJoinPool
 
 import cache._
-import com.google.inject.name.Named
-import com.google.inject.{AbstractModule, Provides, Singleton}
+import com.google.inject.{AbstractModule, Provides}
+import javax.inject.{Named, Singleton}
 import javax.sql.DataSource
+import org.http4s.Uri
 import play.api.db.Database
 import play.api.{Configuration, Environment}
 import play.db.NamedDatabase
@@ -52,12 +53,11 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.notifications.NotificationSc
 import uk.ac.ncl.openlab.intake24.services.systemdb.user._
 import uk.ac.ncl.openlab.intake24.services.systemdb.uxEvents.UxEventsDataService
 import uk.ac.ncl.openlab.intake24.services.{NdnsCompoundFoodGroupsService, RecipesAttributeCache}
+import uk.ac.ncl.openlab.intake24.shorturls.ShortUrlsHttpClientConfig
 import uk.ac.ncl.openlab.intake24.systemsql.admin._
 import uk.ac.ncl.openlab.intake24.systemsql.notifications.NotificationScheduleDataServiceImpl
-import uk.ac.ncl.openlab.intake24.systemsql.shortUrl.ShortUrlDataServiceImpl
 import uk.ac.ncl.openlab.intake24.systemsql.user._
 import uk.ac.ncl.openlab.intake24.systemsql.uxEvents.UxEventsDataServiceImpl
-import urlShort.{RandomShortUrlImpl, ShortUrlService}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -180,7 +180,13 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     ExecutionContext.fromExecutor(new ForkJoinPool(maxThreads))
   }
 
-  def configure() = {
+  @Provides
+  @Singleton
+  def shortUrlsConfig(configuration: Configuration): ShortUrlsHttpClientConfig = {
+    ShortUrlsHttpClientConfig(Uri.unsafeFromString(configuration.get[String]("intake24.shortUrlServiceUrl")))
+  }
+
+  override def configure() = {
     // Utility services
 
     bind(classOf[EnglishWordOps]).to(classOf[EnglishWordOpsPlingImpl])
@@ -275,16 +281,17 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     bind(classOf[UxEventsDataService]).to(classOf[UxEventsDataServiceImpl])
 
     // User notifications
-
-    bind(classOf[ShortUrlService]).to(classOf[RandomShortUrlImpl])
     bind(classOf[NotificationScheduleDataService]).to(classOf[NotificationScheduleDataServiceImpl])
     bind(classOf[NotificationSender]).to(classOf[NotificationSenderImpl]).asEagerSingleton()
 
     // User sessions
     bind(classOf[UserSessionDataService]).to(classOf[UserSessionDataServiceImpl])
 
-
     bind(classOf[NdnsCompoundFoodGroupsService]).to(classOf[NdnsCompoundFoodGroupsImpl])
     bind(classOf[FeedbackDataService]).to(classOf[FeedbackDataImpl])
+
+
   }
+
+
 }

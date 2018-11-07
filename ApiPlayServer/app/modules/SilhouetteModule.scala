@@ -37,7 +37,7 @@ import scala.concurrent.duration._
 
 class SilhouetteModule extends AbstractModule with ScalaModule {
 
-  def configure() {
+  override def configure() {
     bind[IdentityService[Intake24User]].to[IdentityServiceImpl]
     bind[FingerprintGenerator].toInstance(new DefaultFingerprintGenerator(false))
     bind[Clock].toInstance(Clock())

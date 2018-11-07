@@ -23,7 +23,7 @@ import uk.ac.ncl.openlab.intake24.services.dataexport.{LocalSecureUrlCleanUpDaem
 
 class LocalSecureUrlModule extends AbstractModule {
 
-  def configure() = {
+  override def configure() = {
     bind(classOf[SecureUrlService]).to(classOf[SecureUrlLocalFileImpl])
     bind(classOf[LocalSecureUrlCleanUpDaemon]).asEagerSingleton()
   }

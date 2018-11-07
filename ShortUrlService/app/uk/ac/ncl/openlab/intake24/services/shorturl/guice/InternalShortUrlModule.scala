@@ -19,7 +19,7 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.services.shorturl.guice
 
 import com.google.inject.AbstractModule
-import uk.ac.ncl.openlab.intake24.services.shorturl.{InternalShortUrlImpl, ShortUrlService}
+import uk.ac.ncl.openlab.intake24.services.shorturl.{InternalShortUrlImpl, ShortUrlBackend}
 import uk.ac.ncl.openlab.intake24.services.systemdb.shortUrls.ShortUrlDataService
 import uk.ac.ncl.openlab.intake24.systemsql.shortUrl.ShortUrlDataServiceImpl
 
@@ -27,6 +27,6 @@ import uk.ac.ncl.openlab.intake24.systemsql.shortUrl.ShortUrlDataServiceImpl
 class InternalShortUrlModule extends AbstractModule {
 
   def configure() = {
-    bind(classOf[ShortUrlService]).to(classOf[InternalShortUrlImpl])
+    bind(classOf[ShortUrlBackend]).to(classOf[InternalShortUrlImpl])
   }
 }

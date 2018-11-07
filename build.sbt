@@ -84,13 +84,17 @@ lazy val playSecurity = project.in(file("PlaySecurity")).dependsOn(playUtils, sy
 lazy val apiPlayServer =
   Project(id = "apiPlayServer", base = file("ApiPlayServer")).enablePlugins(PlayScala, SystemdPlugin, JDebPackaging)
     .dependsOn(apiSharedJVM, foodDataSql, systemDataSql, imageStorageLocal, imageStorageS3, imageProcessorIM, foodSubstRecommender,
-               playSecurity)
+               playSecurity, shortUrlServiceClient)
     .settings(commonSettings: _*)
 
 
-lazy val dataExportService = project.in(file("DataExportService")).enablePlugins(PlayScala, SystemdPlugin, JDebPackaging, ClasspathJarPlugin).dependsOn(apiSharedJVM, foodDataSql, systemDataSql, playSecurity)
+lazy val dataExportService = project.in(file("DataExportService")).enablePlugins(PlayScala, SystemdPlugin, JDebPackaging, ClasspathJarPlugin).dependsOn(apiSharedJVM, foodDataSql, systemDataSql, playSecurity, shortUrlServiceClient)
 
-lazy val shortUrlService = project.in(file("ShortUrlService")).enablePlugins(PlayScala, SystemdPlugin, JDebPackaging, ClasspathJarPlugin).dependsOn(apiSharedJVM, systemDataSql, playSecurity)
+lazy val shortUrlServiceApi = project.in(file("ShortUrlServiceAPI"))
+
+lazy val shortUrlServiceClient = project.in(file("ShortUrlServiceClient")).dependsOn(shortUrlServiceApi)
+
+lazy val shortUrlService = project.in(file("ShortUrlService")).enablePlugins(PlayScala, SystemdPlugin, JDebPackaging, ClasspathJarPlugin).dependsOn(apiSharedJVM, systemDataSql).dependsOn(shortUrlServiceApi, playUtils)
 
 lazy val apiDocs = scalatex.ScalatexReadme(
   projectId = "apiDocs",

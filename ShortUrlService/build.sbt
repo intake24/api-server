@@ -12,6 +12,7 @@ libraryDependencies ++= Seq(
   guice,
   cacheApi,
   ehcache,
+  ws,
   "commons-net" % "commons-net" % "3.6",
   "com.opencsv" % "opencsv" % "4.2",
   "com.amazonaws" % "aws-java-sdk-s3" % "1.11.383",

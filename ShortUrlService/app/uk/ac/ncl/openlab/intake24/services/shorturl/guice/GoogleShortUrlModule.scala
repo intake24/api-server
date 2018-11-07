@@ -19,11 +19,11 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.services.shorturl.guice
 
 import com.google.inject.AbstractModule
-import uk.ac.ncl.openlab.intake24.services.shorturl.{GoogleShortUrlImpl, ShortUrlService}
+import uk.ac.ncl.openlab.intake24.services.shorturl.{GoogleShortUrlImpl, ShortUrlBackend}
 
 class GoogleShortUrlModule extends AbstractModule {
 
   def configure() = {
-    bind(classOf[ShortUrlService]).to(classOf[GoogleShortUrlImpl])
+    bind(classOf[ShortUrlBackend]).to(classOf[GoogleShortUrlImpl])
   }
 }

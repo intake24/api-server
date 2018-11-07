@@ -22,6 +22,7 @@ import java.util.concurrent.ForkJoinPool
 
 import com.google.inject.{AbstractModule, Provides}
 import javax.inject.{Named, Singleton}
+import org.http4s.Uri
 import play.api.Configuration
 import play.api.db.{Database, NamedDatabase}
 import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodGroupsAdminImpl
@@ -30,13 +31,14 @@ import uk.ac.ncl.openlab.intake24.services.NdnsCompoundFoodGroupsService
 import uk.ac.ncl.openlab.intake24.services.dataexport.{CSVFormatV1, CSVFormatV2, DataExportDaemon, SurveyCSVExporter}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, ScheduledDataExportService, SurveyAdminService, UserAdminService}
+import uk.ac.ncl.openlab.intake24.shorturls.ShortUrlsHttpClientConfig
 import uk.ac.ncl.openlab.intake24.systemsql.admin.{DataExportImpl, ScheduledDataExportImpl, SurveyAdminImpl, UserAdminImpl}
 
 import scala.concurrent.ExecutionContext
 
 class DataExportModule extends AbstractModule {
 
-  def configure() = {
+  override def configure() = {
 
     bind(classOf[UserAdminService]).to(classOf[UserAdminImpl])
     bind(classOf[SurveyAdminService]).to(classOf[SurveyAdminImpl])
@@ -49,6 +51,13 @@ class DataExportModule extends AbstractModule {
 
     bind(classOf[DataExportDaemon]).asEagerSingleton()
   }
+
+  @Provides
+  @Singleton
+  def shortUrlsConfig(configuration: Configuration): ShortUrlsHttpClientConfig = {
+    ShortUrlsHttpClientConfig(Uri.unsafeFromString(configuration.get[String]("intake24.shortUrlServiceUrl")))
+  }
+
 
   @Provides
   @Singleton
