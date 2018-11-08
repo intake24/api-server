@@ -32,6 +32,11 @@ import uk.ac.ncl.openlab.intake24.services.fooddb.images._
 
 import scala.concurrent.{ExecutionContext, Future}
 
+
+case class ImageMapObjectWithUrl(description: String, overlayImageUrl: String, navigationIndex: Int, outlineCoordinates: Array[Double])
+
+case class ImageMapWithUrls(id: String, description: String, baseImageId: Long, baseImageUrl: String, objects: Map[Int, ImageMapObjectWithUrl])
+
 class ImageMapAdminController @Inject()(
                                          imageMaps: ImageMapsAdminService,
                                          imageDatabase: ImageDatabaseService,
@@ -68,9 +73,9 @@ class ImageMapAdminController @Inject()(
         overlayDescriptors <- imageAdmin.generateImageMapOverlays(params.id, baseImageSourceRecord.id, imageMap).right;
         _ <- {
 
-          val objects = imageMap.outlines.keySet.foldLeft(Map[Int, ImageMapObjectRecord]()) {
+          val objects = imageMap.outlines.keySet.foldLeft(Map[Int, NewImageMapObject]()) {
             case (acc, objectId) =>
-              acc + (objectId -> ImageMapObjectRecord(params.objectDescriptions(objectId.toString), imageMap.getCoordsArray(objectId).toArray, overlayDescriptors(objectId).id))
+              acc + (objectId -> NewImageMapObject(objectId, params.objectDescriptions(objectId.toString), imageMap.navigation.indexOf(objectId), imageMap.getCoordsArray(objectId).toArray, overlayDescriptors(objectId).id))
           }
 
           imageMaps.createImageMaps(Seq(NewImageMapRecord(params.id, params.description, processedBaseImageDescriptor.id, imageMap.navigation, objects)))
@@ -91,6 +96,24 @@ class ImageMapAdminController @Inject()(
     _ =>
       Future {
         translateDatabaseResult(imageMaps.listImageMaps())
+      }
+  }
+
+  def getImageMap(id: String) = rab.restrictAccess(foodAuthChecks.canReadPortionSizeMethods) {
+    _ =>
+      Future {
+        val result = imageMaps.getImageMap(id).map {
+          imageMap =>
+
+            val objects = imageMap.objects.foldLeft(Map[Int, ImageMapObjectWithUrl]()) {
+              case (result, obj) =>
+                result + (obj.id -> ImageMapObjectWithUrl(obj.description, imageStorage.getUrl(obj.overlayImagePath), obj.navigationIndex, obj.outlineCoordinates))
+            }
+
+            ImageMapWithUrls(imageMap.id, imageMap.description, imageMap.baseImageId, imageStorage.getUrl(imageMap.baseImagePath), objects)
+        }
+
+        translateDatabaseResult(result)
       }
   }
 
@@ -128,10 +151,10 @@ class ImageMapAdminController @Inject()(
     request =>
       Future {
         val result = for (
-          baseImage <- getFile("baseImage", request.body).right;
-          sourceKeywords <- getOptionalMultipleData("baseImageKeywords", request.body).right;
-          params <- getParsedData[NewImageMapRequest]("imageMapParameters", request.body).right;
-          imgMap <- createImageMapWithoutObjects(baseImage, sourceKeywords, params, request.subject.userId.toString).right // FIXME: better uploader string
+          baseImage <- getFile("baseImage", request.body);
+          sourceKeywords <- getOptionalMultipleData("baseImageKeywords", request.body);
+          params <- getParsedData[NewImageMapRequest]("imageMapParameters", request.body);
+          imgMap <- createImageMapWithoutObjects(baseImage, sourceKeywords, params, request.subject.userId.toString) // FIXME: better uploader string
         ) yield imgMap
 
         result match {

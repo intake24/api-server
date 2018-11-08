@@ -955,6 +955,23 @@ object FoodDatabaseMigrations {
         ???
 
       }
+    },
+
+    new Migration {
+      override val versionFrom: Long = 54l
+      override val versionTo: Long = 55l
+      override val description: String = "Drop image_map_id from guide_image_objects"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("alter table guide_image_objects drop column image_map_id").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
     }
   )
 }

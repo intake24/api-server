@@ -18,6 +18,8 @@ limitations under the License.
 
 package controllers
 
+import java.awt.Shape
+
 import javax.inject.Inject
 import io.circe.generic.auto._
 import parsers.{FormDataUtil, JsonBodyParser}
@@ -27,9 +29,22 @@ import security.Intake24RestrictedActionBuilder
 import scala.concurrent.{ExecutionContext, Future}
 import uk.ac.ncl.openlab.intake24.api.data.NewGuideImageRequest
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.{ImageAdminService, ImageStorageService}
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.{AWTImageMap, ImageAdminService, ImageStorageService, ShapeFactory}
+import uk.ac.ncl.openlab.intake24.services.fooddb.user.ImageMapService
+
+case class AdminGuideImageHeader(id: String, description: String, imageMapId: String, baseImageUrl: String)
+
+case class AdminGuideImageObject(id: Int, description: String, outlineCoordinates: Array[Double], overlayImageUrl: String, weight: Double)
+
+case class AdminNewGuideImageObject(description: String, outlineCoordinates: Array[Double], weight: Double)
+
+case class AdminGuideImage(id: String, description: String, imageMapId: String, baseImageUrl: String, objects: Seq[AdminGuideImageObject])
+
+case class PatchGuideImageObjectsRequest(imageWidth: Double, imageHeight: Double, objects: Seq[AdminNewGuideImageObject])
+
 
 class GuideImageAdminController @Inject()(guideImageAdminService: GuideImageAdminService,
+                                          imageMapsService: ImageMapService,
                                           imageMapsAdminService: ImageMapsAdminService,
                                           imageAdminService: ImageAdminService,
                                           imageStorage: ImageStorageService,
@@ -44,35 +59,79 @@ class GuideImageAdminController @Inject()(guideImageAdminService: GuideImageAdmi
 
   def listGuideImages() = rab.restrictAccess(foodAuthChecks.canReadPortionSizeMethods) {
     Future {
-      translateDatabaseResult(guideImageAdminService.listGuideImages().map { images =>
-        images.map(img => img.copy(path = imageStorage.getUrl(img.path)))
-      })
+
+      val result = for (guideHeaders <- guideImageAdminService.listGuideImages();
+                        imageMapHeaders <- imageMapsService.getImageMaps(guideHeaders.map(_.imageMapId))) yield {
+
+        guideHeaders.zip(imageMapHeaders).map {
+          case (guideHeader, imageMapHeader) =>
+            AdminGuideImageHeader(guideHeader.id, guideHeader.description, guideHeader.imageMapId, imageStorage.getUrl(imageMapHeader.baseImagePath))
+        }
+      }
+      translateDatabaseResult(result)
     }
   }
 
   def getGuideImage(id: String) = rab.restrictAccess(foodAuthChecks.canReadPortionSizeMethods) {
     Future {
-      translateDatabaseResult(guideImageAdminService.getGuideImage(id))
-    }
-  }
 
-  def getGuideImageFull(id: String) = rab.restrictAccess(foodAuthChecks.canReadPortionSizeMethods) {
-    Future {
-      translateDatabaseResult(guideImageAdminService.getFullGuideImage(id))
+      val result = for (guideImage <- guideImageAdminService.getGuideImage(id);
+                        imageMap <- imageMapsAdminService.getImageMap(guideImage.imageMapId)) yield {
+        val objects = imageMap.objects.sortBy(_.navigationIndex).map {
+          obj =>
+            AdminGuideImageObject(obj.id, obj.description, obj.outlineCoordinates,
+              imageStorage.getUrl(obj.overlayImagePath), guideImage.weights(obj.id))
+        }
+
+        AdminGuideImage(id, guideImage.description, guideImage.imageMapId, imageStorage.getUrl(imageMap.baseImagePath), objects)
+      }
+
+      translateDatabaseResult(result)
     }
   }
 
   def patchGuideImageMeta(id: String) = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(jsonBodyParser.parse[GuideImageMeta]) {
     request =>
       Future {
-        translateDatabaseResult(guideImageAdminService.patchGuideImageMeta(id, request.body))
+        val result = for (
+          result <- guideImageAdminService.updateGuideImageMeta(id, request.body);
+          // this is to keep IDs and descriptions of image maps that are used for guide images in sync with guide image ids
+          // at some point this needs to be dropped and moved to numeric IDs
+          _ <- imageMapsAdminService.updateImageMapMeta(id, ImageMapMeta(request.body.id, request.body.description))
+        ) yield result
+
+        translateDatabaseResult(result)
       }
   }
 
   def patchGuideImageObjects(id: String) = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(jsonBodyParser.parse[PatchGuideImageObjectsRequest]) {
     request =>
       Future {
-        translateDatabaseResult(guideImageAdminService.patchGuideImageObjects(id, request.body.imageWidth / request.body.imageHeight, request.body.objects))
+
+        // Object ID vs nav indexes aren't meaningful for guide images creating using the admin tool and could be
+        // merged, however some legacy image maps have arbitrary object IDs that reflect numbers in the pictures
+        // and they need to be able to be re-arranged
+
+        val navIndexes = request.body.objects.indices
+        val shapeMap = navIndexes.zip(request.body.objects.map(obj => ShapeFactory.getShapeFromFlatCoordinates(obj.outlineCoordinates))).toMap
+        val imageMap = AWTImageMap(navIndexes, shapeMap, request.body.imageWidth / request.body.imageHeight)
+
+
+        val result = for (
+          imageMapId <- guideImageAdminService.getImageMapId(id).wrapped;
+          sourceId <- imageMapsAdminService.getImageMapBaseImageSourceId(imageMapId).wrapped;
+          overlays <- imageAdminService.generateImageMapOverlays(imageMapId, sourceId, imageMap);
+          _ <- imageMapsAdminService.updateImageMapObjects(imageMapId, request.body.objects.zipWithIndex.map {
+            case (obj, index) =>
+              NewImageMapObject(index, obj.description, index, obj.outlineCoordinates, overlays(index).id)
+          }).wrapped;
+          _ <- guideImageAdminService.updateGuideImageObjects(id, request.body.objects.zipWithIndex.map {
+            case (obj, index) =>
+              GuideImageMapObject(index, obj.weight)
+          }).wrapped
+        ) yield ()
+
+        translateImageServiceAndDatabaseResult(result)
       }
   }
 

@@ -16,14 +16,9 @@ object ShapeFactory {
     path
   }
 
-  def getShapeFromFlatCoordinates(coords: Seq[Double]): Option[Shape] =
-    groupFlattenCoordinates(coords).map(getShapeFromCoordinates)
+  def getShapeFromFlatCoordinates(coords: Seq[Double]): Shape =
+    getShapeFromCoordinates(groupFlattenCoordinates(coords))
 
-  def groupFlattenCoordinates(coords: Seq[Double]): Option[Seq[(Double, Double)]] =
-    if (coords.size % 2 != 0) {
-      None
-    } else {
-      Some(coords.grouped(2).map(i => i.head -> i(1)).toSeq)
-    }
-
+  def groupFlattenCoordinates(coords: Seq[Double]): Seq[(Double, Double)] =
+    coords.grouped(2).filter(_.size == 2).map(i => i(0) -> i(1)).toSeq
 }

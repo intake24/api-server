@@ -49,7 +49,7 @@ class ImageDatabaseServiceSqlImpl @Inject()(@Named("intake24_foods") val dataSou
         if (keywordParams.nonEmpty)
           batchSql(keywordsQuery, keywordParams).execute()
 
-//        Fixme: was copied from the getSourceImageRecords. Should probably be a RETURNING result of previous queries
+        //        Fixme: was copied from the getSourceImageRecords. Should probably be a RETURNING result of previous queries
         val result = SQL(getSourceImagesQuery).on('ids -> ids).executeQuery().as(Macro.namedParser[SourceImageRecordRow].*).map {
           row =>
             row.id -> row.toSourceImageRecord
@@ -85,9 +85,9 @@ class ImageDatabaseServiceSqlImpl @Inject()(@Named("intake24_foods") val dataSou
           val words = term.replaceAll("[^a-zA-Z0-9 ]", " ").toLowerCase().split("\\s+")
           SQL(filterSourceImagesQuery)
             .on('offset -> offset,
-                'limit -> limit,
-                'regex_pattern -> s"%(${words.mkString("|")})%",
-                'array_pattern -> s"{${words.mkString(",")}}")
+              'limit -> limit,
+              'regex_pattern -> s"%(${words.mkString("|")})%",
+              'array_pattern -> s"{${words.mkString(",")}}")
         case _ => SQL(listSourceImagesQuery).on('offset -> offset, 'limit -> limit)
       }
 
@@ -138,7 +138,10 @@ class ImageDatabaseServiceSqlImpl @Inject()(@Named("intake24_foods") val dataSou
           Seq[NamedParameter]('path -> rec.path, 'source_id -> rec.sourceId, 'purpose -> ProcessedImagePurpose.toId(rec.purpose))
       }
 
-      Right(AnormUtil.batchKeys(batchSql(query, params)))
+      if (params.nonEmpty)
+        Right(AnormUtil.batchKeys(batchSql(query, params)))
+      else
+        Right(Seq())
   }
 
   def deleteProcessedImageRecords(ids: Seq[Long]): Either[UnexpectedDatabaseError, Unit] =

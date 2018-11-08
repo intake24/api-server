@@ -1,7 +1,7 @@
 package uk.ac.ncl.openlab.intake24.foodsql.admin
 
+import anorm.Macro.ColumnNaming
 import javax.sql.DataSource
-
 import anorm.{BatchSql, Macro, NamedParameter, SQL, SqlParser}
 import com.google.inject.name.Named
 import com.google.inject.{Inject, Singleton}
@@ -98,6 +98,78 @@ class ImageMapsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: Data
           SQL("DELETE FROM image_map_objects WHERE image_map_id={image_map_id} AND id NOT IN({new_object_ids})").on('image_map_id -> imageMapId, 'new_object_ids -> update.objects.keySet.toSeq).execute()
 
           Right(())
+        }
+      }
+  }
+
+  def updateImageMapMeta(id: String, update: ImageMapMeta): Either[UpdateError, Unit] = tryWithConnection {
+    implicit conn =>
+      val count = SQL("update image_maps set id={new_id},description={new_description} where id={id}")
+        .on('id -> id, 'new_id -> update.id, 'new_description -> update.description)
+        .executeUpdate()
+
+      if (count != 1)
+        Left(RecordNotFound(new RuntimeException(s"Image map $id not found")))
+      else
+        Right(())
+  }
+
+  override def updateImageMapObjects(id: String, objects: Seq[NewImageMapObject]): Either[UpdateError, Unit] = tryWithConnection {
+    implicit conn =>
+      SQL("delete from image_map_objects where image_map_id={id}")
+        .on('id -> id)
+        .execute()
+
+      val objectParams = objects.map {
+        obj =>
+          val outline = s"{${obj.outline.mkString(",")}}"
+          Seq[NamedParameter]('image_map_id -> id, 'object_id -> obj.id, 'description -> obj.description, 'nav_index -> obj.navigationIndex,
+            'outline -> outline, 'image_id -> obj.overlayImageId)
+      }
+
+      if (objectParams.nonEmpty)
+        BatchSql(
+          """insert into image_map_objects(id, image_map_id, description, navigation_index, outline_coordinates, overlay_image_id)
+            |values ({object_id},{image_map_id},{description},{nav_index},{outline}::double precision[], {image_id})""".stripMargin,
+          objectParams.head, objectParams.tail:_*).execute()
+
+      Right(())
+  }
+
+  private case class GetImageMapRow(id: String, description: String, baseImageId: Long, baseImagePath: String)
+
+
+  override def getImageMap(id: String): Either[LookupError, ImageMapRecord] = tryWithConnection {
+    implicit conn =>
+      withTransaction {
+
+        SQL(
+          """select image_maps.id, image_maps.description, base_image_id, processed_images.path as base_image_path
+            |from image_maps join processed_images on image_maps.base_image_id = processed_images.id
+            |where image_maps.id = {id}""".stripMargin)
+          .on('id -> id)
+          .executeQuery()
+          .as(Macro.namedParser[GetImageMapRow](ColumnNaming.SnakeCase).singleOpt) match {
+          case Some(imageMapRow) =>
+
+            val objects = SQL(
+              """select image_map_objects.id,
+                |       description,
+                |       navigation_index,
+                |       overlay_image_id,
+                |       i.path as overlay_image_path,
+                |       outline_coordinates
+                |from image_map_objects
+                |       join processed_images i on image_map_objects.overlay_image_id = i.id
+                |where image_map_id = {id}
+                |""".stripMargin)
+              .on('id -> id)
+              .executeQuery()
+              .as(Macro.namedParser[ImageMapObject](ColumnNaming.SnakeCase).*)
+
+            Right(ImageMapRecord(imageMapRow.id, imageMapRow.description, imageMapRow.baseImageId, imageMapRow.baseImagePath, objects))
+          case None => Left(RecordNotFound(new RuntimeException(s"Image map $id not found")))
+
         }
       }
   }
