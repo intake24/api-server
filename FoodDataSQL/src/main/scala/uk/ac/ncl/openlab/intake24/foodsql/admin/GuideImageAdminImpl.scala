@@ -59,6 +59,45 @@ class GuideImageAdminImpl @Inject()(@Named("intake24_foods")
       Right(())
   }
 
+  override def deleteGuideImage(id: String): Either[DeleteError, Unit] = tryWithConnection {
+    implicit conn =>
+      logger.debug(s"Trying to delete guide image $id")
+
+      withTransaction {
+        val count = SQL("select count(*) from foods_portion_size_method_params where name='guide-image-id' and value={id}")
+          .on('id -> id)
+          .as(SqlParser.int(1).single)
+
+        if (count > 0)
+          Left(StillReferenced(new RuntimeException("Guide image is still referenced. Remove all portion size estimation methods using this guide image first.")))
+        else {
+
+          val imageMapId = SQL("select image_map_id from guide_images where id={id}")
+            .on('id -> id)
+            .as(SqlParser.str(1).single)
+
+          SQL("delete from guide_images where id={id}")
+            .on('id -> id)
+            .executeUpdate()
+
+          val usageCount = SQL("select count(*) from guide_images where image_map_id={imageMapId}")
+            .on('imageMapId -> imageMapId)
+            .as(SqlParser.long(1).single)
+
+          if (usageCount > 0)
+            logger.warn(s"Keeping image map $imageMapId because it is used by other guide images. This is OK, but unexpected.")
+          else {
+            logger.debug(s"Deleting unused image map $imageMapId")
+            SQL("delete from image_maps where id={imageMapId}")
+              .on('imageMapId -> imageMapId)
+              .execute()
+          }
+
+          Right(())
+        }
+      }
+  }
+
   def updateGuideSelectionImage(id: String, selectionImageId: Long) = tryWithConnection {
     implicit conn =>
       tryWithConstraintCheck[DependentUpdateError, Unit]("guide_selection_image_id_fk", e => ParentRecordNotFound(e)) {

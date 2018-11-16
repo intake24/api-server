@@ -19,6 +19,8 @@ trait GuideImageAdminService extends GuideImageService {
 
   def deleteAllGuideImages(): Either[UnexpectedDatabaseError, Unit]
 
+  def deleteGuideImage(id: String): Either[DeleteError, Unit]
+
   def createGuideImages(guideImages: Seq[NewGuideImageRecord]): Either[DependentCreateError, Unit]
 
   def updateGuideSelectionImage(id: String, selectionImageId: Long): Either[DependentUpdateError, Unit]

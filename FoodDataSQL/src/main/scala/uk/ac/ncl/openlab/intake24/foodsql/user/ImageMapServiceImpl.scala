@@ -17,6 +17,8 @@ class ImageMapServiceImpl @Inject()(@Named("intake24_foods") val dataSource: Dat
   private case class ObjectRow(imageMapId: String, objectId: Int, description: String, navigationIndex: Int, outlineCoordinates: Array[Double],
                                overlayImagePath: String)
 
+  private case class ImageMapRow(id: String, description: String, path: String)
+
   def getImageMaps(ids: Seq[String]): Either[LookupError, Seq[UserImageMap]] = tryWithConnection {
     implicit conn =>
       withTransaction {
@@ -25,13 +27,12 @@ class ImageMapServiceImpl @Inject()(@Named("intake24_foods") val dataSource: Dat
         val imageMaps = SQL("select image_maps.id, description, path from image_maps join processed_images on image_maps.base_image_id = processed_images.id where image_maps.id in ({ids})")
           .on('ids -> ids)
           .executeQuery()
-          .as((SqlParser.str(1) ~ SqlParser.str(2) ~ SqlParser.str(3)).*)
+          .as(Macro.namedParser[ImageMapRow].*)
+          .foldLeft(Map[String, ImageMapRow]()) {
+            case (res, row) => res + (row.id -> row)
+          }
 
-        val existingIds = imageMaps.map {
-          case id ~ _ ~ _ => id
-        }
-
-        val missingIds = ids.filterNot(existingIds.contains(_))
+        val missingIds = ids.filterNot(imageMaps.keySet.contains(_))
 
         if (missingIds.nonEmpty)
           Left(RecordNotFound(new RuntimeException(s"Missing image maps: ${missingIds.mkString(", ")}")))
@@ -49,22 +50,23 @@ class ImageMapServiceImpl @Inject()(@Named("intake24_foods") val dataSource: Dat
             .on('ids -> ids)
             .executeQuery()
             .as(Macro.namedParser[ObjectRow](ColumnNaming.SnakeCase).*)
+            .groupBy(_.imageMapId)
 
-          val objectMap = objects.groupBy(_.imageMapId)
+          Right(ids.map {
+            id =>
+            val userObjects = objects.get(id) match {
+              case Some(objects) =>
+                objects.sortBy(_.navigationIndex).map {
+                  obj =>
+                    UserImageMapObject(obj.objectId, obj.description, obj.overlayImagePath, obj.outlineCoordinates)
+                }
+              case None => List()
+            }
 
-          Right(imageMaps.map {
-            case id ~ _ ~ baseImagePath =>
+              UserImageMap(imageMaps(id).path, userObjects)
 
-              val userObjects = objectMap.get(id) match {
-                case Some(objects) =>
-                  objects.sortBy(_.navigationIndex).map {
-                    obj =>
-                      UserImageMapObject(obj.objectId, obj.description, obj.overlayImagePath, obj.outlineCoordinates)
-                  }
-                case None => List()
-              }
-              UserImageMap(baseImagePath, userObjects)
           })
+
         }
       }
   }

@@ -958,12 +958,32 @@ object FoodDatabaseMigrations {
     },
 
     new Migration {
-      override val versionFrom: Long = 54l
-      override val versionTo: Long = 55l
-      override val description: String = "Drop image_map_id from guide_image_objects"
+    override val versionFrom: Long = 54l
+    override val versionTo: Long = 55l
+    override val description: String = "Drop image_map_id from guide_image_objects"
+
+    override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+      SQL("alter table guide_image_objects drop column image_map_id").execute()
+
+      Right(())
+    }
+
+    def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+      ???
+
+    }
+  },
+
+
+    new Migration {
+      override val versionFrom: Long = 55l
+      override val versionTo: Long = 56l
+      override val description: String = "Cascade deletion of image map objects"
 
       override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
-        SQL("alter table guide_image_objects drop column image_map_id").execute()
+
+        SQL("ALTER TABLE image_map_objects DROP CONSTRAINT image_map_objects_image_map_id_fkey").execute()
+        SQL("ALTER TABLE image_map_objects ADD CONSTRAINT image_map_objects_image_map_id_fkey FOREIGN KEY (image_map_id) REFERENCES image_maps (id) ON DELETE CASCADE ON UPDATE CASCADE").execute()
 
         Right(())
       }
@@ -973,5 +993,8 @@ object FoodDatabaseMigrations {
 
       }
     }
+
+
+
   )
 }

@@ -90,6 +90,12 @@ class GuideImageAdminController @Inject()(guideImageAdminService: GuideImageAdmi
     }
   }
 
+  def deleteGuideImage(id: String) = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods) {
+    Future {
+      translateDatabaseResult(guideImageAdminService.deleteGuideImage(id))
+    }
+  }
+
   def patchGuideImageMeta(id: String) = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(jsonBodyParser.parse[GuideImageMeta]) {
     request =>
       Future {
