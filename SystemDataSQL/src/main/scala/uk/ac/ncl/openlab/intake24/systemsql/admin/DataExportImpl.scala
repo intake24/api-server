@@ -191,9 +191,10 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
         """SELECT data_export_tasks.id, created_at, date_from, date_to, progress, successful, upload_successful, download_url, download_url_expires_at
           |FROM
           |  data_export_tasks LEFT JOIN data_export_downloads d3 ON data_export_tasks.id = d3.task_id
-          |WHERE purpose='download' AND user_id={user_id}
+          |WHERE purpose='download' AND user_id={user_id} AND survey_id={survey_id}
           |  AND created_at > (now() - interval '1 day')
-          |  AND (download_url_expires_at > now() OR download_url_expires_at IS NULL)""".stripMargin)
+          |  AND (download_url_expires_at > now() OR download_url_expires_at IS NULL)
+          |ORDER BY created_at DESC""".stripMargin)
         .on('user_id -> userId, 'survey_id -> surveyId)
         .as(Macro.namedParser[ExportTaskStatusDownloadRow].*)
         .map {
