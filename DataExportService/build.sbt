@@ -1,9 +1,9 @@
 name := """intake24-data-export"""
 organization := "uk.ac.ncl.openlab.intake24"
 
-version := "4.1.1-SNAPSHOT"
+version := "4.2.0-SNAPSHOT"
 
-scalaVersion := "2.12.6"
+scalaVersion := "2.12.7"
 
 maintainer := "Ivan Poliakov <ivan.poliakov@ncl.ac.uk>"
 

@@ -35,7 +35,9 @@ class SingleThreadedDataExporter @Inject()(configuration: Configuration,
   private def export(taskId: Long, surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime, dataScheme: CustomDataScheme,
                      foodGroups: Map[Int, FoodGroupRecord], localNutrients: Seq[LocalNutrientDescription], insertBOM: Boolean, format: String): Future[Either[AnyError, File]] = {
 
-    def throttle() = Thread.sleep(throttleDelay)
+    def throttle() =
+      if (throttleDelay > 0)
+        Thread.sleep(throttleDelay)
 
     @throws[IOException]
     def exportNextBatch(exporter: SurveyCSVExporter, csvWriter: CSVWriter, offset: Int): Either[DatabaseError, Int] = {
