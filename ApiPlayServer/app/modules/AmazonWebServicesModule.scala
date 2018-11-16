@@ -33,9 +33,7 @@ class AmazonWebServicesModule extends AbstractModule {
   @Provides
   @Singleton
   def createS3client(config: Configuration): AmazonS3 = {
-    val profileName = config.getOptional[String]("intake24.s3.profileName").getOrElse("default")
-    AmazonS3ClientBuilder.standard()
-      .withCredentials(new ProfileCredentialsProvider(profileName)).build()
+    AmazonS3ClientBuilder.defaultClient()
   }
 
 }
