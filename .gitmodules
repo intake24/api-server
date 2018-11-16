@@ -24,3 +24,4 @@
 [submodule "standardize"]
 	path = standardize
 	url = git@github.com:timosadchiy/standardize.git
+	branch = master
