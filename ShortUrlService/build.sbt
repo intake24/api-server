@@ -1,7 +1,7 @@
 name := """intake24-short-urls"""
 organization := "uk.ac.ncl.openlab.intake24"
 
-version := "4.0.0-SNAPSHOT"
+version := "1.0.0-SNAPSHOT"
 
 scalaVersion := "2.12.7"
 

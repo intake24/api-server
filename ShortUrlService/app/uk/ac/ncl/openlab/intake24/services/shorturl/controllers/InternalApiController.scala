@@ -21,22 +21,32 @@ package uk.ac.ncl.openlab.intake24.services.shorturl.controllers
 import io.circe.generic.auto._
 import io.circe.syntax._
 import javax.inject.Inject
+import org.slf4j.LoggerFactory
 import play.api.mvc.{BaseController, ControllerComponents}
 import uk.ac.ncl.openlab.intake24.play.utils.{DatabaseErrorHandler, JsonBodyParser}
-import uk.ac.ncl.openlab.intake24.services.shorturl.ShortUrlBackend
+import uk.ac.ncl.openlab.intake24.services.shorturl.ShortUrlService
 import uk.ac.ncl.openlab.intake24.shorturls.{ShortUrlsRequest, ShortUrlsResponse}
 
 import scala.concurrent.ExecutionContext
 
-class InternalApiController @Inject()(shortUrlService: ShortUrlBackend,
+class InternalApiController @Inject()(shortUrlService: ShortUrlService,
                                       val controllerComponents: ControllerComponents,
                                       jsonBodyParser: JsonBodyParser,
                                       implicit val executionContext: ExecutionContext) extends BaseController with DatabaseErrorHandler {
 
+  val logger = LoggerFactory.getLogger(classOf[InternalApiController])
+
   def shorten() = Action.async(jsonBodyParser.parse[ShortUrlsRequest]) {
     request =>
-      shortUrlService.shorten(request.body.fullUrls).map {
+
+      logger.debug(s"Shorten request: ${request.body.fullUrls.mkString(",")}")
+
+
+      shortUrlService.getShortUrls(request.body.fullUrls).map {
         shortUrls =>
+
+          logger.debug(s"Shorten result: ${shortUrls.mkString(",")}")
+
           Ok(ShortUrlsResponse(shortUrls).asJson.noSpaces)
       }
   }

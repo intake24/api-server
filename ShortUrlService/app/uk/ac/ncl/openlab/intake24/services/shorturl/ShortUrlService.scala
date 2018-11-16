@@ -6,11 +6,11 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.shortUrls.ShortUrlDataServic
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ShortUrlCache @Inject()(shortUrlService: ShortUrlBackend,
-                              dataService: ShortUrlDataService,
-                              implicit val ec: ExecutionContext) {
+class ShortUrlService @Inject()(shortUrlService: ShortUrlBackend,
+                                dataService: ShortUrlDataService,
+                                implicit val ec: ExecutionContext) {
 
-  private def createAndCache(remaining: Seq[String], acc: Map[String, String] = Map(), attemptsRemaining: Int = 10): Future[Map[String, String]] =
+  private def createAndStore(remaining: Seq[String], acc: Map[String, String] = Map(), attemptsRemaining: Int = 10): Future[Map[String, String]] =
     if (attemptsRemaining == 0)
       Future.failed(new RuntimeException("Failed to allocate unique short URLs in 10 attempts"))
     else if (remaining.isEmpty)
@@ -19,7 +19,7 @@ class ShortUrlCache @Inject()(shortUrlService: ShortUrlBackend,
       for (newShortUrls <- shortUrlService.shorten(remaining).map(remaining.zip(_));
            failed <- asFuture(dataService.saveShortUrls(newShortUrls));
            cached <- Future.successful(newShortUrls.filterNot(u => failed.contains(u._1)));
-           res <- createAndCache(failed, acc ++ cached, attemptsRemaining - 1)
+           res <- createAndStore(failed, acc ++ cached, attemptsRemaining - 1)
       ) yield res
 
   def getShortUrls(longUrls: Seq[String]): Future[Seq[String]] =
@@ -27,7 +27,7 @@ class ShortUrlCache @Inject()(shortUrlService: ShortUrlBackend,
       existing =>
         val missing = longUrls.filterNot(existing.keySet.contains(_))
 
-        createAndCache(missing).map {
+        createAndStore(missing).map {
           created =>
             val urlMap = existing ++ created
             longUrls.map(urlMap)

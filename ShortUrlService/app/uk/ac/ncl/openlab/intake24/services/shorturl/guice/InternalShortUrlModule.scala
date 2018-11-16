@@ -28,5 +28,6 @@ class InternalShortUrlModule extends AbstractModule {
 
   def configure() = {
     bind(classOf[ShortUrlBackend]).to(classOf[InternalShortUrlImpl])
+    bind(classOf[ShortUrlDataService]).to(classOf[ShortUrlDataServiceImpl])
   }
 }
