@@ -8,7 +8,8 @@
 	branch = master
 [submodule "pairwise-association-rules"]
 	path = pairwise-association-rules
-	url = git@github.com:digitalinteraction/pairwise-association-rules.git
+	url = https://github.com/digitalinteraction/pairwise-association-rules.git
+	branch = master
 [submodule "api-shared"]
 	path = api-shared
 	url = https://github.com/intake24/api-shared
@@ -19,9 +20,9 @@
 	branch = master
 [submodule "RosHTTP"]
 	path = RosHTTP
-	url = git@github.com:intake24/RosHTTP.git
+	url = https://github.com/intake24/RosHTTP.git
 	branch = master
 [submodule "standardize"]
 	path = standardize
-	url = git@github.com:timosadchiy/standardize.git
+	url = https://github.com/timosadchiy/standardize.git
 	branch = master
