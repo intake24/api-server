@@ -1949,6 +1949,45 @@ object SystemDatabaseMigrations {
         ???
 
       }
+    },
+
+
+    new Migration {
+
+      override val versionFrom: Long = 84l
+      override val versionTo: Long = 85l
+      override val description: String = "Add New Zealand (v.2) locale"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("INSERT INTO locales VALUES('en_NZ_2', 'New Zealand (v.2)', 'New Zealand (v.2)', 'en_GB', 'en', 'nz', 'en_GB')").execute()
+        SQL("INSERT INTO local_nutrient_types(locale_id, nutrient_type_id) SELECT 'en_GB_simple', nutrient_type_id FROM local_nutrient_types WHERE locale_id='en_GB'").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 84l
+      override val versionTo: Long = 85l
+      override val description: String = "UK (South Asian)"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("INSERT INTO locales VALUES('en_GB_sa', 'United Kingdom (South Asian)', 'United Kingdom (South Asian)', 'en_GB', 'en', 'gb', 'en_GB')").execute()
+        SQL("INSERT INTO local_nutrient_types(locale_id, nutrient_type_id) SELECT 'en_GB_sa', nutrient_type_id FROM local_nutrient_types WHERE locale_id='en_GB'").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
     }
 
   )
