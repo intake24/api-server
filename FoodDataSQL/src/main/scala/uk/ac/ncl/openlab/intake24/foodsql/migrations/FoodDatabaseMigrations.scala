@@ -992,9 +992,43 @@ object FoodDatabaseMigrations {
         ???
 
       }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 56l
+      override val versionTo: Long = 57l
+      override val description: String = "Add New Zealand (v.2) locale"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("INSERT INTO locales VALUES('en_NZ_2', 'New Zealand (v.2)', 'New Zealand (v.2)', 'en_GB', 'en', 'nz', 'en_GB')").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 57l
+      override val versionTo: Long = 58l
+      override val description: String = "Add UK (South Asian) locale"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("INSERT INTO locales VALUES('en_GB_sa', 'United Kingdom (South Asian)', 'United Kingdom (South Asian)', 'en_GB', 'en', 'gb', 'en_GB')").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
     }
-
-
 
   )
 }

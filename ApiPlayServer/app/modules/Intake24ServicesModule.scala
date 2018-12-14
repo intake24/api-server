@@ -78,8 +78,10 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
       case "da_DK" => new FoodIndexImpl_da_DK(foodIndexDataService)
       case "ar_AE" => new FoodIndexImpl_ar_AE(foodIndexDataService)
       case "en_NZ" => new FoodIndexImpl_en_NZ(foodIndexDataService)
+      case "en_NZ_2" => new FoodIndexImpl_en_NZ_2(foodIndexDataService)
       case "en_GB_gf" => new FoodIndexImpl_en_GB_gf(foodIndexDataService)
       case "en_GB_simple" => new FoodIndexImpl_en_GB_simple(foodIndexDataService)
+      case "en_GB_sa" => new FoodIndexImpl_en_GB_SA(foodIndexDataService)
       case "en_IN" => new FoodIndexImpl_en_IN(foodIndexDataService)
       case "en_AU" => new FoodIndexImpl_en_AU(foodIndexDataService)
     }
@@ -118,11 +120,12 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
       case "da_DK" => new SplitterImpl_da_DK(foodIndexDataService)
       case "ar_AE" => new SplitterImpl_ar_AE(foodIndexDataService)
       case "en_NZ" => new SplitterImpl_en_NZ(foodIndexDataService)
+      case "en_NZ_2" => new SplitterImpl_en_NZ(foodIndexDataService)
       case "en_GB_gf" => new SplitterImpl_en_GB_gf(foodIndexDataService)
       case "en_GB_simple" => new SplitterImpl_en_GB_simple(foodIndexDataService)
+      case "en_GB_sa" => new SplitterImpl_en_GB(foodIndexDataService)
       case "en_IN" => new SplitterImpl_en_IN(foodIndexDataService)
       case "en_AU" => new SplitterImpl_en_AU(foodIndexDataService)
-
     }
 
     enabledLocales.foldLeft(Map[String, Splitter]()) {
