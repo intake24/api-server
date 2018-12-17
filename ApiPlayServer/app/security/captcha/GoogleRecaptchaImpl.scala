@@ -31,6 +31,9 @@ class GoogleRecaptchaImpl @Inject()(ws: WSClient,
     }
 
   def verify(response: String, remoteip: String) = {
+    logger.debug("Sending Recaptcha verify request:")
+    logger.debug(s"response=$response")
+    logger.debug(s"secret=${secretKey.substring(0, 8)}...")
     ws.url("https://www.google.com/recaptcha/api/siteverify")
       .withQueryStringParameters("secret" -> secretKey, "response" -> response)
       .post("")
@@ -49,7 +52,8 @@ class GoogleRecaptchaImpl @Inject()(ws: WSClient,
                   None
               }
             case status =>
-              logger.error(s"Recaptcha verify failed with HTTP status $status")
+              logger.error(s"Recaptcha verify failed with HTTP status $status:")
+              logger.error(response.body)
               None
 
           }
