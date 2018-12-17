@@ -41,6 +41,8 @@ Webapp/war
 /DatabaseTools/src/main/scala/uk/ac/ncl/openlab/intake24/sql/tools/food/development-database-config.json
 /DatabaseTools/src/main/scala/uk/ac/ncl/openlab/intake24/sql/tools/food/test-database-config.json
 
+/DevelopmentConfig
+
 test.conf
 
 /DevelopmentConfig

@@ -1,3 +1,4 @@
 # Survey management
 
-GET        /locales        controllers.pub.PublicToolsController.listLocales()
+GET        /locales                controllers.pub.PublicToolsController.listLocales()
+GET        /snapshots/foods        controllers.pub.DatabaseSnapshotDownloadController.getFoodsSnapshotUrl()
