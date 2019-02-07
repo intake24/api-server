@@ -78,7 +78,7 @@ class UserDataExportController @Inject()(configuration: Configuration,
   val logger = LoggerFactory.getLogger(classOf[UserDataExportController])
 
   val surveyFrontendUrl = configuration.get[String]("intake24.surveyFrontendUrl")
-
+  val shortenAuthUrls = configuration.get[Boolean]("intake24.dataExport.authenticationUrls.shorten")
 
   private def appendShortUrls(respondents: Seq[RespondentWithAuthUrl]): Try[Seq[RespondentWithAuthAndShortUrls]] = {
 
@@ -105,10 +105,17 @@ class UserDataExportController @Inject()(configuration: Configuration,
       })
 
 
-    def writeRows(respondents: Seq[RespondentWithAuthAndShortUrls], writer: CSVWriter): Try[Unit] = Try {
+    def writeRowsWithShortUrls(respondents: Seq[RespondentWithAuthAndShortUrls], writer: CSVWriter): Try[Unit] = Try {
       respondents.foreach {
         row =>
           writer.writeNext(Array(row.id.toString, row.userName, row.authUrl, row.shortUrl))
+      }
+    }
+
+    def writeRows(respondents: Seq[RespondentWithAuthUrl], writer: CSVWriter): Try[Unit] = Try {
+      respondents.foreach {
+        row =>
+          writer.writeNext(Array(row.id.toString, row.userName, row.authUrl))
       }
     }
 
@@ -117,9 +124,14 @@ class UserDataExportController @Inject()(configuration: Configuration,
         respondents =>
           if (respondents.isEmpty)
             Success(())
-          else for (withShortUrls <- appendShortUrls(respondents);
-                    _ <- writeRows(withShortUrls, writer);
-                    _ <- exportRemaining(offset + respondents.length, batchSize, writer)) yield ()
+          else {
+            val action = if (shortenAuthUrls)
+              appendShortUrls(respondents).flatMap(rows => writeRowsWithShortUrls(rows, writer))
+            else
+              writeRows(respondents, writer)
+
+            action.flatMap(_ => exportRemaining(offset + respondents.length, batchSize, writer))
+          }
       }
 
     Try {
@@ -129,7 +141,8 @@ class UserDataExportController @Inject()(configuration: Configuration,
       (file, writer)
     }.flatMap {
       case (file, writer) =>
-        writer.writeNext(Array("Intake24 user ID", "Survey user ID", "Authentication URL", "Short authentication URL"))
+        val header = Array("Intake24 user ID", "Survey user ID", "Authentication URL") ++ (if (shortenAuthUrls) Array("Short authentication URL") else Array[String]())
+        writer.writeNext(header)
         val result = exportRemaining(0, 1000, writer).map(_ => file)
         Try {
           writer.close()
