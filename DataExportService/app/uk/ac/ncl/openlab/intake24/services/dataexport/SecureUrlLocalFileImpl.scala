@@ -23,6 +23,13 @@ class SecureUrlLocalFileImpl @Inject()(configuration: Configuration,
 
   val apiServerUrlPrefix = configuration.get[String]("intake24.apiServerUrl")
 
+  if (Files.exists(dirPath) && !Files.isDirectory(dirPath))
+    logger.error(s"$dirPath is not a directory. This will cause export errors. Please check the configuration files.")
+  else if (!Files.exists(dirPath)) {
+    logger.warn(s"$dirPath does not exist. Attempting to create.")
+    Files.createDirectories(dirPath)
+  }
+
   def createUrl(fileName: String, file: File, expirationDate: ZonedDateTime): Try[URL] =
     Try {
       val secureName = UUID.randomUUID().toString()
@@ -31,7 +38,6 @@ class SecureUrlLocalFileImpl @Inject()(configuration: Configuration,
       val destPath = dirPath.resolve(s"$secureName.$fileName")
 
       Files.move(srcPath, destPath)
-
 
 
       new URL(s"$apiServerUrlPrefix/data-export/download?key=$secureName")
