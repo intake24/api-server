@@ -554,7 +554,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
 
   def nextGeneratedUserId(surveyId: String): Either[UnexpectedDatabaseError, Int] = tryWithConnection {
     implicit conn =>
-      Right(SQL("INSERT INTO gen_user_counters VALUES('demo', 0) ON CONFLICT(survey_id) DO UPDATE SET count=gen_user_counters.count+1 RETURNING count")
+      Right(SQL("INSERT INTO gen_user_counters VALUES({survey_id}, 0) ON CONFLICT(survey_id) DO UPDATE SET count=gen_user_counters.count+1 RETURNING count")
         .on('survey_id -> surveyId)
         .executeQuery()
         .as(SqlParser.int("count").single))
