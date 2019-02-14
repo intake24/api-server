@@ -31,18 +31,20 @@ case class SurveyParametersIn(id: String, schemeId: String, localeId: String, st
                               startDate: ZonedDateTime, endDate: ZonedDateTime,
                               allowGeneratedUsers: Boolean,
                               externalFollowUpURL: Option[String], supportEmail: String,
-                              description: Option[String], submissionNotificationUrl: Option[String])
+                              description: Option[String], finalPageHtml: Option[String],
+                              submissionNotificationUrl: Option[String])
 
 case class SurveyParametersOut(id: String, schemeId: String, localeId: String, state: Int,
                                startDate: ZonedDateTime, endDate: ZonedDateTime,
                                suspensionReason: Option[String], allowGeneratedUsers: Boolean,
                                externalFollowUpURL: Option[String], supportEmail: String,
-                               description: Option[String], submissionNotificationUrl: Option[String])
+                               description: Option[String], finalPageHtml: Option[String],
+                               submissionNotificationUrl: Option[String])
 
 // Staff cannot change survey ID, scheme, locale and generated user settings
 case class StaffSurveyUpdate(startDate: ZonedDateTime, endDate: ZonedDateTime,
                              externalFollowUpURL: Option[String], supportEmail: String,
-                             description: Option[String])
+                             description: Option[String], finalPageHtml: Option[String])
 
 case class LocalNutrientDescription(nutrientTypeId: Int, description: String, unit: String)
 

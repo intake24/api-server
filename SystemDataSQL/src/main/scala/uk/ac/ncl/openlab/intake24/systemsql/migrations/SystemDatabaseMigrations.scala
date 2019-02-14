@@ -1988,6 +1988,24 @@ object SystemDatabaseMigrations {
         ???
 
       }
+    },
+
+    new Migration {
+
+      override val versionFrom: Long = 86l
+      override val versionTo: Long = 87l
+      override val description: String = "Add editable final page HTML"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("alter table surveys add column final_page_html varchar(10000)").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
     }
 
   )

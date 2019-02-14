@@ -43,10 +43,15 @@ class SurveyAdminController @Inject()(service: SurveyAdminService,
     val description =
       if (strict) surveyParametersIn.description.map(d => HtmlSanitisePolicy.sanitise(d))
       else surveyParametersIn.description.map(d => HtmlSanitisePolicy.easedSanitise(d))
+
+    val finalPageHtml =
+      if (strict) surveyParametersIn.finalPageHtml.map(html => HtmlSanitisePolicy.sanitise(html))
+      else surveyParametersIn.finalPageHtml.map(html => HtmlSanitisePolicy.easedSanitise(html))
+
     SurveyParametersIn(surveyParametersIn.id, surveyParametersIn.schemeId, surveyParametersIn.localeId,
       surveyParametersIn.state, surveyParametersIn.startDate, surveyParametersIn.endDate,
       surveyParametersIn.allowGeneratedUsers, surveyParametersIn.externalFollowUpURL,
-      surveyParametersIn.supportEmail, description, surveyParametersIn.submissionNotificationUrl)
+      surveyParametersIn.supportEmail, description, finalPageHtml, surveyParametersIn.submissionNotificationUrl)
   }
 
   def createSurvey() = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin)(jsonBodyParser.parse[SurveyParametersIn]) {
@@ -71,7 +76,7 @@ class SurveyAdminController @Inject()(service: SurveyAdminService,
         // FIXME: better split into different endpoints for cleaner authorization
           translateDatabaseResult(service.staffUpdateSurvey(surveyId,
             StaffSurveyUpdate(params.startDate, params.endDate,
-              params.externalFollowUpURL, params.supportEmail, params.description)))
+              params.externalFollowUpURL, params.supportEmail, params.description, params.finalPageHtml)))
         else
           translateDatabaseResult(service.updateSurvey(surveyId, params))
       }

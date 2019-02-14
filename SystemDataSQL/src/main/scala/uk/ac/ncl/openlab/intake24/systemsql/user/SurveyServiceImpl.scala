@@ -15,8 +15,8 @@ import uk.ac.ncl.openlab.intake24.surveydata.NutrientMappedSubmission
 class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends SurveyService with SqlDataService with SqlResourceLoader {
 
   private case class UserSurveyParametersRow(id: String, scheme_id: String, state: Int, locale: String, started: Boolean, finished: Boolean, suspension_reason: Option[String],
-                                             originating_url: Option[String], description: Option[String], store_user_session_on_server: Option[Boolean],
-                                             number_of_submissions_for_feedback: Int)
+                                             originating_url: Option[String], description: Option[String], final_page_html: Option[String],
+                                             store_user_session_on_server: Option[Boolean], number_of_submissions_for_feedback: Int)
 
   private case class UxEventSettingsRow(enable_search_events: Boolean, enable_associated_foods_events: Boolean)
 
@@ -44,7 +44,7 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
 
   override def getSurveyParameters(surveyId: String): Either[LookupError, UserSurveyParameters] = tryWithConnection {
     implicit conn =>
-      SQL("SELECT id, scheme_id, locale, state, now() >= start_date AS started, now() > end_date AS finished, suspension_reason, originating_url, description, store_user_session_on_server, number_of_submissions_for_feedback FROM surveys WHERE id={survey_id}")
+      SQL("SELECT id, scheme_id, locale, state, now() >= start_date AS started, now() > end_date AS finished, suspension_reason, originating_url, description, final_page_html, store_user_session_on_server, number_of_submissions_for_feedback FROM surveys WHERE id={survey_id}")
         .on('survey_id -> surveyId)
         .executeQuery()
         .as(Macro.namedParser[UserSurveyParametersRow].singleOpt) match {
@@ -71,8 +71,8 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
             case None => UxEventsSettings(false, false)
           }
 
-          Right(UserSurveyParameters(row.id, row.scheme_id, row.locale, state, row.suspension_reason, row.description, uxEventsSettings, row.store_user_session_on_server.getOrElse(false),
-            row.number_of_submissions_for_feedback))
+          Right(UserSurveyParameters(row.id, row.scheme_id, row.locale, state, row.suspension_reason, row.description,
+            row.final_page_html, uxEventsSettings, row.store_user_session_on_server.getOrElse(false), row.number_of_submissions_for_feedback))
 
         }
         case None =>
