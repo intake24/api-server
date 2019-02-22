@@ -132,7 +132,7 @@ class AsynchronousProblemsPrecacher @Inject()(localesService: LocalesAdminServic
             processNextTask(s"$id", System.currentTimeMillis(), List(VisitLocale(id)))
           }
         }
-        countDownLatch.set(new CountDownLatch(knownLocales.size))
+        countDownLatch.set(new CountDownLatch(locales.size))
 
       } else {
         logger.warn("Problems precacher locales list empty -- is this intentional?")
