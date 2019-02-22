@@ -15,12 +15,10 @@ class OptionsLog @Inject()(implicit val mat: Materializer, ec: ExecutionContext)
   def apply(nextFilter: RequestHeader => Future[Result])
            (requestHeader: RequestHeader): Future[Result] = {
 
-    if (requestHeader.method == HttpVerbs.OPTIONS) {
-      logger.debug(s"Request: requestHeader.toString()")
-      requestHeader.headers.headers.foreach {
-        case (header, value) =>
-          logger.debug(s"  $header: $value")
-      }
+    logger.debug(s"Request: ${requestHeader.toString()}")
+    requestHeader.headers.headers.foreach {
+      case (header, value) =>
+        logger.debug(s"  $header: $value")
     }
 
     nextFilter(requestHeader)
