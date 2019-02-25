@@ -30,7 +30,7 @@ object FoodListExport extends App with DatabaseConnection with WarningMessage {
 
   val csvWriter = new CSVWriter(new FileWriter(new File(options.outputFile())))
 
-  csvWriter.writeNext(Array("Intake24 code", "English description", "Local description", "Food composition table", "Food composition record ID"))
+  csvWriter.writeNext(Array("Intake24 code", "English description", "Local description", "Food composition table", "Food composition record ID", "Portion size estimation methods"))
 
   indexService.indexableFoods(options.locale()) match {
     case Right(foods) =>
@@ -44,9 +44,16 @@ object FoodListExport extends App with DatabaseConnection with WarningMessage {
 
               val compTables = food.local.nutrientTableCodes.toArray.flatMap(t => Array(t._1, t._2))
 
-              val row = Array(food.main.code, food.main.englishDescription, food.local.localDescription.getOrElse("N/A")) ++ compTables
 
-              csvWriter.writeNext(row)
+              val psm = food.local.portionSize.map {
+                psm =>
+                  (Seq(s"Method: ${psm.method}", s"conversion: ${psm.conversionFactor}") ++ psm.parameters.map( p => s"${p.name}: ${p.value}")).mkString(", ")
+              }.mkString("\n")
+
+              if (food.allowedInLocale(options.locale())) {
+                val row = Array(food.main.code, food.main.englishDescription, food.local.localDescription.getOrElse("N/A")) ++ compTables :+ psm
+                csvWriter.writeNext(row)
+              }
 
             case Left(e) => e.exception.printStackTrace()
           }
