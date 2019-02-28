@@ -1,7 +1,7 @@
 package uk.ac.ncl.openlab.intake24.services.dataexport
 
 import java.nio.file.attribute.BasicFileAttributes
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{DirectoryStream, Files, Path, Paths}
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
@@ -35,15 +35,23 @@ class LocalSecureUrlCleanUpDaemon @Inject()(config: Configuration,
 
       logger.debug("Deleting files created before " + minCreatedAt.toString)
 
-      Files.newDirectoryStream(dir, (entry: Path) => Files.isRegularFile(entry)).iterator().asScala.foreach {
-        file =>
-          val attrs = Files.readAttributes(file, classOf[BasicFileAttributes])
-          val createdAt = attrs.creationTime().toInstant
+      var stream: DirectoryStream[Path] = null
 
-          if (createdAt.isBefore(minCreatedAt)) {
-            logger.debug(s"Deleting ${file.toString}")
-            Files.delete(file)
-          }
+      try {
+        stream = Files.newDirectoryStream(dir, (entry: Path) => Files.isRegularFile(entry))
+        stream.iterator().asScala.foreach {
+          file =>
+            val attrs = Files.readAttributes(file, classOf[BasicFileAttributes])
+            val createdAt = attrs.creationTime().toInstant
+
+            if (createdAt.isBefore(minCreatedAt)) {
+              logger.debug(s"Deleting ${file.toString}")
+              Files.delete(file)
+            }
+        }
+      } finally  {
+        if (stream != null)
+          stream.close()
       }
     }
   } else {
