@@ -1,6 +1,6 @@
 package uk.ac.ncl.openlab.intake24.services.dataexport
 
-import java.io.{File, FileWriter, IOException}
+import java.io.{File, FileWriter, IOException, Writer}
 import java.time.Duration
 import java.time.format.DateTimeFormatter
 
@@ -245,9 +245,9 @@ class SurveyCSVExporter(val format: CSVFormat) {
   def createTempFile(): File = File.createTempFile("intake24-export-", ".csv")
 
   @throws[IOException]
-  def writeHeader(fileWriter: FileWriter, csvWriter: CSVWriter, dataScheme: CustomDataScheme, localNutrients: Seq[LocalNutrientDescription], insertBOM: Boolean): Unit = {
+  def writeHeader(writer: Writer, csvWriter: CSVWriter, dataScheme: CustomDataScheme, localNutrients: Seq[LocalNutrientDescription], insertBOM: Boolean): Unit = {
     if (insertBOM) {
-      fileWriter.append('\ufeff')
+      writer.append('\ufeff')
     }
     csvWriter.writeNext(format.getHeaderRow(dataScheme, localNutrients))
   }

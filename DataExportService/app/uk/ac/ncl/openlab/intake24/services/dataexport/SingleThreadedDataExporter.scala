@@ -1,6 +1,7 @@
 package uk.ac.ncl.openlab.intake24.services.dataexport
 
-import java.io.{File, FileWriter, IOException}
+import java.io._
+import java.nio.charset.{Charset, StandardCharsets}
 import java.time.ZonedDateTime
 
 import au.com.bytecode.opencsv.CSVWriter
@@ -81,7 +82,7 @@ class SingleThreadedDataExporter @Inject()(configuration: Configuration,
       logger.debug(s"[$taskId] started export task")
 
       var file: File = null
-      var fileWriter: FileWriter = null
+      var fileWriter: OutputStreamWriter = null
       var csvWriter: CSVWriter = null
 
       try {
@@ -91,7 +92,7 @@ class SingleThreadedDataExporter @Inject()(configuration: Configuration,
             logger.debug(s"[$taskId] creating a temporary CSV file for export")
 
             file = exporter.createTempFile()
-            fileWriter = new FileWriter(file)
+            fileWriter = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8)
             csvWriter = new CSVWriter(fileWriter)
 
             logger.debug(s"[$taskId] writing CSV header")
