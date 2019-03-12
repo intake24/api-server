@@ -187,7 +187,7 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
           'survey_monkey_url -> parameters.externalFollowUpURL,
           'support_email -> parameters.supportEmail,
           'description -> parameters.description,
-        'final_page_html -> parameters.finalPageHtml)
+          'final_page_html -> parameters.finalPageHtml)
         .executeQuery().as(Macro.namedParser[SurveyParametersRow].single)
       Right(row.toSurveyParameters)
   }
@@ -263,6 +263,17 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
   // TODO: Hard coded to match legacy behaviour, but needs better solution eventually
   override def getCustomDataScheme(schemeId: String): Either[LookupError, CustomDataScheme] = schemeId match {
     case "default" => Right(CustomDataScheme(Seq(), Seq(), Seq(), Seq()))
+    case "ndns419" => Right(CustomDataScheme(Seq(), Seq(
+      CustomFieldDescription("cookingOil", "Cooking oil used"),
+      CustomFieldDescription("diet", "Diet"),
+      CustomFieldDescription("supplements", "Supplements"),
+      CustomFieldDescription("foodAmount", "Food amount"),
+      CustomFieldDescription("foodAmountReason", "Reason for unusual food amount")),
+      Seq(
+        CustomFieldDescription("foodSource", "Food source")),
+      Seq(
+        CustomFieldDescription("servingWeightFactor", "As served weight factor")
+      )))
     case "experimental-pa-rules" => Right(CustomDataScheme(Seq(), Seq(), Seq(), Seq()))
     case "experimental-flexible-recall" => Right(CustomDataScheme(Seq(), Seq(), Seq(), Seq()))
     case "young_scot_2014" =>
