@@ -75,7 +75,7 @@ class SurveyAdminController @Inject()(service: SurveyAdminService,
         // Survey staff is not allowed to change survey ID, scheme, locale and generated user settings
         // FIXME: better split into different endpoints for cleaner authorization
           translateDatabaseResult(service.staffUpdateSurvey(surveyId,
-            StaffSurveyUpdate(params.startDate, params.endDate,
+            StaffSurveyUpdate(params.startDate, params.endDate, params.state,
               params.externalFollowUpURL, params.supportEmail, params.description, params.finalPageHtml)))
         else
           translateDatabaseResult(service.updateSurvey(surveyId, params))

@@ -160,6 +160,7 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
           |UPDATE surveys
           |SET start_date={start_date},
           |    end_date={end_date},
+          |    state={state},
           |    survey_monkey_url={survey_monkey_url},
           |    support_email={support_email},
           |    description={description},
@@ -184,6 +185,7 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
         .on('survey_id -> surveyId,
           'start_date -> parameters.startDate,
           'end_date -> parameters.endDate,
+          'state -> parameters.state,
           'survey_monkey_url -> parameters.externalFollowUpURL,
           'support_email -> parameters.supportEmail,
           'description -> parameters.description,

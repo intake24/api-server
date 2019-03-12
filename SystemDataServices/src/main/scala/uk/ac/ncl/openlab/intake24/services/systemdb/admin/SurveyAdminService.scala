@@ -43,7 +43,7 @@ case class SurveyParametersOut(id: String, schemeId: String, localeId: String, s
 
 // Staff cannot change survey ID, scheme, locale and generated user settings
 case class StaffSurveyUpdate(startDate: ZonedDateTime, endDate: ZonedDateTime,
-                             externalFollowUpURL: Option[String], supportEmail: String,
+                             state: Int, externalFollowUpURL: Option[String], supportEmail: String,
                              description: Option[String], finalPageHtml: Option[String])
 
 case class LocalNutrientDescription(nutrientTypeId: Int, description: String, unit: String)
