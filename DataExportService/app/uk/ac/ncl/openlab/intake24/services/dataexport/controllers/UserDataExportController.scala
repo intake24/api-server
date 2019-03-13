@@ -59,9 +59,9 @@ object UserDataExportStatus {
 
 }
 
-case class RespondentWithAuthUrl(id: Long, userName: String, authUrl: String)
+case class RespondentWithAuthUrls(id: Long, userName: String, authUrl: String, feedbackAuthUrl: String)
 
-case class RespondentWithAuthAndShortUrls(id: Long, userName: String, authUrl: String, shortUrl: String)
+case class RespondentWithAuthAndShortUrls(id: Long, userName: String, authUrl: String, shortUrl: String, feedbackAuthUrl: String, feedbackAuthShortUrl: String)
 
 class UserDataExportController @Inject()(configuration: Configuration,
                                          service: UserAdminService,
@@ -80,12 +80,18 @@ class UserDataExportController @Inject()(configuration: Configuration,
   val surveyFrontendUrl = configuration.get[String]("intake24.surveyFrontendUrl")
   val shortenAuthUrls = configuration.get[Boolean]("intake24.dataExport.authenticationUrls.shorten")
 
-  private def appendShortUrls(respondents: Seq[RespondentWithAuthUrl]): Try[Seq[RespondentWithAuthAndShortUrls]] = {
+  private def appendShortUrls(respondents: Seq[RespondentWithAuthUrls]): Try[Seq[RespondentWithAuthAndShortUrls]] = {
 
-    shortUrlsClient.getShortUrls(ShortUrlsRequest(respondents.map(_.authUrl))).attempt.unsafeRunSync.map {
-      response =>
-        respondents.zip(response.shortUrls).map {
-          case (r, shortUrl) => RespondentWithAuthAndShortUrls(r.id, r.userName, r.authUrl, shortUrl)
+
+    val shortUrlsRequest =
+      for (authShortUrls <- shortUrlsClient.getShortUrls(ShortUrlsRequest(respondents.map(_.authUrl)));
+           feedbackShortUrls <- shortUrlsClient.getShortUrls(ShortUrlsRequest(respondents.map(_.feedbackAuthUrl)))) yield
+        (authShortUrls, feedbackShortUrls)
+
+    shortUrlsRequest.attempt.unsafeRunSync.map {
+      case (authShortUrls, feedbackShortUrls) =>
+        respondents.zip(authShortUrls.shortUrls).zip(feedbackShortUrls.shortUrls).map {
+          case ((r, shortUrl), feedbackShortUrl) => RespondentWithAuthAndShortUrls(r.id, r.userName, r.authUrl, shortUrl, r.feedbackAuthUrl, feedbackShortUrl)
         }
     } match {
       case Left(error) => Failure(error)
@@ -95,27 +101,28 @@ class UserDataExportController @Inject()(configuration: Configuration,
 
   private def exportImpl(surveyId: String): Try[File] = {
 
-    def getRespondentRecords(offset: Int, limit: Int): Try[Seq[RespondentWithAuthUrl]] =
+    def getRespondentRecords(offset: Int, limit: Int): Try[Seq[RespondentWithAuthUrls]] =
       ErrorUtils.asTry(for (users <- service.listUsersByRole(Roles.surveyRespondent(surveyId), offset, limit);
                             aliases <- service.getSurveyUserAliases(users.map(_.id), surveyId)) yield {
         users.filter(u => aliases.contains(u.id)).map {
           user =>
-            RespondentWithAuthUrl(user.id, aliases(user.id).userName, surveyFrontendUrl + s"/surveys/$surveyId?auth=${aliases(user.id).urlAuthToken}")
+            RespondentWithAuthUrls(user.id, aliases(user.id).userName,
+              surveyFrontendUrl + s"/surveys/$surveyId?auth=${aliases(user.id).urlAuthToken}",
+              surveyFrontendUrl + s"/surveys/$surveyId/feedback#/token-login/${aliases(user.id).urlAuthToken}")
         }
       })
-
 
     def writeRowsWithShortUrls(respondents: Seq[RespondentWithAuthAndShortUrls], writer: CSVWriter): Try[Unit] = Try {
       respondents.foreach {
         row =>
-          writer.writeNext(Array(row.id.toString, row.userName, row.authUrl, row.shortUrl))
+          writer.writeNext(Array(row.id.toString, row.userName, row.authUrl, row.shortUrl, row.feedbackAuthUrl, row.feedbackAuthShortUrl))
       }
     }
 
-    def writeRows(respondents: Seq[RespondentWithAuthUrl], writer: CSVWriter): Try[Unit] = Try {
+    def writeRows(respondents: Seq[RespondentWithAuthUrls], writer: CSVWriter): Try[Unit] = Try {
       respondents.foreach {
         row =>
-          writer.writeNext(Array(row.id.toString, row.userName, row.authUrl))
+          writer.writeNext(Array(row.id.toString, row.userName, row.authUrl, row.feedbackAuthUrl))
       }
     }
 
@@ -141,7 +148,8 @@ class UserDataExportController @Inject()(configuration: Configuration,
       (file, writer)
     }.flatMap {
       case (file, writer) =>
-        val header = Array("Intake24 user ID", "Survey user ID", "Authentication URL") ++ (if (shortenAuthUrls) Array("Short authentication URL") else Array[String]())
+        val header = Array("Intake24 user ID", "Survey user ID", "Authentication URL") ++ (if (shortenAuthUrls) Array("Short authentication URL") else Array[String]()) ++
+          Array("Feedback URL") ++ (if (shortenAuthUrls) Array("Short feedback URL") else Array[String]())
         writer.writeNext(header)
         val result = exportRemaining(0, 1000, writer).map(_ => file)
         Try {
