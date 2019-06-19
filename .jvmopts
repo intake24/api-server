@@ -1,1 +1,4 @@
--Xms512M -Xmx2048M -Xss2M -XX:MaxMetaspaceSize=1024M
+-Xms512M
+-Xmx2048M
+-Xss2M
+-XX:MaxMetaspaceSize=1024M
