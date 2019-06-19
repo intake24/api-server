@@ -20,7 +20,7 @@ import ResolveInternalDependencies._
 
 lazy val commonSettings = Seq(
   version := "3.30.2-SNAPSHOT",
-  scalaVersion := "2.12.7",
+  scalaVersion := "2.12.8",
   publishArtifact in(Compile, packageDoc) := false,
   scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
 )
