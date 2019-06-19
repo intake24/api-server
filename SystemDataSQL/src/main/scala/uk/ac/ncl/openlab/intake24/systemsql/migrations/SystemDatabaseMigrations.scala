@@ -1880,10 +1880,11 @@ object SystemDatabaseMigrations {
 
         SQL("ALTER TABLE signin_log ALTER COLUMN remote_address DROP NOT NULL").execute()
 
-        SQL("""UPDATE signin_log SET remote_address=NULL WHERE (user_id NOT IN (SELECT DISTINCT (id) FROM users JOIN user_roles u ON users.id = u.user_id WHERE
-              |  role='superuser' OR role='foodsadmin' OR role ='imageadmin' OR role ='surveyadmin' OR role='imagesadmin'
-              |  OR role LIKE '%/staff' OR role LIKE 'fdbm/') OR user_id IS NULL)
-              """.stripMargin).execute()
+        SQL(
+          """UPDATE signin_log SET remote_address=NULL WHERE (user_id NOT IN (SELECT DISTINCT (id) FROM users JOIN user_roles u ON users.id = u.user_id WHERE
+            |  role='superuser' OR role='foodsadmin' OR role ='imageadmin' OR role ='surveyadmin' OR role='imagesadmin'
+            |  OR role LIKE '%/staff' OR role LIKE 'fdbm/') OR user_id IS NULL)
+          """.stripMargin).execute()
 
         Right(())
       }
@@ -1900,12 +1901,13 @@ object SystemDatabaseMigrations {
 
       override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
 
-        SQL("""UPDATE users SET name=NULL,email=NULL,phone=NULL,simple_name=NULL WHERE
-              |  id NOT IN (SELECT DISTINCT (id) FROM users JOIN user_roles u ON users.id = u.user_id WHERE
-              |  role='superuser' OR role='foodsadmin' OR role ='imageadmin' OR role ='surveyadmin' OR role='imagesadmin'
-              |  OR role LIKE '%/staff' OR role LIKE 'fdbm/')
-              |  AND id NOT IN (SELECT DISTINCT (id) FROM users JOIN user_survey_aliases a ON users.id = a.user_id WHERE a.survey_id='flex-recall')
-            """.stripMargin).execute()
+        SQL(
+          """UPDATE users SET name=NULL,email=NULL,phone=NULL,simple_name=NULL WHERE
+            |  id NOT IN (SELECT DISTINCT (id) FROM users JOIN user_roles u ON users.id = u.user_id WHERE
+            |  role='superuser' OR role='foodsadmin' OR role ='imageadmin' OR role ='surveyadmin' OR role='imagesadmin'
+            |  OR role LIKE '%/staff' OR role LIKE 'fdbm/')
+            |  AND id NOT IN (SELECT DISTINCT (id) FROM users JOIN user_survey_aliases a ON users.id = a.user_id WHERE a.survey_id='flex-recall')
+          """.stripMargin).execute()
 
         Right(())
       }
@@ -2006,6 +2008,38 @@ object SystemDatabaseMigrations {
         ???
 
       }
+    },
+
+    new Migration {
+      override val versionFrom: Long = 87l
+      override val versionTo: Long = 88l
+      override val description: String = "Create tools_tasks table"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        val createToolsTasks =
+          """create table tools_tasks
+            |(
+            |  id serial primary key,
+            |  type varchar(64) not null,
+            |  user_id integer not null
+            |    constraint tools_tasks_user_id_fk
+            |    references users on update cascade on delete restrict,
+            |  created_at timestamp with time zone not null,
+            |  started_at timestamp with time zone,
+            |  completed_at timestamp with time zone,
+            |  download_url varchar(1024),
+            |  download_url_expires_at timestamp with time zone,
+            |  progress real,
+            |  successful boolean,
+            |  stack_trace varchar(2048)
+            |)""".stripMargin
+
+        SQL(createToolsTasks).execute()
+
+        Right(())
+      }
+
+      override def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = ???
     }
 
   )
