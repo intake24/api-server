@@ -5,6 +5,7 @@ import org.slf4j.Logger
 import java.sql.Connection
 
 import anorm.{BatchSql, NamedParameter, SQL}
+import uk.ac.ncl.openlab.intake24.nutrientsndns.{CsvNutrientTableMapping, LegacyNutrientTables}
 import uk.ac.ncl.openlab.intake24.sql.migrations.MigrationFailed
 
 object FoodDatabaseMigrations {
@@ -958,21 +959,21 @@ object FoodDatabaseMigrations {
     },
 
     new Migration {
-    override val versionFrom: Long = 54l
-    override val versionTo: Long = 55l
-    override val description: String = "Drop image_map_id from guide_image_objects"
+      override val versionFrom: Long = 54l
+      override val versionTo: Long = 55l
+      override val description: String = "Drop image_map_id from guide_image_objects"
 
-    override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
-      SQL("alter table guide_image_objects drop column image_map_id").execute()
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("alter table guide_image_objects drop column image_map_id").execute()
 
-      Right(())
-    }
+        Right(())
+      }
 
-    def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
-      ???
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
 
-    }
-  },
+      }
+    },
 
 
     new Migration {
@@ -1028,7 +1029,87 @@ object FoodDatabaseMigrations {
         ???
 
       }
+    },
+
+    new Migration {
+      override val versionFrom: Long = 58l
+      override val versionTo: Long = 59l
+      override val description: String = "Create nutrient table CSV mapping tables"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        val createMapping =
+          """create table nutrient_table_csv_mapping
+            |(
+            |  nutrient_table_id varchar(32) primary key references nutrient_tables(id) on update cascade on delete restrict,
+            |  row_offset integer not null,
+            |  id_column_offset integer not null,
+            |  description_column_offset integer not null,
+            |  local_description_column_offset integer
+            |)""".stripMargin
+
+        val createColumns =
+          """create table nutrient_table_csv_mapping_columns
+            |(
+            |  id serial primary key,
+            |  nutrient_table_id varchar(32) not null references nutrient_tables(id) on update cascade on delete restrict,
+            |  nutrient_type_id integer not null references nutrient_types(id) on update cascade on delete restrict,
+            |  column_offset integer not null
+            |)""".stripMargin
+
+
+        SQL(createMapping).execute()
+        SQL(createColumns).execute()
+
+        Right(())
+      }
+
+      override def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = ???
+    },
+
+    new Migration {
+      override val versionFrom: Long = 59l
+      override val versionTo: Long = 60l
+      override val description: String = "Import existing CSV mappings"
+
+      private val tableMappingQuery =
+        """insert into nutrient_table_csv_mapping(nutrient_table_id, row_offset, id_column_offset, description_column_offset, local_description_column_offset)
+          | values({id},{row_offset},{id_column_offset},{description_column_offset},{local_description_column_offset})""".stripMargin
+
+      private val columnMappingQuery =
+        """insert into nutrient_table_csv_mapping_columns(nutrient_table_id, nutrient_type_id, column_offset)
+          |values ({table_id},{nutrient_id},{column_offset})
+        """.stripMargin
+
+      private def importMapping(tableId: String, mapping: CsvNutrientTableMapping)(implicit connection: Connection): Unit = {
+        SQL(tableMappingQuery)
+          .on(
+            'id -> tableId,
+            'row_offset -> mapping.rowOffset,
+            'id_column_offset -> mapping.idColumn,
+            'description_column_offset -> mapping.descriptionColumn,
+            'local_description_column_offset -> mapping.localDescriptionColumn
+          ).execute()
+
+        val columnParams = mapping.nutrientMapping.toSeq.map {
+          case (nutrientId, columnOffset) =>
+            Seq[NamedParameter]('table_id -> tableId, 'nutrient_id -> nutrientId, 'column_offset -> (columnOffset - 1))
+        }
+
+        BatchSql(columnMappingQuery, columnParams.head, columnParams.tail: _*).execute()
+      }
+
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        importMapping("NDNS", LegacyNutrientTables.ndnsCsvTableMapping)
+        importMapping("NZ", LegacyNutrientTables.nzCsvTableMapping)
+
+        Right(())
+      }
+
+      override def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = ???
     }
+
 
   )
 }
