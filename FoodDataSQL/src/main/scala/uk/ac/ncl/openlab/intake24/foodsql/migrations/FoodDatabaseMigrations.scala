@@ -1108,8 +1108,34 @@ object FoodDatabaseMigrations {
       }
 
       override def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = ???
-    }
+    },
 
+    new Migration {
+
+      override val versionFrom: Long = 60l
+      override val versionTo: Long = 61l
+      override val description: String = "Modify nutrient_table_csv_mapping_nutrient_table_id_fkey to cascade deletions"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL(
+          """
+            | alter table nutrient_table_csv_mapping drop constraint nutrient_table_csv_mapping_nutrient_table_id_fkey;
+            |
+            | alter table nutrient_table_csv_mapping
+            | add constraint nutrient_table_csv_mapping_nutrient_table_id_fkey
+            | foreign key (nutrient_table_id) references nutrient_tables
+            | on update cascade on delete cascade;
+            |
+        """.stripMargin).execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+    }
 
   )
 }
