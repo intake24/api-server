@@ -28,7 +28,7 @@ trait FoodsAdminQueries extends FoodsAdminService
 
   private val foodRowParser = Macro.namedParser[FoodRow]
 
-  private case class FoodResultRow(version: UUID, code: String, description: String, local_description: Option[String], do_not_use: Option[Boolean], food_group_id: Long,
+  private case class FoodResultRow(version: UUID, code: String, description: String, local_description: Option[String], food_group_id: Long,
                                    same_as_before_option: Option[Boolean], ready_meal_option: Option[Boolean], reasonable_amount: Option[Int], local_version: Option[UUID])
 
   private case class NutrientTableRow(nutrient_table_id: String, nutrient_table_record_id: String)
@@ -111,7 +111,7 @@ trait FoodsAdminQueries extends FoodsAdminService
     }
   }
 
-  private val foodLocalInsertQuery = "INSERT INTO foods_local VALUES({food_code}, {locale_id}, {local_description}, {simple_local_description}, {do_not_use}, {version}::uuid)"
+  private val foodLocalInsertQuery = "INSERT INTO foods_local VALUES({food_code}, {locale_id}, {local_description}, {simple_local_description}, {version}::uuid)"
 
   private val foodNutrientMappingInsertQuery = "INSERT INTO foods_nutrient_mapping VALUES ({food_code}, {locale_id}, {nutrient_table_id}, {nutrient_table_code})"
 
@@ -132,7 +132,7 @@ trait FoodsAdminQueries extends FoodsAdminService
         case (code, local) =>
           Seq[NamedParameter]('food_code -> code, 'locale_id -> locale, 'local_description -> local.localDescription.map(d => truncateDescription(d, code)),
             'simple_local_description -> local.localDescription.map(d => StringUtils.stripAccents(truncateDescription(d, code))),
-            'do_not_use -> local.doNotUse, 'version -> UUID.randomUUID())
+            'version -> UUID.randomUUID())
       }.toSeq
 
       batchSql(foodLocalInsertQuery, foodLocalParams).execute()
@@ -176,7 +176,7 @@ trait FoodsAdminQueries extends FoodsAdminService
   }
 
   protected def getFoodLocaleRestrictionsQuery(foodCode: String)(implicit conn: java.sql.Connection): Either[UnexpectedDatabaseError, Seq[String]] = {
-    Right(SQL("SELECT locale_id FROM foods_restrictions WHERE food_code={food_code}").on('food_code -> foodCode).as(SqlParser.str("locale_id").*))
+    Right(SQL("SELECT locale_id FROM foods_local_lists WHERE food_code={food_code}").on('food_code -> foodCode).as(SqlParser.str("locale_id").*))
   }
 
   protected def updateFoodLocaleRestrictionsQuery(foodCode: String, localeRestrictions: Seq[String])(implicit conn: java.sql.Connection): Either[LocalLookupError, Unit] = {
@@ -253,9 +253,9 @@ trait FoodsAdminQueries extends FoodsAdminService
       foodLocal.baseVersion match {
         case Some(version) => {
 
-          val rowsAffected = SQL("UPDATE foods_local SET version = {new_version}::uuid, local_description = {local_description}, simple_local_description = {simple_local_description}, do_not_use = {do_not_use} WHERE food_code = {food_code} AND locale_id = {locale_id} AND version = {base_version}::uuid")
+          val rowsAffected = SQL("UPDATE foods_local SET version = {new_version}::uuid, local_description = {local_description}, simple_local_description = {simple_local_description} WHERE food_code = {food_code} AND locale_id = {locale_id} AND version = {base_version}::uuid")
             .on('food_code -> foodCode, 'locale_id -> locale, 'base_version -> foodLocal.baseVersion, 'new_version -> UUID.randomUUID(),
-              'local_description -> foodLocal.localDescription.map(d => truncateDescription(d, foodCode)), 'simple_local_description -> foodLocal.localDescription.map(d => truncateDescription(StringUtils.stripAccents(d), foodCode)), 'do_not_use -> foodLocal.doNotUse)
+              'local_description -> foodLocal.localDescription.map(d => truncateDescription(d, foodCode)), 'simple_local_description -> foodLocal.localDescription.map(d => truncateDescription(StringUtils.stripAccents(d), foodCode)))
             .executeUpdate()
 
           if (rowsAffected == 1) {
@@ -267,7 +267,7 @@ trait FoodsAdminQueries extends FoodsAdminService
           try {
             SQL(foodLocalInsertQuery)
               .on('food_code -> foodCode, 'locale_id -> locale, 'local_description -> foodLocal.localDescription.map(d => truncateDescription(d, foodCode)), 'simple_local_description -> foodLocal.localDescription.map(d => truncateDescription(StringUtils.stripAccents(d), foodCode)),
-                'do_not_use -> foodLocal.doNotUse, 'version -> UUID.randomUUID())
+                'version -> UUID.randomUUID())
               .execute()
 
             Right(())

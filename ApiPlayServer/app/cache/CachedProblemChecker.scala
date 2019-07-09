@@ -92,7 +92,7 @@ case class CachedProblemChecker @Inject()(
         if (userFoodRecord.portionSizeMethods.size > 1 && userFoodRecord.portionSizeMethods.exists(x => x.description == "no description" || x.imageUrl == "images/placeholder.jpg"))
           problems += NoMethodDescOrImage
 
-        if (adminFoodRecord.local.localDescription.isEmpty && !adminFoodRecord.local.doNotUse && translationRequired)
+        if (adminFoodRecord.local.localDescription.isEmpty && translationRequired)
           problems += LocalDescriptionMissing
 
         problems.toSeq.map(pcode => FoodProblem(code, userFoodRecord.localDescription, pcode))

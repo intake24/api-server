@@ -42,14 +42,27 @@ class FoodBrowsingServiceImpl @Inject()(@Named("intake24_foods") val dataSource:
     def mkUserHeader = UserFoodHeader(code, local_description.getOrElse(description))
   }
 
+  private def validateCategoryAndLocale(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Unit] = {
+    val validation = SQL("select (select 1 from categories where code={category_code}) as v1, (select 1 from locales where id={locale_id}) as v2")
+      .on('category_code -> code, 'locale_id -> locale)
+      .executeQuery()
+      .as((SqlParser.int(1).? ~ SqlParser.int(2).?).single)
+
+    if (validation._1.isEmpty)
+      Left(RecordNotFound(new RuntimeException(s"Category $code does not exist")))
+    else if (validation._2.isEmpty)
+      Left(RecordNotFound(new RuntimeException(s"Locale $locale does not exist")))
+    else
+      Right(())
+  }
+
   private def categoryFoodContentsImpl(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[UserFoodHeader]] = {
-
-    val result = SQL(categoryFoodContentsQuery).on('category_code -> code, 'locale_id -> locale).executeQuery()
-
-    parseWithLocaleAndCategoryValidation(code, result, Macro.namedParser[UserFoodHeaderRow].+)(Seq(FirstRowValidationClause("code", () => Right(List())))).right.map {
-      _.map {
-        _.mkUserHeader
-      }
+    validateCategoryAndLocale(code, locale).flatMap {
+      _ =>
+        Right(SQL(categoryFoodContentsQuery).on('category_code -> code, 'locale_id -> locale)
+          .executeQuery()
+          .as(Macro.namedParser[UserFoodHeaderRow].*)
+          .map(_.mkUserHeader))
     }
   }
 

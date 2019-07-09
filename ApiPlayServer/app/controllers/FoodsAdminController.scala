@@ -79,7 +79,7 @@ class FoodsAdminController @Inject()(service: FoodsAdminService,
               sourceFoodRecord.main.groupCode, sourceFoodRecord.main.attributes, sourceFoodRecord.main.parentCategories.map(_.code),
               sourceFoodRecord.main.localeRestrictions)).right;
             _ <- service.updateLocalFoodRecord(code, LocalFoodRecordUpdate(None, sourceFoodRecord.local.localDescription.map("Copy of " + _),
-              sourceFoodRecord.local.doNotUse, sourceFoodRecord.local.nutrientTableCodes, sourceFoodRecord.local.portionSize,
+              sourceFoodRecord.local.nutrientTableCodes, sourceFoodRecord.local.portionSize,
               sourceFoodRecord.local.associatedFoods.map(_.toAssociatedFood), sourceFoodRecord.local.brandNames), locale).right
           )
             yield CloneFoodResult(code)
@@ -102,7 +102,7 @@ class FoodsAdminController @Inject()(service: FoodsAdminService,
               Seq(locale))).right;
 
             _ <- service.updateLocalFoodRecord(code, LocalFoodRecordUpdate(None, Some("Copy of " + sourceUserRecord.localDescription),
-              false, sourceUserRecord.nutrientTableCodes, sourceUserRecord.portionSizeMethods,
+              sourceUserRecord.nutrientTableCodes, sourceUserRecord.portionSizeMethods,
               assocFoods, brandNames), locale).right
           )
 

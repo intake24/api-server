@@ -1,11 +1,8 @@
-WITH v AS(
-  SELECT (SELECT code FROM categories WHERE code={category_code}) AS category_code,
-  (SELECT id FROM locales WHERE id={locale_id}) AS locale_id
-)
-SELECT v.locale_id, v.category_code, code, description, local_description,
-       COALESCE(do_not_use, false) AS do_not_use,
-       ARRAY(SELECT locale_id FROM foods_restrictions WHERE food_code = code) AS restrict
-  FROM v LEFT JOIN foods_categories ON foods_categories.category_code = v.category_code
-         LEFT JOIN foods ON foods.code = foods_categories.food_code 
-         LEFT JOIN foods_local ON foods.code = foods_local.food_code AND foods_local.locale_id = v.locale_id
-ORDER BY local_description
+SELECT code, description, coalesce(fl.local_description, flp.local_description) AS local_description
+FROM foods_categories
+    JOIN foods_local_lists ON foods_local_lists.food_code = foods_categories.food_code AND foods_local_lists.locale_id = {locale_id}
+    LEFT JOIN foods ON foods.code = foods_categories.food_code
+    LEFT JOIN foods_local as fl ON fl.food_code = foods_categories.food_code AND fl.locale_id = {locale_id}
+    LEFT JOIN foods_local as flp ON flp.food_code = foods_categories.food_code AND flp.locale_id IN (SELECT prototype_locale_id AS l FROM locales WHERE id={locale_id})
+WHERE foods_categories.category_code = {category_code}
+ORDER BY coalesce(fl.local_description, flp.local_description)

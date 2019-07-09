@@ -23,4 +23,4 @@ import com.google.inject.Singleton
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
 
 @Singleton
-class FoodIndexImpl_en_GB @Inject() (foodData: FoodIndexDataService) extends EnglishFoodIndex (foodData, "en_GB")
+class FoodIndexImpl_en_GB @Inject() (foodData: FoodIndexDataService) extends EnglishFoodIndex (foodData, "en_GB_v1")

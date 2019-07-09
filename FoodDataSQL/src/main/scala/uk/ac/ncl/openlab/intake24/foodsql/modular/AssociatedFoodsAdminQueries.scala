@@ -14,7 +14,7 @@ trait AssociatedFoodsAdminQueries extends SqlDataService with SqlResourceLoader 
   private val logger = LoggerFactory.getLogger(classOf[AssociatedFoodsAdminQueries])
 
   private case class AssociatedFoodPromptsRow(
-                                               associated_food_code: Option[String], food_english_description: Option[String], food_local_description: Option[String], food_do_not_use: Option[Boolean],
+                                               associated_food_code: Option[String], food_english_description: Option[String], food_local_description: Option[String],
                                                associated_category_code: Option[String], category_english_description: Option[String], category_local_description: Option[String], category_is_hidden: Option[Boolean],
                                                text: Option[String], link_as_main: Option[Boolean], generic_name: Option[String])
 
@@ -27,7 +27,7 @@ trait AssociatedFoodsAdminQueries extends SqlDataService with SqlResourceLoader 
       row =>
         val foodOrCategory: Either[FoodHeader, CategoryHeader] =
           if (row.food_english_description.nonEmpty)
-            Left(FoodHeader(row.associated_food_code.get, row.food_english_description.get, row.food_local_description, row.food_do_not_use.getOrElse(false)))
+            Left(FoodHeader(row.associated_food_code.get, row.food_english_description.get, row.food_local_description))
           else
             Right(CategoryHeader(row.associated_category_code.get, row.category_english_description.get, row.category_local_description, row.category_is_hidden.get))
 

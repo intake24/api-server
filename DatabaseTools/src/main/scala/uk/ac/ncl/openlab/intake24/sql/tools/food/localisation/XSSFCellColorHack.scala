@@ -25,6 +25,6 @@ trait XSSFCellColorHack {
     if (fgColor == null)
       default
     else
-      fgColor.getRgbWithTint().map("%02X".format(_)).mkString
+      fgColor.getRGB.map("%02X".format(_)).mkString
   }
 }

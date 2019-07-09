@@ -1,4 +1,4 @@
-SELECT associated_food_code, f1.description as food_english_description, foods_local.local_description as food_local_description, foods_local.do_not_use as food_do_not_use,
+SELECT associated_food_code, f1.description as food_english_description, foods_local.local_description as food_local_description,
   associated_category_code, c1.description as category_english_description, c1.is_hidden as category_is_hidden, categories_local.local_description as category_local_description, 
   text, link_as_main, generic_name
 FROM associated_foods

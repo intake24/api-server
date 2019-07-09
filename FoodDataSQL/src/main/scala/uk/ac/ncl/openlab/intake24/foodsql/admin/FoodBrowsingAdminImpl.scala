@@ -27,7 +27,7 @@ class FoodBrowsingAdminImpl @Inject()(@Named("intake24_foods") val dataSource: D
   def getUncategorisedFoods(locale: String): Either[LocaleError, Seq[FoodHeader]] = tryWithConnection {
     implicit conn =>
       val result = SQL(uncategorisedFoodsQuery).on('locale_id -> locale).executeQuery()
-      parseWithLocaleValidation(result, Macro.namedParser[FoodHeaderRow].+)(Seq(FirstRowValidationClause("code", () => Right(List())))).right.map(_.map(_.asFoodHeader(locale)))
+      parseWithLocaleValidation(result, Macro.namedParser[FoodHeaderRow].+)(Seq(FirstRowValidationClause("code", () => Right(List())))).right.map(_.map(_.asFoodHeader))
   }
 
   lazy private val rootCategoriesQuery = sqlFromResource("admin/root_categories.sql")

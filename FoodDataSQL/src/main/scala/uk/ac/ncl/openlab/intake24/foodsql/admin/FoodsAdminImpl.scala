@@ -26,7 +26,7 @@ class FoodsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSour
 
   private val logger = LoggerFactory.getLogger(classOf[FoodsAdminImpl])
 
-  private case class FoodResultRow(version: UUID, code: String, description: String, local_description: Option[String], do_not_use: Option[Boolean], food_group_id: Long,
+  private case class FoodResultRow(version: UUID, code: String, description: String, local_description: Option[String], food_group_id: Long,
                                    same_as_before_option: Option[Boolean], ready_meal_option: Option[Boolean], reasonable_amount: Option[Int],
                                    use_in_recipes: Option[Int], local_version: Option[UUID])
 
@@ -50,7 +50,7 @@ class FoodsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSour
                 MainFoodRecord(result.version, result.code, result.description, result.food_group_id.toInt,
                   InheritableAttributes(result.ready_meal_option, result.same_as_before_option, result.reasonable_amount,
                     result.use_in_recipes), parentCategories, localeRestrictions),
-                LocalFoodRecord(result.local_version, result.local_description, result.do_not_use.getOrElse(false), nutrientTableCodes, portionSizeMethods,
+                LocalFoodRecord(result.local_version, result.local_description, nutrientTableCodes, portionSizeMethods,
                   associatedFoods, brandNames))
           }
         }.right

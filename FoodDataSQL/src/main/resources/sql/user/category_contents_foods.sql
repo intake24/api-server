@@ -1,18 +1,10 @@
-WITH v AS(
-  SELECT (SELECT code FROM categories WHERE code={category_code}) AS category_code,
-  (SELECT id FROM locales WHERE id={locale_id}) AS locale_id
-), t AS(
-  SELECT v.locale_id, v.category_code, code, description, COALESCE(fl1.local_description, fl2.local_description) AS local_description, COALESCE(fl1.do_not_use, fl2.do_not_use) AS do_not_use
-    FROM v LEFT JOIN foods_categories ON foods_categories.category_code = v.category_code
-           LEFT JOIN foods ON foods.code = foods_categories.food_code 
-           LEFT JOIN foods_local as fl1 ON foods.code = fl1.food_code AND fl1.locale_id = v.locale_id
-           LEFT JOIN foods_local as fl2 ON foods.code = fl2.food_code AND fl2.locale_id IN (SELECT prototype_locale_id FROM locales WHERE id=v.locale_id)
-           LEFT JOIN foods_restrictions ON foods.code = foods_restrictions.food_code
-    WHERE NOT (COALESCE(fl1.do_not_use, fl2.do_not_use))
-          AND NOT (COALESCE(fl1.do_not_use, fl2.do_not_use))
-          AND (foods_restrictions.locale_id = {locale_id} OR foods_restrictions.locale_id IS NULL) 
-)
-SELECT locale_id, category_code, code, description, local_description FROM t
-UNION ALL
-SELECT locale_id, category_code, NULL, NULL, NULL FROM v WHERE NOT EXISTS(SELECT 1 FROM t LIMIT 1)
-ORDER BY local_description, description
+SELECT code, description, coalesce(fl.local_description, flp.local_description) as local_description
+FROM foods_categories
+         INNER JOIN foods_local_lists ON foods_categories.food_code = foods_local_lists.food_code AND foods_local_lists.locale_id = {locale_id}
+         LEFT JOIN foods ON foods.code = foods_local_lists.food_code
+         LEFT JOIN foods_local as fl ON fl.food_code = foods_local_lists.food_code AND fl.locale_id = {locale_id}
+         LEFT JOIN foods_local as flp ON flp.food_code = foods_local_lists.food_code AND flp.locale_id IN
+                                                                                         (SELECT prototype_locale_id AS l FROM locales WHERE id = {locale_id})
+WHERE foods_categories.category_code = {category_code} AND coalesce(fl.local_description, flp.local_description) IS NOT NULL
+ORDER BY coalesce(fl.local_description, flp.local_description) DESC
+LIMIT 30

@@ -4,7 +4,7 @@ import uk.ac.ncl.openlab.intake24.sql.migrations.Migration
 import org.slf4j.Logger
 import java.sql.Connection
 
-import anorm.{BatchSql, NamedParameter, SQL}
+import anorm.{BatchSql, NamedParameter, SQL, SqlParser, ~}
 import uk.ac.ncl.openlab.intake24.nutrientsndns.{CsvNutrientTableMapping, LegacyNutrientTables}
 import uk.ac.ncl.openlab.intake24.sql.migrations.MigrationFailed
 
@@ -1135,6 +1135,88 @@ object FoodDatabaseMigrations {
         ???
 
       }
+    },
+
+    new Migration {
+      override val versionFrom: Long = 61l
+      override val versionTo: Long = 62l
+      override val description: String = "Rename en_GB locale to en_GB_v1"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL("update locales set id='en_GB_v1' where id='en_GB'").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+
+    },
+
+    new Migration {
+      override val versionFrom: Long = 62l
+      override val versionTo: Long = 63l
+      override val description: String = "Create local food list table"
+
+      private def updateLocale(localeId: String, logger: Logger)(implicit connection: Connection): Unit = {
+
+        val foodCodes = SQL("""SELECT code
+                              |FROM foods
+                              |    LEFT JOIN foods_local as t1 ON foods.code = t1.food_code AND t1.locale_id = {locale_id}
+                              |    LEFT JOIN foods_local as t2 ON foods.code = t2.food_code AND t2.locale_id IN (SELECT prototype_locale_id FROM locales WHERE id = {locale_id})
+                              |    LEFT JOIN foods_restrictions ON foods.code = foods_restrictions.food_code
+                              |WHERE
+                              |    (t1.local_description IS NOT NULL OR t2.local_description IS NOT NULL)
+                              |    AND NOT (COALESCE(t1.do_not_use, t2.do_not_use, false))
+                              |    AND (foods_restrictions.locale_id = {locale_id} OR foods_restrictions.locale_id IS NULL)""".stripMargin)
+          .on('locale_id -> localeId)
+          .executeQuery()
+          .as(SqlParser.str("code").*)
+
+        logger.info(s"Found ${foodCodes.size} foods to be used in $localeId")
+
+        val params = foodCodes.map {
+          code => Seq[NamedParameter]('locale_id -> localeId, 'food_code -> code)
+        }
+
+        if (params.nonEmpty) {
+          BatchSql("insert into foods_local_lists(locale_id, food_code) values ({locale_id},{food_code})", params.head, params.tail: _*)
+            .execute()
+        }
+      }
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+
+        SQL(
+          """create table foods_local_lists(
+            |    locale_id varchar(16) references locales(id),
+            |    food_code varchar(8) references foods(code),
+            |    constraint foods_locale_inclusion_pk primary key (locale_id, food_code)
+            |)""".stripMargin).execute()
+
+        val locales = SQL("""select id from locales""").executeQuery().as(SqlParser.str("id").*)
+
+        locales.foreach {
+          id =>
+            logger.info(s"Updating $id")
+            updateLocale(id, logger)
+        }
+
+
+        SQL("alter table foods_local drop column do_not_use").execute()
+        SQL("drop table foods_restrictions").execute()
+
+        Right(())
+      }
+
+      def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        ???
+
+      }
+
     }
 
   )

@@ -23,7 +23,7 @@ class FoodNutrientServiceEnGbNDNSImpl @Inject()(val nutrientService: FoodComposi
 
   // Fixme: Cached needs to be refreshed for newly added foods
   private val foodNutrientMap: Map[String, Map[Long, Double]] =
-    nutrientService.listFoodNutrients("NDNS", "en_GB") match {
+    nutrientService.listFoodNutrients("NDNS", "en_GB_v1") match {
       case Right(r) => r
       case Left(e) =>
         logger.error(s"Couldn't get food nutrients. ${e.exception.getMessage}")
