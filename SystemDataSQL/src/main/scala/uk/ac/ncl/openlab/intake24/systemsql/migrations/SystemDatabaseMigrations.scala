@@ -2056,7 +2056,20 @@ object SystemDatabaseMigrations {
       }
 
       override def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = ???
-    }
+    },
 
+    new Migration {
+      override val versionFrom: Long = 89l
+      override val versionTo: Long = 90l
+      override val description: String = "Add en_GB_v2 locale"
+
+      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
+        SQL("INSERT INTO locales VALUES('en_GB_v2', 'United Kingdom (NDNS)', 'United Kingdom (NDNS)', 'en_GB', 'en', 'gb', NULL)").execute()
+
+        Right(())
+      }
+
+      override def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = ???
+    }
   )
 }

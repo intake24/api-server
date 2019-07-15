@@ -143,7 +143,7 @@ object IndianFoodsImport extends App with WarningMessage with ErrorHandler with 
         logger.info("  setting do not use")
 
         throwOnError(for (r <- service.getFoodRecord(code, locale);
-                          _ <- service.updateLocalFoodRecord(code, r.local.toUpdate.copy(doNotUse = true), locale)) yield ())
+                          _ <- service.updateLocalFoodRecord(code, r.local.toUpdate, locale)) yield ())
       } else if (recode.contains(code)) {
         logger.info("  copying local description and setting IND code")
         throwOnError(for (r <- service.getFoodRecord(code, locale);

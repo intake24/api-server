@@ -311,7 +311,7 @@ object ImportNewZealandFoods extends App with DatabaseConnection with WarningMes
 
               foodsAdminService.getFoodRecord(nzFood.code, "en_NZ").right.flatMap {
                 existingRecord =>
-                  foodsAdminService.updateLocalFoodRecord(nzFood.code, LocalFoodRecordUpdate(existingRecord.local.version, None, false, nutrientTableCodes, Seq(), Seq(), Seq()), "en_NZ")
+                  foodsAdminService.updateLocalFoodRecord(nzFood.code, LocalFoodRecordUpdate(existingRecord.local.version, None,  nutrientTableCodes, Seq(), Seq(), Seq()), "en_NZ")
               } match {
                 case Right(()) =>
                   println("\u001b[32mOK\u001b[39m")
@@ -334,7 +334,7 @@ object ImportNewZealandFoods extends App with DatabaseConnection with WarningMes
               println("  creating new food")
 
               val result = for (_ <- foodsAdminService.createFood(NewMainFoodRecord(nzFood.code, nzFood.description, nzFood.groupCode, nzFood.attributes, categories.foodSuperCategories(nzFood.code), Seq("en_NZ"))).right;
-                                _ <- foodsAdminService.updateLocalFoodRecord(nzFood.code, LocalFoodRecordUpdate(None, Some(nzFood.description), false, nzFood.nutrientTableCodes, fixedStandardUnits, Seq(), Seq()), "en_NZ").right)
+                                _ <- foodsAdminService.updateLocalFoodRecord(nzFood.code, LocalFoodRecordUpdate(None, Some(nzFood.description),  nzFood.nutrientTableCodes, fixedStandardUnits, Seq(), Seq()), "en_NZ").right)
                 yield ()
 
               result match {

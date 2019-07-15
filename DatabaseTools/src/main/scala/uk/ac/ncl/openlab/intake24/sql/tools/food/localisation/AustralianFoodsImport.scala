@@ -2383,7 +2383,7 @@ object AustralianFoodsImport extends App with WarningMessage with ErrorHandler w
         logger.info("  setting do not use")
 
         throwOnError(for (r <- service.getFoodRecord(code, locale);
-                          _ <- service.updateLocalFoodRecord(code, r.local.toUpdate.copy(doNotUse = true), locale)) yield ())
+                          _ <- service.updateLocalFoodRecord(code, r.local.toUpdate, locale)) yield ())
       } else if (recodingMap.contains(code)) {
         logger.info("  copying local description and setting AUSNUT code")
         throwOnError(for (r <- service.getFoodRecord(code, locale);

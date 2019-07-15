@@ -87,7 +87,7 @@ object RestoreDeletedFoods extends App with DatabaseConnection with WarningMessa
 
           println(s"\tcreating local food record for ${localeId}...")
 
-          val newLocalRecord = NewLocalFoodRecord(localRecord.localDescription, localRecord.doNotUse, localRecord.nutrientTableCodes,
+          val newLocalRecord = NewLocalFoodRecord(localRecord.localDescription, false, localRecord.nutrientTableCodes,
             localRecord.portionSize, localRecord.associatedFoods.map(_.toAssociatedFood), localRecord.brandNames)
 
           throwOnError(foodsServiceDest.createLocalFoodRecords(Map(code -> newLocalRecord), localeId))
