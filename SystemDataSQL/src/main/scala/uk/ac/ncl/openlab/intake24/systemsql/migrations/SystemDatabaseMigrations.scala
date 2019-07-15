@@ -2049,8 +2049,6 @@ object SystemDatabaseMigrations {
 
       override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
         SQL("update locales set id='en_GB_v1' where id='en_GB'").execute()
-        SQL("update surveys set locale_id='en_GB_v1' where locale_id='en_GB'").execute()
-        SQL("alter table surveys add constraint surveys_locale_fk foreign key(locale) references locales(id) on delete restrict on update cascade").execute()
 
         Right(())
       }
