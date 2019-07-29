@@ -49,8 +49,9 @@ trait DatabaseConnection {
 
     config.password.foreach(pw => dbConnectionProps.setProperty("dataSource.password", pw))
 
-    if (config.useSsl)
+    if (config.useSsl) {
       dbConnectionProps.setProperty("dataSource.ssl", "true")
+    }
 
     new HikariDataSource(new HikariConfig(dbConnectionProps))
   }

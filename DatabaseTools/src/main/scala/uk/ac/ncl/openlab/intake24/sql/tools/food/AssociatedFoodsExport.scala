@@ -53,7 +53,7 @@ object AssociatedFoodsExport extends App with DatabaseConnection with WarningMes
               af =>
 
                 af.foodOrCategoryHeader match {
-                  case Left(FoodHeader(code, englishDescription, localDescription, excluded)) =>
+                  case Left(FoodHeader(code, englishDescription, localDescription)) =>
                     csvWriter.writeNext(Array(header.code, foodEnglishDescription, header.localDescription, code, englishDescription, "", "", af.promptText, af.linkAsMain.toString, af.genericName))
                   case Right(CategoryHeader(code, englishDescription, localDescription, isHidden)) =>
                     csvWriter.writeNext(Array(header.code, foodEnglishDescription, header.localDescription, "", "", code, englishDescription, af.promptText, af.linkAsMain.toString, af.genericName))
