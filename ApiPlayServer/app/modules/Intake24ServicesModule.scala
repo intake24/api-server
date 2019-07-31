@@ -73,7 +73,7 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     // This could be done using DI, but not sure if holding an injector instance for auto reloading
     // is a good idea
     def createIndex(localeId: String) = localeId match {
-      case "en_GB_v1" => new FoodIndexImpl_en_GB(foodIndexDataService)
+      case "en_GB" => new FoodIndexImpl_en_GB(foodIndexDataService)
       case "pt_PT" => new FoodIndexImpl_pt_PT(foodIndexDataService)
       case "da_DK" => new FoodIndexImpl_da_DK(foodIndexDataService)
       case "ar_AE" => new FoodIndexImpl_ar_AE(foodIndexDataService)
@@ -115,7 +115,7 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
     val enabledLocales = configuration.get[Seq[String]]("intake24.foodIndex.enabledLocales")
 
     def createSplitter(localeId: String) = localeId match {
-      case "en_GB_v1" => new SplitterImpl_en_GB(foodIndexDataService)
+      case "en_GB" => new SplitterImpl_en_GB(foodIndexDataService)
       case "pt_PT" => new SplitterImpl_pt_PT(foodIndexDataService)
       case "da_DK" => new SplitterImpl_da_DK(foodIndexDataService)
       case "ar_AE" => new SplitterImpl_ar_AE(foodIndexDataService)

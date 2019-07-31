@@ -2008,66 +2008,6 @@ object SystemDatabaseMigrations {
         ???
 
       }
-    },
-
-    new Migration {
-      override val versionFrom: Long = 87l
-      override val versionTo: Long = 88l
-      override val description: String = "Create tools_tasks table"
-
-      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
-        val createToolsTasks =
-          """create table tools_tasks
-            |(
-            |  id serial primary key,
-            |  type varchar(64) not null,
-            |  user_id integer not null
-            |    constraint tools_tasks_user_id_fk
-            |    references users on update cascade on delete restrict,
-            |  created_at timestamp with time zone not null,
-            |  started_at timestamp with time zone,
-            |  completed_at timestamp with time zone,
-            |  download_url varchar(1024),
-            |  download_url_expires_at timestamp with time zone,
-            |  progress real,
-            |  successful boolean,
-            |  stack_trace varchar(2048)
-            |)""".stripMargin
-
-        SQL(createToolsTasks).execute()
-
-        Right(())
-      }
-
-      override def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = ???
-    },
-
-    new Migration {
-      override val versionFrom: Long = 88l
-      override val versionTo: Long = 89l
-      override val description: String = "Rename en_GB locale to en_GB_v1"
-
-      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
-        SQL("update locales set id='en_GB_v1' where id='en_GB'").execute()
-
-        Right(())
-      }
-
-      override def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = ???
-    },
-
-    new Migration {
-      override val versionFrom: Long = 89l
-      override val versionTo: Long = 90l
-      override val description: String = "Add en_GB_v2 locale"
-
-      override def apply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = {
-        SQL("INSERT INTO locales VALUES('en_GB_v2', 'United Kingdom (NDNS)', 'United Kingdom (NDNS)', 'en_GB', 'en', 'gb', NULL)").execute()
-
-        Right(())
-      }
-
-      override def unapply(logger: Logger)(implicit connection: Connection): Either[MigrationFailed, Unit] = ???
     }
   )
 }
