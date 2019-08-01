@@ -44,6 +44,8 @@ import scala.util.{Failure, Success}
 
 case class SubmissionResponseBody(followUpUrl: Option[String], redirectToFeedback: Boolean)
 
+case class UserInfoResponseBody(id: Long, name: Option[String], recallNumber: Int)
+
 class SurveyController @Inject()(service: SurveyService,
                                  ws: WSClient,
                                  userService: UserAdminService,
@@ -74,6 +76,22 @@ class SurveyController @Inject()(service: SurveyService,
     _ =>
       Future {
         translateDatabaseResult(service.getSurveyParameters(surveyId))
+      }
+  }
+
+  def getSurveyUserInfo(surveyId: String) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(playBodyParsers.empty) {
+    request =>
+      Future {
+        val userId = request.subject.userId
+
+        (for (user <- userService.getUserById(userId);
+              currentSubmissionsCount <- service.getNumberOfSubmissionsForUser(surveyId, userId))
+          yield ((user, currentSubmissionsCount))) match {
+          case Right((user, currentSubmissionsCount)) =>
+            Ok(UserInfoResponseBody(user.id, user.name, currentSubmissionsCount + 1).asJson.noSpaces).as(ContentTypes.JSON)
+
+          case Left(error) => translateDatabaseError(error)
+        }
       }
   }
 
