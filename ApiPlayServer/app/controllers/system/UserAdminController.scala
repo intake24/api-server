@@ -380,41 +380,53 @@ class UserAdminController @Inject()(service: UserAdminService,
 
   private def passwordResetTokenCacheKey(token: String) = s"UserAdminController.passwordReset.$token"
 
+  private def doPasswordReset(email: String): Result = {
+    val bytes = new Array[Byte](33) // 256 bit + extra char to prevent base64 padding
+    random.nextBytes(bytes)
+
+    val token = base64Encoder.encodeToString(bytes)
+
+    service.getUserByEmail(email) match {
+      case Right(profile) =>
+        syncCacheApi.set(passwordResetTokenCacheKey(token), profile.id, 4.hours)
+
+        val passwordResetUrl = adminFrontendUrl + "password-reset/#?token=" + token
+
+        profile.email match {
+          case Some(address) =>
+            val body = PasswordResetLink(profile.name, passwordResetUrl, 4)
+            val email = Email("Intake24 password reset link", "Intake24 <support@intake24.co.uk>", Seq(address), None, Some(body.toString()))
+            mailerClient.send(email)
+            Ok
+          case None => Ok
+        }
+
+      case Left(RecordNotFound(e)) => Ok
+      case Left(error) => translateDatabaseError(error)
+    }
+  }
+
   def passwordResetRequest() = Action.async(jsonBodyParser.parse[PasswordResetRequest]) {
     request =>
 
-      captchaService.verify(request.body.recaptchaResponse, request.remoteAddress).flatMap {
-        case Some(true) =>
-          Future {
+      val recaptchaEnabled = configuration.get[Boolean]("intake24.recaptcha.enabled")
 
-            val bytes = new Array[Byte](33) // 256 bit + extra char to prevent base64 padding
-            random.nextBytes(bytes)
-
-            val token = base64Encoder.encodeToString(bytes)
-
-            service.getUserByEmail(request.body.email) match {
-              case Right(profile) =>
-                syncCacheApi.set(passwordResetTokenCacheKey(token), profile.id, 4.hours)
-
-                val passwordResetUrl = adminFrontendUrl + "password-reset/#?token=" + token
-
-                profile.email match {
-                  case Some(address) =>
-                    val body = PasswordResetLink(profile.name, passwordResetUrl, 4)
-                    val email = Email("Intake24 password reset link", "Intake24 <support@intake24.co.uk>", Seq(address), None, Some(body.toString()))
-                    mailerClient.send(email)
-                    Ok
-                  case None => Ok
-                }
-
-              case Left(RecordNotFound(e)) => Ok
-              case Left(error) => translateDatabaseError(error)
+      if (recaptchaEnabled) {
+        captchaService.verify(request.body.recaptchaResponse, request.remoteAddress).flatMap {
+          case Some(true) =>
+            Future {
+              doPasswordReset(request.body.email)
             }
-          }
 
-        case Some(false) => Future.successful(Forbidden)
+          case Some(false) => Future.successful(Forbidden)
 
-        case None => Future.successful(InternalServerError)
+          case None => Future.successful(InternalServerError)
+        }
+      }
+      else {
+        Future {
+          doPasswordReset(request.body.email)
+        }
       }
   }
 
