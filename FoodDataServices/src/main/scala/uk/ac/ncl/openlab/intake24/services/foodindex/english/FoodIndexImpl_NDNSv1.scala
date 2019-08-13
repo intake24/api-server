@@ -18,17 +18,8 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.services.foodindex.english
 
-import org.workcraft.phrasesearch.Metaphone3Encoder
-
+import com.google.inject.{Inject, Singleton}
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
-import uk.ac.ncl.openlab.intake24.services.foodindex.AbstractFoodIndex
 
-abstract class EnglishFoodIndex(foodData: FoodIndexDataService, locale: String)
-  extends AbstractFoodIndex(foodData, Some(Metaphone3Encoder()), EnglishWordOpsPlingImpl(), EnglishFoodIndex.indexFilter,
-    EnglishFoodIndex.nonIndexedWords, EnglishFoodIndex.specialFoodNames, locale)
-
-object EnglishFoodIndex {
-  val indexFilter = Seq("`", ",", """\/""", """\-""", """\)""", """\(""", """\.""", """e\.g\.""", """e\.g""", """\'s""", "–")
-  val nonIndexedWords = Seq("and", "the", "with", "from")
-  val specialFoodNames = new EnglishSpecialFoodNames
-}
+@Singleton
+class FoodIndexImpl_NDNSv1 @Inject()(foodData: FoodIndexDataService) extends EnglishFoodIndex (foodData, "NDNSv1")
