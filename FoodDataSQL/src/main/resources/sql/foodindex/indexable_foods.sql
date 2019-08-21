@@ -7,9 +7,8 @@ WITH t AS (
     WHERE
         (t1.local_description IS NOT NULL OR t2.local_description IS NOT NULL)
 )
-SELECT t.code, t.local_description FROM
+SELECT DISTINCT t.code, t.local_description FROM
     t
-        JOIN foods_categories as fc ON t.code = fc.food_code
-        JOIN categories as cats ON cats.code = fc.category_code
-GROUP BY (t.code, t.local_description)
-HAVING (NOT bool_and(cats.is_hidden))
+        LEFT JOIN foods_categories as fc ON t.code = fc.food_code
+        LEFT JOIN categories as cats ON cats.code = fc.category_code
+WHERE NOT cats.is_hidden OR cats.is_hidden is NULL
