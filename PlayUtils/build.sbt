@@ -28,8 +28,8 @@ resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases/"
 
 libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play" % "2.6.16",
-  "io.circe" %% "circe-core" % "0.9.3",
-  "io.circe" %% "circe-generic" % "0.9.3",
-  "io.circe" %% "circe-parser" % "0.9.3"
+  "io.circe" %% "circe-core" % "0.10.1",
+  "io.circe" %% "circe-generic" % "0.10.1",
+  "io.circe" %% "circe-parser" % "0.10.1"
 )
 
