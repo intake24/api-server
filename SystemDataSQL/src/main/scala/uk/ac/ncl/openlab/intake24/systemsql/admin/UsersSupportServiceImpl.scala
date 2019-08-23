@@ -40,7 +40,7 @@ class UsersSupportServiceImpl @Inject()(@Named("intake24_system") val dataSource
                  _ <- physicalDataService.batchUpdateQuery(physicalData).right
             ) yield usersWithIds.map {
               case (newUserData, userId) =>
-                NewRespondentIds(userId, newUserData.externalId, authTokens(userId))
+                NewRespondentIds(userId, surveyId, newUserData.externalId, authTokens(userId))
             }
         }
       }

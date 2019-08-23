@@ -1,6 +1,6 @@
 package uk.ac.ncl.openlab.intake24.services.systemdb.admin
 
-import uk.ac.ncl.openlab.intake24.api.data.NewUserProfile
+import uk.ac.ncl.openlab.intake24.api.data.{NewRespondentIds, NewUserProfile}
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.UserPhysicalDataOut
 
@@ -42,7 +42,7 @@ trait UserAdminService {
     * This method is meant for uploading survey respondent data from external files and will
     * automatically create a survey alias.
     */
-  def createOrUpdateUsersWithAliases(users: Seq[NewUserWithAlias]): Either[DependentUpdateError, Unit]
+  def createOrUpdateUsersWithAliases(users: Seq[NewUserWithAlias]): Either[DependentUpdateError, Seq[NewRespondentIds]]
 
   def createUsers(users: Seq[NewUserProfile]): Either[CreateError, Seq[Long]]
 

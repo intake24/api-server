@@ -50,6 +50,9 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
+
+case class CreateOrUpdateResponse(users: Seq[NewRespondentIds])
+
 class UserAdminController @Inject()(service: UserAdminService,
                                     userPhysicalData: UserPhysicalDataService,
                                     UsersSupportService: UserPhysicalDataService,
@@ -104,7 +107,7 @@ class UserAdminController @Inject()(service: UserAdminService,
           SecurePassword(passwordInfo.password, passwordInfo.salt.get, passwordInfo.hasher))
     }
 
-    translateDatabaseResult(service.createOrUpdateUsersWithAliases(newUserRecords))
+    translateDatabaseResult(service.createOrUpdateUsersWithAliases(newUserRecords).map(CreateOrUpdateResponse(_)))
   }
 
   private def uploadCSV(formData: MultipartFormData[Files.TemporaryFile], surveyId: String, roles: Set[String]): Result = {

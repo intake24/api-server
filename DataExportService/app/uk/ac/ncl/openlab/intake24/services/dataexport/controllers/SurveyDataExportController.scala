@@ -60,6 +60,7 @@ class SurveyDataExportController @Inject()(configuration: Configuration,
                                            rab: Intake24RestrictedActionBuilder,
                                            playBodyParsers: PlayBodyParsers,
                                            jsonBodyParser: JsonBodyParser,
+                                           userAdminService: UserAdminService,
                                            csvExportFormats: Map[String, SurveyCSVExporter],
                                            val controllerComponents: ControllerComponents,
                                            implicit val executionContext: ExecutionContext) extends BaseController
@@ -69,15 +70,25 @@ class SurveyDataExportController @Inject()(configuration: Configuration,
 
   val urlValidityPeriod = configuration.get[FiniteDuration](s"intake24.dataExport.secureUrl.validityPeriod")
 
-  def getSurveySubmissions(surveyId: String, dateFrom: String, dateTo: String, offset: Int, limit: Int) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
+  def getSurveySubmissions(surveyId: String, userName: Option[String], dateFrom: Option[String], dateTo: Option[String], offset: Int, limit: Int) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
     _ =>
       Future {
 
         try {
-          val parsedFrom = ZonedDateTime.parse(dateFrom)
-          val parsedTo = ZonedDateTime.parse(dateTo)
+          val parsedFrom = dateFrom.map(ZonedDateTime.parse)
+          val parsedTo = dateTo.map(ZonedDateTime.parse)
 
-          translateDatabaseResult(service.getSurveySubmissions(surveyId, Some(parsedFrom), Some(parsedTo), offset, limit, None))
+          val result = userName match {
+            case Some(userName) =>
+              for (
+                userProfile <- userAdminService.getUserByAlias(SurveyUserAlias(surveyId, userName));
+                submissions <- service.getSurveySubmissions(surveyId, parsedFrom, parsedTo, offset, limit, Some(userProfile.id))
+              ) yield submissions
+            case None =>
+              service.getSurveySubmissions(surveyId, parsedFrom, parsedTo, offset, limit, None)
+          }
+
+          translateDatabaseResult(result)
         } catch {
           case e: DateTimeParseException => BadRequest(toJsonString(ErrorDescription("DateFormat", "Failed to parse date parameter. Expected a UTC date in ISO 8601 format, e.g. '2017-02-15T16:40:30Z'.")))
         }

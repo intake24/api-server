@@ -1,13 +1,14 @@
 package uk.ac.ncl.openlab.intake24.systemsql.admin
 
 import java.sql.Connection
+
+import anorm.Macro.ColumnNaming
 import javax.inject.{Inject, Named}
 import javax.sql.DataSource
-
 import anorm._
 import org.apache.commons.lang3.StringUtils
 import org.postgresql.util.PSQLException
-import uk.ac.ncl.openlab.intake24.api.data.NewUserProfile
+import uk.ac.ncl.openlab.intake24.api.data.{NewRespondentIds, NewUserProfile}
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
@@ -150,7 +151,21 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
 
   private lazy val createOrUpdateUserByAliasQuery = sqlFromResource("admin/users/create_or_update_user_by_alias.sql")
 
-  def createOrUpdateUsersWithAliases(usersWithAliases: Seq[NewUserWithAlias]): Either[DependentUpdateError, Unit] = tryWithConnection {
+  private def fetchNewRespondentIds(aliases: Seq[SurveyUserAlias])(implicit connection: Connection): Either[UnexpectedDatabaseError, Seq[NewRespondentIds]] = {
+    Right(SQL(
+      """with q(survey_id, user_name) as (
+        |    select *
+        |    from unnest(ARRAY [{survey_ids}], ARRAY [{user_names}])
+        |)
+        |select a.user_id, q.survey_id, q.user_name, a.url_auth_token
+        |from q
+        |         join user_survey_aliases as a on q.survey_id = a.survey_id and q.user_name = a.user_name;""".stripMargin)
+      .on('survey_ids -> aliases.map(_.surveyId), 'user_names -> aliases.map(_.userName))
+      .executeQuery()
+      .as(Macro.namedParser[NewRespondentIds](ColumnNaming.SnakeCase).*))
+  }
+
+  def createOrUpdateUsersWithAliases(usersWithAliases: Seq[NewUserWithAlias]): Either[DependentUpdateError, Seq[NewRespondentIds]] = tryWithConnection {
     implicit conn =>
       withTransaction {
 
@@ -161,7 +176,7 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
         }
 
         if (userUpsertParams.nonEmpty) {
-          tryWithConstraintCheck[DependentUpdateError, Unit]("users_email_unique", e => DuplicateCode(e)) {
+          tryWithConstraintCheck[DependentUpdateError, Seq[NewRespondentIds]]("users_email_unique", e => DuplicateCode(e)) {
             BatchSql(createOrUpdateUserByAliasQuery, userUpsertParams.head, userUpsertParams.tail: _*).execute()
 
             for (
@@ -171,12 +186,14 @@ class UserAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSour
               _ <- updateCustomDataByAlias(usersWithAliases.foldLeft(List[CustomDataForAlias]()) {
                 case (acc, record) => CustomDataForAlias(record.alias.surveyId, record.alias.userName, record.userInfo.customFields) +: acc
               }).right;
-              _ <- createOrUpdatePasswordsByAlias(usersWithAliases.map(u => SecurePasswordForAlias(u.alias, u.password))).right
-            ) yield ()
+              _ <- createOrUpdatePasswordsByAlias(usersWithAliases.map(u => SecurePasswordForAlias(u.alias, u.password))).right;
+              result <- fetchNewRespondentIds(usersWithAliases.map(_.alias))
+            ) yield result
+
           }
         }
         else
-          Right(())
+          Right(Seq())
       }
   }
 
