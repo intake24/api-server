@@ -388,6 +388,7 @@ class UserAdminController @Inject()(service: UserAdminService,
     random.nextBytes(bytes)
 
     val token = base64Encoder.encodeToString(bytes)
+    val supportEmail = configuration.get[String]("intake24.supportEmail")
 
     service.getUserByEmail(email) match {
       case Right(profile) =>
@@ -398,7 +399,7 @@ class UserAdminController @Inject()(service: UserAdminService,
         profile.email match {
           case Some(address) =>
             val body = PasswordResetLink(profile.name, passwordResetUrl, 4)
-            val email = Email("Intake24 password reset link", "Intake24 <support@intake24.co.uk>", Seq(address), None, Some(body.toString()))
+            val email = Email("Intake24 password reset link", s"Intake24 <$supportEmail>", Seq(address), None, Some(body.toString()))
             mailerClient.send(email)
             Ok
           case None => Ok

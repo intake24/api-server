@@ -56,6 +56,8 @@ class HelpController @Inject()(cache: SyncCacheApi,
   with DatabaseErrorHandler with JsonUtils {
 
   val callbackRequestRate = config.get[Int]("intake24.help.callbackRequestRateSeconds")
+  val supportEmail = config.get[String]("intake24.supportEmail")
+  val feedbackEmail = config.get[String]("intake24.feedbackEmail")
 
   private def getCacheKey(subject: Intake24AccessToken) = {
     s"reject-callback-${subject.userId.toString}"
@@ -103,7 +105,7 @@ class HelpController @Inject()(cache: SyncCacheApi,
                     val message = Email(
                       subject = s"Someone needs help completing their Intake24 survey ($surveyId)",
                       bodyText = Some(s"Please call ${request.body.name} on ${request.body.phone} (survey ID: $surveyId, user ID: $userName)"),
-                      from = "Intake24 <support@intake24.co.uk>",
+                      from = s"Intake24 <$supportEmail>",
                       to = emailAddresses
                     )
 
@@ -163,8 +165,8 @@ class HelpController @Inject()(cache: SyncCacheApi,
                      |Experience: ${if (request.body.like) "Liked" else "Disliked"} \n
                      |${request.body.body}
                   """.stripMargin),
-                from = "Intake24 Feedback <support@intake24.co.uk>",
-                to = Seq("Intake24 Feedback <feedback@intake24.co.uk>")
+                from = s"Intake24 Feedback <$supportEmail>",
+                to = Seq(s"Intake24 Feedback <$feedbackEmail>")
               )
 
               mailer.send(message)

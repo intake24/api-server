@@ -181,6 +181,7 @@ class SurveyDataExportController @Inject()(configuration: Configuration,
         val parsedTo = ZonedDateTime.parse(dateTo)
         val forceBOM = request.getQueryString("forceBOM").isDefined
 
+        val supportEmail = configuration.get[String]("intake24.supportEmail")
 
         val queueResult = dataExporter.queueCsvExport(request.subject.userId, surveyId, parsedFrom, parsedTo, forceBOM, "download", format)
 
@@ -197,7 +198,7 @@ class SurveyDataExportController @Inject()(configuration: Configuration,
               case Success(secureUrl) =>
                 checkResult(service.setExportTaskDownloadUrl(exportTaskHandle.id, secureUrl, urlExpirationDate), "Failed to set download URL")
                 checkResult(emailSender.sendHtml(request.subject.userId, s"Your Intake24 survey ($surveyId) data is available for download",
-                  "Intake24 <support@intake24.co.uk>", downloadAvailableMessage(surveyId, secureUrl.toString())), "Failed to send e-mail notification")
+                  s"Intake24 <$supportEmail>", downloadAvailableMessage(surveyId, secureUrl.toString())), "Failed to send e-mail notification")
 
               case Failure(exception) =>
                 logger.error("Failed to create secure URL for file download", exception)
