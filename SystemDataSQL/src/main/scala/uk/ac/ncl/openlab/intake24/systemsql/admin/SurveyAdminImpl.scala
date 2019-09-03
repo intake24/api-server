@@ -276,6 +276,32 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
       Seq(
         CustomFieldDescription("servingWeightFactor", "As served weight factor")
       )))
+    case "ndns1019" => Right(CustomDataScheme(Seq(), Seq(
+      CustomFieldDescription("cookingOil", "Cooking oil used"),
+      CustomFieldDescription("diet", "Diet"),
+      CustomFieldDescription("supplements", "Supplements"),
+      CustomFieldDescription("foodAmount", "Food amount"),
+      CustomFieldDescription("foodAmountReason", "Reason for unusual food amount"),
+      CustomFieldDescription("proxy", "Proxy"),
+      CustomFieldDescription("proxyIssues", "Proxy Issues")),
+      Seq(
+        CustomFieldDescription("foodSource", "Food source")),
+      Seq(
+        CustomFieldDescription("servingWeightFactor", "As served weight factor")
+      )))
+    case "sab" => Right(CustomDataScheme(Seq(), Seq(
+      CustomFieldDescription("cookingOil", "Cooking oil used"),
+      CustomFieldDescription("diet", "Diet"),
+      CustomFieldDescription("supplements", "Supplements"),
+      CustomFieldDescription("foodAmount", "Food amount"),
+      CustomFieldDescription("foodAmountReason", "Reason for unusual food amount"),
+      CustomFieldDescription("diffParticipant", "Participant difficulties"),
+      CustomFieldDescription("diffInterviewer", "Interviewer difficulties")),
+      Seq(
+        CustomFieldDescription("foodSource", "Food source")),
+      Seq(
+        CustomFieldDescription("servingWeightFactor", "As served weight factor")
+      )))
     case "experimental-pa-rules" => Right(CustomDataScheme(Seq(), Seq(), Seq(), Seq()))
     case "experimental-flexible-recall" => Right(CustomDataScheme(Seq(), Seq(), Seq(), Seq()))
     case "young_scot_2014" =>
