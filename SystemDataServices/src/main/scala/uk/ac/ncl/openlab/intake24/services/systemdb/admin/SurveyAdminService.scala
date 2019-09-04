@@ -32,14 +32,18 @@ case class SurveyParametersIn(id: String, schemeId: String, localeId: String, st
                               allowGeneratedUsers: Boolean,
                               externalFollowUpURL: Option[String], supportEmail: String,
                               description: Option[String], finalPageHtml: Option[String],
-                              submissionNotificationUrl: Option[String])
+                              submissionNotificationUrl: Option[String],
+                              feedbackEnabled: Boolean, numberOfSubmissionsForFeedback: Int,
+                              storeUserSessionOnServer: Option[Boolean])
 
 case class SurveyParametersOut(id: String, schemeId: String, localeId: String, state: Int,
                                startDate: ZonedDateTime, endDate: ZonedDateTime,
                                suspensionReason: Option[String], allowGeneratedUsers: Boolean,
                                externalFollowUpURL: Option[String], supportEmail: String,
                                description: Option[String], finalPageHtml: Option[String],
-                               submissionNotificationUrl: Option[String])
+                               submissionNotificationUrl: Option[String],
+                               feedbackEnabled: Boolean, numberOfSubmissionsForFeedback: Int,
+                               storeUserSessionOnServer: Option[Boolean])
 
 // Staff cannot change survey ID, scheme, locale and generated user settings
 case class StaffSurveyUpdate(startDate: ZonedDateTime, endDate: ZonedDateTime,

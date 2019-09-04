@@ -54,13 +54,17 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             |INSERT INTO surveys (
             |         id, state, start_date, end_date, scheme_id, locale,
             |         allow_gen_users, suspension_reason, survey_monkey_url, support_email,
-            |         description, final_page_html, submission_notification_url
+            |         description, final_page_html, submission_notification_url,
+            |         feedback_enabled, number_of_submissions_for_feedback,
+            |         store_user_session_on_server
             |)
             |VALUES ({id}, {state}, {start_date}, {end_date},
             |        {scheme_id}, {locale}, {allow_gen_users}, '',
             |        {survey_monkey_url}, {support_email}, {description},
             |        {final_page_html},
-            |        {submission_notification_url})
+            |        {submission_notification_url},
+            |        {feedback_enabled}, {number_of_submissions_for_feedback},
+            |        {store_user_session_on_server})
             |RETURNING id,
             |          state,
             |          start_date,
@@ -73,7 +77,10 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             |          support_email,
             |          description,
             |          final_page_html,
-            |          submission_notification_url
+            |          submission_notification_url,
+            |          feedback_enabled,
+            |          number_of_submissions_for_feedback,
+            |          store_user_session_on_server;
           """.stripMargin
 
         val row = SQL(sqlQuery)
@@ -88,7 +95,10 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             'support_email -> parameters.supportEmail,
             'description -> parameters.description,
             'final_page_html -> parameters.finalPageHtml,
-            'submission_notification_url -> parameters.submissionNotificationUrl)
+            'submission_notification_url -> parameters.submissionNotificationUrl,
+            'feedback_enabled -> parameters.feedbackEnabled,
+            'number_of_submissions_for_feedback -> parameters.numberOfSubmissionsForFeedback,
+            'store_user_session_on_server -> parameters.storeUserSessionOnServer)
           .executeQuery().as(Macro.namedParser[SurveyParametersRow].single)
         Right(row.toSurveyParameters)
       }
@@ -117,7 +127,10 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             |    support_email={support_email},
             |    description={description},
             |    final_page_html={final_page_html},
-            |    submission_notification_url={submission_notification_url}
+            |    submission_notification_url={submission_notification_url},
+            |    feedback_enabled={feedback_enabled},
+            |    number_of_submissions_for_feedback={number_of_submissions_for_feedback},
+            |    store_user_session_on_server={store_user_session_on_server}
             |WHERE id={survey_id}
             |RETURNING id,
             |          state,
@@ -131,7 +144,10 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             |          support_email,
             |          description,
             |          final_page_html,
-            |          submission_notification_url;
+            |          submission_notification_url,
+            |          feedback_enabled,
+            |          number_of_submissions_for_feedback,
+            |          store_user_session_on_server;
           """.stripMargin
 
         val row = SQL(sqlQuery)
@@ -147,7 +163,10 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             'support_email -> parameters.supportEmail,
             'description -> parameters.description,
             'final_page_html -> parameters.finalPageHtml,
-            'submission_notification_url -> parameters.submissionNotificationUrl)
+            'submission_notification_url -> parameters.submissionNotificationUrl,
+            'feedback_enabled -> parameters.feedbackEnabled,
+            'number_of_submissions_for_feedback -> parameters.numberOfSubmissionsForFeedback,
+            'store_user_session_on_server -> parameters.storeUserSessionOnServer)
           .executeQuery().as(Macro.namedParser[SurveyParametersRow].single)
         Right(row.toSurveyParameters)
       }
@@ -221,12 +240,15 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
                                          start_date: ZonedDateTime, end_date: ZonedDateTime, suspension_reason: Option[String],
                                          allow_gen_users: Boolean, survey_monkey_url: Option[String], support_email: String,
                                          description: Option[String], final_page_html: Option[String],
-                                         submission_notification_url: Option[String]) {
+                                         submission_notification_url: Option[String],
+                                         feedback_enabled: Boolean, number_of_submissions_for_feedback: Int,
+                                         store_user_session_on_server: Option[Boolean]) {
 
     def toSurveyParameters: SurveyParametersOut = new SurveyParametersOut(
       this.id, this.scheme_id, this.locale, this.state, this.start_date, this.end_date,
       this.suspension_reason, this.allow_gen_users, this.survey_monkey_url, this.support_email,
-      this.description, this.final_page_html, this.submission_notification_url
+      this.description, this.final_page_html, this.submission_notification_url, this.feedback_enabled,
+      this.number_of_submissions_for_feedback, this.store_user_session_on_server
     )
 
   }
@@ -235,7 +257,8 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
     implicit conn =>
       SQL(
         """SELECT id, scheme_id, state, locale, start_date, end_date, suspension_reason,
-          |allow_gen_users, survey_monkey_url, support_email, description, final_page_html, submission_notification_url FROM surveys WHERE id={survey_id}""".stripMargin)
+          |allow_gen_users, survey_monkey_url, support_email, description, final_page_html, submission_notification_url,
+          |feedback_enabled, number_of_submissions_for_feedback, store_user_session_on_server FROM surveys WHERE id={survey_id}""".stripMargin)
         .on('survey_id -> surveyId)
         .executeQuery()
         .as(Macro.namedParser[SurveyParametersRow].singleOpt) match {
