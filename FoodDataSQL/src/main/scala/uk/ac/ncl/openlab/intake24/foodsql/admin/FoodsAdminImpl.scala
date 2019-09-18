@@ -157,7 +157,6 @@ class FoodsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSour
           _ <- updateFoodAttributesQuery(foodCode, foodRecord.attributes).right;
           _ <- removeFoodFromAllCategoriesQuery(foodCode).right;
           _ <- addFoodsToCategoriesQuery(Map(foodCode -> foodRecord.parentCategories)).right;
-          _ <- updateFoodLocaleRestrictionsQuery(foodCode, foodRecord.localeRestrictions).right;
           _ <- updateFoodQuery(foodCode, foodRecord).right
         ) yield ()
       }
