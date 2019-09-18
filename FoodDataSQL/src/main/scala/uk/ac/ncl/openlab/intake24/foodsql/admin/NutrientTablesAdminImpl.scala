@@ -43,7 +43,7 @@ class NutrientTablesAdminImpl @Inject()(@Named("intake24_foods") val dataSource:
       val result = SQL(sqlQuery).on(
         'nutrient_table_id -> nutrientTableId,
         'query -> s"%${AnormUtil.escapeLike(StringUtils.stripAccents(query.getOrElse("")))}%",
-        'limit -> 20
+        'limit -> 200
       ).executeQuery().as(Macro.namedParser[NutrientTableRecordRow].*).map(_.toNutrientTableRecord)
       Right(result)
   }
