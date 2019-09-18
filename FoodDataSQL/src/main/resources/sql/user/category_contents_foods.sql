@@ -6,5 +6,5 @@ FROM foods_categories
          LEFT JOIN foods_local as flp ON flp.food_code = foods_local_lists.food_code AND flp.locale_id IN
                                                                                          (SELECT prototype_locale_id AS l FROM locales WHERE id = {locale_id})
 WHERE foods_categories.category_code = {category_code} AND coalesce(fl.local_description, flp.local_description) IS NOT NULL
-ORDER BY coalesce(fl.local_description, flp.local_description) DESC
+ORDER BY coalesce(fl.local_description, flp.local_description)
 LIMIT 30
