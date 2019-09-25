@@ -174,4 +174,13 @@ class FoodsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSour
         ) yield ()
       }
   }
+
+  def addFoodToLocalList(code: String, locale: String): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
+    implicit conn =>
+
+      SQL("insert into foods_local_lists(locale_id,food_code) values ({locale},{code})")
+        .on('locale -> locale, 'code -> code).execute()
+
+      Right(())
+  }
 }

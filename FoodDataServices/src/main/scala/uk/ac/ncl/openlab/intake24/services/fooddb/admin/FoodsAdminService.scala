@@ -4,6 +4,7 @@ import uk.ac.ncl.openlab.intake24.api.data.admin._
 import uk.ac.ncl.openlab.intake24.errors._
 
 trait FoodsAdminService {
+  def addFoodToLocalList(code: String, locale: String): Either[UnexpectedDatabaseError, Unit]
 
   def getFoodRecord(code: String, locale: String): Either[LocalLookupError, FoodRecord]
 

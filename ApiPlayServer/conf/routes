@@ -43,6 +43,7 @@ GET            /admin/foods/code-available/:code                             con
 GET            /admin/foods/:locale/:code                                    controllers.FoodsAdminController.getFoodRecord(code: String, locale: String)
 
 POST           /admin/foods/new                                              controllers.FoodsAdminController.createFood()
+POST           /admin/foods/add-to-locale                                    controllers.FoodsAdminController.addFoodToLocalList(code: String, locale: String)
 POST           /admin/foods/new/:locale                                      controllers.FoodsAdminController.createLocalFood(locale)
 
 POST           /admin/foods/new-with-temp-code                               controllers.FoodsAdminController.createFoodWithTempCode()

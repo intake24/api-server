@@ -84,18 +84,6 @@ trait FoodsAdminQueries extends FoodsAdminService
 
         batchSql(foodAttributesInsertQuery, foodAttributeParams).execute()
 
-        val localeRestrictionParams = foods.flatMap {
-          f =>
-            f.localeRestrictions.map {
-              locale =>
-                Seq[NamedParameter]('food_code -> f.code, 'locale_id -> locale)
-            }
-        }
-
-        if (localeRestrictionParams.nonEmpty) {
-          batchSql("INSERT INTO foods_restrictions VALUES({food_code},{locale_id})", localeRestrictionParams).execute()
-        }
-
         Right(())
       }
     } else {
@@ -177,22 +165,6 @@ trait FoodsAdminQueries extends FoodsAdminService
 
   protected def getFoodLocaleRestrictionsQuery(foodCode: String)(implicit conn: java.sql.Connection): Either[UnexpectedDatabaseError, Seq[String]] = {
     Right(SQL("SELECT locale_id FROM foods_local_lists WHERE food_code={food_code}").on('food_code -> foodCode).as(SqlParser.str("locale_id").*))
-  }
-
-  protected def updateFoodLocaleRestrictionsQuery(foodCode: String, localeRestrictions: Seq[String])(implicit conn: java.sql.Connection): Either[LocalLookupError, Unit] = {
-
-    val errors = Map[String, PSQLException => LocalLookupError]("foods_restrictions_food_code_fk" -> (e => RecordNotFound(new RuntimeException(foodCode))), "foods_restrictions_locale_id_fk" -> (e => UndefinedLocale(e)))
-
-    tryWithConstraintsCheck(errors) {
-      SQL("DELETE FROM foods_restrictions WHERE food_code={food_code}").on('food_code -> foodCode).execute()
-
-      if (localeRestrictions.nonEmpty) {
-        val params = localeRestrictions.map(locale => Seq[NamedParameter]('food_code -> foodCode, 'locale_id -> locale))
-        batchSql("INSERT INTO foods_restrictions VALUES({food_code},{locale_id})", params).execute()
-      }
-
-      Right(())
-    }
   }
 
   protected def updateFoodAttributesQuery(foodCode: String, attributes: InheritableAttributes)(implicit conn: java.sql.Connection): Either[LookupError, Unit] = {

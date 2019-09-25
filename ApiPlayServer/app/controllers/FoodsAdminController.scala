@@ -69,6 +69,13 @@ class FoodsAdminController @Inject()(service: FoodsAdminService,
       }
   }
 
+  def addFoodToLocalList(code: String, locale: String) = rab.restrictAccess(foodAuthChecks.canCreateLocalFoods(locale))(bodyParsers.empty) {
+    request =>
+      Future {
+        translateDatabaseResult(service.addFoodToLocalList(code, locale))
+      }
+  }
+
   def cloneFood(code: String, locale: String) = rab.restrictAccess(foodAuthChecks.canCreateMainFoods)(bodyParsers.empty) {
     _ =>
       Future {
@@ -80,7 +87,8 @@ class FoodsAdminController @Inject()(service: FoodsAdminService,
               sourceFoodRecord.main.localeRestrictions)).right;
             _ <- service.updateLocalFoodRecord(code, LocalFoodRecordUpdate(None, sourceFoodRecord.local.localDescription.map("Copy of " + _),
               sourceFoodRecord.local.nutrientTableCodes, sourceFoodRecord.local.portionSize,
-              sourceFoodRecord.local.associatedFoods.map(_.toAssociatedFood), sourceFoodRecord.local.brandNames), locale).right
+              sourceFoodRecord.local.associatedFoods.map(_.toAssociatedFood), sourceFoodRecord.local.brandNames), locale).right;
+            _ <- service.addFoodToLocalList(code, locale)
           )
             yield CloneFoodResult(code)
 
@@ -103,7 +111,8 @@ class FoodsAdminController @Inject()(service: FoodsAdminService,
 
             _ <- service.updateLocalFoodRecord(code, LocalFoodRecordUpdate(None, Some("Copy of " + sourceUserRecord.localDescription),
               sourceUserRecord.nutrientTableCodes, sourceUserRecord.portionSizeMethods,
-              assocFoods, brandNames), locale).right
+              assocFoods, brandNames), locale).right;
+            _ <- service.addFoodToLocalList(code, locale)
           )
 
             yield CloneFoodResult(code)

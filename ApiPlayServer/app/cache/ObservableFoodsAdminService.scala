@@ -98,4 +98,9 @@ class ObservableFoodsAdminServiceImpl @Inject()(@BasicImpl service: FoodsAdminSe
         }
     }
   }
+
+  def addFoodToLocalList(code: String, locale: String): Either[UnexpectedDatabaseError, Unit] = service.addFoodToLocalList(code, locale).map {
+    _ =>
+      observers.foreach(_.onLocalFoodRecordUpdated(code, locale))
+  }
 }
