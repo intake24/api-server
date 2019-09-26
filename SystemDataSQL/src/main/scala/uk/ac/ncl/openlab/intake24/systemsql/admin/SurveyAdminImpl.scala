@@ -302,7 +302,6 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
     case "ndns1019" => Right(CustomDataScheme(Seq(), Seq(
       CustomFieldDescription("cookingOil", "Cooking oil used"),
       CustomFieldDescription("diet", "Diet"),
-      CustomFieldDescription("supplements", "Supplements"),
       CustomFieldDescription("foodAmount", "Food amount"),
       CustomFieldDescription("foodAmountReason", "Reason for unusual food amount"),
       CustomFieldDescription("proxy", "Proxy"),
