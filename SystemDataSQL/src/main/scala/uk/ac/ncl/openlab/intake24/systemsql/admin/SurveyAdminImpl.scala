@@ -288,6 +288,10 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
   // TODO: Hard coded to match legacy behaviour, but needs better solution eventually
   override def getCustomDataScheme(schemeId: String): Either[LookupError, CustomDataScheme] = schemeId match {
     case "default" => Right(CustomDataScheme(Seq(), Seq(), Seq(), Seq()))
+    case "bham1119" => Right(CustomDataScheme(Seq(), Seq(), Seq(
+      CustomFieldDescription("foodSources", "Food sources"),
+      CustomFieldDescription("mealLocation", "Meal location")
+    ), Seq()))
     case "ndns419" => Right(CustomDataScheme(Seq(), Seq(
       CustomFieldDescription("cookingOil", "Cooking oil used"),
       CustomFieldDescription("diet", "Diet"),
