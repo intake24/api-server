@@ -6,7 +6,7 @@ case class FiveADayFeedback(tellMeMoreText: String, tooLowMessage: String)
 
 case class FoodGroupValueThreshold(threshold: Double, message: String)
 
-case class FoodGroupFeedbackRow(name: String, foodGroupIds: Seq[Int], low: Option[FoodGroupValueThreshold], high: Option[FoodGroupValueThreshold], tellMeMore: String)
+case class FoodGroupFeedbackRow(name: String, nutrientIds: Seq[Int], low: Option[FoodGroupValueThreshold], high: Option[FoodGroupValueThreshold], tellMeMore: String)
 
 trait FeedbackDataService {
   def getFiveADayFeedback(): Either[UnexpectedDatabaseError, FiveADayFeedback]

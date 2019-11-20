@@ -25,7 +25,7 @@ class FeedbackDataImpl @Inject()(@Named("intake24_foods") val dataSource: DataSo
   def getFoodGroupsFeedback(): Either[UnexpectedDatabaseError, Seq[FoodGroupFeedbackRow]] = tryWithConnection {
     implicit connection =>
 
-      val foodGroups = SQL("SELECT food_groups_feedback_id, food_group_id FROM food_groups_feedback_group_ids")
+      val foodGroups = SQL("SELECT food_groups_feedback_id, nutrient_id FROM food_groups_feedback_nutrient_ids")
         .executeQuery()
         .as((SqlParser.int(1) ~ SqlParser.int(2)).*)
         .foldLeft(Map[Int, Seq[Int]]().withDefaultValue(Seq())) {
@@ -35,7 +35,6 @@ class FeedbackDataImpl @Inject()(@Named("intake24_foods") val dataSource: DataSo
       val rows = SQL("SELECT id, name, too_high_threshold, too_high_message, too_low_threshold, too_low_message, tell_me_more_text FROM food_groups_feedback")
         .executeQuery()
         .as(Macro.namedParser[InternalRow](Macro.ColumnNaming.SnakeCase).*)
-
 
       val result = rows.map {
         row =>
