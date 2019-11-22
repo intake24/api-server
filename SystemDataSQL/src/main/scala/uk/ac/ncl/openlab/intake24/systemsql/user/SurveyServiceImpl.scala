@@ -183,6 +183,20 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
               BatchSql("INSERT INTO survey_submission_portion_size_fields VALUES (DEFAULT, {food_id}, {name}, {value})", foodPortionSizeMethodParams.head, foodPortionSizeMethodParams.tail: _*).execute()
             }
 
+            // Food composition table fields
+
+            val foodFieldParams = foods.flatMap {
+              case (food_id, food) =>
+                food.fields.map {
+                  case (name, value) => Seq[NamedParameter]('food_id -> food_id, 'field_name -> name, 'value -> value)
+                }
+            }
+
+            if (!foodFieldParams.isEmpty) {
+              BatchSql("INSERT INTO survey_submission_fields(food_id, field_name, value) VALUES ({food_id}, {field_name}, {value})",
+                foodFieldParams.head, foodFieldParams.tail: _*).execute()
+            }
+
             // Food nutrient values
 
             val foodNutrientParams = foods.flatMap {

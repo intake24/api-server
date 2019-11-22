@@ -87,7 +87,7 @@ class DefaultNutrientMappingServiceImpl @Inject()(foodDataService: FoodDataServi
                 case Some(key) => compositionDataMap(key)
                 case None => {
                   logger.error(s"Foods ${food.code} is missing nutrient table mapping for locale $locale. Using empty nutrient record to avoid crashing user-facing service.")
-                  Map[Long, Double]()
+                  FoodCompositionRecord(Map(), Map())
                 }
               }
 
@@ -95,13 +95,13 @@ class DefaultNutrientMappingServiceImpl @Inject()(foodDataService: FoodDataServi
 
               val foodGroup = foodGroupMap(foodData.groupCode)
 
-              val nutrients = foodCompositionData.map {
+              val nutrients = foodCompositionData.nutrients.map {
                 case (k, v) => (k -> v * psw.portionWeight / 100.0)
               }
 
               NutrientMappedFood(food.code, foodData.englishDescription, foodData.localDescription, food.isReadyMeal, food.searchTerm, food.brand, psw, food.customData,
                 mapping.headOption.map(_._1), mapping.headOption.map(_._2), foodData.reasonableAmount.toDouble >= psw.portionWeight, foodData.groupCode, foodGroup.main.englishDescription, foodGroup.local.localDescription,
-                nutrients)
+                foodCompositionData.fields, nutrients)
 
           }
 

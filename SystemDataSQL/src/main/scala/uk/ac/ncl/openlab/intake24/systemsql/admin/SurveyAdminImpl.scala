@@ -1,9 +1,10 @@
 package uk.ac.ncl.openlab.intake24.systemsql.admin
 
 import java.time.{Instant, ZonedDateTime}
+
+import anorm.Macro.ColumnNaming
 import javax.inject.{Inject, Named}
 import javax.sql.DataSource
-
 import anorm._
 import org.postgresql.util.PSQLException
 import uk.ac.ncl.openlab.intake24.errors._
@@ -280,6 +281,20 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
       withTransaction {
         SQL("SELECT 1 FROM locales WHERE id={locale_id}").on('locale_id -> localeId).executeQuery().as(SqlParser.long(1).singleOpt) match {
           case Some(_) => Right(SQL(localNutrientTypesQuery).on('locale_id -> localeId).executeQuery().as(Macro.namedParser[LocalNutrientTypeRow].*).map(_.toLocalNutrientDescription))
+          case None => Left(RecordNotFound(new RuntimeException(s"Locale $localeId does not exist")))
+        }
+      }
+  }
+
+  def getLocalFields(localeId: String): Either[LookupError, Seq[LocalFieldDescription]] = tryWithConnection {
+    implicit conn =>
+      withTransaction {
+        SQL("SELECT 1 FROM locales WHERE id={locale_id}").on('locale_id -> localeId).executeQuery().as(SqlParser.long(1).singleOpt) match {
+          case Some(_) => {
+            Right(SQL("select field_name, description from local_fields where locale_id={locale_id} order by id")
+              .on('locale_id -> localeId).executeQuery()
+              .as(Macro.namedParser[LocalFieldDescription](ColumnNaming.SnakeCase).*))
+          }
           case None => Left(RecordNotFound(new RuntimeException(s"Locale $localeId does not exist")))
         }
       }

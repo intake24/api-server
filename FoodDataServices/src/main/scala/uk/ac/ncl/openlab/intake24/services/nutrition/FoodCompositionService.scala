@@ -22,13 +22,15 @@ import uk.ac.ncl.openlab.intake24.errors.{FoodCompositionTableError, UnexpectedD
 
 case class NutrientDescription(nutrientId: Long, description: String, unit: String)
 
+case class FoodCompositionRecord(fields: Map[String, String], nutrients: Map[Long, Double])
+
 trait FoodCompositionService {
 
   def getSupportedNutrients(): Either[UnexpectedDatabaseError, Seq[NutrientDescription]]
 
   def getEnergyKcalNutrientId(): Long
 
-  def getFoodCompositionRecord(table_id: String, record_id: String): Either[FoodCompositionTableError, Map[Long, Double]]
+  def getFoodCompositionRecord(table_id: String, record_id: String): Either[FoodCompositionTableError, FoodCompositionRecord]
 
   def listFoodNutrients(tableId: String, localeId: String): Either[FoodCompositionTableError, Map[String, Map[Long, Double]]]
 

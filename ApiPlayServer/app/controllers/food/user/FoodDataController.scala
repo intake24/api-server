@@ -100,7 +100,7 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
 
         val result = for (
           foodData <- foodDataService.getFoodData(code, locale).right.map(_._1).right;
-          caloriesPer100g <- foodCompositionService.getFoodCompositionRecord(foodData.nutrientTableCodes.head._1, foodData.nutrientTableCodes.head._2).right.map(_ (energyKcalId)).right;
+          caloriesPer100g <- foodCompositionService.getFoodCompositionRecord(foodData.nutrientTableCodes.head._1, foodData.nutrientTableCodes.head._2).right.map(_.nutrients(energyKcalId)).right;
           associatedFoods <- associatedFoodsService.getAssociatedFoods(code, locale).right;
           brands <- brandNamesService.getBrandNames(code, locale).right;
           categories <- foodBrowsingService.getFoodAllCategories(code).right
@@ -119,14 +119,14 @@ class FoodDataController @Inject()(foodDataService: FoodDataService,
           case _ =>
             val result = for (
               foodData <- foodDataService.getFoodData(code, locale).right.map(_._1).right;
-              nutrients <- foodCompositionService.getFoodCompositionRecord(foodData.nutrientTableCodes.head._1, foodData.nutrientTableCodes.head._2).right
+              record <- foodCompositionService.getFoodCompositionRecord(foodData.nutrientTableCodes.head._1, foodData.nutrientTableCodes.head._2).right
             ) yield {
 
               val weightedNutrients = weight match {
-                case Some(w) => nutrients.mapValues {
+                case Some(w) => record.nutrients.mapValues {
                   v => v * w / 100.0
                 }
-                case None => nutrients
+                case None => record.nutrients
               }
 
               UserFoodNutrientData(SourceFoodCompositionTable(foodData.nutrientTableCodes.head._1, foodData.nutrientTableCodes.head._2, "TBD", "TBD"), weightedNutrients)

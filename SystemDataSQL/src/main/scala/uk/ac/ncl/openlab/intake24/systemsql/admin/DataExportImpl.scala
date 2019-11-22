@@ -29,6 +29,8 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
 
   lazy val getSurveySubmissionNutrientsSql = sqlFromResource("admin/get_survey_submission_nutrients.sql")
 
+  lazy val getSurveySubmissionFieldsSql = sqlFromResource("admin/get_survey_submission_fields.sql")
+
   private case class SubmissionRow(id: UUID, survey_id: String, user_id: Int, user_name: Option[String], start_time: ZonedDateTime, end_time: ZonedDateTime, log: Array[String],
                                    submission_custom_fields: Array[Array[String]], user_custom_fields: Array[Array[String]])
 
@@ -41,6 +43,8 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
   private case class MissingFoodRow(meal_id: Long, name: String, brand: String, description: String, portion_size: String, leftovers: String)
 
   private case class NutrientRow(food_id: Long, n_type: Long, n_amount: Double)
+
+  private case class FieldRow(food_id: Long, field_name: String, value: String)
 
   private def customFieldsAsMap(fields: Array[Array[String]]) =
     fields.foldLeft(Map[String, String]()) {
@@ -80,6 +84,9 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
 
             val nutrientRows = SQL(getSurveySubmissionNutrientsSql).on('submission_ids -> submissionIdsSeqParam).executeQuery().as(Macro.namedParser[NutrientRow].*).groupBy(_.food_id)
 
+            val fieldRows = SQL(getSurveySubmissionFieldsSql).on('submission_ids -> submissionIdsSeqParam).executeQuery()
+              .as(Macro.namedParser[FieldRow].*).groupBy(_.food_id)
+
             val submissions = submissionRows.map {
               submissionRow =>
                 val meals = mealRows.getOrElse(submissionRow.id, Seq()).map {
@@ -91,9 +98,15 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
                             (nutrientRow.n_type.toInt, nutrientRow.n_amount)
                         }.toMap
 
+                        val fields = fieldRows.getOrElse(foodRow.food_id, Seq()).map {
+                          fieldRow =>
+                            (fieldRow.field_name, fieldRow.value)
+                        }.toMap
+
+
                         ExportFood(foodRow.code, foodRow.english_description, foodRow.local_description, foodRow.search_term, foodRow.nutrient_table_id, foodRow.nutrient_table_code, foodRow.ready_meal,
                           PortionSize(foodRow.portion_size_method_id, customFieldsAsMap(foodRow.portion_size_data)).asPortionSizeWithWeights, foodRow.reasonable_amount,
-                          foodRow.food_group_id, foodRow.brand, nutrients, customFieldsAsMap(foodRow.custom_fields))
+                          foodRow.food_group_id, foodRow.brand, fields, nutrients, customFieldsAsMap(foodRow.custom_fields))
                     }
 
                     val missingFoods = missingFoodRows.getOrElse(mealRow.meal_id, Seq()).map {

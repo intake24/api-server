@@ -1,13 +1,12 @@
 package uk.ac.ncl.openlab.intake24.foodsql.user
 
 import javax.sql.DataSource
-
 import anorm.{Macro, SQL, SqlParser, sqlToSimple}
 import com.google.inject.name.Named
 import com.google.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.errors.{FoodCompositionTableError, RecordNotFound, UnexpectedDatabaseError}
-import uk.ac.ncl.openlab.intake24.services.nutrition.{FoodCompositionService, NutrientDescription}
+import uk.ac.ncl.openlab.intake24.services.nutrition.{FoodCompositionRecord, FoodCompositionService, NutrientDescription}
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
 
@@ -32,7 +31,9 @@ class FoodCompositionServiceImpl @Inject()(@Named("intake24_foods") val dataSour
 
   private case class NutrientsRow(nutrient_type_id: Long, units_per_100g: Double)
 
-  def getFoodCompositionRecord(table_id: String, record_id: String): Either[FoodCompositionTableError, Map[Long, Double]] = tryWithConnection {
+  private case class FieldsRow(field_name: String, field_value: String)
+
+  def getFoodCompositionRecord(table_id: String, record_id: String): Either[FoodCompositionTableError, FoodCompositionRecord] = tryWithConnection {
     implicit conn =>
       val validation = SQL("SELECT 1 FROM nutrient_table_records WHERE id={record_id} AND nutrient_table_id={table_id}")
         .on('record_id -> record_id, 'table_id -> table_id)
@@ -41,13 +42,19 @@ class FoodCompositionServiceImpl @Inject()(@Named("intake24_foods") val dataSour
       if (!validation)
         Left(RecordNotFound(new RuntimeException(s"table_id: $table_id, record_id: $record_id")))
       else {
-        val rows = SQL("SELECT nutrient_type_id, units_per_100g FROM nutrient_table_records_nutrients WHERE nutrient_table_record_id={record_id} and nutrient_table_id={table_id}")
+        val nutrientRows = SQL("SELECT nutrient_type_id, units_per_100g FROM nutrient_table_records_nutrients WHERE nutrient_table_record_id={record_id} and nutrient_table_id={table_id}")
           .on('record_id -> record_id, 'table_id -> table_id)
           .as(Macro.namedParser[NutrientsRow].*)
 
-        val result = rows.map(row => row.nutrient_type_id -> row.units_per_100g).toMap
+        val nutrientsMap = nutrientRows.map(row => row.nutrient_type_id -> row.units_per_100g).toMap
 
-        Right(result)
+        val fieldRows = SQL("SELECT field_name, field_value FROM nutrient_table_records_fields WHERE nutrient_table_record_id={record_id} and nutrient_table_id={table_id}")
+          .on('record_id -> record_id, 'table_id -> table_id)
+          .as(Macro.namedParser[FieldsRow].*)
+
+        val fieldsMap = fieldRows.map(row => row.field_name -> row.field_value).toMap
+
+        Right(FoodCompositionRecord(fieldsMap, nutrientsMap))
       }
   }
 

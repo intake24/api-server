@@ -34,7 +34,8 @@ class SingleThreadedDataExporter @Inject()(configuration: Configuration,
   private val batchSize = configuration.get[Int](s"$configSection.task.batchSize")
 
   private def export(taskId: Long, surveyId: String, dateFrom: ZonedDateTime, dateTo: ZonedDateTime, dataScheme: CustomDataScheme,
-                     foodGroups: Map[Int, FoodGroupRecord], localNutrients: Seq[LocalNutrientDescription], insertBOM: Boolean, format: String): Future[Either[AnyError, File]] = {
+                     foodGroups: Map[Int, FoodGroupRecord], localFields: Seq[LocalFieldDescription],
+                     localNutrients: Seq[LocalNutrientDescription], insertBOM: Boolean, format: String): Future[Either[AnyError, File]] = {
 
     def throttle() =
       if (throttleDelay > 0)
@@ -47,7 +48,7 @@ class SingleThreadedDataExporter @Inject()(configuration: Configuration,
       exportService.getSurveySubmissions(surveyId, Some(dateFrom), Some(dateTo), offset, batchSize, None).map {
         submissions =>
           if (submissions.size > 0)
-            exporter.writeSubmissionsBatch(csvWriter, dataScheme, foodGroups, localNutrients, submissions)
+            exporter.writeSubmissionsBatch(csvWriter, dataScheme, foodGroups, localFields, localNutrients, submissions)
           submissions.size
       }
     }
@@ -97,7 +98,7 @@ class SingleThreadedDataExporter @Inject()(configuration: Configuration,
 
             logger.debug(s"[$taskId] writing CSV header")
 
-            exporter.writeHeader(fileWriter, csvWriter, dataScheme, localNutrients, insertBOM)
+            exporter.writeHeader(fileWriter, csvWriter, dataScheme, localFields, localNutrients, insertBOM)
 
             throttle()
 
@@ -155,10 +156,11 @@ class SingleThreadedDataExporter @Inject()(configuration: Configuration,
         survey <- surveyAdminService.getSurveyParameters(surveyId);
         foodGroups <- foodGroupsAdminService.listFoodGroups(survey.localeId);
         dataScheme <- surveyAdminService.getCustomDataScheme(survey.schemeId);
+        localFields <- surveyAdminService.getLocalFields(survey.localeId);
         localNutrients <- surveyAdminService.getLocalNutrientTypes(survey.localeId);
         taskId <- exportService.createExportTask(userId, surveyId, dateFrom, dateTo, purpose)
       ) yield {
-        ExportTaskHandle(taskId, export(taskId, surveyId, dateFrom, dateTo, dataScheme, foodGroups, localNutrients, insertBOM, format))
+        ExportTaskHandle(taskId, export(taskId, surveyId, dateFrom, dateTo, dataScheme, foodGroups, localFields, localNutrients, insertBOM, format))
       }
     }
   }

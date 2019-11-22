@@ -13,7 +13,8 @@ case class ExportSubmission(id: UUID, userId: Int, userAlias: Option[String], us
 case class ExportMeal(name: String, time: MealTime, customData: Map[String, String], foods: Seq[ExportFood], missingFoods: Seq[MissingFood])
 
 case class ExportFood(code: String, englishDescription: String, localDescription: Option[String], searchTerm: String, nutrientTableId: String, nutrientTableCode: String, isReadyMeal: Boolean,
-                      portionSize: PortionSizeWithWeights, reasonableAmount: Boolean, foodGroupId: Int, brand: String, nutrients: Map[Int, Double], customData: Map[String, String])
+                      portionSize: PortionSizeWithWeights, reasonableAmount: Boolean, foodGroupId: Int, brand: String, fields: Map[String, String],
+                      nutrients: Map[Int, Double], customData: Map[String, String])
 
 case class ExportTaskProgressUpdate(id: Long, progress: Double)
 

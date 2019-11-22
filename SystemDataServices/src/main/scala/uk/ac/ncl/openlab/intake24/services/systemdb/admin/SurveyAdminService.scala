@@ -52,6 +52,8 @@ case class StaffSurveyUpdate(startDate: ZonedDateTime, endDate: ZonedDateTime,
 
 case class LocalNutrientDescription(nutrientTypeId: Int, description: String, unit: String)
 
+case class LocalFieldDescription(fieldName: String, description: String)
+
 trait SurveyAdminService {
 
   def validateSurveyId(surveyId: String): Either[CreateError, Unit]
@@ -71,6 +73,8 @@ trait SurveyAdminService {
   def getCustomDataScheme(schemeId: String): Either[LookupError, CustomDataScheme]
 
   def getLocalNutrientTypes(localeId: String): Either[LookupError, Seq[LocalNutrientDescription]]
+
+  def getLocalFields(localeId: String): Either[LookupError, Seq[LocalFieldDescription]]
 
   def deleteSurvey(surveyId: String): Either[DeleteError, Unit]
 

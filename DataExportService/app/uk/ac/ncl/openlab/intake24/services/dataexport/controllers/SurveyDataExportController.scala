@@ -132,14 +132,15 @@ class SurveyDataExportController @Inject()(configuration: Configuration,
               val forceBOM = request.getQueryString("forceBOM").isDefined
 
               val data = for (params <- surveyAdminService.getSurveyParameters(surveyId).right;
+                              localFields <- surveyAdminService.getLocalFields(params.localeId).right;
                               localNutrients <- surveyAdminService.getLocalNutrientTypes(params.localeId).right;
                               dataScheme <- surveyAdminService.getCustomDataScheme(params.schemeId).right;
                               foodGroups <- foodGroupsAdminService.listFoodGroups(params.localeId).right;
-                              submissions <- service.getSurveySubmissions(surveyId, Some(parsedFrom), Some(parsedTo), 0, Integer.MAX_VALUE, None).right) yield ((localNutrients, dataScheme, foodGroups, submissions))
+                              submissions <- service.getSurveySubmissions(surveyId, Some(parsedFrom), Some(parsedTo), 0, Integer.MAX_VALUE, None).right) yield ((localFields, localNutrients, dataScheme, foodGroups, submissions))
 
               data match {
-                case Right((localNutrients, dataScheme, foodGroups, submissions)) =>
-                  exporter.exportSurveySubmissions(dataScheme, foodGroups, localNutrients, submissions, forceBOM) match {
+                case Right((localFields, localNutrients, dataScheme, foodGroups, submissions)) =>
+                  exporter.exportSurveySubmissions(dataScheme, foodGroups, localFields, localNutrients, submissions, forceBOM) match {
                     case Right(csvFile) =>
                       val dateStamp = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.ofInstant(Clock.systemUTC().instant(), ZoneId.systemDefault).withNano(0)).replace(":", "-").replace("T", "-")
 

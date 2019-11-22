@@ -29,7 +29,8 @@ case class SurveySubmission(startTime: ZonedDateTime, endTime: ZonedDateTime, ux
 case class NutrientMappedMeal(name: String, time: MealTime, customData: Map[String, String], foods: Seq[NutrientMappedFood], missingFoods: Seq[MissingFood])
 
 case class NutrientMappedFood(code: String, englishDescription: String, localDescription: String, isReadyMeal: Boolean, searchTerm: String, brand: String, portionSize: PortionSizeWithWeights, customData: Map[String, String],
-                              nutrientTableId: Option[String], nutrientTableCode: Option[String], reasonableAmount: Boolean, foodGroupId: Int, foodGroupEnglishDescription: String, foodGroupLocalDescription: Option[String], nutrients: Map[Long, Double])
+                              nutrientTableId: Option[String], nutrientTableCode: Option[String], reasonableAmount: Boolean, foodGroupId: Int, foodGroupEnglishDescription: String, foodGroupLocalDescription: Option[String],
+                              fields: Map[String, String], nutrients: Map[Long, Double])
 
 case class NutrientMappedSubmission(startTime: ZonedDateTime, endTime: ZonedDateTime, uxSessionId: UUID, meals: Seq[NutrientMappedMeal], customData: Map[String, String])
 

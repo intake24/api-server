@@ -14,9 +14,10 @@ import scala.collection.{JavaConverters, mutable}
 
 
 trait CSVFormat {
-  def getHeaderRow(dataScheme: CustomDataScheme, localNutrients: Seq[LocalNutrientDescription]): Array[String]
+  def getHeaderRow(dataScheme: CustomDataScheme, localFields: Seq[LocalFieldDescription], localNutrients: Seq[LocalNutrientDescription]): Array[String]
 
-  def getSubmissionRows(submission: ExportSubmission, dataScheme: CustomDataScheme, foodGroups: Map[Int, FoodGroupRecord], localNutrients: Seq[LocalNutrientDescription]): Seq[Array[String]]
+  def getSubmissionRows(submission: ExportSubmission, dataScheme: CustomDataScheme, foodGroups: Map[Int, FoodGroupRecord], localFields: Seq[LocalFieldDescription],
+                        localNutrients: Seq[LocalNutrientDescription]): Seq[Array[String]]
 }
 
 class CSVFormatV1 extends CSVFormat {
@@ -25,7 +26,7 @@ class CSVFormatV1 extends CSVFormat {
 
   val noData = "N/A"
 
-  def getHeaderRow(dataScheme: CustomDataScheme, localNutrients: Seq[LocalNutrientDescription]): Array[String] = {
+  def getHeaderRow(dataScheme: CustomDataScheme, localFields: Seq[LocalFieldDescription], localNutrients: Seq[LocalNutrientDescription]): Array[String] = {
 
     val header = mutable.Buffer[String]()
     header.append("Survey ID", "User ID")
@@ -39,12 +40,14 @@ class CSVFormatV1 extends CSVFormat {
     header.append(dataScheme.foodCustomFields.map(_.description): _*)
     header.append("Serving size (g/ml)", "Serving image", "Leftovers (g/ml)", "Leftovers image", "Portion size (g/ml)", "Reasonable amount")
     header.append("Missing food description", "Missing food portion size", "Missing food leftovers")
+
     header.append(localNutrients.map(_.description): _*)
 
     header.toArray
   }
 
-  def getSubmissionRows(submission: ExportSubmission, dataScheme: CustomDataScheme, foodGroups: Map[Int, FoodGroupRecord], localNutrients: Seq[LocalNutrientDescription]): Seq[Array[String]] = {
+  def getSubmissionRows(submission: ExportSubmission, dataScheme: CustomDataScheme, foodGroups: Map[Int, FoodGroupRecord], localFields: Seq[LocalFieldDescription],
+                        localNutrients: Seq[LocalNutrientDescription]): Seq[Array[String]] = {
 
     def mealRows(mealId: Int, meal: ExportMeal): Seq[Array[String]] = {
 
@@ -106,8 +109,7 @@ class CSVFormatV1 extends CSVFormat {
         row.append(if (missingFood.portionSize.isEmpty) noData else missingFood.portionSize)
         row.append(if (missingFood.leftovers.isEmpty) noData else missingFood.leftovers)
 
-
-        localNutrients.map(_.nutrientTypeId).foreach {
+        localNutrients.foreach {
           _ =>
             row.append(noData)
         }
@@ -134,7 +136,7 @@ class CSVFormatV2 extends CSVFormat {
 
   val noData = "N/A"
 
-  def getHeaderRow(dataScheme: CustomDataScheme, localNutrients: Seq[LocalNutrientDescription]): Array[String] = {
+  def getHeaderRow(dataScheme: CustomDataScheme, localFields: Seq[LocalFieldDescription], localNutrients: Seq[LocalNutrientDescription]): Array[String] = {
 
     val header = mutable.Buffer[String]()
     header.append("Survey ID", "User ID")
@@ -148,12 +150,15 @@ class CSVFormatV2 extends CSVFormat {
     header.append(dataScheme.foodCustomFields.map(_.description): _*)
     header.append("Serving size (g/ml)", "Serving image", "Leftovers (g/ml)", "Leftovers image", "Portion size (g/ml)", "Reasonable amount")
     header.append("Missing food description", "Missing food portion size", "Missing food leftovers")
+
+    header.append(localFields.map(_.description): _*)
     header.append(localNutrients.map(_.description): _*)
 
     header.toArray
   }
 
-  def getSubmissionRows(submission: ExportSubmission, dataScheme: CustomDataScheme, foodGroups: Map[Int, FoodGroupRecord], localNutrients: Seq[LocalNutrientDescription]): Seq[Array[String]] = {
+  def getSubmissionRows(submission: ExportSubmission, dataScheme: CustomDataScheme, foodGroups: Map[Int, FoodGroupRecord],
+                        localFields: Seq[LocalFieldDescription], localNutrients: Seq[LocalNutrientDescription]): Seq[Array[String]] = {
 
     def mealRows(mealId: Int, meal: ExportMeal): Seq[Array[String]] = {
 
@@ -188,6 +193,11 @@ class CSVFormatV2 extends CSVFormat {
 
         row.append(noData, noData, noData)
 
+        localFields.map(_.fieldName).foreach {
+          fieldName =>
+            row.append(food.fields.get(fieldName).getOrElse(noData))
+        }
+
         localNutrients.map(_.nutrientTypeId).foreach {
           nutrientTypeId =>
             row.append(food.nutrients.get(nutrientTypeId).map("%.2f".format(_)).getOrElse(noData))
@@ -215,8 +225,11 @@ class CSVFormatV2 extends CSVFormat {
         row.append(if (missingFood.portionSize.isEmpty) noData else missingFood.portionSize)
         row.append(if (missingFood.leftovers.isEmpty) noData else missingFood.leftovers)
 
+        localFields.foreach {
+          _ => row.append(noData)
+        }
 
-        localNutrients.map(_.nutrientTypeId).foreach {
+        localNutrients.foreach {
           _ =>
             row.append(noData)
         }
@@ -245,24 +258,28 @@ class SurveyCSVExporter(val format: CSVFormat) {
   def createTempFile(): File = File.createTempFile("intake24-export-", ".csv")
 
   @throws[IOException]
-  def writeHeader(writer: Writer, csvWriter: CSVWriter, dataScheme: CustomDataScheme, localNutrients: Seq[LocalNutrientDescription], insertBOM: Boolean): Unit = {
+  def writeHeader(writer: Writer, csvWriter: CSVWriter, dataScheme: CustomDataScheme, localFields: Seq[LocalFieldDescription],
+                  localNutrients: Seq[LocalNutrientDescription], insertBOM: Boolean): Unit = {
     if (insertBOM) {
       writer.append('\ufeff')
     }
-    csvWriter.writeNext(format.getHeaderRow(dataScheme, localNutrients))
+    csvWriter.writeNext(format.getHeaderRow(dataScheme, localFields, localNutrients))
   }
 
 
   @throws[IOException]
-  def writeSubmissionsBatch(csvWriter: CSVWriter, dataScheme: CustomDataScheme, foodGroups: Map[Int, FoodGroupRecord], localNutrients: Seq[LocalNutrientDescription], submissions: Seq[ExportSubmission]): Unit = {
+  def writeSubmissionsBatch(csvWriter: CSVWriter, dataScheme: CustomDataScheme, foodGroups: Map[Int, FoodGroupRecord],
+                            localFields: Seq[LocalFieldDescription], localNutrients: Seq[LocalNutrientDescription], submissions: Seq[ExportSubmission]): Unit = {
     submissions.foreach {
       submission =>
-        csvWriter.writeAll(JavaConverters.seqAsJavaList(format.getSubmissionRows(submission, dataScheme, foodGroups, localNutrients)))
+        csvWriter.writeAll(JavaConverters.seqAsJavaList(format.getSubmissionRows(submission, dataScheme, foodGroups, localFields, localNutrients)))
     }
   }
 
 
-  def exportSurveySubmissions(dataScheme: CustomDataScheme, foodGroups: Map[Int, FoodGroupRecord], localNutrients: Seq[LocalNutrientDescription], submissions: Seq[ExportSubmission], insertBOM: Boolean): Either[String, File] = {
+  def exportSurveySubmissions(dataScheme: CustomDataScheme, foodGroups: Map[Int, FoodGroupRecord],
+                              localFields: Seq[LocalFieldDescription], localNutrients: Seq[LocalNutrientDescription],
+                              submissions: Seq[ExportSubmission], insertBOM: Boolean): Either[String, File] = {
 
     var csvWriter: CSVWriter = null
     var fileWriter: FileWriter = null
@@ -273,8 +290,8 @@ class SurveyCSVExporter(val format: CSVFormat) {
       fileWriter = new FileWriter(file)
       csvWriter = new CSVWriter(fileWriter)
 
-      writeHeader(fileWriter, csvWriter, dataScheme, localNutrients, insertBOM)
-      writeSubmissionsBatch(csvWriter, dataScheme, foodGroups, localNutrients, submissions)
+      writeHeader(fileWriter, csvWriter, dataScheme, localFields, localNutrients, insertBOM)
+      writeSubmissionsBatch(csvWriter, dataScheme, foodGroups, localFields, localNutrients, submissions)
 
       Right(file)
 
