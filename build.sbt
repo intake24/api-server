@@ -30,8 +30,6 @@ lazy val scalaHttpJVM = project.in(file("RosHTTP"))
 
 lazy val apiSharedJVM = project.in(file("api-shared"))
 
-lazy val apiClientJVM = project.in(file("api-client"))
-
 lazy val sharedTypes = Project(id = "sharedTypes", base = file("SharedTypes")).settings(commonSettings: _*)
 
 lazy val infiauto = Project(id = "infiauto", base = file("infiauto")).settings(commonSettings: _*)
