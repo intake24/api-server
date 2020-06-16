@@ -24,7 +24,7 @@ libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % "1.7.21",
   "org.apache.xmlgraphics" % "batik-svg-dom" % "1.7",
   "org.apache.xmlgraphics" % "batik-util" % "1.7",
-  "com.fasterxml.jackson.core" % "jackson-databind" % "2.1.2",
+  "com.fasterxml.jackson.core" % "jackson-databind" % "[2.9.10.4,)",
   "net.sf.opencsv" % "opencsv" % "2.1",
   "org.im4java" % "im4java" % "1.4.0"
 )
