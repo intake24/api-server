@@ -26,9 +26,12 @@ assemblyMergeStrategy in assembly ~= { (old) => {
   case x => old(x)
 }}
 
+val circeVersion = "0.10.1"
 
 libraryDependencies ++= Seq(
-  "uk.ac.ncl.openlab.intake24" %% "api-client" % "1.0.0-SNAPSHOT",
+  "io.circe" %% "circe-core" % circeVersion,
+  "io.circe" %% "circe-generic" % circeVersion,
+  "io.circe" %% "circe-parser" % circeVersion,
   "com.google.gwt" % "gwt-user" % "2.7.0" % "provided",
   "org.slf4j" % "slf4j-api" % "1.7.21",
   "org.slf4j" % "slf4j-simple" % "1.7.21",

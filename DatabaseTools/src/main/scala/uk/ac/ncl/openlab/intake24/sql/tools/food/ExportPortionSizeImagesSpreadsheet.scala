@@ -202,6 +202,10 @@ object ExportPortionSizeImagesSpreadsheet extends App with DatabaseConnection wi
     val psmImageHeaderCell = headerRow.createCell(5)
     psmImageHeaderCell.setCellValue("PSM reference image")
 
+    val psmHeaderCell = headerRow.createCell(6)
+    psmImageHeaderCell.setCellValue("PSM reference image")
+
+
     headerRow.setRowStyle(headerStyle)
 
     sheet.setColumnWidth(0, 15 * 256)
