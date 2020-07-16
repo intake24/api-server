@@ -318,13 +318,31 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
       Seq(
         CustomFieldDescription("servingWeightFactor", "As served weight factor")
       )))
-    case "ndns1019" => Right(CustomDataScheme(Seq(), Seq(
+    case "ndns_default" | "ndns1019" => Right(CustomDataScheme(Seq(), Seq(
       CustomFieldDescription("cookingOil", "Cooking oil used"),
       CustomFieldDescription("diet", "Diet"),
       CustomFieldDescription("foodAmount", "Food amount"),
       CustomFieldDescription("foodAmountReason", "Reason for unusual food amount"),
       CustomFieldDescription("proxy", "Proxy"),
       CustomFieldDescription("proxyIssues", "Proxy Issues")),
+      Seq(
+        CustomFieldDescription("foodSource", "Food source")),
+      Seq(
+        CustomFieldDescription("servingWeightFactor", "As served weight factor")
+      )))
+    case "ndns_follow_up" => Right(CustomDataScheme(Seq(), Seq(
+      CustomFieldDescription("cookingOil", "Cooking oil used"),
+      CustomFieldDescription("diet", "Diet"),
+      CustomFieldDescription("foodAmount", "Food amount"),
+      CustomFieldDescription("foodAmountReason", "Reason for unusual food amount"),
+      CustomFieldDescription("proxy", "Proxy"),
+      CustomFieldDescription("proxyIssues", "Proxy Issues"),
+      CustomFieldDescription("selfIsolation", "Self Isolation"),
+      CustomFieldDescription("infrequentFood_selectedFish", "InfrequentFood SelectedFish"),
+      CustomFieldDescription("infrequentFood_anyFish", "InfrequentFood AnyFish"),
+      CustomFieldDescription("infrequentFood_whiteMeat", "InfrequentFood WhiteMeat"),
+      CustomFieldDescription("infrequentFood_fruitJuice", "InfrequentFood FruitJuice"),
+      CustomFieldDescription("infrequentFood_softDrinks", "InfrequentFood SoftDrinks")),
       Seq(
         CustomFieldDescription("foodSource", "Food source")),
       Seq(
