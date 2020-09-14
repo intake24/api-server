@@ -95,9 +95,10 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
       withTransaction {
         val generatedId = java.util.UUID.randomUUID()
 
-        SQL("INSERT INTO survey_submissions VALUES ({id}::uuid, {survey_id}, {user_id}, {start_time}, {end_time}, ARRAY[{log}]::text[], {ux_session_id}::uuid)")
+        SQL("INSERT INTO survey_submissions VALUES ({id}::uuid, {survey_id}, {user_id}, {start_time}, {end_time}, ARRAY[{log}]::text[], {ux_session_id}::uuid, {submission_time})")
           .on('id -> generatedId, 'survey_id -> surveyId, 'user_id -> userId, 'start_time -> survey.startTime,
-            'end_time -> survey.endTime, 'log -> Seq[String](), 'ux_session_id -> survey.uxSessionId)
+            'end_time -> survey.endTime, 'log -> Seq[String](), 'ux_session_id -> survey.uxSessionId,
+            'submission_time -> ZonedDateTime.now())
           .execute()
 
         val customFieldParams = survey.customData.map {
