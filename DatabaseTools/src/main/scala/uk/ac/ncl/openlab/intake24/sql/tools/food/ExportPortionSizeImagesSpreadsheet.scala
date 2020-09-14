@@ -3,9 +3,9 @@ package uk.ac.ncl.openlab.intake24.sql.tools.food
 import java.io.{FileInputStream, FileOutputStream}
 import java.nio.file.{Files, Path, Paths}
 
-import org.apache.poi.ss.usermodel.{BorderStyle, CellStyle, CellType, ClientAnchor, VerticalAlignment, Workbook}
+import org.apache.poi.ss.usermodel.{BorderStyle, CellStyle, CellType, ClientAnchor, RichTextString, VerticalAlignment, Workbook}
 import org.apache.poi.util.Units
-import org.apache.poi.xssf.usermodel.{XSSFCellStyle, XSSFCreationHelper, XSSFDrawing, XSSFShape, XSSFSheet, XSSFWorkbook}
+import org.apache.poi.xssf.usermodel.{XSSFCellStyle, XSSFCreationHelper, XSSFDrawing, XSSFRichTextString, XSSFShape, XSSFSheet, XSSFTextParagraph, XSSFWorkbook}
 import org.rogach.scallop.ScallopConf
 import uk.ac.ncl.openlab.intake24.api.data.{PortionSizeMethod, UserFoodHeader}
 import uk.ac.ncl.openlab.intake24.errors.LookupError
@@ -44,7 +44,7 @@ object ExportPortionSizeImagesSpreadsheet extends App with DatabaseConnection wi
 
   val pictureIdCache = mutable.HashMap[String, Int]()
 
-  case class PSMRowData(method: String, id: String, image: Option[Path])
+  case class PSMRowData(method: String, id: String, image: Option[Path], info: Option[XSSFRichTextString])
 
   def getPSMRowData(psm: PortionSizeMethod): PSMRowData =
     psm.method match {
@@ -58,7 +58,7 @@ object ExportPortionSizeImagesSpreadsheet extends App with DatabaseConnection wi
         val image = Paths.get(options.imageDir()).resolve(asServedSet.images(asServedSet.images.size / 2).mainImagePath)
 
 
-        PSMRowData("As served", setId, Some(image))
+        PSMRowData("As served", setId, Some(image), None)
 
       case "guide-image" =>
 
@@ -69,21 +69,21 @@ object ExportPortionSizeImagesSpreadsheet extends App with DatabaseConnection wi
         val imageMap = imageMapService.getImageMap(guideImage.imageMapId).right.get
         val image = Paths.get(options.imageDir()).resolve(imageMap.baseImagePath)
 
-        PSMRowData("Guide image", guideId, Some(image))
+        PSMRowData("Guide image", guideId, Some(image), None)
 
       case "pizza" =>
 
         val imageMap = imageMapService.getImageMap("gpizza").right.get
         val image = Paths.get(options.imageDir()).resolve(imageMap.baseImagePath)
 
-        PSMRowData("Pizza", "", Some(image))
+        PSMRowData("Pizza", "", Some(image), None)
 
       case "milk-on-cereal" =>
 
-        PSMRowData("Milk on cereal", "", None)
+        PSMRowData("Milk on cereal", "", None, None)
 
       case "milk-in-a-hot-drink" =>
-        PSMRowData("Milk in a hot drink", "", None)
+        PSMRowData("Milk in a hot drink", "", None, None)
 
       case "drink-scale" =>
 
@@ -93,13 +93,27 @@ object ExportPortionSizeImagesSpreadsheet extends App with DatabaseConnection wi
         val imageMap = imageMapService.getImageMap(drinkwareSet.guideId).right.get
         val image = Paths.get(options.imageDir()).resolve(imageMap.baseImagePath)
 
-        PSMRowData("Drink scale", setId, Some(image))
+        PSMRowData("Drink scale", setId, Some(image), None)
 
       case "cereal" =>
-        PSMRowData("Cereal", "", None)
+        PSMRowData("Cereal", "", None, None)
 
       case "standard-portion" =>
-        PSMRowData("Standard portion", "", None)
+
+        val p = new XSSFRichTextString()
+        p.append("Units:\n")
+
+        val unitCount = psm.parameters.find(_.name == "units-count").get.value.toInt
+
+        (0 to (unitCount - 1)).foreach {
+          i =>
+            val name = psm.parameters.find(_.name == s"unit$i-name").get.value
+            val weight = psm.parameters.find(_.name == s"unit$i-weight").get.value
+
+            p.append(s" • $name: $weight g (ml)\n")
+        }
+
+        PSMRowData("Standard portion", "", None, Some(p))
     }
 
   def appendPortionSizeMethodRows(workbook: XSSFWorkbook, sheet: XSSFSheet, drawing: XSSFDrawing, helper: XSSFCreationHelper,
@@ -121,12 +135,28 @@ object ExportPortionSizeImagesSpreadsheet extends App with DatabaseConnection wi
     val psmCell = row.createCell(3)
     val psmIdCell = row.createCell(4)
     val psmImageCell = row.createCell(5)
+    val psmInfoCell = row.createCell(6)
+
+
+    val cs = workbook.createCellStyle()
+    cs.cloneStyleFrom(cellStyle)
+    cs.setWrapText(true)
+
+    codeCell.setCellStyle(cs)
+    engDescCell.setCellStyle(cs)
+    localDescCell.setCellStyle(cs)
+    psmCell.setCellStyle(cs)
+    psmIdCell.setCellStyle(cs)
+    psmImageCell.setCellStyle(cs)
+    psmInfoCell.setCellStyle(cs)
 
     codeCell.setCellValue(food.code)
     engDescCell.setCellValue(englishDescription)
     localDescCell.setCellValue(food.localDescription)
     psmCell.setCellValue(rowData.method)
     psmIdCell.setCellValue(rowData.id)
+
+    rowData.info.foreach(psmInfoCell.setCellValue(_))
 
     rowData.image match {
       case Some(path) =>
@@ -202,8 +232,8 @@ object ExportPortionSizeImagesSpreadsheet extends App with DatabaseConnection wi
     val psmImageHeaderCell = headerRow.createCell(5)
     psmImageHeaderCell.setCellValue("PSM reference image")
 
-    val psmHeaderCell = headerRow.createCell(6)
-    psmImageHeaderCell.setCellValue("PSM reference image")
+    val psmData = headerRow.createCell(6)
+    psmData.setCellValue("Additional PSM info")
 
 
     headerRow.setRowStyle(headerStyle)
@@ -214,6 +244,7 @@ object ExportPortionSizeImagesSpreadsheet extends App with DatabaseConnection wi
     sheet.setColumnWidth(3, 25 * 256)
     sheet.setColumnWidth(4, 20 * 256)
     sheet.setColumnWidth(5, 70 * 256)
+    sheet.setColumnWidth(6, 100 * 256)
 
 
     val drawing = sheet.createDrawingPatriarch()
