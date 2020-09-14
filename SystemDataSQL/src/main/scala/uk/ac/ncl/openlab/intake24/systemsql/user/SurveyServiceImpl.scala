@@ -16,7 +16,8 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
 
   private case class UserSurveyParametersRow(id: String, scheme_id: String, state: Int, locale: String, started: Boolean, finished: Boolean, suspension_reason: Option[String],
                                              originating_url: Option[String], description: Option[String], final_page_html: Option[String],
-                                             store_user_session_on_server: Option[Boolean], number_of_submissions_for_feedback: Int)
+                                             store_user_session_on_server: Option[Boolean], number_of_submissions_for_feedback: Int,
+                                             maximum_daily_submissions: Int, minimum_submission_interval: Int)
 
   private case class UxEventSettingsRow(enable_search_events: Boolean, enable_associated_foods_events: Boolean)
 
@@ -44,7 +45,9 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
 
   override def getSurveyParameters(surveyId: String): Either[LookupError, UserSurveyParameters] = tryWithConnection {
     implicit conn =>
-      SQL("SELECT id, scheme_id, locale, state, now() >= start_date AS started, now() > end_date AS finished, suspension_reason, originating_url, description, final_page_html, store_user_session_on_server, number_of_submissions_for_feedback FROM surveys WHERE id={survey_id}")
+      SQL("SELECT id, scheme_id, locale, state, now() >= start_date AS started, now() > end_date AS finished, suspension_reason, " +
+        "originating_url, description, final_page_html, store_user_session_on_server, number_of_submissions_for_feedback, " +
+        "maximum_daily_submissions, minimum_submission_interval FROM surveys WHERE id={survey_id}")
         .on('survey_id -> surveyId)
         .executeQuery()
         .as(Macro.namedParser[UserSurveyParametersRow].singleOpt) match {
@@ -72,7 +75,8 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
           }
 
           Right(UserSurveyParameters(row.id, row.scheme_id, row.locale, state, row.suspension_reason, row.description,
-            row.final_page_html, uxEventsSettings, row.store_user_session_on_server.getOrElse(false), row.number_of_submissions_for_feedback))
+            row.final_page_html, uxEventsSettings, row.store_user_session_on_server.getOrElse(false), row.number_of_submissions_for_feedback,
+            row.maximum_daily_submissions, row.minimum_submission_interval))
 
         }
         case None =>
@@ -253,4 +257,20 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
     implicit conn =>
       Right(SQL("SELECT COUNT(*) FROM survey_submissions WHERE survey_id={survey_id} AND user_id={user_id}").on('survey_id -> surveyId, 'user_id -> userId).executeQuery().as(SqlParser.int(1).single))
   }
+
+  override def getLastSubmissionTime(surveyId: String, userId: Long): Either[UnexpectedDatabaseError, Option[ZonedDateTime]] = tryWithConnection {
+    implicit conn =>
+      Right(SQL("SELECT submission_time FROM survey_submissions WHERE survey_id={survey_id} AND user_id={user_id} ORDER BY submission_time DESC LIMIT 1")
+        .on('survey_id -> surveyId, 'user_id -> userId)
+        .executeQuery()
+        .as(SqlParser.get[ZonedDateTime]("submission_time").singleOpt))
+  }
+
+  override def getNumberOfSubmissionsOnDay(surveyId: String, userId: Long, dayOfYear: Int, timeZone: String): Either[UnexpectedDatabaseError, Int] = tryWithConnection {
+    implicit conn =>
+      Right(SQL("SELECT COUNT(*) FROM survey_submissions WHERE survey_id={survey_id} AND user_id={user_id} AND EXTRACT(DOY FROM (submission_time AT TIME ZONE {time_zone}))={doy}")
+        .on('survey_id -> surveyId, 'user_id -> userId, 'time_zone -> timeZone, 'doy -> dayOfYear)
+        .as(SqlParser.int(1).single))
+  }
+
 }

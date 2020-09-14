@@ -18,13 +18,16 @@ limitations under the License.
 
 package controllers.system.user
 
-import javax.inject.Inject
+import java.time.temporal.ChronoUnit
+import java.time.{ZoneId, ZonedDateTime}
 
+import javax.inject.Inject
 import akka.actor.ActorSystem
 import controllers.DatabaseErrorHandler
 import io.circe.syntax._
 import io.circe.generic.auto._
 import models.{SaveUserSessionRequest, UserSessionResponse}
+
 import parsers.{JsonBodyParser, JsonUtils}
 import play.Logger
 import play.api.http.ContentTypes
@@ -44,7 +47,7 @@ import scala.util.{Failure, Success}
 
 case class SubmissionResponseBody(followUpUrl: Option[String], redirectToFeedback: Boolean)
 
-case class UserInfoResponseBody(id: Long, name: Option[String], recallNumber: Int, redirectToFeedback: Boolean)
+case class UserInfoResponseBody(id: Long, name: Option[String], recallNumber: Int, redirectToFeedback: Boolean, maximumDailySubmissionsReached: Boolean)
 
 class SurveyController @Inject()(service: SurveyService,
                                  ws: WSClient,
@@ -79,20 +82,26 @@ class SurveyController @Inject()(service: SurveyService,
       }
   }
 
-  def getSurveyUserInfo(surveyId: String) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(playBodyParsers.empty) {
+  def getSurveyUserInfo(surveyId: String, clientTimeZone: Option[String]) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(playBodyParsers.empty) {
     request =>
       Future {
         val userId = request.subject.userId
 
+        val zoneId = parseZoneId(clientTimeZone)
+
+        val clientDayOfYear = ZonedDateTime.now(zoneId).getDayOfYear
+
         (for (surveyParameters <- service.getSurveyParameters(surveyId);
               user <- userService.getUserById(userId);
               currentSubmissionsCount <- service.getNumberOfSubmissionsForUser(surveyId, userId);
+              numberOfSubmissionsToday <- service.getNumberOfSubmissionsOnDay(surveyId, userId, clientDayOfYear, zoneId.getId());
               followUp <- service.getSurveyFollowUp(surveyId))
-          yield ((surveyParameters, user, currentSubmissionsCount, followUp))) match {
-          case Right((surveyParameters, user, currentSubmissionsCount, followUp)) =>
+          yield ((surveyParameters, user, currentSubmissionsCount, numberOfSubmissionsToday, followUp))) match {
+          case Right((surveyParameters, user, currentSubmissionsCount, numberOfSubmissionsToday, followUp)) =>
 
             val redirectToFeedback = (currentSubmissionsCount >= surveyParameters.numberOfSurveysForFeedback) && followUp.showFeedback
-            Ok(UserInfoResponseBody(user.id, user.name, currentSubmissionsCount + 1, redirectToFeedback).asJson.noSpaces).as(ContentTypes.JSON)
+            Ok(UserInfoResponseBody(user.id, user.name, currentSubmissionsCount + 1, redirectToFeedback,
+              numberOfSubmissionsToday >= surveyParameters.maximumDailySubmissions).asJson.noSpaces).as(ContentTypes.JSON)
 
           case Left(error) => translateDatabaseError(error)
         }
@@ -150,18 +159,46 @@ class SurveyController @Inject()(service: SurveyService,
       }
   }
 
-  def submitSurvey(surveyId: String) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(jsonBodyParser.parse[SurveySubmission]) {
+  def isTooEarly(lastSubmissionTime: Option[ZonedDateTime], minimumInterval: Int): Boolean = lastSubmissionTime match {
+    case Some(time) =>
+      val interval = ChronoUnit.SECONDS.between(time, ZonedDateTime.now())
+      interval < minimumInterval
+    case None => false
+  }
+
+  def parseZoneId(zone: Option[String]): ZoneId = zone match {
+    case None => ZoneId.systemDefault()
+    case Some(z) => try {
+      ZoneId.of(z)
+    } catch {
+      case e: RuntimeException =>
+        ZoneId.systemDefault()
+    }
+  }
+
+  def submitSurvey(surveyId: String, clientTimeZone: Option[String]) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(jsonBodyParser.parse[SurveySubmission]) {
     request =>
       Future {
-        val userId = request.subject.userId;
+        val userId = request.subject.userId
+
+        val zoneId = parseZoneId(clientTimeZone)
+
+        val clientDayOfYear = ZonedDateTime.now(zoneId).getDayOfYear
 
         val result = for (surveyParameters <- service.getSurveyParameters(surveyId);
                           currentSubmissionsCount <- service.getNumberOfSubmissionsForUser(surveyId, userId);
+                          numberOfSubmissionsToday <- service.getNumberOfSubmissionsOnDay(surveyId, userId, clientDayOfYear, zoneId.getId());
+                          lastSubmissionTime <- service.getLastSubmissionTime(surveyId, userId);
                           userNameOpt <- userService.getSurveyUserAliases(Seq(userId), surveyId).map(_.get(userId).map(_.userName));
                           followUp <- service.getSurveyFollowUp(surveyId)) yield {
           if (surveyParameters.state != "running")
             Forbidden(toJsonString(ErrorDescription("SurveyNotRunning", "Survey not accepting submissions at this time")))
-          else {
+          else if (numberOfSubmissionsToday >= surveyParameters.maximumDailySubmissions)
+            TooManyRequests(toJsonString(ErrorDescription("MaximumDailySubmissions", "Maximum daily submissions reached, try again tomorrow")))
+          else if (isTooEarly(lastSubmissionTime, surveyParameters.minimumSubmissionInterval))
+            TooManyRequests(toJsonString(ErrorDescription("MinimumSubmissionInterval", "Minimum submission interval not met, try again later")))
+          else
+          {
             val userId = request.subject.userId
 
             // No reason to keep the user waiting for the database result because reporting nutrient mapping or

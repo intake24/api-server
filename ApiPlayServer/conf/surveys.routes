@@ -21,12 +21,12 @@ DELETE        /:surveyId                                             controllers
 GET           /:surveyId/public-parameters                           controllers.system.user.SurveyController.getPublicSurveyParameters(surveyId: String)
 GET           /:surveyId/feedback-style                              controllers.system.user.SurveyController.getSurveyFeedbackStyle(surveyId: String)
 GET           /:surveyId/parameters                                  controllers.system.user.SurveyController.getSurveyParameters(surveyId: String)
-GET           /:surveyId/user-info                                   controllers.system.user.SurveyController.getSurveyUserInfo(surveyId: String)
+GET           /:surveyId/user-info                                   controllers.system.user.SurveyController.getSurveyUserInfo(surveyId: String, tz: Option[String])
 GET           /:surveyId/follow-up                                   controllers.system.user.SurveyController.getSurveyFollowUp(surveyId: String)
 
 POST          /:surveyId/generate-user                               controllers.system.user.GeneratedUsersController.generateUser(surveyId: String)
 
-POST          /:surveyId/submissions                                 controllers.system.user.SurveyController.submitSurvey(surveyId: String)
+POST          /:surveyId/submissions                                 controllers.system.user.SurveyController.submitSurvey(surveyId: String, tz: Option[String])
 POST          /:surveyId/request-callback                            controllers.system.user.HelpController.requestCallback(surveyId)
 
 # Survey Permissions

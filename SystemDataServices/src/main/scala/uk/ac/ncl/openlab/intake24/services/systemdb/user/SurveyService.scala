@@ -14,7 +14,8 @@ case class UxEventsSettings(enableSearchEvents: Boolean, enableAssociatedFoodsEv
 
 case class UserSurveyParameters(id: String, schemeId: String, localeId: String, state: String, suspensionReason: Option[String],
                                 description: Option[String], finalPageHtml: Option[String], uxEventsSettings: UxEventsSettings,
-                                storeUserSessionOnServer: Boolean, numberOfSurveysForFeedback: Int)
+                                storeUserSessionOnServer: Boolean, numberOfSurveysForFeedback: Int,
+                                maximumDailySubmissions: Int, minimumSubmissionInterval: Int)
 
 case class SurveyFollowUp(followUpUrl: Option[String], showFeedback: Boolean)
 
@@ -33,5 +34,9 @@ trait SurveyService {
   def userSubmittedWithinPeriod(surveyId: String, userId: Long, dateFrom: ZonedDateTime, dateTo: ZonedDateTime): Either[UnexpectedDatabaseError, Boolean]
 
   def getNumberOfSubmissionsForUser(surveyId: String, userId: Long): Either[UnexpectedDatabaseError, Int]
+
+  def getNumberOfSubmissionsOnDay(surveyId: String, userId: Long, dayOfYear: Int, timeZone: String): Either[UnexpectedDatabaseError, Int]
+
+  def getLastSubmissionTime(surveyId: String, userId: Long): Either[UnexpectedDatabaseError, Option[ZonedDateTime]]
 
 }
