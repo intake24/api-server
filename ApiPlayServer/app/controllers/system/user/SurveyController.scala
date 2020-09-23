@@ -87,7 +87,7 @@ class SurveyController @Inject()(service: SurveyService,
       Future {
         val userId = request.subject.userId
 
-        val zoneId = parseZoneId(clientTimeZone)
+        val zoneId = parseZoneId(clientTimeZone.getOrElse(null))
 
         val clientDayOfYear = ZonedDateTime.now(zoneId).getDayOfYear
 
@@ -166,22 +166,19 @@ class SurveyController @Inject()(service: SurveyService,
     case None => false
   }
 
-  def parseZoneId(zone: Option[String]): ZoneId = zone match {
-    case None => ZoneId.systemDefault()
-    case Some(z) => try {
-      ZoneId.of(z)
-    } catch {
-      case e: RuntimeException =>
-        ZoneId.systemDefault()
-    }
+  def parseZoneId(zone: String): ZoneId = try {
+    ZoneId.of(zone)
+  } catch {
+    case _: RuntimeException =>
+      ZoneId.systemDefault()
   }
 
-  def submitSurvey(surveyId: String, clientTimeZone: Option[String]) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(jsonBodyParser.parse[SurveySubmission]) {
+  def submitSurvey(surveyId: String) = rab.restrictToRoles(Roles.surveyRespondent(surveyId))(jsonBodyParser.parse[SurveySubmission]) {
     request =>
       Future {
         val userId = request.subject.userId
 
-        val zoneId = parseZoneId(clientTimeZone)
+        val zoneId = parseZoneId(request.body.timeZone)
 
         val clientDayOfYear = ZonedDateTime.now(zoneId).getDayOfYear
 
@@ -197,8 +194,7 @@ class SurveyController @Inject()(service: SurveyService,
             TooManyRequests(toJsonString(ErrorDescription("MaximumDailySubmissions", "Maximum daily submissions reached, try again tomorrow")))
           else if (isTooEarly(lastSubmissionTime, surveyParameters.minimumSubmissionInterval))
             TooManyRequests(toJsonString(ErrorDescription("MinimumSubmissionInterval", "Minimum submission interval not met, try again later")))
-          else
-          {
+          else {
             val userId = request.subject.userId
 
             // No reason to keep the user waiting for the database result because reporting nutrient mapping or

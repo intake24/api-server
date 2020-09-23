@@ -24,7 +24,7 @@ case class Meal(name: String, foods: Seq[Food], missingFoods: Seq[MissingFood], 
 
 case class MissingFood(name: String, brand: String, description: String, portionSize: String, leftovers: String)
 
-case class SurveySubmission(startTime: ZonedDateTime, endTime: ZonedDateTime, uxSessionId: UUID, meals: Seq[Meal], customData: Map[String, String])
+case class SurveySubmission(startTime: ZonedDateTime, endTime: ZonedDateTime, timeZone: String, uxSessionId: UUID, meals: Seq[Meal], customData: Map[String, String])
 
 case class NutrientMappedMeal(name: String, time: MealTime, customData: Map[String, String], foods: Seq[NutrientMappedFood], missingFoods: Seq[MissingFood])
 
