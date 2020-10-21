@@ -47,7 +47,8 @@ import scala.util.{Failure, Success}
 
 case class SubmissionResponseBody(followUpUrl: Option[String], redirectToFeedback: Boolean)
 
-case class UserInfoResponseBody(id: Long, name: Option[String], recallNumber: Int, redirectToFeedback: Boolean, maximumDailySubmissionsReached: Boolean)
+case class UserInfoResponseBody(id: Long, name: Option[String], recallNumber: Int, redirectToFeedback: Boolean,
+                                maximumTotalSubmissionsReached: Boolean, maximumDailySubmissionsReached: Boolean)
 
 class SurveyController @Inject()(service: SurveyService,
                                  ws: WSClient,
@@ -101,6 +102,10 @@ class SurveyController @Inject()(service: SurveyService,
 
             val redirectToFeedback = (currentSubmissionsCount >= surveyParameters.numberOfSurveysForFeedback) && followUp.showFeedback
             Ok(UserInfoResponseBody(user.id, user.name, currentSubmissionsCount + 1, redirectToFeedback,
+              surveyParameters.maximumTotalSubmissions match {
+                case Some(limit) => currentSubmissionsCount >= limit
+                case None => false
+              },
               numberOfSubmissionsToday >= surveyParameters.maximumDailySubmissions).asJson.noSpaces).as(ContentTypes.JSON)
 
           case Left(error) => translateDatabaseError(error)
@@ -192,6 +197,11 @@ class SurveyController @Inject()(service: SurveyService,
             Forbidden(toJsonString(ErrorDescription("SurveyNotRunning", "Survey not accepting submissions at this time")))
           else if (numberOfSubmissionsToday >= surveyParameters.maximumDailySubmissions)
             TooManyRequests(toJsonString(ErrorDescription("MaximumDailySubmissions", "Maximum daily submissions reached, try again tomorrow")))
+          else if (surveyParameters.maximumTotalSubmissions match {
+            case Some(limit) => currentSubmissionsCount >= limit
+            case None => false
+          })
+            Forbidden(toJsonString(ErrorDescription("MaximumSubmissions", "Maximum number of submissions reached")))
           else if (isTooEarly(lastSubmissionTime, surveyParameters.minimumSubmissionInterval))
             TooManyRequests(toJsonString(ErrorDescription("MinimumSubmissionInterval", "Minimum submission interval not met, try again later")))
           else {

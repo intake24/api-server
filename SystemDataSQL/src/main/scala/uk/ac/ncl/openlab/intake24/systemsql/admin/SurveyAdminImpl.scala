@@ -53,21 +53,23 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
         val sqlQuery =
           """
             |INSERT INTO surveys (
-            |         id, state, start_date, end_date, scheme_id, locale,
-            |         allow_gen_users, suspension_reason, survey_monkey_url, support_email,
-            |         description, final_page_html, submission_notification_url,
+            |         id, state, start_date, end_date,
+            |         scheme_id, locale, allow_gen_users, gen_user_key, suspension_reason,
+            |         survey_monkey_url, support_email, description,
+            |         final_page_html,
+            |         submission_notification_url,
             |         feedback_enabled, number_of_submissions_for_feedback,
             |         store_user_session_on_server, maximum_daily_submissions,
-            |         minimum_submission_interval
+            |         maximum_total_submissions, minimum_submission_interval
             |)
             |VALUES ({id}, {state}, {start_date}, {end_date},
-            |        {scheme_id}, {locale}, {allow_gen_users}, '',
+            |        {scheme_id}, {locale}, {allow_gen_users}, {gen_user_key}, '',
             |        {survey_monkey_url}, {support_email}, {description},
             |        {final_page_html},
             |        {submission_notification_url},
             |        {feedback_enabled}, {number_of_submissions_for_feedback},
             |        {store_user_session_on_server}, {maximum_daily_submissions},
-            |        {minimum_submission_interval})
+            |        {maximum_total_submissions}, {minimum_submission_interval})
             |RETURNING id,
             |          state,
             |          start_date,
@@ -75,6 +77,7 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             |          scheme_id,
             |          locale,
             |          allow_gen_users,
+            |          gen_user_key,
             |          suspension_reason,
             |          survey_monkey_url,
             |          support_email,
@@ -85,6 +88,7 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             |          number_of_submissions_for_feedback,
             |          store_user_session_on_server,
             |          maximum_daily_submissions,
+            |          maximum_total_submissions,
             |          minimum_submission_interval;
           """.stripMargin
 
@@ -96,6 +100,7 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             'scheme_id -> parameters.schemeId,
             'locale -> parameters.localeId,
             'allow_gen_users -> parameters.allowGeneratedUsers,
+            'gen_user_key -> parameters.generateUserKey,
             'survey_monkey_url -> parameters.externalFollowUpURL,
             'support_email -> parameters.supportEmail,
             'description -> parameters.description,
@@ -105,6 +110,7 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             'number_of_submissions_for_feedback -> parameters.numberOfSubmissionsForFeedback,
             'store_user_session_on_server -> parameters.storeUserSessionOnServer,
             'maximum_daily_submissions -> parameters.maximumDailySubmissions,
+            'maximum_total_submissions -> parameters.maximumTotalSubmissions,
             'minimum_submission_interval -> parameters.minimumSubmissionInterval)
           .executeQuery().as(Macro.namedParser[SurveyParametersRow].single)
         Right(row.toSurveyParameters)
@@ -132,6 +138,7 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             |    scheme_id={scheme_id},
             |    locale={locale},
             |    allow_gen_users={allow_gen_users},
+            |    gen_user_key={gen_user_key},
             |    survey_monkey_url={survey_monkey_url},
             |    support_email={support_email},
             |    description={description},
@@ -141,6 +148,7 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             |    number_of_submissions_for_feedback={number_of_submissions_for_feedback},
             |    store_user_session_on_server={store_user_session_on_server},
             |    maximum_daily_submissions={maximum_daily_submissions},
+            |    maximum_total_submissions={maximum_total_submissions},
             |    minimum_submission_interval={minimum_submission_interval}
             |WHERE id={survey_id}
             |RETURNING id,
@@ -150,6 +158,7 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             |          scheme_id,
             |          locale,
             |          allow_gen_users,
+            |          gen_user_key,
             |          suspension_reason,
             |          survey_monkey_url,
             |          support_email,
@@ -160,6 +169,7 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             |          number_of_submissions_for_feedback,
             |          store_user_session_on_server,
             |          maximum_daily_submissions,
+            |          maximum_total_submissions,
             |          minimum_submission_interval;
           """.stripMargin
 
@@ -172,6 +182,7 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             'scheme_id -> parameters.schemeId,
             'locale -> parameters.localeId,
             'allow_gen_users -> parameters.allowGeneratedUsers,
+            'gen_user_key -> parameters.generateUserKey,
             'survey_monkey_url -> parameters.externalFollowUpURL,
             'support_email -> parameters.supportEmail,
             'description -> parameters.description,
@@ -181,6 +192,7 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             'number_of_submissions_for_feedback -> parameters.numberOfSubmissionsForFeedback,
             'store_user_session_on_server -> parameters.storeUserSessionOnServer,
             'maximum_daily_submissions -> parameters.maximumDailySubmissions,
+            'maximum_total_submissions -> parameters.maximumTotalSubmissions,
             'minimum_submission_interval -> parameters.minimumSubmissionInterval)
           .executeQuery().as(Macro.namedParser[SurveyParametersRow].single)
         Right(row.toSurveyParameters)
@@ -253,19 +265,21 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
 
   private case class SurveyParametersRow(id: String, scheme_id: String, state: Int, locale: String,
                                          start_date: ZonedDateTime, end_date: ZonedDateTime, suspension_reason: Option[String],
-                                         allow_gen_users: Boolean, survey_monkey_url: Option[String], support_email: String,
+                                         allow_gen_users: Boolean, gen_user_key: Option[String], survey_monkey_url: Option[String], support_email: String,
                                          description: Option[String], final_page_html: Option[String],
                                          submission_notification_url: Option[String],
                                          feedback_enabled: Boolean, number_of_submissions_for_feedback: Int,
                                          store_user_session_on_server: Option[Boolean],
                                          maximum_daily_submissions: Int,
+                                         maximum_total_submissions: Option[Int],
                                          minimum_submission_interval: Int) {
 
     def toSurveyParameters: SurveyParametersOut = new SurveyParametersOut(
       this.id, this.scheme_id, this.locale, this.state, this.start_date, this.end_date,
-      this.suspension_reason, this.allow_gen_users, this.survey_monkey_url, this.support_email,
+      this.suspension_reason, this.allow_gen_users, this.gen_user_key, this.survey_monkey_url, this.support_email,
       this.description, this.final_page_html, this.submission_notification_url, this.feedback_enabled,
-      this.number_of_submissions_for_feedback, this.store_user_session_on_server, this.maximum_daily_submissions, this.minimum_submission_interval
+      this.number_of_submissions_for_feedback, this.store_user_session_on_server, this.maximum_daily_submissions,
+      this.maximum_total_submissions, this.minimum_submission_interval
     )
 
   }
@@ -274,9 +288,9 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
     implicit conn =>
       SQL(
         """SELECT id, scheme_id, state, locale, start_date, end_date, suspension_reason,
-          |allow_gen_users, survey_monkey_url, support_email, description, final_page_html, submission_notification_url,
+          |allow_gen_users, gen_user_key, survey_monkey_url, support_email, description, final_page_html, submission_notification_url,
           |feedback_enabled, number_of_submissions_for_feedback, store_user_session_on_server, maximum_daily_submissions,
-          |minimum_submission_interval FROM surveys WHERE id={survey_id}""".stripMargin)
+          |maximum_total_submissions, minimum_submission_interval FROM surveys WHERE id={survey_id}""".stripMargin)
         .on('survey_id -> surveyId)
         .executeQuery()
         .as(Macro.namedParser[SurveyParametersRow].singleOpt) match {

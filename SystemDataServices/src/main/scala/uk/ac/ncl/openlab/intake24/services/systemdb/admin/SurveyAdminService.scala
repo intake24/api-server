@@ -29,24 +29,27 @@ case class CustomDataScheme(userCustomFields: Seq[CustomFieldDescription], surve
 
 case class SurveyParametersIn(id: String, schemeId: String, localeId: String, state: Int,
                               startDate: ZonedDateTime, endDate: ZonedDateTime,
-                              allowGeneratedUsers: Boolean,
+                              allowGeneratedUsers: Boolean, generateUserKey: Option[String],
                               externalFollowUpURL: Option[String], supportEmail: String,
                               description: Option[String], finalPageHtml: Option[String],
                               submissionNotificationUrl: Option[String],
                               feedbackEnabled: Boolean, numberOfSubmissionsForFeedback: Int,
                               storeUserSessionOnServer: Option[Boolean],
                               maximumDailySubmissions: Int,
+                              maximumTotalSubmissions: Option[Int],
                               minimumSubmissionInterval: Int)
 
 case class SurveyParametersOut(id: String, schemeId: String, localeId: String, state: Int,
                                startDate: ZonedDateTime, endDate: ZonedDateTime,
                                suspensionReason: Option[String], allowGeneratedUsers: Boolean,
+                               generateUserKey: Option[String],
                                externalFollowUpURL: Option[String], supportEmail: String,
                                description: Option[String], finalPageHtml: Option[String],
                                submissionNotificationUrl: Option[String],
                                feedbackEnabled: Boolean, numberOfSubmissionsForFeedback: Int,
                                storeUserSessionOnServer: Option[Boolean],
                                maximumDailySubmissions: Int,
+                               maximumTotalSubmissions: Option[Int],
                                minimumSubmissionInterval: Int)
 
 // Staff cannot change survey ID, scheme, locale and generated user settings

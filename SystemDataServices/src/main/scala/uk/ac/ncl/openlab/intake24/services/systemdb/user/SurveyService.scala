@@ -15,7 +15,7 @@ case class UxEventsSettings(enableSearchEvents: Boolean, enableAssociatedFoodsEv
 case class UserSurveyParameters(id: String, schemeId: String, localeId: String, state: String, suspensionReason: Option[String],
                                 description: Option[String], finalPageHtml: Option[String], uxEventsSettings: UxEventsSettings,
                                 storeUserSessionOnServer: Boolean, numberOfSurveysForFeedback: Int,
-                                maximumDailySubmissions: Int, minimumSubmissionInterval: Int)
+                                maximumDailySubmissions: Int, maximumTotalSubmissions: Option[Int], minimumSubmissionInterval: Int)
 
 case class SurveyFollowUp(followUpUrl: Option[String], showFeedback: Boolean)
 

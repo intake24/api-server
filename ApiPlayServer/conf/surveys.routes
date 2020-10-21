@@ -25,6 +25,7 @@ GET           /:surveyId/user-info                                   controllers
 GET           /:surveyId/follow-up                                   controllers.system.user.SurveyController.getSurveyFollowUp(surveyId: String)
 
 POST          /:surveyId/generate-user                               controllers.system.user.GeneratedUsersController.generateUser(surveyId: String)
+POST          /:surveyId/create-user                                 controllers.system.user.GeneratedUsersController.createUser(surveyId: String, params: String)
 
 POST          /:surveyId/submissions                                 controllers.system.user.SurveyController.submitSurvey(surveyId: String)
 POST          /:surveyId/request-callback                            controllers.system.user.HelpController.requestCallback(surveyId)

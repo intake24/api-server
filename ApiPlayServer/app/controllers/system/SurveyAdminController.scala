@@ -50,10 +50,10 @@ class SurveyAdminController @Inject()(service: SurveyAdminService,
 
     SurveyParametersIn(surveyParametersIn.id, surveyParametersIn.schemeId, surveyParametersIn.localeId,
       surveyParametersIn.state, surveyParametersIn.startDate, surveyParametersIn.endDate,
-      surveyParametersIn.allowGeneratedUsers, surveyParametersIn.externalFollowUpURL,
+      surveyParametersIn.allowGeneratedUsers, surveyParametersIn.generateUserKey, surveyParametersIn.externalFollowUpURL,
       surveyParametersIn.supportEmail, description, finalPageHtml, surveyParametersIn.submissionNotificationUrl,
       surveyParametersIn.feedbackEnabled, surveyParametersIn.numberOfSubmissionsForFeedback,
-      surveyParametersIn.storeUserSessionOnServer, surveyParametersIn.maximumDailySubmissions,
+      surveyParametersIn.storeUserSessionOnServer, surveyParametersIn.maximumDailySubmissions, surveyParametersIn.maximumTotalSubmissions,
       surveyParametersIn.minimumSubmissionInterval)
   }
 

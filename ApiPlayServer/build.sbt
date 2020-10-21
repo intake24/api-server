@@ -43,6 +43,7 @@ libraryDependencies ++= Seq(
   "com.amazonaws" % "aws-java-sdk" % "1.11.155",
   "org.apache.shiro" % "shiro-core" % "1.2.3", // for v1.0 authentication support
   "com.typesafe.play" %% "play-integration-test" % "2.6.5" % "test",
+  "com.auth0" % "java-jwt" % "3.8.1",
   "commons-net" % "commons-net" % "3.6"
 )
 
