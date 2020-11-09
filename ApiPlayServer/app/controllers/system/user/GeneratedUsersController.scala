@@ -96,10 +96,16 @@ class GeneratedUsersController @Inject()(userAdminService: UserAdminService,
   }
 
   def decodeCreateUserParameters(key: String, token: String): Either[String, CreateUserParameters] = {
-    val verifier = JWT.require(Algorithm.HMAC256(key)).build()
-
     try {
-      val decodedJwt = verifier.verify(token)
+      val decodedJwt = JWT.decode(token)
+
+      val verifier = decodedJwt.getAlgorithm() match {
+        case "HS256" => JWT.require(Algorithm.HMAC256(key)).build()
+        case "HS512" => JWT.require(Algorithm.HMAC512(key)).build()
+        case alg => throw new JWTVerificationException(s"Unsupported JWT algorithm $alg")
+      }
+
+      verifier.verify(decodedJwt)
 
       val redirect = decodedJwt.getClaim("redirect")
       val user = decodedJwt.getClaim("user")
