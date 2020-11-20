@@ -64,6 +64,7 @@ case class RespondentWithAuthUrls(id: Long, userName: String, authUrl: String, f
 case class RespondentWithAuthAndShortUrls(id: Long, userName: String, authUrl: String, shortUrl: String, feedbackAuthUrl: String, feedbackAuthShortUrl: String)
 
 class UserDataExportController @Inject()(configuration: Configuration,
+                                         surveyAdminService: SurveyAdminService,
                                          service: UserAdminService,
                                          secureUrlService: SecureUrlService,
                                          syncCacheApi: SyncCacheApi,
@@ -101,14 +102,14 @@ class UserDataExportController @Inject()(configuration: Configuration,
 
   private def exportImpl(surveyId: String): Try[File] = {
 
-    def getRespondentRecords(offset: Int, limit: Int): Try[Seq[RespondentWithAuthUrls]] =
+    def getRespondentRecords(baseUrl: String, offset: Int, limit: Int): Try[Seq[RespondentWithAuthUrls]] =
       ErrorUtils.asTry(for (users <- service.listUsersByRole(Roles.surveyRespondent(surveyId), offset, limit);
                             aliases <- service.getSurveyUserAliases(users.map(_.id), surveyId)) yield {
         users.filter(u => aliases.contains(u.id)).map {
           user =>
             RespondentWithAuthUrls(user.id, aliases(user.id).userName,
-              surveyFrontendUrl + s"/surveys/$surveyId?auth=${aliases(user.id).urlAuthToken}",
-              surveyFrontendUrl + s"/surveys/$surveyId/feedback#/token-login/${aliases(user.id).urlAuthToken}")
+              baseUrl + s"/surveys/$surveyId?auth=${aliases(user.id).urlAuthToken}",
+              baseUrl + s"/surveys/$surveyId/feedback#/token-login/${aliases(user.id).urlAuthToken}")
         }
       })
 
@@ -126,8 +127,8 @@ class UserDataExportController @Inject()(configuration: Configuration,
       }
     }
 
-    def exportRemaining(offset: Int, batchSize: Int, writer: CSVWriter): Try[Unit] =
-      getRespondentRecords(offset, batchSize).flatMap {
+    def exportRemaining(baseUrl: String, offset: Int, batchSize: Int, writer: CSVWriter): Try[Unit] =
+      getRespondentRecords(baseUrl, offset, batchSize).flatMap {
         respondents =>
           if (respondents.isEmpty)
             Success(())
@@ -137,26 +138,30 @@ class UserDataExportController @Inject()(configuration: Configuration,
             else
               writeRows(respondents, writer)
 
-            action.flatMap(_ => exportRemaining(offset + respondents.length, batchSize, writer))
+            action.flatMap(_ => exportRemaining(baseUrl, offset + respondents.length, batchSize, writer))
           }
       }
 
-    Try {
-      val file = File.createTempFile("intake24", ".csv")
-      val writer = new CSVWriter(new FileWriter(file))
+    ErrorUtils.asTry(surveyAdminService.getSurveyParameters(surveyId)).flatMap(parameters =>
+      Try {
+        val file = File.createTempFile("intake24", ".csv")
+        val writer = new CSVWriter(new FileWriter(file))
 
-      (file, writer)
-    }.flatMap {
-      case (file, writer) =>
-        val header = Array("Intake24 user ID", "Survey user ID", "Authentication URL") ++ (if (shortenAuthUrls) Array("Short authentication URL") else Array[String]()) ++
-          Array("Feedback URL") ++ (if (shortenAuthUrls) Array("Short feedback URL") else Array[String]())
-        writer.writeNext(header)
-        val result = exportRemaining(0, 1000, writer).map(_ => file)
-        Try {
-          writer.close()
-        }
-        result
-    }
+        (file, writer)
+      }.flatMap {
+        case (file, writer) =>
+          val header = Array("Intake24 user ID", "Survey user ID", "Authentication URL") ++ (if (shortenAuthUrls) Array("Short authentication URL") else Array[String]()) ++
+            Array("Feedback URL") ++ (if (shortenAuthUrls) Array("Short feedback URL") else Array[String]())
+          writer.writeNext(header)
+
+          val baseUrl = parameters.authUrlDomainOverride.getOrElse(surveyFrontendUrl).stripSuffix("/")
+
+          val result = exportRemaining(baseUrl, 0, 1000, writer).map(_ => file)
+          Try {
+            writer.close()
+          }
+          result
+      })
   }
 
   def cacheKey(surveyId: String, requestId: String): String = s"intake24.userDataExport.$requestId"

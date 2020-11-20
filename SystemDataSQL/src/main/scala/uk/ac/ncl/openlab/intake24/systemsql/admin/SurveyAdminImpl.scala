@@ -60,7 +60,8 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             |         submission_notification_url,
             |         feedback_enabled, number_of_submissions_for_feedback,
             |         store_user_session_on_server, maximum_daily_submissions,
-            |         maximum_total_submissions, minimum_submission_interval
+            |         maximum_total_submissions, minimum_submission_interval,
+            |         auth_url_domain_override
             |)
             |VALUES ({id}, {state}, {start_date}, {end_date},
             |        {scheme_id}, {locale}, {allow_gen_users}, {gen_user_key}, '',
@@ -69,7 +70,8 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             |        {submission_notification_url},
             |        {feedback_enabled}, {number_of_submissions_for_feedback},
             |        {store_user_session_on_server}, {maximum_daily_submissions},
-            |        {maximum_total_submissions}, {minimum_submission_interval})
+            |        {maximum_total_submissions}, {minimum_submission_interval},
+            |        {auth_url_domain_override})
             |RETURNING id,
             |          state,
             |          start_date,
@@ -89,7 +91,8 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             |          store_user_session_on_server,
             |          maximum_daily_submissions,
             |          maximum_total_submissions,
-            |          minimum_submission_interval;
+            |          minimum_submission_interval,
+            |          auth_url_domain_override;
           """.stripMargin
 
         val row = SQL(sqlQuery)
@@ -111,7 +114,8 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             'store_user_session_on_server -> parameters.storeUserSessionOnServer,
             'maximum_daily_submissions -> parameters.maximumDailySubmissions,
             'maximum_total_submissions -> parameters.maximumTotalSubmissions,
-            'minimum_submission_interval -> parameters.minimumSubmissionInterval)
+            'minimum_submission_interval -> parameters.minimumSubmissionInterval,
+            'auth_url_domain_override -> parameters.authUrlDomainOverride)
           .executeQuery().as(Macro.namedParser[SurveyParametersRow].single)
         Right(row.toSurveyParameters)
       }
@@ -149,7 +153,8 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             |    store_user_session_on_server={store_user_session_on_server},
             |    maximum_daily_submissions={maximum_daily_submissions},
             |    maximum_total_submissions={maximum_total_submissions},
-            |    minimum_submission_interval={minimum_submission_interval}
+            |    minimum_submission_interval={minimum_submission_interval},
+            |    auth_url_domain_override={auth_url_domain_override}
             |WHERE id={survey_id}
             |RETURNING id,
             |          state,
@@ -170,7 +175,8 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             |          store_user_session_on_server,
             |          maximum_daily_submissions,
             |          maximum_total_submissions,
-            |          minimum_submission_interval;
+            |          minimum_submission_interval,
+            |          auth_url_domain_override;
           """.stripMargin
 
         val row = SQL(sqlQuery)
@@ -193,7 +199,8 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             'store_user_session_on_server -> parameters.storeUserSessionOnServer,
             'maximum_daily_submissions -> parameters.maximumDailySubmissions,
             'maximum_total_submissions -> parameters.maximumTotalSubmissions,
-            'minimum_submission_interval -> parameters.minimumSubmissionInterval)
+            'minimum_submission_interval -> parameters.minimumSubmissionInterval,
+          'auth_url_domain_override -> parameters.authUrlDomainOverride)
           .executeQuery().as(Macro.namedParser[SurveyParametersRow].single)
         Right(row.toSurveyParameters)
       }
@@ -272,14 +279,15 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
                                          store_user_session_on_server: Option[Boolean],
                                          maximum_daily_submissions: Int,
                                          maximum_total_submissions: Option[Int],
-                                         minimum_submission_interval: Int) {
+                                         minimum_submission_interval: Int,
+                                         auth_url_domain_override: Option[String]) {
 
     def toSurveyParameters: SurveyParametersOut = new SurveyParametersOut(
       this.id, this.scheme_id, this.locale, this.state, this.start_date, this.end_date,
       this.suspension_reason, this.allow_gen_users, this.gen_user_key, this.survey_monkey_url, this.support_email,
       this.description, this.final_page_html, this.submission_notification_url, this.feedback_enabled,
       this.number_of_submissions_for_feedback, this.store_user_session_on_server, this.maximum_daily_submissions,
-      this.maximum_total_submissions, this.minimum_submission_interval
+      this.maximum_total_submissions, this.minimum_submission_interval, this.auth_url_domain_override
     )
 
   }
@@ -290,7 +298,7 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
         """SELECT id, scheme_id, state, locale, start_date, end_date, suspension_reason,
           |allow_gen_users, gen_user_key, survey_monkey_url, support_email, description, final_page_html, submission_notification_url,
           |feedback_enabled, number_of_submissions_for_feedback, store_user_session_on_server, maximum_daily_submissions,
-          |maximum_total_submissions, minimum_submission_interval FROM surveys WHERE id={survey_id}""".stripMargin)
+          |maximum_total_submissions, minimum_submission_interval, auth_url_domain_override FROM surveys WHERE id={survey_id}""".stripMargin)
         .on('survey_id -> surveyId)
         .executeQuery()
         .as(Macro.namedParser[SurveyParametersRow].singleOpt) match {

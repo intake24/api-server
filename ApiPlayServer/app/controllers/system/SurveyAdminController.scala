@@ -54,7 +54,7 @@ class SurveyAdminController @Inject()(service: SurveyAdminService,
       surveyParametersIn.supportEmail, description, finalPageHtml, surveyParametersIn.submissionNotificationUrl,
       surveyParametersIn.feedbackEnabled, surveyParametersIn.numberOfSubmissionsForFeedback,
       surveyParametersIn.storeUserSessionOnServer, surveyParametersIn.maximumDailySubmissions, surveyParametersIn.maximumTotalSubmissions,
-      surveyParametersIn.minimumSubmissionInterval)
+      surveyParametersIn.minimumSubmissionInterval, surveyParametersIn.authUrlDomainOverride)
   }
 
   def createSurvey() = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin)(jsonBodyParser.parse[SurveyParametersIn]) {
