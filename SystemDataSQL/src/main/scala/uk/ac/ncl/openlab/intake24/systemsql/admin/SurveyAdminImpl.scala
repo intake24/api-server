@@ -9,7 +9,7 @@ import anorm._
 import org.postgresql.util.PSQLException
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
-import uk.ac.ncl.openlab.intake24.services.systemdb.user.UserSurveyParameters
+import uk.ac.ncl.openlab.intake24.services.systemdb.user.{ErrorReportingSettings, UserSurveyParameters}
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
 class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends SurveyAdminService with SqlDataService with SqlResourceLoader {
@@ -61,7 +61,8 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             |         feedback_enabled, number_of_submissions_for_feedback,
             |         store_user_session_on_server, maximum_daily_submissions,
             |         maximum_total_submissions, minimum_submission_interval,
-            |         auth_url_domain_override
+            |         auth_url_domain_override, client_error_report_state,
+            |         client_error_report_stack_trace
             |)
             |VALUES ({id}, {state}, {start_date}, {end_date},
             |        {scheme_id}, {locale}, {allow_gen_users}, {gen_user_key}, '',
@@ -71,7 +72,8 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             |        {feedback_enabled}, {number_of_submissions_for_feedback},
             |        {store_user_session_on_server}, {maximum_daily_submissions},
             |        {maximum_total_submissions}, {minimum_submission_interval},
-            |        {auth_url_domain_override})
+            |        {auth_url_domain_override}, {client_error_report_state},
+            |        {client_error_report_stack_trace})
             |RETURNING id,
             |          state,
             |          start_date,
@@ -92,7 +94,9 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             |          maximum_daily_submissions,
             |          maximum_total_submissions,
             |          minimum_submission_interval,
-            |          auth_url_domain_override;
+            |          auth_url_domain_override,
+            |          client_error_report_state,
+            |          client_error_report_stack_trace;
           """.stripMargin
 
         val row = SQL(sqlQuery)
@@ -115,7 +119,9 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             'maximum_daily_submissions -> parameters.maximumDailySubmissions,
             'maximum_total_submissions -> parameters.maximumTotalSubmissions,
             'minimum_submission_interval -> parameters.minimumSubmissionInterval,
-            'auth_url_domain_override -> parameters.authUrlDomainOverride)
+            'auth_url_domain_override -> parameters.authUrlDomainOverride,
+            'client_error_report_state -> parameters.errorReporting.reportSurveyState,
+            'client_error_report_stack_trace -> parameters.errorReporting.reportStackTrace)
           .executeQuery().as(Macro.namedParser[SurveyParametersRow].single)
         Right(row.toSurveyParameters)
       }
@@ -154,7 +160,9 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             |    maximum_daily_submissions={maximum_daily_submissions},
             |    maximum_total_submissions={maximum_total_submissions},
             |    minimum_submission_interval={minimum_submission_interval},
-            |    auth_url_domain_override={auth_url_domain_override}
+            |    auth_url_domain_override={auth_url_domain_override},
+            |    client_error_report_state={client_error_report_state},
+            |    client_error_report_stack_trace={client_error_report_stack_trace}
             |WHERE id={survey_id}
             |RETURNING id,
             |          state,
@@ -176,7 +184,9 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             |          maximum_daily_submissions,
             |          maximum_total_submissions,
             |          minimum_submission_interval,
-            |          auth_url_domain_override;
+            |          auth_url_domain_override,
+            |          client_error_report_state,
+            |          client_error_report_stack_trace;
           """.stripMargin
 
         val row = SQL(sqlQuery)
@@ -200,7 +210,9 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
             'maximum_daily_submissions -> parameters.maximumDailySubmissions,
             'maximum_total_submissions -> parameters.maximumTotalSubmissions,
             'minimum_submission_interval -> parameters.minimumSubmissionInterval,
-          'auth_url_domain_override -> parameters.authUrlDomainOverride)
+            'auth_url_domain_override -> parameters.authUrlDomainOverride,
+            'client_error_report_state -> parameters.errorReporting.reportSurveyState,
+            'client_error_report_stack_trace -> parameters.errorReporting.reportStackTrace)
           .executeQuery().as(Macro.namedParser[SurveyParametersRow].single)
         Right(row.toSurveyParameters)
       }
@@ -280,16 +292,18 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
                                          maximum_daily_submissions: Int,
                                          maximum_total_submissions: Option[Int],
                                          minimum_submission_interval: Int,
-                                         auth_url_domain_override: Option[String]) {
+                                         auth_url_domain_override: Option[String],
+                                         client_error_report_state: Boolean,
+                                         client_error_report_stack_trace: Boolean) {
 
     def toSurveyParameters: SurveyParametersOut = new SurveyParametersOut(
       this.id, this.scheme_id, this.locale, this.state, this.start_date, this.end_date,
       this.suspension_reason, this.allow_gen_users, this.gen_user_key, this.survey_monkey_url, this.support_email,
       this.description, this.final_page_html, this.submission_notification_url, this.feedback_enabled,
       this.number_of_submissions_for_feedback, this.store_user_session_on_server, this.maximum_daily_submissions,
-      this.maximum_total_submissions, this.minimum_submission_interval, this.auth_url_domain_override
+      this.maximum_total_submissions, this.minimum_submission_interval, this.auth_url_domain_override,
+      ErrorReportingSettings(client_error_report_state, this.client_error_report_stack_trace)
     )
-
   }
 
   override def getSurveyParameters(surveyId: String): Either[LookupError, SurveyParametersOut] = tryWithConnection {
@@ -298,7 +312,8 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
         """SELECT id, scheme_id, state, locale, start_date, end_date, suspension_reason,
           |allow_gen_users, gen_user_key, survey_monkey_url, support_email, description, final_page_html, submission_notification_url,
           |feedback_enabled, number_of_submissions_for_feedback, store_user_session_on_server, maximum_daily_submissions,
-          |maximum_total_submissions, minimum_submission_interval, auth_url_domain_override FROM surveys WHERE id={survey_id}""".stripMargin)
+          |maximum_total_submissions, minimum_submission_interval, auth_url_domain_override, client_error_report_state,
+          |client_error_report_stack_trace FROM surveys WHERE id={survey_id}""".stripMargin)
         .on('survey_id -> surveyId)
         .executeQuery()
         .as(Macro.namedParser[SurveyParametersRow].singleOpt) match {

@@ -23,12 +23,18 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
 
   override def getPublicSurveyParameters(surveyId: String): Either[LookupError, PublicSurveyParameters] = tryWithConnection {
     implicit conn =>
-      SQL("SELECT locale, respondent_language_id, support_email, originating_url FROM surveys JOIN locales ON locales.id = surveys.locale WHERE surveys.id={survey_id}")
+      SQL("SELECT locale, respondent_language_id, support_email, originating_url, client_error_report_state, " +
+        "client_error_report_stack_trace FROM surveys JOIN locales ON locales.id = surveys.locale WHERE surveys.id={survey_id}")
         .on('survey_id -> surveyId)
         .executeQuery()
-        .as((SqlParser.str("locale") ~ SqlParser.str("respondent_language_id") ~ SqlParser.str("support_email") ~ SqlParser.str("originating_url").?).singleOpt) match {
-        case Some(locale ~ respondentLanguageId ~ email ~ url) =>
-          Right(PublicSurveyParameters(locale, respondentLanguageId, email, url))
+        .as((SqlParser.str("locale") ~
+          SqlParser.str("respondent_language_id") ~
+          SqlParser.str("support_email") ~
+          SqlParser.str("originating_url").? ~
+          SqlParser.bool("client_error_report_state") ~
+          SqlParser.bool("client_error_report_stack_trace")).singleOpt) match {
+        case Some(locale ~ respondentLanguageId ~ email ~ url ~ reportSurveyState ~ reportStackTrace) =>
+          Right(PublicSurveyParameters(locale, respondentLanguageId, email, url, ErrorReportingSettings(reportSurveyState, reportStackTrace)))
         case None =>
           Left(RecordNotFound(new RuntimeException(s"Survey $surveyId does not exist")))
       }

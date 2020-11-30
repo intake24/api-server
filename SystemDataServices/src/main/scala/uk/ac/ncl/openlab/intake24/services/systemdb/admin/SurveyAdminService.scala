@@ -3,6 +3,7 @@ package uk.ac.ncl.openlab.intake24.services.systemdb.admin
 import java.time.{Instant, ZonedDateTime}
 
 import uk.ac.ncl.openlab.intake24.errors._
+import uk.ac.ncl.openlab.intake24.services.systemdb.user.ErrorReportingSettings
 
 sealed abstract class SurveyState(code: Long)
 
@@ -38,7 +39,8 @@ case class SurveyParametersIn(id: String, schemeId: String, localeId: String, st
                               maximumDailySubmissions: Int,
                               maximumTotalSubmissions: Option[Int],
                               minimumSubmissionInterval: Int,
-                              authUrlDomainOverride: Option[String])
+                              authUrlDomainOverride: Option[String],
+                              errorReporting: ErrorReportingSettings)
 
 case class SurveyParametersOut(id: String, schemeId: String, localeId: String, state: Int,
                                startDate: ZonedDateTime, endDate: ZonedDateTime,
@@ -52,7 +54,8 @@ case class SurveyParametersOut(id: String, schemeId: String, localeId: String, s
                                maximumDailySubmissions: Int,
                                maximumTotalSubmissions: Option[Int],
                                minimumSubmissionInterval: Int,
-                               authUrlDomainOverride: Option[String])
+                               authUrlDomainOverride: Option[String],
+                               errorReporting: ErrorReportingSettings)
 
 // Staff cannot change survey ID, scheme, locale and generated user settings
 case class StaffSurveyUpdate(startDate: ZonedDateTime, endDate: ZonedDateTime,

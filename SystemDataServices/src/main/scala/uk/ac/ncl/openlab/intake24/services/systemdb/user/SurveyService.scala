@@ -6,7 +6,10 @@ import java.util.UUID
 import uk.ac.ncl.openlab.intake24.errors._
 import uk.ac.ncl.openlab.intake24.surveydata.NutrientMappedSubmission
 
-case class PublicSurveyParameters(localeId: String, respondentLanguageId: String, supportEmail: String, originatingURL: Option[String])
+case class ErrorReportingSettings(reportSurveyState: Boolean, reportStackTrace: Boolean)
+
+case class PublicSurveyParameters(localeId: String, respondentLanguageId: String, supportEmail: String, originatingURL: Option[String],
+                                  errorReporting: ErrorReportingSettings)
 
 case class SurveyFeedbackStyle(feedbackStyle: String)
 

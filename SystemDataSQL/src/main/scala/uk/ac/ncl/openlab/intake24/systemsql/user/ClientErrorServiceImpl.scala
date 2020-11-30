@@ -12,7 +12,7 @@ import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 class ClientErrorServiceImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends ClientErrorService with SqlDataService with SqlResourceLoader {
   def submitErrorReport(report: NewClientErrorReport): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
-      SQL("INSERT INTO client_error_reports VALUES(DEFAULT,{user_id},{survey_id},{reported_at},ARRAY[{stack_trace}],{survey_state_json},true)")
+      SQL("INSERT INTO client_error_reports VALUES(DEFAULT,{user_id},{survey_id},{reported_at},ARRAY[{stack_trace}]::varchar[],{survey_state_json},true)")
         .on('user_id -> report.userId,
           'survey_id -> report.surveyId,
           'reported_at -> report.reportedAt,
