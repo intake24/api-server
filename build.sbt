@@ -105,7 +105,7 @@ lazy val apiDocs = scalatex.ScalatexReadme(
 ).settings(
   scalaVersion := "2.12.4",
   libraryDependencies ++= Seq(
-    "com.lihaoyi" %% "upickle" % "0.4.3",
+    "com.lihaoyi" %% "upickle" % "0.4.4",
     "com.google.code.gson" % "gson" % "2.3.1" // for JSON pretty-printing
   )
 ).dependsOn(apiPlayServer)

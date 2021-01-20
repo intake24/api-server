@@ -20,7 +20,7 @@ name := "system-data-sql"
 
 description := "Intake24 SQL based system database"
 
-resolvers += "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/"
+resolvers += "Typesafe Releases" at "https://repo.typesafe.com/typesafe/releases/"
 
 parallelExecution in Test := false
 
