@@ -145,11 +145,12 @@ class FoodBrowsingServiceImpl @Inject()(@Named("intake24_foods") val dataSource:
       val q =
         """
           |SELECT
-          |  f.code,
-          |  f2.local_description AS localDescription
-          |FROM foods AS f
-          |  JOIN foods_local f2 on f.code = f2.food_code
-          |WHERE f2.locale_id='en_GB' AND NOT f2.do_not_use AND f2.local_description IS NOT NULL
+          |    fl.food_code AS code,
+          |    fl.local_description AS localDescription
+          |FROM foods_local_lists AS l
+          |         JOIN foods_local fl on fl.food_code = l.food_code AND fl.locale_id = l.locale_id
+          |WHERE l.locale_id={locale_id}
+          |ORDER BY l.food_code
         """.stripMargin
       val rows = SQL(q).on('locale_id -> localeId).as(Macro.namedParser[UserFoodHeader].*)
       Right(rows)
