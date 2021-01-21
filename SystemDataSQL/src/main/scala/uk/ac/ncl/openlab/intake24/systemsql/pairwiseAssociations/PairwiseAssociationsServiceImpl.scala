@@ -100,6 +100,7 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
         if (submissions.nonEmpty) {
           logger.debug(s"Processing ${submissions.size} submissions")
           action(submissions)
+          Thread.sleep(100)
           processSubmissions(surveyId, offset + submissions.size)(action)
         }
     }
