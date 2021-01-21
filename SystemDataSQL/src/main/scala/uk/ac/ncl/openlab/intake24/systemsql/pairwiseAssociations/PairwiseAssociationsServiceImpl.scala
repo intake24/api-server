@@ -90,17 +90,24 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
   }
 
   def processSubmissions(surveyId: String, offset: Int = 0)(action: Seq[ExportSubmission] => Unit): Unit = {
-    logger.debug(s"Retrieving next batch of ${settings.rulesUpdateBatchSize} submissions")
+    logger.debug(s"Fetching next batch of up to ${settings.rulesUpdateBatchSize} submissions")
 
-    dataExportService.getSurveySubmissions(surveyId, None, None, offset, settings.rulesUpdateBatchSize, None) match {
+    val t0 = System.currentTimeMillis()
+
+    val result =  dataExportService.getSurveySubmissions(surveyId, None, None, offset, settings.rulesUpdateBatchSize, None)
+
+    logger.debug(s"Received new batch in ${System.currentTimeMillis() - t0} ms")
+
+    result match {
       case Left(error) =>
         logger.warn(s"Failed to retrieve the next batch of submissions for survey $surveyId, offset $offset, batch size ${settings.rulesUpdateBatchSize}", error.exception)
 
       case Right(submissions) =>
         if (submissions.nonEmpty) {
           logger.debug(s"Processing ${submissions.size} submissions")
+          val t0 = System.currentTimeMillis()
           action(submissions)
-          Thread.sleep(100)
+          logger.debug(s"Processed current batch in ${System.currentTimeMillis() - t0} ms")
           processSubmissions(surveyId, offset + submissions.size)(action)
         }
     }
