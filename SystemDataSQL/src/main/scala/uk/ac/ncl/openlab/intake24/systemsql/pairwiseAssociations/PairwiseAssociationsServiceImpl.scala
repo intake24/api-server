@@ -89,8 +89,8 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
     }
   }
 
-  def processSubmissions(surveyId: String, offset: Int = 0)(action: Seq[ExportSubmission] => Unit): Unit = {
-    logger.debug(s"Fetching next batch of up to ${settings.rulesUpdateBatchSize} submissions")
+  def processSubmissions(surveyId: String, total: Int, offset: Int = 0)(action: Seq[ExportSubmission] => Unit): Unit = {
+    logger.debug(s"Fetching next batch of up to ${settings.rulesUpdateBatchSize} submissions at offset $offset (expected total $total)")
 
     val t0 = System.currentTimeMillis()
 
@@ -108,7 +108,7 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
           val t0 = System.currentTimeMillis()
           action(submissions)
           logger.debug(s"Processed current batch in ${System.currentTimeMillis() - t0} ms")
-          processSubmissions(surveyId, offset + submissions.size)(action)
+          processSubmissions(surveyId, total, offset + submissions.size)(action)
         }
     }
   }
@@ -117,19 +117,24 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
     Future {
       logger.debug("Refreshing Pairwise associations")
       logger.debug("Collecting surveys")
-      val surveys = surveyAdminService.listSurveys()
-      surveys.left.foreach(e => logger.error(e.exception.getMessage))
 
-      logger.debug("Building new pairwise associations graph")
+      val surveys = surveyAdminService.listSurveys() match {
+        case Right(surveys) => surveys
+        case Left(error) =>
+          logger.error("Failed to load surveys", error.exception)
+          Seq()
+      }
+
+      logger.debug(s"Building new pairwise associations graph from ${surveys.size} surveys")
       val foldGraph = Map[String, PairwiseAssociationRules]().withDefault(_ => PairwiseAssociationRules(None))
-      surveys.getOrElse(Nil).foldLeft(foldGraph) { (foldGraph, survey) =>
+      surveys.foldLeft(foldGraph) { (foldGraph, survey) =>
         val localeRules = foldGraph(survey.localeId)
         val submissionCount = getSubmissionCount(survey.id)
 
         if (surveyIsValid(survey.id, submissionCount, "getSurveySubmissions")) {
           logger.debug(s"Processing $submissionCount submissions from survey ${survey.id}")
 
-          processSubmissions(survey.id) {
+          processSubmissions(survey.id, submissionCount) {
             submissions =>
               logger.debug("Adding transactions to the graph")
               val transactions = submissions.flatMap(_.meals.map(_.foods.map(_.code)))

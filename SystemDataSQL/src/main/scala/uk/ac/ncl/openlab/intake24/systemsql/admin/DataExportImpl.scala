@@ -86,15 +86,19 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
 
             val t2 = System.currentTimeMillis()
             val foodRows = SQL(getSurveySubmissionFoodsSql).on('submission_ids -> submissionIdsSeqParam).executeQuery().as(Macro.namedParser[FoodRow].*).groupBy(_.meal_id)
-            logger.debug(s"Get food rows time: ${System.currentTimeMillis() - t2} ms")
+            logger.debug(s"Get food rows time: ${System.currentTimeMillis() - t2} ms, food rows count: ${foodRows.size}")
 
             val t3 = System.currentTimeMillis()
             val missingFoodRows = SQL(getSurveySubmissionMissingFoodsSql).on('submission_ids -> submissionIdsSeqParam).executeQuery().as(Macro.namedParser[MissingFoodRow].*).groupBy(_.meal_id)
             logger.debug(s"Get missing food rows time: ${System.currentTimeMillis() - t3} ms")
 
             val t4 = System.currentTimeMillis()
-            val nutrientRows = SQL(getSurveySubmissionNutrientsSql).on('submission_ids -> submissionIdsSeqParam).executeQuery().as(Macro.namedParser[NutrientRow].*).groupBy(_.food_id)
-            logger.debug(s"Get nutrient rows time: ${System.currentTimeMillis() - t4} ms")
+            val nutrientRowsResult = SQL(getSurveySubmissionNutrientsSql).on('submission_ids -> submissionIdsSeqParam).executeQuery()
+            logger.debug(s"Get nutrient rows query time: ${System.currentTimeMillis() - t4} ms")
+
+            val t41 = System.currentTimeMillis()
+            val nutrientRows = nutrientRowsResult.as(Macro.namedParser[NutrientRow].*).groupBy(_.food_id)
+            logger.debug(s"Get nutrient rows parse time: ${System.currentTimeMillis() - t41} ms, nutrient rows count: ${nutrientRows.size}")
 
             val t5 = System.currentTimeMillis()
             val fieldRows = SQL(getSurveySubmissionFieldsSql).on('submission_ids -> submissionIdsSeqParam).executeQuery()
