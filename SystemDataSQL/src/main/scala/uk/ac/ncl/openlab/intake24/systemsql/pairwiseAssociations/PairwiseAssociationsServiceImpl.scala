@@ -1,7 +1,6 @@
 package uk.ac.ncl.openlab.intake24.systemsql.pairwiseAssociations
 
 import java.time.{ZoneId, ZonedDateTime}
-
 import javax.inject.{Inject, Named, Singleton}
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.errors.UpdateError
@@ -9,6 +8,7 @@ import uk.ac.ncl.openlab.intake24.pairwiseAssociationRules.PairwiseAssociationRu
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, ExportSubmission, SurveyAdminService, SurveyParametersOut}
 import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsDataService, PairwiseAssociationsService, PairwiseAssociationsServiceConfiguration, PairwiseAssociationsServiceSortTypes}
 
+import scala.annotation.tailrec
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
@@ -89,7 +89,8 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
     }
   }
 
-  def processSubmissions(surveyId: String, total: Int, offset: Int = 0)(action: Seq[ExportSubmission] => Unit): Unit = {
+  @tailrec
+  private def processSubmissions(surveyId: String, total: Int, offset: Int = 0)(action: Seq[ExportSubmission] => Unit): Unit = {
     logger.debug(s"Fetching next batch of up to ${settings.rulesUpdateBatchSize} submissions at offset $offset (expected total $total)")
 
     val t0 = System.currentTimeMillis()
