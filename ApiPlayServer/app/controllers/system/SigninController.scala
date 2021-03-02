@@ -154,12 +154,14 @@ class SigninController @Inject()(silhouette: Environment[Intake24ApiEnv],
         case Some(user) => silhouette.authenticatorService.create(jwt.loginInfo).flatMap {
           accessToken =>
 
+            val customFields = user.userInfo.customFields.map { case (k, v) => Json.obj("key" -> k, "value" -> v) }
+
             val customClaims = user.userInfo.name match {
-              case Some(name) => Json.obj("type" -> "access", "userId" -> user.userInfo.id, "roles" -> user.userInfo.roles.toList, "name" -> name)
-              case None => Json.obj("type" -> "access", "userId" -> user.userInfo.id, "roles" -> user.userInfo.roles.toList)
+              case Some(name) => Json.obj("type" -> "access", "userId" -> user.userInfo.id, "roles" -> user.userInfo.roles.toList,
+                "customFields" -> customFields, "name" -> name)
+              case None => Json.obj("type" -> "access", "userId" -> user.userInfo.id, "roles" -> user.userInfo.roles.toList,
+                "customFields" -> customFields)
             }
-
-
 
             /*
             // This code is for idle expiration of refresh tokens, disabled for simplicity
