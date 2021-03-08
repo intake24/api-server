@@ -405,7 +405,9 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
     case "sab" => Right(CustomDataScheme(
       Seq(
         CustomFieldDescription("interviewerId", "Interviewer ID"),
-        CustomFieldDescription("interviewerName", "Interviewer Name")
+        CustomFieldDescription("interviewerName", "Interviewer Name"),
+        CustomFieldDescription("interviewerTeamName", "Interviewer Team Name"),
+        CustomFieldDescription("country", "Country")
       ),
       Seq(
         CustomFieldDescription("cookingOil", "Cooking oil used"),
