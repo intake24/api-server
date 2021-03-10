@@ -26,7 +26,7 @@ description := "Intake24 Api Server"
 
 maintainer := "Ivan Poliakov <ivan.poliakov@ncl.ac.uk>"
 
-version := "1.0.0"
+version := "1.0.0-SNAPSHOT"
 
 packageSummary := "API server for Intake24 "
 
@@ -34,8 +34,8 @@ packageDescription := """API server for Intake24."""
 
 
 lazy val packageManagerSettings = Seq(
-  rpmRelease := version,
-  rpmVendor := organization,
+  rpmRelease := "1.0.0",
+  rpmVendor := "uk.ac.ncl.openlab.intake24",
   rpmUrl := Some("http://github.com/intake24/survey-frontend"),
   rpmLicense := Some("ASL 2.0")
 )
