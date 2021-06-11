@@ -8,13 +8,13 @@ import org.slf4j.LoggerFactory
 import play.api.cache.SyncCacheApi
 import uk.ac.ncl.openlab.intake24.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.services.NdnsCompoundFoodGroupsService
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{ExportFood, ExportMeal, ExportSubmission}
-import uk.ac.ncl.openlab.intake24.surveydata.{MealTime, MissingFood, PortionSizeWithWeights}
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{ExportFood, ExportMeal, ExportMissingFood, ExportSubmission}
+import uk.ac.ncl.openlab.intake24.surveydata.{MealTime, PortionSizeWithWeights}
 
 
 case class ExportSubmissionWithFoodGroups(id: UUID, userId: Int, userAlias: Option[String], userCustomData: Map[String, String], surveyCustomData: Map[String, String], startTime: ZonedDateTime, endTime: ZonedDateTime, meals: Seq[ExportMealWithFoodGroups])
 
-case class ExportMealWithFoodGroups(name: String, time: MealTime, customData: Map[String, String], foods: Seq[ExportFoodWithFoodGroups], missingFoods: Seq[MissingFood])
+case class ExportMealWithFoodGroups(name: String, time: MealTime, customData: Map[String, String], foods: Seq[ExportFoodWithFoodGroups], missingFoods: Seq[ExportMissingFood])
 
 case class ExportFoodWithFoodGroups(code: String, englishDescription: String, localDescription: Option[String], searchTerm: String, nutrientTableId: String, nutrientTableCode: String, isReadyMeal: Boolean,
                                     portionSize: PortionSizeWithWeights, reasonableAmount: Boolean, foodGroupId: Int, brand: String, nutrients: Map[Int, Double], compoundFoodGroups: Map[Int, Double], customData: Map[String, String])
