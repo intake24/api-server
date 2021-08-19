@@ -35,12 +35,12 @@ class NotificationSenderImpl @Inject()(system: ActorSystem,
 
   val logger = LoggerFactory.getLogger(classOf[NotificationSenderImpl])
 
-  system.scheduler.schedule(0.second, 2.minutes) {
+  system.scheduler.scheduleWithFixedDelay(0.second, 2.minutes)(new Runnable {
 
     val NOTIFY_AGAIN_AFTER_MINUTES = 40
     val ADMIN_NAME = "Tim"
 
-    sendNotifications()
+    override def run(): Unit = sendNotifications()
 
     case class MessagePack(email: String, sms: String)
 
@@ -251,7 +251,5 @@ class NotificationSenderImpl @Inject()(system: ActorSystem,
       notification.notificationType == Notification.NotificationTypeLoginLast && !userSubmitted
     }
 
-  }
-
-
+  })
 }

@@ -16,8 +16,8 @@ import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 class UserPhysicalDataServiceImpl @Inject()(@Named("intake24_system") val dataSource: DataSource) extends UserPhysicalDataService
   with SqlDataService with SqlResourceLoader {
 
-  val constraintErrorsPartialFn = PartialFunction[String, PSQLException => ConstraintError] {
-    constraintName => (e: PSQLException) => ConstraintViolation(e.toString, e)
+  val constraintErrorsPartialFn: PartialFunction[String, PSQLException => ConstraintError] = {
+    case constraintName => (e: PSQLException) => ConstraintViolation(e.toString, e)
   }
 
   private case class UserInfoRow(user_id: Long, sex: Option[String],
