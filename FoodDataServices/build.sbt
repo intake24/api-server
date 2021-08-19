@@ -28,6 +28,7 @@ libraryDependencies ++= Seq(
   "br.com.socialsla" % "ptstemmer-java" % "0.3.b1",
   "org.scalatest" %% "scalatest" % "3.0.1" % "test",
   "org.apache.commons" % "commons-lang3" % "3.4",
-  "org.apache.xmlgraphics" % "batik-svg-dom" % "1.7",
-  "org.apache.xmlgraphics" % "batik-util" % "1.7"
+  "org.apache.xmlgraphics" % "batik-svg-dom" % "1.14",
+  "org.apache.xmlgraphics" % "batik-util" % "1.14",
+  "org.apache.xmlgraphics" % "batik-anim" % "1.14"
 )

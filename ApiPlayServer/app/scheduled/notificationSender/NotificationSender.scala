@@ -1,11 +1,9 @@
 package scheduled.notificationSender
 
-import java.time.ZonedDateTime
-
 import akka.actor.ActorSystem
-import javax.inject.{Inject, Singleton}
+import org.slf4j.LoggerFactory
+import play.api.Configuration
 import play.api.libs.mailer.{Email, MailerClient}
-import play.api.{Configuration, Logger}
 import sms.SMSService
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{UserAdminService, UserProfile}
 import uk.ac.ncl.openlab.intake24.services.systemdb.notifications.{NewNotification, Notification, NotificationScheduleDataService}
@@ -13,12 +11,14 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.user.{PublicSurveyParameters
 import uk.ac.ncl.openlab.intake24.services.systemdb.uxEvents.UxEventsDataService
 import uk.ac.ncl.openlab.intake24.shorturls.{ShortUrlsHttpClient, ShortUrlsRequest}
 
+import java.time.ZonedDateTime
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
-  * Created by Tim Osadchiy on 12/10/2017.
-  */
+ * Created by Tim Osadchiy on 12/10/2017.
+ */
 trait NotificationSender
 
 @Singleton
@@ -32,6 +32,8 @@ class NotificationSenderImpl @Inject()(system: ActorSystem,
                                        uxEventsDataService: UxEventsDataService,
                                        configuration: Configuration,
                                        implicit val executionContext: ExecutionContext) extends NotificationSender {
+
+  val logger = LoggerFactory.getLogger(classOf[NotificationSenderImpl])
 
   system.scheduler.schedule(0.second, 2.minutes) {
 
@@ -196,7 +198,7 @@ class NotificationSenderImpl @Inject()(system: ActorSystem,
       mailerClient.send(email)
     }
 
-    def logError(msg: String) = Logger.error(s"${getClass.getSimpleName}. $msg")
+    def logError(msg: String) = logger.error(s"${getClass.getSimpleName}. $msg")
 
     def createReminder(notification: Notification) = {
       val newDate = ZonedDateTime.now().plusMinutes(NOTIFY_AGAIN_AFTER_MINUTES)
@@ -219,9 +221,9 @@ class NotificationSenderImpl @Inject()(system: ActorSystem,
     def shouldRemind(notification: Notification): Boolean = notification.surveyId.exists { surveyId =>
 
       /**
-        * This function checks if user was active within the last 2 hours.
-        * Used to check if previous notification was ignored
-        */
+       * This function checks if user was active within the last 2 hours.
+       * Used to check if previous notification was ignored
+       */
       if (!Seq(Notification.NotificationTypeLoginSecondReminder, Notification.NotificationTypeLoginFirstReminder).contains(notification.notificationType)) {
         false
       } else {
@@ -239,9 +241,9 @@ class NotificationSenderImpl @Inject()(system: ActorSystem,
     def shouldSendLastNotification(notification: Notification): Boolean = notification.surveyId.exists { surveyId =>
 
       /**
-        * This function checks if user submitted within the last 18 hours.
-        * Used to check if there is a need to ask user for submission on the last morning
-        */
+       * This function checks if user submitted within the last 18 hours.
+       * Used to check if there is a need to ask user for submission on the last morning
+       */
       val dateFrom = notification.dateTime.minusHours(18)
       val userSubmitted = surveyService
         .userSubmittedWithinPeriod(surveyId, notification.userId, dateFrom, ZonedDateTime.now())

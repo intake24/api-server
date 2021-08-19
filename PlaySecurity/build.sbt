@@ -28,10 +28,10 @@ resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases/"
 
 libraryDependencies ++= Seq(
   "net.codingwell" %% "scala-guice" % "4.1.0",
-  "com.mohiva" %% "play-silhouette" % "5.0.5",
+  "com.mohiva" %% "play-silhouette" % "7.0.0",
   "io.circe" %% "circe-core" % "0.9.3",
   "io.circe" %% "circe-generic" % "0.9.3",
   "io.circe" %% "circe-parser" % "0.9.3",
-  "org.apache.shiro" % "shiro-core" % "1.2.3", // for v1.0 authentication support
+  "org.apache.shiro" % "shiro-core" % "1.7.1", // for v1.0 authentication support
 )
 

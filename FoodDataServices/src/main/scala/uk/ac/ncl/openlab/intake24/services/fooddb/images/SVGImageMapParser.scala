@@ -1,17 +1,16 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.images
 
 
-import java.awt.Shape
-import java.awt.geom.{AffineTransform, PathIterator}
-import java.io.StringReader
-
-import org.apache.batik.dom.svg.{SAXSVGDocumentFactory, SVGOMDocument}
+import org.apache.batik.anim.dom.{SAXSVGDocumentFactory, SVGOMDocument}
 import org.apache.batik.parser.{AWTPathProducer, AWTTransformProducer}
 import org.apache.batik.util.XMLResourceDescriptor
 import org.slf4j.LoggerFactory
 import org.w3c.dom.svg.SVGSVGElement
 import org.w3c.dom.{Element, Node}
 
+import java.awt.Shape
+import java.awt.geom.{AffineTransform, PathIterator}
+import java.io.StringReader
 import scala.collection.mutable
 
 case class AWTImageMap(navigation: Seq[Int], outlines: Map[Int, Shape], aspect: Double) {

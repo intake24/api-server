@@ -18,18 +18,16 @@ limitations under the License.
 
 package controllers
 
-import java.nio.file.Paths
-import javax.inject.Inject
-
-import play.api.Logger
+import io.circe.generic.auto._
+import org.slf4j.LoggerFactory
+import parsers.JsonBodyParser
 import play.api.mvc.{BaseController, ControllerComponents}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
-import io.circe.generic.auto._
-import parsers.{JsonBodyParser, JsonUtils}
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
+import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 case class AsServedImageWithUrls(sourceId: Long, imageUrl: String, thumbnailUrl: String, weight: Double)
@@ -56,6 +54,8 @@ class AsServedSetsAdminController @Inject()(
 
   import ImageAdminService.WrapDatabaseError
   import uk.ac.ncl.openlab.intake24.errors.ErrorUtils.sequence
+
+  val logger = LoggerFactory.getLogger(classOf[AsServedSetsAdminController])
 
   def resolveUrls(image: AsServedImageWithPaths): AsServedImageWithUrls =
     AsServedImageWithUrls(image.sourceId, imageStorage.getUrl(image.imagePath), imageStorage.getUrl(image.thumbnailPath), image.weight)
@@ -210,8 +210,9 @@ class AsServedSetsAdminController @Inject()(
 
             val result = for (
               sources <- sequence(records.map {
-                record => imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForAsServed(setId, record._1.filename), record._1.ref.path,
-                  record._1.filename, keywords, uploaderName)
+                record =>
+                  imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForAsServed(setId, record._1.filename), record._1.ref.path,
+                    record._1.filename, keywords, uploaderName)
               }).right;
               result <- createAsServedSetImpl(NewAsServedSet(setId, description, sources.zip(weights).map { case (source, weight) => NewAsServedImage(source.id, weight) })).right)
               yield result
@@ -229,7 +230,7 @@ class AsServedSetsAdminController @Inject()(
     imageAdmin.deleteProcessedImages(images) match {
       case Right(()) => Right(())
       case Left(e) =>
-        Logger.warn("Could not delete old as served images", e.exception)
+        logger.warn("Could not delete old as served images", e.exception)
         Right(())
     }
   }

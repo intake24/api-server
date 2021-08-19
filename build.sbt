@@ -18,6 +18,8 @@ limitations under the License.
 
 import ResolveInternalDependencies._
 
+Global / dependencyCheckFormats := Seq("HTML", "JSON")
+
 lazy val commonSettings = Seq(
   version := "3.30.2-SNAPSHOT",
   scalaVersion := "2.12.8",

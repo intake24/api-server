@@ -18,22 +18,22 @@ limitations under the License.
 
 package controllers.system.user
 
-import javax.inject.Inject
-
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
+import org.slf4j.LoggerFactory
 import parsers.{JsonBodyParser, JsonUtils}
+import play.api.Configuration
 import play.api.libs.mailer.{Email, MailerClient}
 import play.api.mvc._
-import play.api.{Configuration, Logger}
 import play.cache.SyncCacheApi
 import security._
 import sms.SMSService
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.UserAdminService
 
+import javax.inject.Inject
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -58,6 +58,8 @@ class HelpController @Inject()(cache: SyncCacheApi,
   val callbackRequestRate = config.get[Int]("intake24.help.callbackRequestRateSeconds")
   val supportEmail = config.get[String]("intake24.supportEmail")
   val feedbackEmail = config.get[String]("intake24.feedbackEmail")
+
+  val logger = LoggerFactory.getLogger(classOf[HelpController])
 
   private def getCacheKey(subject: Intake24AccessToken) = {
     s"reject-callback-${subject.userId.toString}"
@@ -85,7 +87,7 @@ class HelpController @Inject()(cache: SyncCacheApi,
           val supportUsers = userAdminService.listUsersByRole(Roles.surveySupport(surveyId), 0, 100).right.flatMap {
             users =>
               if (users.isEmpty) {
-                Logger.warn(s"Support user list is empty for survey $surveyId -- falling back to global support users")
+                logger.warn(s"Support user list is empty for survey $surveyId -- falling back to global support users")
                 userAdminService.listUsersByRole(Roles.globalSupport, 0, 100)
               }
               else
@@ -98,7 +100,7 @@ class HelpController @Inject()(cache: SyncCacheApi,
               val phoneNumbers = users.filter(_.smsNotifications).flatMap(_.phone)
 
               if (emailAddresses.isEmpty)
-                Logger.error(s"No support e-mail addresses are available for survey $surveyId: support user list is empty, none of support users have an e-mail address set, or all available support users have e-mail notifications disabled")
+                logger.error(s"No support e-mail addresses are available for survey $surveyId: support user list is empty, none of support users have an e-mail address set, or all available support users have e-mail notifications disabled")
               else
                 system.scheduler.scheduleOnce(0.seconds) {
                   try {
@@ -111,12 +113,12 @@ class HelpController @Inject()(cache: SyncCacheApi,
 
                     mailer.send(message)
                   } catch {
-                    case e: Throwable => Logger.error("Failed to send e-mail message", e)
+                    case e: Throwable => logger.error("Failed to send e-mail message", e)
                   }
                 }
 
               if (phoneNumbers.isEmpty)
-                Logger.warn(s"No support phone numbers are available for survey $surveyId: support user list is empty, none of support users have a phone number set, or all available support users have SMS notifiactions disabled")
+                logger.warn(s"No support phone numbers are available for survey $surveyId: support user list is empty, none of support users have a phone number set, or all available support users have SMS notifiactions disabled")
               else
                 system.scheduler.scheduleOnce(0.seconds) {
                   phoneNumbers.foreach {
@@ -124,7 +126,7 @@ class HelpController @Inject()(cache: SyncCacheApi,
                       try {
                         smsService.sendMessage(s"Intake24: please call ${request.body.name} on ${request.body.phone} (survey ID: $surveyId, user ID: $userName)", toNumber)
                       } catch {
-                        case e: Throwable => Logger.error("Failed to send SMS message", e)
+                        case e: Throwable => logger.error("Failed to send SMS message", e)
                       }
                   }
                 }
@@ -171,7 +173,7 @@ class HelpController @Inject()(cache: SyncCacheApi,
 
               mailer.send(message)
             } catch {
-              case e: Throwable => Logger.error("Failed to send e-mail message", e)
+              case e: Throwable => logger.error("Failed to send e-mail message", e)
             }
           }
 
