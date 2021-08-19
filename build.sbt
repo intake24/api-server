@@ -21,7 +21,7 @@ import ResolveInternalDependencies._
 Global / dependencyCheckFormats := Seq("HTML", "JSON")
 
 lazy val commonSettings = Seq(
-  version := "3.30.2-SNAPSHOT",
+  version := "3.31.0-SNAPSHOT",
   scalaVersion := "2.12.14",
   publishArtifact in(Compile, packageDoc) := false,
   scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
