@@ -22,6 +22,6 @@ description := "Intake24 S3 image storage implementation"
 
 libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % "1.7.21",
-  "com.amazonaws" % "aws-java-sdk" % "1.11.155",
+  "com.amazonaws" % "aws-java-sdk" % "1.12.51",
   "commons-io" % "commons-io" % "2.5"
 )

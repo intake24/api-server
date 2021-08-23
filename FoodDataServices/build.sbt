@@ -24,7 +24,7 @@ resolvers += Resolver.mavenLocal
 
 libraryDependencies ++= Seq(
   "net.codingwell" %% "scala-guice" % "4.1.0",
-  "commons-io" % "commons-io" % "2.5",
+  "commons-io" % "commons-io" % "2.11.0",
   "br.com.socialsla" % "ptstemmer-java" % "0.3.b1",
   "org.scalatest" %% "scalatest" % "3.0.1" % "test",
   "org.apache.commons" % "commons-lang3" % "3.4",

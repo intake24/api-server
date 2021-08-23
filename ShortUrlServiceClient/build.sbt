@@ -3,7 +3,7 @@ organization := "uk.ac.ncl.openlab.intake24"
 
 version := "1.0.0-SNAPSHOT"
 
-scalaVersion := "2.12.7"
+scalaVersion := "2.12.14"
 
 scalacOptions += "-Ypartial-unification"
 

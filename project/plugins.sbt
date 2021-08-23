@@ -18,10 +18,6 @@ limitations under the License.
 
 addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.7.9")
 
-addSbtPlugin("com.lihaoyi" % "scalatex-sbt-plugin" % "0.3.11")
-
-addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.10.0-RC1")
-
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.6")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.3.2")
@@ -30,13 +26,18 @@ addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.21")
 
 addSbtPlugin("net.vonbuchholtz" % "sbt-dependency-check" % "3.1.3")
 
+// addDependencyTreePlugin
+
+addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.10.0-RC1")
+
 libraryDependencies ++= Seq(
   "org.vafer" % "jdeb" % "1.5" artifacts (Artifact("jdeb", "jar", "jar")),
-  "org.scala-js" %% "scalajs-env-selenium" % "0.2.0",
+)
 
+dependencyOverrides ++= Seq(
   // There seems to be some conflict involving this library among the various SBT plugins which
   // breaks the dependency check plugin.
   // Forcing a dependency on a newer version helps but might cause some unexpected behaviour
   // if they aren't binary compatible.
-  "com.google.guava" % "guava" % "30.1.1-jre"
+  "com.google.guava" % "guava" % "27.1-jre"
 )

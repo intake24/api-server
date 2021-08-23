@@ -28,7 +28,7 @@ class ErrorDigestSenderImpl @Inject()(config: Configuration,
 
   val logger = LoggerFactory.getLogger(classOf[ErrorDigestSenderImpl])
 
-  system.scheduler.scheduleWithFixedDelay(0.minutes, frequency.minutes)(
+  system.scheduler.schedule(0.minutes, frequency.minutes)(
     new Runnable {
       def formatReport(report: ClientErrorReport) = {
         val sb = new StringBuilder

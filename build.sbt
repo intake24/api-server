@@ -24,9 +24,8 @@ lazy val commonSettings = Seq(
   version := "3.31.0-SNAPSHOT",
   scalaVersion := "2.12.14",
   publishArtifact in(Compile, packageDoc) := false,
-  scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
+  scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature"),
 )
-
 
 lazy val scalaHttpJVM = project.in(file("RosHTTP"))
 
@@ -97,19 +96,5 @@ lazy val shortUrlServiceApi = project.in(file("ShortUrlServiceAPI"))
 lazy val shortUrlServiceClient = project.in(file("ShortUrlServiceClient")).dependsOn(shortUrlServiceApi)
 
 lazy val shortUrlService = project.in(file("ShortUrlService")).enablePlugins(PlayScala, SystemdPlugin, JDebPackaging, ClasspathJarPlugin).dependsOn(apiSharedJVM, systemDataSql).dependsOn(shortUrlServiceApi, playUtils)
-
-lazy val apiDocs = scalatex.ScalatexReadme(
-  projectId = "apiDocs",
-  wd = file(""),
-  url = "",
-  source = "ApiDocs",
-  autoResources = List("apidocs-styles.css")
-).settings(
-  scalaVersion := "2.12.4",
-  libraryDependencies ++= Seq(
-    "com.lihaoyi" %% "upickle" % "0.4.4",
-    "com.google.code.gson" % "gson" % "2.3.1" // for JSON pretty-printing
-  )
-).dependsOn(apiPlayServer)
 
 onLoad.in(Global) ~= { f => s => resolveInternalDependenciesImpl(f(s)) }

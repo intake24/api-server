@@ -27,7 +27,7 @@ resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
 resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases/"
 
 libraryDependencies ++= Seq(
-  "com.typesafe.play" %% "play" % "2.6.16",
+  "com.typesafe.play" %% "play" % "2.7.9",
   "io.circe" %% "circe-core" % "0.10.1",
   "io.circe" %% "circe-generic" % "0.10.1",
   "io.circe" %% "circe-parser" % "0.10.1"

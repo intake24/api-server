@@ -35,7 +35,7 @@ class NotificationSenderImpl @Inject()(system: ActorSystem,
 
   val logger = LoggerFactory.getLogger(classOf[NotificationSenderImpl])
 
-  system.scheduler.scheduleWithFixedDelay(0.second, 2.minutes)(new Runnable {
+  system.scheduler.schedule(0.second, 2.minutes)(new Runnable {
 
     val NOTIFY_AGAIN_AFTER_MINUTES = 40
     val ADMIN_NAME = "Tim"

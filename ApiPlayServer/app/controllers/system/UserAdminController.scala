@@ -21,8 +21,8 @@ package controllers.system
 import java.io.StringWriter
 import java.security.SecureRandom
 import java.util.Base64
-
 import akka.stream.scaladsl.{Source, StreamConverters}
+
 import javax.inject.Inject
 import au.com.bytecode.opencsv.CSVWriter
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
@@ -30,7 +30,7 @@ import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
 import org.reactivestreams.Publisher
 import parsers.{JsonBodyParser, JsonUtils, UserRecordsCSVParser}
-import play.api.Configuration
+import play.api.{Configuration, Logger}
 import play.api.cache.SyncCacheApi
 import play.api.http.ContentTypes
 import play.api.libs.Files
@@ -70,7 +70,6 @@ class UserAdminController @Inject()(service: UserAdminService,
                                     val controllerComponents: ControllerComponents,
                                     implicit val executionContext: ExecutionContext) extends BaseController
   with DatabaseErrorHandler with JsonUtils {
-
 
   private lazy val random = new SecureRandom()
   private lazy val base64Encoder = Base64.getUrlEncoder()
