@@ -42,11 +42,15 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-mailer" % "6.0.1",
   "com.typesafe.play" %% "play-mailer-guice" % "6.0.1",
   "com.twilio.sdk" % "twilio" % "7.7.0",
-  "com.amazonaws" % "aws-java-sdk" % "1.11.155",
-  "org.apache.shiro" % "shiro-core" % "1.2.3", // for v1.0 authentication support
-  "com.typesafe.play" %% "play-integration-test" % "2.6.5" % "test",
+  "com.amazonaws" % "aws-java-sdk" % "1.12.51",
   "com.auth0" % "java-jwt" % "3.8.1",
   "commons-net" % "commons-net" % "3.6"
+)
+
+dependencyOverrides ++= Seq(
+  "com.atlassian.jwt" % "jwt-core" % "3.2.1",
+  "com.atlassian.jwt" % "jwt-api" % "3.2.1",
+  "com.fasterxml.jackson.core" % "jackson-databind" % "2.10.5.1"
 )
 
 // These are the default Java settings that go into conf/application.ini and are read by the start up

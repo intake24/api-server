@@ -5,16 +5,19 @@ import java.time.ZonedDateTime
 import java.util.UUID
 
 import uk.ac.ncl.openlab.intake24.errors.{LookupError, UnexpectedDatabaseError}
-import uk.ac.ncl.openlab.intake24.surveydata.{MealTime, MissingFood, PortionSizeWithWeights}
+import uk.ac.ncl.openlab.intake24.surveydata.{MealTime, PortionSizeWithWeights}
 
 
 case class ExportSubmission(id: UUID, userId: Int, userAlias: Option[String], userCustomData: Map[String, String], surveyCustomData: Map[String, String], startTime: ZonedDateTime, endTime: ZonedDateTime, meals: Seq[ExportMeal])
 
-case class ExportMeal(name: String, time: MealTime, customData: Map[String, String], foods: Seq[ExportFood], missingFoods: Seq[MissingFood])
+case class ExportMeal(id: Long, name: String, time: MealTime, customData: Map[String, String], foods: Seq[ExportFood], missingFoods: Seq[ExportMissingFood])
 
-case class ExportFood(code: String, englishDescription: String, localDescription: Option[String], searchTerm: String, nutrientTableId: String, nutrientTableCode: String, isReadyMeal: Boolean,
+case class ExportFood(id: Long, code: String, englishDescription: String, localDescription: Option[String], searchTerm: String, nutrientTableId: String, nutrientTableCode: String, isReadyMeal: Boolean,
                       portionSize: PortionSizeWithWeights, reasonableAmount: Boolean, foodGroupId: Int, brand: String, fields: Map[String, String],
                       nutrients: Map[Int, Double], customData: Map[String, String])
+
+case class ExportMissingFood(id: Long, name: String, brand: String, description: String, portionSize: String, leftovers: String)
+
 
 case class ExportTaskProgressUpdate(id: Long, progress: Double)
 

@@ -27,7 +27,7 @@ parallelExecution in Test := false
 // test in assembly := {}
 
 libraryDependencies ++= Seq(
-  "com.google.gwt" % "gwt-user" % "2.7.0" % "provided",
+  "com.google.gwt" % "gwt-user" % "2.8.2" % "provided",
   "org.slf4j" % "slf4j-api" % "1.7.21",
   "net.codingwell" %% "scala-guice" % "4.1.0",
   "org.apache.commons" % "commons-lang3" % "3.4",

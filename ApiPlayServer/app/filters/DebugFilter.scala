@@ -18,25 +18,26 @@ limitations under the License.
 
 package filters
 
-import play.api.mvc.RequestHeader
-import play.api.mvc.Result
-import play.api.Logger
-import play.api.mvc.Filter
-
-import scala.concurrent.{ExecutionContext, Future}
 import akka.stream.Materializer
+import org.slf4j.LoggerFactory
+import play.api.mvc.{Filter, RequestHeader, Result}
+
 import javax.inject.Inject
+import scala.concurrent.{ExecutionContext, Future}
 
 class DebugFilter @Inject()(implicit val mat: Materializer,
                             implicit val executionContext: ExecutionContext) extends Filter {
+
+  val logger = LoggerFactory.getLogger(classOf[DebugFilter])
+
   def apply(next: RequestHeader => Future[Result])(rh: RequestHeader): Future[Result] = {
     next.apply(rh).map {
       result =>
-        Logger.debug(s"${rh.method} ${rh.uri}")
-        Logger.debug("REQUEST HEADERS:")
+        logger.debug(s"${rh.method} ${rh.uri}")
+        logger.debug("REQUEST HEADERS:")
         rh.headers.keys.foreach {
           k =>
-            Logger.info(s"${k}: ${rh.headers(k)}")
+            logger.info(s"${k}: ${rh.headers(k)}")
         }
         result
     }

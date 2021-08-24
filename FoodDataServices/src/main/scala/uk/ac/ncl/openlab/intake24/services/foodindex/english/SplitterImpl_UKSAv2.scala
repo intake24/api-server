@@ -16,12 +16,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-name := "image-storage-s3"
+package uk.ac.ncl.openlab.intake24.services.foodindex.english
 
-description := "Intake24 S3 image storage implementation"
+import com.google.inject.{Inject, Singleton}
+import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
 
-libraryDependencies ++= Seq(
-  "org.slf4j" % "slf4j-api" % "1.7.21",
-  "com.amazonaws" % "aws-java-sdk" % "1.12.51",
-  "commons-io" % "commons-io" % "2.5"
-)
+// FIXME: Error handling
+@Singleton
+class SplitterImpl_UKSAv2 @Inject()(foodData: FoodIndexDataService) extends EnglishSplitter(foodData.splitList("UKSAv2").right.get)

@@ -166,7 +166,7 @@ class UserDataExportController @Inject()(configuration: Configuration,
 
   def cacheKey(surveyId: String, requestId: String): String = s"intake24.userDataExport.$requestId"
 
-  def exportRespondentAuthUrlsAsCsv(surveyId: String) = rab.restrictToRoles(Roles.surveyStaff(surveyId)) {
+  def exportRespondentAuthUrlsAsCsv(surveyId: String) = rab.restrictToRoles(Roles.surveyAdmin, Roles.surveyStaff(surveyId)) {
     Future {
 
       val requestId = UUID.randomUUID().toString
@@ -194,7 +194,7 @@ class UserDataExportController @Inject()(configuration: Configuration,
   }
 
 
-  def getUrlExportStatus(surveyId: String, requestId: String) = rab.restrictToRoles(Roles.surveyStaff(surveyId)) {
+  def getUrlExportStatus(surveyId: String, requestId: String) = rab.restrictToRoles(Roles.surveyAdmin, Roles.surveyStaff(surveyId)) {
     Future {
       syncCacheApi.get[String](cacheKey(surveyId, requestId)) match {
         case Some(value) => Ok(value).as(ContentTypes.JSON)

@@ -1,16 +1,15 @@
 package scheduled
 
-import javax.inject.{Inject, Named, Singleton}
-
-import scala.concurrent.duration._
 import akka.actor.ActorSystem
 import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsService, PairwiseAssociationsServiceConfiguration}
 
+import javax.inject.{Inject, Named, Singleton}
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 
 /**
-  * Created by Tim Osadchiy on 12/10/2017.
-  */
+ * Created by Tim Osadchiy on 12/10/2017.
+ */
 trait PairwiseAssociationsRefresher
 
 @Singleton
@@ -24,8 +23,7 @@ class PairwiseAssociationsRefresherImpl @Inject()(settings: PairwiseAssociations
     paService.refresh()
   }
 
-  system.scheduler.schedule(settings.nextRefreshIn, 24.hours) {
-    paService.refresh()
-  }
-
+  system.scheduler.schedule(settings.nextRefreshIn, 24.hours)(new Runnable {
+    override def run() = paService.refresh()
+  })
 }

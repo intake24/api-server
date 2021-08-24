@@ -238,12 +238,22 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
           |          scheme_id,
           |          locale,
           |          allow_gen_users,
+          |          gen_user_key,
           |          suspension_reason,
           |          survey_monkey_url,
           |          support_email,
           |          description,
           |          final_page_html,
-          |          submission_notification_url;
+          |          submission_notification_url,
+          |          feedback_enabled,
+          |          number_of_submissions_for_feedback,
+          |          store_user_session_on_server,
+          |          maximum_daily_submissions,
+          |          maximum_total_submissions,
+          |          minimum_submission_interval,
+          |          auth_url_domain_override,
+          |          client_error_report_state,
+          |          client_error_report_stack_trace;
         """.stripMargin
 
       val row = SQL(sqlQuery)
@@ -405,7 +415,9 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
     case "sab" => Right(CustomDataScheme(
       Seq(
         CustomFieldDescription("interviewerId", "Interviewer ID"),
-        CustomFieldDescription("interviewerName", "Interviewer Name")
+        CustomFieldDescription("interviewerName", "Interviewer Name"),
+        CustomFieldDescription("interviewerTeamName", "Interviewer Team Name"),
+        CustomFieldDescription("country", "Country")
       ),
       Seq(
         CustomFieldDescription("cookingOil", "Cooking oil used"),

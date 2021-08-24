@@ -32,6 +32,5 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-core" % "0.9.3",
   "io.circe" %% "circe-generic" % "0.9.3",
   "io.circe" %% "circe-parser" % "0.9.3",
-  "org.apache.shiro" % "shiro-core" % "1.2.3", // for v1.0 authentication support
+  "org.apache.shiro" % "shiro-core" % "1.7.1", // for v1.0 authentication support
 )
-

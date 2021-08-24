@@ -18,24 +18,24 @@ limitations under the License.
 
 package controllers.system
 
-import javax.inject.Inject
-
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.util.Credentials
 import com.mohiva.play.silhouette.api.{Environment, LoginInfo}
 import com.mohiva.play.silhouette.impl.exceptions.{IdentityNotFoundException, InvalidPasswordException}
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
+import org.slf4j.LoggerFactory
 import parsers.{JsonBodyParser, JsonUtils}
+import play.api.Configuration
 import play.api.http.ContentTypes
 import play.api.libs.json.Json
 import play.api.mvc._
-import play.api.{Configuration, Logger}
 import security._
 import uk.ac.ncl.openlab.intake24.api.data._
 import uk.ac.ncl.openlab.intake24.errors.UnexpectedDatabaseError
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{SigninAttempt, SigninLogService, SurveyUserAlias}
 
+import javax.inject.Inject
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -54,11 +54,13 @@ class SigninController @Inject()(silhouette: Environment[Intake24ApiEnv],
   val accessTokenExpiryPeriod = configuration.get[Int]("intake24.security.accessTokenExpiryMinutes").minutes
   val refreshTokenExpiryPeriod = configuration.get[Int]("intake24.security.refreshTokenExpiryDays").days
 
+  val logger = LoggerFactory.getLogger(classOf[SigninController])
+
   def logAttemptAsync(event: SigninAttempt) = {
     actorSystem.scheduler.scheduleOnce(0.seconds) {
       signinLogService.logSigninAttempt(event) match {
         case Right(()) => ()
-        case Left(UnexpectedDatabaseError(e)) => Logger.error("Failed to log sign in attempt", e)
+        case Left(UnexpectedDatabaseError(e)) => logger.error("Failed to log sign in attempt", e)
       }
     }
   }
@@ -154,12 +156,14 @@ class SigninController @Inject()(silhouette: Environment[Intake24ApiEnv],
         case Some(user) => silhouette.authenticatorService.create(jwt.loginInfo).flatMap {
           accessToken =>
 
+            val customFields = user.userInfo.customFields.map { case (k, v) => Json.obj("name" -> k, "value" -> v) }
+
             val customClaims = user.userInfo.name match {
-              case Some(name) => Json.obj("type" -> "access", "userId" -> user.userInfo.id, "roles" -> user.userInfo.roles.toList, "name" -> name)
-              case None => Json.obj("type" -> "access", "userId" -> user.userInfo.id, "roles" -> user.userInfo.roles.toList)
+              case Some(name) => Json.obj("type" -> "access", "userId" -> user.userInfo.id, "roles" -> user.userInfo.roles.toList,
+                "customFields" -> customFields, "name" -> name)
+              case None => Json.obj("type" -> "access", "userId" -> user.userInfo.id, "roles" -> user.userInfo.roles.toList,
+                "customFields" -> customFields)
             }
-
-
 
             /*
             // This code is for idle expiration of refresh tokens, disabled for simplicity

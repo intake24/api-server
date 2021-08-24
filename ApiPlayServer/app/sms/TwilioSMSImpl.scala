@@ -4,7 +4,8 @@ import com.google.inject.{Inject, Singleton}
 import com.twilio.Twilio
 import com.twilio.`type`.PhoneNumber
 import com.twilio.rest.api.v2010.account.Message
-import play.api.{Configuration, Logger}
+import org.slf4j.LoggerFactory
+import play.api.Configuration
 
 @Singleton
 class TwilioSMSImpl @Inject()(config: Configuration) extends SMSService {
@@ -15,11 +16,13 @@ class TwilioSMSImpl @Inject()(config: Configuration) extends SMSService {
 
   val mockSetting = config.getOptional[String]("twilio.mock")
 
+  val logger = LoggerFactory.getLogger(classOf[TwilioSMSImpl])
+
   val mock = mockSetting.isDefined || {
     if (accountSid.isDefined && authToken.isDefined && fromNumber.isDefined)
       false
     else {
-      Logger.warn("Twilio configuration missing, falling back to mock implementation")
+      logger.warn("Twilio configuration missing, falling back to mock implementation")
       true
     }
   }
@@ -31,10 +34,10 @@ class TwilioSMSImpl @Inject()(config: Configuration) extends SMSService {
 
     if (mock) {
       val reason = if (mockSetting.isDefined) "twilio.mock setting is set" else "Twilio configuration is missing"
-      Logger.info(s"""Sending mock SMS message "$messageBody" to $to. Twilio SMS service disabled because $reason.""")
+      logger.info(s"""Sending mock SMS message "$messageBody" to $to. Twilio SMS service disabled because $reason.""")
     } else {
       val message = Message.creator(new PhoneNumber(to), new PhoneNumber(fromNumber.get), messageBody).create()
-      Logger.debug(s"Twilio message sent, sid: ${message.getSid()}")
+      logger.debug(s"Twilio message sent, sid: ${message.getSid()}")
     }
   }
 }

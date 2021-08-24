@@ -18,8 +18,8 @@ import uk.ac.ncl.openlab.intake24.sql.SqlDataService
 class DemographicGroupsServiceImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource)
   extends DemographicGroupsService with SqlDataService {
 
-  val constraintErrorsPartialFn = PartialFunction[String, PSQLException => ConstraintError] {
-    constraintName => (e: PSQLException) => ConstraintViolation(constraintName, e)
+  val constraintErrorsPartialFn: PartialFunction[String, PSQLException => ConstraintError] = {
+    case constraintName => (e: PSQLException) => ConstraintViolation(constraintName, e)
   }
 
   private def unpackOptionalRangeToQuery[T](range: Option[NumRange[T]]): Option[String] = {

@@ -40,7 +40,7 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
                              portion_size_method_id: String, reasonable_amount: Boolean, food_group_id: Int, brand: String, nutrient_table_id: String, nutrient_table_code: String,
                              custom_fields: Array[Array[String]], portion_size_data: Array[Array[String]])
 
-  private case class MissingFoodRow(meal_id: Long, name: String, brand: String, description: String, portion_size: String, leftovers: String)
+  private case class MissingFoodRow(meal_id: Long, mf_food_id: Long, name: String, brand: String, description: String, portion_size: String, leftovers: String)
 
   private case class NutrientRow(food_id: Long, n_type: Long, n_amount: Double)
 
@@ -124,17 +124,17 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
                         }.toMap
 
 
-                        ExportFood(foodRow.code, foodRow.english_description, foodRow.local_description, foodRow.search_term, foodRow.nutrient_table_id, foodRow.nutrient_table_code, foodRow.ready_meal,
+                        ExportFood(foodRow.food_id, foodRow.code, foodRow.english_description, foodRow.local_description, foodRow.search_term, foodRow.nutrient_table_id, foodRow.nutrient_table_code, foodRow.ready_meal,
                           PortionSize(foodRow.portion_size_method_id, customFieldsAsMap(foodRow.portion_size_data)).asPortionSizeWithWeights, foodRow.reasonable_amount,
                           foodRow.food_group_id, foodRow.brand, fields, nutrients, customFieldsAsMap(foodRow.custom_fields))
                     }
 
                     val missingFoods = missingFoodRows.getOrElse(mealRow.meal_id, Seq()).map {
                       mfr =>
-                        MissingFood(mfr.name, mfr.brand, mfr.description, mfr.portion_size, mfr.leftovers)
+                        ExportMissingFood(mfr.mf_food_id, mfr.name, mfr.brand, mfr.description, mfr.portion_size, mfr.leftovers)
                     }
 
-                    ExportMeal(mealRow.name, MealTime(mealRow.hours, mealRow.minutes), customFieldsAsMap(mealRow.custom_fields), foods, missingFoods)
+                    ExportMeal(mealRow.meal_id, mealRow.name, MealTime(mealRow.hours, mealRow.minutes), customFieldsAsMap(mealRow.custom_fields), foods, missingFoods)
                 }
                 ExportSubmission(submissionRow.id, submissionRow.user_id, submissionRow.user_name, customFieldsAsMap(submissionRow.user_custom_fields), customFieldsAsMap(submissionRow.submission_custom_fields),
                   submissionRow.start_time, submissionRow.end_time, meals)

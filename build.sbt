@@ -18,6 +18,7 @@ limitations under the License.
 import com.typesafe.sbt.SbtNativePackager._
 import ResolveInternalDependencies._
 
+<<<<<<< HEAD
 name := "intake24-api-server"
 
 organization := "uk.ac.ncl.openlab.intake24"
@@ -39,13 +40,20 @@ lazy val packageManagerSettings = Seq(
   rpmUrl := Some("http://github.com/intake24/survey-frontend"),
   rpmLicense := Some("ASL 2.0")
 )
+=======
+Global / dependencyCheckFormats := Seq("HTML", "JSON")
+>>>>>>> f243898b9e73f766e693c3020a5e2ac5173caa76
 
 lazy val commonSettings = Seq(
-  version := "3.30.2-SNAPSHOT",
-  scalaVersion := "2.12.8",
+  version := "3.31.0-SNAPSHOT",
+  scalaVersion := "2.12.14",
   publishArtifact in(Compile, packageDoc) := false,
   scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature"),
+<<<<<<< HEAD
 )++ packageManagerSettings
+=======
+)
+>>>>>>> f243898b9e73f766e693c3020a5e2ac5173caa76
 
 lazy val scalaHttpJVM = project.in(file("RosHTTP"))
 
@@ -117,6 +125,7 @@ lazy val shortUrlServiceClient = project.in(file("ShortUrlServiceClient")).depen
 
 lazy val shortUrlService = project.in(file("ShortUrlService")).enablePlugins(PlayScala, SystemdPlugin, JDebPackaging, ClasspathJarPlugin).dependsOn(apiSharedJVM, systemDataSql).dependsOn(shortUrlServiceApi, playUtils)
 
+<<<<<<< HEAD
 
 lazy val apiDocs = scalatex.ScalatexReadme(
   projectId = "apiDocs",
@@ -132,4 +141,6 @@ lazy val apiDocs = scalatex.ScalatexReadme(
   )
 ).dependsOn(apiPlayServer)
 
+=======
+>>>>>>> f243898b9e73f766e693c3020a5e2ac5173caa76
 onLoad.in(Global) ~= { f => s => resolveInternalDependenciesImpl(f(s)) }

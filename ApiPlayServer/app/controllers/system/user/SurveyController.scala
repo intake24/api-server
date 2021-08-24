@@ -18,18 +18,13 @@ limitations under the License.
 
 package controllers.system.user
 
-import java.time.temporal.ChronoUnit
-import java.time.{ZoneId, ZonedDateTime}
-
-import javax.inject.Inject
 import akka.actor.ActorSystem
 import controllers.DatabaseErrorHandler
-import io.circe.syntax._
 import io.circe.generic.auto._
+import io.circe.syntax._
 import models.{SaveUserSessionRequest, UserSessionResponse}
-
+import org.slf4j.LoggerFactory
 import parsers.{JsonBodyParser, JsonUtils}
-import play.Logger
 import play.api.http.ContentTypes
 import play.api.libs.ws.WSClient
 import play.api.mvc._
@@ -41,6 +36,9 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{SurveyAdminService, U
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.{FoodPopularityService, SurveyService, UserSession, UserSessionDataService}
 import uk.ac.ncl.openlab.intake24.surveydata.{SubmissionNotification, SurveySubmission}
 
+import java.time.temporal.ChronoUnit
+import java.time.{ZoneId, ZonedDateTime}
+import javax.inject.Inject
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -64,6 +62,8 @@ class SurveyController @Inject()(service: SurveyService,
                                  val controllerComponents: ControllerComponents,
                                  implicit val executionContext: ExecutionContext) extends BaseController
   with DatabaseErrorHandler with JsonUtils {
+
+  private val logger = LoggerFactory.getLogger(classOf[SurveyController])
 
   def getPublicSurveyParameters(surveyId: String) = Action {
     translateDatabaseResult(service.getPublicSurveyParameters(surveyId))
@@ -124,7 +124,7 @@ class SurveyController @Inject()(service: SurveyService,
         ) yield {
 
           if (userNameOpt.isEmpty)
-            Logger.warn(s"Survey user has no survey alias (for external follow up URL): $userId")
+            logger.warn(s"Survey user has no survey alias (for external follow up URL): $userId")
 
           val followUpUrlWithUserName = for (userName <- userNameOpt;
                                              followUpUrl <- followUp.followUpUrl)
@@ -233,7 +233,7 @@ class SurveyController @Inject()(service: SurveyService,
                                 userAlias <- userService.getSurveyUserAliases(Seq(userId), surveyId))
                             yield ((userParams, userAlias))) match {
                             case Right((userParams, userAlias)) =>
-                              Logger.debug("Sending survey submission notification")
+                              logger.debug("Sending survey submission notification")
 
                               val payload = SubmissionNotification(userParams.id, surveyId, userAlias.get(userId).map(_.userName).getOrElse(null),
                                 userParams.customFields, nutrientMappedSubmission.startTime, nutrientMappedSubmission.endTime,
@@ -246,28 +246,28 @@ class SurveyController @Inject()(service: SurveyService,
                                 .onComplete {
                                   case Success(response) =>
                                     if (response.status == 200)
-                                      Logger.debug(s"Survey submission notification sent to $notificationUrl")
+                                      logger.debug(s"Survey submission notification sent to $notificationUrl")
                                     else
-                                      Logger.error(s"Survey submission notification sent, but request failed with code ${response.status}")
+                                      logger.error(s"Survey submission notification sent, but request failed with code ${response.status}")
                                   case Failure(e) =>
-                                    Logger.error("Failed to send survey submission notification", e)
+                                    logger.error("Failed to send survey submission notification", e)
                                 }
 
-                            case Left(error) => Logger.error(s"Could not get user data for user $userId", error.exception)
+                            case Left(error) => logger.error(s"Could not get user data for user $userId", error.exception)
                           }
 
 
                       }
-                    case Left(error) => Logger.error(s"Could not get survey parameters for survey $surveyId", error.exception)
+                    case Left(error) => logger.error(s"Could not get survey parameters for survey $surveyId", error.exception)
                   }
 
-                case Left(error) => Logger.error(s"Could not save survey submission!", error.exception)
+                case Left(error) => logger.error(s"Could not save survey submission!", error.exception)
 
               }
             }
 
             if (userNameOpt.isEmpty)
-              Logger.warn(s"Survey user has no survey alias (for external follow up URL): $userId")
+              logger.warn(s"Survey user has no survey alias (for external follow up URL): $userId")
 
             val submissionThresholdReached = (currentSubmissionsCount + 1) >= surveyParameters.numberOfSurveysForFeedback
 
