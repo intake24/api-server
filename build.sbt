@@ -34,7 +34,7 @@ packageDescription := """API server for Intake24."""
 
 
 lazy val packageManagerSettings = Seq(
-  rpmRelease := "1.0.0",
+  rpmRelease := "2.0.0",
   rpmVendor := "uk.ac.ncl.openlab.intake24",
   rpmUrl := Some("http://github.com/intake24/api-server"),
   rpmLicense := Some("ASL 2.0")
