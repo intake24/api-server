@@ -20,8 +20,6 @@ name := """intake24-api-server"""
 
 description := "Intake24 Play Framework API server"
 
-maintainer := "Ivan Poliakov <ivan.poliakov@ncl.ac.uk>"
-
 resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
 
 resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases/"
@@ -81,6 +79,10 @@ linuxPackageMappings ~= {
 }
 
 routesGenerator := InjectedRoutesGenerator
+
+rpmVendor := "intake24"
+
+rpmLicense := Some("Apache-2.0")
 
 // EclipseKeys.withSource := true
 
