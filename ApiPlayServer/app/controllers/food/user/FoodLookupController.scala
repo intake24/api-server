@@ -19,13 +19,13 @@ limitations under the License.
 package controllers.food.user
 
 import javax.inject.Inject
-
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
+import org.slf4j.LoggerFactory
 import parsers.JsonUtils
 import play.api.mvc.{BaseController, ControllerComponents, PlayBodyParsers}
 import security.Intake24RestrictedActionBuilder
-import uk.ac.ncl.openlab.intake24.api.data.{ErrorDescription, LookupResult}
+import uk.ac.ncl.openlab.intake24.api.data.{ErrorDescription, LookupResult, UserFoodHeader}
 import uk.ac.ncl.openlab.intake24.errors.{LookupError, RecordNotFound}
 import uk.ac.ncl.openlab.intake24.services.RecipesAttributeCache
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.FoodBrowsingService
@@ -49,6 +49,8 @@ class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex],
 
   import uk.ac.ncl.openlab.intake24.errors.ErrorUtils._
 
+  private val logger = LoggerFactory.getLogger(getClass)
+
   def getSplitSuggestion(locale: String, description: String) = rab.restrictToAuthenticated(playBodyParsers.empty) {
     _ =>
       Future {
@@ -59,12 +61,14 @@ class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex],
       }
   }
 
-  private def lookupImpl(locale: String, description: String, selectedFoods: Seq[String], maxResults: Int, algorithmId: String, resultFilter: IndexLookupResult => IndexLookupResult): Either[LookupError, LookupResult] = {
+  private def lookupImpl(locale: String, description: String, selectedFoods: Seq[String], maxResults: Int, algorithmId: String, matchScoreWeight: Double, resultFilter: IndexLookupResult => IndexLookupResult): Either[LookupError, LookupResult] = {
     foodIndexes.get(locale) match {
       case Some(index) => {
         val lookupResult = resultFilter(index.lookup(description, Math.max(0, Math.min(maxResults, 50)), 15))
 
-        val sortedFoodHeaders = getSortedFoods(locale, lookupResult, selectedFoods, algorithmId).map(_.food)
+        logger.debug(lookupResult.toString)
+
+        val sortedFoodHeaders = getSortedFoods(locale, lookupResult, selectedFoods, algorithmId, matchScoreWeight).map(_.food)
         val sortedCategoryHeaders = lookupResult.categories.sortBy(_.matchCost).map(_.category)
 
         Right(LookupResult(sortedFoodHeaders, sortedCategoryHeaders))
@@ -73,38 +77,82 @@ class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex],
     }
   }
 
-  private def getLookupSortMap(locale: String, selectedFoods: Seq[String], algorithmId: String): Map[String, Double] =
-    pairwiseAssociationsService.recommend(locale, selectedFoods, algorithmId).groupBy(_._1).map(i => i._1 -> i._2.head._2)
+  private def normaliseSortMap(m: Map[String, Double]): Map[String, Double] = {
+    if (m.isEmpty)
+      Map()
+    else {
+      val min = m.values.min
+      val max = m.values.max
 
-  private def getSortedFoods(locale: String, lookupResult: IndexLookupResult, selectedFoods: Seq[String], algorithmId: String): Seq[MatchedFood] = {
-    val foundFoodCodes = lookupResult.foods.map(_.food.code)
-    val gr = getLookupSortMap(locale, selectedFoods, algorithmId)
-    val srtMap = gr.filter(i => foundFoodCodes.contains(i._1))
-    val getScore = (code: String) => srtMap.getOrElse(code, 0d)
+      val range = max - min
 
-    lookupResult.foods.sortBy(f => (-getScore(f.food.code), f.matchCost))
+      if (range.abs < 1E-8) {
+        // Map same values to 1.0
+        m.mapValues(v => v - min + 1.0).map(identity)
+      } else {
+        m.mapValues(v => (v - min) / range).map(identity)
+      }
+    }
   }
 
-  def lookup(locale: String, description: String, selectedFoods: Seq[String], maxResults: Int, algorithm: String = PairwiseAssociationsServiceSortTypes.paRules) = rab.restrictToAuthenticated {
+  private def normaliseMatchCost(foods: Seq[MatchedFood]): Seq[MatchedFood] = {
+    if (foods.isEmpty)
+      Seq()
+    else {
+
+      val costs = foods.map(_.matchCost)
+
+      val min = costs.min
+      val max = costs.max
+
+      val range = max - min
+
+      if (range.abs < 1E-8) {
+        foods.map(f => MatchedFood(f.food, 1.0 - f.matchCost - min))
+      } else {
+        foods.map(f => MatchedFood(f.food, 1.0 - (f.matchCost - min) / range))
+      }
+    }
+  }
+
+  private def getLookupSortMap(locale: String, selectedFoods: Seq[String], algorithmId: String): Map[String, Double] = algorithmId match {
+    case "paRules" | "popularity" => pairwiseAssociationsService.recommend(locale, selectedFoods, algorithmId).groupBy(_._1).map(i => i._1 -> i._2.head._2)
+    case _ => throw new RuntimeException(s"Unexpected sort algorithm id: $algorithmId");
+  }
+
+  private def getSortedFoods(locale: String, lookupResult: IndexLookupResult, selectedFoods: Seq[String], algorithmId: String, matchScoreWeight: Double): Seq[MatchedFood] = {
+    val foundFoodCodes = lookupResult.foods.map(_.food.code)
+    val gr = getLookupSortMap(locale, selectedFoods, algorithmId)
+    val srtMap = normaliseSortMap(gr.filter(i => foundFoodCodes.contains(i._1)))
+    val normalisedMatchedFoods = normaliseMatchCost(lookupResult.foods)
+
+    val getScore = (code: String) => srtMap.getOrElse(code, 0d)
+
+    normalisedMatchedFoods.sortBy(f => {
+      -(getScore(f.food.code) * (1.0 - matchScoreWeight) + f.matchCost * matchScoreWeight)
+    })
+  }
+
+  def lookup(locale: String, description: String, selectedFoods: Seq[String], maxResults: Int, algorithm: String, matchScoreWeight: Int) = rab.restrictToAuthenticated {
     _ =>
       Future {
-        translateDatabaseResult(lookupImpl(locale, description, selectedFoods, maxResults, algorithm, recipesAttributeIndex.filterForRegularFoods))
+        translateDatabaseResult(lookupImpl(locale, description, selectedFoods, maxResults, algorithm, matchScoreWeight / 100.0, recipesAttributeIndex.filterForRegularFoods))
       }
   }
 
-  def lookupForRecipes(locale: String, description: String, selectedFoods: Seq[String], maxResults: Int, algorithm: String = PairwiseAssociationsServiceSortTypes.paRules) = rab.restrictToAuthenticated {
+  def lookupForRecipes(locale: String, description: String, selectedFoods: Seq[String], maxResults: Int, algorithm: String, matchScoreWeight: Int) = rab.restrictToAuthenticated {
     _ =>
       Future {
-        translateDatabaseResult(lookupImpl(locale, description, selectedFoods, maxResults, algorithm, recipesAttributeIndex.filterForRecipes))
+        translateDatabaseResult(lookupImpl(locale, description, selectedFoods, maxResults, algorithm, matchScoreWeight / 100.0, recipesAttributeIndex.filterForRecipes))
       }
   }
 
   //FIXME: bad performance due to individual queries for every food and category
-  def lookupInCategory(locale: String, description: String, categoryCode: String, selectedFoods: Seq[String], maxResult: Int, algorithm: String = PairwiseAssociationsServiceSortTypes.paRules) = rab.restrictToAuthenticated {
+  def lookupInCategory(locale: String, description: String, categoryCode: String, selectedFoods: Seq[String], maxResult: Int, algorithm: String, matchScoreWeight: Int) = rab.restrictToAuthenticated {
     _ =>
       Future {
         val result = for (
-          lookupResult <- lookupImpl(locale, description, selectedFoods, maxResult, algorithm, recipesAttributeIndex.filterForRegularFoods).right;
+          lookupResult <- lookupImpl(locale, description, selectedFoods, maxResult, algorithm, matchScoreWeight / 100.0, recipesAttributeIndex.filterForRegularFoods).right;
           foodSuperCategories <- sequence(lookupResult.foods.map(f => foodBrowsingService.getFoodAllCategories(f.code).right.map(sc => (f.code -> sc)))).right.map(_.toMap).right;
           categorySuperCategories <- sequence(lookupResult.categories.map(c => foodBrowsingService.getCategoryAllCategories(c.code).right.map(sc => (c.code -> sc)))).right.map(_.toMap).right
         ) yield LookupResult(lookupResult.foods.filter(f => foodSuperCategories(f.code).contains(categoryCode)),

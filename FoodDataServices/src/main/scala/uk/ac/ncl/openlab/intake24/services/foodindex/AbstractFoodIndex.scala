@@ -75,11 +75,11 @@ abstract class AbstractFoodIndex(foodData: FoodIndexDataService, phoneticEncoder
     val t0 = System.currentTimeMillis()
 
     val matchedFoods = foodIndex.lookup(description, maxFoods).map {
-      case (h, cost) => MatchedFood(h, cost)
+      case (h, cost) => MatchedFood(h, cost.toDouble)
     }
 
     val matchedCategories = categoryIndex.lookup(description, maxCategories).map {
-      case (h, cost) => MatchedCategory(h, cost)
+      case (h, cost) => MatchedCategory(h, cost.toDouble)
     }
 
     matchedCategories.foreach(c => log.debug(c.toString))

@@ -20,9 +20,9 @@ package uk.ac.ncl.openlab.intake24.services.foodindex
 
 import uk.ac.ncl.openlab.intake24.api.data.{UserCategoryHeader, UserFoodHeader}
 
-case class MatchedFood(food: UserFoodHeader, matchCost: Int)
+case class MatchedFood(food: UserFoodHeader, matchCost: Double)
 
-case class MatchedCategory(category: UserCategoryHeader, matchCost: Int)
+case class MatchedCategory(category: UserCategoryHeader, matchCost: Double)
 
 case class IndexLookupResult(foods: Seq[MatchedFood], categories: Seq[MatchedCategory])
 
