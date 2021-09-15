@@ -144,20 +144,9 @@ class FoodLookupController @Inject()(foodIndexes: Map[String, FoodIndex],
         val normalisedSortMap = normaliseSortMap(sortMap)
         val normalisedMatchedFoods = normaliseMatchCost(lookupResult.foods)
 
-        logger.debug("--- Normalized sort map")
-        logger.debug(normalisedSortMap.toString)
-
-        logger.debug("--- Normalised matches")
-        logger.debug(normalisedMatchedFoods.toString())
-
-        val sorted = normalisedMatchedFoods.sortBy(f => {
+        normalisedMatchedFoods.sortBy(f => {
           -(normalisedSortMap.getOrElse(f.food.code, 0.0) * (1.0 - matchScoreWeight) + f.matchCost * matchScoreWeight)
         })
-
-        logger.debug("--- Weighted scores")
-        logger.debug(sorted.toString())
-
-        sorted
     }
   }
 
