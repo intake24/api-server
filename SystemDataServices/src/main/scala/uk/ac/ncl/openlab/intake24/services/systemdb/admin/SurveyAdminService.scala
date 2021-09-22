@@ -40,7 +40,9 @@ case class SurveyParametersIn(id: String, schemeId: String, localeId: String, st
                               maximumTotalSubmissions: Option[Int],
                               minimumSubmissionInterval: Int,
                               authUrlDomainOverride: Option[String],
-                              errorReporting: ErrorReportingSettings)
+                              errorReporting: ErrorReportingSettings,
+                              searchSortingAlgorithm: String,
+                              searchMatchScoreWeight: Int)
 
 case class SurveyParametersOut(id: String, schemeId: String, localeId: String, state: Int,
                                startDate: ZonedDateTime, endDate: ZonedDateTime,
@@ -55,7 +57,9 @@ case class SurveyParametersOut(id: String, schemeId: String, localeId: String, s
                                maximumTotalSubmissions: Option[Int],
                                minimumSubmissionInterval: Int,
                                authUrlDomainOverride: Option[String],
-                               errorReporting: ErrorReportingSettings)
+                               errorReporting: ErrorReportingSettings,
+                               searchSortingAlgorithm: String,
+                               searchMatchScoreWeight: Int)
 
 // Staff cannot change survey ID, scheme, locale and generated user settings
 case class StaffSurveyUpdate(startDate: ZonedDateTime, endDate: ZonedDateTime,
