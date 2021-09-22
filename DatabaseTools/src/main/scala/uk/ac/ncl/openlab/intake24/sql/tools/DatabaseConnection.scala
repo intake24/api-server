@@ -46,6 +46,7 @@ trait DatabaseConnection {
     dbConnectionProps.setProperty("dataSource.serverName", config.host)
     dbConnectionProps.put("dataSource.logWriter", new PrintWriter(System.out))
     dbConnectionProps.put("maximumPoolSize", "1")
+    dbConnectionProps.put("dataSource.sslfactory", "org.postgresql.ssl.DefaultJavaSSLFactory")
 
     config.password.foreach(pw => dbConnectionProps.setProperty("dataSource.password", pw))
 

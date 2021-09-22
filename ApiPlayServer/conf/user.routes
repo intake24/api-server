@@ -2,9 +2,9 @@
 # Food lookup and browser
 
 GET         /foods/:locale/split-description             controllers.food.user.FoodLookupController.getSplitSuggestion(locale: String, desc: String)
-GET         /foods/:locale/lookup                        controllers.food.user.FoodLookupController.lookup(locale: String, desc: String, existing: Seq[String], limit: Int = 50, alg: String = "paRules")
-GET         /foods/:locale/lookup-for-recipes            controllers.food.user.FoodLookupController.lookupForRecipes(locale: String, desc: String, existing: Seq[String], limit: Int = 50, alg: String = "paRules")
-GET         /foods/:locale/lookup-in-category            controllers.food.user.FoodLookupController.lookupInCategory(locale: String, desc: String, category: String, existing: Seq[String], limit: Int = 50, alg: String)
+GET         /foods/:locale/lookup                        controllers.food.user.FoodLookupController.lookup(locale: String, desc: String, existing: Seq[String], limit: Int ?= 50, alg: String ?= "paRules", matchScoreWeight: Int ?= 0)
+GET         /foods/:locale/lookup-for-recipes            controllers.food.user.FoodLookupController.lookupForRecipes(locale: String, desc: String, existing: Seq[String], limit: Int ?= 50, alg: String ?= "paRules", matchScoreWeight: Int ?= 0)
+GET         /foods/:locale/lookup-in-category            controllers.food.user.FoodLookupController.lookupInCategory(locale: String, desc: String, category: String, existing: Seq[String], limit: Int ?= 50, alg: String ?= "paRules", matchScoreWeight: Int ?= 0)
 
 GET         /categories/:locale/:code                    controllers.food.user.FoodDataController.getCategoryContents(code: String, locale: String, existing: Seq[String], alg: String)
 GET         /categories/:locale                          controllers.food.user.FoodDataController.getRootCategories(locale: String)

@@ -29,6 +29,24 @@ class FoodPopularityServiceImpl @Inject()(@Named("intake24_system") val dataSour
       }
   }
 
+  def getFixedFoodRanking(localeId: String, foodCodes: Seq[String]): Either[UnexpectedDatabaseError, Map[String, Int]] = tryWithConnection {
+    implicit conn =>
+      if (foodCodes.isEmpty)
+        Right(Map())
+      else {
+        val ranking = SQL("SELECT food_code, rank FROM fixed_food_ranking WHERE food_code IN ({food_codes}) AND locale_id={locale}")
+          .on('food_codes -> foodCodes, 'locale -> localeId)
+          .executeQuery()
+          .as((SqlParser.str("food_code") ~ SqlParser.int("rank")).*)
+          .map {
+            case food_code ~ rank => food_code -> rank
+          }
+          .toMap
+
+        Right(foodCodes.map(code => (code, ranking.getOrElse(code, 0))).toMap)
+      }
+  }
+
   def incrementPopularityCount(foodCodes: Seq[String]): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
       val updateParams = foodCodes.map(code => Seq[NamedParameter]('food_code -> code))
