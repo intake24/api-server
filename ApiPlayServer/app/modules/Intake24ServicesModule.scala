@@ -89,6 +89,7 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
       case "BHSAv1" => new FoodIndexImpl_BHSAv1(foodIndexDataService)
       case "UKSAv2" => new FoodIndexImpl_UKSAv2(foodIndexDataService)
       case "UK_current" => new FoodIndexImpl_UK_current(foodIndexDataService)
+      case "en_FJ" => new FoodIndexImpl_en_FJ(foodIndexDataService)
     }
 
     val globalReloadPeriod = reloadPeriod * enabledLocales.size
@@ -136,6 +137,7 @@ class Intake24ServicesModule(env: Environment, config: Configuration) extends Ab
       case "BHSAv1" => new SplitterImpl_BHSAv1(foodIndexDataService)
       case "UKSAv2" => new SplitterImpl_UKSAv2(foodIndexDataService)
       case "UK_current" => new SplitterImpl_UK_current(foodIndexDataService)
+      case "en_FJ" => new SplitterImpl_en_FJ(foodIndexDataService)
     }
 
     enabledLocales.foldLeft(Map[String, Splitter]()) {
