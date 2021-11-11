@@ -34,19 +34,25 @@ class UserAuthChecks @Inject()(userAdminService: UserAdminService) {
     else
       userAdminService.getUserById(userId).right.map {
         userProfile =>
-          // Global survey admin can edit any respondent's profile if they only have respondent roles
-          if (subject.roles.contains(Roles.surveyAdmin))
-            isUserRespondentOnly(userProfile)
-          else {
-            // Survey staff can edit profiles for users who are respondents of their surveys only
-            // e.g. if user is respondent for s1 and s2, and subject is staff for s1, s2, s3, request will be allowed
-            // however if user is also respondent for s4 (where the subject isn't staff), request will be denied
+          // In all other cases only respondents profiles can be edited by the owners of their
+          // surveys.
+          // Deny if user has any other roles.
+          if (!isUserRespondentOnly(userProfile))
+            false
+          else
+            // Global survey admin can edit any respondent's profile
+            if (subject.roles.contains(Roles.surveyAdmin))
+              true
+            else {
+              // Survey staff can edit profiles for users who are respondents of their surveys only
+              // e.g. if user is respondent for s1 and s2, and subject is staff for s1, s2, s3, request will be allowed
+              // however if user is also respondent for s4 (where the subject isn't staff), request will be denied
 
-            val userIsRespondent = getSurveyIdsWhereUserIsRespondent(userProfile)
-            val subjectIsStaff = getSurveyIdsWhereSubjectIsStaff(subject)
+              val userIsRespondent = getSurveyIdsWhereUserIsRespondent(userProfile)
+              val subjectIsStaff = getSurveyIdsWhereSubjectIsStaff(subject)
 
-            userIsRespondent.forall(surveyId => subjectIsStaff.contains(surveyId))
-          }
+              userIsRespondent.nonEmpty && userIsRespondent.forall(surveyId => subjectIsStaff.contains(surveyId))
+            }
       }
   }
 
