@@ -117,7 +117,8 @@ object ExportPortionSizeImagesSpreadsheet extends App with DatabaseConnection wi
     }
 
   def appendPortionSizeMethodRows(workbook: XSSFWorkbook, sheet: XSSFSheet, drawing: XSSFDrawing, helper: XSSFCreationHelper,
-                                  food: UserFoodHeader, englishDescription: String, psm: PortionSizeMethod, cellStyle: CellStyle): Unit = {
+                                  food: UserFoodHeader, englishDescription: String, psm: PortionSizeMethod, nutrientTableCodes: Map[String, String],
+                                  cellStyle: CellStyle): Unit = {
 
 
     println(s"Writing [${food.code}] ${englishDescription}")
@@ -132,10 +133,12 @@ object ExportPortionSizeImagesSpreadsheet extends App with DatabaseConnection wi
     val codeCell = row.createCell(0)
     val engDescCell = row.createCell(1)
     val localDescCell = row.createCell(2)
-    val psmCell = row.createCell(3)
-    val psmIdCell = row.createCell(4)
-    val psmImageCell = row.createCell(5)
-    val psmInfoCell = row.createCell(6)
+    val fctIdCell = row.createCell(3)
+    val fctCodeCell = row.createCell(4)
+    val psmCell = row.createCell(5)
+    val psmIdCell = row.createCell(6)
+    val psmImageCell = row.createCell(7)
+    val psmInfoCell = row.createCell(8)
 
 
     val cs = workbook.createCellStyle()
@@ -145,6 +148,8 @@ object ExportPortionSizeImagesSpreadsheet extends App with DatabaseConnection wi
     codeCell.setCellStyle(cs)
     engDescCell.setCellStyle(cs)
     localDescCell.setCellStyle(cs)
+    fctIdCell.setCellStyle(cs)
+    fctCodeCell.setCellStyle(cs)
     psmCell.setCellStyle(cs)
     psmIdCell.setCellStyle(cs)
     psmImageCell.setCellStyle(cs)
@@ -153,6 +158,8 @@ object ExportPortionSizeImagesSpreadsheet extends App with DatabaseConnection wi
     codeCell.setCellValue(food.code)
     engDescCell.setCellValue(englishDescription)
     localDescCell.setCellValue(food.localDescription)
+    fctIdCell.setCellValue(nutrientTableCodes.head._1)
+    fctCodeCell.setCellValue(nutrientTableCodes.head._2)
     psmCell.setCellValue(rowData.method)
     psmIdCell.setCellValue(rowData.id)
 
@@ -174,8 +181,8 @@ object ExportPortionSizeImagesSpreadsheet extends App with DatabaseConnection wi
 
         anchor.setRow1(rowNum)
         anchor.setRow2(rowNum + 1)
-        anchor.setCol1(5)
-        anchor.setCol2(6)
+        anchor.setCol1(7)
+        anchor.setCol2(8)
 
         anchor.setDx1(4 * Units.EMU_PER_PIXEL)
         anchor.setDy1(4 * Units.EMU_PER_PIXEL)
@@ -223,16 +230,22 @@ object ExportPortionSizeImagesSpreadsheet extends App with DatabaseConnection wi
     val descriptionHeaderCell = headerRow.createCell(2)
     descriptionHeaderCell.setCellValue("Food description (local)")
 
-    val psmHeaderCell = headerRow.createCell(3)
+    val fctTableIdHeaderCell = headerRow.createCell(3)
+    fctTableIdHeaderCell.setCellValue("Food composition table")
+
+    val fctTableCodeHeaderCell = headerRow.createCell(4)
+    fctTableCodeHeaderCell.setCellValue("Food composition code")
+
+    val psmHeaderCell = headerRow.createCell(5)
     psmHeaderCell.setCellValue("Portion size method")
 
-    val psmIdHeaderCell = headerRow.createCell(4)
+    val psmIdHeaderCell = headerRow.createCell(6)
     psmIdHeaderCell.setCellValue("PSM id")
 
-    val psmImageHeaderCell = headerRow.createCell(5)
+    val psmImageHeaderCell = headerRow.createCell(7)
     psmImageHeaderCell.setCellValue("PSM reference image")
 
-    val psmData = headerRow.createCell(6)
+    val psmData = headerRow.createCell(8)
     psmData.setCellValue("Additional PSM info")
 
 
@@ -242,9 +255,11 @@ object ExportPortionSizeImagesSpreadsheet extends App with DatabaseConnection wi
     sheet.setColumnWidth(1, 50 * 256)
     sheet.setColumnWidth(2, 50 * 256)
     sheet.setColumnWidth(3, 25 * 256)
-    sheet.setColumnWidth(4, 20 * 256)
-    sheet.setColumnWidth(5, 70 * 256)
-    sheet.setColumnWidth(6, 100 * 256)
+    sheet.setColumnWidth(4, 25 * 256)
+    sheet.setColumnWidth(5, 25 * 256)
+    sheet.setColumnWidth(6, 20 * 256)
+    sheet.setColumnWidth(7, 70 * 256)
+    sheet.setColumnWidth(8, 100 * 256)
 
 
     val drawing = sheet.createDrawingPatriarch()
@@ -255,7 +270,8 @@ object ExportPortionSizeImagesSpreadsheet extends App with DatabaseConnection wi
       case (header, index) =>
         foodData(header.code).portionSizeMethods.foreach {
           psm =>
-            appendPortionSizeMethodRows(workbook, sheet, drawing, helper, header, foodData(header.code).englishDescription, psm, cellStyle)
+            appendPortionSizeMethodRows(workbook, sheet, drawing, helper, header, foodData(header.code).englishDescription, psm,
+              foodData(header.code).nutrientTableCodes, cellStyle)
         }
     }
 
