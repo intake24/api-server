@@ -18,14 +18,13 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.services.dataexport.controllers
 
-import java.nio.file.{Files, Paths}
-
-import javax.inject.Inject
 import org.slf4j.LoggerFactory
 import play.api.Configuration
 import play.api.mvc.{BaseController, ControllerComponents}
 import uk.ac.ncl.openlab.intake24.play.utils.DatabaseErrorHandler
 
+import java.nio.file.{Files, Paths}
+import javax.inject.Inject
 import scala.collection.JavaConverters
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -39,15 +38,28 @@ class LocalSecureUrlController @Inject()(configuration: Configuration,
 
   val dirPath = Paths.get(configuration.get[String]("intake24.dataExport.secureUrl.local.directory"))
 
+  private val uuid4regex = """[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}""".r
+
+  // This endpoint must allow downloading files with a simple HTTP GET request without additional authentication
+  // so that it is possible, for instance, to embed a download link in an e-mail notification.
+  // A random nonce in the form of a v4 UUID is used for ad-hoc authentication.
   def download(key: String) = Action.async {
     Future {
-      JavaConverters.asScalaIterator(Files.newDirectoryStream(dirPath).iterator()).find(_.getFileName.toString.startsWith(key)) match {
-        case Some(path) =>
-          val clientName = path.getFileName.toString.drop(key.length + 1)
-          Ok.sendFile(path.toFile, false, _ => clientName)
-        case None =>
-          NotFound
-      }
+      if (uuid4regex.pattern.matcher(key).matches()) {
+        // Partial filename matching is dangerous but it is also the most straightforward way to preserve the original file names in a
+        // cross-platform manner without involving the database.
+
+        // An alternative solution could be embedding the original file name in the download URL, but that would break backwards
+        // compatibility and create an option for potential abuse via malformed file names in the request.
+        JavaConverters.asScalaIterator(Files.newDirectoryStream(dirPath).iterator()).find(_.getFileName.toString.startsWith(key)) match {
+          case Some(path) =>
+            val clientName = path.getFileName.toString.drop(key.length + 1)
+            Ok.sendFile(path.toFile, false, _ => clientName)
+          case None =>
+            NotFound
+        }
+      } else
+        BadRequest
     }
   }
 }
