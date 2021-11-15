@@ -13,6 +13,8 @@ class UserAuthChecks @Inject()(userAdminService: UserAdminService) {
 
   def canListUsers(t: Intake24AccessToken) = t.roles.exists(r => r.endsWith(Roles.staffSuffix) || r == Roles.superuser || r == Roles.surveyAdmin)
 
+  def canDeleteUsers(t: Intake24AccessToken) = t.roles.contains(Roles.superuser)
+
   def canCreateUser(t: Intake24AccessToken) = t.roles.exists(r => r == Roles.superuser || r == Roles.surveyAdmin)
 
   def getSurveyIdsWhereUserIsRespondent(profile: UserProfile): Set[String] =
@@ -22,7 +24,7 @@ class UserAuthChecks @Inject()(userAdminService: UserAdminService) {
     subject.roles.filter(_.endsWith(Roles.staffSuffix)).map(_.dropRight(Roles.staffSuffix.length))
 
   def isUserRespondentOnly(profile: UserProfile): Boolean =
-    profile.roles.nonEmpty && profile.roles.forall(_.endsWith(Roles.respondentSuffix))
+    profile.roles.nonEmpty && profile.roles.forall(Roles.isSurveyRespondent)
 
   def canUpdateProfile(userId: Long)(subject: Intake24AccessToken): Either[DatabaseError, Boolean] = {
     // Anyone can edit their own profile

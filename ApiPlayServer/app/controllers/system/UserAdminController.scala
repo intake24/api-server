@@ -18,6 +18,8 @@ limitations under the License.
 
 package controllers.system
 
+import akka.http.scaladsl.model.StatusCodes.BadRequest
+
 import java.io.StringWriter
 import java.security.SecureRandom
 import java.util.Base64
@@ -36,7 +38,7 @@ import play.api.http.ContentTypes
 import play.api.libs.Files
 import play.api.libs.mailer.{Email, MailerClient}
 import play.api.mvc._
-import security.Intake24RestrictedActionBuilder
+import security.{Intake24AccessToken, Intake24RestrictedActionBuilder}
 import security.captcha.AsyncCaptchaService
 import uk.ac.ncl.openlab.intake24.api.data._
 import uk.ac.ncl.openlab.intake24.errors.{ErrorUtils, RecordNotFound}
@@ -122,6 +124,20 @@ class UserAdminController @Inject()(service: UserAdminService,
     }
   }
 
+  private def isValidCreateUserRequest(subject: Intake24AccessToken, request: CreateUserRequest): Boolean = {
+    val rolesAreValid = request.userInfo.roles.nonEmpty && request.userInfo.roles.forall(Roles.isValidRole)
+
+    val subjectCanCreateRoles =
+      if (subject.roles.contains(Roles.superuser))
+        true
+      else if (subject.roles.contains(Roles.surveyAdmin))
+        request.userInfo.roles.forall(role => !Roles.isAdminRole(role) && (Roles.isSurveyRespondent(role) || Roles.isSurveyStaff(role)))
+      else
+        false
+
+    rolesAreValid && subjectCanCreateRoles
+  }
+
   def findUsers(query: String, limit: Int) = rab.restrictAccess(authChecks.canListUsers) {
     _ =>
       Future {
@@ -132,9 +148,12 @@ class UserAdminController @Inject()(service: UserAdminService,
   def createUser() = rab.restrictAccess(authChecks.canCreateUser)(jsonBodyParser.parse[CreateUserRequest]) {
     request =>
       Future {
-        val pwInfo = passwordHasherRegistry.current.hash(request.body.password)
-
-        translateDatabaseResult(service.createUserWithPassword(NewUserWithPassword(request.body.userInfo, SecurePassword(pwInfo.password, pwInfo.salt.get, pwInfo.hasher))))
+        if (!isValidCreateUserRequest(request.subject, request.body))
+          BadRequest
+        else {
+          val pwInfo = passwordHasherRegistry.current.hash(request.body.password)
+          translateDatabaseResult(service.createUserWithPassword(NewUserWithPassword(request.body.userInfo, SecurePassword(pwInfo.password, pwInfo.salt.get, pwInfo.hasher))))
+        }
       }
   }
 
@@ -160,7 +179,7 @@ class UserAdminController @Inject()(service: UserAdminService,
       }
   }
 
-  def deleteUsers() = rab.restrictAccess(authChecks.canCreateUser)(jsonBodyParser.parse[DeleteUsersRequest]) {
+  def deleteUsers() = rab.restrictAccess(authChecks.canDeleteUsers)(jsonBodyParser.parse[DeleteUsersRequest]) {
     request =>
       Future {
         translateDatabaseResult(service.deleteUsersById(request.body.userIds))
@@ -189,12 +208,12 @@ class UserAdminController @Inject()(service: UserAdminService,
   }
 
   /**
-    * Only users that have a user name in this survey will be returned.
-    *
-    * If someone has a respondent role but does not have a user alias for this survey they will be filtered out.
-    *
-    * This is because client-side user presentation currently does not make sense without a user name.
-    */
+   * Only users that have a user name in this survey will be returned.
+   *
+   * If someone has a respondent role but does not have a user alias for this survey they will be filtered out.
+   *
+   * This is because client-side user presentation currently does not make sense without a user name.
+   */
   def listSurveyRespondentUsers(surveyId: String, offset: Int, limit: Int) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.empty) {
     _ =>
       Future {
@@ -289,7 +308,7 @@ class UserAdminController @Inject()(service: UserAdminService,
         dbResult match {
           case Right(rows) if rows.nonEmpty =>
 
-            val withShortUrls = appendShortUrls(rows).get  // boom :-(
+            val withShortUrls = appendShortUrls(rows).get // boom :-(
 
             cachedNext = Some(toCsvChunk(withShortUrls.map(row => Array(row.id.toString, row.userName, row.authUrl, row.shortUrl))))
             offset += rows.length

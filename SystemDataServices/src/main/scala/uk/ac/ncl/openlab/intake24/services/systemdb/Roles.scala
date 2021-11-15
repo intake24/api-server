@@ -11,6 +11,8 @@ object Roles {
 
   val imagesAdmin = "imagesadmin"
 
+  val adminRoles = Set(superuser, globalSupport, surveyAdmin, foodsAdmin, imagesAdmin)
+
   val respondentSuffix = "/respondent"
 
   val staffSuffix = "/staff"
@@ -26,4 +28,13 @@ object Roles {
 
   def foodDatabaseMaintainer(localeId: String) = s"$foodDatabaseMaintainerPrefix$localeId"
 
+  def isAdminRole(role: String) = adminRoles.contains(role)
+
+  def isSurveyStaff(role: String) = role.endsWith(staffSuffix) && role.length > staffSuffix.length
+
+  def isSurveyRespondent(role: String) = role.endsWith(respondentSuffix) && role.length > respondentSuffix.length
+
+  def isFoodDatabaseMaintainer(role: String) = role.startsWith(foodDatabaseMaintainerPrefix) && role.length > foodDatabaseMaintainerPrefix.length
+
+  def isValidRole(role: String): Boolean = isAdminRole(role) || isSurveyStaff(role) || isSurveyRespondent(role) || isFoodDatabaseMaintainer(role)
 }
