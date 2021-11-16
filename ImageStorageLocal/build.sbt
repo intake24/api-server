@@ -22,5 +22,6 @@ description := "Intake24 local image storage implementation"
 
 libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % "1.7.21",
-  "commons-io" % "commons-io" % "2.5"
+  "commons-io" % "commons-io" % "2.5",
+  "org.scalatest" %% "scalatest" % "3.2.10" % "test"
 )
