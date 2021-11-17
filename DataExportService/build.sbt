@@ -1,7 +1,7 @@
 name := """intake24-data-export"""
 organization := "uk.ac.ncl.openlab.intake24"
 
-version := "4.3.0-SNAPSHOT"
+version := "4.3.1-SNAPSHOT"
 
 scalaVersion := "2.12.14"
 
