@@ -265,7 +265,9 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
           |          minimum_submission_interval,
           |          auth_url_domain_override,
           |          client_error_report_state,
-          |          client_error_report_stack_trace;
+          |          client_error_report_stack_trace,
+          |          search_sorting_algorithm,
+          |          search_match_score_weight;
         """.stripMargin
 
       val row = SQL(sqlQuery)
