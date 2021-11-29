@@ -2,7 +2,7 @@ package uk.ac.ncl.openlab.intake24.services.fooddb.images
 
 import java.io.{File, IOException}
 import java.nio.file._
-import java.nio.file.attribute.BasicFileAttributes
+import java.nio.file.attribute.{BasicFileAttributes, PosixFilePermissions}
 import java.util.UUID
 import javax.inject.Inject
 
@@ -20,6 +20,8 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
   private val sourcePathPrefix = "source"
 
   private val tempFilePrefix = "intake24-"
+
+  private val filePerms = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-r--r--"))
 
   private val logger = LoggerFactory.getLogger(classOf[ImageAdminServiceDefaultImpl])
 
@@ -86,7 +88,7 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
   withTempDir {
     tempDir =>
       val extension = getExtension(source.toString)
-      val thumbDst = Files.createTempFile(tempDir, tempFilePrefix, extension)
+      val thumbDst = Files.createTempFile(tempDir, tempFilePrefix, extension, filePerms)
 
       for (
         _ <- {
@@ -136,9 +138,9 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
 
             val extension = getExtension(path)
 
-            val srcPath = Files.createTempFile(tempDir, tempFilePrefix, extension)
-            val dstMainPath = Files.createTempFile(tempDir, tempFilePrefix, extension)
-            val dstThumbnailPath = Files.createTempFile(tempDir, tempFilePrefix, extension)
+            val srcPath = Files.createTempFile(tempDir, tempFilePrefix, extension, filePerms)
+            val dstMainPath = Files.createTempFile(tempDir, tempFilePrefix, extension, filePerms)
+            val dstThumbnailPath = Files.createTempFile(tempDir, tempFilePrefix, extension, filePerms)
 
             val randomName = UUID.randomUUID().toString() + extension
 
@@ -164,8 +166,8 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
       tempDir =>
         val extension = getExtension(sourcePath)
 
-        val srcPath = Files.createTempFile(tempDir, tempFilePrefix, extension)
-        val dstPath = Files.createTempFile(tempDir, tempFilePrefix, extension)
+        val srcPath = Files.createTempFile(tempDir, tempFilePrefix, extension, filePerms)
+        val dstPath = Files.createTempFile(tempDir, tempFilePrefix, extension, filePerms)
 
         val randomName = UUID.randomUUID().toString() + extension
 
@@ -201,8 +203,8 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
       tempDir =>
         val extension = getExtension(sourcePath)
 
-        val srcPath = Files.createTempFile(tempDir, tempFilePrefix, extension)
-        val dstPath = Files.createTempFile(tempDir, tempFilePrefix, extension)
+        val srcPath = Files.createTempFile(tempDir, tempFilePrefix, extension, filePerms)
+        val dstPath = Files.createTempFile(tempDir, tempFilePrefix, extension, filePerms)
 
         val randomName = UUID.randomUUID().toString() + extension
 
