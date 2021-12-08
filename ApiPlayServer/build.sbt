@@ -32,6 +32,7 @@ libraryDependencies ++= Seq(
   jdbc,
   cache,
   guice,
+  ehcache,
   "net.codingwell" %% "scala-guice" % "4.1.0",
   "com.mohiva" %% "play-silhouette" % "5.0.0",
   "io.circe" %% "circe-core" % circeVersion,
@@ -46,9 +47,13 @@ libraryDependencies ++= Seq(
 )
 
 dependencyOverrides ++= Seq(
+  "net.sf.ehcache" % "ehcache" % "2.10.9.2",
   "com.atlassian.jwt" % "jwt-core" % "3.2.1",
   "com.atlassian.jwt" % "jwt-api" % "3.2.1",
-  "com.fasterxml.jackson.core" % "jackson-databind" % "2.10.5.1"
+  "com.fasterxml.jackson.core" % "jackson-databind" % "2.10.5.1",
+  "com.typesafe.akka" % "akka-http-core_2.12" % "10.1.14",
+  "com.typesafe.play" % "play-ws_2.12" % "2.6.24"
+
 )
 
 // These are the default Java settings that go into conf/application.ini and are read by the start up

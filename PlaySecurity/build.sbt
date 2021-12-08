@@ -34,3 +34,8 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-parser" % "0.9.3",
   "org.apache.shiro" % "shiro-core" % "1.7.1", // for v1.0 authentication support
 )
+
+dependencyOverrides ++= Seq(
+  "com.typesafe.akka" % "akka-http-core_2.12" % "10.1.14",
+  "com.typesafe.play" % "play-ws_2.12" % "2.6.24"
+)

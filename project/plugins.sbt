@@ -26,7 +26,9 @@ addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.21")
 
 addSbtPlugin("net.vonbuchholtz" % "sbt-dependency-check" % "3.1.3")
 
-// addDependencyTreePlugin
+addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.10.0-RC1")
+
+//addDependencyTreePlugin
 
 addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.10.0-RC1")
 

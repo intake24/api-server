@@ -20,3 +20,10 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-mailer-guice" % "6.0.1",
   "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test
 )
+
+dependencyOverrides ++= Seq(
+    "commons-beanutils" % "commons-beanutils" % "1.9.4",
+    "com.typesafe.akka" % "akka-http-core_2.12" % "10.1.14",
+    "com.typesafe.play" % "play-ws_2.12" % "2.6.24",
+    "net.sf.ehcache" % "ehcache" % "2.10.9.2",
+)
