@@ -1,20 +1,29 @@
 package uk.ac.ncl.openlab.intake24.systemsql.pairwiseAssociations
 
-import java.time.{ZoneId, ZonedDateTime}
+import cats.data.EitherT
+import cats.implicits._
+
+import java.time.{Instant, ZoneId, ZonedDateTime}
 import javax.inject.{Inject, Named, Singleton}
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.errors.UpdateError
+import uk.ac.ncl.openlab.intake24.errors.{DatabaseError, ErrorUtils, UnexpectedDatabaseError, UpdateError}
 import uk.ac.ncl.openlab.intake24.pairwiseAssociationRules.PairwiseAssociationRules
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, ExportSubmission, SurveyAdminService, SurveyParametersOut}
 import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsDataService, PairwiseAssociationsService, PairwiseAssociationsServiceConfiguration, PairwiseAssociationsServiceSortTypes}
 
 import scala.annotation.tailrec
+import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
+
 
 /**
  * Created by Tim Osadchiy on 04/10/2017.
  */
+
+case class Transactions(lastSubmissionTime: ZonedDateTime, batches: List[TransactionBatch])
+
+case class TransactionBatch(localeId: String, transactions: Seq[Seq[String]])
 
 @Singleton
 class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsServiceConfiguration,
@@ -25,19 +34,17 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
 
   type LocalizedPARules = Map[String, PairwiseAssociationRules]
 
+  private val dateLowerBound = ZonedDateTime.ofInstant(Instant.EPOCH, ZoneId.systemDefault());
+
   private val threadSleepFor = 5
 
   private val logger = LoggerFactory.getLogger(getClass)
 
   private var associationRules = Map[String, PairwiseAssociationRules]()
 
-  private val associationRulesPromise = Promise[Map[String, PairwiseAssociationRules]]
-
   getAssociationRulesFromDb()
 
   override def getAssociationRules(): Map[String, PairwiseAssociationRules] = associationRules
-
-  override def getAssociationRulesAsync(): Future[Map[String, PairwiseAssociationRules]] = associationRulesPromise.future
 
   override def recommend(locale: String,
                          items: Seq[String],
@@ -60,48 +67,52 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
     }.getOrElse(Map[String, Int]())
   }
 
-  override def addTransactions(surveyId: String, items: Seq[Seq[String]]): Unit =
-    getValidSurvey(surveyId, "addTransactions").map { surveyParams =>
-      associationRules.get(surveyParams.localeId) match {
-        case None =>
-          val ar = PairwiseAssociationRules(None)
-          ar.addTransactions(items)
-          associationRules = associationRules + (surveyParams.localeId -> ar)
-        case Some(ar) => ar.addTransactions(items)
-      }
-      dataService.addTransactions(surveyParams.localeId, items)
-    }
+  private def addTransactions(transactions: List[TransactionBatch]): Future[Either[DatabaseError, Unit]] = Future {
+    val grouped = groupTransactions(transactions)
+    ErrorUtils.sequence(grouped.toSeq.map { case (localeId, transactions) => dataService.addTransactions(localeId, transactions) }).right.map(_ => ())
+  }
 
-  override def refresh(): Future[Either[UpdateError, LocalizedPARules]] = {
-    for (
-      graph <- buildRules();
-      result <- dataService.writeAssociations(graph)
-    ) yield {
-      result match {
-        case Left(e) =>
-          logger.error(s"Failed to refresh PairwiseAssociations ${e.exception.getMessage}")
-          Left(e)
-        case Right(_) =>
-          logger.debug(s"Successfully refreshed Pairwise associations")
-          this.associationRules = graph
-          Right(graph)
-      }
-    }
+  // TODO: Use atomic reference
+  private def updateRules(newRules: Map[String, PairwiseAssociationRules]): Unit = this.associationRules = newRules
+
+  override def update(): Future[Either[DatabaseError, Unit]] = {
+
+    val eitherT = for (
+      lastSubmissionTime <- EitherT(Future.successful(dataService.getLastSubmissionTime()));
+      transactions <- EitherT(collectTransactionsAfter(lastSubmissionTime));
+      _ <- EitherT(addTransactions(transactions.batches));
+      _ <- EitherT(Future.successful(dataService.updateLastSubmissionTime(transactions.lastSubmissionTime)));
+      associations <- EitherT(dataService.getAssociations())
+    ) yield updateRules(associations)
+
+    eitherT.value
+  }
+
+  override def rebuild(): Future[Either[DatabaseError, Unit]] = {
+    val eitherT = for (
+      transactions <- EitherT(collectTransactions());
+      graph <- EitherT(Future.successful(Right(buildRules(transactions.batches))));
+      _ <- EitherT(dataService.writeAssociations(graph));
+      _ <- EitherT(Future.successful(dataService.updateLastSubmissionTime(transactions.lastSubmissionTime)))
+    ) yield updateRules(graph)
+
+    eitherT.value
   }
 
   @tailrec
-  private def processSubmissions(surveyId: String, total: Int, offset: Int = 0)(action: Seq[ExportSubmission] => Unit): Unit = {
+  private def processSubmissions(surveyId: String, total: Int, offset: Int = 0)(action: Seq[ExportSubmission] => Unit): Either[DatabaseError, Unit] = {
     logger.debug(s"Fetching next batch of up to ${settings.rulesUpdateBatchSize} submissions at offset $offset (expected total $total)")
 
     val t0 = System.currentTimeMillis()
 
-    val result =  dataExportService.getSurveySubmissions(surveyId, None, None, offset, settings.rulesUpdateBatchSize, None)
+    val result = dataExportService.getSurveySubmissions(surveyId, None, None, offset, settings.rulesUpdateBatchSize, None)
 
     logger.debug(s"Received new batch in ${System.currentTimeMillis() - t0} ms")
 
     result match {
       case Left(error) =>
         logger.warn(s"Failed to retrieve the next batch of submissions for survey $surveyId, offset $offset, batch size ${settings.rulesUpdateBatchSize}", error.exception)
+        Left(error)
 
       case Right(submissions) =>
         if (submissions.nonEmpty) {
@@ -110,40 +121,55 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
           action(submissions)
           logger.debug(s"Processed current batch in ${System.currentTimeMillis() - t0} ms")
           processSubmissions(surveyId, total, offset + submissions.size)(action)
-        }
+        } else Right(())
     }
   }
 
-  def buildRules(): Future[LocalizedPARules] = {
-    Future {
-      logger.debug("Refreshing Pairwise associations")
-      logger.debug("Collecting surveys")
+  def collectTransactions(): Future[Either[UnexpectedDatabaseError, Transactions]] = collectTransactionsAfter(dateLowerBound)
 
-      val surveys = surveyAdminService.listSurveys() match {
-        case Right(surveys) => surveys
-        case Left(error) =>
-          logger.error("Failed to load surveys", error.exception)
-          Seq()
-      }
+  def collectTransactionsAfter(after: ZonedDateTime): Future[Either[UnexpectedDatabaseError, Transactions]] = Future {
+    logger.debug(s"Collecting transactions from surveys after $after")
 
-      logger.debug(s"Building new pairwise associations graph from ${surveys.size} surveys")
-      val foldGraph = Map[String, PairwiseAssociationRules]().withDefault(_ => PairwiseAssociationRules(None))
-      surveys.foldLeft(foldGraph) { (foldGraph, survey) =>
-        val localeRules = foldGraph(survey.localeId)
-        val submissionCount = getSubmissionCount(survey.id)
+    surveyAdminService.listSurveys().flatMap {
+      surveys =>
+        val batches = mutable.MutableList()
 
-        if (surveyIsValid(survey.id, submissionCount, "getSurveySubmissions")) {
-          logger.debug(s"Processing $submissionCount submissions from survey ${survey.id}")
+        var lastSubmissionTime = after
 
-          processSubmissions(survey.id, submissionCount) {
-            submissions =>
-              logger.debug("Adding transactions to the graph")
-              val transactions = submissions.flatMap(_.meals.map(_.foods.map(_.code)))
-              localeRules.addTransactions(transactions)
-          }
+        surveys.foreach {
+          surveyParams =>
+
+            val submissionCount = getSubmissionCount(surveyParams.id)
+
+            if (surveyIsValid(surveyParams.id, submissionCount, "getSurveySubmissions")) {
+              logger.debug(s"Processing submissions from survey ${surveyParams.id}")
+
+              processSubmissions(surveyParams.id, submissionCount) {
+                submissions =>
+                  implicit val localDateOrdering: Ordering[ZonedDateTime] = _ compareTo _
+                  lastSubmissionTime = localDateOrdering.max(lastSubmissionTime, submissions.map(_.submissionTime).max)
+                  val surveyTransactions = submissions.flatMap(_.meals.map(_.foods.map(_.code)))
+                  batches += TransactionBatch(surveyParams.localeId, surveyTransactions)
+              }
+            }
         }
-        foldGraph + (survey.localeId -> localeRules)
-      }
+
+        logger.debug(s"Last seen submission time: $lastSubmissionTime")
+        Right(Transactions(lastSubmissionTime, batches.toList))
+    }
+  }
+
+  def groupTransactions(transactions: List[TransactionBatch]): Map[String, Seq[Seq[String]]] =
+    transactions.groupBy(_.localeId).map { case (k, v) => (k, v.flatMap(_.transactions)) }
+
+  def buildRules(transactions: Seq[TransactionBatch]): LocalizedPARules = {
+    logger.debug(s"Building new pairwise associations graph from ${transactions.size} transaction batches")
+    val z = Map[String, PairwiseAssociationRules]().withDefault(_ => PairwiseAssociationRules(None))
+    transactions.foldLeft(z) { (map, transactionsBatch) =>
+      logger.debug(s"Processing a transaction batch of size ${transactionsBatch.transactions.size}")
+      val localeRules = map(transactionsBatch.localeId)
+      localeRules.addTransactions(transactionsBatch.transactions)
+      map + (transactionsBatch.localeId -> localeRules)
     }
   }
 
@@ -194,12 +220,12 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
   }
 
   private def getAssociationRulesFromDb() = dataService.getAssociations().onComplete({
-    case Success(mp) =>
-      this.associationRules = mp
-      associationRulesPromise.success(mp)
+    case Success(Right(mp)) =>
+      updateRules(mp)
+    case Success(Left(error)) =>
+      logger.error(error.exception.getMessage)
     case Failure(e) =>
       logger.error(e.getMessage)
-      associationRulesPromise.failure(e)
   })
 
   private case class Submission(locale: String, meals: Seq[Seq[String]])

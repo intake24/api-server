@@ -20,10 +20,10 @@ class PairwiseAssociationsRefresherImpl @Inject()(settings: PairwiseAssociations
   extends PairwiseAssociationsRefresher {
 
   system.scheduler.scheduleOnce(0.minutes) {
-    paService.refresh()
+    paService.update()
   }
 
   system.scheduler.schedule(settings.nextRefreshIn, 24.hours)(new Runnable {
-    override def run() = paService.refresh()
+    override def run() = paService.update()
   })
 }

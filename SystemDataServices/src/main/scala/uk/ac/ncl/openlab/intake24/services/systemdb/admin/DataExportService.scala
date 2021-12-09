@@ -8,7 +8,8 @@ import uk.ac.ncl.openlab.intake24.errors.{LookupError, UnexpectedDatabaseError}
 import uk.ac.ncl.openlab.intake24.surveydata.{MealTime, PortionSizeWithWeights}
 
 
-case class ExportSubmission(id: UUID, userId: Int, userAlias: Option[String], userCustomData: Map[String, String], surveyCustomData: Map[String, String], startTime: ZonedDateTime, endTime: ZonedDateTime, meals: Seq[ExportMeal])
+case class ExportSubmission(id: UUID, userId: Int, userAlias: Option[String], userCustomData: Map[String, String], surveyCustomData: Map[String, String], startTime: ZonedDateTime, endTime: ZonedDateTime,
+                            submissionTime: ZonedDateTime, meals: Seq[ExportMeal])
 
 case class ExportMeal(id: Long, name: String, time: MealTime, customData: Map[String, String], foods: Seq[ExportFood], missingFoods: Seq[ExportMissingFood])
 

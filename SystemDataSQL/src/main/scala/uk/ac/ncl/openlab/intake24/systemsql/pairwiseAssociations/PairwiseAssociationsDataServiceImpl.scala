@@ -1,21 +1,23 @@
 package uk.ac.ncl.openlab.intake24.systemsql.pairwiseAssociations
 
 import java.sql.Connection
-
 import javax.inject.{Inject, Named}
 import javax.sql.DataSource
 import anorm.{BatchSql, Macro, NamedParameter, SQL, SqlParser}
+import cats.data.EitherT
+import cats.implicits._
 import org.slf4j.LoggerFactory
 import uk.ac.ncl.openlab.intake24.errors.{UnexpectedDatabaseError, UpdateError}
 import uk.ac.ncl.openlab.intake24.pairwiseAssociationRules.{PairwiseAssociationRules, PairwiseAssociationRulesConstructorParams}
 import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsDataService, PairwiseAssociationsServiceConfiguration}
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
 
+import java.time.ZonedDateTime
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
 /**
-  * Created by Tim Osadchiy on 02/10/2017.
-  */
+ * Created by Tim Osadchiy on 02/10/2017.
+ */
 class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") val dataSource: DataSource,
                                                     settings: PairwiseAssociationsServiceConfiguration,
                                                     @Named("intake24") implicit val executionContext: ExecutionContext) extends PairwiseAssociationsDataService with SqlDataService {
@@ -66,11 +68,11 @@ class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") va
 
   private case class TransactionCountRow(locale: String, transactions_count: Int)
 
-  override def getAssociations(): Future[Map[String, PairwiseAssociationRules]] = {
-    for (
-      transactionCounts <- getTransactionCounts();
-      occurrences <- getOccurrenceMapAsync();
-      coOccurrences <- getCoOccurenceMapAsync()
+  override def getAssociations(): Future[Either[UnexpectedDatabaseError, Map[String, PairwiseAssociationRules]]] = {
+    val eitherT = for (
+      transactionCounts <- EitherT(getTransactionCounts());
+      occurrences <- EitherT(getOccurrenceMapAsync());
+      coOccurrences <- EitherT(getCoOccurenceMapAsync())
     ) yield occurrences.flatMap { occurrenceNode =>
       for (
         transactionCount <- transactionCounts.get(occurrenceNode._1);
@@ -82,6 +84,8 @@ class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") va
         }
       ) yield paramsNode
     }
+
+    eitherT.value
   }
 
   override def writeAssociations(localeAssociations: Map[String, PairwiseAssociationRules]): Future[Either[UpdateError, Unit]] = {
@@ -190,7 +194,7 @@ class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") va
     SQL(qs).execute()
   }
 
-  private def getCoOccurenceMapAsync(): Future[Map[String, Map[String, Map[String, Int]]]] = {
+  private def getCoOccurenceMapAsync(): Future[Either[UnexpectedDatabaseError, Map[String, Map[String, Map[String, Int]]]]] = {
     val defaultMap: Map[String, Map[String, Map[String, Int]]] = Map().withDefaultValue(Map().withDefaultValue(Map().withDefaultValue(0)))
     Future {
       countRecordsInTable(pairwiseAssociationsCoOccurrencesTN).flatMap { count =>
@@ -227,14 +231,11 @@ class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") va
             Left(UnexpectedDatabaseError(new Exception("Couldn't retrieve co-occurrence records")))
         }
 
-      } match {
-        case Left(e) => throw e.exception
-        case Right(mp) => mp
       }
     }
   }
 
-  private def getOccurrenceMapAsync(): Future[Map[String, Map[String, Int]]] = {
+  private def getOccurrenceMapAsync(): Future[Either[UnexpectedDatabaseError, Map[String, Map[String, Int]]]] = {
     val defaultMap = Map[String, Map[String, Int]]().withDefaultValue(Map().withDefaultValue(0))
     Future {
       countRecordsInTable(pairwiseAssociationsOccurrencesTN).flatMap { count =>
@@ -262,14 +263,11 @@ class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") va
             logger.info(s"At least one occurrence batch was retrieved with the following error. $error")
             Left(UnexpectedDatabaseError(new Exception("Couldn't retieve occurence records")))
         }
-      } match {
-        case Left(e) => throw e.exception
-        case Right(mp) => mp
       }
     }
   }
 
-  private def getTransactionCounts(): Future[Map[String, Int]] = {
+  private def getTransactionCounts(): Future[Either[UnexpectedDatabaseError, Map[String, Int]]] =
     Future {
       tryWithConnection {
         implicit conn =>
@@ -277,12 +275,8 @@ class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") va
             n._1 -> n._2.head.transactions_count
           }
           Right(mp)
-      } match {
-        case Right(mp) => mp
-        case Left(e) => throw e.exception
       }
     }
-  }
 
   private def countRecordsInTable(tableName: String): Either[UnexpectedDatabaseError, Int] = tryWithConnection {
     implicit conn => Right(SQL(s"SELECT count(*) FROM $tableName").executeQuery().as(SqlParser.int("count").single))
@@ -306,4 +300,7 @@ class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") va
     }
   }
 
+  override def getLastSubmissionTime(): ZonedDateTime = ???
+
+  override def updateLastSubmissionTime(time: ZonedDateTime): Either[UpdateError, Unit] = ???
 }

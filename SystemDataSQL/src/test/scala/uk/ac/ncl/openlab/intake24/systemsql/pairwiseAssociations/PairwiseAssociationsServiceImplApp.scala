@@ -51,7 +51,8 @@ object PairwiseAssociationsServiceImplApp extends App {
   checkConsistance()
 
   def checkConsistance() = {
-    val f = for (
+    /* val f = for (
+      transactions <- EitherT(dataService.getAssociations());
       builtRules <- service.buildRules();
       dbRules <- service.getAssociationRulesAsync();
       equal = graphsEqual(builtRules, dbRules)
@@ -59,19 +60,19 @@ object PairwiseAssociationsServiceImplApp extends App {
     f.onComplete { f =>
       f
     }
-    Await.result(f, Duration.Inf)
+    Await.result(f, Duration.Inf) */
   }
 
   def buildRules() = {
-    service.buildRules().onComplete { rules =>
+    /* service.buildRules().onComplete { rules =>
       rules
-    }
+    } */
   }
 
   def refresh() = {
-    service.refresh().onComplete(graph => {
+    /* service.refresh().onComplete(graph => {
       graph
-    })
+    }) */
   }
 
   def graphsEqual(builtGraph: Map[String, PairwiseAssociationRules], dbGraph: Map[String, PairwiseAssociationRules]) = {

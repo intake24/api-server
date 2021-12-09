@@ -31,6 +31,7 @@ libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % "1.7.21",
   "net.codingwell" %% "scala-guice" % "4.1.0",
   "org.apache.commons" % "commons-lang3" % "3.4",
+  "org.typelevel" %% "cats-core" % "1.4.0",
   "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test,
   "ch.qos.logback" % "logback-classic" % "1.2.3" % Test
 )

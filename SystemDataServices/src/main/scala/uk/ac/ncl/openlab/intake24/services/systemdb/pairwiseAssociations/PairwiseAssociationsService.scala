@@ -1,17 +1,16 @@
 package uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations
 
-import java.util.concurrent.TimeUnit
-import java.util.{Calendar, Date}
-
-import uk.ac.ncl.openlab.intake24.errors.UpdateError
+import uk.ac.ncl.openlab.intake24.errors.DatabaseError
 import uk.ac.ncl.openlab.intake24.pairwiseAssociationRules.PairwiseAssociationRules
 
+import java.util.Calendar
+import java.util.concurrent.TimeUnit
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
 /**
-  * Created by Tim Osadchiy on 04/10/2017.
-  */
+ * Created by Tim Osadchiy on 04/10/2017.
+ */
 
 object PairwiseAssociationsServiceSortTypes {
   val popularity = "popularity"
@@ -51,10 +50,7 @@ trait PairwiseAssociationsService {
 
   def getOccurrences(locale: String): Map[String, Int]
 
-  def addTransactions(surveyId: String, items: Seq[Seq[String]]): Unit
+  def update(): Future[Either[DatabaseError, Unit]]
 
-  def refresh(): Future[Either[UpdateError, Map[String, PairwiseAssociationRules]]]
-
-  def getAssociationRulesAsync(): Future[Map[String, PairwiseAssociationRules]]
-
+  def rebuild(): Future[Either[DatabaseError, Unit]]
 }

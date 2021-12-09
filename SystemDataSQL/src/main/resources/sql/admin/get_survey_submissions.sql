@@ -1,4 +1,4 @@
-SELECT id, ss.survey_id, ss.user_id, a.user_name, start_time, end_time, log,
+SELECT id, ss.survey_id, ss.user_id, a.user_name, start_time, end_time, submission_time, log,
     ARRAY(SELECT ARRAY[name, value] FROM survey_submission_custom_fields AS cf WHERE cf.survey_submission_id = ss.id) AS submission_custom_fields,
     ARRAY(SELECT ARRAY[name, value] FROM user_custom_fields AS ucf WHERE ucf.user_id = ss.user_id) AS user_custom_fields
 FROM survey_submissions AS ss

@@ -31,8 +31,8 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
 
   lazy val getSurveySubmissionFieldsSql = sqlFromResource("admin/get_survey_submission_fields.sql")
 
-  private case class SubmissionRow(id: UUID, survey_id: String, user_id: Int, user_name: Option[String], start_time: ZonedDateTime, end_time: ZonedDateTime, log: Array[String],
-                                   submission_custom_fields: Array[Array[String]], user_custom_fields: Array[Array[String]])
+  private case class SubmissionRow(id: UUID, survey_id: String, user_id: Int, user_name: Option[String], start_time: ZonedDateTime, end_time: ZonedDateTime,
+                                   submission_time: ZonedDateTime, log: Array[String], submission_custom_fields: Array[Array[String]], user_custom_fields: Array[Array[String]])
 
   private case class MealRow(submission_id: UUID, meal_id: Long, hours: Int, minutes: Int, name: String, custom_fields: Array[Array[String]])
 
@@ -137,7 +137,7 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
                     ExportMeal(mealRow.meal_id, mealRow.name, MealTime(mealRow.hours, mealRow.minutes), customFieldsAsMap(mealRow.custom_fields), foods, missingFoods)
                 }
                 ExportSubmission(submissionRow.id, submissionRow.user_id, submissionRow.user_name, customFieldsAsMap(submissionRow.user_custom_fields), customFieldsAsMap(submissionRow.submission_custom_fields),
-                  submissionRow.start_time, submissionRow.end_time, meals)
+                  submissionRow.start_time, submissionRow.end_time, submissionRow.submission_time, meals)
             }
 
             logger.debug(s"Create submission objects time: ${System.currentTimeMillis() - t6} ms")
