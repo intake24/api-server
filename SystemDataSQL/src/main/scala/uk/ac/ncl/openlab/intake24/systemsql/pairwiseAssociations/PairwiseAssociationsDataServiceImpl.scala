@@ -300,7 +300,14 @@ class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") va
     }
   }
 
-  override def getLastSubmissionTime(): ZonedDateTime = ???
+  override def getLastSubmissionTime(): Either[UnexpectedDatabaseError, ZonedDateTime] = tryWithConnection {
+    implicit conn =>
+      Right(SQL(s"select last_submission_time from pairwise_associations_state limit 1").executeQuery().as(SqlParser.scalar[ZonedDateTime].single))
+  }
 
-  override def updateLastSubmissionTime(time: ZonedDateTime): Either[UpdateError, Unit] = ???
+  override def updateLastSubmissionTime(time: ZonedDateTime): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
+    implicit conn =>
+      SQL(s"update pairwise_associations_state set last_submission_time={time}").on('time -> time).executeUpdate()
+      Right(())
+  }
 }

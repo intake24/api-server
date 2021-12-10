@@ -13,6 +13,7 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{Pairwi
 
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
@@ -88,10 +89,11 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
     eitherT.value
   }
 
+
   override def rebuild(): Future[Either[DatabaseError, Unit]] = {
     val eitherT = for (
       transactions <- EitherT(collectTransactions());
-      graph <- EitherT(Future.successful(Right(buildRules(transactions.batches))));
+      graph <- EitherT.right(Future.successful(buildRules(transactions.batches)));
       _ <- EitherT(dataService.writeAssociations(graph));
       _ <- EitherT(Future.successful(dataService.updateLastSubmissionTime(transactions.lastSubmissionTime)))
     ) yield updateRules(graph)
@@ -100,12 +102,12 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
   }
 
   @tailrec
-  private def processSubmissions(surveyId: String, total: Int, offset: Int = 0)(action: Seq[ExportSubmission] => Unit): Either[DatabaseError, Unit] = {
+  private def processSubmissions(surveyId: String, after: ZonedDateTime, total: Int, offset: Int = 0)(action: Seq[ExportSubmission] => Unit): Either[DatabaseError, Unit] = {
     logger.debug(s"Fetching next batch of up to ${settings.rulesUpdateBatchSize} submissions at offset $offset (expected total $total)")
 
     val t0 = System.currentTimeMillis()
 
-    val result = dataExportService.getSurveySubmissions(surveyId, None, None, offset, settings.rulesUpdateBatchSize, None)
+    val result = dataExportService.getSurveySubmissions(surveyId, Some(after), None, offset, settings.rulesUpdateBatchSize, None)
 
     logger.debug(s"Received new batch in ${System.currentTimeMillis() - t0} ms")
 
@@ -120,7 +122,7 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
           val t0 = System.currentTimeMillis()
           action(submissions)
           logger.debug(s"Processed current batch in ${System.currentTimeMillis() - t0} ms")
-          processSubmissions(surveyId, total, offset + submissions.size)(action)
+          processSubmissions(surveyId, after, total, offset + submissions.size)(action)
         } else Right(())
     }
   }
@@ -132,7 +134,7 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
 
     surveyAdminService.listSurveys().flatMap {
       surveys =>
-        val batches = mutable.MutableList()
+        val batches = ListBuffer[TransactionBatch]()
 
         var lastSubmissionTime = after
 
@@ -144,10 +146,13 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
             if (surveyIsValid(surveyParams.id, submissionCount, "getSurveySubmissions")) {
               logger.debug(s"Processing submissions from survey ${surveyParams.id}")
 
-              processSubmissions(surveyParams.id, submissionCount) {
+              processSubmissions(surveyParams.id, after, submissionCount) {
                 submissions =>
                   implicit val localDateOrdering: Ordering[ZonedDateTime] = _ compareTo _
                   lastSubmissionTime = localDateOrdering.max(lastSubmissionTime, submissions.map(_.submissionTime).max)
+
+                  logger.debug(s"Last submission time in survey ${surveyParams.id} is $lastSubmissionTime")
+
                   val surveyTransactions = submissions.flatMap(_.meals.map(_.foods.map(_.code)))
                   batches += TransactionBatch(surveyParams.localeId, surveyTransactions)
               }
@@ -207,7 +212,7 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
       logger.warn(s"Survey $surveyId is ignored due to its' name at $operationPrefix")
       false
     } else if (submissionCount < settings.minimumNumberOfSurveySubmissions) {
-      logger.warn(s"Survey $surveyId is ignored since it contains less than ${settings.minimumNumberOfSurveySubmissions} at $operationPrefix")
+      logger.warn(s"Survey $surveyId is ignored since it contains less than ${settings.minimumNumberOfSurveySubmissions} total submissions in $operationPrefix")
       false
     } else {
       true
