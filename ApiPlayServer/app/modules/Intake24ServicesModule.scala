@@ -62,7 +62,7 @@ import uk.ac.ncl.openlab.intake24.systemsql.uxEvents.UxEventsDataServiceImpl
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-class Intake24ServicesModule(env: Environment, config: Configuration) extends AbstractModule {
+class Intake24ServicesModule extends AbstractModule {
   @Provides
   @Singleton
   def foodIndexes(foodIndexDataService: FoodIndexDataService, configuration: Configuration): Map[String, FoodIndex] = {
