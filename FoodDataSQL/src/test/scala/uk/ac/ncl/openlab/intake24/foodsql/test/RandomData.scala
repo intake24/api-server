@@ -61,7 +61,7 @@ trait RandomData {
     val reasonableAmount = if (Random.nextBoolean()) Some(Random.nextInt(1000)) else None
     val useInRecipes = Random.nextInt(3)
 
-    InheritableAttributes(readyMeal, sameAsBefore, reasonableAmount, useInRecipes)
+    InheritableAttributes(readyMeal, sameAsBefore, reasonableAmount, Some(useInRecipes))
   }
 
   def randomNewFood(code: String, groupCodes: IndexedSeq[Int]) = NewMainFoodRecord(code, randomDescription, randomElement(groupCodes), randomAttributes, Seq(), Seq())
@@ -130,7 +130,7 @@ trait RandomData {
       Seq.fill(count)(PortionSizeMethodParameter(randomIdentifier, randomDescription))
     }
 
-    PortionSizeMethod(randomIdentifier, randomDescription, randomDescription, Random.nextBoolean(), randomParameters)
+    PortionSizeMethod(randomIdentifier, randomDescription, randomDescription, Random.nextBoolean(), Random.nextDouble(), randomParameters)
   }
 
   def randomPortionSizeMethods = {

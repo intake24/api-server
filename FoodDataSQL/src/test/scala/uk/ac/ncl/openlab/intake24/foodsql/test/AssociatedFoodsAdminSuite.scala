@@ -1,9 +1,11 @@
 package uk.ac.ncl.openlab.intake24.foodsql.test
 
 import org.scalatest.{BeforeAndAfterAll, DoNotDiscover, FunSuite}
-import uk.ac.ncl.openlab.intake24.AssociatedFoodWithHeader
+import uk.ac.ncl.openlab.intake24.api.data.admin.{CategoryHeader, FoodHeader}
 import uk.ac.ncl.openlab.intake24.errors.{ParentRecordNotFound, RecordNotFound, UndefinedLocale}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodDatabaseAdminService
+
+case class AssociatedFoodWithHeader(header: Either[FoodHeader, CategoryHeader], text: String, linkAsMain: Boolean, genericName: String)
 
 @DoNotDiscover
 class AssociatedFoodsAdminSuite(service: FoodDatabaseAdminService) extends FunSuite with BeforeAndAfterAll with FixedData with RandomData {
