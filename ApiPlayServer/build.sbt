@@ -30,6 +30,7 @@ val circeVersion = "0.10.1"
 
 libraryDependencies ++= Seq(
   jdbc,
+  jdbc % Test,
   cache,
   guice,
   "net.codingwell" %% "scala-guice" % "4.1.0",
@@ -42,7 +43,9 @@ libraryDependencies ++= Seq(
   "com.twilio.sdk" % "twilio" % "7.7.0",
   "com.amazonaws" % "aws-java-sdk" % "1.12.51",
   "com.auth0" % "java-jwt" % "3.8.1",
-  "commons-net" % "commons-net" % "3.6"
+  "commons-net" % "commons-net" % "3.6",
+  "org.scalatest" %% "scalatest" % "3.0.1" % "test",
+  "org.scalatestplus.play" %% "scalatestplus-play" % "4.0.0" % "test"
 )
 
 dependencyOverrides ++= Seq(
