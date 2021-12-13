@@ -22,3 +22,4 @@ dist
 /conf/logback.xml
 /conf/application.conf
 /conf/ehcache.xml
+/conf/application-test.conf
