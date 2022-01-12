@@ -4,8 +4,8 @@ SELECT id, ss.survey_id, ss.user_id, a.user_name, start_time, end_time, submissi
 FROM survey_submissions AS ss
 LEFT JOIN user_survey_aliases AS a ON ss.user_id  = a.user_id
 WHERE ss.survey_id={survey_id}
-AND ({time_from}::timestamp with time zone IS NULL OR start_time>{time_from})
-AND ({time_to}::timestamp with time zone IS NULL OR end_time<{time_to})
+AND ({time_from}::timestamp with time zone IS NULL OR submission_time>{time_from})
+AND ({time_to}::timestamp with time zone IS NULL OR submission_time<{time_to})
 AND ({respondent_id} IS NULL OR ss.user_id = {respondent_id})
-ORDER BY end_time ASC
+ORDER BY submission_time ASC
 OFFSET {offset} LIMIT {limit}
