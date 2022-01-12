@@ -1,8 +1,5 @@
 package uk.ac.ncl.openlab.intake24.systemsql.pairwiseAssociations
 
-import java.sql.Connection
-import javax.inject.{Inject, Named}
-import javax.sql.DataSource
 import anorm.{BatchSql, Macro, NamedParameter, SQL, SqlParser}
 import cats.data.EitherT
 import cats.implicits._
@@ -12,8 +9,11 @@ import uk.ac.ncl.openlab.intake24.pairwiseAssociationRules.{PairwiseAssociationR
 import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsDataService, PairwiseAssociationsServiceConfiguration}
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
 
-import java.time.ZonedDateTime
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import java.sql.Connection
+import java.time.{Instant, ZoneId, ZonedDateTime}
+import javax.inject.{Inject, Named}
+import javax.sql.DataSource
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * Created by Tim Osadchiy on 02/10/2017.
@@ -302,12 +302,14 @@ class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") va
 
   override def getLastSubmissionTime(): Either[UnexpectedDatabaseError, ZonedDateTime] = tryWithConnection {
     implicit conn =>
-      Right(SQL(s"select last_submission_time from pairwise_associations_state limit 1").executeQuery().as(SqlParser.scalar[ZonedDateTime].single))
+      val time = SQL(s"select last_submission_time from pairwise_associations_state limit 1").executeQuery().as(SqlParser.scalar[ZonedDateTime].singleOpt)
+      Right(time.getOrElse(ZonedDateTime.ofInstant(Instant.ofEpochMilli(0L), ZoneId.of("Z"))))
   }
 
   override def updateLastSubmissionTime(time: ZonedDateTime): Either[UnexpectedDatabaseError, Unit] = tryWithConnection {
     implicit conn =>
-      SQL(s"update pairwise_associations_state set last_submission_time={time}").on('time -> time).executeUpdate()
+      SQL(s"insert into pairwise_associations_state(id, last_submission_time) values (1, {time}) " +
+        s"on conflict(id) do update set last_submission_time={time}").on('time -> time).executeUpdate()
       Right(())
   }
 }
