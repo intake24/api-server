@@ -5,10 +5,12 @@ import com.google.inject.name.Named
 import com.google.inject.{AbstractModule, Provides, Singleton}
 import play.api.Configuration
 import play.api.db.{Database, NamedDatabase}
-import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, SurveyAdminService}
+import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, SurveyAdminService, UserAdminService}
 import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsDataService, PairwiseAssociationsService, PairwiseAssociationsServiceConfiguration}
-import uk.ac.ncl.openlab.intake24.systemsql.admin.{DataExportImpl, SurveyAdminImpl}
+import uk.ac.ncl.openlab.intake24.services.systemdb.user.SurveyService
+import uk.ac.ncl.openlab.intake24.systemsql.admin.{DataExportImpl, SurveyAdminImpl, UserAdminImpl}
 import uk.ac.ncl.openlab.intake24.systemsql.pairwiseAssociations.{PairwiseAssociationsDataServiceImpl, PairwiseAssociationsServiceImpl}
+import uk.ac.ncl.openlab.intake24.systemsql.user.SurveyServiceImpl
 
 import java.util.concurrent.ForkJoinPool
 import scala.concurrent.ExecutionContext
@@ -54,6 +56,8 @@ class PairwiseAssociationsTestModule extends AbstractModule {
     bind(classOf[PairwiseAssociationsDataService]).to(classOf[PairwiseAssociationsDataServiceImpl])
     bind(classOf[PairwiseAssociationsService]).to(classOf[PairwiseAssociationsServiceImpl])
     bind(classOf[SurveyAdminService]).to(classOf[SurveyAdminImpl])
+    bind(classOf[SurveyService]).to(classOf[SurveyServiceImpl])
     bind(classOf[DataExportService]).to(classOf[DataExportImpl])
+    bind(classOf[UserAdminService]).to(classOf[UserAdminImpl])
   }
 }
