@@ -6,11 +6,12 @@ import cats.implicits._
 import java.time.{Instant, ZoneId, ZonedDateTime}
 import javax.inject.{Inject, Named, Singleton}
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.errors.{DatabaseError, ErrorUtils, UnexpectedDatabaseError, UpdateError}
+import uk.ac.ncl.openlab.intake24.errors.{DatabaseError, ErrorUtils, StillReferenced, UnexpectedDatabaseError, UpdateError}
 import uk.ac.ncl.openlab.intake24.pairwiseAssociationRules.PairwiseAssociationRules
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, ExportSubmission, SurveyAdminService, SurveyParametersOut}
 import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsDataService, PairwiseAssociationsService, PairwiseAssociationsServiceConfiguration, PairwiseAssociationsServiceSortTypes}
 
+import java.util.concurrent.atomic.AtomicBoolean
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -37,11 +38,11 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
 
   private val dateLowerBound = ZonedDateTime.ofInstant(Instant.EPOCH, ZoneId.systemDefault());
 
-  private val threadSleepFor = 5
-
   private val logger = LoggerFactory.getLogger(getClass)
 
   private var associationRules = Map[String, PairwiseAssociationRules]()
+
+  private val updateInProgress = new AtomicBoolean(false)
 
   getAssociationRulesFromDb()
 
@@ -76,29 +77,48 @@ class PairwiseAssociationsServiceImpl @Inject()(settings: PairwiseAssociationsSe
   // TODO: Use atomic reference
   private def updateRules(newRules: Map[String, PairwiseAssociationRules]): Unit = this.associationRules = newRules
 
+  // Update and rebuild can be called from different threads but running more than one update
+  // operation concurrently will likely result in undefined behaviour
+
   override def update(): Future[Either[DatabaseError, Unit]] = {
+    if (!updateInProgress.compareAndSet(false, true)) {
+      Future.successful(Left(StillReferenced(new RuntimeException("Another update is still in progress"))))
+    } else {
 
-    val eitherT = for (
-      lastSubmissionTime <- EitherT(Future.successful(dataService.getLastSubmissionTime()));
-      transactions <- EitherT(collectTransactionsAfter(lastSubmissionTime));
-      _ <- EitherT(addTransactions(transactions.batches));
-      _ <- EitherT(Future.successful(dataService.updateLastSubmissionTime(transactions.lastSubmissionTime)));
-      associations <- EitherT(dataService.getAssociations())
-    ) yield updateRules(associations)
+      val eitherT = for (
+        lastSubmissionTime <- EitherT(Future.successful(dataService.getLastSubmissionTime()));
+        transactions <- EitherT(collectTransactionsAfter(lastSubmissionTime));
+        _ <- EitherT(addTransactions(transactions.batches));
+        _ <- EitherT(Future.successful(dataService.updateLastSubmissionTime(transactions.lastSubmissionTime)));
+        associations <- EitherT(dataService.getAssociations())
+      ) yield updateRules(associations)
 
-    eitherT.value
+      eitherT.value.map {
+        result =>
+          updateInProgress.set(false)
+          result
+      }
+    }
   }
 
-
   override def rebuild(): Future[Either[DatabaseError, Unit]] = {
-    val eitherT = for (
-      transactions <- EitherT(collectTransactions());
-      graph <- EitherT.right(Future.successful(buildRules(transactions.batches)));
-      _ <- EitherT(dataService.writeAssociations(graph));
-      _ <- EitherT(Future.successful(dataService.updateLastSubmissionTime(transactions.lastSubmissionTime)))
-    ) yield updateRules(graph)
+    if (!updateInProgress.compareAndSet(false, true)) {
+      Future.successful(Left(StillReferenced(new RuntimeException("Another update is still in progress"))))
+    } else {
 
-    eitherT.value
+      val eitherT = for (
+        transactions <- EitherT(collectTransactions());
+        graph <- EitherT.right(Future.successful(buildRules(transactions.batches)));
+        _ <- EitherT(dataService.writeAssociations(graph));
+        _ <- EitherT(Future.successful(dataService.updateLastSubmissionTime(transactions.lastSubmissionTime)))
+      ) yield updateRules(graph)
+
+      eitherT.value.map {
+        result =>
+          updateInProgress.set(false)
+          result
+      }
+    }
   }
 
   @tailrec

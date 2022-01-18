@@ -162,6 +162,12 @@ GET            /admin/weight-targets                                         con
 
 POST           /errors/report                                                controllers.system.ClientErrorReportController.reportError()
 
+# Pairwise associations
+
+POST           /admin/pairwise-associations/update                           controllers.system.PairwiseAssociationsAdminController.update()
+POST           /admin/pairwise-associations/rebuild                          controllers.system.PairwiseAssociationsAdminController.rebuild()
+POST           /admin/pairwise-associations/copy-occurrence-data             controllers.system.PairwiseAssociationsAdminController.copyOccurrenceData(src: String, dst: String)
+
 ->             /user                                                         user.Routes
 ->             /users                                                        users.Routes
 ->             /surveys                                                      surveys.Routes

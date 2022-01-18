@@ -1,7 +1,7 @@
 import com.google.inject.Inject
 import com.typesafe.config.{ConfigFactory, ConfigParseOptions, ConfigResolveOptions}
 import modules.PairwiseAssociationsTestModule
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuite}
+import org.scalatest.{BeforeAndAfterEach, FunSuite}
 import play.api.db.{DBModule, Database, HikariCPModule, NamedDatabase}
 import play.api.inject.guice.GuiceInjectorBuilder
 import play.api.inject.{ApplicationLifecycle, DefaultApplicationLifecycle, bind}
@@ -51,6 +51,11 @@ class PairwiseAssociationsTests extends FunSuite with BeforeAndAfterEach with Da
   private def assertSuccessful(result: Either[AnyError, Any]) = result match {
     case Left(error) => fail(error.exception)
     case Right(_) => ()
+  }
+
+  private def assertFailed(result: Either[AnyError, Any]) = result match {
+    case Left(_) => ()
+    case Right(_) => fail("Expected operation to fail")
   }
 
   override def beforeEach() = {
@@ -297,12 +302,26 @@ class PairwiseAssociationsTests extends FunSuite with BeforeAndAfterEach with Da
 
     val dataAfterMoreUpdates = paService.getAssociationRules()("en_GB").getParams()
 
-    assert(dataAfterUpdate.occurrences("F001") == 9)
-    assert(dataAfterUpdate.occurrences("F002") == 9)
-    assert(dataAfterUpdate.occurrences("F003") == 9)
+    assert(dataAfterMoreUpdates.occurrences("F001") == 9)
+    assert(dataAfterMoreUpdates.occurrences("F002") == 9)
+    assert(dataAfterMoreUpdates.occurrences("F003") == 9)
 
-    assert(dataAfterUpdate.coOccurrences("F001")("F002") == 9)
-    assert(dataAfterUpdate.coOccurrences("F002")("F001") == 9)
-    assert(dataAfterUpdate.coOccurrences("F003")("F002") == 9)
+    assert(dataAfterMoreUpdates.coOccurrences("F001")("F002") == 9)
+    assert(dataAfterMoreUpdates.coOccurrences("F002")("F001") == 9)
+    assert(dataAfterMoreUpdates.coOccurrences("F003")("F002") == 9)
+  }
+
+  test("Multiple concurrent updates should not be allowed")
+  {
+    createSubmission("test1", Seq(Seq("F001", "F002", "F003"), Seq("F001", "F002", "F003"), Seq("F001", "F002", "F003")))
+
+    val paService = injector.instanceOf[PairwiseAssociationsService]
+
+    val shouldSucceed = paService.update()
+    val shouldFail = paService.update()
+
+    assertSuccessful(Await.result(shouldSucceed, 1 minute))
+    assertFailed(Await.result(shouldFail, 1 minute))
+    assertSuccessful(Await.result(paService.update(), 1 minute))
   }
 }

@@ -22,4 +22,7 @@ trait PairwiseAssociationsDataService {
 
   def addTransactions(locale: String, transactions: Seq[Seq[String]]): Either[UpdateError, Unit]
 
+  def copyOccurrenceData(sourceLocale: String, destinationLocale: String): Future[Either[DatabaseError, Unit]]
+
+  def copyCoOccurrenceData(sourceLocale: String, destinationLocale: String): Future[Either[DatabaseError, Unit]]
 }

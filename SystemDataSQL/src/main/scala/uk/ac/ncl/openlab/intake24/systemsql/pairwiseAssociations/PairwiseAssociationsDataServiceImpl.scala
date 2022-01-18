@@ -4,7 +4,7 @@ import anorm.{BatchSql, Macro, NamedParameter, SQL, SqlParser}
 import cats.data.EitherT
 import cats.implicits._
 import org.slf4j.LoggerFactory
-import uk.ac.ncl.openlab.intake24.errors.{UnexpectedDatabaseError, UpdateError}
+import uk.ac.ncl.openlab.intake24.errors.{DatabaseError, UnexpectedDatabaseError, UpdateError}
 import uk.ac.ncl.openlab.intake24.pairwiseAssociationRules.{PairwiseAssociationRules, PairwiseAssociationRulesConstructorParams}
 import uk.ac.ncl.openlab.intake24.services.systemdb.pairwiseAssociations.{PairwiseAssociationsDataService, PairwiseAssociationsServiceConfiguration}
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
@@ -61,6 +61,19 @@ class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") va
        |ON CONFLICT (locale)
        |  DO UPDATE SET transactions_count = $pairwiseAssociationsTransactionsCountTN.transactions_count + {transactions_count};
     """.stripMargin
+
+  private val copyOccurrenceDataSql =
+    s"""
+       |insert into pairwise_associations_occurrences(locale, food_code, occurrences)
+       |select {dst_locale}, food_code, occurrences from pairwise_associations_occurrences where locale = {src_locale}
+       |on conflict (locale, food_code) do update set occurrences = excluded.occurrences
+       |""".stripMargin
+
+  private val copyCoOccurrenceDataSql =
+    s"""insert into pairwise_associations_co_occurrences(locale, antecedent_food_code, consequent_food_code, occurrences)
+       |select {dst_locale}, antecedent_food_code, consequent_food_code, occurrences from pairwise_associations_co_occurrences where locale = {src_locale}
+       |on conflict (locale, antecedent_food_code, consequent_food_code) do update set occurrences = excluded.occurrences
+       |""".stripMargin
 
   private case class CoOccurrenceRow(locale: String, antecedent_food_code: String, consequent_food_code: String, occurrences: Int)
 
@@ -312,4 +325,28 @@ class PairwiseAssociationsDataServiceImpl @Inject()(@Named("intake24_system") va
         s"on conflict(id) do update set last_submission_time={time}").on('time -> time).executeUpdate()
       Right(())
   }
+
+  override def copyOccurrenceData(sourceLocale: String, destinationLocale: String): Future[Either[DatabaseError, Unit]] =
+    Future {
+      tryWithConnection {
+        implicit conn =>
+          SQL(copyOccurrenceDataSql)
+            .on('src_locale -> sourceLocale, 'dst_locale -> destinationLocale)
+            .execute()
+
+          Right(())
+      }
+    }
+
+  override def copyCoOccurrenceData(sourceLocale: String, destinationLocale: String): Future[Either[DatabaseError, Unit]] =
+    Future {
+      tryWithConnection {
+        implicit conn =>
+          SQL(copyCoOccurrenceDataSql)
+            .on('src_locale -> sourceLocale, 'dst_locale -> destinationLocale)
+            .execute()
+
+          Right(())
+      }
+    }
 }
