@@ -23,7 +23,7 @@ import play.api.Configuration
 import play.api.mvc.{BaseController, ControllerComponents}
 import uk.ac.ncl.openlab.intake24.play.utils.DatabaseErrorHandler
 
-import java.nio.file.{Files, Paths}
+import java.nio.file.{DirectoryStream, Files, Path, Paths}
 import javax.inject.Inject
 import scala.collection.JavaConverters
 import scala.concurrent.{ExecutionContext, Future}
@@ -51,12 +51,21 @@ class LocalSecureUrlController @Inject()(configuration: Configuration,
 
         // An alternative solution could be embedding the original file name in the download URL, but that would break backwards
         // compatibility and create an option for potential abuse via malformed file names in the request.
-        JavaConverters.asScalaIterator(Files.newDirectoryStream(dirPath).iterator()).find(_.getFileName.toString.startsWith(key)) match {
-          case Some(path) =>
-            val clientName = path.getFileName.toString.drop(key.length + 1)
-            Ok.sendFile(path.toFile, false, _ => clientName)
-          case None =>
-            NotFound
+
+        var stream: DirectoryStream[Path] = null
+
+        try {
+          stream = Files.newDirectoryStream(dirPath)
+          JavaConverters.asScalaIterator(stream.iterator()).find(_.getFileName.toString.startsWith(key)) match {
+            case Some(path) =>
+              val clientName = path.getFileName.toString.drop(key.length + 1)
+              Ok.sendFile(path.toFile, false, _ => clientName)
+            case None =>
+              NotFound
+          }
+        } finally {
+          if (stream != null)
+            stream.close()
         }
       } else
         BadRequest
