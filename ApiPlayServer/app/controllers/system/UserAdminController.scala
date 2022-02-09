@@ -48,6 +48,7 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.user.UserPhysicalDataService
 import uk.ac.ncl.openlab.intake24.shorturls.{ShortUrlsHttpClient, ShortUrlsRequest}
 import views.html.PasswordResetLink
 
+import scala.annotation.tailrec
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -73,6 +74,14 @@ class UserAdminController @Inject()(service: UserAdminService,
                                     implicit val executionContext: ExecutionContext) extends BaseController
   with DatabaseErrorHandler with JsonUtils {
 
+  // From https://stackoverflow.com/a/201378 with case-insensitive flag added
+  val emailRegex = """(?i)(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])""".r
+
+  // From https://phoneregex.com
+  // UK specific version
+  val phoneRegex = """^(?:(?:\(?(?:0(?:0|11)\)?[\s-]?\(?|\+)44\)?[\s-]?(?:\(?0\)?[\s-]?)?)|(?:\(?0))(?:(?:\d{5}\)?[\s-]?\d{4,5})|(?:\d{4}\)?[\s-]?(?:\d{5}|\d{3}[\s-]?\d{3}))|(?:\d{3}\)?[\s-]?\d{3}[\s-]?\d{3,4})|(?:\d{2}\)?[\s-]?\d{4}[\s-]?\d{4}))(?:[\s-]?(?:x|ext\.?|\#)\d{3,4})?""".r
+
+
   private lazy val random = new SecureRandom()
   private lazy val base64Encoder = Base64.getUrlEncoder()
 
@@ -94,6 +103,36 @@ class UserAdminController @Inject()(service: UserAdminService,
       setting
   }
 
+  private val blockRespondentPersonalData = configuration.getOptional[Boolean]("intake24.blockRespondentPersonalData").getOrElse(true)
+
+  private def hasPersonalData(record: NewRespondent): Option[String] = {
+    // Respondents should not have real names, e-mails or phone numbers in the corresponding
+    // special case columns
+    if (record.name.isDefined)
+      Some("Uploading respondent real names is not allowed by the security policy")
+    else if (record.email.isDefined)
+      Some("Uploading respondent e-mail addresses is not allowed by the security policy")
+    else if (record.phone.isDefined)
+      Some("Uploading respondent phone numbers is not allowed by the security policy")
+
+    // userName should not be a valid e-mail address or a phone number
+    else if (emailRegex.findFirstIn(record.userName.trim).isDefined)
+      Some("Security policy does not allow using e-mail addresses as user IDs")
+    else if (phoneRegex.findFirstIn(record.userName.trim).isDefined)
+      Some("Security policy does not allow using phone numbers as user IDs")
+    else
+      None
+  }
+
+  private def checkForPersonalData(csvRecords: Seq[NewRespondent]): Option[String] = {
+    csvRecords.flatMap(hasPersonalData).headOption
+  }
+
+  private def createOrUpdateWithPersonalDataCheck(surveyId: String, roles: Set[String], userRecords: Seq[NewRespondent]): Result =
+    checkForPersonalData(userRecords) match {
+      case Some(message) => BadRequest(toJsonString(ErrorDescription("InvalidCSV", message)))
+      case None => doCreateOrUpdate(surveyId, roles, userRecords)
+    }
 
   private def doCreateOrUpdate(surveyId: String, roles: Set[String], userRecords: Seq[NewRespondent]): Result = {
     val hasher = passwordHasherRegistry.current
@@ -117,7 +156,10 @@ class UserAdminController @Inject()(service: UserAdminService,
     else {
       UserRecordsCSVParser.parseFile(formData.files(0).ref.path.toFile) match {
         case Right(csvRecords) =>
-          doCreateOrUpdate(surveyId, roles, csvRecords)
+          if (blockRespondentPersonalData)
+            createOrUpdateWithPersonalDataCheck(surveyId, roles, csvRecords)
+          else
+            doCreateOrUpdate(surveyId, roles, csvRecords)
         case Left(error) =>
           BadRequest(toJsonString(ErrorDescription("InvalidCSV", error)))
       }
@@ -349,7 +391,10 @@ class UserAdminController @Inject()(service: UserAdminService,
   def createOrUpdateSurveyRespondents(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(jsonBodyParser.parse[CreateOrUpdateSurveyUsersRequest]) {
     request =>
       Future {
-        doCreateOrUpdate(surveyId, Set(Roles.surveyRespondent(surveyId)), request.body.users)
+        if (blockRespondentPersonalData)
+          createOrUpdateWithPersonalDataCheck(surveyId, Set(Roles.surveyRespondent(surveyId)), request.body.users)
+        else
+          doCreateOrUpdate(surveyId, Set(Roles.surveyRespondent(surveyId)), request.body.users)
       }
   }
 
