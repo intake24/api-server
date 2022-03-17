@@ -42,3 +42,7 @@ libraryDependencies ++= Seq(
   "com.opencsv" % "opencsv" % "3.9",
   "org.apache.poi" % "poi-ooxml" % "4.1.0"
 )
+
+dependencyOverrides ++= Seq(
+   "commons-beanutils" % "commons-beanutils" % "1.9.4",
+)

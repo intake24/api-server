@@ -15,9 +15,30 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
+import com.typesafe.sbt.SbtNativePackager._
 import ResolveInternalDependencies._
 
+name := "intake24-api-server"
+
+organization := "uk.ac.ncl.openlab.intake24"
+
+description := "Intake24 Api Server"
+
+maintainer := "Ivan Poliakov <ivan.poliakov@ncl.ac.uk>"
+
+version := "1.0.0-SNAPSHOT"
+
+packageSummary := "API server for Intake24 "
+
+packageDescription := """API server for Intake24."""
+
+
+lazy val packageManagerSettings = Seq(
+  rpmRelease := "2.0.6",
+  rpmVendor := "uk.ac.ncl.openlab.intake24",
+  rpmUrl := Some("http://github.com/intake24/api-server"),
+  rpmLicense := Some("ASL 2.0")
+)
 Global / dependencyCheckFormats := Seq("HTML", "JSON")
 
 lazy val commonSettings = Seq(
@@ -25,7 +46,8 @@ lazy val commonSettings = Seq(
   scalaVersion := "2.12.14",
   publishArtifact in(Compile, packageDoc) := false,
   scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature"),
-)
+)++ packageManagerSettings
+
 
 lazy val scalaHttpJVM = project.in(file("RosHTTP"))
 
@@ -83,13 +105,13 @@ lazy val playUtils = project.in(file("PlayUtils")).dependsOn(sharedTypes, apiSha
 lazy val playSecurity = project.in(file("PlaySecurity")).dependsOn(playUtils, systemDataSql, apiSharedJVM)
 
 lazy val apiPlayServer =
-  Project(id = "apiPlayServer", base = file("ApiPlayServer")).enablePlugins(PlayScala, SystemdPlugin, JDebPackaging)
+  Project(id = "apiPlayServer", base = file("ApiPlayServer")).enablePlugins(PlayScala, SystemdPlugin, JDebPackaging, RpmPlugin)
     .dependsOn(apiSharedJVM, foodDataSql, systemDataSql, imageStorageLocal, imageStorageS3, imageProcessorIM, foodSubstRecommender,
                playSecurity, shortUrlServiceClient)
     .settings(commonSettings: _*)
 
 
-lazy val dataExportService = project.in(file("DataExportService")).enablePlugins(PlayScala, SystemdPlugin, JDebPackaging, ClasspathJarPlugin).dependsOn(apiSharedJVM, foodDataSql, systemDataSql, playSecurity, shortUrlServiceClient)
+lazy val dataExportService = project.in(file("DataExportService")).settings(packageManagerSettings: _*).enablePlugins(PlayScala, SystemdPlugin, JDebPackaging, ClasspathJarPlugin, RpmPlugin).dependsOn(apiSharedJVM, foodDataSql, systemDataSql, playSecurity, shortUrlServiceClient)
 
 lazy val shortUrlServiceApi = project.in(file("ShortUrlServiceAPI"))
 
@@ -97,4 +119,3 @@ lazy val shortUrlServiceClient = project.in(file("ShortUrlServiceClient")).depen
 
 lazy val shortUrlService = project.in(file("ShortUrlService")).enablePlugins(PlayScala, SystemdPlugin, JDebPackaging, ClasspathJarPlugin).dependsOn(apiSharedJVM, systemDataSql).dependsOn(shortUrlServiceApi, playUtils)
 
-onLoad.in(Global) ~= { f => s => resolveInternalDependenciesImpl(f(s)) }
