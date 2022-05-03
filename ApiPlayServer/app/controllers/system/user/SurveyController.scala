@@ -18,6 +18,9 @@ limitations under the License.
 
 package controllers.system.user
 
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
+import com.auth0.jwt.exceptions.JWTVerificationException
 import akka.actor.ActorSystem
 import controllers.DatabaseErrorHandler
 import io.circe.generic.auto._
@@ -36,6 +39,7 @@ import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{SurveyAdminService, U
 import uk.ac.ncl.openlab.intake24.services.systemdb.user.{FoodPopularityService, SurveyService, UserSession, UserSessionDataService}
 import uk.ac.ncl.openlab.intake24.surveydata.{SubmissionNotification, SurveySubmission}
 
+import java.util.Date
 import java.time.temporal.ChronoUnit
 import java.time.{ZoneId, ZonedDateTime}
 import javax.inject.Inject
@@ -97,7 +101,7 @@ class SurveyController @Inject()(service: SurveyService,
               currentSubmissionsCount <- service.getNumberOfSubmissionsForUser(surveyId, userId);
               numberOfSubmissionsToday <- service.getNumberOfSubmissionsOnDay(surveyId, userId, clientDayOfYear, zoneId.getId());
               followUp <- service.getSurveyFollowUp(surveyId))
-          yield ((surveyParameters, user, currentSubmissionsCount, numberOfSubmissionsToday, followUp))) match {
+        yield ((surveyParameters, user, currentSubmissionsCount, numberOfSubmissionsToday, followUp))) match {
           case Right((surveyParameters, user, currentSubmissionsCount, numberOfSubmissionsToday, followUp)) =>
 
             val redirectToFeedback = (currentSubmissionsCount >= surveyParameters.numberOfSurveysForFeedback) && followUp.showFeedback
@@ -128,7 +132,7 @@ class SurveyController @Inject()(service: SurveyService,
 
           val followUpUrlWithUserName = for (userName <- userNameOpt;
                                              followUpUrl <- followUp.followUpUrl)
-            yield followUpUrl.replace("[intake24_username_value]", userName)
+          yield followUpUrl.replace("[intake24_username_value]", userName)
 
           followUp.copy(followUpUrl = followUpUrlWithUserName)
         }
@@ -231,16 +235,39 @@ class SurveyController @Inject()(service: SurveyService,
 
                           (for (userParams <- userService.getUserById(userId);
                                 userAlias <- userService.getSurveyUserAliases(Seq(userId), surveyId))
-                            yield ((userParams, userAlias))) match {
+                          yield ((userParams, userAlias))) match {
                             case Right((userParams, userAlias)) =>
                               logger.debug("Sending survey submission notification")
 
-                              val payload = SubmissionNotification(userParams.id, surveyId, userAlias.get(userId).map(_.userName).getOrElse(null),
+                              val alias = userAlias.get(userId).map(_.userName).getOrElse(null)
+                              val payload = SubmissionNotification(userParams.id, surveyId, alias,
                                 userParams.customFields, nutrientMappedSubmission.startTime, nutrientMappedSubmission.endTime,
                                 nutrientMappedSubmission.uxSessionId, submissionId, nutrientMappedSubmission.customData, nutrientMappedSubmission.meals).asJson.noSpaces
 
-                              ws.url(notificationUrl)
-                                .withHttpHeaders("Content-Type" -> "application/json; charset=utf-8")
+                              var wsRequest = ws.url(notificationUrl).addHttpHeaders("Content-Type" -> "application/json; charset=utf-8")
+
+                              if (surveyParameters.allowGeneratedUsers && !surveyParameters.generateUserKey.isEmpty) {
+                                try {
+                                  val algorithm = Algorithm.HMAC256(surveyParameters.generateUserKey.getOrElse(""))
+                                  val iat = new Date()
+                                  val exp = new Date(iat.getTime() + 5 * 60 * 1000)
+
+                                  val token = JWT.create()
+                                    .withIssuer("intake24")
+                                    .withSubject(alias)
+                                    .withAudience(notificationUrl)
+                                    .withIssuedAt(iat)
+                                    .withExpiresAt(exp)
+                                    .sign(algorithm)
+
+                                  wsRequest = wsRequest.addHttpHeaders("Authorization" -> s"Bearer $token")
+                                } catch {
+                                  case e: JWTVerificationException =>
+                                    logger.debug("JWT creation failed, payload not signed.")
+                                }
+                              }
+
+                              wsRequest
                                 .withBody(payload)
                                 .execute("POST")
                                 .onComplete {
@@ -275,7 +302,7 @@ class SurveyController @Inject()(service: SurveyService,
               if (submissionThresholdReached) {
                 for (userName <- userNameOpt;
                      followUpUrl <- followUp.followUpUrl)
-                  yield followUpUrl.replace("[intake24_username_value]", userName)
+                yield followUpUrl.replace("[intake24_username_value]", userName)
               }
               else
                 None
