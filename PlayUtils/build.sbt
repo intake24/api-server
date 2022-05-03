@@ -24,8 +24,6 @@ maintainer := "Ivan Poliakov <ivan.poliakov@ncl.ac.uk>"
 
 resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
 
-resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases/"
-
 libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play" % "2.7.9",
   "io.circe" %% "circe-core" % "0.10.1",

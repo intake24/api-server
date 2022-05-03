@@ -24,8 +24,6 @@ maintainer := "Ivan Poliakov <ivan.poliakov@ncl.ac.uk>"
 
 resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
 
-resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases/"
-
 libraryDependencies ++= Seq(
   "net.codingwell" %% "scala-guice" % "4.1.0",
   "com.mohiva" %% "play-silhouette" % "5.0.5",

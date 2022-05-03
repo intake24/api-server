@@ -22,8 +22,6 @@ description := "Intake24 Play Framework API server"
 
 resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
 
-resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases/"
-
 resolvers += "jcenter" at "https://jcenter.bintray.com/"
 
 val circeVersion = "0.10.1"
