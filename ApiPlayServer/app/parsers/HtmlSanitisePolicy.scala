@@ -49,16 +49,18 @@ object HtmlSanitisePolicy {
     .matching(YOUTUBE_URL_POLICY)
     .onElements("iframe").toFactory
 
+  val allowClasses = new HtmlPolicyBuilder().allowAttributes("class").globally().toFactory
+
   def sanitise(html: String): String = {
     val policy: PolicyFactory = Sanitizers.FORMATTING.and(Sanitizers.BLOCKS)
-      .and(Sanitizers.LINKS)
+      .and(Sanitizers.LINKS).and(allowClasses)
     policy.sanitize(html)
   }
 
   def easedSanitise(html: String) = {
     val policy: PolicyFactory = Sanitizers.FORMATTING.and(Sanitizers.BLOCKS)
       .and(Sanitizers.LINKS).and(Sanitizers.IMAGES).and(IFRAME_POLICY)
-        .and(Sanitizers.STYLES)
+        .and(Sanitizers.STYLES).and(allowClasses)
     policy.sanitize(html)
   }
 
