@@ -116,7 +116,8 @@ case class PhraseMatch[T](index: Int, value: T, wordCount: Int, quality: Int, wo
 
 case class DictionaryPhrase(asTyped: String, words: Seq[CaseInsensitiveString])
 
-class PhraseIndex[T](phrases: Seq[(String, T)], indexFilter: Seq[CaseInsensitiveString], nonIndexedWords: Seq[CaseInsensitiveString], val phoneticEncoder: Option[PhoneticEncoder], val stemmer: WordOps, synsets: Seq[Set[CaseInsensitiveString]]) {
+class PhraseIndex[T](phrases: Seq[(String, T)], indexFilter: Seq[CaseInsensitiveString],
+                     nonIndexedWords: Seq[CaseInsensitiveString], val phoneticEncoder: Option[PhoneticEncoder], val stemmer: WordOps, synsets: Seq[Set[CaseInsensitiveString]]) {
 
   def mkWordList(phrase: String) =
   // filter sequences of ignored character sequences and words such as 'e.g.' '/' '-' ',' 'and' 'with'

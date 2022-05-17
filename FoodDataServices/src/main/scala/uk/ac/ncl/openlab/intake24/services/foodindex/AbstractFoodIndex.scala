@@ -18,6 +18,7 @@ limitations under the License.
 
 package uk.ac.ncl.openlab.intake24.services.foodindex
 
+import com.infiauto.datastr.auto.LevenshteinAutomaton
 import org.slf4j.LoggerFactory
 import org.workcraft.phrasesearch._
 import uk.ac.ncl.openlab.intake24.api.data.UserFoodHeader
@@ -31,9 +32,11 @@ abstract class AbstractFoodIndex(foodData: FoodIndexDataService, phoneticEncoder
 
   val ft0 = System.currentTimeMillis()
 
-  val localSpecialFoodHeaders = Seq(UserFoodHeader(FoodIndex.specialFoodSalad, localSpecialFoods.saladDescription), UserFoodHeader(FoodIndex.specialFoodSandwich, localSpecialFoods.sandwichDescription))
+  val localSpecialFoodHeaders = IndexedSeq(
+    UserFoodHeader(FoodIndex.specialFoodSalad, localSpecialFoods.saladDescription),
+    UserFoodHeader(FoodIndex.specialFoodSandwich, localSpecialFoods.sandwichDescription))
 
-  val indexableFoods = throwOnError(foodData.indexableFoods(locale)) ++ localSpecialFoodHeaders
+  val indexableFoods = throwOnError(foodData.indexableFoods(locale))
 
   log.debug(s"${indexableFoods.size} indexable foods for $locale loaded in ${System.currentTimeMillis() - ft0} ms")
 
@@ -61,6 +64,8 @@ abstract class AbstractFoodIndex(foodData: FoodIndexDataService, phoneticEncoder
 
   val foodIndex = new PhraseIndex(foodIndexEntries, indexFilterCis, nonIndexedWordsCis, phoneticEncoder, wordOps, synsets)
 
+  val specialFoodIndex = new PhraseIndex(localSpecialFoodHeaders.map(header => (header.localDescription, header)), indexFilterCis, nonIndexedWordsCis, phoneticEncoder, wordOps, synsets)
+
   val categoryIndex = new PhraseIndex(categoryIndexEntries, indexFilterCis, nonIndexedWordsCis, phoneticEncoder, wordOps, synsets)
 
   log.debug(s"Indexing complete in ${System.currentTimeMillis() - it0} ms")
@@ -69,12 +74,13 @@ abstract class AbstractFoodIndex(foodData: FoodIndexDataService, phoneticEncoder
     log.debug(s"Lookup request: $description")
     val foodInterpretation = foodIndex.interpretPhrase(description, MatchFewer)
     val categoryInterpretation = categoryIndex.interpretPhrase(description, MatchFewer)
+
     log.debug(s"Interpretation of input as food name: ${foodInterpretation}")
     log.debug(s"Interpretation of input as category name: ${categoryInterpretation}")
 
     val t0 = System.currentTimeMillis()
 
-    val matchedFoods = foodIndex.lookup(description, maxFoods).map {
+    val matchedFoods = (specialFoodIndex.lookup(description, 10) ++ foodIndex.lookup(description, maxFoods)).map {
       case (h, cost) => MatchedFood(h, cost.toDouble)
     }
 
