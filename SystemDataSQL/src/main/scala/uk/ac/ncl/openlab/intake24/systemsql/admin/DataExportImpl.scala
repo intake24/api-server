@@ -80,30 +80,34 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
           if (submissionIds.isEmpty)
             Right(Seq())
           else {
+
             val t1 = System.currentTimeMillis()
             val mealRows = SQL(getSurveySubmissionMealsSql).on('submission_ids -> submissionIdsSeqParam).executeQuery().as(Macro.namedParser[MealRow].*).groupBy(_.submission_id)
             logger.debug(s"Get meal rows time: ${System.currentTimeMillis() - t1} ms")
 
             val t2 = System.currentTimeMillis()
-            val foodRows = SQL(getSurveySubmissionFoodsSql).on('submission_ids -> submissionIdsSeqParam).executeQuery().as(Macro.namedParser[FoodRow].*).groupBy(_.meal_id)
+            val foodRows = SQL(getSurveySubmissionFoodsSql).on('submission_ids -> submissionIdsSeqParam).executeQuery().as(Macro.namedParser[FoodRow].*)
+            val foodRowsGrouped = foodRows.groupBy(_.meal_id)
             logger.debug(s"Get food rows time: ${System.currentTimeMillis() - t2} ms, food rows count: ${foodRows.size}")
 
             val t3 = System.currentTimeMillis()
             val missingFoodRows = SQL(getSurveySubmissionMissingFoodsSql).on('submission_ids -> submissionIdsSeqParam).executeQuery().as(Macro.namedParser[MissingFoodRow].*).groupBy(_.meal_id)
             logger.debug(s"Get missing food rows time: ${System.currentTimeMillis() - t3} ms")
 
-            val t4 = System.currentTimeMillis()
-            val nutrientRowsResult = SQL(getSurveySubmissionNutrientsSql).on('submission_ids -> submissionIdsSeqParam).executeQuery()
-            logger.debug(s"Get nutrient rows query time: ${System.currentTimeMillis() - t4} ms")
+            val foodIds = foodRows.map(_.food_id)
 
-            val t41 = System.currentTimeMillis()
-            val nutrientRows = nutrientRowsResult.as(Macro.namedParser[NutrientRow].*).groupBy(_.food_id)
-            logger.debug(s"Get nutrient rows parse time: ${System.currentTimeMillis() - t41} ms, nutrient rows count: ${nutrientRows.size}")
+            val t4 = System.currentTimeMillis()
+            val nutrientRows = SQL("SELECT food_id, nutrient_type_id as n_type, amount as n_amount FROM survey_submission_nutrients WHERE food_id IN({food_ids})")
+              .on('food_ids -> foodIds).executeQuery().as(Macro.namedParser[NutrientRow].*)
+            val nutrientRowsGrouped = nutrientRows.groupBy(_.food_id)
+            logger.debug(s"Get nutrient rows query time: ${System.currentTimeMillis() - t4} ms, nutrient rows count: ${nutrientRows.size}")
 
             val t5 = System.currentTimeMillis()
-            val fieldRows = SQL(getSurveySubmissionFieldsSql).on('submission_ids -> submissionIdsSeqParam).executeQuery()
-              .as(Macro.namedParser[FieldRow].*).groupBy(_.food_id)
-            logger.debug(s"Get field rows time: ${System.currentTimeMillis() - t5} ms")
+            val fieldRows = SQL("SELECT food_id, field_name, value FROM survey_submission_fields WHERE food_id IN({food_ids})").on('food_ids -> foodIds)
+              .executeQuery()
+              .as(Macro.namedParser[FieldRow].*)
+            val fieldRowsGrouped = fieldRows.groupBy(_.food_id)
+            logger.debug(s"Get field rows time: ${System.currentTimeMillis() - t5} ms, field rows count: ${fieldRows.size}")
 
             val t6 = System.currentTimeMillis()
 
@@ -111,14 +115,14 @@ class DataExportImpl @Inject()(@Named("intake24_system") val dataSource: DataSou
               submissionRow =>
                 val meals = mealRows.getOrElse(submissionRow.id, Seq()).map {
                   mealRow =>
-                    val foods = foodRows.getOrElse(mealRow.meal_id, Seq()).map {
+                    val foods = foodRowsGrouped.getOrElse(mealRow.meal_id, Seq()).map {
                       foodRow =>
-                        val nutrients = nutrientRows.getOrElse(foodRow.food_id, Seq()).map {
+                        val nutrients = nutrientRowsGrouped.getOrElse(foodRow.food_id, Seq()).map {
                           nutrientRow =>
                             (nutrientRow.n_type.toInt, nutrientRow.n_amount)
                         }.toMap
 
-                        val fields = fieldRows.getOrElse(foodRow.food_id, Seq()).map {
+                        val fields = fieldRowsGrouped.getOrElse(foodRow.food_id, Seq()).map {
                           fieldRow =>
                             (fieldRow.field_name, fieldRow.value)
                         }.toMap
