@@ -92,5 +92,5 @@ class FoodAuthChecks @Inject()(service: FoodsAdminService) {
 
   def canUploadSourceImages(subject: Intake24AccessToken) = isSuperUser(subject) || isImagesAdmin(subject)
 
-
+  def canDeleteSourceImages(subject: Intake24AccessToken) = isSuperUser(subject) || isImagesAdmin(subject)
 }

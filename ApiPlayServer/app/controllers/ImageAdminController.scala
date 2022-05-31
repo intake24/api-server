@@ -69,11 +69,11 @@ class ImageAdminController @Inject()(service: ImageAdminService,
     request => uploadImpl(None, request)
   }
 
-  def uploadSourceImageForAsServed(setId: String) = rab.restrictToRoles(Roles.superuser, Roles.foodsAdmin)(playBodyParsers.multipartFormData) {
+  def uploadSourceImageForAsServed(setId: String) = rab.restrictAccess(foodAuthChecks.canUploadSourceImages)(playBodyParsers.multipartFormData) {
     request => uploadImpl(Some(originalPath => ImageAdminService.getSourcePathForAsServed(setId, originalPath)), request)
   }
 
-  def uploadSourceImageForImageMap(id: String) = rab.restrictToRoles(Roles.superuser, Roles.foodsAdmin)(playBodyParsers.multipartFormData) {
+  def uploadSourceImageForImageMap(id: String) = rab.restrictAccess(foodAuthChecks.canUploadSourceImages)(playBodyParsers.multipartFormData) {
     request => uploadImpl(Some(originalPath => ImageAdminService.getSourcePathForImageMap(id, originalPath)), request)
   }
 
@@ -91,21 +91,21 @@ class ImageAdminController @Inject()(service: ImageAdminService,
       }
   }
 
-  def updateSourceImage(id: Int) = rab.restrictToRoles(Roles.superuser, Roles.foodsAdmin)(jsonBodyParser.parse[SourceImageRecordUpdate]) {
+  def updateSourceImage(id: Int) = rab.restrictAccess(foodAuthChecks.canUploadSourceImages)(jsonBodyParser.parse[SourceImageRecordUpdate]) {
     request =>
       Future {
         translateDatabaseResult(databaseService.updateSourceImageRecord(id, request.body))
       }
   }
 
-  def deleteSourceImages() = rab.restrictToRoles(Roles.superuser, Roles.foodsAdmin)(jsonBodyParser.parse[Seq[Long]]) {
+  def deleteSourceImages() = rab.restrictAccess(foodAuthChecks.canDeleteSourceImages)(jsonBodyParser.parse[Seq[Long]]) {
     request =>
       Future {
         translateImageServiceAndDatabaseResult(service.deleteSourceImages(request.body))
       }
   }
 
-  def processForSelectionScreen(pathPrefix: String, sourceId: Long) = rab.restrictToRoles(Roles.superuser, Roles.foodsAdmin) {
+  def processForSelectionScreen(pathPrefix: String, sourceId: Long) = rab.restrictAccess(foodAuthChecks.canUploadSourceImages) {
     _ =>
       Future {
         translateImageServiceAndDatabaseResult(service.processForSelectionScreen(pathPrefix, sourceId))
