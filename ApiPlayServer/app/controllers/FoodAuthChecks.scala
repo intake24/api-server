@@ -37,7 +37,7 @@ class FoodAuthChecks @Inject()(service: FoodsAdminService) {
     isFoodsAdmin(subject)
 
   def allowAnyStaff(subject: Intake24AccessToken) =
-    isSurveyAdmin(subject) || isFoodsAdmin(subject) || isAnyLocaleMaintainer(subject) || subject.roles.exists(r => r.endsWith(Roles.staffSuffix))
+    isSurveyAdmin(subject) || isFoodsAdmin(subject) || isImagesAdmin(subject) || isAnyLocaleMaintainer(subject) || subject.roles.exists(r => r.endsWith(Roles.staffSuffix))
 
   def canReadLocales(subject: Intake24AccessToken) = allowAnyStaff(subject)
 
