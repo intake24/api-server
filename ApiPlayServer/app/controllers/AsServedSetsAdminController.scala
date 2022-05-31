@@ -74,7 +74,7 @@ class AsServedSetsAdminController @Inject()(
     }
   }
 
-  def deleteAsServedSet(id: String) = rab.restrictToRoles(Roles.superuser) {
+  def deleteAsServedSet(id: String) = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods) {
     Future {
       translateDatabaseResult(service.deleteAsServedSetRecord(id))
     }
