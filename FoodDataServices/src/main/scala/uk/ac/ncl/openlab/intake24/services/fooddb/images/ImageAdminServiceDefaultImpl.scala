@@ -1,13 +1,13 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.images
 
-import java.io.{File, IOException}
-import java.nio.file._
-import java.nio.file.attribute.{BasicFileAttributes, PosixFilePermissions}
-import java.util.UUID
-import javax.inject.Inject
-
 import org.apache.commons.io.FilenameUtils
 import org.slf4j.LoggerFactory
+
+import java.io.{File, IOException}
+import java.nio.file._
+import java.nio.file.attribute.{BasicFileAttributes, FileAttribute, PosixFilePermissions}
+import java.util.UUID
+import javax.inject.Inject
 
 class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseService, val imageProcessor: ImageProcessor, val storage: ImageStorageService,
                                              val fileTypeAnalyzer: FileTypeAnalyzer)
@@ -21,7 +21,12 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
 
   private val tempFilePrefix = "intake24-"
 
-  private val filePerms = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-r--r--"))
+  private val isPosix = FileSystems.getDefault().supportedFileAttributeViews().contains("posix")
+
+  private val tempFilePerms: Array[FileAttribute[_]] = if (isPosix)
+    Array(PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-r--r--")))
+  else
+    Array()
 
   private val logger = LoggerFactory.getLogger(classOf[ImageAdminServiceDefaultImpl])
 
@@ -33,12 +38,20 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
       } finally {
         Files.walkFileTree(tempDir, new SimpleFileVisitor[Path]() {
           override def visitFile(file: Path, attrs: BasicFileAttributes) = {
-            Files.delete(file)
+            try {
+              Files.delete(file)
+            } catch {
+              case e: IOException => logger.warn(f"Couldn't delete file ${file.toAbsolutePath}: ${e.getMessage}")
+            }
             FileVisitResult.CONTINUE
           }
 
           override def postVisitDirectory(dir: Path, e: IOException) = {
-            Files.delete(dir)
+            try {
+              Files.delete(dir)
+            } catch {
+              case e: IOException => logger.warn(f"Couldn't delete directory ${dir.toAbsolutePath}: ${e.getMessage}")
+            }
             FileVisitResult.CONTINUE
           }
         })
@@ -46,7 +59,6 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
     } catch {
       case e: IOException => Left(ImageServiceErrorWrapper(IOError(e)))
     }
-
 
   def checkFileType(path: Path, originalName: String): Either[ImageServiceError, Unit] = {
     val actualType = fileTypeAnalyzer.getFileMimeType(path, originalName)
@@ -85,34 +97,35 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
   // Failing to do that won't break anything, but will result in unused files.
   // Maybe some garbage collection is a better idea?
   def uploadSourceImage(suggestedPath: String, source: Path, sourceFileName: String, keywords: Seq[String], uploaderName: String): Either[ImageServiceOrDatabaseError, SourceImageRecord] =
-  withTempDir {
-    tempDir =>
-      val extension = getExtension(source.toString)
-      val thumbDst = Files.createTempFile(tempDir, tempFilePrefix, extension, filePerms)
+    withTempDir {
+      tempDir =>
+        val extension = getExtension(source.toString)
 
-      for (
-        _ <- {
-          logger.debug("Checking file type")
-          checkFileType(source, sourceFileName).wrapped.right
-        };
-        _ <- {
-          logger.debug("Generating fixed size thumbnail")
-          imageProcessor.processForSourceThumbnail(source, thumbDst).wrapped.right
-        };
-        actualPath <- {
-          logger.debug("Uploading source image to storage")
-          storage.uploadImage(sourcePathPrefix + File.separator + suggestedPath, source).wrapped.right
-        };
-        actualThumbPath <- {
-          logger.debug("Uploading thumbnail image to storage")
-          storage.uploadImage(sourcePathPrefix + "/thumbnails/" + suggestedPath, thumbDst).wrapped.right
-        };
-        id <- {
-          logger.debug("Creating a database record for the source image")
-          imageDatabase.createSourceImageRecords(Seq(NewSourceImageRecord(actualPath, actualThumbPath, keywords, uploaderName))).wrapped.right
-        }
-      ) yield id.head
-  }
+        val thumbDst = Files.createTempFile(tempDir, tempFilePrefix, extension, tempFilePerms: _*)
+
+        for (
+          _ <- {
+            logger.debug("Checking file type")
+            checkFileType(source, sourceFileName).wrapped.right
+          };
+          _ <- {
+            logger.debug("Generating fixed size thumbnail")
+            imageProcessor.processForSourceThumbnail(source, thumbDst).wrapped.right
+          };
+          actualPath <- {
+            logger.debug("Uploading source image to storage")
+            storage.uploadImage(sourcePathPrefix + File.separator + suggestedPath, source).wrapped.right
+          };
+          actualThumbPath <- {
+            logger.debug("Uploading thumbnail image to storage")
+            storage.uploadImage(sourcePathPrefix + "/thumbnails/" + suggestedPath, thumbDst).wrapped.right
+          };
+          id <- {
+            logger.debug("Creating a database record for the source image")
+            imageDatabase.createSourceImageRecords(Seq(NewSourceImageRecord(actualPath, actualThumbPath, keywords, uploaderName))).wrapped.right
+          }
+        ) yield id.head
+    }
 
   def deleteSourceImages(ids: Seq[Long]): Either[ImageServiceOrDatabaseError, Unit] = {
     for (
@@ -138,9 +151,9 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
 
             val extension = getExtension(path)
 
-            val srcPath = Files.createTempFile(tempDir, tempFilePrefix, extension, filePerms)
-            val dstMainPath = Files.createTempFile(tempDir, tempFilePrefix, extension, filePerms)
-            val dstThumbnailPath = Files.createTempFile(tempDir, tempFilePrefix, extension, filePerms)
+            val srcPath = Files.createTempFile(tempDir, tempFilePrefix, extension, tempFilePerms: _*)
+            val dstMainPath = Files.createTempFile(tempDir, tempFilePrefix, extension, tempFilePerms: _*)
+            val dstThumbnailPath = Files.createTempFile(tempDir, tempFilePrefix, extension, tempFilePerms: _*)
 
             val randomName = UUID.randomUUID().toString() + extension
 
@@ -166,8 +179,8 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
       tempDir =>
         val extension = getExtension(sourcePath)
 
-        val srcPath = Files.createTempFile(tempDir, tempFilePrefix, extension, filePerms)
-        val dstPath = Files.createTempFile(tempDir, tempFilePrefix, extension, filePerms)
+        val srcPath = Files.createTempFile(tempDir, tempFilePrefix, extension, tempFilePerms: _*)
+        val dstPath = Files.createTempFile(tempDir, tempFilePrefix, extension, tempFilePerms: _*)
 
         val randomName = UUID.randomUUID().toString() + extension
 
@@ -203,8 +216,8 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
       tempDir =>
         val extension = getExtension(sourcePath)
 
-        val srcPath = Files.createTempFile(tempDir, tempFilePrefix, extension, filePerms)
-        val dstPath = Files.createTempFile(tempDir, tempFilePrefix, extension, filePerms)
+        val srcPath = Files.createTempFile(tempDir, tempFilePrefix, extension, tempFilePerms: _*)
+        val dstPath = Files.createTempFile(tempDir, tempFilePrefix, extension, tempFilePerms: _*)
 
         val randomName = UUID.randomUUID().toString() + extension
 
@@ -290,6 +303,6 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
     for (source <- imageDatabase.getSourceImageRecords(Seq(sourceImageId)).wrapped.right;
          actualPath <- processAndUploadSelectionScreenImage(pathPrefix, source.head.path).right;
          ssiId <- imageDatabase.createProcessedImageRecords(Seq(ProcessedImageRecord(actualPath, source.head.id, ProcessedImagePurpose.PortionSizeSelectionImage))).wrapped.right)
-      yield ImageDescriptor(ssiId.head, actualPath)
+    yield ImageDescriptor(ssiId.head, actualPath)
 
 }
