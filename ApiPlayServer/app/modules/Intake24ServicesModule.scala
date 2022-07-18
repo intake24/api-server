@@ -89,6 +89,7 @@ class Intake24ServicesModule extends AbstractModule {
       case "BHSAv1" => new FoodIndexImpl_BHSAv1(foodIndexDataService)
       case "UKSAv2" => new FoodIndexImpl_UKSAv2(foodIndexDataService)
       case "UK_current" => new FoodIndexImpl_UK_current(foodIndexDataService)
+      case "UK_V2_2022" => new FoodIndexImpl_UK_V2_2022(foodIndexDataService)
       case "en_FJ" => new FoodIndexImpl_en_FJ(foodIndexDataService)
     }
 
@@ -137,6 +138,7 @@ class Intake24ServicesModule extends AbstractModule {
       case "BHSAv1" => new SplitterImpl_BHSAv1(foodIndexDataService)
       case "UKSAv2" => new SplitterImpl_UKSAv2(foodIndexDataService)
       case "UK_current" => new SplitterImpl_UK_current(foodIndexDataService)
+      case "UK_V2_2022" => new SplitterImpl_UK_V2_2022(foodIndexDataService)
       case "en_FJ" => new SplitterImpl_en_FJ(foodIndexDataService)
     }
 
