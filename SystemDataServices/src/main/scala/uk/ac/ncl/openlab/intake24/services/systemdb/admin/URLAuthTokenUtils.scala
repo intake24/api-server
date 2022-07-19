@@ -4,13 +4,11 @@ import java.security.SecureRandom
 import java.util.Base64
 import java.io._
 import java.io.File
-import org.slf4j.LoggerFactory
 import com.typesafe.config.ConfigFactory
 
 object URLAuthTokenUtils {
   private val secureRandom = new SecureRandom()
   private val base64Encoder = Base64.getUrlEncoder()
-  private val logger = LoggerFactory.getLogger("URLAuthTokenUtil");
   private val configAuthTokenLength: Int = Option(ConfigFactory.load().getInt("intake24.security.urlAuthTokenLength")).getOrElse(9);
   
   private val allowedChars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789"
@@ -24,7 +22,6 @@ object URLAuthTokenUtils {
   def generateToken = {
     val chars = allowedChars.toCharArray
     val password = new StringBuilder()
-    logger.debug(s"Auth Length: ${configAuthTokenLength}");
 
     for (i <- 0 until configAuthTokenLength) {
       password.append(chars(secureRandom.nextInt(chars.length)))
