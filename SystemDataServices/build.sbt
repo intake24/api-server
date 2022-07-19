@@ -19,9 +19,12 @@ limitations under the License.
 name := "system-data-services"
 
 description := "Intake24 system data services"
+resolvers += "Typesafe Releases" at "https://repo.typesafe.com/typesafe/releases/"
 
 libraryDependencies ++=
  Seq(
   "com.google.gwt" % "gwt-user" % "2.7.0" % "provided",
-  "net.sf.opencsv" % "opencsv" % "2.1"
+  "org.slf4j" % "slf4j-api" % "1.7.21",
+  "net.sf.opencsv" % "opencsv" % "2.1",
+  "com.typesafe" % "config" % "1.3.3"
   )
