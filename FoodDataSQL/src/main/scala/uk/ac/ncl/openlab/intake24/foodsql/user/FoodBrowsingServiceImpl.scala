@@ -4,6 +4,7 @@ import anorm.NamedParameter.symbol
 import anorm.{Macro, SQL, SqlParser, sqlToSimple}
 import com.google.inject.name.Named
 import com.google.inject.{Inject, Singleton}
+
 import javax.sql.DataSource
 import uk.ac.ncl.openlab.intake24.api.data.admin.{CategoryHeader, FoodHeader}
 import uk.ac.ncl.openlab.intake24.api.data.{UserCategoryContents, UserCategoryHeader, UserFoodHeader}
@@ -11,6 +12,7 @@ import uk.ac.ncl.openlab.intake24.errors.{LocalLookupError, LocaleError, LookupE
 import uk.ac.ncl.openlab.intake24.foodsql.shared.SuperCategoriesQueries
 import uk.ac.ncl.openlab.intake24.foodsql.{FirstRowValidation, FirstRowValidationClause}
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.{CategoryCategoryRelation, FoodBrowsingService, FoodCategoryRelation}
+import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndex
 import uk.ac.ncl.openlab.intake24.sql.{SqlDataService, SqlResourceLoader}
 
 @Singleton
@@ -89,7 +91,11 @@ class FoodBrowsingServiceImpl @Inject()(@Named("intake24_foods") val dataSource:
   }
 
   def getFoodAllCategories(code: String): Either[LookupError, Set[String]] = tryWithConnection {
-    implicit conn => getFoodAllCategoriesCodesQuery(code)
+    implicit conn =>
+      if (FoodIndex.allSpecialFoodCodes.contains(code))
+        Right(Set())
+      else
+        getFoodAllCategoriesCodesQuery(code)
   }
 
   def getCategoryAllCategories(code: String): Either[LookupError, Set[String]] = tryWithConnection {
