@@ -104,6 +104,7 @@ class UserAdminController @Inject()(service: UserAdminService,
   }
 
   private val blockRespondentPersonalData = configuration.getOptional[Boolean]("intake24.blockRespondentPersonalData").getOrElse(true)
+  private val allowPersonalDataIfSuperuser = configuration.getOptional[Boolean]("intake24.allowPersonalDataIfSuperuser").getOrElse(false)
 
   private def hasPersonalData(record: NewRespondent): Option[String] = {
     // Respondents should not have real names, e-mails or phone numbers in the corresponding
@@ -150,13 +151,13 @@ class UserAdminController @Inject()(service: UserAdminService,
     translateDatabaseResult(service.createOrUpdateUsersWithAliases(newUserRecords).map(CreateOrUpdateResponse(_)))
   }
 
-  private def uploadCSV(formData: MultipartFormData[Files.TemporaryFile], surveyId: String, roles: Set[String]): Result = {
+  private def uploadCSV(formData: MultipartFormData[Files.TemporaryFile], surveyId: String, roles: Set[String], skipPersonalDataCheck: Boolean): Result = {
     if (formData.files.length != 1)
       BadRequest(toJsonString(ErrorDescription("BadRequest", s"Expected exactly one file attachment, got ${formData.files.length}"))).as(ContentTypes.JSON)
     else {
       UserRecordsCSVParser.parseFile(formData.files(0).ref.path.toFile) match {
         case Right(csvRecords) =>
-          if (blockRespondentPersonalData)
+          if (blockRespondentPersonalData && !skipPersonalDataCheck)
             createOrUpdateWithPersonalDataCheck(surveyId, roles, csvRecords)
           else
             doCreateOrUpdate(surveyId, roles, csvRecords)
@@ -401,7 +402,7 @@ class UserAdminController @Inject()(service: UserAdminService,
   def uploadSurveyRespondentsCSV(surveyId: String) = rab.restrictToRoles(Roles.superuser, Roles.surveyAdmin, Roles.surveyStaff(surveyId))(playBodyParsers.multipartFormData) {
     request =>
       Future {
-        uploadCSV(request.body, surveyId, Set(Roles.surveyRespondent(surveyId)))
+        uploadCSV(request.body, surveyId, Set(Roles.surveyRespondent(surveyId)), allowPersonalDataIfSuperuser && request.subject.roles.contains(Roles.superuser))
       }
   }
 
