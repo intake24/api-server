@@ -1,14 +1,14 @@
 package uk.ac.ncl.openlab.intake24.sql.tools.food
 
-import java.io.{File, FileWriter}
-
 import com.opencsv.CSVWriter
 import org.rogach.scallop.ScallopConf
 import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodsAdminImpl
 import uk.ac.ncl.openlab.intake24.foodsql.foodindex.FoodIndexDataImpl
-import uk.ac.ncl.openlab.intake24.foodsql.user.{FoodBrowsingServiceImpl, FoodDataServiceImpl}
+import uk.ac.ncl.openlab.intake24.foodsql.user.FoodBrowsingServiceImpl
 import uk.ac.ncl.openlab.intake24.sql.tools._
 
+import java.io.{File, FileOutputStream, OutputStreamWriter}
+import java.nio.charset.StandardCharsets
 import scala.language.reflectiveCalls
 
 object FoodListExport extends App with DatabaseConnection with WarningMessage {
@@ -30,7 +30,7 @@ object FoodListExport extends App with DatabaseConnection with WarningMessage {
 
   val foodBrowsingService = new FoodBrowsingServiceImpl(dataSource)
 
-  val csvWriter = new CSVWriter(new FileWriter(new File(options.outputFile())))
+  val csvWriter = new CSVWriter(new OutputStreamWriter(new FileOutputStream(new File(options.outputFile())), StandardCharsets.UTF_8))
 
   csvWriter.writeNext(Array("Intake24 code", "English description", "Local description",
     "Food composition table", "Food composition record ID",
