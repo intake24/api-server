@@ -19,8 +19,8 @@ limitations under the License.
 package uk.ac.ncl.openlab.intake24.services.dataexport.guice
 
 import java.util.concurrent.ForkJoinPool
-
 import com.google.inject.{AbstractModule, Provides}
+
 import javax.inject.{Named, Singleton}
 import org.http4s.Uri
 import play.api.Configuration
@@ -28,7 +28,7 @@ import play.api.db.{Database, NamedDatabase}
 import uk.ac.ncl.openlab.intake24.foodsql.admin.FoodGroupsAdminImpl
 import uk.ac.ncl.openlab.intake24.foodsql.user.NdnsCompoundFoodGroupsImpl
 import uk.ac.ncl.openlab.intake24.services.NdnsCompoundFoodGroupsService
-import uk.ac.ncl.openlab.intake24.services.dataexport.{CSVFormatV1, CSVFormatV2, CSVFormatV3, DataExportDaemon, SurveyCSVExporter}
+import uk.ac.ncl.openlab.intake24.services.dataexport.{CSVFormatV1, CSVFormatV2, CSVFormatV3, CSVFormatV4, DataExportDaemon, SurveyCSVExporter}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin.{DataExportService, ScheduledDataExportService, SurveyAdminService, UserAdminService}
 import uk.ac.ncl.openlab.intake24.shorturls.ShortUrlsHttpClientConfig
@@ -62,7 +62,8 @@ class DataExportModule extends AbstractModule {
   @Provides
   @Singleton
   def csvExportFormats(): Map[String, SurveyCSVExporter] =
-    Map("v1" -> new SurveyCSVExporter(new CSVFormatV1), "v2" -> new SurveyCSVExporter(new CSVFormatV2), "v3" -> new SurveyCSVExporter(new CSVFormatV3))
+    Map("v1" -> new SurveyCSVExporter(new CSVFormatV1), "v2" -> new SurveyCSVExporter(new CSVFormatV2),
+      "v3" -> new SurveyCSVExporter(new CSVFormatV3), "v4" -> new SurveyCSVExporter(new CSVFormatV4))
 
 
   // Custom execution context for long-running blocking tasks (data export etc.)
