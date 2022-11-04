@@ -19,11 +19,11 @@ limitations under the License.
 package controllers
 
 import javax.inject.Inject
-
 import io.circe.generic.auto._
 import parsers.{JsonBodyParser, JsonUtils}
 import play.api.mvc.{BaseController, ControllerComponents, PlayBodyParsers}
 import security.Intake24RestrictedActionBuilder
+import uk.ac.ncl.openlab.intake24.api.data.ErrorDescription
 import uk.ac.ncl.openlab.intake24.api.data.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodsAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.{AssociatedFoodsService, BrandNamesService, FoodDataService}
@@ -90,7 +90,7 @@ class FoodsAdminController @Inject()(service: FoodsAdminService,
               sourceFoodRecord.local.associatedFoods.map(_.toAssociatedFood), sourceFoodRecord.local.brandNames), locale).right;
             _ <- service.addFoodToLocalList(code, locale)
           )
-            yield CloneFoodResult(code)
+          yield CloneFoodResult(code)
 
         translateDatabaseResult(result)
       }
@@ -115,7 +115,7 @@ class FoodsAdminController @Inject()(service: FoodsAdminService,
             _ <- service.addFoodToLocalList(code, locale)
           )
 
-            yield CloneFoodResult(code)
+          yield CloneFoodResult(code)
 
         translateDatabaseResult(result)
       }
@@ -141,6 +141,8 @@ class FoodsAdminController @Inject()(service: FoodsAdminService,
       Future {
         if (!foodAuthChecks.isFoodsAdmin(request.subject) && !request.body.localeRestrictions.forall(l => foodAuthChecks.isLocaleMaintainer(l, request.subject)))
           Forbidden
+        else if (request.body.localeRestrictions.isEmpty)
+          BadRequest(toJsonString(ErrorDescription("EmptyLocaleList","Food must be assigned to at least one locale")))
         else
           translateDatabaseResult(service.updateMainFoodRecord(foodCode, request.body))
       }

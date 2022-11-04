@@ -1,9 +1,8 @@
 package uk.ac.ncl.openlab.intake24.foodsql.modular
 
 import java.util.UUID
-
 import anorm.NamedParameter.symbol
-import anorm.{AnormUtil, Macro, NamedParameter, SQL, SqlParser, sqlToSimple}
+import anorm.{AnormUtil, BatchSql, Macro, NamedParameter, SQL, SqlParser, sqlToSimple}
 import org.apache.commons.lang3.StringUtils
 import org.postgresql.util.PSQLException
 import org.slf4j.LoggerFactory
@@ -187,6 +186,16 @@ trait FoodsAdminQueries extends FoodsAdminService
       .executeUpdate()
 
     if (rowsAffected == 1) {
+      SQL("DELETE FROM foods_local_lists WHERE food_code={code}")
+        .on('code -> foodRecord.code)
+        .execute();
+
+      val insertParams = foodRecord.localeRestrictions.map(localeId => Seq[NamedParameter]('code -> foodRecord.code, 'localeId -> localeId))
+
+      if (insertParams.nonEmpty) {
+        batchSql("INSERT INTO foods_local_lists(food_code,locale_id) VALUES({code},{localeId})", insertParams).execute()
+      }
+
       Right(())
     } else
       Left(VersionConflict(new RuntimeException(foodCode)))
