@@ -93,13 +93,15 @@ class SurveyController @Inject()(service: SurveyService,
         val userId = request.subject.userId
 
         val zoneId = parseZoneId(clientTimeZone.getOrElse(null))
+        val zoneDt = ZonedDateTime.now(zoneId)
 
-        val clientDayOfYear = ZonedDateTime.now(zoneId).getDayOfYear
+        val clientYear = zoneDt.getYear
+        val clientDayOfYear = zoneDt.getDayOfYear
 
         (for (surveyParameters <- service.getSurveyParameters(surveyId);
               user <- userService.getUserById(userId);
               currentSubmissionsCount <- service.getNumberOfSubmissionsForUser(surveyId, userId);
-              numberOfSubmissionsToday <- service.getNumberOfSubmissionsOnDay(surveyId, userId, clientDayOfYear, zoneId.getId());
+              numberOfSubmissionsToday <- service.getNumberOfSubmissionsOnDay(surveyId, userId, clientYear, clientDayOfYear, zoneId.getId());
               followUp <- service.getSurveyFollowUp(surveyId))
         yield ((surveyParameters, user, currentSubmissionsCount, numberOfSubmissionsToday, followUp))) match {
           case Right((surveyParameters, user, currentSubmissionsCount, numberOfSubmissionsToday, followUp)) =>
@@ -188,12 +190,14 @@ class SurveyController @Inject()(service: SurveyService,
         val userId = request.subject.userId
 
         val zoneId = parseZoneId(request.body.timeZone)
+        val zoneDt = ZonedDateTime.now(zoneId)
 
-        val clientDayOfYear = ZonedDateTime.now(zoneId).getDayOfYear
+        val clientYear = zoneDt.getYear
+        val clientDayOfYear = zoneDt.getDayOfYear
 
         val result = for (surveyParameters <- service.getSurveyParameters(surveyId);
                           currentSubmissionsCount <- service.getNumberOfSubmissionsForUser(surveyId, userId);
-                          numberOfSubmissionsToday <- service.getNumberOfSubmissionsOnDay(surveyId, userId, clientDayOfYear, zoneId.getId());
+                          numberOfSubmissionsToday <- service.getNumberOfSubmissionsOnDay(surveyId, userId, clientYear, clientDayOfYear, zoneId.getId());
                           lastSubmissionTime <- service.getLastSubmissionTime(surveyId, userId);
                           userNameOpt <- userService.getSurveyUserAliases(Seq(userId), surveyId).map(_.get(userId).map(_.userName));
                           followUp <- service.getSurveyFollowUp(surveyId)) yield {

@@ -39,7 +39,7 @@ trait SurveyService {
 
   def getNumberOfSubmissionsForUser(surveyId: String, userId: Long): Either[UnexpectedDatabaseError, Int]
 
-  def getNumberOfSubmissionsOnDay(surveyId: String, userId: Long, dayOfYear: Int, timeZone: String): Either[UnexpectedDatabaseError, Int]
+  def getNumberOfSubmissionsOnDay(surveyId: String, userId: Long, year: Int, dayOfYear: Int, timeZone: String): Either[UnexpectedDatabaseError, Int]
 
   def getLastSubmissionTime(surveyId: String, userId: Long): Either[UnexpectedDatabaseError, Option[ZonedDateTime]]
 

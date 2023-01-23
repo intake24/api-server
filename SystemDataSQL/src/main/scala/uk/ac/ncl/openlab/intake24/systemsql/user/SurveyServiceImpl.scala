@@ -275,10 +275,10 @@ class SurveyServiceImpl @Inject()(@Named("intake24_system") val dataSource: Data
         .as(SqlParser.get[ZonedDateTime]("submission_time").singleOpt))
   }
 
-  override def getNumberOfSubmissionsOnDay(surveyId: String, userId: Long, dayOfYear: Int, timeZone: String): Either[UnexpectedDatabaseError, Int] = tryWithConnection {
+  override def getNumberOfSubmissionsOnDay(surveyId: String, userId: Long, year: Int,dayOfYear: Int, timeZone: String): Either[UnexpectedDatabaseError, Int] = tryWithConnection {
     implicit conn =>
-      Right(SQL("SELECT COUNT(*) FROM survey_submissions WHERE survey_id={survey_id} AND user_id={user_id} AND EXTRACT(DOY FROM (submission_time AT TIME ZONE {time_zone}))={doy}")
-        .on('survey_id -> surveyId, 'user_id -> userId, 'time_zone -> timeZone, 'doy -> dayOfYear)
+      Right(SQL("SELECT COUNT(*) FROM survey_submissions WHERE survey_id={survey_id} AND user_id={user_id} AND EXTRACT(YEAR FROM (submission_time AT TIME ZONE {time_zone}))={year} AND EXTRACT(DOY FROM (submission_time AT TIME ZONE {time_zone}))={doy}")
+        .on('survey_id -> surveyId, 'user_id -> userId, 'time_zone -> timeZone, 'year -> year, 'doy -> dayOfYear)
         .as(SqlParser.int(1).single))
   }
 
