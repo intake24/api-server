@@ -7,7 +7,8 @@ import java.io.InputStreamReader
 
 object DatabaseConfigChooser {
 
-  val default = IndexedSeq("Development" -> "development-database-config.json", "Test" -> "test-database-config.json", "Production" -> "production-database-config.json")
+  val default = IndexedSeq("Development" -> "development-database-config.json", "Test" -> "test-database-config.json", "Production" -> "production-database-config.json",
+  "NYUAD" -> "nyuad-database-config.json")
 
   def chooseDatabaseConfiguration(configDirPath: String = "./database-config", options: IndexedSeq[(String, String)] = default): DatabaseConfiguration = {
 
