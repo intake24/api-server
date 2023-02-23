@@ -21,6 +21,5 @@ package uk.ac.ncl.openlab.intake24.services.foodindex.english
 import com.google.inject.{Inject, Singleton}
 import uk.ac.ncl.openlab.intake24.services.foodindex.FoodIndexDataService
 
-// FIXME: Error handling
 @Singleton
-class SplitterImpl_NZ_dev @Inject()(foodData: FoodIndexDataService) extends EnglishSplitter(foodData.splitList("en_GB").right.get) // en_GB intentional
+class FoodIndexImpl_NZ_V3_2023 @Inject()(foodData: FoodIndexDataService) extends EnglishFoodIndex (foodData, "NZ_V3_2023")
