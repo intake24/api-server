@@ -3,8 +3,8 @@ package uk.ac.ncl.openlab.intake24.services.dataexport
 import java.io._
 import java.nio.charset.{Charset, StandardCharsets}
 import java.time.ZonedDateTime
-
 import au.com.bytecode.opencsv.CSVWriter
+
 import javax.inject.{Inject, Named, Singleton}
 import org.slf4j.LoggerFactory
 import play.api.Configuration
@@ -13,6 +13,7 @@ import uk.ac.ncl.openlab.intake24.errors.{AnyError, DatabaseError, UnexpectedExc
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.FoodGroupsAdminService
 import uk.ac.ncl.openlab.intake24.services.systemdb.admin._
 
+import scala.annotation.tailrec
 import scala.concurrent.{ExecutionContext, Future}
 
 case class ExportTaskHandle(id: Long, result: Future[Either[AnyError, File]])
@@ -54,6 +55,7 @@ class SingleThreadedDataExporter @Inject()(configuration: Configuration,
     }
 
     @throws[IOException]
+    @tailrec
     def exportRemaining(exporter: SurveyCSVExporter, csvWriter: CSVWriter, totalCount: Int, currentOffset: Int = 0): Either[DatabaseError, Unit] =
       if (totalCount == 0) {
         logger.debug(s"[$taskId] expected total count is 0, skipping export steps")
@@ -62,20 +64,24 @@ class SingleThreadedDataExporter @Inject()(configuration: Configuration,
       else {
         logger.debug(s"[$taskId] expected total count is $totalCount")
 
-        exportNextBatch(exporter, csvWriter, currentOffset).flatMap {
-          submissionsInLastBatch =>
+        // Pattern matches are ugly here but @tailrec won't work with flatMap
+        exportNextBatch(exporter, csvWriter, currentOffset) match {
+          case Right(submissionsInLastBatch) =>
             if (submissionsInLastBatch > 0) {
               val newOffset = currentOffset + batchSize
               val progress = (currentOffset + submissionsInLastBatch).toDouble / totalCount.toDouble
 
-              exportService.updateExportTaskProgress(taskId, progress).map {
-                _ =>
+              exportService.updateExportTaskProgress(taskId, progress) match {
+                case Right(()) =>
                   throttle()
                   exportRemaining(exporter, csvWriter, totalCount, newOffset)
+                case e => e
               }
             }
-            else
+            else {
               exportService.updateExportTaskProgress(taskId, 1.0)
+            }
+          case Left(e) => Left(e)
         }
       }
 
