@@ -473,6 +473,17 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
       Seq(
         CustomFieldDescription("servingWeightFactor", "As served weight factor")
       )))
+    case "nz" => Right(CustomDataScheme(Seq(), Seq(
+      CustomFieldDescription("diet", "Diet"),
+      CustomFieldDescription("foodAmount", "Food amount"),
+      CustomFieldDescription("foodAmountReason", "Reason for unusual food amount"),
+      CustomFieldDescription("proxy", "Proxy"),
+      CustomFieldDescription("proxyIssues", "Proxy Issues")),
+      Seq(
+        CustomFieldDescription("foodSource", "Food source")),
+      Seq(
+        CustomFieldDescription("servingWeightFactor", "As served weight factor")
+      )))
     case "experimental-pa-rules" => Right(CustomDataScheme(Seq(), Seq(), Seq(), Seq()))
     case "experimental-flexible-recall" => Right(CustomDataScheme(Seq(), Seq(), Seq(), Seq()))
     case "young_scot_2014" =>
