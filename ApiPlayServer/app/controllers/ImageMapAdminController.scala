@@ -24,9 +24,11 @@ import parsers.FormDataUtil
 import play.api.http.ContentTypes
 import play.api.libs.Files.TemporaryFile
 import play.api.mvc.MultipartFormData.FilePart
+import play.api.mvc.Results.BadRequest
 import play.api.mvc.{BaseController, ControllerComponents, Result}
 import security.Intake24RestrictedActionBuilder
 import uk.ac.ncl.openlab.intake24.api.data.{ErrorDescription, ImageMapResponse, NewImageMapRequest, NewImageMapWithObjectsRequest}
+import uk.ac.ncl.openlab.intake24.play.utils.JsonUtils
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin._
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
 
@@ -36,6 +38,54 @@ import scala.concurrent.{ExecutionContext, Future}
 case class ImageMapObjectWithUrl(description: String, overlayImageUrl: String, navigationIndex: Int, outlineCoordinates: Array[Double])
 
 case class ImageMapWithUrls(id: String, description: String, baseImageId: Long, baseImageUrl: String, objects: Map[Int, ImageMapObjectWithUrl])
+
+object ImageMapAdminUtils extends JsonUtils {
+
+  private val svgParser = new SVGImageMapParser()
+
+  import ImageAdminService.WrapDatabaseError
+
+  def parseImageMapSvg(svgFile: FilePart[TemporaryFile]): Either[Result, AWTImageMap] =
+    svgParser.parseImageMap(svgFile.ref.path.toString) match {
+      case Left(e) => Left(BadRequest(toJsonString(ErrorDescription("InvalidParameter", s"Failed to parse the SVG image map: ${e.getClass.getName}: ${e.getMessage}"))))
+      case Right(m) => Right(m)
+    }
+
+  def parseOutlineSvg(svgFile: FilePart[TemporaryFile]): Either[Result, AWTOutline] =
+    svgParser.parseOutline(svgFile.ref.path.toString) match {
+      case Left(e) => Left(BadRequest(toJsonString(ErrorDescription("InvalidParameter", s"Failed to parse the SVG outline: ${e.getClass.getName}: ${e.getMessage}"))))
+      case Right(m) => Right(m)
+    }
+
+  def validateParams(params: NewImageMapWithObjectsRequest, parsedImageMap: AWTImageMap): Either[Result, Unit] =
+    parsedImageMap.outlines.keySet.find(k => !params.objectDescriptions.contains(k.toString)) match {
+      case Some(missingId) => Left(BadRequest(toJsonString(ErrorDescription("InvalidParameter", s"Missing description for object $missingId"))))
+      case None => Right(())
+    }
+
+  def createImageMap(imageAdmin: ImageAdminService,
+                     imageMaps: ImageMapsAdminService,
+                     baseImage: FilePart[TemporaryFile],
+                     keywords: Seq[String],
+                     params: NewImageMapWithObjectsRequest,
+                     imageMap: AWTImageMap,
+                     uploader: String): Either[ImageServiceOrDatabaseError, Unit] = {
+    for (
+      baseImageSourceRecord <- imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForImageMap(params.id, baseImage.filename), baseImage.ref.path,
+        baseImage.filename, keywords, uploader).right;
+      processedBaseImageDescriptor <- imageAdmin.processForImageMapBase(params.id, baseImageSourceRecord.id).right;
+      overlayDescriptors <- imageAdmin.generateImageMapOverlays(params.id, baseImageSourceRecord.id, imageMap).right;
+      _ <- {
+
+        val objects = imageMap.outlines.keySet.foldLeft(Map[Int, NewImageMapObject]()) {
+          case (acc, objectId) =>
+            acc + (objectId -> NewImageMapObject(objectId, params.objectDescriptions(objectId.toString), imageMap.navigation.indexOf(objectId), imageMap.getCoordsArray(objectId).toArray, overlayDescriptors(objectId).id))
+        }
+
+        imageMaps.createImageMaps(Seq(NewImageMapRecord(params.id, params.description, processedBaseImageDescriptor.id, imageMap.navigation, objects)))
+      }.wrapped.right) yield ()
+  }
+}
 
 class ImageMapAdminController @Inject()(
                                          imageMaps: ImageMapsAdminService,
@@ -50,7 +100,6 @@ class ImageMapAdminController @Inject()(
 
   import ImageAdminService.WrapDatabaseError
 
-  private val svgParser = new SVGImageMapParser()
 
   /* def resolveUrls(image: AsServedImageWithPaths): AsServedImageWithUrls =
     AsServedImageWithUrls(image.sourceId, imageStorage.getUrl(image.imagePath), imageStorage.getUrl(image.thumbnailPath), image.weight)
@@ -58,30 +107,9 @@ class ImageMapAdminController @Inject()(
   def resolveUrls(set: AsServedSetWithPaths): AsServedSetWithUrls = AsServedSetWithUrls(set.id, set.description, set.images.map(resolveUrls))*/
 
 
-  private def validateParams(params: NewImageMapWithObjectsRequest, parsedImageMap: AWTImageMap): Either[Result, Unit] =
-    parsedImageMap.outlines.keySet.find(k => !params.objectDescriptions.contains(k.toString)) match {
-      case Some(missingId) => Left(BadRequest(toJsonString(ErrorDescription("InvalidParameter", s"Missing description for object $missingId"))))
-      case None => Right(())
-    }
 
   private def createImageMap(baseImage: FilePart[TemporaryFile], keywords: Seq[String], params: NewImageMapWithObjectsRequest, imageMap: AWTImageMap, uploader: String): Either[Result, Unit] =
-    translateImageServiceAndDatabaseError(
-      for (
-        baseImageSourceRecord <- imageAdmin.uploadSourceImage(ImageAdminService.getSourcePathForImageMap(params.id, baseImage.filename), baseImage.ref.path,
-          baseImage.filename, keywords, uploader).right;
-        processedBaseImageDescriptor <- imageAdmin.processForImageMapBase(params.id, baseImageSourceRecord.id).right;
-        overlayDescriptors <- imageAdmin.generateImageMapOverlays(params.id, baseImageSourceRecord.id, imageMap).right;
-        _ <- {
-
-          val objects = imageMap.outlines.keySet.foldLeft(Map[Int, NewImageMapObject]()) {
-            case (acc, objectId) =>
-              acc + (objectId -> NewImageMapObject(objectId, params.objectDescriptions(objectId.toString), imageMap.navigation.indexOf(objectId), imageMap.getCoordsArray(objectId).toArray, overlayDescriptors(objectId).id))
-          }
-
-          imageMaps.createImageMaps(Seq(NewImageMapRecord(params.id, params.description, processedBaseImageDescriptor.id, imageMap.navigation, objects)))
-        }.wrapped.right
-
-      ) yield ())
+    translateImageServiceAndDatabaseError(ImageMapAdminUtils.createImageMap(imageAdmin, imageMaps, baseImage, keywords, params, imageMap, uploader))
 
   private def createImageMapWithoutObjects(baseImage: FilePart[TemporaryFile], keywords: Seq[String], params: NewImageMapRequest, uploader: String): Either[Result, ImageMapResponse] =
     translateImageServiceAndDatabaseError(
@@ -132,11 +160,8 @@ class ImageMapAdminController @Inject()(
           svgImage <- getFile("svg", request.body).right;
           sourceKeywords <- getOptionalMultipleData("baseImageKeywords", request.body).right;
           params <- getParsedData[NewImageMapWithObjectsRequest]("imageMapParameters", request.body).right;
-          imageMap <- (svgParser.parseImageMap(svgImage.ref.path.toString) match {
-            case Left(e) => Left(BadRequest(toJsonString(ErrorDescription("InvalidParameter", s"Failed to parse the SVG image map: ${e.getClass.getName}: ${e.getMessage}"))))
-            case Right(m) => Right(m)
-          }).right;
-          _ <- validateParams(params, imageMap).right;
+          imageMap <- ImageMapAdminUtils.parseImageMapSvg(svgImage).right;
+          _ <- ImageMapAdminUtils.validateParams(params, imageMap).right;
           _ <- createImageMap(baseImage, sourceKeywords, params, imageMap, request.subject.userId.toString).right // FIXME: better uploader string
         ) yield ()
 

@@ -36,6 +36,29 @@ case class AWTImageMap(navigation: Seq[Int], outlines: Map[Int, Shape], aspect: 
   }
 }
 
+case class AWTOutline(shape: Shape, aspect: Double) {
+  val coordsArray: Seq[Double] = {
+    val i = shape.getPathIterator(null, 0.005)
+
+    val result = mutable.Buffer[Double]()
+
+    while (!i.isDone) {
+      {
+        val coords = new Array[Float](6)
+        val segType = i.currentSegment(coords)
+        if (segType == PathIterator.SEG_MOVETO || segType == PathIterator.SEG_LINETO) {
+          result.append(coords(0))
+          result.append(coords(1))
+        }
+
+      }
+      i.next()
+    }
+
+    result
+  }
+}
+
 class SVGImageMapParser {
 
   private implicit class DocExt(doc: SVGOMDocument) {
@@ -142,7 +165,7 @@ class SVGImageMapParser {
       svgElement.getHeight.getBaseVal.getValue
   }
 
-  def parseImageMap(svgPath: String): Either[Throwable, AWTImageMap] = {
+  def parseImageMap(svgPath: String): Either[Exception, AWTImageMap] = {
     logger.debug(s"Trying to parse image map from $svgPath")
 
     try {
@@ -162,7 +185,29 @@ class SVGImageMapParser {
 
       Right(AWTImageMap(navigation, outlines, aspect))
     } catch {
-      case e: Throwable => Left(e)
+      case e: Exception => Left(e)
+    }
+  }
+
+  def parseOutline(svgPath: String): Either[Exception, AWTOutline] = {
+    logger.debug(s"Trying to parse single outline from $svgPath")
+
+    try {
+      val svgDoc = parseSvg(svgPath)
+
+      val svgElem = svgDoc.getRootElement
+
+      val (width, height) = (getSVGWidth(svgElem), getSVGHeight(svgElem))
+
+      val scale = 1.0 / width
+
+      val aspect = width / height
+
+      val outlines = getOutlines(scale, svgDoc, s => if (s == "outline") Some(0) else None)
+
+      Right(AWTOutline(outlines(0), aspect))
+    } catch {
+      case e: Exception => Left(e)
     }
   }
 }

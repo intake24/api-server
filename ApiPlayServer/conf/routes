@@ -114,8 +114,7 @@ POST           /admin/portion-size/guide-image/selection-screen-image        con
 
 GET            /admin/portion-size/drinkware                                 controllers.DrinkwareAdminController.listDrinkwareSets()
 GET            /admin/portion-size/drinkware/:id                             controllers.DrinkwareAdminController.getDrinkwareSet(id: String)
-
-
+POST           /admin/portion-size/drinkware/upload                          controllers.DrinkwareAdminController.uploadDrinkwareSet()
 
 # Nutrient tables
 

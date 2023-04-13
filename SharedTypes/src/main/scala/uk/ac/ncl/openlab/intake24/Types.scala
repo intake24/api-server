@@ -75,8 +75,9 @@ case class DrinkScale(objectId: Int, baseImagePath: String, overlayImagePath: St
 
 case class DrinkwareHeader(id: String, description: String)
 
-case class DrinkwareSet(id: String, description: String, guideId: String, scales: Seq[DrinkScale])
+case class DrinkwareSetRecord(id: String, description: String, guideId: String)
 
+case class DrinkwareSet(id: String, description: String, guideId: String, scales: Seq[DrinkScale])
 
 case class FoodGroupMain(id: Int, englishDescription: String)
 

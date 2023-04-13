@@ -57,4 +57,13 @@ trait FormDataUtil extends JsonUtils {
       str =>
         parseJson[T](str)
     }
+
+  def getIntData(key: String, parsedBody: MultipartFormData[TemporaryFile]): Either[Result, Int] = getData(key, parsedBody).flatMap {
+    str =>
+      try {
+        Right(Integer.parseInt(str))
+      } catch {
+        case e: RuntimeException => Left(BadRequest(s"""{"cause":"Expected "$key" to be an integer value, but "$str" is not}"""))
+      }
+  }
 }
