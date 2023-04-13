@@ -305,4 +305,11 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
          ssiId <- imageDatabase.createProcessedImageRecords(Seq(ProcessedImageRecord(actualPath, source.head.id, ProcessedImagePurpose.PortionSizeSelectionImage))).wrapped.right)
     yield ImageDescriptor(ssiId.head, actualPath)
 
+  def processForSlidingScale(pathPrefix: String, sourceImageId: Long): Either[ImageServiceOrDatabaseError, ImageDescriptor] =
+    for (source <- imageDatabase.getSourceImageRecords(Seq(sourceImageId)).wrapped.right;
+         actualPath <- processAndUploadSlidingScale(pathPrefix, source.head.path).right;
+         ssiId <- imageDatabase.createProcessedImageRecords(Seq(ProcessedImageRecord(actualPath, source.head.id, ProcessedImagePurpose.PortionSizeSelectionImage))).wrapped.right)
+    yield ImageDescriptor(ssiId.head, actualPath)
+
+  override def generateSlidingScaleOverlay(drinkwareSetId: String, sourceId: Long, outline: AWTOutline): Either[ImageServiceOrDatabaseError, ImageDescriptor] = ???
 }

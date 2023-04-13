@@ -1,7 +1,5 @@
 package uk.ac.ncl.openlab.intake24.foodsql.admin
 
-import javax.sql.DataSource
-
 import anorm._
 import com.google.inject.name.Named
 import com.google.inject.{Inject, Singleton}
@@ -10,7 +8,9 @@ import uk.ac.ncl.openlab.intake24.errors.{CreateError, DuplicateCode, Unexpected
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.DrinkwareAdminService
 import uk.ac.ncl.openlab.intake24.services.fooddb.user.DrinkwareService
 import uk.ac.ncl.openlab.intake24.sql.SqlDataService
-import uk.ac.ncl.openlab.intake24.{DrinkwareHeader, DrinkwareSet, VolumeSample}
+import uk.ac.ncl.openlab.intake24.{DrinkwareHeader, DrinkwareSet, DrinkwareSetRecord, VolumeSample}
+
+import javax.sql.DataSource
 
 @Singleton
 class DrinkwareAdminImpl @Inject()(@Named("intake24_foods") val dataSource: DataSource, drinkwareService: DrinkwareService) extends DrinkwareAdminService with SqlDataService {
@@ -77,6 +77,17 @@ class DrinkwareAdminImpl @Inject()(@Named("intake24_foods") val dataSource: Data
         }
       } else {
         logger.warn("Drinkware file contains no records")
+        Right(())
+      }
+  }
+
+  def createDrinkwareSetRecord(record: DrinkwareSetRecord) = tryWithConnection {
+    implicit conn =>
+      tryWithConstraintCheck("drinkware_sets_pk", DuplicateCode) {
+        SQL("""INSERT INTO drinkware_sets VALUES ({id}, {description}, {guide_image_id})""")
+          .on('id -> record.id, 'description -> record.description, 'guide_image_id -> record.guideId)
+          .executeInsert()
+
         Right(())
       }
   }

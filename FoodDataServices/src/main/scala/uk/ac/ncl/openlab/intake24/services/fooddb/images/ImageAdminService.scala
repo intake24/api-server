@@ -36,7 +36,11 @@ trait ImageAdminService {
 
   def processForImageMapBase(imageMapId: String, sourceImageId: Long): Either[ImageServiceOrDatabaseError, ImageDescriptor]
 
+  def processForSlidingScale(drinkwareSetId: String, sourceImageId: Long): Either[ImageServiceOrDatabaseError, ImageDescriptor]
+
   def generateImageMapOverlays(imageMapId: String, sourceId: Long, imageMap: AWTImageMap): Either[ImageServiceOrDatabaseError, Map[Int, ImageDescriptor]]
+
+  def generateSlidingScaleOverlay(drinkwareSetId: String, sourceId: Long, outline: AWTOutline): Either[ImageServiceOrDatabaseError, ImageDescriptor]
 }
 
 object ImageAdminService {
@@ -53,6 +57,8 @@ object ImageAdminService {
 
   val imageMapPathPrefix = "image_maps"
 
+  val drinkScalePathPrefix = "drink_scales"
+
   def randomName(originalName: String) = {
     val extension = "." + FilenameUtils.getExtension(originalName).toLowerCase()
 
@@ -64,6 +70,9 @@ object ImageAdminService {
 
   def getSourcePathForImageMap(id: String, originalName: String): String =
     s"$imageMapPathPrefix/$id/${randomName(originalName)}"
+
+  def getSourcePathForDrinkScale(id: String, originalName: String): String =
+    s"$drinkScalePathPrefix/$id/${randomName(originalName)}"
 
   def ssiPrefixAsServed(setId: String): String =
     s"$asServedPathPrefix/$setId/selection"
