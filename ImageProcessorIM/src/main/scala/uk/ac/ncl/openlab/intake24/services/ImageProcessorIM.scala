@@ -1,15 +1,15 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.images
 
-import java.awt.{BasicStroke, Color, RenderingHints}
+import org.im4java.core.{IMOperation, ImageCommand, Info}
+import org.im4java.process.ArrayListOutputConsumer
+import org.slf4j.LoggerFactory
+
 import java.awt.image.BufferedImage
+import java.awt.{BasicStroke, Color, Dimension, RenderingHints}
 import java.nio.file.{Files, Path}
 import java.util.UUID
 import javax.imageio.ImageIO
 import javax.inject.{Inject, Singleton}
-
-import org.im4java.core.{ConvertCmd, IMOperation, ImageCommand}
-import org.slf4j.LoggerFactory
-
 import scala.collection.JavaConverters._
 
 @Singleton
@@ -17,13 +17,15 @@ class ImageProcessorIM @Inject()(val settings: ImageProcessorSettings) extends I
 
   val logger = LoggerFactory.getLogger(classOf[ImageProcessorIM])
 
-  val convertCmd = {
+  private def initConvertCommand(): ImageCommand = {
     val cmd = new ImageCommand(settings.command: _*)
 
     settings.cmdSearchPath.foreach(cmd.setSearchPath(_))
 
     cmd
   }
+
+  private val convertCmd = initConvertCommand()
 
   override def processForSourceThumbnail(sourceImage: Path, thumbnail: Path): Either[ImageProcessorError, Unit] =
     try {
@@ -44,7 +46,7 @@ class ImageProcessorIM @Inject()(val settings: ImageProcessorSettings) extends I
       Right(())
 
     } catch {
-      case e: Throwable => Left(ImageProcessorError(e))
+      case e: Exception => Left(ImageProcessorError(e))
     }
 
   def processForAsServed(sourceImage: Path, mainImageDest: Path, thumbnailDest: Path): Either[ImageProcessorError, Unit] = {
@@ -76,7 +78,7 @@ class ImageProcessorIM @Inject()(val settings: ImageProcessorSettings) extends I
       Right(())
 
     } catch {
-      case e: Throwable => Left(ImageProcessorError(e))
+      case e: Exception => Left(ImageProcessorError(e))
     }
   }
 
@@ -98,7 +100,7 @@ class ImageProcessorIM @Inject()(val settings: ImageProcessorSettings) extends I
       Right(())
 
     } catch {
-      case e: Throwable => Left(ImageProcessorError(e))
+      case e: Exception => Left(ImageProcessorError(e))
     }
   }
 
@@ -118,8 +120,28 @@ class ImageProcessorIM @Inject()(val settings: ImageProcessorSettings) extends I
 
       Right(())
     } catch {
-      case e: Throwable => Left(ImageProcessorError(e))
+      case e: Exception => Left(ImageProcessorError(e))
     }
+  }
+
+  def blur(sourcePath: Path, destPath: Path, blurStrength: Double): Unit = {
+    // ImageMagick's blur filter is broken -- see http://www.imagemagick.org/Usage/bugs/blur_trans/
+    // The bug was fixed in 6.2.5 but got broken again in 6.8.something
+    // Still not fixed as of 6.9.6 :(
+
+    // Workaround from this thread (using 100% resize with Gaussian filter):
+    // http://www.imagemagick.org/discourse-server/viewtopic.php?f=3&t=24665&sid=4a6c39fd9ae46dc356d68a396a2f3ac9&start=15#p106183
+    // Slower than normal blur, but works correctly
+
+    val op = new IMOperation()
+    op.addImage(sourcePath.toString)
+
+    op.filter("Gaussian")
+    op.define(s"filter:sigma=$blurStrength")
+    op.addRawArgs("-resize", "100%")
+    op.addImage(destPath.toString)
+
+    convertCmd.run(op)
   }
 
   def generateImageMapOverlays(imageMap: AWTImageMap, directory: Path): Either[ImageProcessorError, Map[Int, Path]] = {
@@ -138,8 +160,6 @@ class ImageProcessorIM @Inject()(val settings: ImageProcessorSettings) extends I
 
       g.setColor(color)
 
-      logger.debug(s"${color.getRed}, ${color.getGreen}, ${color.getBlue}")
-
       val result = imageMap.outlines.map {
         case (objectId, outline) =>
           g.setBackground(new Color(0, 0, 0, 0))
@@ -153,28 +173,10 @@ class ImageProcessorIM @Inject()(val settings: ImageProcessorSettings) extends I
           g.setTransform(currentTransform)
 
           val unblurred = Files.createTempFile("intake24-overlay-", ".png")
-
-          // ImageMagick's blur filter is broken -- see http://www.imagemagick.org/Usage/bugs/blur_trans/
-          // The bug was fixed in 6.2.5 but got broken again in 6.8.something
-          // Still not fixed as of 6.9.6 :(
-
-          // Workaround from this thread (using 100% resize with Gaussian filter):
-          // http://www.imagemagick.org/discourse-server/viewtopic.php?f=3&t=24665&sid=4a6c39fd9ae46dc356d68a396a2f3ac9&start=15#p106183
-          // Slower than normal blur, but works correctly
-
-          ImageIO.write(image, "png", unblurred.toFile())
           val outputPath = directory.resolve(UUID.randomUUID().toString + ".png")
 
-          val op = new IMOperation()
-          op.addImage(unblurred.toString)
-
-          op.filter("Gaussian")
-          op.define(s"filter:sigma=${settings.imageMap.outlineBlurStrength}")
-          op.addRawArgs("-resize", "100%")
-          op.addImage(outputPath.toString)
-
-          convertCmd.run(op)
-
+          ImageIO.write(image, "png", unblurred.toFile())
+          blur(unblurred, outputPath, settings.imageMap.outlineBlurStrength)
           Files.delete(unblurred)
 
           logger.debug(s"Generated outline image for object $objectId: ${outputPath.toString}")
@@ -185,7 +187,76 @@ class ImageProcessorIM @Inject()(val settings: ImageProcessorSettings) extends I
       Right(result)
     }
     catch {
-      case e: Throwable => Left(ImageProcessorError(e))
+      case e: Exception => Left(ImageProcessorError(e))
+    }
+  }
+
+  def processForSlidingScale(sourceImage: Path, dest: Path): Either[ImageProcessorError, Dimension] = {
+    try {
+      val op = new IMOperation()
+
+      op.resize(settings.slidingScale.baseImageWidth)
+      op.background("white")
+      op.gravity("Center")
+      op.format("\"%w %h\"")
+      op.write("info:")
+      op.addImage(sourceImage.toString())
+      op.addImage(dest.toString())
+
+      logger.debug(s"Invoking ImageMagick for sliding scale image: ${((convertCmd.getCommand.asScala) ++ (op.getCmdArgs.asScala)).mkString(" ")}")
+
+      val consumer = new ArrayListOutputConsumer()
+      val command = initConvertCommand()
+      command.setOutputConsumer(consumer)
+      command.run(op)
+
+      val sizeStrings = consumer.getOutput.get(0).split("\\s+")
+      val width = Integer.parseInt(sizeStrings(0))
+      val height = Integer.parseInt(sizeStrings(1))
+
+      Right(new Dimension(width, height))
+    } catch {
+      case e: Exception => Left(ImageProcessorError(e))
+    }
+  }
+
+  def generateSlidingScaleOverlay(outline: AWTOutline, directory: Path): Either[ImageProcessorError, Path] = {
+    try {
+      val targetWidth = settings.slidingScale.baseImageWidth
+      val targetHeight = (settings.slidingScale.baseImageWidth / outline.aspect).toInt
+
+      val image = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_ARGB)
+      val g = image.createGraphics()
+      g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+
+      val color = new Color(settings.slidingScale.fillColor._1.toFloat,
+        settings.slidingScale.fillColor._2.toFloat,
+        settings.slidingScale.fillColor._3.toFloat)
+
+      g.setPaint(color)
+
+
+      g.setBackground(new Color(0, 0, 0, 0))
+      g.clearRect(0, 0, image.getWidth, image.getHeight)
+
+      val currentTransform = g.getTransform()
+
+      g.scale(targetWidth, targetWidth)
+      g.fill(outline.shape)
+
+      g.setTransform(currentTransform)
+
+      val unblurred = Files.createTempFile("intake24-overlay-", ".png")
+      ImageIO.write(image, "png", unblurred.toFile())
+      val outputPath = directory.resolve(UUID.randomUUID().toString + ".png")
+      blur(unblurred, outputPath, settings.slidingScale.blurStrength)
+      Files.delete(unblurred)
+
+      logger.debug(s"Generated outline image for sliding scale: ${outputPath.toString}")
+
+      Right(outputPath)
+    } catch {
+      case e: Exception => Left(ImageProcessorError(e))
     }
   }
 }

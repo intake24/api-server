@@ -8,7 +8,10 @@ case class SourceImageSettings(thumbnailWidth: Int, thumbnailHeight: Int)
 
 case class ImageMapSettings(baseImageWidth: Int, outlineStrokeWidth: Double, outlineColor: (Double, Double, Double), outlineBlurStrength: Double)
 
-case class ImageProcessorSettings(cmdSearchPath: Option[String], command: Seq[String], source: SourceImageSettings, selection: SelectionImageSettings, asServed: AsServedImageSettings, imageMap: ImageMapSettings)
+case class SlidingScaleSettings(baseImageWidth: Int, fillColor: (Double, Double, Double), blurStrength: Double)
+
+case class ImageProcessorSettings(cmdSearchPath: Option[String], command: Seq[String], source: SourceImageSettings, selection: SelectionImageSettings,
+                                  asServed: AsServedImageSettings, imageMap: ImageMapSettings, slidingScale: SlidingScaleSettings)
 
 object ImageProcessorSettings {
   def testSettings() = ImageProcessorSettings(
@@ -17,6 +20,7 @@ object ImageProcessorSettings {
     SourceImageSettings(768, 432),
     SelectionImageSettings(300, 200),
     AsServedImageSettings(654, 436, 80),
-    ImageMapSettings(654, 3.0, (0.125, 0.25, 0.5), 6.0)
+    ImageMapSettings(654, 3.0, (0.125, 0.25, 0.5), 6.0),
+    SlidingScaleSettings(654, (0.125, 0.25, 0.5), 6.0)
   )
 }

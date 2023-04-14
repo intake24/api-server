@@ -19,23 +19,25 @@ limitations under the License.
 package controllers
 
 import io.circe.generic.auto._
-import parsers.FormDataUtil
+import parsers.{FormDataUtil, VolumeSamplesCSVParser}
+import play.api.http.ContentTypes
 import play.api.libs.Files.TemporaryFile
 import play.api.mvc.MultipartFormData.FilePart
 import play.api.mvc.{BaseController, ControllerComponents, MultipartFormData, Result}
 import security.Intake24RestrictedActionBuilder
-import uk.ac.ncl.openlab.intake24.DrinkwareSetRecord
-import uk.ac.ncl.openlab.intake24.api.data.NewImageMapWithObjectsRequest
-import uk.ac.ncl.openlab.intake24.play.utils.JsonBodyParser
+import uk.ac.ncl.openlab.intake24.{DrinkScale, DrinkwareSet, DrinkwareSetRecord, VolumeSample}
+import uk.ac.ncl.openlab.intake24.api.data.{ErrorDescription, NewImageMapWithObjectsRequest}
+import uk.ac.ncl.openlab.intake24.play.utils.{JsonBodyParser, JsonUtils}
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{DrinkwareAdminService, ImageMapsAdminService}
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.{ImageAdminService, ImageDescriptor, SVGImageMapParser}
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageAdminService.WrapDatabaseError
+import uk.ac.ncl.openlab.intake24.services.fooddb.images.{AWTImageMap, ImageAdminService, ImageDescriptor, SVGImageMapParser, SlidingScaleImageInfo, SlidingScaleOverlayInfo}
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 case class SlidingScaleData(objectId: Int, baseImage: FilePart[TemporaryFile], outline: FilePart[TemporaryFile])
 
-case class SlidingScaleImages(base: ImageDescriptor, overlay: ImageDescriptor)
+case class SlidingScaleImages(base: SlidingScaleImageInfo, overlay: SlidingScaleOverlayInfo)
 
 class DrinkwareAdminController @Inject()(service: DrinkwareAdminService,
                                          imageAdminService: ImageAdminService,
@@ -86,15 +88,11 @@ class DrinkwareAdminController @Inject()(service: DrinkwareAdminService,
     }
 
 
-  private def createImageMap(id: String, baseImageFile: FilePart[TemporaryFile], outlinesFile: FilePart[TemporaryFile], uploaderString: String): Either[Result, Unit] = {
-
-    ImageMapAdminUtils.parseImageMapSvg(outlinesFile).flatMap {
-      imageMap =>
-        val generatedDescriptions = imageMap.outlines.map { case (k, v) => (k.toString, s"Vessel $k") };
-        val params = NewImageMapWithObjectsRequest(id, s"Image map for drinkware set $id", generatedDescriptions);
-        val result = ImageMapAdminUtils.createImageMap(imageAdminService, imageMapService, baseImageFile, Seq("cup", "glass", "mug", "drink"), params, imageMap, uploaderString)
-        translateImageServiceAndDatabaseError(result)
-    }
+  private def createImageMap(id: String, baseImageFile: FilePart[TemporaryFile], parsedImageMap: AWTImageMap, uploaderString: String): Either[Result, Unit] = {
+    val generatedDescriptions = parsedImageMap.outlines.map { case (k, v) => (k.toString, s"Vessel $k") };
+    val params = NewImageMapWithObjectsRequest(id, s"Image map for drinkware set $id", generatedDescriptions);
+    val result = ImageMapAdminUtils.createImageMap(imageAdminService, imageMapService, baseImageFile, Seq("cup", "glass", "mug", "drink"), params, parsedImageMap, uploaderString)
+    translateImageServiceAndDatabaseError(result)
   }
 
   private def processSlidingScaleImage(setId: String, slidingScale: SlidingScaleData, uploaderString: String): Either[Result, SlidingScaleImages] = {
@@ -104,9 +102,9 @@ class DrinkwareAdminController @Inject()(service: DrinkwareAdminService,
           sourceImageRecord <- imageAdminService.uploadSourceImage(ImageAdminService.getSourcePathForDrinkScale(setId, slidingScale.baseImage.filename),
             slidingScale.baseImage.ref.path,
             slidingScale.baseImage.filename, Seq("cup", "glass", "mug", "drink"), uploaderString);
-          processedImageDescriptor <- imageAdminService.processForSlidingScale(setId, sourceImageRecord.id);
+          imageInfo <- imageAdminService.processForSlidingScale(setId, sourceImageRecord.id);
           overlayDescriptor <- imageAdminService.generateSlidingScaleOverlay(setId, sourceImageRecord.id, outline)
-        ) yield SlidingScaleImages(processedImageDescriptor, overlayDescriptor)
+        ) yield SlidingScaleImages(imageInfo, SlidingScaleOverlayInfo(overlayDescriptor, outline))
 
         translateImageServiceAndDatabaseError(result)
     }
@@ -123,6 +121,45 @@ class DrinkwareAdminController @Inject()(service: DrinkwareAdminService,
     }
   }
 
+  private def validateScaleData(selectionMap: AWTImageMap, scaleData: Seq[SlidingScaleData]): Either[Result, Unit] = {
+    val missingScales = selectionMap.outlines.keySet.filterNot(objectId => scaleData.exists(_.objectId == objectId))
+
+    if (missingScales.size == 0)
+      Right(())
+    else
+      Left(BadRequest(toJsonString(ErrorDescription("BadRequest", s"Sliding scale data is missing for object IDs: ${missingScales.mkString(", ")}"))))
+  }
+
+  private def makeLegacyRecord(setId: String, setDescription: String, scaleData: Seq[SlidingScaleData], scaleImages: Seq[SlidingScaleImages],
+                               volumeSamples: Map[Int, Seq[VolumeSample]]): Either[Result, DrinkwareSet] = {
+
+    val missingVolumeData = scaleData.map(_.objectId).filterNot(objectId => volumeSamples.keySet.contains(objectId))
+
+    if (missingVolumeData.size > 1)
+      Left(BadRequest(toJsonString(ErrorDescription("BadRequest", s"Volume samples data is missing for object IDs: ${missingVolumeData.mkString(", ")}"))))
+    else {
+      val scales = scaleData.zip(scaleImages).map {
+        case (data, images) =>
+          val outlineBounds = images.overlay.outline.shape.getBounds2D
+
+          val emptyLevel = (images.base.size.height * outlineBounds.getMinY * images.overlay.outline.aspect).toInt
+          val fullLevel = (images.base.size.height * outlineBounds.getMaxY * images.overlay.outline.aspect).toInt
+
+          DrinkScale(data.objectId, images.base.imageDescriptor.path, images.overlay.imageDescriptor.path, images.base.size.width, images.base.size.height,
+            emptyLevel, fullLevel, volumeSamples(data.objectId))
+      }
+
+      Right(DrinkwareSet(setId, setDescription, setId, scales))
+    }
+  }
+
+  private def parseVolumeSamples(file: FilePart[TemporaryFile]): Either[Result, Map[Int, Seq[VolumeSample]]] = {
+    VolumeSamplesCSVParser.parseFile(file.ref.path.toFile) match {
+      case Right(samples) => Right(samples)
+      case Left(error) => Left(BadRequest(toJsonString(ErrorDescription("BadRequest", error))))
+    }
+  }
+
   def uploadDrinkwareSet() = rab.restrictAccess(foodAuthChecks.canWritePortionSizeMethods)(parse.multipartFormData) {
     request =>
 
@@ -131,19 +168,20 @@ class DrinkwareAdminController @Inject()(service: DrinkwareAdminService,
       Future {
         val result = for (
           setId <- getData("setId", request.body);
+          setDescription <- getData("setDescription", request.body);
           setImage <- getFile("setImageFile", request.body);
           setOutlines <- getFile("setOutlinesFile", request.body);
-          volumeSamples <- getFile("volumeSamplesFile", request.body);
+          volumeSamplesFile <- getFile("volumeSamplesFile", request.body);
+
           scaleData <- parseScaleData(request.body);
-
-          _ <- createImageMap(setId, setImage, setOutlines, uploaderString);
-          scaleImages <- processSlidingScaleImages(setId, scaleData, uploaderString)
-
-        ) yield scaleImages.foreach {
-          image =>
-            println (s"Base image: (${image.base.id}) ${image.base.path}")
-            println (s"Overlay: (${image.overlay.id}) ${image.overlay.path}")
-        }
+          imageMap <- ImageMapAdminUtils.parseImageMapSvg(setOutlines);
+          _ <- validateScaleData(imageMap, scaleData);
+          volumeSamples <- parseVolumeSamples(volumeSamplesFile);
+          _ <- createImageMap(setId, setImage, imageMap, uploaderString);
+          scaleImages <- processSlidingScaleImages(setId, scaleData, uploaderString);
+          legacyRecord <- makeLegacyRecord(setId, setDescription, scaleData, scaleImages, volumeSamples);
+          _ <- translateImageServiceAndDatabaseError(service.createDrinkwareSets(Seq(legacyRecord)).wrapped)
+        ) yield ()
 
         result match {
           case Left(badResult) => badResult

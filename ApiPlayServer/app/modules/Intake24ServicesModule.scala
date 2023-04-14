@@ -183,11 +183,18 @@ class Intake24ServicesModule extends AbstractModule {
         configuration.get[Double]("intake24.images.processor.imageMaps.outlineColor.b")),
       configuration.get[Double]("intake24.images.processor.imageMaps.outlineBlurStrength"))
 
+    val slidingScaleSettings = SlidingScaleSettings(
+      configuration.get[Int]("intake24.images.processor.slidingScale.baseImageWidth"),
+      (configuration.get[Double]("intake24.images.processor.slidingScale.fillColor.r"),
+        configuration.get[Double]("intake24.images.processor.slidingScale.fillColor.g"),
+        configuration.get[Double]("intake24.images.processor.slidingScale.fillColor.b")),
+      configuration.get[Double]("intake24.images.processor.slidingScale.blurStrength"))
+
     val commandSearchPath = configuration.getOptional[String]("intake24.images.processor.commandSearchPath")
 
     val command = configuration.getOptional[Seq[String]]("intake24.images.processor.command").getOrElse(Seq("magick", "convert"))
 
-    ImageProcessorSettings(commandSearchPath, command, source, selection, asServed, imageMaps)
+    ImageProcessorSettings(commandSearchPath, command, source, selection, asServed, imageMaps, slidingScaleSettings)
   }
 
   // Custom execution context for long-running blocking tasks (data export etc.)
