@@ -205,7 +205,10 @@ class SVGImageMapParser {
 
       val outlines = getOutlines(scale, svgDoc, s => if (s == "outline") Some(0) else None)
 
-      Right(AWTOutline(outlines(0), aspect))
+      if (outlines.size != 1)
+        Left(new RuntimeException("No path with the id 'outline' found in the SVG file"))
+      else
+        Right(AWTOutline(outlines(0), aspect))
     } catch {
       case e: Exception => Left(e)
     }

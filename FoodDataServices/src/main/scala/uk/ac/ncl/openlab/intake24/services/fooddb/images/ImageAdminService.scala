@@ -2,9 +2,10 @@ package uk.ac.ncl.openlab.intake24.services.fooddb.images
 
 import java.nio.file.Path
 import java.util.UUID
-
 import org.apache.commons.io.FilenameUtils
 import uk.ac.ncl.openlab.intake24.errors.DatabaseError
+
+import java.awt.Dimension
 
 case class ImageDescriptor(id: Long, path: String)
 
@@ -23,6 +24,10 @@ case class DatabaseErrorWrapper(error: DatabaseError) extends ImageServiceOrData
 
 case class ImageServiceErrorWrapper(error: ImageServiceError) extends ImageServiceOrDatabaseError
 
+case class SlidingScaleImageInfo(imageDescriptor: ImageDescriptor, size: Dimension)
+
+case class SlidingScaleOverlayInfo(imageDescriptor: ImageDescriptor, outline: AWTOutline)
+
 trait ImageAdminService {
   def uploadSourceImage(suggestedPath: String, source: Path, sourceFileName: String, keywords: Seq[String], uploaderName: String): Either[ImageServiceOrDatabaseError, SourceImageRecord]
 
@@ -36,7 +41,7 @@ trait ImageAdminService {
 
   def processForImageMapBase(imageMapId: String, sourceImageId: Long): Either[ImageServiceOrDatabaseError, ImageDescriptor]
 
-  def processForSlidingScale(drinkwareSetId: String, sourceImageId: Long): Either[ImageServiceOrDatabaseError, ImageDescriptor]
+  def processForSlidingScale(drinkwareSetId: String, sourceImageId: Long): Either[ImageServiceOrDatabaseError, SlidingScaleImageInfo]
 
   def generateImageMapOverlays(imageMapId: String, sourceId: Long, imageMap: AWTImageMap): Either[ImageServiceOrDatabaseError, Map[Int, ImageDescriptor]]
 

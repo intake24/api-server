@@ -3,6 +3,7 @@ package uk.ac.ncl.openlab.intake24.services.fooddb.images
 import org.apache.commons.io.FilenameUtils
 import org.slf4j.LoggerFactory
 
+import java.awt.Dimension
 import java.io.{File, IOException}
 import java.nio.file._
 import java.nio.file.attribute.{BasicFileAttributes, FileAttribute, PosixFilePermissions}
@@ -12,6 +13,8 @@ import javax.inject.Inject
 class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseService, val imageProcessor: ImageProcessor, val storage: ImageStorageService,
                                              val fileTypeAnalyzer: FileTypeAnalyzer)
   extends ImageAdminService {
+
+  private case class ProcessedSlidingScaleImageInfo(path: String, size: Dimension)
 
   import ImageAdminService.{WrapDatabaseError, WrapImageServiceError}
 
@@ -191,6 +194,23 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
         ) yield actualPath
     }
 
+  private def processAndUploadSlidingScaleBase(drinkwareSetId: String, sourcePath: String): Either[ImageServiceOrDatabaseError, ProcessedSlidingScaleImageInfo] =
+    withTempDir {
+      tempDir =>
+        val extension = getExtension(sourcePath)
+
+        val srcPath = Files.createTempFile(tempDir, tempFilePrefix, extension, tempFilePerms: _*)
+        val dstPath = Files.createTempFile(tempDir, tempFilePrefix, extension, tempFilePerms: _*)
+
+        val randomName = UUID.randomUUID().toString() + extension
+
+        for (
+          _ <- storage.downloadImage(sourcePath, srcPath).wrapped;
+          dimensions <- imageProcessor.processForSlidingScale(srcPath, dstPath).wrapped;
+          actualPath <- storage.uploadImage(s"drinkware/$drinkwareSetId/$randomName", dstPath).wrapped
+        ) yield ProcessedSlidingScaleImageInfo(actualPath, dimensions)
+    }
+
   private def generateAndUploadImageMapOverlays(imageMapId: String, imageMap: AWTImageMap): Either[ImageServiceOrDatabaseError, Map[Int, String]] =
     withTempDir {
       tempDir =>
@@ -209,6 +229,20 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
         }
 
         imageProcessor.generateImageMapOverlays(imageMap, tempDir).wrapped.right.flatMap(upload(_))
+    }
+
+  private def generateAndUploadSlidingScaleOverlay(drinkwareSetId: String, outline: AWTOutline): Either[ImageServiceOrDatabaseError, String] =
+    withTempDir {
+      tempDir =>
+
+        logger.debug(s"Generating sliding scale overlay for drinkware set $drinkwareSetId")
+
+        imageProcessor.generateSlidingScaleOverlay(outline, tempDir).wrapped.flatMap {
+          path =>
+            val extension = getExtension(path.toString)
+            val randomName = UUID.randomUUID().toString + extension
+            storage.uploadImage(s"drinkware/$drinkwareSetId/overlays/$randomName", path).wrapped
+        }
     }
 
   private def processAndUploadSelectionScreenImage(pathPrefix: String, sourcePath: String): Either[ImageServiceOrDatabaseError, String] =
@@ -299,17 +333,26 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
         }
     }
 
+  def generateSlidingScaleOverlay(drinkwareSetId: String, sourceId: Long, outline: AWTOutline): Either[ImageServiceOrDatabaseError, ImageDescriptor] =
+    generateAndUploadSlidingScaleOverlay(drinkwareSetId, outline).flatMap {
+      path =>
+        val record = ProcessedImageRecord(path, sourceId, ProcessedImagePurpose.SlidingScaleOverlay)
+        imageDatabase.createProcessedImageRecords(Seq(record)).wrapped.map {
+          processedImageIds =>
+            ImageDescriptor(processedImageIds.head, path)
+        }
+    }
+
   def processForSelectionScreen(pathPrefix: String, sourceImageId: Long): Either[ImageServiceOrDatabaseError, ImageDescriptor] =
     for (source <- imageDatabase.getSourceImageRecords(Seq(sourceImageId)).wrapped.right;
          actualPath <- processAndUploadSelectionScreenImage(pathPrefix, source.head.path).right;
          ssiId <- imageDatabase.createProcessedImageRecords(Seq(ProcessedImageRecord(actualPath, source.head.id, ProcessedImagePurpose.PortionSizeSelectionImage))).wrapped.right)
     yield ImageDescriptor(ssiId.head, actualPath)
 
-  def processForSlidingScale(pathPrefix: String, sourceImageId: Long): Either[ImageServiceOrDatabaseError, ImageDescriptor] =
-    for (source <- imageDatabase.getSourceImageRecords(Seq(sourceImageId)).wrapped.right;
-         actualPath <- processAndUploadSlidingScale(pathPrefix, source.head.path).right;
-         ssiId <- imageDatabase.createProcessedImageRecords(Seq(ProcessedImageRecord(actualPath, source.head.id, ProcessedImagePurpose.PortionSizeSelectionImage))).wrapped.right)
-    yield ImageDescriptor(ssiId.head, actualPath)
+  def processForSlidingScale(drinkwareSetId: String, sourceImageId: Long): Either[ImageServiceOrDatabaseError, SlidingScaleImageInfo] =
+    for (source <- imageDatabase.getSourceImageRecords(Seq(sourceImageId)).wrapped;
+         imageInfo <- processAndUploadSlidingScaleBase(drinkwareSetId, source.head.path);
+         ssiId <- imageDatabase.createProcessedImageRecords(Seq(ProcessedImageRecord(imageInfo.path, source.head.id, ProcessedImagePurpose.SlidingScaleBase))).wrapped)
+    yield SlidingScaleImageInfo(ImageDescriptor(ssiId.head, imageInfo.path), imageInfo.size)
 
-  override def generateSlidingScaleOverlay(drinkwareSetId: String, sourceId: Long, outline: AWTOutline): Either[ImageServiceOrDatabaseError, ImageDescriptor] = ???
 }
