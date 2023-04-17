@@ -6,24 +6,28 @@ import uk.ac.ncl.openlab.intake24.VolumeSample
 import java.io.{File, FileReader}
 import scala.collection.JavaConverters._
 
+case class VolumeSampleData(objectDescription: String, volumeSamples: Seq[VolumeSample])
+
 object VolumeSamplesCSVParser {
 
-  private case class VolumeSampleRow(scaleId: Int, height: Double, volume: Double)
+  private case class VolumeSampleRow(scaleId: Int, description: String, volume: Double, height: Double)
 
   private def parseRow(rowIndex: Int, row: Array[String]): Either[String, VolumeSampleRow] =
-    if (row.length < 3)
-      Left(s"""Too few columns in row ${rowIndex + 1}: 3 required, only ${row.length} found""")
+    if (row.length < 4)
+      Left(s"""Too few columns in row ${rowIndex + 1}: 4 required, only ${row.length} found""")
     else {
       val objectIdString = row(0)
-      val heightString = row(1)
+      val objectDescription = row(1).trim
       val volumeString = row(2)
+      val heightString = row(3)
+
 
       try {
         val objectId = Integer.parseInt(objectIdString)
         val height = java.lang.Double.parseDouble(heightString)
         val volume = java.lang.Double.parseDouble(volumeString)
 
-        Right(VolumeSampleRow(objectId, height, volume))
+        Right(VolumeSampleRow(objectId, objectDescription, volume, height))
       } catch {
         case e: NumberFormatException => Left(s"Invalid number in row ${rowIndex + 1}: ${e.getMessage}")
       }
@@ -39,7 +43,7 @@ object VolumeSamplesCSVParser {
     }
   }
 
-  def parseFile(file: File): Either[String, Map[Int, Seq[VolumeSample]]] = {
+  def parseFile(file: File): Either[String, Map[Int, VolumeSampleData]] = {
     val reader = new CSVReader(new FileReader(file))
 
     try {
@@ -56,12 +60,13 @@ object VolumeSamplesCSVParser {
             records.groupBy(_.scaleId).map {
               case (scaleId, row) =>
                 val samples = row.map(sample => VolumeSample(sample.height, sample.volume))
+                val description = row(0).description
                 val max = samples.map(_.fl).max
                 if (max > 0.0001) {
-                  val normalised = samples.map(sample =>VolumeSample(sample.fl / max, sample.v))
-                  (scaleId, normalised)
+                  val normalised = samples.map(sample => VolumeSample(sample.fl / max, sample.v))
+                  (scaleId, VolumeSampleData(description, normalised))
                 } else {
-                  (scaleId, samples)
+                  (scaleId, VolumeSampleData(description, samples))
                 }
             }
         }
