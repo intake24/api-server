@@ -19,18 +19,17 @@ limitations under the License.
 package controllers
 
 import io.circe.generic.auto._
-import parsers.{FormDataUtil, VolumeSamplesCSVParser}
-import play.api.http.ContentTypes
+import parsers.{FormDataUtil, VolumeSampleData, VolumeSamplesCSVParser}
 import play.api.libs.Files.TemporaryFile
 import play.api.mvc.MultipartFormData.FilePart
 import play.api.mvc.{BaseController, ControllerComponents, MultipartFormData, Result}
 import security.Intake24RestrictedActionBuilder
-import uk.ac.ncl.openlab.intake24.{DrinkScale, DrinkwareSet, DrinkwareSetRecord, VolumeSample}
 import uk.ac.ncl.openlab.intake24.api.data.{ErrorDescription, NewImageMapWithObjectsRequest}
-import uk.ac.ncl.openlab.intake24.play.utils.{JsonBodyParser, JsonUtils}
+import uk.ac.ncl.openlab.intake24.play.utils.JsonBodyParser
 import uk.ac.ncl.openlab.intake24.services.fooddb.admin.{DrinkwareAdminService, ImageMapsAdminService}
 import uk.ac.ncl.openlab.intake24.services.fooddb.images.ImageAdminService.WrapDatabaseError
-import uk.ac.ncl.openlab.intake24.services.fooddb.images.{AWTImageMap, ImageAdminService, ImageDescriptor, SVGImageMapParser, SlidingScaleImageInfo, SlidingScaleOverlayInfo}
+import uk.ac.ncl.openlab.intake24.services.fooddb.images._
+import uk.ac.ncl.openlab.intake24.{DrinkScale, DrinkwareSet, DrinkwareSetRecord}
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -88,8 +87,9 @@ class DrinkwareAdminController @Inject()(service: DrinkwareAdminService,
     }
 
 
-  private def createImageMap(id: String, baseImageFile: FilePart[TemporaryFile], parsedImageMap: AWTImageMap, uploaderString: String): Either[Result, Unit] = {
-    val generatedDescriptions = parsedImageMap.outlines.map { case (k, v) => (k.toString, s"Vessel $k") };
+  private def createImageMap(id: String, baseImageFile: FilePart[TemporaryFile], parsedImageMap: AWTImageMap, volumeSampleData: Map[Int, VolumeSampleData],
+                             uploaderString: String): Either[Result, Unit] = {
+    val generatedDescriptions = parsedImageMap.outlines.map { case (k, v) => (k.toString, volumeSampleData(k).objectDescription) };
     val params = NewImageMapWithObjectsRequest(id, s"Image map for drinkware set $id", generatedDescriptions);
     val result = ImageMapAdminUtils.createImageMap(imageAdminService, imageMapService, baseImageFile, Seq("cup", "glass", "mug", "drink"), params, parsedImageMap, uploaderString)
     translateImageServiceAndDatabaseError(result)
@@ -131,7 +131,7 @@ class DrinkwareAdminController @Inject()(service: DrinkwareAdminService,
   }
 
   private def makeLegacyRecord(setId: String, setDescription: String, scaleData: Seq[SlidingScaleData], scaleImages: Seq[SlidingScaleImages],
-                               volumeSamples: Map[Int, Seq[VolumeSample]]): Either[Result, DrinkwareSet] = {
+                               volumeSamples: Map[Int, VolumeSampleData]): Either[Result, DrinkwareSet] = {
 
     val missingVolumeData = scaleData.map(_.objectId).filterNot(objectId => volumeSamples.keySet.contains(objectId))
 
@@ -142,18 +142,18 @@ class DrinkwareAdminController @Inject()(service: DrinkwareAdminService,
         case (data, images) =>
           val outlineBounds = images.overlay.outline.shape.getBounds2D
 
-          val emptyLevel = (images.base.size.height * outlineBounds.getMinY * images.overlay.outline.aspect).toInt
-          val fullLevel = (images.base.size.height * outlineBounds.getMaxY * images.overlay.outline.aspect).toInt
+          val fullLevel = images.base.size.height - (images.base.size.height * outlineBounds.getMinY * images.overlay.outline.aspect).toInt
+          val emptyLevel = images.base.size.height - (images.base.size.height * outlineBounds.getMaxY * images.overlay.outline.aspect).toInt
 
           DrinkScale(data.objectId, images.base.imageDescriptor.path, images.overlay.imageDescriptor.path, images.base.size.width, images.base.size.height,
-            emptyLevel, fullLevel, volumeSamples(data.objectId))
+            emptyLevel, fullLevel, volumeSamples(data.objectId).volumeSamples)
       }
 
       Right(DrinkwareSet(setId, setDescription, setId, scales))
     }
   }
 
-  private def parseVolumeSamples(file: FilePart[TemporaryFile]): Either[Result, Map[Int, Seq[VolumeSample]]] = {
+  private def parseVolumeSamples(file: FilePart[TemporaryFile]): Either[Result, Map[Int, VolumeSampleData]] = {
     VolumeSamplesCSVParser.parseFile(file.ref.path.toFile) match {
       case Right(samples) => Right(samples)
       case Left(error) => Left(BadRequest(toJsonString(ErrorDescription("BadRequest", error))))
@@ -173,11 +173,11 @@ class DrinkwareAdminController @Inject()(service: DrinkwareAdminService,
           setOutlines <- getFile("setOutlinesFile", request.body);
           volumeSamplesFile <- getFile("volumeSamplesFile", request.body);
 
+          volumeSamples <- parseVolumeSamples(volumeSamplesFile);
           scaleData <- parseScaleData(request.body);
           imageMap <- ImageMapAdminUtils.parseImageMapSvg(setOutlines);
           _ <- validateScaleData(imageMap, scaleData);
-          volumeSamples <- parseVolumeSamples(volumeSamplesFile);
-          _ <- createImageMap(setId, setImage, imageMap, uploaderString);
+          _ <- createImageMap(setId, setImage, imageMap, volumeSamples, uploaderString);
           scaleImages <- processSlidingScaleImages(setId, scaleData, uploaderString);
           legacyRecord <- makeLegacyRecord(setId, setDescription, scaleData, scaleImages, volumeSamples);
           _ <- translateImageServiceAndDatabaseError(service.createDrinkwareSets(Seq(legacyRecord)).wrapped)
