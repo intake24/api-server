@@ -19,9 +19,9 @@ limitations under the License.
 package modules
 
 import java.util.concurrent.ForkJoinPool
-
 import cache._
 import com.google.inject.{AbstractModule, Provides}
+
 import javax.inject.{Named, Singleton}
 import javax.sql.DataSource
 import org.http4s.Uri
@@ -59,6 +59,7 @@ import uk.ac.ncl.openlab.intake24.systemsql.notifications.NotificationScheduleDa
 import uk.ac.ncl.openlab.intake24.systemsql.user._
 import uk.ac.ncl.openlab.intake24.systemsql.uxEvents.UxEventsDataServiceImpl
 
+import java.awt.Color
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
@@ -185,9 +186,11 @@ class Intake24ServicesModule extends AbstractModule {
 
     val slidingScaleSettings = SlidingScaleSettings(
       configuration.get[Int]("intake24.images.processor.slidingScale.baseImageWidth"),
-      (configuration.get[Double]("intake24.images.processor.slidingScale.fillColor.r"),
-        configuration.get[Double]("intake24.images.processor.slidingScale.fillColor.g"),
-        configuration.get[Double]("intake24.images.processor.slidingScale.fillColor.b")),
+      new Color(
+      configuration.get[Double]("intake24.images.processor.slidingScale.fillColor.r").toFloat,
+        configuration.get[Double]("intake24.images.processor.slidingScale.fillColor.g").toFloat,
+        configuration.get[Double]("intake24.images.processor.slidingScale.fillColor.b").toFloat,
+        configuration.get[Double]("intake24.images.processor.slidingScale.fillColor.a").toFloat),
       configuration.get[Double]("intake24.images.processor.slidingScale.blurStrength"))
 
     val commandSearchPath = configuration.getOptional[String]("intake24.images.processor.commandSearchPath")

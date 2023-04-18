@@ -1,5 +1,7 @@
 package uk.ac.ncl.openlab.intake24.services.fooddb.images
 
+import java.awt.Color
+
 case class AsServedImageSettings(width: Int, height: Int, thumbnailWidth: Int)
 
 case class SelectionImageSettings(width: Int, height: Int)
@@ -8,7 +10,7 @@ case class SourceImageSettings(thumbnailWidth: Int, thumbnailHeight: Int)
 
 case class ImageMapSettings(baseImageWidth: Int, outlineStrokeWidth: Double, outlineColor: (Double, Double, Double), outlineBlurStrength: Double)
 
-case class SlidingScaleSettings(baseImageWidth: Int, fillColor: (Double, Double, Double), blurStrength: Double)
+case class SlidingScaleSettings(baseImageWidth: Int, fillColor: Color, blurStrength: Double)
 
 case class ImageProcessorSettings(cmdSearchPath: Option[String], command: Seq[String], source: SourceImageSettings, selection: SelectionImageSettings,
                                   asServed: AsServedImageSettings, imageMap: ImageMapSettings, slidingScale: SlidingScaleSettings)
@@ -21,6 +23,6 @@ object ImageProcessorSettings {
     SelectionImageSettings(300, 200),
     AsServedImageSettings(654, 436, 80),
     ImageMapSettings(654, 3.0, (0.125, 0.25, 0.5), 6.0),
-    SlidingScaleSettings(654, (0.125, 0.25, 0.5), 6.0)
+    SlidingScaleSettings(654, new Color(0.125f, 0.25f, 0.5f), 6.0)
   )
 }

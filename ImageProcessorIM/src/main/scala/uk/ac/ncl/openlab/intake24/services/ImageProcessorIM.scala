@@ -229,12 +229,7 @@ class ImageProcessorIM @Inject()(val settings: ImageProcessorSettings) extends I
       val g = image.createGraphics()
       g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
 
-      val color = new Color(settings.slidingScale.fillColor._1.toFloat,
-        settings.slidingScale.fillColor._2.toFloat,
-        settings.slidingScale.fillColor._3.toFloat)
-
-      g.setPaint(color)
-
+      g.setPaint(settings.slidingScale.fillColor)
 
       g.setBackground(new Color(0, 0, 0, 0))
       g.clearRect(0, 0, image.getWidth, image.getHeight)
