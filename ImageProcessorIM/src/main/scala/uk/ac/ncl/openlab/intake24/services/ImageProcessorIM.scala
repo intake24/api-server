@@ -198,7 +198,7 @@ class ImageProcessorIM @Inject()(val settings: ImageProcessorSettings) extends I
       op.resize(settings.slidingScale.baseImageWidth)
       op.background("white")
       op.gravity("Center")
-      op.format("\"%w %h\"")
+      op.format("%w %h")
       op.write("info:")
       op.addImage(sourceImage.toString())
       op.addImage(dest.toString())
