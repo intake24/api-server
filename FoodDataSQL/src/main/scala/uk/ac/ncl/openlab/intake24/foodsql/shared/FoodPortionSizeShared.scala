@@ -12,16 +12,20 @@ trait FoodPortionSizeShared extends SqlResourceLoader with FirstRowValidation {
 
   protected val psmResultRowParser = Macro.namedParser[PsmResultRow]
 
+  private lazy val idParamNames = Set("serving-image-set", "leftovers-image-set", "guide-image-id", "drinkware-id")
+
   protected def mkPortionSizeMethods(rows: Seq[PsmResultRow]) =
   // FIXME: surely there is a better method to group records preserving order...
     rows.groupBy(_.id).toSeq.sortBy(_._1).map {
       case (id, rows) =>
         val params = rows.filterNot(r => r.param_name.isEmpty || r.param_value.isEmpty).map(row => PortionSizeMethodParameter(row.param_name.get, row.param_value.get))
         val head = rows.head
+        val imageUrl = rows.find(row => row.param_name.map(idParamNames.contains(_)).getOrElse(false)).getOrElse(head).image_url
 
-        PortionSizeMethod(head.method, head.description, head.image_url, head.use_for_recipes, head.conversion_factor, params)
+        PortionSizeMethod(head.method, head.description, imageUrl, head.use_for_recipes, head.conversion_factor, params)
     }
 
+  // FIXME: The query is too complex for what it does
   private lazy val foodPsmQuery = sqlFromResource("shared/food_portion_size_methods.sql")
 
   protected def getFoodPortionSizeMethodsQuery(code: String, locale: String)(implicit conn: java.sql.Connection): Either[LocalLookupError, Seq[PortionSizeMethod]] = {
