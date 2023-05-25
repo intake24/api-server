@@ -388,6 +388,24 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
       CustomFieldDescription("foodSources", "Food sources"),
       CustomFieldDescription("mealLocation", "Meal location")
     ), Seq()))
+    case "bristol_ooh" => Right(CustomDataScheme(Seq(),
+      Seq(
+        CustomFieldDescription("cookingOil", "Cooking oil used"),
+        CustomFieldDescription("diet", "Diet"),
+        CustomFieldDescription("foodAmount", "Food amount"),
+        CustomFieldDescription("foodAmountReason", "Reason for unusual food amount")
+      ),
+      Seq(
+        CustomFieldDescription("foodSource", "Food source"),
+        CustomFieldDescription("foodSourceFollowUp", "Food source follow-up"),
+        CustomFieldDescription("readyToEat", "Ready to eat"),
+        CustomFieldDescription("mealLocation", "Meal location"),
+        CustomFieldDescription("mealLocationFollowUp", "Meal location follow-up"),
+        CustomFieldDescription("mealCompany", "Meal company")
+      ),
+      Seq(
+        CustomFieldDescription("servingWeightFactor", "As served weight factor")
+      )))
     case "debeat" => Right(CustomDataScheme(Seq(),
       Seq(
         CustomFieldDescription("foodAmount", "Food amount")
