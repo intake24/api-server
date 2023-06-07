@@ -21,7 +21,7 @@ package org.workcraft.phrasesearch
 case class Metaphone3Encoder() extends PhoneticEncoder {
   private val m3 = new Metaphone3()
   
-  m3.SetKeyLength(5)
+  m3.SetKeyLength(12)
   m3.SetEncodeVowels(true)
   m3.SetEncodeExact(true)
   
