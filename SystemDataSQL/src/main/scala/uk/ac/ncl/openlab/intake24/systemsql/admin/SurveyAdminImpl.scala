@@ -439,7 +439,7 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
       Seq(
         CustomFieldDescription("servingWeightFactor", "As served weight factor")
       )))
-    case "ndns_default" | "ndns1019" => Right(CustomDataScheme(Seq(), Seq(
+    case "ndns_default" | "ndns1019" | "ndns_default_simple" => Right(CustomDataScheme(Seq(), Seq(
       CustomFieldDescription("cookingOil", "Cooking oil used"),
       CustomFieldDescription("diet", "Diet"),
       CustomFieldDescription("foodAmount", "Food amount"),
