@@ -401,6 +401,7 @@ class SurveyAdminImpl @Inject()(@Named("intake24_system") val dataSource: DataSo
         CustomFieldDescription("readyToEat", "Ready to eat"),
         CustomFieldDescription("mealLocation", "Meal location"),
         CustomFieldDescription("mealLocationFollowUp", "Meal location follow-up"),
+        CustomFieldDescription("mealDelivery", "Meal Delivery"),
         CustomFieldDescription("mealCompany", "Meal company")
       ),
       Seq(
