@@ -31,7 +31,7 @@ addSbtPlugin("net.vonbuchholtz" % "sbt-dependency-check" % "3.1.3")
 addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.10.0-RC1")
 
 libraryDependencies ++= Seq(
-  "org.vafer" % "jdeb" % "1.5" artifacts (Artifact("jdeb", "jar", "jar")),
+  "org.vafer" % "jdeb" % "1.10" artifacts (Artifact("jdeb", "jar", "jar")),
 )
 
 dependencyOverrides ++= Seq(
