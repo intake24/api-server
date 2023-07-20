@@ -13,7 +13,7 @@ class GoogleShortUrlImpl @Inject()(ws: WSClient,
                                    configuration: Configuration) extends ShortUrlBackend {
 
   private implicit val responseDecoder =
-    Decoder.forProduct3[String, String, String, ShortResp]("kind", "id", "longUrl") {
+    Decoder.forProduct3[ShortResp, String, String, String]("kind", "id", "longUrl") {
       (kind, id, longUrl) => ShortResp(kind, id, longUrl)
     }
 

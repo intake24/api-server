@@ -29,7 +29,7 @@ class ShortUrlModule extends AbstractModule {
   @Named("intake24_system")
   def systemDataSource(@NamedDatabase("intake24_system") db: Database) = db.dataSource
 
-  def configure() = {
+  override def configure() = {
     bind(classOf[ShortUrlDataService]).to(classOf[ShortUrlDataServiceImpl])
   }
 }

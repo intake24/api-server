@@ -23,7 +23,7 @@ import uk.ac.ncl.openlab.intake24.services.shorturl.{GoogleShortUrlImpl, ShortUr
 
 class GoogleShortUrlModule extends AbstractModule {
 
-  def configure() = {
+  override def configure() = {
     bind(classOf[ShortUrlBackend]).to(classOf[GoogleShortUrlImpl])
   }
 }
