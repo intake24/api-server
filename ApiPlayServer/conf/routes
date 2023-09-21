@@ -126,6 +126,8 @@ GET            /admin/nutrient-types                                         con
 
 # Source image management
 
+GET            /admin/images/download                                        controllers.ImageAdminController.downloadImage(path: String)
+
 GET            /admin/images/source                                          controllers.ImageAdminController.listSourceImages(offset: Int, limit: Int, search: Option[String])
 POST           /admin/images/source/new                                      controllers.ImageAdminController.uploadSourceImage()
 POST           /admin/images/source/new-as-served                            controllers.ImageAdminController.uploadSourceImageForAsServed(setId: String)

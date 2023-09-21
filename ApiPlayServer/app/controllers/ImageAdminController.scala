@@ -1,8 +1,5 @@
 package controllers
 
-import java.time.format.DateTimeFormatter
-import javax.inject.Inject
-
 import io.circe.generic.auto._
 import org.slf4j.LoggerFactory
 import parsers.{JsonBodyParser, JsonUtils}
@@ -14,6 +11,9 @@ import security.{Intake24AccessToken, Intake24RestrictedActionBuilder}
 import uk.ac.ncl.openlab.intake24.services.fooddb.images._
 import uk.ac.ncl.openlab.intake24.services.systemdb.Roles
 
+import java.nio.file.{Files, Paths}
+import java.time.format.DateTimeFormatter
+import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class ImageAdminController @Inject()(service: ImageAdminService,
@@ -41,7 +41,6 @@ class ImageAdminController @Inject()(service: ImageAdminService,
     val keywords = request.body.dataParts.get("keywords").getOrElse(Seq())
 
 
-
     if (request.body.files.length < 1)
       BadRequest("""{"cause":"Expected file attachments"}""").as(ContentTypes.JSON)
     else {
@@ -64,6 +63,18 @@ class ImageAdminController @Inject()(service: ImageAdminService,
     }
   }
 
+  def downloadImage(path: String) = rab.restrictAccess(foodAuthChecks.canReadPortionSizeMethods) {
+    _ =>
+      Future {
+        service.downloadSourceImage(path) match {
+          case Right(tempPath) =>
+            val fileName = Paths.get(path).getFileName.toString
+            Ok.sendFile(tempPath.toFile, true, _ => fileName, () => Files.deleteIfExists(tempPath))
+          case Left(DatabaseErrorWrapper(error)) => translateDatabaseError(error)
+          case Left(ImageServiceErrorWrapper(error)) => translateImageServiceError(error)
+        }
+      }
+  }
 
   def uploadSourceImage() = rab.restrictAccess(foodAuthChecks.canUploadSourceImages)(playBodyParsers.multipartFormData) {
     request => uploadImpl(None, request)

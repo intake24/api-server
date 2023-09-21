@@ -31,6 +31,8 @@ case class SlidingScaleOverlayInfo(imageDescriptor: ImageDescriptor, outline: AW
 trait ImageAdminService {
   def uploadSourceImage(suggestedPath: String, source: Path, sourceFileName: String, keywords: Seq[String], uploaderName: String): Either[ImageServiceOrDatabaseError, SourceImageRecord]
 
+  def downloadSourceImage(path: String): Either[ImageServiceOrDatabaseError, Path]
+
   def deleteSourceImages(ids: Seq[Long]): Either[ImageServiceOrDatabaseError, Unit]
 
   def deleteProcessedImages(ids: Seq[Long]): Either[ImageServiceOrDatabaseError, Unit]

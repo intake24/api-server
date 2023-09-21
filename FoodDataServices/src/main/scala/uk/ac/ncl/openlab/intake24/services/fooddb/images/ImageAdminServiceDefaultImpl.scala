@@ -130,6 +130,13 @@ class ImageAdminServiceDefaultImpl @Inject()(val imageDatabase: ImageDatabaseSer
         ) yield id.head
     }
 
+  override def downloadSourceImage(path: String): Either[ImageServiceOrDatabaseError, Path] = {
+    val extension = getExtension(path)
+    val destPath = Files.createTempFile(tempFilePrefix, extension);
+
+    storage.downloadImage(path, destPath).map(_ => destPath).wrapped
+  }
+
   def deleteSourceImages(ids: Seq[Long]): Either[ImageServiceOrDatabaseError, Unit] = {
     for (
       records <- imageDatabase.getSourceImageRecords(ids).wrapped.right;

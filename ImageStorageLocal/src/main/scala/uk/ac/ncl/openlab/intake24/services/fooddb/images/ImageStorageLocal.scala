@@ -4,7 +4,7 @@ import org.apache.commons.io.{FileUtils, FilenameUtils}
 import org.slf4j.LoggerFactory
 
 import java.io.{File, FileOutputStream}
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{CopyOption, Files, Path, Paths, StandardCopyOption}
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 
@@ -92,7 +92,7 @@ class ImageStorageLocal @Inject()(val settings: LocalImageStorageSettings) exten
   def downloadImage(path: String, dest: Path): Either[ImageStorageError, Unit] = {
     resolveLocalPath(path).flatMap(localPath => {
       try {
-        Files.copy(Paths.get(localPath), new FileOutputStream(dest.toFile()))
+        Files.copy(Paths.get(localPath), dest, StandardCopyOption.REPLACE_EXISTING)
         Right(())
       } catch {
         case e: Throwable => Left(ImageStorageError(e))

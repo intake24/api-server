@@ -114,7 +114,7 @@ class AsServedSetsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: D
       Right(())
   }
 
-  private case class PortableAsServedImageRow(weight: Double, source_path: String, source_thumbnail_path: String, keywords: Array[String], image_path: String, thumbnail_image_path: String)
+  private case class PortableAsServedImageRow(weight: Double, source_path: String, source_thumbnail_path: String, keywords: Option[Array[String]], image_path: String, thumbnail_image_path: String)
 
   private case class PortableAsServedSetRow(description: String, selection_source_path: String, selection_image_path: String)
 
@@ -129,7 +129,9 @@ class AsServedSetsAdminImpl @Inject()(@Named("intake24_foods") val dataSource: D
           case Some(row) =>
             val images = SQL(portableImagesQuery).on('as_served_set_id -> id).as(Macro.namedParser[PortableAsServedImageRow].*).map {
               row =>
-                PortableAsServedImage(row.source_path, row.source_thumbnail_path, row.keywords, row.image_path, row.thumbnail_image_path, row.weight)
+                val keywords: Seq[String] = row.keywords.map(_.toSeq).getOrElse(Seq())
+
+                PortableAsServedImage(row.source_path, row.source_thumbnail_path, keywords, row.image_path, row.thumbnail_image_path, row.weight)
             }
             Right(PortableAsServedSet(id, row.description, row.selection_source_path, row.selection_image_path, images))
           case None => Left(RecordNotFound(new RuntimeException(s"As served set $id not found")))
